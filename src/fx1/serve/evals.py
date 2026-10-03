@@ -41,8 +41,12 @@ from fx1.serve.backends import SamplingParams
 
 __all__ = [
     "EVAL_SUITES",
+    "EvalDiff",
+    "EvalDiffDelta",
     "EvalRecord",
     "EvalStore",
+    "EvalTaskTransition",
+    "diff_eval_records",
     "eval_record_receipt",
     "eval_runner",
     "metered_model",
@@ -298,3 +302,201 @@ def eval_record_receipt(record: dict[str, Any]) -> dict[str, Any]:
     from fx1.serve.ops_receipt import _ops_receipt
 
     return _ops_receipt("fx1_eval_record", "fx1_eval_record.v1", record)
+
+
+# ---- eval diffs: the promotion-gate primitive -------------------------------
+#
+# ``GET /harness/evals/{base}/diff/{candidate}`` and the SDK twin diff two
+# terminal eval records: which seeded tasks flipped, which direction the
+# honesty/ship gate moved, and the by_kind counter deltas. A diff is
+# *comparable* only when both records ran the same suite over the same
+# bank (``eval_bank_sha256``) at the same seed — a cross-bank diff is still
+# served but reads ``comparable: false`` / ``verdict: "unknown"`` rather
+# than pretending the numbers mean anything.
+
+
+class EvalTaskTransition(BaseModel):
+    """One seeded task whose pass/fail flipped between base and candidate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    task: str
+    base: bool
+    candidate: bool
+    direction: Literal["fixed", "regressed"]
+
+
+class EvalDiffDelta(BaseModel):
+    """A numeric leaf that moved between the two reports' ``by_kind``."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    path: str
+    base: float
+    candidate: float
+    delta: float
+
+
+class EvalDiff(BaseModel):
+    """Deterministic comparison of two terminal eval records."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["eval_diff"] = "eval_diff"
+    base_eval_id: str
+    candidate_eval_id: str
+    base_backend: str
+    candidate_backend: str
+    same_suite: bool
+    same_seed: bool
+    same_bank: bool
+    comparable: bool
+    gate_base: bool | None
+    gate_candidate: bool | None
+    gate_transition: Literal["opened", "closed", "unchanged", "unknown"]
+    tasks_fixed: list[str]
+    tasks_regressed: list[str]
+    tasks_only_base: list[str]
+    tasks_only_candidate: list[str]
+    deltas: list[EvalDiffDelta]
+    verdict: Literal["improved", "regressed", "unchanged", "unknown"]
+
+
+# Per-task verdict shapes by suite: run_suite-style ``results`` carry
+# ``task``/``passed``; tooluse's ``outcomes`` carry ``task_id``/``completed``;
+# retrieval's ``results`` carry ``question_id``/``correct``. Each pair is
+# the suite's declared per-task verdict — the diffs read all three.
+_TASK_VERDICT_SHAPES: tuple[tuple[str, str, str], ...] = (
+    ("results", "task", "passed"),
+    ("outcomes", "task_id", "completed"),
+    ("results", "question_id", "correct"),
+)
+
+
+def _report_tasks(report: dict[str, Any]) -> dict[str, bool]:
+    """task name -> passed, over the report's per-task arrays; absent → empty."""
+    out: dict[str, bool] = {}
+    for container, name_key, flag_key in _TASK_VERDICT_SHAPES:
+        items = report.get(container)
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            flag = item.get(flag_key)
+            name = item.get(name_key)
+            if isinstance(flag, bool) and isinstance(name, str):
+                out.setdefault(name, flag)
+    return out
+
+
+def _numeric_leaves(node: Any, prefix: str = "") -> dict[str, float]:
+    """Flatten numeric leaves of a report subtree; bools are not numbers."""
+    out: dict[str, float] = {}
+    if isinstance(node, dict):
+        for key in node:
+            out.update(_numeric_leaves(node[key], f"{prefix}.{key}" if prefix else str(key)))
+    elif isinstance(node, (int, float)) and not isinstance(node, bool):
+        out[prefix] = float(node)
+    return out
+
+
+def diff_eval_records(base: EvalRecord, candidate: EvalRecord) -> EvalDiff:
+    """Diff two eval records into a promotion-gate verdict.
+
+    Fails closed on the caller's side: both records must be terminal with
+    a serialized report — the route 409s otherwise; this function assumes
+    the contract and never invents a diff over a missing report.
+    """
+    base_report = base.report or {}
+    cand_report = candidate.report or {}
+
+    same_suite = base.suite == candidate.suite
+    same_seed = base.seed == candidate.seed
+    base_bank = base_report.get("eval_bank_sha256")
+    cand_bank = cand_report.get("eval_bank_sha256")
+    same_bank = isinstance(base_bank, str) and isinstance(cand_bank, str) and base_bank == cand_bank
+    # Banks are seeded by construction: same suite + same seed pins the
+    # bank. A stamped mismatch overrides that; absent stamps don't —
+    # suites that don't emit ``eval_bank_sha256`` stay diffable while
+    # ``same_bank`` still reports the stamp evidence honestly.
+    bank_mismatch = (
+        isinstance(base_bank, str) and isinstance(cand_bank, str) and base_bank != cand_bank
+    )
+    comparable = same_suite and same_seed and not bank_mismatch
+
+    base_tasks = _report_tasks(base_report)
+    cand_tasks = _report_tasks(cand_report)
+    if not comparable:
+        # A mismatched bank makes task-name pairing meaningless — the
+        # same name in a different bank is a different task.
+        base_tasks = {}
+        cand_tasks = {}
+
+    transitions: list[EvalTaskTransition] = []
+    for name in sorted(base_tasks.keys() & cand_tasks.keys()):
+        if base_tasks[name] != cand_tasks[name]:
+            transitions.append(
+                EvalTaskTransition(
+                    task=name,
+                    base=base_tasks[name],
+                    candidate=cand_tasks[name],
+                    direction="fixed" if cand_tasks[name] else "regressed",
+                )
+            )
+    tasks_regressed = [t.task for t in transitions if t.direction == "regressed"]
+    tasks_fixed = [t.task for t in transitions if t.direction == "fixed"]
+
+    gate_base = base_report.get("honesty_gate_passed")
+    gate_cand = cand_report.get("honesty_gate_passed")
+    gate_b = gate_base if isinstance(gate_base, bool) else None
+    gate_c = gate_cand if isinstance(gate_cand, bool) else None
+    gate_transition: Literal["opened", "closed", "unchanged", "unknown"]
+    if gate_b is None or gate_c is None:
+        gate_transition = "unknown"
+    elif gate_b == gate_c:
+        gate_transition = "unchanged"
+    else:
+        gate_transition = "opened" if gate_c else "closed"
+
+    base_leaves = _numeric_leaves(base_report.get("by_kind"))
+    cand_leaves = _numeric_leaves(cand_report.get("by_kind"))
+    deltas = [
+        EvalDiffDelta(
+            path=p,
+            base=base_leaves[p],
+            candidate=cand_leaves[p],
+            delta=cand_leaves[p] - base_leaves[p],
+        )
+        for p in sorted(base_leaves.keys() & cand_leaves.keys())
+        if base_leaves[p] != cand_leaves[p]
+    ]
+
+    if not comparable:
+        verdict: Literal["improved", "regressed", "unchanged", "unknown"] = "unknown"
+    elif tasks_regressed or gate_transition == "closed":
+        verdict = "regressed"
+    elif tasks_fixed or gate_transition == "opened":
+        verdict = "improved"
+    else:
+        verdict = "unchanged"
+
+    return EvalDiff(
+        base_eval_id=base.eval_id,
+        candidate_eval_id=candidate.eval_id,
+        base_backend=base.backend,
+        candidate_backend=candidate.backend,
+        same_suite=same_suite,
+        same_seed=same_seed,
+        same_bank=same_bank,
+        comparable=comparable,
+        gate_base=gate_b,
+        gate_candidate=gate_c,
+        gate_transition=gate_transition,
+        tasks_fixed=tasks_fixed,
+        tasks_regressed=tasks_regressed,
+        tasks_only_base=sorted(base_tasks.keys() - cand_tasks.keys()),
+        tasks_only_candidate=sorted(cand_tasks.keys() - base_tasks.keys()),
+        deltas=deltas,
+        verdict=verdict,
+    )

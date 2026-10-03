@@ -301,6 +301,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/evals/{eval_id}/diff/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diff Evals
+         * @description Promotion-gate primitive: diff two terminal eval records —
+         *     task-level pass/fail transitions, the honesty-gate move, and
+         *     ``by_kind`` counter deltas. ``comparable`` requires the same
+         *     suite over the same eval bank (``eval_bank_sha256``); a
+         *     cross-bank diff is served but reads ``verdict='unknown'``.
+         */
+        get: operations["diff_evals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/evals/{eval_id}/receipt": {
         parameters: {
             query?: never;
@@ -1526,6 +1550,72 @@ export interface components {
             draining: boolean;
             /** Inflight */
             inflight: number;
+        };
+        /**
+         * EvalDiff
+         * @description Deterministic comparison of two terminal eval records.
+         */
+        EvalDiff: {
+            /** Base Backend */
+            base_backend: string;
+            /** Base Eval Id */
+            base_eval_id: string;
+            /** Candidate Backend */
+            candidate_backend: string;
+            /** Candidate Eval Id */
+            candidate_eval_id: string;
+            /** Comparable */
+            comparable: boolean;
+            /** Deltas */
+            deltas: components["schemas"]["EvalDiffDelta"][];
+            /** Gate Base */
+            gate_base: boolean | null;
+            /** Gate Candidate */
+            gate_candidate: boolean | null;
+            /**
+             * Gate Transition
+             * @enum {string}
+             */
+            gate_transition: "opened" | "closed" | "unchanged" | "unknown";
+            /**
+             * Object
+             * @default eval_diff
+             * @constant
+             */
+            object: "eval_diff";
+            /** Same Bank */
+            same_bank: boolean;
+            /** Same Seed */
+            same_seed: boolean;
+            /** Same Suite */
+            same_suite: boolean;
+            /** Tasks Fixed */
+            tasks_fixed: string[];
+            /** Tasks Only Base */
+            tasks_only_base: string[];
+            /** Tasks Only Candidate */
+            tasks_only_candidate: string[];
+            /** Tasks Regressed */
+            tasks_regressed: string[];
+            /**
+             * Verdict
+             * @enum {string}
+             */
+            verdict: "improved" | "regressed" | "unchanged" | "unknown";
+        };
+        /**
+         * EvalDiffDelta
+         * @description A numeric leaf that moved between the two reports' ``by_kind``.
+         */
+        EvalDiffDelta: {
+            /** Base */
+            base: number;
+            /** Candidate */
+            candidate: number;
+            /** Delta */
+            delta: number;
+            /** Path */
+            path: string;
         };
         /**
          * EvalListResponse
@@ -3255,6 +3345,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvalRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    diff_evals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalDiff"];
                 };
             };
             /** @description Validation Error */

@@ -38,6 +38,7 @@ export type CompletionRecord = components["schemas"]["CompletionRecord"];
 export type CompletionListResponse =
   components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
 export type EvalRecord = components["schemas"]["EvalRecord"];
 export type EvalSubmitRequest =
@@ -1260,6 +1261,18 @@ export class HarnessApiClient {
       idempotent: true,
     });
     return (await this.parse(res)) as EvalRecord;
+  }
+
+  /**
+   * GET /harness/evals/{base}/diff/{candidate} — the promotion-gate
+   * diff over two terminal eval records: task-level transitions, the
+   * gate move, by_kind deltas, verdict. 404 unknown id, 409
+   * non-terminal or missing report.
+   */
+  diffEvals(baseId: string, candidateId: string): Promise<EvalDiff> {
+    return this.get(
+      `/harness/evals/${encodeURIComponent(baseId)}/diff/${encodeURIComponent(candidateId)}`,
+    ) as Promise<EvalDiff>;
   }
 
   /**

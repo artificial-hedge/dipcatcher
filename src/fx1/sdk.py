@@ -56,7 +56,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.evals import EvalRecord, EvalStore
+from fx1.serve.evals import EvalDiff, EvalRecord, EvalStore, diff_eval_records
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
     OpenAIChatRequest,
@@ -735,6 +735,24 @@ class Fx1Harness:
                 f"eval {eval_id} is {rec.status} — receipts export on terminal records only"
             )
         return eval_record_receipt(rec.model_dump(mode="json"))
+
+    def eval_diff(self, base_id: str, candidate_id: str) -> EvalDiff:
+        """Diff two stored eval records — the wire twin is
+        ``GET /harness/evals/{base}/diff/{candidate}``. Unknown ids raise
+        ``KeyError``; non-terminal records or missing reports raise
+        ``RuntimeError`` (the wire's 404/409)."""
+        base = self._eval_store.get(base_id)
+        if base is None:
+            raise KeyError(base_id)
+        cand = self._eval_store.get(candidate_id)
+        if cand is None:
+            raise KeyError(candidate_id)
+        for rec in (base, cand):
+            if rec.status in ("queued", "running") or rec.report is None:
+                raise RuntimeError(
+                    f"eval {rec.eval_id} is {rec.status} — diffs need terminal records with reports"
+                )
+        return diff_eval_records(base, cand)
 
     # ---- registry ------------------------------------------------------
 

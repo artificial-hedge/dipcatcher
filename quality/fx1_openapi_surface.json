@@ -234,6 +234,27 @@
         ]
       }
     },
+    "/harness/evals/{eval_id}/diff/{candidate_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/evals/{eval_id}/receipt": {
       "get": {
         "params": [
@@ -769,5 +790,5 @@
       }
     }
   },
-  "schema_sha256": "fb9e122bafbd1d3f58a2ba8cc582c89d64670798fee7cd2611e5ee1802df2b1c"
+  "schema_sha256": "8751c607f6acf70a0c7804c1dc937d339193bfdf6da30a4e7a794d2fc313e079"
 }

@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "fa5e5a44e86c9bf38204acf16a1ccc916cdff8fa",
+  "git_revision": "4c26a18974458a715285e08537f497cb64ecf365",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -71,6 +71,7 @@
       "drain_score_up": true,
       "drain_moderations_up": true,
       "drain_uncapped_routes_up": true,
+      "drain_eval_diff_up": true,
       "drain_health_reports": true,
       "drain_metrics_reports": true,
       "drain_idempotent": true,
@@ -354,6 +355,10 @@
       "eval_receipt_nonterminal_409": true,
       "eval_cancel_queued_200": true,
       "eval_cancelled_never_runs": true,
+      "eval_diff_200": true,
+      "eval_diff_unknown_404": true,
+      "eval_diff_cross_suite_incomparable": true,
+      "eval_diff_nonterminal_409": true,
       "eval_cancel_running_409": true,
       "eval_judge_metered": true,
       "eval_capabilities_lists_suites": true,
@@ -576,5 +581,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it.",
-  "receipt_sha256": "b36b3e37bb4f4acdce80cdfd8b32fba1d7381fd14ca0de4b26a96b4fa0eaea41"
+  "receipt_sha256": "22b62bb00cb084659cae5176559befa9d287a79301c034e52ecf485e70d4e6b5"
 }

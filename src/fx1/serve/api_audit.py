@@ -744,6 +744,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             dclient.get("/harness/commands").status_code == 200
             and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
         )
+        out["drain_eval_diff_up"] = dclient.get("/harness/evals/a/diff/b").status_code == 404
         out["drain_health_reports"] = (
             dclient.get("/health").status_code == 200
             and dclient.get("/health").json()["draining"] is True
@@ -2437,7 +2438,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         )
         out["capabilities_features"] = all(
             capj["features"].get(f) is True
-            for f in ("idempotency", "sse", "webhooks", "batch", "jobs", "drain")
+            for f in ("idempotency", "sse", "webhooks", "batch", "jobs", "drain", "eval_diff")
         )
         out["capabilities_roles_cover_registry"] = set(capj["roles"]) == {
             str(r) for r in _HarnessRole
@@ -3439,6 +3440,54 @@ def _probe_backend_probes(
     out["eval_cancel_queued_200"] = canc.status_code == 200 and canc.json()["status"] == "cancelled"
     hold_ev.set()
     out["eval_cancelled_never_runs"] = qc2.get(f"/harness/evals/{be_id}").json()["report"] is None
+
+    # Eval-diff — the promotion-gate primitive. Two succeeded evals on
+    # the same bank → comparable + verdict; a cancelled record 409s; a
+    # cross-suite diff is served but incomparable (verdict 'unknown').
+    ev2_id = eval_app.post(
+        "/harness/evals", json={"suite": "tooluse", "backend": "byok", "seed": 0}
+    ).json()["eval_id"]
+    ev2_rec = _wait_eval(eval_app, ev2_id)
+    diff = eval_app.get(f"/harness/evals/{ev_id}/diff/{ev2_id}")
+    dj = diff.json() if diff.status_code == 200 else {}
+    out["eval_diff_200"] = (
+        ev2_rec.get("status") == "succeeded"
+        and diff.status_code == 200
+        and dj.get("object") == "eval_diff"
+        and dj.get("same_suite") is True
+        and dj.get("same_seed") is True
+        # tooluse reports don't stamp eval_bank_sha256 — same_bank is the
+        # stamp evidence, comparable is the suite+seed-pinning contract
+        and dj.get("same_bank") is False
+        and dj.get("comparable") is True
+        and dj.get("verdict") == "unchanged"
+        and dj.get("tasks_fixed") == []
+        and dj.get("tasks_regressed") == []
+    )
+    out["eval_diff_unknown_404"] = (
+        eval_app.get(f"/harness/evals/nope/diff/{ev2_id}").status_code == 404
+        and eval_app.get(f"/harness/evals/{ev_id}/diff/nope").status_code == 404
+    )
+    cap_id = eval_app.post(
+        "/harness/evals", json={"suite": "capability", "backend": "byok", "seed": 0}
+    ).json()["eval_id"]
+    _wait_eval(eval_app, cap_id)
+    xdiff = eval_app.get(f"/harness/evals/{ev_id}/diff/{cap_id}")
+    out["eval_diff_cross_suite_incomparable"] = (
+        xdiff.status_code == 200
+        and xdiff.json().get("same_suite") is False
+        and xdiff.json().get("comparable") is False
+        and xdiff.json().get("verdict") == "unknown"
+    )
+    qc2b_id = qc2.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
+        "eval_id"
+    ]
+    _wait_eval(qc2, qc2b_id)
+    out["eval_diff_nonterminal_409"] = (
+        qc2.get(f"/harness/evals/{be_id}/diff/{qc2b_id}").status_code == 409
+        and qc2.get(f"/harness/evals/{be_id}/diff/{qc2b_id}").json().get("code")
+        == "eval_not_terminal"
+    )
 
     # Cancel on a running eval is 409 — suite runners have no kill handle.
     # The gate event is set before wait expires so the suite completes.

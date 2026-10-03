@@ -579,6 +579,17 @@ class HarnessClient:
         )
         return dict(out)
 
+    def diff_evals(self, base_id: str, candidate_id: str) -> dict[str, Any]:
+        """GET /harness/evals/{base}/diff/{candidate} — the promotion-gate
+        diff: task transitions, gate move, by_kind deltas, verdict.
+        404 unknown id, 409 non-terminal/missing report."""
+        out = self._json(
+            "GET",
+            f"/harness/evals/{urllib.parse.quote(base_id)}/diff/{urllib.parse.quote(candidate_id)}",
+            idempotent=True,
+        )
+        return dict(out)
+
     def wait_eval(
         self,
         eval_id: str,

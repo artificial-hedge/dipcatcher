@@ -105,9 +105,11 @@ from fx1.serve.contract import API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
+    EvalDiff,
     EvalRecord,
     EvalStore,
     EvalSuiteName,
+    diff_eval_records,
     eval_record_receipt,
     metered_model,
     run_eval_record,
@@ -2708,6 +2710,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         return eval_record_receipt(rec.model_dump(mode="json"))
 
+    @app.get(
+        "/harness/evals/{eval_id}/diff/{candidate_id}",
+        response_model=EvalDiff,
+        tags=["evals"],
+        operation_id="diff_evals",
+    )
+    def diff_evals(eval_id: str, candidate_id: str) -> EvalDiff:
+        """Promotion-gate primitive: diff two terminal eval records —
+        task-level pass/fail transitions, the honesty-gate move, and
+        ``by_kind`` counter deltas. ``comparable`` requires the same
+        suite over the same eval bank (``eval_bank_sha256``); a
+        cross-bank diff is served but reads ``verdict='unknown'``."""
+        base = eval_store.get(eval_id)
+        if base is None:
+            raise ApiError(404, f"unknown eval_id {eval_id!r}")
+        cand = eval_store.get(candidate_id)
+        if cand is None:
+            raise ApiError(404, f"unknown eval_id {candidate_id!r}")
+        for rec in (base, cand):
+            if rec.status not in _TERMINAL_JOB_STATUS or rec.report is None:
+                raise ApiError(
+                    409,
+                    f"eval {rec.eval_id!r} is {rec.status} — diffs need terminal records with reports",
+                    code="eval_not_terminal",
+                )
+        return diff_eval_records(base, cand)
+
     @app.delete(
         "/harness/evals/{eval_id}",
         response_model=EvalRecord,
@@ -4932,6 +4961,7 @@ def create_app(
                 "openai_moderations": True,
                 "score": True,
                 "evals": True,
+                "eval_diff": True,
             },
             eval_suites=list(EVAL_SUITES),
             limits={

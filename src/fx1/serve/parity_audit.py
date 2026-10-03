@@ -1577,6 +1577,37 @@ def parity_audit() -> dict[str, bool]:
             _raises(lambda: sdk_u.moderate([]))[0] == "ValidationError"
             and _raises(lambda: remote_u.moderate([]))[0] == "ValueError"
         )
+
+        # eval-diff surface: the promotion-gate primitive is the same
+        # contract in-process and over the wire — same-suite same-bank
+        # records are comparable and verdict-classified identically; the
+        # unknown-id fault maps KeyError on both surfaces.
+        ev_a = sdk_u.run_eval("tooluse", backend="byok", seed=0)
+        ev_b = sdk_u.run_eval("tooluse", backend="byok", seed=0)
+        sdk_diff = sdk_u.eval_diff(ev_a.eval_id, ev_b.eval_id)
+        rv_a = remote_u.submit_eval("tooluse", backend="byok", seed=0)
+        rv_b = remote_u.submit_eval("tooluse", backend="byok", seed=0)
+        remote_u.wait_eval(rv_a["eval_id"], timeout_s=120)
+        remote_u.wait_eval(rv_b["eval_id"], timeout_s=120)
+        wire_diff = remote_u.diff_evals(rv_a["eval_id"], rv_b["eval_id"])
+
+        def _diff_norm(d: Any) -> dict[str, Any]:
+            dd = d.model_dump(mode="json") if hasattr(d, "model_dump") else dict(d)
+            dd.pop("base_eval_id", None)
+            dd.pop("candidate_eval_id", None)
+            return dd
+
+        out["eval_diff_parity"] = (
+            _diff_norm(sdk_diff) == _diff_norm(wire_diff)
+            and sdk_diff.same_suite
+            and sdk_diff.same_seed
+            and sdk_diff.comparable
+            and sdk_diff.verdict == "unchanged"
+        )
+        out["eval_diff_unknown_parity"] = (
+            _raises(lambda: sdk_u.eval_diff("nope", ev_b.eval_id))[0] == "KeyError"
+            and _raises(lambda: remote_u.diff_evals("nope", rv_b["eval_id"]))[0] == "KeyError"
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (

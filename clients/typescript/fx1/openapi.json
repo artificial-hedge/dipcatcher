@@ -1550,6 +1550,178 @@
         "title": "DrainResponse",
         "type": "object"
       },
+      "EvalDiff": {
+        "additionalProperties": false,
+        "description": "Deterministic comparison of two terminal eval records.",
+        "properties": {
+          "base_backend": {
+            "title": "Base Backend",
+            "type": "string"
+          },
+          "base_eval_id": {
+            "title": "Base Eval Id",
+            "type": "string"
+          },
+          "candidate_backend": {
+            "title": "Candidate Backend",
+            "type": "string"
+          },
+          "candidate_eval_id": {
+            "title": "Candidate Eval Id",
+            "type": "string"
+          },
+          "comparable": {
+            "title": "Comparable",
+            "type": "boolean"
+          },
+          "deltas": {
+            "items": {
+              "$ref": "#/components/schemas/EvalDiffDelta"
+            },
+            "title": "Deltas",
+            "type": "array"
+          },
+          "gate_base": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Base"
+          },
+          "gate_candidate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Candidate"
+          },
+          "gate_transition": {
+            "enum": [
+              "opened",
+              "closed",
+              "unchanged",
+              "unknown"
+            ],
+            "title": "Gate Transition",
+            "type": "string"
+          },
+          "object": {
+            "const": "eval_diff",
+            "default": "eval_diff",
+            "title": "Object",
+            "type": "string"
+          },
+          "same_bank": {
+            "title": "Same Bank",
+            "type": "boolean"
+          },
+          "same_seed": {
+            "title": "Same Seed",
+            "type": "boolean"
+          },
+          "same_suite": {
+            "title": "Same Suite",
+            "type": "boolean"
+          },
+          "tasks_fixed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Fixed",
+            "type": "array"
+          },
+          "tasks_only_base": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Only Base",
+            "type": "array"
+          },
+          "tasks_only_candidate": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Only Candidate",
+            "type": "array"
+          },
+          "tasks_regressed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Regressed",
+            "type": "array"
+          },
+          "verdict": {
+            "enum": [
+              "improved",
+              "regressed",
+              "unchanged",
+              "unknown"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_eval_id",
+          "candidate_eval_id",
+          "base_backend",
+          "candidate_backend",
+          "same_suite",
+          "same_seed",
+          "same_bank",
+          "comparable",
+          "gate_base",
+          "gate_candidate",
+          "gate_transition",
+          "tasks_fixed",
+          "tasks_regressed",
+          "tasks_only_base",
+          "tasks_only_candidate",
+          "deltas",
+          "verdict"
+        ],
+        "title": "EvalDiff",
+        "type": "object"
+      },
+      "EvalDiffDelta": {
+        "additionalProperties": false,
+        "description": "A numeric leaf that moved between the two reports' ``by_kind``.",
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "number"
+          },
+          "candidate": {
+            "title": "Candidate",
+            "type": "number"
+          },
+          "delta": {
+            "title": "Delta",
+            "type": "number"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "base",
+          "candidate",
+          "delta"
+        ],
+        "title": "EvalDiffDelta",
+        "type": "object"
+      },
       "EvalListResponse": {
         "additionalProperties": false,
         "description": "Eval inventory page: ``total`` is the filtered count before paging.",
@@ -5944,6 +6116,122 @@
           }
         },
         "summary": "Get Eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}/diff/{candidate_id}": {
+      "get": {
+        "description": "Promotion-gate primitive: diff two terminal eval records \u2014\ntask-level pass/fail transitions, the honesty-gate move, and\n``by_kind`` counter deltas. ``comparable`` requires the same\nsuite over the same eval bank (``eval_bank_sha256``); a\ncross-bank diff is served but reads ``verdict='unknown'``.",
+        "operationId": "diff_evals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eval_id",
+            "required": true,
+            "schema": {
+              "title": "Eval Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalDiff"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Diff Evals",
         "tags": [
           "evals"
         ]
