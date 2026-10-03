@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-990 calculus-of-variations canon.
+        "euler_lagrange",
+        "legendre_cond",
+        "jacobi_eq",
+        "geodesic_var",
+        "isoperimetric_var",
+        "soap_film",
         # Wave-989 microlocal-2 canon.
         "parametrix",
         "wave_eq_group",
