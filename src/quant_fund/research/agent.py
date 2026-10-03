@@ -6687,6 +6687,14 @@ from quant_fund.research.benches_w836 import (
     bench_kubota_mean_width_family,
     bench_santalo_measure_family,
 )
+from quant_fund.research.benches_w837 import (
+    bench_alexandrov_fenchel_family,
+    bench_brunn_minkowski_family,
+    bench_helly_theorem_family,
+    bench_isoperimetric_ineq_family,
+    bench_minkowski_sum_family,
+    bench_mixed_volume_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7058,6 +7066,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "brunn_minkowski": bench_brunn_minkowski_family,
+        "alexandrov_fenchel": bench_alexandrov_fenchel_family,
+        "isoperimetric_ineq": bench_isoperimetric_ineq_family,
+        "minkowski_sum": bench_minkowski_sum_family,
+        "mixed_volume": bench_mixed_volume_family,
+        "helly_theorem": bench_helly_theorem_family,
         "crofton_formula": bench_crofton_formula_family,
         "kinematic_measure": bench_kinematic_measure_family,
         "buffon_needle": bench_buffon_needle_family,
