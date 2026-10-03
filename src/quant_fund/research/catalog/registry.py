@@ -2756,6 +2756,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "difficulty_retarget",
         "fork_resolution",
         "block_validator",
+        # Wave-233 compiler-2 canon: SSA, SCCP, GVN, coalescing,
+        # scheduling, LICM.
+        "ssa_construct",
+        "sccp_const",
+        "gvn_elim",
+        "reg_coalesce",
+        "instr_sched",
+        "licm_hoist",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
