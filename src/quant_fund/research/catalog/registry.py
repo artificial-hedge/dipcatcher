@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-426 homotopy-7 canon.
+        "model_category",
+        "quillen_adj",
+        "simplicial_set",
+        "infinity_cat",
+        "derived_alg",
+        "stable_cat",
         # Wave-425 stacks/moduli canon.
         "moduli_stack",
         "stacky_curve",
