@@ -2848,6 +2848,22 @@ from quant_fund.research.benches_w356 import (
     bench_poisson_process_family,
     bench_stopping_time_family,
 )
+from quant_fund.research.benches_w357 import (
+    bench_connection_form_family,
+    bench_gauss_bonnet_family,
+    bench_geodesic_eq_family,
+    bench_holonomy_family,
+    bench_parallel_transport_family,
+    bench_sectional_curv_family,
+)
+from quant_fund.research.benches_w358 import (
+    bench_banach_alaoglu_family,
+    bench_closed_graph_family,
+    bench_open_mapping_family,
+    bench_reflexive_space_family,
+    bench_uniform_bounded_family,
+    bench_weak_convergence_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3227,6 +3243,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "open_mapping": bench_open_mapping_family,
+        "uniform_bounded": bench_uniform_bounded_family,
+        "weak_convergence": bench_weak_convergence_family,
+        "banach_alaoglu": bench_banach_alaoglu_family,
+        "reflexive_space": bench_reflexive_space_family,
+        "closed_graph": bench_closed_graph_family,
+        "connection_form": bench_connection_form_family,
+        "parallel_transport": bench_parallel_transport_family,
+        "holonomy": bench_holonomy_family,
+        "gauss_bonnet": bench_gauss_bonnet_family,
+        "geodesic_eq": bench_geodesic_eq_family,
+        "sectional_curv": bench_sectional_curv_family,
         "markov_chain": bench_markov_chain_family,
         "martingale_check": bench_martingale_check_family,
         "poisson_process": bench_poisson_process_family,
