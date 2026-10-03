@@ -730,6 +730,17 @@ backends are configured (`backends`, booleans only), and the registered
 command roles (`roles`). Clients self-configure from this instead of
 hardcoding server internals.
 
+`fx1 harness selftest` is the deploy gate: zero-config golden-path smoke
+of the whole contract. With no flags it boots a stub OpenAI engine and
+the production app on loopback and walks auth, commands, a BYOK
+completion, SSE reassembly, idempotent replay, the async job lifecycle,
+sealed-receipt verification, drain, and in-process parity with
+`Fx1Harness` — 17 checks, exit 0 only when all pass. `--state-dir DIR`
+adds a real process restart proving job-record recovery. `--remote URL`
+flips to read-only probes against a live deployment (no model spend):
+health, version negotiation, commands, advisory surfaces, and the auth
+gate when `--api-key` is given.
+
 ## Async jobs & webhooks
 
 `POST /harness/jobs` admits under the drain + `max_inflight` gates and
@@ -753,6 +764,33 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 - **Lifespan** — on shutdown the gate drains, queued jobs flip to
   `cancelled` (firing their webhooks), the executor releases pending
   futures; running jobs finish bounded by their command timeout.
+- **Durability** — with `--state-dir` (`FX1_API_STATE_DIR`) every state
+  transition and cancel/evict across the async surface appends to a
+  hash-chained JSONL journal (fsync'd per append): `jobs.jsonl`,
+  `evals.jsonl`, `batches.jsonl`, `ft_jobs.jsonl`, `files.jsonl` +
+  `files/<id>.bin` blob files, and `idem_{runs,complete,complete_batch,
+  openai}.jsonl`. On boot each chain is verified line-by-line — a torn
+  tail or edited line truncates at the first bad record — and the
+  stores are rebuilt: terminal records return as-was, anything still
+  `queued`/`running`/`validating`/`in_progress`/`finalizing`/
+  `cancelling` at the crash recovers as `failed` with a
+  restart-explaining `error` (payloads are not journaled, so nothing is
+  silently re-run), and `Idempotency-Key` mappings survive — the idem
+  stores journal the recorded response itself, so a retried submission
+  replays the recorded answer (`replayed: true`) after a restart
+  instead of re-running. Upload payloads live in content blobs, not
+  the journal; a record whose blob is missing drops with a
+  `recover_warnings` entry, and deletes/evictions tombstone the blob.
+  The ft journal also restores each job's event feed and the `ft:`
+  model registry — a model card never outlives its producing job
+  (eviction drops the card). `callback_secret` never reaches disk, so
+  a recovered record with a `callback_url` keeps it for audit but
+  cannot deliver post-restart. Boot compacts each journal to live
+  records. Unset = the same in-memory stores as before. The in-process
+  SDK binds the same journals: `Fx1Harness(state_dir=...)` (or the
+  `FX1_SDK_STATE_DIR` env var) journals evals and fine-tune jobs with
+  identical restart semantics — a mid-eval crash recovers as `failed`,
+  terminal records return as-was.
 
 The same contract applies on the OpenAI-compatible async surfaces:
 `POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept
@@ -821,6 +859,7 @@ out-of-range values:
 | `--cors-origins` | `FX1_API_CORS_ORIGINS` | (off) | comma-separated browser origins for CORS; each must be a scheme+host URL, `*` and non-http(s) refused; preflights bypass the API-key gate (they carry no credentials), every preflight reflects the `expose` list of stamped headers |
 | `--breaker-threshold` | `FX1_API_BREAKER_THRESHOLD` | 5 | consecutive call faults that open a backend's circuit; 0 disables. While open, calls fast-fail `503 backend_unavailable` + `Retry-After` without burning an inflight slot; a single half-open probe is admitted after cooldown and closes the circuit on success. Resolution faults that surface as 503 count; client errors (404/422), capability gaps (501), and honesty-gate refusals never do |
 | `--receipts-dir` | `FX1_API_RECEIPTS_DIR` | `receipts` | sealed-receipt store backing `GET /receipts*` — `503 receipts_unavailable` when absent |
+| `--state-dir` | `FX1_API_STATE_DIR` | (off) | durable dir for the state journals (jobs/evals/batches/ft-jobs/files/idempotency) — crash/restart recovers records + keys; unset = in-memory |
 | `--breaker-cooldown-s` | `FX1_API_BREAKER_COOLDOWN_S` | 30 | seconds an open circuit fast-fails before admitting a probe |
 
 `POST /harness/drain` is the one-way graceful-exit latch: work routes

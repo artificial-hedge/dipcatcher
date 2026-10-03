@@ -131,6 +131,7 @@ from fx1.serve.finetune import (
     default_ft_runner,
     validate_chat_jsonl,
 )
+from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -192,6 +193,7 @@ _FILE_BYTES_ENV = "FX1_API_FILE_BYTES"
 _BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
 _BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
 _STORE_MAX_ENV = "FX1_API_STORE_MAX"
+_STATE_DIR_ENV = "FX1_API_STATE_DIR"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -1477,6 +1479,7 @@ def _submit_job(
             inflight.release()
             return
         job.status = "running"
+        job_store.mark(job)
         try:
             result = lab.run(
                 body.command,
@@ -1503,6 +1506,7 @@ def _submit_job(
         finally:
             _deliver_callback(job)
         job.finished_at = time.time()
+        job_store.mark(job)
         metrics.release()
         inflight.release()
 
@@ -1872,12 +1876,52 @@ class _IdemStore[IdemT: BaseModel]:
     retry a submission after a transport blip without double-executing
     the work. Read-only replays bypass the drain latch and the
     concurrency cap: the work already happened.
+
+    With a ``JobJournal`` bound, each ``put`` is journaled (key,
+    fingerprint, and the stored response itself — the replay *is* the
+    response, so the payload must ride along) and boot restores the map:
+    a retried submission post-restart replays the recorded answer
+    instead of re-running it. ``model`` is the response class to decode
+    with; required when a journal is bound.
     """
 
-    def __init__(self, max_entries: int) -> None:
+    def __init__(
+        self,
+        max_entries: int,
+        journal: JobJournal | None = None,
+        model: type[IdemT] | None = None,
+    ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            if model is None:
+                raise ValueError("_IdemStore with a journal requires the response model class")
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._map.pop(str(evict), None)
+                rec = payload.get("idem")
+                if rec is None:
+                    continue
+                self._map[str(rec["key"])] = (
+                    str(rec["fp"]),
+                    model.model_validate(rec["resp"]),
+                )
+                self._map.move_to_end(str(rec["key"]))
+            self._compact_locked()
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact(
+                [
+                    {"idem": {"key": k, "fp": fp, "resp": resp.model_dump(mode="json")}}
+                    for k, (fp, resp) in self._map.items()
+                ]
+            )
 
     def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
@@ -1890,8 +1934,17 @@ class _IdemStore[IdemT: BaseModel]:
         with self._lock:
             self._map[key] = (fingerprint, resp)
             self._map.move_to_end(key)
+            evicted: list[str] = []
             while len(self._map) > self._max:
-                self._map.popitem(last=False)
+                old_key, _ = self._map.popitem(last=False)
+                evicted.append(old_key)
+            if self._journal is not None:
+                payload: dict[str, Any] = {
+                    "idem": {"key": key, "fp": fingerprint, "resp": resp.model_dump(mode="json")}
+                }
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 class _OpenAIIdemRecord(_Model):
@@ -1952,14 +2005,75 @@ class _JobStore:
     contract as the sync route) and release it when the job finishes, so
     the queue can never grow past the declared concurrency bound. The
     store is an LRU; evicting a job also drops its idempotency mapping.
+
+    With a ``JobJournal`` bound (``--state-dir`` on serve), every
+    transition is journaled before the store mutates, and boot replays
+    the chain: terminal records come back as-was; jobs still queued or
+    running at the crash are restored as ``failed`` with an honest
+    restart error (never re-run — their payload isn't journaled), and
+    their idempotency keys still resolve so a retried submission returns
+    the lost record instead of duplicating work.
     """
 
-    def __init__(self, max_entries: int) -> None:
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._job_key: dict[str, str] = {}
+        self._job_fp: dict[str, str] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = time.time()
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._drop(str(evict))
+                if "job" not in payload:
+                    continue
+                job = JobStatusResponse.model_validate(payload["job"])
+                self._jobs[job.job_id] = job
+                self._jobs.move_to_end(job.job_id)
+                key, fp = payload.get("key"), payload.get("fp")
+                if key is not None and fp is not None:
+                    self._keys[key] = (fp, job.job_id)
+                    self._job_key[job.job_id] = key
+                    self._job_fp[job.job_id] = fp
+            for job in self._jobs.values():
+                if job.status in ("queued", "running"):
+                    job.status = "failed"
+                    job.error = "process restarted before the job reached a terminal state"
+                    job.finished_at = now
+            self._compact_locked()
+
+    def _drop(self, job_id: str) -> None:
+        self._jobs.pop(job_id, None)
+        key = self._job_key.pop(job_id, None)
+        self._job_fp.pop(job_id, None)
+        if key is not None:
+            self._keys.pop(key, None)
+
+    def _record(self, job: JobStatusResponse) -> dict[str, Any]:
+        return {
+            "job": job.model_dump(mode="json"),
+            "key": self._job_key.get(job.job_id),
+            "fp": self._job_fp.get(job.job_id),
+        }
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        post-replay so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            self._journal.compact([self._record(j) for j in self._jobs.values()])
+
+    def mark(self, job: JobStatusResponse) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``job`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(job))
 
     def get(self, job_id: str) -> JobStatusResponse | None:
         with self._lock:
@@ -1985,6 +2099,8 @@ class _JobStore:
             if job.status == "queued":
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
                 return job, "cancelled"
             return job, job.status
 
@@ -1998,6 +2114,8 @@ class _JobStore:
             for job in out:
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
             return out
 
     def get_key(self, key: str) -> tuple[str, str] | None:
@@ -2020,16 +2138,26 @@ class _JobStore:
                 self._keys[key] = (fingerprint, job.job_id)
                 self._keys.move_to_end(key)
                 self._job_key[job.job_id] = key
+                self._job_fp[job.job_id] = fingerprint
+            evicted: list[str] = []
             while len(self._jobs) > self._max:
                 old_id, _ = self._jobs.popitem(last=False)
                 old_key = self._job_key.pop(old_id, None)
+                self._job_fp.pop(old_id, None)
                 if old_key is not None:
                     self._keys.pop(old_key, None)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(job)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 class _FileRecord(_Model):
-    """A stored upload — content stays in process memory (LRU-bounded,
-    like every store on this surface; nothing durable pretends otherwise)."""
+    """A stored upload — LRU-bounded in memory; with ``--state-dir`` the
+    content rides along as a blob under ``files/`` (journaled metadata +
+    blob bytes, so a restart returns the same bytes under the same id)."""
 
     file_id: str
     filename: str
@@ -2044,13 +2172,78 @@ class _FileStore:
 
     Files are the batch input channel — one upload, then batches reference
     it by id. Bounded by entry count AND per-file bytes so an upload flood
-    can't pin the process; eviction is silent LRU like the job store."""
+    can't pin the process; eviction is silent LRU like the job store.
 
-    def __init__(self, max_entries: int, max_bytes: int) -> None:
+    With ``--state-dir`` the store is durable: content lands in
+    ``files/<file_id>.bin`` (atomic tmp+rename) *before* the journaled
+    metadata line, so replay only ever restores a record whose bytes are
+    already on disk; eviction and delete journal tombstones and unlink the
+    blob. Orphan blobs (journaled metadata lost to a torn tail, or a crash
+    between blob write and journal) are GC'd on boot — a file id can never
+    resurrect pointing at content that isn't there."""
+
+    def __init__(
+        self,
+        max_entries: int,
+        max_bytes: int,
+        state_dir: Path | None = None,
+    ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes
         self._files: OrderedDict[str, _FileRecord] = OrderedDict()
+        self._dir = Path(state_dir) / "files" if state_dir is not None else None
+        self._journal = (
+            JobJournal(Path(state_dir) / "files.jsonl") if state_dir is not None else None
+        )
+        self.recover_warnings: list[str] = []
+        if self._journal is not None:
+            res = self._journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    fid = str(evict)
+                    self._files.pop(fid, None)
+                    self._blob(fid).unlink(missing_ok=True)
+                if "file_deleted" in payload:
+                    fid = str(payload["file_deleted"])
+                    self._files.pop(fid, None)
+                    self._blob(fid).unlink(missing_ok=True)
+                    continue
+                if "file" not in payload:
+                    continue
+                meta = payload["file"]
+                fid = str(meta["file_id"])
+                blob = self._blob(fid)
+                if not blob.is_file():
+                    self.recover_warnings.append(
+                        f"file {fid}: journaled without its content blob — dropped"
+                    )
+                    continue
+                rec = _FileRecord.model_validate({**meta, "content": blob.read_bytes()})
+                self._files[fid] = rec
+                self._files.move_to_end(fid)
+            # GC blobs with no live record (torn tail / mid-eviction crash)
+            blobs = (
+                self._dir.glob("file-*.bin") if self._dir is not None and self._dir.is_dir() else ()
+            )
+            for blob in blobs:
+                if blob.stem not in self._files:
+                    blob.unlink(missing_ok=True)
+            self._compact_locked()
+
+    def _blob(self, file_id: str) -> Path:
+        if self._dir is None:  # only reachable in the journal-less mode
+            raise RuntimeError("file store has no state_dir — nothing durable to address")
+        return self._dir / f"{file_id}.bin"
+
+    @staticmethod
+    def _meta(rec: _FileRecord) -> dict[str, Any]:
+        return rec.model_dump(mode="json", exclude={"content"})
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact([{"file": self._meta(r)} for r in self._files.values()])
 
     def put(self, *, filename: str, purpose: str, content: bytes) -> _FileRecord:
         rec = _FileRecord(
@@ -2061,11 +2254,32 @@ class _FileStore:
             created_at=int(time.time()),
             content=content,
         )
+        if self._dir is not None:
+            # Blob first, fsync'd: the journaled metadata line may only ever
+            # name content that is already durable.
+            self._dir.mkdir(parents=True, exist_ok=True)
+            blob = self._blob(rec.file_id)
+            tmp = self._dir / f".{rec.file_id}.tmp"
+            with tmp.open("wb") as fh:
+                fh.write(content)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, blob)
+        evicted: list[str] = []
         with self._lock:
             self._files[rec.file_id] = rec
             self._files.move_to_end(rec.file_id)
             while len(self._files) > self._max:
-                self._files.popitem(last=False)
+                old_id, _ = self._files.popitem(last=False)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload: dict[str, Any] = {"file": self._meta(rec)}
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
+        if self._dir is not None:
+            for fid in evicted:
+                self._blob(fid).unlink(missing_ok=True)
         return rec
 
     def get(self, file_id: str) -> _FileRecord | None:
@@ -2084,7 +2298,12 @@ class _FileStore:
 
     def delete(self, file_id: str) -> _FileRecord | None:
         with self._lock:
-            return self._files.pop(file_id, None)
+            rec = self._files.pop(file_id, None)
+            if rec is not None and self._journal is not None:
+                self._journal.append({"file_deleted": file_id})
+        if rec is not None and self._dir is not None:
+            self._blob(file_id).unlink(missing_ok=True)
+        return rec
 
     @property
     def max_bytes(self) -> int:
@@ -2136,19 +2355,77 @@ class _BatchRecord(_Model):
 
 
 class _BatchStore:
-    """Bounded LRU store of batches (newest-first listing)."""
+    """Bounded LRU store of batches (newest-first listing).
 
-    def __init__(self, max_entries: int) -> None:
+    With a ``JobJournal`` bound (``--state-dir``) every status transition
+    is journaled (``put``/``mark``/evict) and boot replays the chain:
+    terminal batches return as-was; a batch still mid-flight at the crash
+    recovers as ``failed`` with a restart-explaining error — its input
+    lines aren't journaled, so nothing is silently re-run.
+    ``_callback_secret`` never touches disk, so a recovered batch keeps
+    ``callback_url`` for audit but cannot deliver post-restart."""
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._batches: OrderedDict[str, _BatchRecord] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = int(time.time())
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._batches.pop(str(evict), None)
+                if "batch" not in payload:
+                    continue
+                batch = _BatchRecord.model_validate(payload["batch"])
+                self._batches[batch.batch_id] = batch
+                self._batches.move_to_end(batch.batch_id)
+            for batch in self._batches.values():
+                if batch.status not in _BATCH_TERMINAL:
+                    batch.status = "failed"
+                    batch.failed_at = now
+                    batch.errors = {
+                        "object": "list",
+                        "data": [
+                            {
+                                "code": "internal_error",
+                                "message": "process restarted before the batch "
+                                "reached a terminal state",
+                            }
+                        ],
+                    }
+            self._compact_locked()
+
+    def _record(self, batch: _BatchRecord) -> dict[str, Any]:
+        return {"batch": batch.model_dump(mode="json")}
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact([self._record(b) for b in self._batches.values()])
+
+    def mark(self, batch: _BatchRecord) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``batch`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(batch))
 
     def put(self, batch: _BatchRecord) -> None:
         with self._lock:
             self._batches[batch.batch_id] = batch
             self._batches.move_to_end(batch.batch_id)
+            evicted: list[str] = []
             while len(self._batches) > self._max:
-                self._batches.popitem(last=False)
+                old_id, _ = self._batches.popitem(last=False)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(batch)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
     def get(self, batch_id: str) -> _BatchRecord | None:
         with self._lock:
@@ -2586,6 +2863,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 inflight.release()
                 return
             record.status = "running"
+            eval_store.mark(record)
             try:
                 name, backend, attempts = _resolve_chain(body)
                 record.backend = name
@@ -2625,6 +2903,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 record.finished_at = time.time()
             finally:
                 _deliver_callback(record)
+                eval_store.mark(record)
             metrics.release()
             inflight.release()
 
@@ -3970,6 +4249,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         try:
             batch.status = "in_progress"
             batch.in_progress_at = int(time.time())
+            batch_store.mark(batch)
             out_lines: builtins.list[str] = []
             counts = batch.request_counts
             cancelled = False
@@ -3985,6 +4265,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
             batch.status = "finalizing"
             batch.finalizing_at = int(time.time())
+            batch_store.mark(batch)
             if out_lines:
                 rec = file_store.put(
                     filename=f"{batch.batch_id}_output.jsonl",
@@ -4018,6 +4299,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             metrics.release()
             inflight.release()
             _batch_webhook(batch)
+            batch_store.mark(batch)
 
     def _batch_webhook(batch: _BatchRecord) -> None:
         """Fire-once terminal webhook: the projected OpenAI envelope is the
@@ -4039,6 +4321,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
             batch.status = "expired"
             batch.expired_at = int(time.time())
+            batch_store.mark(batch)
             _batch_webhook(batch)  # expiry is a terminal transition too
         return batch_object(batch.model_dump())
 
@@ -4292,6 +4575,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._cancel.set()
         batch.status = "cancelling"
         batch.cancelling_at = int(time.time())
+        batch_store.mark(batch)
         return JSONResponse(_batch_project(batch))
 
     @app.post(
@@ -4652,9 +4936,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             if entry.cancel.is_set():
                 job.status = "cancelled"
                 job.finished_at = int(time.time())
+                ft_store.mark(entry)
                 return
             job.status = "running"
             ft_store.add_event(job.id, "info", "job started", None)
+            ft_store.mark(entry)
             outcome = ft_runner(
                 spec,
                 emit=lambda level, msg, data=None: ft_store.add_event(
@@ -4724,9 +5010,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
         finally:
             job.finished_at = job.finished_at or int(time.time())
+            _deliver_callback(job)
+            ft_store.mark(entry)
             metrics.release()
             inflight.release()
-            _deliver_callback(job)
 
     @app.post(
         "/v1/fine_tuning/jobs",
@@ -4970,6 +5257,7 @@ def create_app(
     store_max: int | None = None,
     ft_runner: FTJobRunner | None = None,
     ft_dir: str | os.PathLike[str] | None = None,
+    state_dir: str | os.PathLike[str] | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -5016,23 +5304,39 @@ def create_app(
     probe_cache: dict[str, BackendProbeVerdict] = {}
     probe_lock = threading.Lock()
     completion_log = _CompletionLog()
-    idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(idem_max)
-    complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
-    complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
-    openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(idem_max)
+    state_dir = state_dir or os.environ.get(_STATE_DIR_ENV) or None
+    state_path = Path(state_dir) if state_dir is not None else None
+
+    def _journal(name: str) -> JobJournal | None:
+        return JobJournal(state_path / name) if state_path is not None else None
+
+    idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(
+        idem_max, journal=_journal("idem_runs.jsonl"), model=HarnessRunResponse
+    )
+    complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(
+        idem_max, journal=_journal("idem_complete.jsonl"), model=CompleteResponse
+    )
+    complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(
+        idem_max,
+        journal=_journal("idem_complete_batch.jsonl"),
+        model=CompleteBatchResponse,
+    )
+    openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
+        idem_max, journal=_journal("idem_openai.jsonl"), model=_OpenAIIdemRecord
+    )
     file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
     batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
     batch_line_max = _env_int_bound(_BATCH_LINES_ENV, 1024, batch_line_max)
     store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
-    job_store = _JobStore(job_max)
-    eval_store = EvalStore(job_max)
-    file_store = _FileStore(file_max, file_bytes_max)
-    batch_store = _BatchStore(batch_max)
+    job_store = _JobStore(job_max, journal=_journal("jobs.jsonl"))
+    eval_store = EvalStore(job_max, journal=_journal("evals.jsonl"))
+    file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
+    batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
     # stores; the runner defaults to the real staged Pipeline (its own
     # trainer fails honestly when no GPU backend is configured).
-    ft_store = FTJobStore(job_max)
+    ft_store = FTJobStore(job_max, journal=_journal("ft_jobs.jsonl"))
     ft_work_root = Path(
         ft_dir
         if ft_dir is not None
