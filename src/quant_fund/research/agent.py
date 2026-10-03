@@ -4911,6 +4911,14 @@ from quant_fund.research.benches_w614 import (
     bench_secondary_op_family,
     bench_steenrod_sq_family,
 )
+from quant_fund.research.benches_w615 import (
+    bench_extremal_ray_family,
+    bench_mori_bir_family,
+    bench_motivic_adams_family,
+    bench_motivic_classifying_family,
+    bench_motivic_dg_family,
+    bench_tate_object_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5290,6 +5298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_adams": bench_motivic_adams_family,
+        "motivic_classifying": bench_motivic_classifying_family,
+        "tate_object": bench_tate_object_family,
+        "motivic_dg": bench_motivic_dg_family,
+        "mori_bir": bench_mori_bir_family,
+        "extremal_ray": bench_extremal_ray_family,
         "primary_op": bench_primary_op_family,
         "secondary_op": bench_secondary_op_family,
         "steenrod_sq": bench_steenrod_sq_family,
