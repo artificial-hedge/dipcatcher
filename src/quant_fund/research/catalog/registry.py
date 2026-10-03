@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-906 persistent-structure canon.
+        "skip_list",
+        "persistent_array",
+        "finger_tree",
+        "rope_string",
+        "vlist",
+        "pure_queue",
         # Wave-905 sorting canon.
         "quicksort",
         "mergesort",
