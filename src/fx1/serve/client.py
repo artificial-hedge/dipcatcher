@@ -657,6 +657,17 @@ class HarnessClient:
         out = self._json("GET", f"/v1/fine_tuning/jobs/{jid}/events?{q}", idempotent=True)
         return dict(out)
 
+    def finetune_job_checkpoints(
+        self, job_id: str, *, limit: int = 10, after: str | None = None
+    ) -> dict[str, Any]:
+        """GET /v1/fine_tuning/jobs/{id}/checkpoints — the model
+        artifacts the job registered, oldest-first (OpenAI's
+        ``fine_tuning.jobs.list_checkpoints``)."""
+        q = f"limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        jid = urllib.parse.quote(job_id)
+        out = self._json("GET", f"/v1/fine_tuning/jobs/{jid}/checkpoints?{q}", idempotent=True)
+        return dict(out)
+
     def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
         """POST /v1/fine_tuning/jobs/{id}/cancel — cooperative: queued
         cancels at once, running stops at the next stage boundary."""

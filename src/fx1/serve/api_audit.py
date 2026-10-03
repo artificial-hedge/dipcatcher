@@ -3104,6 +3104,23 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         resolved and resolved[-1] == ("local_fx1", "/srv/fx1/explicit-ckpt")
     )
 
+    # GET /v1/fine_tuning/jobs/{id}/checkpoints — OpenAI's
+    # list_checkpoints: the registered model artifacts a job produced,
+    # oldest-first; unknown jobs fail closed 404.
+    ck = ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}/checkpoints")
+    out["ft_checkpoints_list"] = (
+        ck.status_code == 200
+        and ck.json()["object"] == "list"
+        and ck.json()["has_more"] is False
+        and ck.json()["first_id"] == ck.json()["last_id"]
+        and [c["fine_tuned_model_checkpoint"] for c in ck.json()["data"]] == [ftname]
+        and ck.json()["data"][0]["id"].startswith("ftckpt-")
+        and ck.json()["data"][0]["object"] == "fine_tuning.job.checkpoint"
+    )
+    out["ft_checkpoints_404"] = (
+        ft2.get("/v1/fine_tuning/jobs/ftjob-nope/checkpoints").status_code == 404
+    )
+
     # DELETE /v1/models/{id} — OpenAI's models.delete for ft: names: the
     # tombstone is real (list/retrieve/chat all go 404 after), a built-in
     # link id refuses 400, and a ghost name fails closed 404 — a delete
@@ -3128,6 +3145,11 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         ft2.delete("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
     )
     out["ft_model_delete_builtin_400"] = ft2.delete("/v1/models/fx1").status_code == 400
+    # a deleted ft: name drops off the job's checkpoint listing — the
+    # tombstone is real, no fabricated history.
+    out["ft_checkpoints_delete_drops"] = (
+        ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}/checkpoints").json()["data"] == []
+    )
 
     # Terminal webhooks on the /v1 surface — the fx1 extension mirrors
     # the /harness/jobs contract: fire once at the terminal transition,

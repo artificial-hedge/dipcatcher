@@ -999,6 +999,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/fine_tuning/jobs/{job_id}/checkpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Finetune Job Checkpoints
+         * @description OpenAI's ``fine_tuning.jobs.list_checkpoints`` — the model
+         *     artifacts a job registered, oldest-first. A job that produced no
+         *     model lists empty (never a fabricated checkpoint); a deleted
+         *     ``ft:`` name drops off — tombstones don't fabricate history.
+         */
+        get: operations["list_finetune_job_checkpoints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/fine_tuning/jobs/{job_id}/events": {
         parameters: {
             query?: never;
@@ -1948,6 +1971,54 @@ export interface components {
             user_provided_suffix?: string | null;
             /** Validation File */
             validation_file?: string | null;
+        };
+        /**
+         * FTJobCheckpoint
+         * @description OpenAI's ``fine_tuning.job.checkpoint`` — one registered model
+         *     artifact a job produced. The harness records the model name and its
+         *     checkpoint dir, not intermediate step metrics — ``step_number`` and
+         *     ``metrics`` stay empty rather than fabricating numbers.
+         */
+        FTJobCheckpoint: {
+            /** Created At */
+            created_at: number;
+            /** Fine Tuned Model Checkpoint */
+            fine_tuned_model_checkpoint: string;
+            /** Id */
+            id: string;
+            /** Metrics */
+            metrics?: {
+                [key: string]: number;
+            };
+            /**
+             * Object
+             * @default fine_tuning.job.checkpoint
+             * @constant
+             */
+            object: "fine_tuning.job.checkpoint";
+            /** Step Number */
+            step_number?: number | null;
+        };
+        /**
+         * FTJobCheckpointList
+         * @description OpenAI's checkpoints list envelope — ``first_id``/``last_id`` are
+         *     the page's edge ids (``after`` cursors), null on an empty page.
+         */
+        FTJobCheckpointList: {
+            /** Data */
+            data: components["schemas"]["FTJobCheckpoint"][];
+            /** First Id */
+            first_id?: string | null;
+            /** Has More */
+            has_more: boolean;
+            /** Last Id */
+            last_id?: string | null;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
         };
         /** FTJobError */
         FTJobError: {
@@ -5480,6 +5551,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_finetune_job_checkpoints: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJobCheckpointList"];
                 };
             };
             /** @description Validation Error */

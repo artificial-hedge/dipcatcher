@@ -215,6 +215,7 @@ same digested shape the job record embeds.
 | `POST /v1/fine_tuning/jobs` | submit a gated fine-tuning job on a `purpose=fine-tune` corpus — synchronous validation, `Idempotency-Key` dedup; `Fx1Harness.create_finetune_job` (in-process, synchronous) / `HarnessClient.create_finetune_job` / `client.createFineTuneJob` / `fx1 harness ft-create` |
 | `GET /v1/fine_tuning/jobs` / `GET /v1/fine_tuning/jobs/{id}` | list (`?limit≤100`, `?after=`) / poll one job record |
 | `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
+| `GET /v1/fine_tuning/jobs/{id}/checkpoints` | the model artifacts the job registered, oldest first (`?limit`, `?after=`); empty for a job that produced none, a deleted `ft:` name drops off |
 | `POST /v1/fine_tuning/jobs/{id}/cancel` | cooperative cancel — queued at once, running at the next stage boundary; terminal `409 job_terminal` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
@@ -271,8 +272,9 @@ to `GET /harness/completions/{id}` and its sealed
   `X-Fx1-Fallbacks` (CSV), `checkpoint_dir` / `X-Fx1-Checkpoint-Dir`,
   `timeout_s`, and `receipt_hashes` / `X-Fx1-Receipt-Hashes` (CSV of
   sha256 digests — header citations run the same mounted-store check,
-  `fx1.receipt_hashes` wins, a malformed digest is a fail-closed 400).
-- **Per-request timeout:** `fx1.timeout_s` (body extension) >
+  the `fx1` extension's `receipt_hashes` wins, a malformed digest is a
+  fail-closed 400).
+- **Per-request timeout:** the `fx1` extension's `timeout_s` (body) >
   `X-Fx1-Timeout` header (seconds). The header is the wire twin for
   clients that can't edit the JSON payload — same deadline reaching the
   backend resolver on chat, responses, and embeddings. A malformed,

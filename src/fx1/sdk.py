@@ -62,6 +62,7 @@ from fx1.serve.finetune import (
     TRAINABLE_MODELS,
     FTHyperparameters,
     FTJob,
+    FTJobCheckpointList,
     FTJobError,
     FTJobRunner,
     FTJobSpec,
@@ -947,6 +948,23 @@ class Fx1Harness:
         ``GET /v1/fine_tuning/jobs/{id}/events``."""
         events, _has_more = self._ft_store.list_events(job_id, limit=limit or 100, after=None)
         return [e.model_dump(mode="json") for e in events]
+
+    def finetune_job_checkpoints(
+        self, job_id: str, *, limit: int | None = None
+    ) -> FTJobCheckpointList:
+        """The job's registered checkpoint artifacts, oldest-first — the
+        wire twin is ``GET /v1/fine_tuning/jobs/{id}/checkpoints``.
+        ``KeyError`` on unknown ids; a deleted ``ft:`` name drops off
+        (the tombstone is real)."""
+        if self._ft_store.get(job_id) is None:
+            raise KeyError(job_id)
+        items, has_more = self._ft_store.checkpoints_for(job_id, limit=limit or 100, after=None)
+        return FTJobCheckpointList(
+            data=items,
+            first_id=items[0].id if items else None,
+            last_id=items[-1].id if items else None,
+            has_more=has_more,
+        )
 
     # ---- registry ------------------------------------------------------
 

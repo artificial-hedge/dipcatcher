@@ -50,6 +50,10 @@ export type FTEventList = components["schemas"]["FTEventList"];
 export type FTHyperparameters =
   components["schemas"]["FTHyperparameters"];
 export type FTJob = components["schemas"]["FTJob"];
+export type FTJobCheckpoint =
+  components["schemas"]["FTJobCheckpoint"];
+export type FTJobCheckpointList =
+  components["schemas"]["FTJobCheckpointList"];
 export type FTJobError = components["schemas"]["FTJobError"];
 export type FTJobEvent = components["schemas"]["FTJobEvent"];
 export type FTJobList = components["schemas"]["FTJobList"];
@@ -1157,6 +1161,24 @@ export class HarnessApiClient {
     return this.get(
       `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/events${suffix}`,
     ) as Promise<FTEventList>;
+  }
+
+  /**
+   * GET /v1/fine_tuning/jobs/{id}/checkpoints — the model artifacts the
+   * job registered, oldest first (OpenAI's `list_checkpoints`). A job
+   * that produced no model lists empty; a deleted `ft:` name drops off.
+   */
+  fineTuneJobCheckpoints(
+    jobId: string,
+    filter?: { limit?: number; after?: string },
+  ): Promise<FTJobCheckpointList> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/checkpoints${suffix}`,
+    ) as Promise<FTJobCheckpointList>;
   }
 
   /**

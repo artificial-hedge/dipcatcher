@@ -159,6 +159,7 @@ def cli_audit() -> dict[str, Any]:
         "ft-events",
         "ft-wait",
         "ft-cancel",
+        "ft-checkpoints",
         "files",
         "file-upload",
         "file-content",
@@ -983,6 +984,21 @@ def cli_audit() -> dict[str, Any]:
         def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
             return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
+
+        def finetune_job_checkpoints(self, job_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            self.last_ft_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [
+                    {
+                        "id": "ftckpt-1",
+                        "object": "fine_tuning.job.checkpoint",
+                        "fine_tuned_model_checkpoint": "ft:fx1:x",
+                    }
+                ],
+                "has_more": False,
+            }
 
         def files(self) -> list[dict[str, Any]]:
             return [{"id": "file-1", "object": "file", "purpose": "batch"}]
@@ -1848,6 +1864,29 @@ def cli_audit() -> dict[str, Any]:
         )
         out["model_delete_inproc_400"] = (
             runner.invoke(app, ["harness", "model-delete", "fx1"]).exit_code == 2
+        )
+        # ft-checkpoints is wire-only — --remote forwards job id + paging.
+        out["remote_ft_checkpoints"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "ft-checkpoints",
+                        "ftjob-x",
+                        "--remote",
+                        "http://h.test",
+                        "--limit",
+                        "5",
+                    ],
+                ).stdout
+            )["data"][0]["object"]
+            == "fine_tuning.job.checkpoint"
+            and remotes[-1].last_ft_job == "ftjob-x"
+            and remotes[-1].last_ft_query == {"limit": 5, "after": None}
+        )
+        out["ft_checkpoints_inproc_exit2"] = (
+            runner.invoke(app, ["harness", "ft-checkpoints", "ftjob-x"]).exit_code == 2
         )
 
         _rr = runner.invoke(
