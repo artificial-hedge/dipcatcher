@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-698 motivic-22 canon.
+        "motivic_frobenius",
+        "motivic_cartier",
+        "motivic_hodge",
+        "motivic_span",
+        "motivic_lax",
+        "motivic_street",
         # Wave-697 spectral-AG-8 canon.
         "spectral_dvr",
         "spectral_noether",
