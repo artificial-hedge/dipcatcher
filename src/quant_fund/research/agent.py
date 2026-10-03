@@ -6919,6 +6919,14 @@ from quant_fund.research.benches_w865 import (
     bench_residual_estimator_family,
     bench_zienkiewicz_zhu_family,
 )
+from quant_fund.research.benches_w866 import (
+    bench_deim_point_family,
+    bench_eim_interp_family,
+    bench_greedy_rb_family,
+    bench_pod_galerkin_family,
+    bench_proper_gen_family,
+    bench_reduced_basis_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7290,6 +7298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pod_galerkin": bench_pod_galerkin_family,
+        "reduced_basis": bench_reduced_basis_family,
+        "deim_point": bench_deim_point_family,
+        "greedy_rb": bench_greedy_rb_family,
+        "eim_interp": bench_eim_interp_family,
+        "proper_gen": bench_proper_gen_family,
         "residual_estimator": bench_residual_estimator_family,
         "zienkiewicz_zhu": bench_zienkiewicz_zhu_family,
         "recovery_error": bench_recovery_error_family,
