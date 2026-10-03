@@ -1,3 +1,4 @@
+feat(research): wave 489 — group-theory-4 canon (building_toy, coxeter_grp, bn_pair, braid_grp, hecke_bm, parabolic_grp) (2889->2895 families)
 feat(research): wave 488 — derived-geometry-3 canon (shifted_tangent, derived_quot, virtual_pull, intrinsic_be, d_critical, perfect_obstruction) (2883->2889 families)
 feat(research): wave 487 — category-7 canon (compact_obj, dualizable_cat, comma_cat, prestack, endo_prof, exact_cat) (2877->2883 families)
 feat(research): wave 486 — algebraic-K-theory-2 canon (waldhausen_k, plus_k, kv_theory, karoubi_v, vorst_stab, nk_theory) (2871->2877 families)

@@ -3903,6 +3903,14 @@ from quant_fund.research.benches_w488 import (
     bench_shifted_tangent_family,
     bench_virtual_pull_family,
 )
+from quant_fund.research.benches_w489 import (
+    bench_bn_pair_family,
+    bench_braid_grp_family,
+    bench_building_toy_family,
+    bench_coxeter_grp_family,
+    bench_hecke_bm_family,
+    bench_parabolic_grp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4282,6 +4290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "building_toy": bench_building_toy_family,
+        "coxeter_grp": bench_coxeter_grp_family,
+        "bn_pair": bench_bn_pair_family,
+        "braid_grp": bench_braid_grp_family,
+        "hecke_bm": bench_hecke_bm_family,
+        "parabolic_grp": bench_parabolic_grp_family,
         "shifted_tangent": bench_shifted_tangent_family,
         "derived_quot": bench_derived_quot_family,
         "virtual_pull": bench_virtual_pull_family,
