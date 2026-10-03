@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-749 vertex-model-2 canon.
+        "bufetov_sixv",
+        "borodin_bufetov",
+        "kuan_sixv",
+        "dimitrov_sixv",
+        "borodin_wheeler",
+        "wheeler_zinn",
         # Wave-748 vertex-model canon.
         "borodin_sixv",
         "gowers_knot",
