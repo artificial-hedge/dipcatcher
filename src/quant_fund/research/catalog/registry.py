@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-957 operator-theory-2 canon.
+        "selfadjoint_op",
+        "unitary_operator",
+        "shift_operator",
+        "fredholm_op",
+        "normal_operator",
+        "multiplication_op",
         # Wave-956 tensor-theory canon.
         "tucker_rank",
         "cp_rank",
