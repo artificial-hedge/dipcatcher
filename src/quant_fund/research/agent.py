@@ -7199,6 +7199,14 @@ from quant_fund.research.benches_w900 import (
     bench_r_tree_family,
     bench_vp_tree_family,
 )
+from quant_fund.research.benches_w901 import (
+    bench_binary_heap_family,
+    bench_binomial_heap_family,
+    bench_fibonacci_heap_family,
+    bench_leftist_heap_family,
+    bench_pairing_heap_family,
+    bench_skew_heap_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7570,6 +7578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "binary_heap": bench_binary_heap_family,
+        "fibonacci_heap": bench_fibonacci_heap_family,
+        "pairing_heap": bench_pairing_heap_family,
+        "binomial_heap": bench_binomial_heap_family,
+        "leftist_heap": bench_leftist_heap_family,
+        "skew_heap": bench_skew_heap_family,
         "kd_tree": bench_kd_tree_family,
         "ball_tree": bench_ball_tree_family,
         "cover_tree": bench_cover_tree_family,
