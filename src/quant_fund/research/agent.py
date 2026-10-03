@@ -2784,6 +2784,14 @@ from quant_fund.research.benches_w348 import (
     bench_poset_dimension_family,
     bench_ramsey_r33_family,
 )
+from quant_fund.research.benches_w349 import (
+    bench_bezout_bezout_family,
+    bench_hilbert_poly_family,
+    bench_monomial_ideal_family,
+    bench_projective_plane_family,
+    bench_variety_dim_family,
+    bench_zariski_topo_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3163,6 +3171,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "zariski_topo": bench_zariski_topo_family,
+        "projective_plane": bench_projective_plane_family,
+        "bezout_bezout": bench_bezout_bezout_family,
+        "variety_dim": bench_variety_dim_family,
+        "monomial_ideal": bench_monomial_ideal_family,
+        "hilbert_poly": bench_hilbert_poly_family,
         "graph_coloring": bench_graph_coloring_family,
         "euler_trail": bench_euler_trail_family,
         "matroid_greedy": bench_matroid_greedy_family,
