@@ -3061,6 +3061,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-312 distributed-4 canon.
+        "hlc_clock",
+        "delta_crdt",
+        "raft_log",
+        "bracha_bcast",
+        "tot_order",
+        "quorum_weighted",
+        "abd_register",
         # Wave-311 VLSI-2 canon.
         "fm_partition",
         "lee_router",

@@ -2487,6 +2487,15 @@ from quant_fund.research.benches_w311 import (
     bench_lee_router_family,
     bench_power_est_family,
 )
+from quant_fund.research.benches_w312 import (
+    bench_abd_register_family,
+    bench_bracha_bcast_family,
+    bench_delta_crdt_family,
+    bench_hlc_clock_family,
+    bench_quorum_weighted_family,
+    bench_raft_log_family,
+    bench_tot_order_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2866,6 +2875,13 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hlc_clock": bench_hlc_clock_family,
+        "delta_crdt": bench_delta_crdt_family,
+        "raft_log": bench_raft_log_family,
+        "bracha_bcast": bench_bracha_bcast_family,
+        "tot_order": bench_tot_order_family,
+        "quorum_weighted": bench_quorum_weighted_family,
+        "abd_register": bench_abd_register_family,
         "fm_partition": bench_fm_partition_family,
         "lee_router": bench_lee_router_family,
         "clock_tree": bench_clock_tree_family,
