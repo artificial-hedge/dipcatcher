@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-993 nonlinear-functional-analysis canon.
+        "monotone_op",
+        "degree_theory",
+        "schauder_fixed",
+        "krein_rutman",
+        "minty_browder",
+        "maximal_monotone",
         # Wave-992 scattering-theory canon.
         "wave_operators",
         "scattering_matrix",
