@@ -52,6 +52,7 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.usage_report import UsageReport
 
 __all__ = [
     "EXPECTED_API_VERSION",
@@ -1145,6 +1146,30 @@ class HarnessClient:
             idempotent=True,
         )
         return dict(out)
+
+    def usage(
+        self,
+        *,
+        backend: str | None = None,
+        model: str | None = None,
+        since: float | None = None,
+        until: float | None = None,
+    ) -> UsageReport:
+        """Token/request accounting over the server's completion log —
+        ``GET /harness/usage``. `since`/`until` are unix-second bounds;
+        since>until is a fail-closed 400 on the wire."""
+        params: dict[str, Any] = {}
+        if backend is not None:
+            params["backend"] = backend
+        if model is not None:
+            params["model"] = model
+        if since is not None:
+            params["since"] = since
+        if until is not None:
+            params["until"] = until
+        query = f"?{urllib.parse.urlencode(params)}" if params else ""
+        out = self._json("GET", f"/harness/usage{query}", idempotent=True)
+        return UsageReport.model_validate(out)
 
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs

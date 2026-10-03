@@ -126,6 +126,7 @@ from fx1.serve.uploads import (
     upload_object,
     validate_upload_intent,
 )
+from fx1.serve.usage_report import UsageReport
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
@@ -215,12 +216,27 @@ class _CompletionLog:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, CompletionRecord] = {}
+        self._dropped = 0
 
     def append(self, rec: CompletionRecord) -> None:
         with self._lock:
             self._items[rec.completion_id] = rec
             while len(self._items) > self._cap:
                 self._items.pop(next(iter(self._items)))
+                self._dropped += 1
+
+    @property
+    def cap(self) -> int:
+        return self._cap
+
+    @property
+    def dropped(self) -> int:
+        with self._lock:
+            return self._dropped
+
+    def all(self, backend: str | None = None) -> list[CompletionRecord]:
+        """Every retained record — the aggregation view (no limit)."""
+        return self.latest(self._cap, backend)
 
     def get(self, completion_id: str) -> CompletionRecord | None:
         with self._lock:
@@ -549,6 +565,33 @@ class Fx1Harness:
         if rec is None:
             raise KeyError(completion_id)
         return rec
+
+    def usage(
+        self,
+        *,
+        backend: str | None = None,
+        model: str | None = None,
+        since: float | None = None,
+        until: float | None = None,
+    ) -> UsageReport:
+        """Token/request accounting over the in-process completion log —
+        the in-process twin of ``GET /harness/usage``. `since`/`until`
+        are unix-second bounds; since>until is a fail-closed ValueError."""
+        from fx1.serve.usage_report import aggregate_usage  # noqa: PLC0415
+
+        if since is not None and until is not None and since > until:
+            raise ValueError("since must be <= until")
+        if backend is not None and backend not in _BACKEND_NAMES:
+            raise ValueError(f"unknown backend {backend!r}")
+        return aggregate_usage(
+            self._log.all(backend),
+            cap=self._log.cap,
+            dropped=self._log.dropped,
+            backend=backend,
+            model=model,
+            since=since,
+            until=until,
+        )
 
     def completion_receipt(self, completion_id: str) -> dict[str, Any]:
         """Export one logged call as a sealed ``fx1_completion_record.v1``

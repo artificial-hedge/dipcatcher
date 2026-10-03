@@ -424,6 +424,37 @@
         ]
       }
     },
+    "/harness/usage": {
+      "get": {
+        "params": [
+          {
+            "name": "backend",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/version": {
       "get": {
         "params": [],
@@ -1465,5 +1496,5 @@
       }
     }
   },
-  "schema_sha256": "bac34ec26a81cae12cdb054b7b08011e8378213ff3d1071515c2828aeafd0ed6"
+  "schema_sha256": "b77d2741c18ff22bf38881868e100d3c728d761f6907ee5e022cee41ef210a67"
 }

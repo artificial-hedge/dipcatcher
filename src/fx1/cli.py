@@ -31,6 +31,11 @@ _TIMEOUT_HELP = "Remote request timeout in seconds."
 _BYOK_URL_HELP = "Per-request BYOK endpoint (OpenAI-compatible base URL)."
 _BYOK_KEY_HELP = "Per-request BYOK API key."
 _BYOK_MODEL_HELP = "Per-request BYOK model name."
+_LIMIT_HELP = "Page size (max 100)."
+_EVAL_ID_HELP = "eval_ id."
+_EVAL_ID_CREATE_HELP = "eval_ id from eval-spec-create."
+_EVALRUN_ID_HELP = "evalrun_ id."
+_FTJOB_ID_HELP = "ftjob- id from ft-create."
 
 
 def _byok_opts(
@@ -1104,6 +1109,32 @@ def harness_bench(
         raise typer.Exit(code=1)
 
 
+@harness_app.command("usage")
+def harness_usage(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_HELP),
+    model: str | None = typer.Option(None, "--model", help="Only count this reported model."),
+    since: float | None = typer.Option(
+        None, "--since", help="Unix-second lower bound on record timestamps."
+    ),
+    until: float | None = typer.Option(
+        None, "--until", help="Unix-second upper bound on record timestamps."
+    ),
+) -> None:
+    """Usage accounting: token/request aggregates over the completion log.
+
+    Totals plus per-backend/per-model splits as JSON — the billing/ops
+    view of every gated call the surface served. ``records_dropped`` in
+    the report declares a truncated ring window. ``--remote`` reads the
+    server's log (``GET /harness/usage``); default reads the in-process
+    SDK's own log."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    report = _or_exit(lambda: surface.usage(backend=backend, model=model, since=since, until=until))
+    typer.echo(json.dumps(report.model_dump(mode="json"), indent=2, sort_keys=True))
+
+
 @harness_app.command("compat")
 def harness_compat(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -1646,7 +1677,7 @@ def harness_eval_spec_create(
 
 @harness_app.command("eval-spec-list")
 def harness_eval_spec_list(
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1663,7 +1694,7 @@ def harness_eval_spec_list(
 
 @harness_app.command("eval-spec-get")
 def harness_eval_spec_get(
-    eval_id: str = typer.Argument(..., help="eval_ id from eval-spec-create."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_CREATE_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1680,7 +1711,7 @@ def harness_eval_spec_get(
 
 @harness_app.command("eval-spec-update")
 def harness_eval_spec_update(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
     name: str | None = typer.Option(None, "--name", help="New display name."),
     metadata_json: str | None = typer.Option(
         None, "--metadata", help="Replacement metadata as a JSON object."
@@ -1708,7 +1739,7 @@ def harness_eval_spec_update(
 
 @harness_app.command("eval-spec-delete")
 def harness_eval_spec_delete(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1726,7 +1757,7 @@ def harness_eval_spec_delete(
 
 @harness_app.command("eval-run")
 def harness_eval_run(
-    eval_id: str = typer.Argument(..., help="eval_ id from eval-spec-create."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_CREATE_HELP),
     model: str = typer.Option(
         ...,
         "--model",
@@ -1774,8 +1805,8 @@ def harness_eval_run(
 
 @harness_app.command("eval-run-list")
 def harness_eval_run_list(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1797,8 +1828,8 @@ def harness_eval_run_list(
 
 @harness_app.command("eval-run-get")
 def harness_eval_run_get(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
-    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1817,8 +1848,8 @@ def harness_eval_run_get(
 
 @harness_app.command("eval-run-cancel")
 def harness_eval_run_cancel(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
-    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1834,8 +1865,8 @@ def harness_eval_run_cancel(
 
 @harness_app.command("eval-run-delete")
 def harness_eval_run_delete(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
-    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1855,9 +1886,9 @@ def harness_eval_run_delete(
 
 @harness_app.command("eval-run-items")
 def harness_eval_run_items(
-    eval_id: str = typer.Argument(..., help="eval_ id."),
-    run_id: str = typer.Argument(..., help="evalrun_ id."),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1996,7 +2027,7 @@ def harness_ft_jobs(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (job id)."),
 ) -> None:
     """List the remote fine-tuning jobs, newest first (in-process runs
@@ -2012,7 +2043,7 @@ def harness_ft_jobs(
 
 @harness_app.command("ft-status")
 def harness_ft_status(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2025,11 +2056,11 @@ def harness_ft_status(
 
 @harness_app.command("ft-events")
 def harness_ft_events(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
 ) -> None:
     """Print a remote fine-tuning job's event feed (oldest first)."""
     _need_remote(remote)
@@ -2043,11 +2074,11 @@ def harness_ft_events(
 
 @harness_app.command("ft-checkpoints")
 def harness_ft_checkpoints(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(10, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(10, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (ftckpt- id)."),
 ) -> None:
     """``GET /v1/fine_tuning/jobs/{id}/checkpoints`` — the model artifacts
@@ -2063,7 +2094,7 @@ def harness_ft_checkpoints(
 
 @harness_app.command("ft-wait")
 def harness_ft_wait(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2085,7 +2116,7 @@ def harness_ft_wait(
 
 @harness_app.command("ft-cancel")
 def harness_ft_cancel(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2101,7 +2132,7 @@ def harness_ft_cancel(
 
 @harness_app.command("ft-pause")
 def harness_ft_pause(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2117,7 +2148,7 @@ def harness_ft_pause(
 
 @harness_app.command("ft-resume")
 def harness_ft_resume(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2333,7 +2364,7 @@ def harness_batches(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (batch id)."),
 ) -> None:
     """List remote batches, newest first."""

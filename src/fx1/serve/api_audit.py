@@ -48,6 +48,11 @@ if TYPE_CHECKING:
 
 __all__ = ["api_audit", "api_audit_bench"]
 
+_PATH_UPLOADS = "/v1/uploads"
+_PATH_EVALS = "/v1/evals"
+_PATH_FT_JOBS = "/v1/fine_tuning/jobs"
+_CORPUS_FILE = "c.jsonl"
+
 _API_KEY_ENV = "FX1_API_KEY"
 _CONVERSATIONS_URL = "/v1/conversations"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
@@ -2872,9 +2877,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         up.status_code == 200 and up.json()["purpose"] == "fine-tune"
     )
     fid = up.json()["id"]
-    sub = ft.post(
-        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid, "suffix": "audit"}
-    )
+    sub = ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": fid, "suffix": "audit"})
     out["ft_create_200"] = (
         sub.status_code == 200
         and sub.json()["id"].startswith("ftjob-")
@@ -2906,22 +2909,22 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         and ev_msgs[-1].startswith("job succeeded")
     )
     out["ft_list_shape"] = (
-        ft.get("/v1/fine_tuning/jobs").status_code == 200
-        and ft.get("/v1/fine_tuning/jobs").json()["object"] == "list"
-        and ft.get("/v1/fine_tuning/jobs").json()["has_more"] is False
-        and ft.get("/v1/fine_tuning/jobs").json()["data"][0]["id"] == jid
+        ft.get(_PATH_FT_JOBS).status_code == 200
+        and ft.get(_PATH_FT_JOBS).json()["object"] == "list"
+        and ft.get(_PATH_FT_JOBS).json()["has_more"] is False
+        and ft.get(_PATH_FT_JOBS).json()["data"][0]["id"] == jid
     )
 
     # Fail-closed submit surface.
     out["ft_model_not_trainable_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "byok", "training_file": fid})
+        ft.post(_PATH_FT_JOBS, json={"model": "byok", "training_file": fid})
         .json()
         .get("error", {})
         .get("code")
         == "model_not_trainable"
     )
     out["ft_unknown_file_404"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": "file-nope"})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": "file-nope"})
         .json()
         .get("error", {})
         .get("code")
@@ -2929,7 +2932,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     )
     bfid = _upload(_CORPUS, purpose="batch").json()["id"]
     out["ft_wrong_purpose_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": bfid})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": bfid})
         .json()
         .get("error", {})
         .get("code")
@@ -2937,7 +2940,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     )
     mfid = _upload(b"not jsonl\n").json()["id"]
     out["ft_malformed_corpus_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": mfid})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": mfid})
         .json()
         .get("error", {})
         .get("code")
@@ -2946,7 +2949,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     out["ft_bad_purpose_upload_400"] = (
         ft.post(
             "/v1/files",
-            files={"file": ("c.jsonl", _CORPUS)},
+            files={"file": (_CORPUS_FILE, _CORPUS)},
             data={"purpose": "user_data"},
         ).status_code
         == 400
@@ -2966,17 +2969,17 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # body under the same key is a 409 conflict.
     ik = "ft-audit-key-1"
     r1 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid},
         headers={"Idempotency-Key": ik},
     )
     r2 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid},
         headers={"Idempotency-Key": ik},
     )
     r3 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid, "suffix": "other"},
         headers={"Idempotency-Key": ik},
     )
@@ -2995,12 +2998,12 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     ftf = _TC3(api_mod.create_app(ft_runner=_boom))
     bf = ftf.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": ftf.post(
                 "/v1/files",
-                files={"file": ("c.jsonl", _CORPUS)},
+                files={"file": (_CORPUS_FILE, _CORPUS)},
                 data={"purpose": "fine-tune"},
             ).json()["id"],
         },
@@ -3028,8 +3031,10 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
 
     ftc = _TC3(api_mod.create_app(ft_runner=_gate_runner))
-    cf = ftc.post("/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"})
-    cj = ftc.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": cf.json()["id"]})
+    cf = ftc.post(
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
+    )
+    cj = ftc.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": cf.json()["id"]})
     cjid = cj.json()["id"]
     for _i in range(400):
         if ftc.get(f"/v1/fine_tuning/jobs/{cjid}").json()["status"] == "running":
@@ -3077,10 +3082,10 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     ftp_app = api_mod.create_app(ft_runner=_pause_runner, max_inflight=1)
     ftp = _TC3(ftp_app)
     pfid = ftp.post(
-        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
     pa = ftp.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": pfid, "suffix": "pa"},
     ).json()
     for _i in range(400):  # pa holds the single slot, running
@@ -3155,7 +3160,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     p_hold2.clear()
     p_gate2.clear()
     pc = ftp.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": pfid, "suffix": "pc"},
     ).json()
     for _i in range(400):
@@ -3200,9 +3205,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     ftn = _TC3(api_mod.create_app(ft_runner=_nogate_runner))
     nfid = ftn.post(
-        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
-    nj = ftn.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": nfid}).json()
+    nj = ftn.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": nfid}).json()
     for _i in range(400):
         if ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()["status"] == "running":
             break
@@ -3241,11 +3246,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     ft2 = _TC3(api_mod.create_app(backend_resolver=_spy, ft_runner=_runner))
     fid2 = ft2.post(
-        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
-    j2 = ft2.post(
-        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid2, "suffix": "r"}
-    ).json()
+    j2 = ft2.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": fid2, "suffix": "r"}).json()
     fin2 = j2
     for _i in range(400):
         fin2 = ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}").json()
@@ -3368,7 +3371,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     cb_fid = _upload(_CORPUS).json()["id"]
     cb_job = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": cb_fid,
@@ -3401,7 +3404,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # 4xx is definitive — one attempt, no retry storm.
     rj_fid = _upload(_CORPUS).json()["id"]
     rj_job = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": rj_fid,
@@ -3418,11 +3421,11 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # Submit-time guards: secret requires url; url must be http(s) with a
     # host — both as the /v1 envelope's 422, never a queued zombie.
     sec_only = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": cb_fid, "callback_secret": "x"},
     )
     bad_url = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": cb_fid, "callback_url": "ftp://x"},
     )
     out["ft_webhook_guards_422"] = (
@@ -3434,7 +3437,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.server_close()
 
 
-def _probe_backend_probes(  # noqa: C901 NOSONAR
+def _probe_backend_probes(  # NOSONAR
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415
@@ -3798,6 +3801,85 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
         cap3.get("c0") is None
         and len(cap3.latest(10, None)) == 3
         and [r.completion_id for r in cap3.latest(10, None)] == ["c4", "c3", "c2"]
+        and cap3.dropped == 2
+        and cap3.cap == 3
+    )
+
+    # --- /harness/usage — token/request accounting over the ring ----------
+    # two ok calls carrying usage + one 502 — totals, splits, filters, and
+    # the truncation honesty fields all assert.
+    class _UsageBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.last_usage = {
+                "prompt_tokens": 5,
+                "completion_tokens": 7,
+                "total_tokens": 12,
+                "cached_tokens": 2,
+            }
+            return "clean"
+
+        def close(self) -> None:
+            pass
+
+    class _DeadBackend:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            raise RuntimeError("dead")
+
+        def close(self) -> None:
+            pass
+
+    u_ok = _UsageBackend()
+    u_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: u_ok if name == "byok" else _DeadBackend()
+        )
+    )
+    for _i in range(2):
+        u_app.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "hi"}]},
+        )
+    u_app.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "hi"}]},
+    )
+    u = u_app.get("/harness/usage").json()
+    out["usage_totals"] = (
+        u["totals"]["requests"] == 3
+        and u["totals"]["ok"] == 2
+        and u["totals"]["errors"] == 1
+        and u["totals"]["prompt_tokens"] == 10
+        and u["totals"]["completion_tokens"] == 14
+        and u["totals"]["total_tokens"] == 24
+        and u["totals"]["other_usage"] == {"cached_tokens": 4}
+        and u["totals"]["usage_reported"] == 2
+        and u["totals"]["mean_latency_ms"] is not None
+        and u["records_seen"] == 3
+        and u["records_dropped"] == 0
+        and u["ring_cap"] == api_mod._COMPLETION_LOG_MAX
+    )
+    out["usage_splits"] = (
+        u["by_backend"]["byok"]["requests"] == 2
+        and u["by_backend"]["hosted_k3"]["errors"] == 1
+        and u["by_model"]["fake-0"]["requests"] == 2
+    )
+    out["usage_filters"] = (
+        u_app.get("/harness/usage?backend=byok").json()["totals"]["requests"] == 2
+        and u_app.get("/harness/usage?model=fake-0").json()["totals"]["requests"] == 2
+        and u_app.get("/harness/usage?model=nope").json()["totals"]["requests"] == 0
+        and u_app.get(f"/harness/usage?since={time.time() + 60}").json()["records_seen"] == 0
+        and u_app.get("/harness/usage?until=1").json()["records_seen"] == 0
+    )
+    out["usage_bad_window_400"] = (
+        u_app.get("/harness/usage?since=2&until=1").status_code == 400
+        and u_app.get("/harness/usage?since=-1").status_code == 422
     )
 
     # --- sealed per-call receipt export -------------------------------------
@@ -4265,7 +4347,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     # store. Specs declare suite knobs in item_schema; runs bind a model
     # (backend link or ft: name); everything cross-links to /harness/evals.
     spec1 = eval_app.post(
-        "/v1/evals",
+        _PATH_EVALS,
         json={
             "name": "tooluse-baseline",
             "data_source_config": {
@@ -4289,7 +4371,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     out["evalspec_bad_suite_422"] = (
         eval_app.post(
-            "/v1/evals",
+            _PATH_EVALS,
             json={
                 "name": "x",
                 "data_source_config": {"type": "custom", "item_schema": {"suite": "nope"}},
@@ -4318,7 +4400,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     # A spec whose schema validator rejects a combination fail-closes 422.
     out["evalspec_schema_validated"] = (
         eval_app.post(
-            "/v1/evals",
+            _PATH_EVALS,
             json={
                 "name": "bad-chain",
                 "data_source_config": {
@@ -4397,7 +4479,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     # ids must not leak.
     spec2_id = (
         eval_app.post(
-            "/v1/evals",
+            _PATH_EVALS,
             json={
                 "name": "retrieval",
                 "data_source_config": {
@@ -7572,7 +7654,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     _ul_payload = b'{"l":1}\n{"l":2}\n{"l":3}\n'
     ulp1, ulp2, ulp3 = _ul_payload[:8], _ul_payload[8:18], _ul_payload[18:]
     uc = fb.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
             "filename": "big.jsonl",
@@ -7592,7 +7674,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     out["upload_create_purpose_400"] = (
         fb.post(
-            "/v1/uploads",
+            _PATH_UPLOADS,
             json={
                 "purpose": "user_data",
                 "filename": "x.jsonl",
@@ -7604,7 +7686,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     out["upload_create_ext_400"] = (
         fb.post(
-            "/v1/uploads",
+            _PATH_UPLOADS,
             json={
                 "purpose": "batch",
                 "filename": "x.txt",
@@ -7659,7 +7741,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     # unknown part id fails closed before the mint
     uc2 = fb.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
             "filename": "m.jsonl",
@@ -7696,7 +7778,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     # declared-but-under-parted refuses (assembled != declared)
     uc3 = fb.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
             "filename": "d.jsonl",
@@ -7711,10 +7793,10 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     )
     # cancel is terminal and replays 200; completing a cancelled intent 409s
     uc4 = fb.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
-            "filename": "c.jsonl",
+            "filename": _CORPUS_FILE,
             "bytes": 2,
             "mime_type": "t",
         },
@@ -7738,7 +7820,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
         api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
     )
     uup = du1.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
             "filename": "d.jsonl",
@@ -7748,7 +7830,7 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
     ).json()["id"]
     dpart = du1.post(f"/v1/uploads/{uup}/parts", files={"data": ("p", b"ab")}).json()["id"]
     du1.post(
-        "/v1/uploads",
+        _PATH_UPLOADS,
         json={
             "purpose": "batch",
             "filename": "gone.jsonl",

@@ -55,15 +55,20 @@ def test_bench_counts_and_usage() -> None:
     )
     m = rec["metrics"]
     assert m["measured_requests"] == 8
-    assert m["error_count"] == 0 and m["error_rate"] == 0.0 and m["errors"] == {}
+    assert m["error_count"] == 0
+    assert m["error_rate"] == 0.0
+    assert m["errors"] == {}
     assert m["prompt_tokens_total"] == 40
     assert m["completion_tokens_total"] == 56
     assert m["usage_reported"] == 8
-    assert m["models"] == ["stub-v0"] and m["backends"] == ["byok"]
-    assert rec["params"]["n"] == 8 and rec["params"]["seed"] == 3
+    assert m["models"] == ["stub-v0"]
+    assert m["backends"] == ["byok"]
+    assert rec["params"]["n"] == 8
+    assert rec["params"]["seed"] == 3
     # warmup + measured == 9 calls; kwargs forward verbatim
     assert len(stub.calls) == 9
-    assert stub.calls[0]["max_tokens"] == 9 and stub.calls[0]["backend"] == "byok"
+    assert stub.calls[0]["max_tokens"] == 9
+    assert stub.calls[0]["backend"] == "byok"
 
 
 def test_bench_prompt_is_digested_not_embedded() -> None:
@@ -90,8 +95,10 @@ def test_bench_all_failed_still_reports() -> None:
 
     rec = run_bench(_Dead(), n=3, concurrency=2, warmup=0)
     m = rec["metrics"]
-    assert m["error_count"] == 3 and m["errors"] == {"ConnectionError": 3}
-    assert m["models"] == [] and m["completion_tokens_total"] == 0
+    assert m["error_count"] == 3
+    assert m["errors"] == {"ConnectionError": 3}
+    assert m["models"] == []
+    assert m["completion_tokens_total"] == 0
 
 
 @pytest.mark.parametrize(
@@ -111,8 +118,9 @@ def test_bench_all_failed_still_reports() -> None:
     ],
 )
 def test_bench_param_bounds_fail_closed(kw: dict) -> None:
+    stub = _Stub()
     with pytest.raises(ValueError):
-        run_bench(_Stub(), **kw)
+        run_bench(stub, **kw)
 
 
 def test_bench_receipt_seals_and_verifies() -> None:
@@ -120,7 +128,8 @@ def test_bench_receipt_seals_and_verifies() -> None:
     doc = bench_receipt(rec)
     assert doc["schema"] == BENCH_RESULT_SCHEMA == "fx1_bench_result.v1"
     assert doc["kind"] == "fx1_bench_result"
-    assert doc["research_only"] is True and doc["live_pnl_claim"] is False
+    assert doc["research_only"] is True
+    assert doc["live_pnl_claim"] is False
     assert doc["receipt_sha256"]
     v = verify_receipt_payload(doc)
     assert v["valid"], v["errors"]

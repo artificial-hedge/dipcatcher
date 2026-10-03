@@ -61,7 +61,8 @@ class TestUploadLifecycle:
         done = c.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [p3, p1, p2]})
         assert done.status_code == 200
         body = done.json()
-        assert body["status"] == "completed" and body["file"]["id"].startswith("file-")
+        assert body["status"] == "completed"
+        assert body["file"]["id"].startswith("file-")
         content = c.get(f"/v1/files/{body['file']['id']}/content")
         assert content.content == _BODY[18:] + _BODY[:8] + _BODY[8:18]
 
@@ -77,13 +78,11 @@ class TestUploadLifecycle:
                 "mime_type": "t",
             },
         ).json()
-        assert (
-            resp["object"] == "upload"
-            and resp["status"] == "pending"
-            and resp["file"] is None
-            and resp["expires_at"] > resp["created_at"]
-            and resp["id"].startswith("upload_")
-        )
+        assert resp["object"] == "upload"
+        assert resp["status"] == "pending"
+        assert resp["file"] is None
+        assert resp["expires_at"] > resp["created_at"]
+        assert resp["id"].startswith("upload_")
         assert c.post(f"/v1/uploads/{uid}/cancel").json()["status"] == "cancelled"
 
 
@@ -127,21 +126,24 @@ class TestUploadFailClosed:
         uid = _create(c, nbytes=64)
         pid = _part(c, uid, b"short").json()["id"]
         r = c.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid]})
-        assert r.status_code == 400 and r.json()["error"]["code"] == "upload_incomplete"
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "upload_incomplete"
 
     def test_missing_part(self) -> None:
         c = _client()
         uid = _create(c)
         _part(c, uid, b"ab")
         r = c.post(f"/v1/uploads/{uid}/complete", json={"part_ids": ["part_nope"]})
-        assert r.status_code == 400 and r.json()["error"]["code"] == "part_not_found"
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "part_not_found"
 
     def test_md5_mismatch_mints_no_file(self) -> None:
         c = _client()
         uid = _create(c, nbytes=2)
         pid = _part(c, uid, b"ab").json()["id"]
         r = c.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid], "md5": "0" * 32})
-        assert r.status_code == 400 and r.json()["error"]["code"] == "checksum_mismatch"
+        assert r.status_code == 400
+        assert r.json()["error"]["code"] == "checksum_mismatch"
         # pre-terminal: still accepts parts; correct md5 then completes
         ok = c.post(
             f"/v1/uploads/{uid}/complete",
@@ -150,14 +152,16 @@ class TestUploadFailClosed:
                 "md5": hashlib.md5(b"ab", usedforsecurity=False).hexdigest(),
             },
         )
-        assert ok.status_code == 200 and ok.json()["file"]["bytes"] == 2
+        assert ok.status_code == 200
+        assert ok.json()["file"]["bytes"] == 2
 
     def test_terminal_records_refuse_parts(self) -> None:
         c = _client()
         uid = _create(c)
         c.post(f"/v1/uploads/{uid}/cancel")
         r = _part(c, uid, b"ab")
-        assert r.status_code == 409 and r.json()["error"]["code"] == "upload_terminal"
+        assert r.status_code == 409
+        assert r.json()["error"]["code"] == "upload_terminal"
         assert c.post(f"/v1/uploads/{uid}/cancel").json()["status"] == "cancelled"
 
     def test_missing_upload_404(self) -> None:
@@ -220,7 +224,8 @@ class TestUploadSdkTwin:
         p1 = sdk.upload_part(up["id"], _BODY[:8])
         p2 = sdk.upload_part(up["id"], _BODY[8:])
         done = sdk.upload_complete(up["id"], [p1["id"], p2["id"]])
-        assert done["status"] == "completed" and done["file"]["bytes"] == len(_BODY)
+        assert done["status"] == "completed"
+        assert done["file"]["bytes"] == len(_BODY)
         assert sdk.file_content(done["file"]["id"]) == _BODY
         assert "_content" not in sdk.file_card(done["file"]["id"])
 

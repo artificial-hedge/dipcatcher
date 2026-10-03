@@ -38,6 +38,8 @@ export type CompletionRecord = components["schemas"]["CompletionRecord"];
 export type CompletionListResponse =
   components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type UsageBucket = components["schemas"]["UsageBucket"];
+export type UsageReport = components["schemas"]["UsageReport"];
 export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
 export type EvalRecord = components["schemas"]["EvalRecord"];
@@ -294,6 +296,13 @@ export interface SseEvent {
   event: string;
   data: string;
   id?: string;
+}
+
+function toBlob(data: string | Uint8Array | Blob, type: string): Blob {
+  if (typeof data === "string") return new Blob([data], { type });
+  if (data instanceof Uint8Array)
+    return new Blob([data as BlobPart], { type });
+  return data;
 }
 
 const DEFAULT_API_VERSION = "1";
@@ -678,6 +687,27 @@ export class HarnessApiClient {
     return this.get(`/harness/completions${suffix}`) as Promise<CompletionListResponse>;
   }
 
+  /**
+   * GET /harness/usage — token/request accounting over the server's
+   * retained completion records (totals + per-backend/per-model splits;
+   * `records_dropped`/`ring_cap` declare a truncated ring window).
+   * `since`/`until` are unix-second bounds; since>until is a 400.
+   */
+  usage(filter?: {
+    backend?: "hosted_k3" | "local_fx1" | "byok";
+    model?: string;
+    since?: number;
+    until?: number;
+  }): Promise<UsageReport> {
+    const q = new URLSearchParams();
+    if (filter?.backend) q.set("backend", filter.backend);
+    if (filter?.model) q.set("model", filter.model);
+    if (filter?.since !== undefined) q.set("since", String(filter.since));
+    if (filter?.until !== undefined) q.set("until", String(filter.until));
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/usage${suffix}`) as Promise<UsageReport>;
+  }
+
   // ---- OpenAI-compatible ingress (/v1) ------------------------------------
 
   /**
@@ -945,12 +975,7 @@ export class HarnessApiClient {
   ): Promise<OpenAIFileObject> {
     const form = new FormData();
     form.append("purpose", purpose);
-    const blob =
-      typeof content === "string"
-        ? new Blob([content], { type: "application/jsonl" })
-        : content instanceof Uint8Array
-          ? new Blob([content as BlobPart], { type: "application/jsonl" })
-          : content;
+    const blob = toBlob(content, "application/jsonl");
     form.append("file", blob, filename);
     const res = await this.send({
       method: "POST",
@@ -1042,12 +1067,7 @@ export class HarnessApiClient {
     data: string | Uint8Array | Blob,
   ): Promise<Record<string, unknown>> {
     const form = new FormData();
-    const blob =
-      typeof data === "string"
-        ? new Blob([data], { type: "application/octet-stream" })
-        : data instanceof Uint8Array
-          ? new Blob([data as BlobPart], { type: "application/octet-stream" })
-          : data;
+    const blob = toBlob(data, "application/octet-stream");
     form.append("data", blob);
     const res = await this.send({
       method: "POST",

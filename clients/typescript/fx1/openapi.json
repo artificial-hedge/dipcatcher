@@ -6271,6 +6271,169 @@
         "title": "ScoreResponse",
         "type": "object"
       },
+      "UsageBucket": {
+        "additionalProperties": false,
+        "description": "Aggregate counters for one slice of the completion log.",
+        "properties": {
+          "completion_tokens": {
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "errors": {
+            "title": "Errors",
+            "type": "integer"
+          },
+          "mean_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Latency Ms"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "integer"
+          },
+          "other_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Other Usage",
+            "type": "object"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "requests": {
+            "title": "Requests",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "title": "Total Tokens",
+            "type": "integer"
+          },
+          "usage_reported": {
+            "title": "Usage Reported",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "requests",
+          "ok",
+          "errors",
+          "usage_reported",
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens",
+          "other_usage",
+          "mean_latency_ms"
+        ],
+        "title": "UsageBucket",
+        "type": "object"
+      },
+      "UsageReport": {
+        "additionalProperties": false,
+        "description": "One usage aggregate: the applied filters, ring accounting, the\ntotals, and the per-backend/per-model splits.",
+        "properties": {
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend"
+          },
+          "by_backend": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UsageBucket"
+            },
+            "title": "By Backend",
+            "type": "object"
+          },
+          "by_model": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/UsageBucket"
+            },
+            "title": "By Model",
+            "type": "object"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "number"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "records_dropped": {
+            "title": "Records Dropped",
+            "type": "integer"
+          },
+          "records_seen": {
+            "title": "Records Seen",
+            "type": "integer"
+          },
+          "ring_cap": {
+            "title": "Ring Cap",
+            "type": "integer"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/UsageBucket"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "generated_at",
+          "since",
+          "until",
+          "backend",
+          "model",
+          "records_seen",
+          "records_dropped",
+          "ring_cap",
+          "totals",
+          "by_backend",
+          "by_model"
+        ],
+        "title": "UsageReport",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -9366,6 +9529,176 @@
         ]
       }
     },
+    "/harness/usage": {
+      "get": {
+        "description": "Token/request accounting over the retained completion records \u2014\nthe billing/ops view. Totals plus per-backend/per-model splits;\n`records_dropped`/`ring_cap` declare a truncated window, and the\nmodel split keys absent models as ``(none)``. `since`/`until`\nare unix-second bounds on the record timestamps; since>until is\na fail-closed 400.",
+        "operationId": "usage_report",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "backend",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "hosted_k3",
+                    "local_fx1",
+                    "byok"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Backend"
+            }
+          },
+          {
+            "in": "query",
+            "name": "model",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 256,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageReport"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Usage Report",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
     "/harness/version": {
       "get": {
         "description": "Version negotiation: the wire contract + package release.",
@@ -10893,7 +11226,11 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Openai Chat Retrieve",
+                  "type": "object"
+                }
               }
             },
             "description": "Successful Response",

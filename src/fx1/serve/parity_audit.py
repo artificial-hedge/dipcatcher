@@ -68,6 +68,7 @@ if TYPE_CHECKING:
 __all__ = ["parity_audit", "parity_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
+_OBJ_UPLOAD_PART = "upload.part"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
 _LOCAL_ENVS = (
     "FX1_LOCAL_SERVE_URL",
@@ -368,7 +369,7 @@ def _tc_transport(client: TestClient) -> Any:
     return send
 
 
-def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
+def parity_audit() -> dict[str, bool]:  # NOSONAR
     out: dict[str, bool] = {}
     saved = {
         k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
@@ -3130,7 +3131,7 @@ def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
         _u_w["object"] == _u_s["object"] == "upload"
         and _u_w["id"].startswith("upload_")
         and _u_s["id"].startswith("upload_")
-        and _pw["object"] == _ps["object"] == "upload.part"
+        and _pw["object"] == _ps["object"] == _OBJ_UPLOAD_PART
         and _ud_w["status"] == _ud_s["status"] == "completed"
         and _ud_w["file"]["bytes"] == _ud_s["file"]["bytes"] == len(_ul_body)
         and _ud_w["file"]["id"].startswith("file-")
@@ -3158,8 +3159,8 @@ def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
         and _md5bad_s == ("UploadStoreError", "checksum_mismatch")
         # a bad md5 is pre-terminal: the intent stays pending and still
         # accepts parts — only a *successful* complete is terminal
-        and c_b.upload_part(_u2["id"], b"ab")["object"] == "upload.part"
-        and sdk_b.upload_part(_u3["id"], b"ab")["object"] == "upload.part"
+        and c_b.upload_part(_u2["id"], b"ab")["object"] == _OBJ_UPLOAD_PART
+        and sdk_b.upload_part(_u3["id"], b"ab")["object"] == _OBJ_UPLOAD_PART
         # cancel is terminal on both legs and replays idempotently
         and c_b.upload_cancel(c_b.upload_create(bytes=4)["id"])["status"] == "cancelled"
         and _raises(

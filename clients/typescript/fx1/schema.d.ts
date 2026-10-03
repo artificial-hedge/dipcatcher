@@ -538,6 +538,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage Report
+         * @description Token/request accounting over the retained completion records —
+         *     the billing/ops view. Totals plus per-backend/per-model splits;
+         *     `records_dropped`/`ring_cap` declare a truncated window, and the
+         *     model split keys absent models as ``(none)``. `since`/`until`
+         *     are unix-second bounds on the record timestamps; since>until is
+         *     a fail-closed 400.
+         */
+        get: operations["usage_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/version": {
         parameters: {
             query?: never;
@@ -3846,6 +3871,64 @@ export interface components {
              */
             object: "list";
         };
+        /**
+         * UsageBucket
+         * @description Aggregate counters for one slice of the completion log.
+         */
+        UsageBucket: {
+            /** Completion Tokens */
+            completion_tokens: number;
+            /** Errors */
+            errors: number;
+            /** Mean Latency Ms */
+            mean_latency_ms: number | null;
+            /** Ok */
+            ok: number;
+            /** Other Usage */
+            other_usage: {
+                [key: string]: number;
+            };
+            /** Prompt Tokens */
+            prompt_tokens: number;
+            /** Requests */
+            requests: number;
+            /** Total Tokens */
+            total_tokens: number;
+            /** Usage Reported */
+            usage_reported: number;
+        };
+        /**
+         * UsageReport
+         * @description One usage aggregate: the applied filters, ring accounting, the
+         *     totals, and the per-backend/per-model splits.
+         */
+        UsageReport: {
+            /** Backend */
+            backend: string | null;
+            /** By Backend */
+            by_backend: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
+            /** By Model */
+            by_model: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
+            /** Generated At */
+            generated_at: number;
+            /** Model */
+            model: string | null;
+            /** Records Dropped */
+            records_dropped: number;
+            /** Records Seen */
+            records_seen: number;
+            /** Ring Cap */
+            ring_cap: number;
+            /** Since */
+            since: number | null;
+            totals: components["schemas"]["UsageBucket"];
+            /** Until */
+            until: number | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -5263,6 +5346,60 @@ export interface operations {
             };
         };
     };
+    usage_report: {
+        parameters: {
+            query?: {
+                backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+                model?: string | null;
+                since?: number | null;
+                until?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_version: {
         parameters: {
             query?: never;
@@ -5936,7 +6073,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

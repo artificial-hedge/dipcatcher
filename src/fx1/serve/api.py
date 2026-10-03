@@ -198,6 +198,7 @@ from fx1.serve.uploads import (
     upload_object,
     validate_upload_intent,
 )
+from fx1.serve.usage_report import UsageReport, aggregate_usage
 from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
@@ -350,6 +351,10 @@ _STATUS_CODES = {
 }
 
 
+_MSG_CALLBACK_NEEDS_URL = "callback_secret requires callback_url"
+_MSG_LIMIT_RANGE = "limit must be 1..100"
+
+
 class ApiError(HTTPException):
     """HTTPException carrying a stable machine ``code``, surfaced in the
     ``{"detail", "code"}`` error envelope so clients switch on it instead
@@ -437,7 +442,7 @@ class HarnessRunRequest(_Model):
     @model_validator(mode="after")
     def _callback_secret_needs_url(self) -> HarnessRunRequest:
         if self.callback_secret is not None and not self.callback_url:
-            raise ValueError("callback_secret requires callback_url")
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
         return self
 
 
@@ -909,7 +914,7 @@ class EvalSubmitRequest(_Model):
         if self.judge_backend is not None and not suite_accepts_judge(self.suite):
             raise ValueError(f"suite '{self.suite}' takes no judge")
         if self.callback_secret is not None and not self.callback_url:
-            raise ValueError("callback_secret requires callback_url")
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
         return self
 
 
@@ -1054,7 +1059,7 @@ class EvalRunCreate(_Model):
     @model_validator(mode="after")
     def _run_valid(self) -> EvalRunCreate:
         if self.callback_secret is not None and not self.callback_url:
-            raise ValueError("callback_secret requires callback_url")
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
         return self
 
 
@@ -1814,7 +1819,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.post(
         "/receipts/verify",
-        response_model=ReceiptVerifyResponse,
         tags=["receipts"],
         operation_id="verify_receipt",
     )
@@ -1833,7 +1837,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.post(
         "/receipts/verify/batch",
-        response_model=ReceiptVerifyBatchResponse,
         tags=["receipts"],
         operation_id="verify_receipts_batch",
     )
@@ -1879,7 +1882,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.get(
         "/receipts",
-        response_model=ReceiptIndexResponse,
         tags=["receipts"],
         operation_id="receipts_index",
     )
@@ -2043,11 +2045,7 @@ def _mount_job_routes(
             raise ApiError(404, f"unknown job_id {job_id!r}")
         return job
 
-    @app.get(
-        "/harness/jobs/{job_id}/receipt",
-        tags=["jobs"],
-        operation_id="job_receipt",
-    )
+    @app.get("/harness/jobs/{job_id}/receipt", tags=["jobs"], operation_id="job_receipt")
     def job_receipt(job_id: str) -> dict[str, Any]:
         """Export the job's ledger record as a sealed
         ``fx1_job_record.v1`` document — the terminal ``result`` embeds
@@ -2062,7 +2060,6 @@ def _mount_job_routes(
 
     @app.delete(
         "/harness/jobs/{job_id}",
-        response_model=JobStatusResponse,
         tags=["jobs"],
         operation_id="cancel_job",
     )
@@ -2863,12 +2860,23 @@ class _CompletionLog:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, CompletionRecord] = {}
+        self._dropped = 0
 
     def append(self, rec: CompletionRecord) -> None:
         with self._lock:
             self._items[rec.completion_id] = rec
             while len(self._items) > self._cap:
                 self._items.pop(next(iter(self._items)))
+                self._dropped += 1
+
+    @property
+    def cap(self) -> int:
+        return self._cap
+
+    @property
+    def dropped(self) -> int:
+        with self._lock:
+            return self._dropped
 
     def get(self, completion_id: str) -> CompletionRecord | None:
         with self._lock:
@@ -2880,6 +2888,10 @@ class _CompletionLog:
         if backend is not None:
             items = [r for r in items if r.backend == backend]
         return items[:limit]
+
+    def all(self, backend: str | None = None) -> list[CompletionRecord]:
+        """Every retained record — the aggregation view (no limit)."""
+        return self.latest(self._cap, backend)
 
 
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
@@ -3243,11 +3255,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(404, f"unknown eval_id {eval_id!r}")
         return rec
 
-    @app.get(
-        "/harness/evals/{eval_id}/receipt",
-        tags=["evals"],
-        operation_id="eval_receipt",
-    )
+    @app.get("/harness/evals/{eval_id}/receipt", tags=["evals"], operation_id="eval_receipt")
     def eval_receipt(eval_id: str) -> dict[str, Any]:
         """Export the eval record as a sealed ``fx1_eval_record.v1``
         document — terminal records only: a still-running eval's receipt
@@ -3266,7 +3274,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/harness/evals/{eval_id}/diff/{candidate_id}",
-        response_model=EvalDiff,
         tags=["evals"],
         operation_id="diff_evals",
     )
@@ -3293,7 +3300,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/harness/evals/{eval_id}",
-        response_model=EvalRecord,
         tags=["evals"],
         operation_id="cancel_eval",
     )
@@ -3343,7 +3349,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/evals",
-        response_model=EvalSpecWire,
         status_code=201,
         operation_id="createEval",
         tags=["evals"],
@@ -3360,24 +3365,21 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         eval_spec_store.put(spec)
         return EvalSpecWire.model_validate(spec_wire(spec))
 
-    @app.get("/v1/evals", response_model=EvalSpecPage, operation_id="listEvals", tags=["evals"])
+    @app.get("/v1/evals", operation_id="listEvals", tags=["evals"])
     def eval_spec_list(limit: int = 20, after: str | None = None) -> EvalSpecPage:
         if not 1 <= limit <= 100:
-            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
         page, more = eval_spec_store.list_specs(limit=limit, after=after)
         return EvalSpecPage(
             data=[EvalSpecWire.model_validate(spec_wire(s)) for s in page], has_more=more
         )
 
-    @app.get(
-        "/v1/evals/{eval_id}", response_model=EvalSpecWire, operation_id="getEval", tags=["evals"]
-    )
+    @app.get("/v1/evals/{eval_id}", operation_id="getEval", tags=["evals"])
     def eval_spec_get(eval_id: str) -> EvalSpecWire:
         return EvalSpecWire.model_validate(spec_wire(_spec_or_404(eval_id)))
 
     @app.post(
         "/v1/evals/{eval_id}",
-        response_model=EvalSpecWire,
         operation_id="updateEval",
         tags=["evals"],
     )
@@ -3392,7 +3394,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/v1/evals/{eval_id}",
-        response_model=EvalSpecDeleted,
         operation_id="deleteEval",
         tags=["evals"],
     )
@@ -3468,7 +3469,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def eval_run_list(eval_id: str, limit: int = 20) -> EvalRunPage:
         _spec_or_404(eval_id)
         if not 1 <= limit <= 100:
-            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
         page, _total = eval_store.list_records(spec=eval_id, limit=limit + 1)
         more = len(page) > limit
         return EvalRunPage(
@@ -3478,7 +3479,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/evals/{eval_id}/runs/{run_id}",
-        response_model=EvalRunObject,
         operation_id="getEvalRun",
         tags=["evals"],
     )
@@ -3488,7 +3488,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/evals/{eval_id}/runs/{run_id}/cancel",
-        response_model=EvalRunObject,
         operation_id="cancelEvalRun",
         tags=["evals"],
     )
@@ -3503,7 +3502,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/v1/evals/{eval_id}/runs/{run_id}",
-        response_model=EvalRunDeleted,
         operation_id="deleteEvalRun",
         tags=["evals"],
     )
@@ -3517,7 +3515,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/evals/{eval_id}/runs/{run_id}/output_items",
-        response_model=EvalOutputItemPage,
         operation_id="listEvalRunOutputItems",
         tags=["evals"],
     )
@@ -3529,7 +3526,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         _spec_or_404(eval_id)
         rec = _run_or_404(eval_id, run_id)
         if not 1 <= limit <= 100:
-            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
         tasks = (
             report_task_items(rec.report)
             if rec.status == "succeeded" and isinstance(rec.report, dict)
@@ -4397,7 +4394,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/models",
-        response_model=OpenAIModelList,
         tags=["openai"],
         operation_id="openai_list_models",
     )
@@ -4413,7 +4409,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/models/{model}",
-        response_model=OpenAIModel,
         tags=["openai"],
         operation_id="openai_retrieve_model",
     )
@@ -4432,7 +4427,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/v1/models/{model}",
-        response_model=OpenAIModelDelete,
         tags=["openai"],
         operation_id="openai_delete_model",
     )
@@ -4982,10 +4976,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         return {"id": envelope_id, "object": f"{object_}.deleted", "deleted": True}
 
     @app.get(
-        "/v1/chat/completions/{completion_id}",
-        response_model=None,
-        tags=["openai"],
-        operation_id="openai_chat_retrieve",
+        "/v1/chat/completions/{completion_id}", tags=["openai"], operation_id="openai_chat_retrieve"
     )
     def openai_chat_retrieve(completion_id: str) -> dict[str, Any]:
         """Retrieve a stored chat completion (``chatcmpl-…``)."""
@@ -5102,8 +5093,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_conversation_update",
     )
     def openai_conversation_update(
-        body: OpenAIConversationUpdate,
-        conversation_id: str,
+        body: OpenAIConversationUpdate, conversation_id: str
     ) -> dict[str, Any]:
         """Update a conversation — ``metadata`` replaces wholesale."""
         conv = _stored_conversation(conversation_id)
@@ -5143,11 +5133,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         items = conv_store.get_items(conversation_id, "items")
         try:
             return paged_item_list(
-                items or [],
-                limit=limit,
-                after=after,
-                before=before,
-                order=order,
+                items or [], limit=limit, after=after, before=before, order=order
             )
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
@@ -5159,8 +5145,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_conversation_items_add",
     )
     def openai_conversation_items_add(
-        body: OpenAIConversationItemsAdd,
-        conversation_id: str,
+        body: OpenAIConversationItemsAdd, conversation_id: str
     ) -> dict[str, Any]:
         """Append items to a conversation — returns the minted items as a
         list object. ``item_ids`` (alias-by-reference) is refused: items
@@ -5183,10 +5168,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_conversation_item_delete",
     )
-    def openai_conversation_item_delete(
-        conversation_id: str,
-        item_id: str,
-    ) -> dict[str, Any]:
+    def openai_conversation_item_delete(conversation_id: str, item_id: str) -> dict[str, Any]:
         """Delete one item from a conversation — the conv object returns;
         a missing item id is a 404."""
         conv = _stored_conversation(conversation_id)
@@ -5194,9 +5176,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         kept = [it for it in items if it.get("id") != item_id]
         if len(kept) == len(items):
             raise ApiError(
-                404,
-                f"item {item_id!r} not found in {conversation_id!r}",
-                code="not_found",
+                404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
             )
         conv_store.put(conv, items={"items": kept})
         return conv
@@ -5218,13 +5198,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if items is None:
             raise ApiError(404, f"{envelope_id!r} not found", code="not_found")
         try:
-            return paged_item_list(
-                items,
-                limit=limit,
-                after=after,
-                before=before,
-                order=order,
-            )
+            return paged_item_list(items, limit=limit, after=after, before=before, order=order)
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
@@ -5367,8 +5341,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             obj = batch_line_body(line, batch.endpoint)
             if getattr(obj, "stream", False):
                 raise OpenAICompatError(
-                    "stream requests are not valid inside a batch",
-                    code="invalid_request",
+                    "stream requests are not valid inside a batch", code="invalid_request"
                 )
             if getattr(obj, "background", False):
                 raise OpenAICompatError(
@@ -6017,12 +5990,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             complete_batch_idem_store.put(key, body_fp, resp)
         return resp
 
-    @app.post(
-        "/harness/backends/{name}/probe",
-        response_model=BackendProbeResponse,
-        tags=["ops"],
-        operation_id="backend_probe",
-    )
+    @app.post("/harness/backends/{name}/probe", tags=["ops"], operation_id="backend_probe")
     def backend_probe(
         name: Literal["hosted_k3", "local_fx1", "byok"],
         body: BackendProbeRequest | None = None,
@@ -6306,12 +6274,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             metrics.release()
             inflight.release()
 
-    @app.post(
-        "/v1/fine_tuning/jobs",
-        response_model=FTJob,
-        tags=["openai"],
-        operation_id="create_finetune_job",
-    )
+    @app.post("/v1/fine_tuning/jobs", tags=["openai"], operation_id="create_finetune_job")
     def create_finetune_job(
         body: FTJobRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -6344,9 +6307,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         frec = file_store.get(body.training_file)
         if frec is None:
             raise ApiError(
-                404,
-                f"training file {body.training_file!r} not found",
-                code="file_not_found",
+                404, f"training file {body.training_file!r} not found", code="file_not_found"
             )
         if frec.purpose != "fine-tune":
             raise ApiError(
@@ -6457,8 +6418,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="list_finetune_jobs",
     )
     def list_finetune_jobs(
-        limit: int = Query(default=20, ge=1, le=100),
-        after: str | None = Query(default=None),
+        limit: int = Query(default=20, ge=1, le=100), after: str | None = Query(default=None)
     ) -> FTJobList:
         """Newest-first page; ``after`` is the exclusive id cursor."""
         jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
@@ -6478,7 +6438,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/fine_tuning/jobs/{job_id}/cancel",
-        response_model=FTJob,
         tags=["openai"],
         operation_id="cancel_finetune_job",
     )
@@ -6510,7 +6469,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/fine_tuning/jobs/{job_id}/pause",
-        response_model=FTJob,
         tags=["openai"],
         operation_id="pause_finetune_job",
     )
@@ -6546,7 +6504,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/fine_tuning/jobs/{job_id}/resume",
-        response_model=FTJob,
         tags=["openai"],
         operation_id="resume_finetune_job",
     )
@@ -6961,7 +6918,7 @@ def create_app(
             )
         return metrics.snapshot()
 
-    @app.get("/health", response_model=HealthResponse, tags=["ops"], operation_id="health")
+    @app.get("/health", tags=["ops"], operation_id="health")
     def health() -> HealthResponse:
         return HealthResponse(
             registered_commands=len(lab.list_commands()),
@@ -6969,7 +6926,7 @@ def create_app(
             draining=metrics.draining.is_set(),
         )
 
-    @app.get("/ready", response_model=ReadyResponse, tags=["ops"], operation_id="ready")
+    @app.get("/ready", tags=["ops"], operation_id="ready")
     def ready() -> ReadyResponse:
         """Kubernetes-style readiness: 200 while accepting work, 503 once
         drain is latched — the load balancer's signal to deregister the
@@ -6989,7 +6946,6 @@ def create_app(
 
     @app.get(
         "/harness/capabilities",
-        response_model=CapabilitiesResponse,
         tags=["ops"],
         operation_id="get_capabilities",
     )
@@ -7122,6 +7078,36 @@ def create_app(
         if rec is None:
             raise ApiError(404, f"completion {completion_id!r} not in the log", code="not_found")
         return completion_record_receipt(rec.model_dump(mode="json"))
+
+    @app.get(
+        "/harness/usage",
+        response_model=UsageReport,
+        tags=["ops"],
+        operation_id="usage_report",
+    )
+    def usage_report(
+        backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None,
+        model: str | None = Query(default=None, max_length=256),
+        since: float | None = Query(default=None, ge=0.0),
+        until: float | None = Query(default=None, ge=0.0),
+    ) -> UsageReport:
+        """Token/request accounting over the retained completion records —
+        the billing/ops view. Totals plus per-backend/per-model splits;
+        `records_dropped`/`ring_cap` declare a truncated window, and the
+        model split keys absent models as ``(none)``. `since`/`until`
+        are unix-second bounds on the record timestamps; since>until is
+        a fail-closed 400."""
+        if since is not None and until is not None and since > until:
+            raise ApiError(400, "since must be <= until", code="bad_window")
+        return aggregate_usage(
+            completion_log.all(backend),
+            cap=completion_log.cap,
+            dropped=completion_log.dropped,
+            backend=backend,
+            model=model,
+            since=since,
+            until=until,
+        )
 
     @app.post(
         "/harness/drain",

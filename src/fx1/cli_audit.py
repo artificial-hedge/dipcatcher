@@ -30,9 +30,12 @@ from quant_fund.utils.reproducibility import git_revision
 __all__ = ["cli_audit", "cli_audit_bench"]
 
 _JSON_OBJECT_ARG = '{"type":"json_object"}'
+_OBJ_EVAL_RUN = "eval.run"
+_OBJ_EVAL_OUTPUT_ITEM = "eval.run.output_item"
+_OBJ_FT_JOB = "fine_tuning.job"
 
 
-def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
+def cli_audit() -> dict[str, Any]:  # NOSONAR
     import json
 
     import typer
@@ -474,11 +477,61 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
 
     from fx1.sdk import CompletionResult  # noqa: PLC0415
 
+    def _canned_usage() -> dict[str, Any]:
+        return {
+            "generated_at": 1.0,
+            "since": None,
+            "until": None,
+            "backend": None,
+            "model": None,
+            "records_seen": 2,
+            "records_dropped": 0,
+            "ring_cap": 256,
+            "totals": {
+                "requests": 2,
+                "ok": 2,
+                "errors": 0,
+                "usage_reported": 2,
+                "prompt_tokens": 8,
+                "completion_tokens": 12,
+                "total_tokens": 20,
+                "other_usage": {},
+                "mean_latency_ms": 1.5,
+            },
+            "by_backend": {
+                "byok": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
+            "by_model": {
+                "fake-v0": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
+        }
+
     class _FakeSDK:
         def __init__(self) -> None:
             self.stream_calls: list[dict[str, Any]] = []
             self.complete_calls: list[dict[str, Any]] = []
             self.batch_calls: list[dict[str, Any]] = []
+            self.usage_kw: dict[str, Any] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -491,7 +544,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             return ["chunk-a", "chunk-b"]
 
         def openai_response(  # NOSONAR(S1172)
-            self, request: Any, **kw: Any
+            self, request: Any, **_kw: Any
         ) -> tuple[dict[str, Any], None]:
             self.complete_calls.append({"responses_body": dict(request)})
             return {"id": "resp_fake", "status": "completed"}, None
@@ -524,6 +577,12 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             from fx1.harness import HarnessResult
 
             return HarnessResult(command=name, exit_code=0, stdout="ran", stderr="")
+
+        def usage(self, **kw: Any) -> Any:
+            from fx1.serve.usage_report import UsageReport
+
+            self.usage_kw = dict(kw)
+            return UsageReport.model_validate(_canned_usage())
 
         def verify_receipt(self, receipt: dict[str, Any]) -> Any:
             from fx1.sdk import ReceiptVerdict
@@ -581,7 +640,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
                 "created_at": 1,
             }
 
-        def eval_specs(self, **kw: Any) -> list[dict[str, Any]]:
+        def eval_specs(self, **_kw: Any) -> list[dict[str, Any]]:
             return [{"id": "eval_x", "object": "eval", "name": "t"}]
 
         def eval_spec_get(self, spec_id: str) -> dict[str, Any]:
@@ -597,20 +656,20 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run_create = {"spec_id": spec_id, **kw}
             return {
                 "id": "evalrun_y",
-                "object": "eval.run",
+                "object": _OBJ_EVAL_RUN,
                 "eval_id": spec_id,
                 "model": kw.get("model"),
                 "status": "completed",
                 "result_counts": {"total": 1, "passed": 1, "failed": 0, "errored": 0},
             }
 
-        def eval_runs(self, spec_id: str, **kw: Any) -> list[dict[str, Any]]:
-            return [{"id": "evalrun_y", "object": "eval.run", "eval_id": spec_id}]
+        def eval_runs(self, spec_id: str, **_kw: Any) -> list[dict[str, Any]]:
+            return [{"id": "evalrun_y", "object": _OBJ_EVAL_RUN, "eval_id": spec_id}]
 
         def eval_run_get(self, spec_id: str, run_id: str) -> dict[str, Any]:
             return {
                 "id": run_id,
-                "object": "eval.run",
+                "object": _OBJ_EVAL_RUN,
                 "eval_id": spec_id,
                 "status": "completed",
             }
@@ -618,11 +677,11 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         def eval_run_delete(self, spec_id: str, run_id: str) -> None:
             self.last_run_delete = (spec_id, run_id)
 
-        def eval_run_items(self, spec_id: str, run_id: str, **kw: Any) -> list[dict[str, Any]]:
+        def eval_run_items(self, spec_id: str, run_id: str, **_kw: Any) -> list[dict[str, Any]]:
             return [
                 {
                     "id": "evalrun_y-0",
-                    "object": "eval.run.output_item",
+                    "object": _OBJ_EVAL_OUTPUT_ITEM,
                     "run_id": run_id,
                     "status": "fail",
                     "datasource_item_id": "t1",
@@ -707,7 +766,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             )
             .get("data")[0]
             .get("object")
-            == "eval.run.output_item"
+            == _OBJ_EVAL_OUTPUT_ITEM
             and json.loads(
                 runner.invoke(app, ["harness", "eval-run-delete", "eval_x", "evalrun_y"]).stdout
             ).get("deleted")
@@ -969,6 +1028,22 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             "errors"
         ] == {"RuntimeError": 2}
 
+        # harness usage in-process leg: aggregates print + filters forward
+        ru = runner.invoke(app, ["harness", "usage"])
+        ru_j = json.loads(ru.stdout) if ru.exit_code == 0 else {}
+        out["usage_local_json"] = (
+            ru_j.get("totals", {}).get("requests") == 2
+            and ru_j.get("by_backend", {}).get("byok", {}).get("ok") == 2
+            and ru_j.get("ring_cap") == 256
+        )
+        runner.invoke(app, ["harness", "usage", "--backend", "hosted_k3", "--since", "5"])
+        out["usage_flags_forward"] = fake.usage_kw == {
+            "backend": "hosted_k3",
+            "model": None,
+            "since": 5.0,
+            "until": None,
+        }
+
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
         def __init__(self, base_url: str, **kw: Any) -> None:
@@ -991,6 +1066,14 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_batch_create: dict[str, Any] | None = None
             self.last_batch_id: str | None = None
             self.last_wait_kw: dict[str, Any] | None = None
+            self.last_usage_kw: dict[str, Any] | None = None
+            self.ft_actions: list[tuple[str, str]] = []
+
+        def usage(self, **kw: Any) -> Any:
+            from fx1.serve.usage_report import UsageReport
+
+            self.last_usage_kw = dict(kw)
+            return UsageReport.model_validate(_canned_usage())
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -1167,7 +1250,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_ft_create = dict(kw)
             return {
                 "id": "ftjob-x",
-                "object": "fine_tuning.job",
+                "object": _OBJ_FT_JOB,
                 "status": "queued",
                 "model": kw.get("model"),
             }
@@ -1177,7 +1260,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_wait_kw = dict(kw)
             return {
                 "id": job_id,
-                "object": "fine_tuning.job",
+                "object": _OBJ_FT_JOB,
                 "status": "succeeded",
                 "fine_tuned_model": "ft:fx1:x:000000000000",
             }
@@ -1204,13 +1287,13 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_ft_query = dict(kw)
             return {
                 "object": "list",
-                "data": [{"id": "ftjob-x", "object": "fine_tuning.job", "status": "succeeded"}],
+                "data": [{"id": "ftjob-x", "object": _OBJ_FT_JOB, "status": "succeeded"}],
                 "has_more": False,
             }
 
         def finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "running"}
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "running"}
 
         def finetune_job_events(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
@@ -1223,15 +1306,16 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
 
         def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "cancelled"}
 
         def pause_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "paused"}
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "paused"}
 
         def resume_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "running"}
+            self.ft_actions.append(("resume", job_id))
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "running"}
 
         def finetune_job_checkpoints(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
@@ -1287,7 +1371,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run_create = {"eval_id": eval_id, **kw}
             return {
                 "id": "evalrun_y",
-                "object": "eval.run",
+                "object": _OBJ_EVAL_RUN,
                 "eval_id": eval_id,
                 "model": kw.get("model"),
                 "status": "queued",
@@ -1297,7 +1381,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run_query = {"eval_id": eval_id, **kw}
             return {
                 "object": "list",
-                "data": [{"id": "evalrun_y", "object": "eval.run", "eval_id": eval_id}],
+                "data": [{"id": "evalrun_y", "object": _OBJ_EVAL_RUN, "eval_id": eval_id}],
                 "has_more": False,
             }
 
@@ -1305,7 +1389,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run = (eval_id, run_id)
             return {
                 "id": run_id,
-                "object": "eval.run",
+                "object": _OBJ_EVAL_RUN,
                 "eval_id": eval_id,
                 "status": "completed",
             }
@@ -1314,7 +1398,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run = (eval_id, run_id)
             return {
                 "id": run_id,
-                "object": "eval.run",
+                "object": _OBJ_EVAL_RUN,
                 "eval_id": eval_id,
                 "status": "canceled",
             }
@@ -1323,14 +1407,14 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             self.last_run = (eval_id, run_id)
             return {"id": run_id, "object": "eval.run.deleted", "deleted": True}
 
-        def eval_run_output_items(self, eval_id: str, run_id: str, **kw: Any) -> dict[str, Any]:
+        def eval_run_output_items(self, eval_id: str, run_id: str, **_kw: Any) -> dict[str, Any]:
             self.last_run = (eval_id, run_id)
             return {
                 "object": "list",
                 "data": [
                     {
                         "id": "evalrun_y-0",
-                        "object": "eval.run.output_item",
+                        "object": _OBJ_EVAL_OUTPUT_ITEM,
                         "run_id": run_id,
                         "eval_id": eval_id,
                         "status": "fail",
@@ -1671,6 +1755,23 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             and rbw_j.get("metrics", {}).get("measured_requests") == 2
             and rbw_j.get("metrics", {}).get("models") == ["remote-v0"]
         )
+        ruw = runner.invoke(
+            app,
+            [
+                "harness",
+                "usage",
+                "--remote",
+                "http://h.test",
+                "--model",
+                "m1",
+                "--since",
+                "5",
+            ],
+        )
+        ruw_j = json.loads(ruw.stdout) if ruw.exit_code == 0 else {}
+        out["usage_remote_mode"] = ruw_j.get("totals", {}).get("requests") == 2 and remotes[
+            -1
+        ].last_usage_kw == {"backend": None, "model": "m1", "since": 5.0, "until": None}
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
             == "cmd-a"
@@ -1891,7 +1992,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             )
             .get("data")[0]
             .get("object")
-            == "eval.run.output_item"
+            == _OBJ_EVAL_OUTPUT_ITEM
         )
 
     # ready under drain: client raises the mapped 503, CLI exits 1

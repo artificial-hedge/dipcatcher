@@ -166,6 +166,9 @@ max-complexity = 74
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B018", "DTZ"]
+"src/fx1/cli_audit.py" = ["C901"]
+"src/fx1/serve/api_audit.py" = ["C901"]
+"src/fx1/serve/parity_audit.py" = ["C901"]
 
 [tool.mypy]
 python_version = "3.12"

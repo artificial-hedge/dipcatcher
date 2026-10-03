@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -445,6 +446,7 @@ def sdk_audit() -> dict[str, bool]:
             self.calls = 0
 
         def complete(self, messages: Any, **kw: Any) -> Any:
+            _ = messages
             self.calls += 1
             return _CR(
                 backend=str(kw.get("backend")),
@@ -479,7 +481,7 @@ def sdk_audit() -> dict[str, bool]:
     out["bench_error_histogram"] = (
         _bdead["metrics"]["error_count"] == 3
         and _bdead["metrics"]["errors"] == {"ConnectionError": 3}
-        and _bdead["metrics"]["error_rate"] == 1.0
+        and abs(_bdead["metrics"]["error_rate"] - 1.0) < 1e-9
     )
     out["bench_bounds_fail_closed"] = (
         _raises(lambda: _run_bench(sdk, n=0)) == "ValueError"
@@ -491,6 +493,82 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: _run_bench(sdk, mode="sideways")) == "ValueError"
     )
     out["bench_receipt_verifies"] = _vrp(_bench_rcpt(_brec))["valid"] is True
+
+    # ---- usage accounting — the in-process twin of /harness/usage ---------
+    # a usage-reporting backend + a dead link: totals, splits, filters, and
+    # the truncation honesty fields all assert.
+    class _UsageBackend(_FakeBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.last_usage = {
+                "prompt_tokens": 4,
+                "completion_tokens": 6,
+                "total_tokens": 10,
+                "cached_tokens": 1,
+            }
+            return super().complete(messages, sampling=sampling)
+
+    u_ok = _UsageBackend()
+
+    class _DeadBackend:
+        def complete(self, messages: Any, **kw: Any) -> str:
+            raise RuntimeError("dead")
+
+        def close(self) -> None:
+            pass
+
+    def _u_resolve(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return u_ok
+        return _DeadBackend()
+
+    sdk_u = Fx1Harness(backend_resolver=_u_resolve)
+    sdk_u.complete(
+        [{"role": "user", "content": "hi"}],
+        backend="byok",
+        byok={"base_url": "http://u.test", "api_key": "k", "model": "m"},
+    )
+    sdk_u.complete(
+        [{"role": "user", "content": "hi"}],
+        backend="byok",
+        byok={"base_url": "http://u.test", "api_key": "k", "model": "m"},
+    )
+    out["usage_failed_call_logged"] = (
+        _raises(
+            lambda: sdk_u.complete(
+                [{"role": "user", "content": "hi"}],
+                backend="hosted_k3",
+            )
+        )
+        == "RuntimeError"
+    )
+    rep = sdk_u.usage()
+    out["usage_totals"] = (
+        rep.totals.requests == 3
+        and rep.totals.ok == 2
+        and rep.totals.errors == 1
+        and rep.totals.prompt_tokens == 8
+        and rep.totals.completion_tokens == 12
+        and rep.totals.total_tokens == 20
+        and rep.totals.other_usage == {"cached_tokens": 2}
+        and rep.totals.usage_reported == 2
+        and rep.records_dropped == 0
+        and rep.by_backend["byok"].requests == 2
+        and rep.by_backend["hosted_k3"].errors == 1
+        and rep.by_model["fake-0"].requests == 2
+    )
+    out["usage_filters"] = (
+        sdk_u.usage(backend="byok").totals.requests == 2
+        and sdk_u.usage(model="fake-0").totals.requests == 2
+        and sdk_u.usage(model="nope").totals.requests == 0
+        and sdk_u.usage(since=time.time() + 60).records_seen == 0
+        and sdk_u.usage(until=1.0).records_seen == 0
+    )
+    out["usage_bad_window_raises"] = (
+        _raises(lambda: sdk_u.usage(since=2.0, until=1.0)) == "ValueError"
+        and _raises(lambda: sdk_u.usage(backend="nope")) == "ValueError"
+    )
 
     return out
 

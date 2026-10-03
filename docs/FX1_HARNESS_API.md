@@ -145,6 +145,16 @@ per-item on batch results, on the stream's `final` frame, and as the
 original id). Probes never log. In-process, `Fx1Harness.completions()`
 / `.completion(id)` return the same records.
 
+**Usage aggregation:** `GET /harness/usage` rolls the completion ring
+into a `UsageReport` — totals (requests/ok/errors/`usage_reported`,
+prompt/completion/total token sums, mean latency) plus `by_backend`
+and `by_model` splits, with `?backend=`/`?model=`/`?since=`/`?until=`
+filters. The ring is bounded: `records_seen` counts only live records,
+`records_dropped` + `ring_cap` disclose evictions, and provider-
+specific counters (e.g. `cached_tokens`) land in `other_usage` rather
+than dropping silently. `since > until` fails closed 400. The
+in-process twin `Fx1Harness.usage()` aggregates the same way.
+
 **Response-side seal:** responses that carry `X-Fx1-Completion-Id` also
 carry `X-Fx1-Receipt-Sha256` — the `receipt_sha256` of the sealed
 `fx1_completion_record.v1` document, so a client pins the evidence
@@ -184,6 +194,7 @@ same digested shape the job record embeds.
 | `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
+| `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model` splits, `?backend=`/`?model=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |
