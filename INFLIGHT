@@ -1,3 +1,4 @@
+feat(research): wave 1008 — thermodynamics canon (carnot_cycle, maxwell_relations, phase_transitions, critical_phenomena, fluctuation_dissipation, entropy_production) (5997->6003 families)
 feat(research): wave 1007 — statistical-mechanics canon (ising_model, partition_function, bose_einstein, fermi_dirac, gibbs_measure, free_energy) (5991->5997 families)
 feat(research): wave 1006 — quantum-mechanics canon (schrodinger_eq, hydrogen_atom, harmonic_oscillator, spin_half, wigner_wick, fock_space) (5985->5991 families)
 feat(research): wave 1005 — general-relativity canon (einstein_equations, schwarzschild_metric, friedmann_eq, kerr_metric, gr_birkhoff, penrose_diagrams) (5979->5985 families)

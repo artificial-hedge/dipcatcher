@@ -8055,6 +8055,14 @@ from quant_fund.research.benches_w1007 import (
     bench_ising_model_family,
     bench_partition_function_family,
 )
+from quant_fund.research.benches_w1008 import (
+    bench_carnot_cycle_family,
+    bench_critical_phenomena_family,
+    bench_entropy_production_family,
+    bench_fluctuation_dissipation_family,
+    bench_maxwell_relations_family,
+    bench_phase_transitions_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8426,6 +8434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "carnot_cycle": bench_carnot_cycle_family,
+        "maxwell_relations": bench_maxwell_relations_family,
+        "phase_transitions": bench_phase_transitions_family,
+        "critical_phenomena": bench_critical_phenomena_family,
+        "fluctuation_dissipation": bench_fluctuation_dissipation_family,
+        "entropy_production": bench_entropy_production_family,
         "ising_model": bench_ising_model_family,
         "partition_function": bench_partition_function_family,
         "bose_einstein": bench_bose_einstein_family,

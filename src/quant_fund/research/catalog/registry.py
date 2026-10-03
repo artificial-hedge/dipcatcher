@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1008 thermodynamics canon.
+        "carnot_cycle",
+        "maxwell_relations",
+        "phase_transitions",
+        "critical_phenomena",
+        "fluctuation_dissipation",
+        "entropy_production",
         # Wave-1007 statistical-mechanics canon.
         "ising_model",
         "partition_function",
