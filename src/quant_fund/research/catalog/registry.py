@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-777 heavy-traffic canon.
+        "fluid_limit",
+        "heavy_traffic",
+        "diffusion_approx",
+        "kingman_bound",
+        "halfin_whitt",
+        "qed_regime",
         # Wave-776 point-process canon.
         "cox_process",
         "hawkes_point",

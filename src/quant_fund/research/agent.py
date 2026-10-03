@@ -6207,6 +6207,14 @@ from quant_fund.research.benches_w776 import (
     bench_palm_dist_family,
     bench_self_excite_family,
 )
+from quant_fund.research.benches_w777 import (
+    bench_diffusion_approx_family,
+    bench_fluid_limit_family,
+    bench_halfin_whitt_family,
+    bench_heavy_traffic_family,
+    bench_kingman_bound_family,
+    bench_qed_regime_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6586,6 +6594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fluid_limit": bench_fluid_limit_family,
+        "heavy_traffic": bench_heavy_traffic_family,
+        "diffusion_approx": bench_diffusion_approx_family,
+        "kingman_bound": bench_kingman_bound_family,
+        "halfin_whitt": bench_halfin_whitt_family,
+        "qed_regime": bench_qed_regime_family,
         "cox_process": bench_cox_process_family,
         "hawkes_point": bench_hawkes_point_family,
         "self_excite": bench_self_excite_family,
