@@ -1,3 +1,4 @@
+feat(research): wave 778 — loss/vacation-queue canon (engset, erlang_b, erlang_c, pollaczek_khinchine, borel_tanner, takacs_vacation) (4623->4629 families)
 feat(research): wave 777 — heavy-traffic canon (fluid_limit, heavy_traffic, diffusion_approx, kingman_bound, halfin_whitt, qed_regime) (4617->4623 families)
 feat(research): wave 776 — point-process canon (cox_process, hawkes_point, self_excite, marked_point, campbell_thm, palm_dist) (4611->4617 families)
 feat(research): wave 775 — martingale-theory canon (doleans_meas, predictable_proc, local_mart, square_bracket, burkholder_davis, gundy_mart) (4605->4611 families)
