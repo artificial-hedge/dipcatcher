@@ -5599,6 +5599,14 @@ from quant_fund.research.benches_w700 import (
     bench_cat_street_family,
     bench_cat_total_family,
 )
+from quant_fund.research.benches_w701 import (
+    bench_derived_conn_family,
+    bench_derived_integral_family,
+    bench_derived_local_family,
+    bench_derived_noether_family,
+    bench_derived_normal_family,
+    bench_derived_reduced_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5978,6 +5986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_conn": bench_derived_conn_family,
+        "derived_local": bench_derived_local_family,
+        "derived_reduced": bench_derived_reduced_family,
+        "derived_integral": bench_derived_integral_family,
+        "derived_normal": bench_derived_normal_family,
+        "derived_noether": bench_derived_noether_family,
         "cat_pushout": bench_cat_pushout_family,
         "cat_span": bench_cat_span_family,
         "cat_lax": bench_cat_lax_family,

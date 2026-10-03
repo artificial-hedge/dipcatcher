@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-701 derived-geometry-9 canon.
+        "derived_conn",
+        "derived_local",
+        "derived_reduced",
+        "derived_integral",
+        "derived_normal",
+        "derived_noether",
         # Wave-700 category-20 canon.
         "cat_pushout",
         "cat_span",
