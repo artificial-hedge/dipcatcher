@@ -6799,6 +6799,14 @@ from quant_fund.research.benches_w850 import (
     bench_osher_solver_family,
     bench_roe_solver_family,
 )
+from quant_fund.research.benches_w851 import (
+    bench_dg_discretization_family,
+    bench_limiter_tvb_family,
+    bench_modal_basis_family,
+    bench_numerical_flux_dg_family,
+    bench_penalty_dg_family,
+    bench_rkdg_step_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7170,6 +7178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dg_discretization": bench_dg_discretization_family,
+        "numerical_flux_dg": bench_numerical_flux_dg_family,
+        "penalty_dg": bench_penalty_dg_family,
+        "modal_basis": bench_modal_basis_family,
+        "limiter_tvb": bench_limiter_tvb_family,
+        "rkdg_step": bench_rkdg_step_family,
         "roe_solver": bench_roe_solver_family,
         "hllc_solver": bench_hllc_solver_family,
         "ausm_flux": bench_ausm_flux_family,
