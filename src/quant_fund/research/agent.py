@@ -6135,6 +6135,14 @@ from quant_fund.research.benches_w767 import (
     bench_sudakov_min_family,
     bench_talagrand_conc_family,
 )
+from quant_fund.research.benches_w768 import (
+    bench_dw_ldp_family,
+    bench_freidlin_wentzell_family,
+    bench_mogulskii_thm_family,
+    bench_sanov_thm_family,
+    bench_schider_thm_family,
+    bench_varadhan_ldp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6514,6 +6522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "varadhan_ldp": bench_varadhan_ldp_family,
+        "freidlin_wentzell": bench_freidlin_wentzell_family,
+        "dw_ldp": bench_dw_ldp_family,
+        "sanov_thm": bench_sanov_thm_family,
+        "mogulskii_thm": bench_mogulskii_thm_family,
+        "schider_thm": bench_schider_thm_family,
         "slepian_lemma": bench_slepian_lemma_family,
         "fernique_thm": bench_fernique_thm_family,
         "borell_tis": bench_borell_tis_family,
