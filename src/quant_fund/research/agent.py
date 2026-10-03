@@ -6671,6 +6671,14 @@ from quant_fund.research.benches_w834 import (
     bench_poincare_semigroup_family,
     bench_spectral_gap_sem_family,
 )
+from quant_fund.research.benches_w835 import (
+    bench_boolean_model_family,
+    bench_germ_grain_family,
+    bench_intrinsic_volumes_family,
+    bench_miles_matheron_family,
+    bench_poisson_voronoi_family,
+    bench_steiner_formula_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7042,6 +7050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "poisson_voronoi": bench_poisson_voronoi_family,
+        "boolean_model": bench_boolean_model_family,
+        "germ_grain": bench_germ_grain_family,
+        "steiner_formula": bench_steiner_formula_family,
+        "miles_matheron": bench_miles_matheron_family,
+        "intrinsic_volumes": bench_intrinsic_volumes_family,
         "dirichlet_form": bench_dirichlet_form_family,
         "markov_semigroup": bench_markov_semigroup_family,
         "poincare_semigroup": bench_poincare_semigroup_family,
