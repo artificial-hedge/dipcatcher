@@ -7143,6 +7143,14 @@ from quant_fund.research.benches_w893 import (
     bench_pseudospectral_coll_family,
     bench_tau_method_family,
 )
+from quant_fund.research.benches_w894 import (
+    bench_barycentric_wts_family,
+    bench_divid_diff_table_family,
+    bench_floater_hormann_family,
+    bench_hermite_interp_family,
+    bench_lagrange_interp_family,
+    bench_neville_interp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7514,6 +7522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lagrange_interp": bench_lagrange_interp_family,
+        "neville_interp": bench_neville_interp_family,
+        "hermite_interp": bench_hermite_interp_family,
+        "divid_diff_table": bench_divid_diff_table_family,
+        "barycentric_wts": bench_barycentric_wts_family,
+        "floater_hormann": bench_floater_hormann_family,
         "covello_est": bench_covello_est_family,
         "dual_goal_est": bench_dual_goal_est_family,
         "pseudospectral_coll": bench_pseudospectral_coll_family,
