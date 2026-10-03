@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-429 algebraic-K-theory canon.
+        "k0_group",
+        "k1_group",
+        "milnor_k2",
+        "quillen_q",
+        "k_theory_spec",
+        "bass_heller_swan",
         # Wave-428 deformation-theory canon.
         "deformation_functor",
         "schlessinger",
