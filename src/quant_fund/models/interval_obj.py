@@ -5,7 +5,7 @@ from __future__ import annotations
 
 def de_morgan_ivl(has_meet: bool, has_join: bool, has_neg: bool) -> bool:
     """The formal interval I carries a De Morgan
-    algebra structure: 0, 1, meet /\, join \/, neg 1-i
+    algebra structure: 0, 1, meet and, join or, neg 1-i
     with (1-i)(1-i) = i."""
     return has_meet and has_join and has_neg
 
