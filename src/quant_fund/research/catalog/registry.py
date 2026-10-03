@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-614 homotopy-13 canon.
+        "primary_op",
+        "secondary_op",
+        "steenrod_sq",
+        "peterson_stein",
+        "moore_spec",
+        "finite_spectra",
         # Wave-613 arithmetic-geometry-2 canon.
         "witt_vector",
         "witt_teich",
