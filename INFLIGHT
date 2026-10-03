@@ -1,3 +1,4 @@
+feat(research): wave 498 — moduli/Gromov-Witten canon (kuranishi, hilbert_scheme2, quot_scheme, m_bar_gn, stable_map, gromov_witten) (2943->2949 families)
 feat(research): wave 497 — birational-geometry canon (minimal_model, klt_pair, flip_cone, fano_mori, mmp_algorithm, toric_flip) (2937->2943 families)
 feat(research): wave 496 — DAG-deformation canon (derived_deformation, formal_deformation, dag_representation, derived_moduli, tangent_coh, obstruction_2) (2931->2937 families)
 feat(research): wave 495 — infinity-2-category canon (globular_model, opetopic, theta_space, complicial, verity_gray, weak_infty) (2925->2931 families)

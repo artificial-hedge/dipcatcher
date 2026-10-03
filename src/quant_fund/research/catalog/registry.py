@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-498 moduli/Gromov-Witten canon.
+        "kuranishi",
+        "hilbert_scheme2",
+        "quot_scheme",
+        "m_bar_gn",
+        "stable_map",
+        "gromov_witten",
         # Wave-497 birational-geometry canon.
         "minimal_model",
         "klt_pair",
