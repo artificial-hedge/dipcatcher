@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-821 random-measure canon.
+        "random_measure",
+        "integer_measure",
+        "poisson_rm",
+        "compensator_rm",
+        "jump_measure",
+        "sato_measure",
         # Wave-820 semimartingale-decomp canon.
         "doom_decomp",
         "pcdt",
