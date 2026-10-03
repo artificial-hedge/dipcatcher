@@ -8031,6 +8031,14 @@ from quant_fund.research.benches_w1004 import (
     bench_landau_damping_family,
     bench_vlasov_eq_family,
 )
+from quant_fund.research.benches_w1005 import (
+    bench_einstein_equations_family,
+    bench_friedmann_eq_family,
+    bench_gr_birkhoff_family,
+    bench_kerr_metric_family,
+    bench_penrose_diagrams_family,
+    bench_schwarzschild_metric_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8402,6 +8410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "einstein_equations": bench_einstein_equations_family,
+        "schwarzschild_metric": bench_schwarzschild_metric_family,
+        "friedmann_eq": bench_friedmann_eq_family,
+        "kerr_metric": bench_kerr_metric_family,
+        "gr_birkhoff": bench_gr_birkhoff_family,
+        "penrose_diagrams": bench_penrose_diagrams_family,
         "boltzmann_eq": bench_boltzmann_eq_family,
         "vlasov_eq": bench_vlasov_eq_family,
         "bgk_model": bench_bgk_model_family,

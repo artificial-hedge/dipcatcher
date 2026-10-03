@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1005 general-relativity canon.
+        "einstein_equations",
+        "schwarzschild_metric",
+        "friedmann_eq",
+        "kerr_metric",
+        "gr_birkhoff",
+        "penrose_diagrams",
         # Wave-1004 kinetic-theory canon.
         "boltzmann_eq",
         "vlasov_eq",
