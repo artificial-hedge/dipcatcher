@@ -1,3 +1,4 @@
+feat(research): wave 887 — solver/transport canon (epi_rk, gauss_rk, adjoint_sparse, element_free, diffusion_approx_sp, importance_rel) (5271->5277 families)
 feat(research): wave 886 — QMC/tensor canon (faure_seq, importance_mc, gauss_hermite, gauss_laguerre, tensor_train, hiot_decomp) (5265->5271 families)
 feat(research): wave 885 — DG-flux/asymptotics canon (ldg_flux, entropy_stable_dg, wkb_turning, averaging_method, laplace_method, hyperasymptotic) (5259->5265 families)
 feat(research): wave 884 — wavelet-2/spectral-elem canon (wavelet_matrix, second_gen_wavelet, nodal_dg, multidomain_sem, boundary_element, marquina_flux) (5253->5259 families)
