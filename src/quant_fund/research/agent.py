@@ -1669,6 +1669,14 @@ from quant_fund.research.benches_w209 import (
     bench_redundancy_block_family,
     bench_weibull_life_family,
 )
+from quant_fund.research.benches_w210 import (
+    bench_bch_code_family,
+    bench_conv_interleaver_family,
+    bench_crc_check_family,
+    bench_ldpc_decoder_family,
+    bench_polar_code_family,
+    bench_turbo_decoder_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4474,6 +4482,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "fmea_rpn": bench_fmea_rpn_family(),
         "life_stress": bench_life_stress_family(),
         "redundancy_block": bench_redundancy_block_family(),
+        "ldpc_decoder": bench_ldpc_decoder_family(),
+        "turbo_decoder": bench_turbo_decoder_family(),
+        "polar_code": bench_polar_code_family(),
+        "bch_code": bench_bch_code_family(),
+        "crc_check": bench_crc_check_family(),
+        "conv_interleaver": bench_conv_interleaver_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
