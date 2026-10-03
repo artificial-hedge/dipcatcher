@@ -1,3 +1,4 @@
+feat(research): wave 277 — signal-processing-4 canon (stft_istft, chirp_z, fir_window, prony_model, wola_synth, decimate_int) (1635->1641 families)
 feat(research): wave 276 — distributed-systems-3 canon (ra_mutex, token_ring, bully_elect, chord_look, quorum_rw, causal_bcast) (1629->1635 families)
 feat(research): wave 275 — databases-4 canon (columnar_scan, simd_filter, late_materialize, radix_join, graceful_hash, index_intersect) (1623->1629 families)
 feat(research): wave 274 — bioinformatics-2 canon (hmm_profile, star_msa, gc_skew, orf_find, kmer_count, seq_logo) (1617->1623 families)
