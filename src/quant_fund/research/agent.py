@@ -3055,6 +3055,14 @@ from quant_fund.research.benches_w382 import (
     bench_stability_spec_family,
     bench_stone_duality_family,
 )
+from quant_fund.research.benches_w383 import (
+    bench_co_homology_family,
+    bench_em_space_family,
+    bench_loop_space_family,
+    bench_mapping_cone_family,
+    bench_stiefel_whitney_family,
+    bench_transfer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3434,6 +3442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mapping_cone": bench_mapping_cone_family,
+        "loop_space": bench_loop_space_family,
+        "em_space": bench_em_space_family,
+        "co_homology": bench_co_homology_family,
+        "stiefel_whitney": bench_stiefel_whitney_family,
+        "transfer": bench_transfer_family,
         "stone_duality": bench_stone_duality_family,
         "saturation_test": bench_saturation_test_family,
         "omitting_types": bench_omitting_types_family,
