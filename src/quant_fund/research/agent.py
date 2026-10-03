@@ -1991,6 +1991,14 @@ from quant_fund.research.benches_w249 import (
     bench_smith_waterman_family,
     bench_upgma_tree_family,
 )
+from quant_fund.research.benches_w250 import (
+    bench_astar_search_family,
+    bench_bidirectional_dijkstra_family,
+    bench_bron_kerbosch_family,
+    bench_critical_path_family,
+    bench_dinic_flow_family,
+    bench_mincost_flow_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2172,6 +2180,12 @@ def _provenance(
         "needleman_wunsch": bench_needleman_wunsch_family,
         "smith_waterman": bench_smith_waterman_family,
         "upgma_tree": bench_upgma_tree_family,
+        "astar_search": bench_astar_search_family,
+        "bidirectional_dijkstra": bench_bidirectional_dijkstra_family,
+        "bron_kerbosch": bench_bron_kerbosch_family,
+        "critical_path": bench_critical_path_family,
+        "dinic_flow": bench_dinic_flow_family,
+        "mincost_flow": bench_mincost_flow_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

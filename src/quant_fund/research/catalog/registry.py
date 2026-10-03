@@ -2864,6 +2864,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "debruijn_assemble",
         "fm_index",
         "motif_scan",
+        # Wave-250 graph-3 canon.
+        "astar_search",
+        "bidirectional_dijkstra",
+        "bron_kerbosch",
+        "critical_path",
+        "dinic_flow",
+        "mincost_flow",
         "needleman_wunsch",
         "smith_waterman",
         "upgma_tree",
