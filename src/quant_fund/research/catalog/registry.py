@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-751 dimer-2 canon.
+        "kassel_kenyon",
+        "ciucu_dimers",
+        "karl_dimers",
+        "petrov_dimer",
+        "durfee_arctic",
+        "cohn_elkies",
         # Wave-750 dimer/Ising canon.
         "smirnov_ising",
         "chelkak_ising",
