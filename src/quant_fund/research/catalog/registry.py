@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-940 variational-inequality canon.
+        "subgradient_extragradient",
+        "korpelevich_eg",
+        "popov_alg",
+        "tseng_fb",
+        "forward_reflected",
+        "reflected_golden",
         # Wave-939 set-feasibility canon.
         "split_feasibility",
         "cq_algorithm",
