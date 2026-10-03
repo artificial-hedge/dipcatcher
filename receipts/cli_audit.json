@@ -134,10 +134,12 @@
       "remote_ready_json": true,
       "remote_ready_under_drain_exit1": true,
       "remote_respond_kwargs": true,
+      "remote_respond_stream": true,
       "remote_score": true,
       "remote_stored_family": true,
       "remote_verify_dir": true,
       "remote_version_json": true,
+      "respond_stream_local_concat": true,
       "serve_bad_knob_exit2": true,
       "serve_flags_reach_app": true,
       "stream_fallback_flags_forward": true,
@@ -148,11 +150,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "3f40f440726ff5435624441adb5bc7c0e115ddc8",
-  "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. Flagged wart: the command is registered as 'maskedaEval'.",
+  "git_revision": "cf9eee50441e4863bdfeb1c08502f1d0e4060478",
+  "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). respond --stream concatenates Responses delta frames on both surfaces (in-process SDK pairs and remote payload dicts), forwarding flag kwargs verbatim. ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "61e5b3a10d5f53a7b7b39fc9fb01ee8be409db5912dc560930a0d18df58a6444",
+  "receipt_sha256": "dc5aa9387ec70aec8ef52952e175c25ebb202d05aa21d13f12183a3e171735fc",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

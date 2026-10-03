@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
@@ -76,6 +76,20 @@ def _bad_arg(msg: str) -> NoReturn:
     """A flag/value fault — one clean line, exit 2, no traceback."""
     typer.echo(f"error: {msg}", err=True)
     raise typer.Exit(code=2)
+
+
+def _emit_response_deltas(events: Iterable[Any]) -> None:
+    """Print a Responses event stream's text — every ``*.delta`` frame's
+    ``delta`` string (output text and function-call arguments alike),
+    nothing else. Accepts bare payload dicts (remote) or ``(event,
+    payload)`` pairs (in-process SDK)."""
+    for event in events:
+        payload = event[1] if isinstance(event, tuple) else event
+        if isinstance(payload, dict):
+            delta = payload.get("delta")
+            if isinstance(delta, str):
+                typer.echo(delta, nl=False)
+    typer.echo()
 
 
 app = typer.Typer(
@@ -1952,6 +1966,9 @@ def harness_respond(
     tool_choice: str | None = typer.Option(
         None, "--tool-choice", help='"none"/"auto"/"required" or a JSON choice object.'
     ),
+    stream: bool = typer.Option(
+        False, "--stream", help="Emit Responses event deltas instead of one JSON block."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2003,8 +2020,31 @@ def harness_respond(
             tchoice = tc
 
     if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        if stream:
+            events, _cid = _or_exit(
+                lambda: client.responses_create_stream(
+                    items,
+                    model=model,
+                    instructions=instructions,
+                    backend=backend,
+                    byok=byok,
+                    checkpoint_dir=checkpoint_dir,
+                    fallbacks=fallbacks or None,
+                    timeout_s=backend_timeout,
+                    temperature=temperature,
+                    top_p=top_p,
+                    max_output_tokens=max_output_tokens,
+                    metadata=meta,
+                    text_format=tfmt,
+                    tools=tool_list,
+                    tool_choice=tchoice,
+                )
+            )
+            _emit_response_deltas(events)
+            return
         resp, _cid = _or_exit(
-            lambda: _remote_client(remote, api_key, timeout_s).responses_create(
+            lambda: client.responses_create(
                 items,
                 model=model,
                 instructions=instructions,
@@ -2054,6 +2094,10 @@ def harness_respond(
     }
     if tfmt is not None:
         body["text"] = {"format": tfmt}
+    if stream:
+        sevents, _cid = _or_exit(lambda: Fx1Harness().openai_response_stream(body, headers=headers))
+        _emit_response_deltas(sevents)
+        return
     resp, _cid = _or_exit(lambda: Fx1Harness().openai_response(body, headers=headers))
     typer.echo(json.dumps(resp, indent=2))
 
