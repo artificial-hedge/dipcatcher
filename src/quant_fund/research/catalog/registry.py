@@ -2977,6 +2977,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ising_metro",
         "pic_plasma",
         "dmc_solver",
+        # Wave-271 networking-3 canon.
+        "ospf_lsa",
+        "stp_spanning",
+        "vlan_tag",
+        "csma_ca",
+        "icmp_path",
+        "diffserv_qos",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",

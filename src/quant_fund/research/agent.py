@@ -2159,6 +2159,14 @@ from quant_fund.research.benches_w270 import (
     bench_lj_md_family,
     bench_pic_plasma_family,
 )
+from quant_fund.research.benches_w271 import (
+    bench_csma_ca_family,
+    bench_diffserv_qos_family,
+    bench_icmp_path_family,
+    bench_ospf_lsa_family,
+    bench_stp_spanning_family,
+    bench_vlan_tag_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2466,6 +2474,12 @@ def _provenance(
         "ising_metro": bench_ising_metro_family,
         "pic_plasma": bench_pic_plasma_family,
         "dmc_solver": bench_dmc_solver_family,
+        "ospf_lsa": bench_ospf_lsa_family,
+        "stp_spanning": bench_stp_spanning_family,
+        "vlan_tag": bench_vlan_tag_family,
+        "csma_ca": bench_csma_ca_family,
+        "icmp_path": bench_icmp_path_family,
+        "diffserv_qos": bench_diffserv_qos_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
