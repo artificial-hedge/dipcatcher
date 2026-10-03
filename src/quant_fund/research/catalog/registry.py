@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-388 homological-algebra-2 canon.
+        "derived_functor",
+        "ext_compute",
+        "tor_compute",
+        "spectral_seq",
+        "koszul_homology",
+        "mapping_degree",
         # Wave-387 probability-4 canon.
         "uniform_integrability",
         "vitali_conv",

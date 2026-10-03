@@ -1,3 +1,4 @@
+feat(research): wave 388 — homological-algebra-2 canon (derived_functor, ext_compute, tor_compute, spectral_seq, koszul_homology, mapping_degree) (2283->2289 families)
 feat(research): wave 387 — probability-4 canon (uniform_integrability, vitali_conv, ldp_theory, concentration_ineq, kolmogorov_01, prokhorov_metric) (2277->2283 families)
 feat(research): wave 386 — proof-theory-2 canon (sequent_calculus, natural_ded, godel_incomp, interp_proof, proof_complexity, modal_completeness) (2271->2277 families)
 feat(research): wave 385 — commutative-algebra-2 canon (hilbert_samuel, krull_dim, noether_normal, primary_decomp, completion_ring, dimension_fiber) (2265->2271 families)

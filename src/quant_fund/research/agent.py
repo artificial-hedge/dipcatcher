@@ -3095,6 +3095,14 @@ from quant_fund.research.benches_w387 import (
     bench_uniform_integrability_family,
     bench_vitali_conv_family,
 )
+from quant_fund.research.benches_w388 import (
+    bench_derived_functor_family,
+    bench_ext_compute_family,
+    bench_koszul_homology_family,
+    bench_mapping_degree_family,
+    bench_spectral_seq_family,
+    bench_tor_compute_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3474,6 +3482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_functor": bench_derived_functor_family,
+        "ext_compute": bench_ext_compute_family,
+        "tor_compute": bench_tor_compute_family,
+        "spectral_seq": bench_spectral_seq_family,
+        "koszul_homology": bench_koszul_homology_family,
+        "mapping_degree": bench_mapping_degree_family,
         "uniform_integrability": bench_uniform_integrability_family,
         "vitali_conv": bench_vitali_conv_family,
         "ldp_theory": bench_ldp_theory_family,
