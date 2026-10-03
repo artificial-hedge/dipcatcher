@@ -4255,6 +4255,14 @@ from quant_fund.research.benches_w532 import (
     bench_multifractal_formal_family,
     bench_self_similar_family,
 )
+from quant_fund.research.benches_w533 import (
+    bench_besicovitch_family,
+    bench_density_thm_family,
+    bench_marstrand_family,
+    bench_preiss_rect_family,
+    bench_rectifiability_family,
+    bench_tangent_measure_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4634,6 +4642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rectifiability": bench_rectifiability_family,
+        "tangent_measure": bench_tangent_measure_family,
+        "density_thm": bench_density_thm_family,
+        "marstrand": bench_marstrand_family,
+        "besicovitch": bench_besicovitch_family,
+        "preiss_rect": bench_preiss_rect_family,
         "hausdorff_dim": bench_hausdorff_dim_family,
         "box_counting": bench_box_counting_family,
         "self_similar": bench_self_similar_family,

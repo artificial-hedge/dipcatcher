@@ -1,3 +1,4 @@
+feat(research): wave 533 — geometric-measure-theory canon (rectifiability, tangent_measure, density_thm, marstrand, besicovitch, preiss_rect) (3153->3159 families)
 feat(research): wave 532 — fractal-geometry canon (hausdorff_dim, box_counting, self_similar, iterated_function, frostman, multifractal_formal) (3147->3153 families)
 feat(research): wave 531 — bifurcation-theory canon (saddle_node, hopf_bif, period_doubling, neimark_sacker, bogdanov_takens, homoclinic_bif) (3141->3147 families)
 feat(research): wave 530 — nonuniform-hyperbolicity canon (pesin_theory, nonuniform_hyp, dominated_split, osceledets_reg, lyapunov_chart, katok_horseshoe) (3135->3141 families)
