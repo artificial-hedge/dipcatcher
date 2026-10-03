@@ -4135,6 +4135,14 @@ from quant_fund.research.benches_w517 import (
     bench_quantum_rmatrix_family,
     bench_quantum_schur_family,
 )
+from quant_fund.research.benches_w518 import (
+    bench_braid_rep_family,
+    bench_quantum_double_family,
+    bench_ribbon_cat_family,
+    bench_rtt_formalism_family,
+    bench_yang_baxter_family,
+    bench_yangian_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4514,6 +4522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "yang_baxter": bench_yang_baxter_family,
+        "braid_rep": bench_braid_rep_family,
+        "yangian": bench_yangian_family,
+        "rtt_formalism": bench_rtt_formalism_family,
+        "quantum_double": bench_quantum_double_family,
+        "ribbon_cat": bench_ribbon_cat_family,
         "quantum_group": bench_quantum_group_family,
         "crystal_base": bench_crystal_base_family,
         "quantum_rmatrix": bench_quantum_rmatrix_family,
