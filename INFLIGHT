@@ -1,3 +1,4 @@
+feat(research): wave 867 — inverse-problem canon (tikhonov_reg, morozov_dp, l_curve_opt, iter_regularize, tv_denoise, bayes_inverse) (5151->5157 families)
 feat(research): wave 866 — model-order-reduction canon (pod_galerkin, reduced_basis, deim_point, greedy_rb, eim_interp, proper_gen) (5145->5151 families)
 feat(research): wave 865 — a-posteriori error-estimation canon (residual_estimator, zienkiewicz_zhu, recovery_error, dual_weighted_res, goal_oriented, equilibrated_flux) (5139->5145 families)
 feat(research): wave 864 — stochastic-Galerkin/UQ canon (stochastic_galerkin, poly_chaos_uq, intrusive_pce, nonintrusive_pce, stochastic_colloc, stochastic_fem) (5133->5139 families)
