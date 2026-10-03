@@ -4127,6 +4127,14 @@ from quant_fund.research.benches_w516 import (
     bench_weyl_kac_family,
     bench_zhu_algebra_family,
 )
+from quant_fund.research.benches_w517 import (
+    bench_crystal_base_family,
+    bench_jimbo_drin_family,
+    bench_lusztig_can_family,
+    bench_quantum_group_family,
+    bench_quantum_rmatrix_family,
+    bench_quantum_schur_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4506,6 +4514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quantum_group": bench_quantum_group_family,
+        "crystal_base": bench_crystal_base_family,
+        "quantum_rmatrix": bench_quantum_rmatrix_family,
+        "jimbo_drin": bench_jimbo_drin_family,
+        "lusztig_can": bench_lusztig_can_family,
+        "quantum_schur": bench_quantum_schur_family,
         "kac_moody": bench_kac_moody_family,
         "weyl_kac": bench_weyl_kac_family,
         "vertex_alg": bench_vertex_alg_family,

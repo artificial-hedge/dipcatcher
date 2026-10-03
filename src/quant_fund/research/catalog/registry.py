@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-517 quantum-groups canon.
+        "quantum_group",
+        "crystal_base",
+        "quantum_rmatrix",
+        "jimbo_drin",
+        "lusztig_can",
+        "quantum_schur",
         # Wave-516 Kac-Moody/VOA canon.
         "kac_moody",
         "weyl_kac",
