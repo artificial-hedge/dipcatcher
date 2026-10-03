@@ -2087,6 +2087,14 @@ from quant_fund.research.benches_w261 import (
     bench_pure_pursuit_family,
     bench_stanley_family,
 )
+from quant_fund.research.benches_w262 import (
+    bench_mesi_cache_family,
+    bench_numa_alloc_family,
+    bench_ring_allreduce_family,
+    bench_simd_lanes_family,
+    bench_stencil_halo_family,
+    bench_task_dag_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2340,6 +2348,12 @@ def _provenance(
         "stanley": bench_stanley_family,
         "particle_slam": bench_particle_slam_family,
         "frontier_explore": bench_frontier_explore_family,
+        "stencil_halo": bench_stencil_halo_family,
+        "mesi_cache": bench_mesi_cache_family,
+        "ring_allreduce": bench_ring_allreduce_family,
+        "simd_lanes": bench_simd_lanes_family,
+        "task_dag": bench_task_dag_family,
+        "numa_alloc": bench_numa_alloc_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
