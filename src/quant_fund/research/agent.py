@@ -6631,6 +6631,14 @@ from quant_fund.research.benches_w829 import (
     bench_local_time_process_family,
     bench_locator_proc_family,
 )
+from quant_fund.research.benches_w830 import (
+    bench_azuma_ineq_family,
+    bench_bounded_diff_family,
+    bench_efron_stein_family,
+    bench_hoeffding_ineq_family,
+    bench_mcdiarmid_ineq_family,
+    bench_talagrand_ineq_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7002,6 +7010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "azuma_ineq": bench_azuma_ineq_family,
+        "mcdiarmid_ineq": bench_mcdiarmid_ineq_family,
+        "talagrand_ineq": bench_talagrand_ineq_family,
+        "efron_stein": bench_efron_stein_family,
+        "bounded_diff": bench_bounded_diff_family,
+        "hoeffding_ineq": bench_hoeffding_ineq_family,
         "local_time_process": bench_local_time_process_family,
         "bounded_mart": bench_bounded_mart_family,
         "fv_mart": bench_fv_mart_family,
