@@ -6143,6 +6143,14 @@ from quant_fund.research.benches_w768 import (
     bench_schider_thm_family,
     bench_varadhan_ldp_family,
 )
+from quant_fund.research.benches_w769 import (
+    bench_barbour_stein_family,
+    bench_chatt_stein_family,
+    bench_chen_stein_family,
+    bench_ross_stein_family,
+    bench_stein_equation_family,
+    bench_stein_method_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6522,6 +6530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stein_method": bench_stein_method_family,
+        "stein_equation": bench_stein_equation_family,
+        "barbour_stein": bench_barbour_stein_family,
+        "chen_stein": bench_chen_stein_family,
+        "ross_stein": bench_ross_stein_family,
+        "chatt_stein": bench_chatt_stein_family,
         "varadhan_ldp": bench_varadhan_ldp_family,
         "freidlin_wentzell": bench_freidlin_wentzell_family,
         "dw_ldp": bench_dw_ldp_family,
