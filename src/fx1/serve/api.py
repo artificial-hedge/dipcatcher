@@ -136,6 +136,7 @@ from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
+    OPENAI_RESPONSE_TERMINAL,
     ByokOverride,
     OpenAIBatchRequest,
     OpenAIChatRequest,
@@ -167,6 +168,7 @@ from fx1.serve.openai_compat import (
     openai_response_object,
     openai_to_kwargs,
     paged_item_list,
+    response_input_item_dicts,
     response_input_items_for_store,
     response_text_format,
     response_to_kwargs,
@@ -2748,6 +2750,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ft_store: FTJobStore,
     ft_runner: FTJobRunner,
     ft_dir: Path,
+    bg_cancel: dict[str, threading.Event],
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -3627,6 +3630,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _openai_response_core(
         body: OpenAIResponseRequest,
         headers: Mapping[str, str],
+        *,
+        rid: str | None = None,
+        created: int | None = None,
     ) -> tuple[dict[str, Any], str, dict[str, int] | None]:
         """The non-streaming ``/v1/responses`` completion core — shared by
         the route and the ``/v1/batches`` worker. Returns the envelope
@@ -3665,12 +3671,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         call_items = openai_response_call_items(out.tool_calls or [])
         lp_arr = out.logprobs.get("content") if isinstance(out.logprobs, dict) else None
         envelope = openai_response_object(
-            rid=f"resp_{uuid.uuid4().hex}",
+            rid=rid or f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
             content=out.content,
             body=body,
             model=out.model,
             usage=out.usage,
+            created=created,
             call_items=call_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
@@ -4065,8 +4072,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         input items, and ``function_call`` output items are first-class —
         the same tool channel as ``/v1/chat/completions`` under its own
         grammar (a link without the channel answers 501). Same fail-closed
-        rule as chat completions for the rest: ``truncation``/``include``/
-        ``background`` refuse at validation (422).
+        rule as chat completions for the rest: ``truncation``/``include``
+        refuse at validation (422). ``background=true`` (with the default
+        ``store=true`` and no ``stream``) queues the work on the jobs
+        executor and returns the ``queued`` response object — poll
+        ``GET /v1/responses/{id}`` or ``POST .../cancel`` — while
+        ``background``+``store=false`` is a 400 and ``background``+
+        ``stream`` runs the normal stream (a stream is already async).
         ``previous_response_id`` chains the turn onto a stored ``response``
         — the model runs on the parent's stored items + its output + this
         request's input, and the child's ``input_items`` carry the whole
@@ -4140,13 +4152,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             # re-pin in the retrieval index — a replay refreshes the entry
             if body.store is not False:
                 envelope_store.put(env)
-            headers = {
-                "X-Fx1-Completion-Id": str(env["_fx1_completion_id"]),
-                "X-Fx1-Idempotent-Replay": "true",
-            }
-            _rsha = _completion_receipt_sha(headers["X-Fx1-Completion-Id"])
-            if _rsha is not None:
-                headers["X-Fx1-Receipt-Sha256"] = _rsha
+            # a non-terminal background response replays the LIVE envelope —
+            # the queued snapshot in the idem record would be stale
+            if env.get("status") in ("queued", "in_progress"):
+                live = envelope_store.get(str(env.get("id")))
+                if live is not None:
+                    env = {**env, **{k: v for k, v in live.items() if not k.startswith("_fx1_")}}
+            headers = {"X-Fx1-Idempotent-Replay": "true"}
+            if env.get("_fx1_completion_id"):
+                headers["X-Fx1-Completion-Id"] = str(env["_fx1_completion_id"])
+                _rsha = _completion_receipt_sha(headers["X-Fx1-Completion-Id"])
+                if _rsha is not None:
+                    headers["X-Fx1-Receipt-Sha256"] = _rsha
             if body.stream:
                 return StreamingResponse(
                     _resp_sse_from(env, skip),
@@ -4157,6 +4174,139 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 k: v for k, v in env.items() if k not in ("_fx1_completion_id", "_fx1_usage")
             }
             return JSONResponse(out_env, headers=headers)
+        if body.background and not body.stream:
+            if body.store is False:
+                raise ApiError(
+                    400,
+                    "background=true needs store=true — a background response is "
+                    "only reachable through the retrieval index",
+                    code="background_requires_store",
+                )
+            if metrics.draining.is_set():
+                raise ApiError(
+                    503,
+                    "harness is draining — no new work accepted",
+                    code="draining",
+                )
+            # validate the chain anchor at submit so a bad parent fails now,
+            # not in the worker; the same check re-runs inside the core so a
+            # parent deleted mid-flight still fails the work honestly
+            if body.previous_response_id is not None:
+                prev = envelope_store.get(body.previous_response_id)
+                if prev is None or prev.get("object") != "response":
+                    raise ApiError(
+                        400,
+                        f"previous_response_id {body.previous_response_id!r} not "
+                        "found — the chain parent must be a stored response "
+                        "(store=true)",
+                        code="previous_response_not_found",
+                    )
+                submit_items = chained_response_input(
+                    prev,
+                    envelope_store.get_items(body.previous_response_id, "input_items") or [],
+                    body.input,
+                )
+            else:
+                submit_items = response_input_item_dicts(body.input)
+            rid = f"resp_{uuid.uuid4().hex}"
+            queued = openai_response_object(
+                rid=rid,
+                item_id="",
+                content="",
+                body=body,
+                model=body.model,
+                usage=None,
+                status="queued",
+            )
+            envelope_store.put(
+                queued,
+                items={"input_items": response_input_items_for_store(submit_items, rid=rid)},
+            )
+            cancel_ev = threading.Event()
+            bg_cancel[rid] = cancel_ev
+
+            def _bg_run() -> None:
+                inflight.acquire()
+                try:
+                    if cancel_ev.is_set():
+                        return
+                    cur = envelope_store.get(rid)
+                    if cur is not None and cur.get("status") == "queued":
+                        cur["status"] = "in_progress"
+                        envelope_store.put(cur)
+                    try:
+                        env_done, cid_done, usage_done = _openai_response_core(
+                            body, request.headers, rid=rid, created=int(queued["created_at"])
+                        )
+                        if key is not None:
+                            openai_idem_store.put(
+                                key,
+                                body_fp,
+                                _OpenAIIdemRecord(
+                                    envelope={
+                                        **env_done,
+                                        "_fx1_completion_id": cid_done,
+                                        "_fx1_usage": usage_done,
+                                    }
+                                ),
+                            )
+                    except OpenAICompatError as exc:
+                        _bg_fail(
+                            rid,
+                            error={"message": str(exc), "code": exc.code},
+                        )
+                    except ApiError as exc:
+                        _bg_fail(
+                            rid,
+                            error={"message": str(exc.detail), "code": _err_code(exc)},
+                        )
+                    except Exception as exc:  # noqa: BLE001 — worker faults land on the record
+                        _bg_fail(
+                            rid,
+                            error={
+                                "message": f"{type(exc).__name__}: {exc}",
+                                "code": "internal_error",
+                            },
+                        )
+                    else:
+                        if cancel_ev.is_set():
+                            done = envelope_store.get(rid)
+                            if done is not None:
+                                done["status"] = "cancelled"
+                                envelope_store.put(done)
+                finally:
+                    inflight.release()
+                    bg_cancel.pop(rid, None)
+
+            def _bg_fail(response_id: str, *, error: dict[str, Any]) -> None:
+                if cancel_ev.is_set():
+                    return  # the cancel verdict stands
+                cur = envelope_store.get(response_id)
+                if cur is None:
+                    return
+                cur["status"] = "failed"
+                cur["error"] = error
+                envelope_store.put(cur)
+
+            if key is not None:
+                openai_idem_store.put(
+                    key,
+                    body_fp,
+                    _OpenAIIdemRecord(
+                        envelope={
+                            **queued,
+                            "_fx1_completion_id": None,
+                            "_fx1_usage": None,
+                        }
+                    ),
+                )
+            try:
+                jobs_executor.submit(_bg_run)
+            except RuntimeError as exc:  # executor gone (shutdown race)
+                envelope_store.delete(rid)
+                bg_cancel.pop(rid, None)
+                raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+            return JSONResponse(queued, status_code=200)
         try:
             envelope, cid, usage = _openai_response_core(body, request.headers)
         except OpenAICompatError as exc:
@@ -4275,6 +4425,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_response_delete(response_id: str) -> dict[str, Any]:
         """Drop a stored response object from the retrieval index."""
         return _drop_envelope(response_id, object_="response")
+
+    @app.post(
+        "/v1/responses/{response_id}/cancel",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_responses_cancel",
+    )
+    def openai_response_cancel(response_id: str) -> dict[str, Any]:
+        """Cancel a queued or in-progress background response (OpenAI's
+        ``responses.cancel``). The stored envelope flips to ``cancelled``
+        and a running worker is told to discard its result — the model
+        call still lands in the completion log when it had already
+        started. Terminal responses refuse 409; unknown ids 404."""
+        env = _stored_envelope(response_id, object_="response")
+        if env["status"] in OPENAI_RESPONSE_TERMINAL:
+            raise ApiError(
+                409,
+                f"{response_id!r} is already {env['status']} — only queued or "
+                "in_progress responses cancel",
+                code="cancel_terminal",
+            )
+        ev = bg_cancel.get(response_id)
+        if ev is not None:
+            ev.set()
+        env["status"] = "cancelled"
+        envelope_store.put(env)
+        return env
 
     def _request_items(
         envelope_id: str,
@@ -4443,6 +4620,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             if getattr(obj, "stream", False):
                 raise OpenAICompatError(
                     "stream requests are not valid inside a batch",
+                    code="invalid_request",
+                )
+            if getattr(obj, "background", False):
+                raise OpenAICompatError(
+                    "background requests are not valid inside a batch — the "
+                    "batch itself is the async surface",
                     code="invalid_request",
                 )
             if isinstance(obj, OpenAIChatRequest):
@@ -5603,6 +5786,10 @@ def create_app(
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
     # and /v1/responses/{id} — `store=false` keeps a call out of it.
     envelope_store = OpenAIEnvelopeStore(store_max)
+    # Cancel flags for background responses — a set event means the stored
+    # envelope was flipped to ``cancelled`` and the worker must not
+    # overwrite it with a terminal result.
+    _bg_cancel: dict[str, threading.Event] = {}
     jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
     @contextmanager
@@ -6137,6 +6324,7 @@ def create_app(
         envelope_store=envelope_store,
         batch_line_max=batch_line_max,
         file_bytes_max=file_bytes_max,
+        bg_cancel=_bg_cancel,
     )
 
     _mount_receipt_routes(app, receipt_index)

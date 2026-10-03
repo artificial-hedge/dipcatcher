@@ -4365,6 +4365,11 @@
         "additionalProperties": true,
         "description": "POST /v1/responses body \u2014 the Responses surface over the same\ngated pipeline. ``input`` is one string or a list of message items;\n``instructions`` prepends a system message. ``reasoning.effort`` maps\nto the decode hint; ``text.format`` maps to the post-validated\n``response_format`` channel; ``user``/``safety_identifier`` stamp the\naudit record.",
         "properties": {
+          "background": {
+            "default": false,
+            "title": "Background",
+            "type": "boolean"
+          },
           "fx1": {
             "anyOf": [
               {
@@ -11683,7 +11688,7 @@
     },
     "/v1/responses": {
       "post": {
-        "description": "OpenAI Responses API over the same gated pipeline.\n\n``input`` is a string or a list of message items\n(``{type: \"message\", role, content: [{type: \"input_text\", text}]}``\nor the shorthand ``{role, content: \"...\"}``); ``instructions``\nprepends a system turn; ``developer`` roles map to ``system``.\n``max_output_tokens`` lands on the decode cap, ``reasoning.effort``\non the reasoning hint, ``text.format`` on the post-validated\n``response_format`` channel (a violation is a provider-side 502),\n``user``/``safety_identifier``/``metadata`` stamp the audit record.\n\n``tools`` (flattened Responses specs), ``tool_choice``\n(``none``/``auto``/``required`` or ``{type: \"function\", name}``),\n``parallel_tool_calls``, ``function_call``/``function_call_output``\ninput items, and ``function_call`` output items are first-class \u2014\nthe same tool channel as ``/v1/chat/completions`` under its own\ngrammar (a link without the channel answers 501). Same fail-closed\nrule as chat completions for the rest: ``truncation``/``include``/\n``background`` refuse at validation (422).\n``previous_response_id`` chains the turn onto a stored ``response``\n\u2014 the model runs on the parent's stored items + its output + this\nrequest's input, and the child's ``input_items`` carry the whole\nhistory. An unknown, deleted, or ``store=false`` parent fails\nclosed ``400 previous_response_not_found``.\n``store`` governs the retrieval index \u2014 ``store=false`` keeps the\ncall out of ``GET /v1/responses/{id}`` (the audit ledger still\nrecords it).\n``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as\non ``/v1/chat/completions`` (the stream's terminal frame is\n``response.completed``, not ``[DONE]``).",
+        "description": "OpenAI Responses API over the same gated pipeline.\n\n``input`` is a string or a list of message items\n(``{type: \"message\", role, content: [{type: \"input_text\", text}]}``\nor the shorthand ``{role, content: \"...\"}``); ``instructions``\nprepends a system turn; ``developer`` roles map to ``system``.\n``max_output_tokens`` lands on the decode cap, ``reasoning.effort``\non the reasoning hint, ``text.format`` on the post-validated\n``response_format`` channel (a violation is a provider-side 502),\n``user``/``safety_identifier``/``metadata`` stamp the audit record.\n\n``tools`` (flattened Responses specs), ``tool_choice``\n(``none``/``auto``/``required`` or ``{type: \"function\", name}``),\n``parallel_tool_calls``, ``function_call``/``function_call_output``\ninput items, and ``function_call`` output items are first-class \u2014\nthe same tool channel as ``/v1/chat/completions`` under its own\ngrammar (a link without the channel answers 501). Same fail-closed\nrule as chat completions for the rest: ``truncation``/``include``\nrefuse at validation (422). ``background=true`` (with the default\n``store=true`` and no ``stream``) queues the work on the jobs\nexecutor and returns the ``queued`` response object \u2014 poll\n``GET /v1/responses/{id}`` or ``POST .../cancel`` \u2014 while\n``background``+``store=false`` is a 400 and ``background``+\n``stream`` runs the normal stream (a stream is already async).\n``previous_response_id`` chains the turn onto a stored ``response``\n\u2014 the model runs on the parent's stored items + its output + this\nrequest's input, and the child's ``input_items`` carry the whole\nhistory. An unknown, deleted, or ``store=false`` parent fails\nclosed ``400 previous_response_not_found``.\n``store`` governs the retrieval index \u2014 ``store=false`` keeps the\ncall out of ``GET /v1/responses/{id}`` (the audit ledger still\nrecords it).\n``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as\non ``/v1/chat/completions`` (the stream's terminal frame is\n``response.completed``, not ``[DONE]``).",
         "operationId": "openai_responses",
         "parameters": [
           {
@@ -12022,6 +12027,111 @@
           }
         },
         "summary": "Openai Response Retrieve",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/responses/{response_id}/cancel": {
+      "post": {
+        "description": "Cancel a queued or in-progress background response (OpenAI's\n``responses.cancel``). The stored envelope flips to ``cancelled``\nand a running worker is told to discard its result \u2014 the model\ncall still lands in the completion log when it had already\nstarted. Terminal responses refuse 409; unknown ids 404.",
+        "operationId": "openai_responses_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "response_id",
+            "required": true,
+            "schema": {
+              "title": "Response Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Response Cancel",
         "tags": [
           "openai"
         ]

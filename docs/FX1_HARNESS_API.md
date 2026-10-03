@@ -221,6 +221,7 @@ same digested shape the job record embeds.
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
+| `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
 | `GET /v1/responses/{id}/input_items` | the `input` items a stored response ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `input_items.list` |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
@@ -453,11 +454,26 @@ same OpenAI error taxonomy:
   returns. `Last-Event-ID` resume works identically to the chat
   stream: the keyed response replays byte-identically, frames ≤
   the cursor dropped.
-- **Fail-closed surface:** `truncation`, `background`,
+- **Fail-closed surface:** `truncation` and
   `include` members outside
-  `message.output_text.logprobs`, and every other unsupported
-  field refuse 422 at validation; nothing is silently dropped.
-  `store` is honored, not refused (retrieval section below).
+  `message.output_text.logprobs`, plus every other unsupported
+  field, refuse 422 at validation; nothing is silently dropped.
+  `store` and `background` are honored, not refused.
+- **Background calls:** `background: true` returns immediately
+  with a `status="queued"` response object; the model call runs on
+  the harness's job executor (same `inflight` capacity budget as
+  synchronous work — submissions fail closed `503 draining` while
+  the harness drains). Poll `GET /v1/responses/{id}` until
+  `status` lands terminal (`completed` / `failed` / `cancelled` /
+  `incomplete`); `POST /v1/responses/{id}/cancel` flips a live
+  one to `cancelled` (409 `cancel_terminal` once terminal).
+  `background` requires `store` (400 `background_requires_store`
+  otherwise) and can't nest inside a batch line (the batch is
+  already the async surface). `previous_response_id` chains
+  validate at submit AND at run time — a parent deleted
+  mid-flight still fails the work honestly. `stream:true` takes
+  precedence over `background` — a stream is already the async
+  surface, so the combination runs the normal stream.
 - **Stateful chains:** `previous_response_id` chains the turn onto
   a stored `response` — the model runs on the parent's stored
   input items + its output + this request's `input`, and the
@@ -471,10 +487,13 @@ same OpenAI error taxonomy:
   body is 409.
 
 Client-side: `HarnessClient.responses_create` /
-`responses_create_stream` in Python (`Fx1Harness.openai_response` /
-`openai_response_stream` in-process — same `(envelope|events, cid)`
+`responses_create_stream` / `cancel_response` in Python
+(`Fx1Harness.openai_response` / `openai_response_stream` /
+`openai_response_cancel` in-process — same `(envelope|events, cid)`
 returns); `HarnessApiClient.responsesCreate` /
-`responsesCreateStream` in TS.
+`responsesCreateStream` / `cancelResponse` in TS; `fx1 harness
+respond [--background]` / `response-get` / `response-cancel` on the
+CLI.
 
 ### Embeddings (`/v1/embeddings`)
 
