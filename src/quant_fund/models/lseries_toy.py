@@ -8,9 +8,7 @@ def euler_factor_sum(a_p: int, p: int) -> float:
     at s = 0.5 gives 1/(1 - a_p/sqrt(p) + 1) toy."""
     s = 0.5
     fp = float(p)
-    return float(
-        1.0 / (1.0 - a_p * fp ** (-s) + fp ** (1.0 - 2.0 * s))
-    )
+    return float(1.0 / (1.0 - a_p * fp ** (-s) + fp ** (1.0 - 2.0 * s)))
 
 
 def _bench_lseries_toy(seed: int = 0) -> float:

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-428 deformation-theory canon.
+        "deformation_functor",
+        "schlessinger",
+        "tangent_space_def",
+        "obstruction_theory",
+        "versal_deformation",
+        "maurer_cartan",
         # Wave-427 number-theory-4 canon.
         "elliptic_height",
         "mordell_weil",
