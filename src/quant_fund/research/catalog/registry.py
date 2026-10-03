@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-502 dg-category canon.
+        "dg_cat2",
+        "dg_morita",
+        "dg_quotient",
+        "drinfeld_quotient",
+        "dg_nerve",
+        "keller_dg",
         # Wave-501 F-singularity canon.
         "f_regular",
         "f_rational",

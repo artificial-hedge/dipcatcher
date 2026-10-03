@@ -4007,6 +4007,14 @@ from quant_fund.research.benches_w501 import (
     bench_test_ideal_family,
     bench_tight_closure_family,
 )
+from quant_fund.research.benches_w502 import (
+    bench_dg_cat2_family,
+    bench_dg_morita_family,
+    bench_dg_nerve_family,
+    bench_dg_quotient_family,
+    bench_drinfeld_quotient_family,
+    bench_keller_dg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4386,6 +4394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dg_cat2": bench_dg_cat2_family,
+        "dg_morita": bench_dg_morita_family,
+        "dg_quotient": bench_dg_quotient_family,
+        "drinfeld_quotient": bench_drinfeld_quotient_family,
+        "dg_nerve": bench_dg_nerve_family,
+        "keller_dg": bench_keller_dg_family,
         "f_regular": bench_f_regular_family,
         "f_rational": bench_f_rational_family,
         "f_pure": bench_f_pure_family,
