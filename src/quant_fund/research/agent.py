@@ -3847,6 +3847,14 @@ from quant_fund.research.benches_w481 import (
     bench_mtc_motive_family,
     bench_triang_motive_family,
 )
+from quant_fund.research.benches_w482 import (
+    bench_blue_shift_family,
+    bench_chromatic_fracture_family,
+    bench_fgsl_group_family,
+    bench_morava_stabilizer_family,
+    bench_red_shift_family,
+    bench_tate_spec_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4226,6 +4234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chromatic_fracture": bench_chromatic_fracture_family,
+        "morava_stabilizer": bench_morava_stabilizer_family,
+        "fgsl_group": bench_fgsl_group_family,
+        "tate_spec": bench_tate_spec_family,
+        "blue_shift": bench_blue_shift_family,
+        "red_shift": bench_red_shift_family,
         "mtc_motive": bench_mtc_motive_family,
         "fqmotive": bench_fqmotive_family,
         "triang_motive": bench_triang_motive_family,
