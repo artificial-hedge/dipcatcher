@@ -2779,6 +2779,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "deadlock_detect",
         "disk_sched",
         "fs_journal",
+        # Wave-236 graphics canon.
+        "raycaster",
+        "bresenham_line",
+        "scanline_fill",
+        "zbuffer_render",
+        "quaternion_slerp",
+        "bsp_tree",
+        "mvp_transform",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
