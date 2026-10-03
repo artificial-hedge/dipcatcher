@@ -3663,6 +3663,14 @@ from quant_fund.research.benches_w458 import (
     bench_transversal_mat_family,
     bench_tutte_poly_family,
 )
+from quant_fund.research.benches_w459 import (
+    bench_chain_cond_family,
+    bench_denotational_family,
+    bench_fixed_points_ord_family,
+    bench_galois_insertion_family,
+    bench_scott_cpo_family,
+    bench_way_below_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4042,6 +4050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fixed_points_ord": bench_fixed_points_ord_family,
+        "chain_cond": bench_chain_cond_family,
+        "scott_cpo": bench_scott_cpo_family,
+        "way_below": bench_way_below_family,
+        "galois_insertion": bench_galois_insertion_family,
+        "denotational": bench_denotational_family,
         "transversal_mat": bench_transversal_mat_family,
         "matroid_rep": bench_matroid_rep_family,
         "tutte_poly": bench_tutte_poly_family,
