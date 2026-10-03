@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-951 matrix-function canon.
+        "determinant_cofactor",
+        "permanent_matrix",
+        "matrix_exponential",
+        "frechet_derivative",
+        "vec_operator",
+        "kronecker_sum",
         # Wave-950 tensor-algebra canon.
         "tensor_contraction",
         "khatri_rao",
