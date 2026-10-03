@@ -6911,6 +6911,14 @@ from quant_fund.research.benches_w864 import (
     bench_stochastic_fem_family,
     bench_stochastic_galerkin_family,
 )
+from quant_fund.research.benches_w865 import (
+    bench_dual_weighted_res_family,
+    bench_equilibrated_flux_family,
+    bench_goal_oriented_family,
+    bench_recovery_error_family,
+    bench_residual_estimator_family,
+    bench_zienkiewicz_zhu_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7282,6 +7290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "residual_estimator": bench_residual_estimator_family,
+        "zienkiewicz_zhu": bench_zienkiewicz_zhu_family,
+        "recovery_error": bench_recovery_error_family,
+        "dual_weighted_res": bench_dual_weighted_res_family,
+        "goal_oriented": bench_goal_oriented_family,
+        "equilibrated_flux": bench_equilibrated_flux_family,
         "stochastic_galerkin": bench_stochastic_galerkin_family,
         "poly_chaos_uq": bench_poly_chaos_uq_family,
         "intrusive_pce": bench_intrusive_pce_family,
