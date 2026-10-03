@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-526 complex-dynamics canon.
+        "julia_set",
+        "mandelbrot_set",
+        "fatou_set",
+        "sullivan_no_wander",
+        "douady_hubbard",
+        "parabolic_impl",
         # Wave-525 ergodic-theory canon.
         "birkhoff",
         "mean_ergodic",
