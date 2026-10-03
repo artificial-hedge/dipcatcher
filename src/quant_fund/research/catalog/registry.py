@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-586 duality-theory canon.
+        "groth_duality",
+        "dualizing_cmplx",
+        "residue_thm",
+        "verdier_duality",
+        "dualizing_sheaf",
+        "relative_duality",
         # Wave-585 intersection-theory canon.
         "intersection_theory",
         "macpherson_chern",

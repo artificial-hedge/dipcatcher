@@ -4679,6 +4679,14 @@ from quant_fund.research.benches_w585 import (
     bench_picard_group_family,
     bench_weil_divisor_family,
 )
+from quant_fund.research.benches_w586 import (
+    bench_dualizing_cmplx_family,
+    bench_dualizing_sheaf_family,
+    bench_groth_duality_family,
+    bench_relative_duality_family,
+    bench_residue_thm_family,
+    bench_verdier_duality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5058,6 +5066,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "groth_duality": bench_groth_duality_family,
+        "dualizing_cmplx": bench_dualizing_cmplx_family,
+        "residue_thm": bench_residue_thm_family,
+        "verdier_duality": bench_verdier_duality_family,
+        "dualizing_sheaf": bench_dualizing_sheaf_family,
+        "relative_duality": bench_relative_duality_family,
         "intersection_theory": bench_intersection_theory_family,
         "macpherson_chern": bench_macpherson_chern_family,
         "weil_divisor": bench_weil_divisor_family,
