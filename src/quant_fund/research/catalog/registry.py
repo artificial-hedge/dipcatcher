@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-453 higher-algebra-2 canon.
+        "operad_koszul",
+        "bar_cobar",
+        "factor_homology",
+        "hochschild_hom",
+        "deligne_conj",
+        "primitive_elts",
         # Wave-452 geometric-Langlands canon.
         "d_module",
         "geometric_langlands",
