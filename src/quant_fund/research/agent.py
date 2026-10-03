@@ -4751,6 +4751,14 @@ from quant_fund.research.benches_w594 import (
     bench_pro_etale_family,
     bench_shapiro_lemma_family,
 )
+from quant_fund.research.benches_w595 import (
+    bench_conjugate_fil_family,
+    bench_crys_cohom_family,
+    bench_divided_power_family,
+    bench_nygaard_filt_family,
+    bench_pd_envelope_family,
+    bench_syntomic_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5130,6 +5138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "crys_cohom": bench_crys_cohom_family,
+        "syntomic": bench_syntomic_family,
+        "divided_power": bench_divided_power_family,
+        "pd_envelope": bench_pd_envelope_family,
+        "nygaard_filt": bench_nygaard_filt_family,
+        "conjugate_fil": bench_conjugate_fil_family,
         "etale_homotopy": bench_etale_homotopy_family,
         "pro_etale": bench_pro_etale_family,
         "etale_fund": bench_etale_fund_family,
