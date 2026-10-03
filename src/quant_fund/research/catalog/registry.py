@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-873 domain-decomposition canon.
+        "dd_partition",
+        "baldding_dd",
+        "neumann_dd",
+        "feti_dp",
+        "subspace_dd",
+        "asm_precond",
         # Wave-872 preconditioner canon.
         "jacobi_precond",
         "ilut_precond",

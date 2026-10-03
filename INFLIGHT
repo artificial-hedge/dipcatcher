@@ -1,3 +1,4 @@
+feat(research): wave 873 — domain-decomposition canon (dd_partition, baldding_dd, neumann_dd, feti_dp, subspace_dd, asm_precond) (5187->5193 families)
 feat(research): wave 872 — preconditioner canon (jacobi_precond, ilut_precond, ssor_precond, amg_precond, ic_precond, polynomial_precond) (5181->5187 families)
 feat(research): wave 871 — Krylov-solver canon (cg_solver, gmres_solver, bicg_solver, arnoldi_eig, lanczos_eig, lsqr_solver) (5175->5181 families)
 feat(research): wave 870 — optimization canon (newton_method, quasi_newton_lbfgs, augmented_lagrangian, interior_point2, grad_descent_nest, conjugate_opt) (5169->5175 families)
