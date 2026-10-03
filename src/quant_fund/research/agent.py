@@ -7071,6 +7071,14 @@ from quant_fund.research.benches_w884 import (
     bench_second_gen_wavelet_family,
     bench_wavelet_matrix_family,
 )
+from quant_fund.research.benches_w885 import (
+    bench_averaging_method_family,
+    bench_entropy_stable_dg_family,
+    bench_hyperasymptotic_family,
+    bench_laplace_method_family,
+    bench_ldg_flux_family,
+    bench_wkb_turning_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7442,6 +7450,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ldg_flux": bench_ldg_flux_family,
+        "entropy_stable_dg": bench_entropy_stable_dg_family,
+        "wkb_turning": bench_wkb_turning_family,
+        "averaging_method": bench_averaging_method_family,
+        "laplace_method": bench_laplace_method_family,
+        "hyperasymptotic": bench_hyperasymptotic_family,
         "wavelet_matrix": bench_wavelet_matrix_family,
         "second_gen_wavelet": bench_second_gen_wavelet_family,
         "nodal_dg": bench_nodal_dg_family,
