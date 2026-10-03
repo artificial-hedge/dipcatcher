@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-516 Kac-Moody/VOA canon.
+        "kac_moody",
+        "weyl_kac",
+        "vertex_alg",
+        "moonshine_module",
+        "affine_lie",
+        "zhu_algebra",
         # Wave-515 syzygy-theory canon.
         "betti_series",
         "minimal_free",
