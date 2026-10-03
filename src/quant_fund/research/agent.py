@@ -5199,6 +5199,14 @@ from quant_fund.research.benches_w650 import (
     bench_moore_htpy_family,
     bench_neisendorfer_htpy_family,
 )
+from quant_fund.research.benches_w651 import (
+    bench_abelian_cat_family,
+    bench_filtered_cat_family,
+    bench_flat_functor_family,
+    bench_malcev_cat_family,
+    bench_regular_cat_family,
+    bench_sifted_cat2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5578,6 +5586,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "flat_functor": bench_flat_functor_family,
+        "filtered_cat": bench_filtered_cat_family,
+        "sifted_cat2": bench_sifted_cat2_family,
+        "regular_cat": bench_regular_cat_family,
+        "abelian_cat": bench_abelian_cat_family,
+        "malcev_cat": bench_malcev_cat_family,
         "bousfield_htpy": bench_bousfield_htpy_family,
         "dror_htpy": bench_dror_htpy_family,
         "kane_htpy": bench_kane_htpy_family,

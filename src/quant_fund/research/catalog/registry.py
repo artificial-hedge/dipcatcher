@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-651 category-10 canon.
+        "flat_functor",
+        "filtered_cat",
+        "sifted_cat2",
+        "regular_cat",
+        "abelian_cat",
+        "malcev_cat",
         # Wave-650 homotopy-20 canon.
         "bousfield_htpy",
         "dror_htpy",
