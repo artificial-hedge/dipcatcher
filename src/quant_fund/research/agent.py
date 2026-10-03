@@ -7615,6 +7615,14 @@ from quant_fund.research.benches_w952 import (
     bench_spectral_gap_family,
     bench_spectral_radius_family,
 )
+from quant_fund.research.benches_w953 import (
+    bench_bounded_operator_family,
+    bench_isometry_operator_family,
+    bench_operator_adjoint_family,
+    bench_operator_norm_family,
+    bench_positive_operator_family,
+    bench_projection_operator_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7986,6 +7994,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bounded_operator": bench_bounded_operator_family,
+        "operator_norm": bench_operator_norm_family,
+        "operator_adjoint": bench_operator_adjoint_family,
+        "projection_operator": bench_projection_operator_family,
+        "positive_operator": bench_positive_operator_family,
+        "isometry_operator": bench_isometry_operator_family,
         "qr_iteration": bench_qr_iteration_family,
         "power_deflation": bench_power_deflation_family,
         "schur_decomp": bench_schur_decomp_family,

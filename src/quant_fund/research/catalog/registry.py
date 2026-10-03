@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-953 operator-theory canon.
+        "bounded_operator",
+        "operator_norm",
+        "operator_adjoint",
+        "projection_operator",
+        "positive_operator",
+        "isometry_operator",
         # Wave-952 spectral-decomposition canon.
         "qr_iteration",
         "power_deflation",
