@@ -269,7 +269,9 @@ to `GET /harness/completions/{id}` and its sealed
   `gpt-4o`).
 - **Chain knobs:** the `fx1` extension's `fallbacks` /
   `X-Fx1-Fallbacks` (CSV), `checkpoint_dir` / `X-Fx1-Checkpoint-Dir`,
-  `timeout_s`, and `receipt_hashes`.
+  `timeout_s`, and `receipt_hashes` / `X-Fx1-Receipt-Hashes` (CSV of
+  sha256 digests — header citations run the same mounted-store check,
+  `fx1.receipt_hashes` wins, a malformed digest is a fail-closed 400).
 - **Per-request timeout:** `fx1.timeout_s` (body extension) >
   `X-Fx1-Timeout` header (seconds). The header is the wire twin for
   clients that can't edit the JSON payload — same deadline reaching the
