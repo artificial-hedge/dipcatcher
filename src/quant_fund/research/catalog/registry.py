@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-501 F-singularity canon.
+        "f_regular",
+        "f_rational",
+        "f_pure",
+        "f_threshold",
+        "test_ideal",
+        "tight_closure",
         # Wave-500 arithmetic-Langlands canon.
         "local_langlands",
         "harris_taylor",

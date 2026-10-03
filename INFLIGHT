@@ -1,3 +1,4 @@
+feat(research): wave 501 — F-singularity canon (f_regular, f_rational, f_pure, f_threshold, test_ideal, tight_closure) (2961->2967 families)
 feat(research): wave 500 — arithmetic-Langlands canon (local_langlands, harris_taylor, weil_group, langlands_functoriality, epsilon_factor, l_packet) (2955->2961 families)
 feat(research): wave 499 — Hodge-theory canon (hodge_decomp, l2_hodge, mixed_hodge, period_map, vhs_polarized, limit_mhs) (2949->2955 families)
 feat(research): wave 498 — moduli/Gromov-Witten canon (kuranishi, hilbert_scheme2, quot_scheme, m_bar_gn, stable_map, gromov_witten) (2943->2949 families)
