@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-532 fractal-geometry canon.
+        "hausdorff_dim",
+        "box_counting",
+        "self_similar",
+        "iterated_function",
+        "frostman",
+        "multifractal_formal",
         # Wave-531 bifurcation-theory canon.
         "saddle_node",
         "hopf_bif",

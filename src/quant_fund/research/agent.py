@@ -4247,6 +4247,14 @@ from quant_fund.research.benches_w531 import (
     bench_period_doubling_family,
     bench_saddle_node_family,
 )
+from quant_fund.research.benches_w532 import (
+    bench_box_counting_family,
+    bench_frostman_family,
+    bench_hausdorff_dim_family,
+    bench_iterated_function_family,
+    bench_multifractal_formal_family,
+    bench_self_similar_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4626,6 +4634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hausdorff_dim": bench_hausdorff_dim_family,
+        "box_counting": bench_box_counting_family,
+        "self_similar": bench_self_similar_family,
+        "iterated_function": bench_iterated_function_family,
+        "frostman": bench_frostman_family,
+        "multifractal_formal": bench_multifractal_formal_family,
         "saddle_node": bench_saddle_node_family,
         "hopf_bif": bench_hopf_bif_family,
         "period_doubling": bench_period_doubling_family,
