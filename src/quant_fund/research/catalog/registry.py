@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-727 Galois-deformation-2 canon.
+        "galdef_ring",
+        "patching_arg",
+        "taylor_wiles",
+        "breuil_meizard",
+        "gee_kisin",
+        "caruso_lebaron",
         # Wave-726 Galois-deformation canon.
         "jetchev_skinner",
         "wan_sss",
