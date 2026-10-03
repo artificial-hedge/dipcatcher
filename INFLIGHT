@@ -1,3 +1,4 @@
+feat(research): wave 948 — structured-matrix canon (circulant_matrix, companion_matrix, vandermonde_matrix, krylov_matrix, hessenberg_form, hankel_matrix) (5637->5643 families)
 feat(research): wave 947 — spectral-interlacing canon (cauchy_interlace, sylvester_law, haynsworth_inertia, min_max_eig, sturm_sequence, bezout_matrix) (5631->5637 families)
 feat(research): wave 946 — positive-matrix canon (perron_frobenius, douglas_factor, cholesky_piv, matrix_square_root, polar_decomp, sylvester_matrix) (5625->5631 families)
 feat(research): wave 945 — matrix-norm canon (kyfan_norm, schatten_norm, numerical_radius, matrix_det, pfaffian_poly, hankel_op) (5619->5625 families)
