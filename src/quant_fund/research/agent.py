@@ -7079,6 +7079,14 @@ from quant_fund.research.benches_w885 import (
     bench_ldg_flux_family,
     bench_wkb_turning_family,
 )
+from quant_fund.research.benches_w886 import (
+    bench_faure_seq_family,
+    bench_gauss_hermite_family,
+    bench_gauss_laguerre_family,
+    bench_hiot_decomp_family,
+    bench_importance_mc_family,
+    bench_tensor_train_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7450,6 +7458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "faure_seq": bench_faure_seq_family,
+        "importance_mc": bench_importance_mc_family,
+        "gauss_hermite": bench_gauss_hermite_family,
+        "gauss_laguerre": bench_gauss_laguerre_family,
+        "tensor_train": bench_tensor_train_family,
+        "hiot_decomp": bench_hiot_decomp_family,
         "ldg_flux": bench_ldg_flux_family,
         "entropy_stable_dg": bench_entropy_stable_dg_family,
         "wkb_turning": bench_wkb_turning_family,
