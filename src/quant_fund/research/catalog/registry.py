@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-897 ODE-theory canon.
+        "linear_multistep",
+        "dahlquist_test",
+        "explicit_midpoint",
+        "heun_method",
+        "trapezoid_rule",
+        "order_barrier",
         # Wave-896 RK/IVP canon.
         "fehlberg_rk",
         "dormand_prince",
