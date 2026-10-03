@@ -2896,6 +2896,22 @@ from quant_fund.research.benches_w362 import (
     bench_liouville_family,
     bench_residue_calc_family,
 )
+from quant_fund.research.benches_w363 import (
+    bench_baire_category_family,
+    bench_cantor_set_family,
+    bench_egorov_thm_family,
+    bench_fatou_lemma_family,
+    bench_monotone_conv_family,
+    bench_vitali_set_family,
+)
+from quant_fund.research.benches_w364 import (
+    bench_adjoint_op_family,
+    bench_compact_resolvent_family,
+    bench_hahn_banach_family,
+    bench_projection_thm_family,
+    bench_riesz_repr_family,
+    bench_selfadjoint_spectrum_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3275,6 +3291,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hahn_banach": bench_hahn_banach_family,
+        "riesz_repr": bench_riesz_repr_family,
+        "adjoint_op": bench_adjoint_op_family,
+        "selfadjoint_spectrum": bench_selfadjoint_spectrum_family,
+        "compact_resolvent": bench_compact_resolvent_family,
+        "projection_thm": bench_projection_thm_family,
+        "cantor_set": bench_cantor_set_family,
+        "baire_category": bench_baire_category_family,
+        "vitali_set": bench_vitali_set_family,
+        "egorov_thm": bench_egorov_thm_family,
+        "fatou_lemma": bench_fatou_lemma_family,
+        "monotone_conv": bench_monotone_conv_family,
         "cauchy_integral": bench_cauchy_integral_family,
         "residue_calc": bench_residue_calc_family,
         "laurent_series": bench_laurent_series_family,

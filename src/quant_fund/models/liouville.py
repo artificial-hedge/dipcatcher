@@ -23,8 +23,11 @@ def _bench_liouville(seed: int = 0) -> float:
         checks.append(abs(cauchy_derivative(lambda z: np.sin(z), 0.0, r)) <= bound + 1e-9)
     # Liouville heuristic: a constant function has derivative 0 everywhere
     checks.append(abs(cauchy_derivative(lambda z: np.full_like(z, 2.5), 0.3, 1.0)) < 1e-9)
-    # maximum modulus: max |z^3 - 2z| on |z|<=1 occurs on boundary, value at interior less
-    f = lambda z: z**3 - 2 * z
+
+    # maximum modulus: max |z^3 - 2z| on |z|<=1 occurs on boundary, interior less
+    def f(z: np.ndarray) -> np.ndarray:
+        return np.asarray(z**3 - 2 * z)
+
     th = np.linspace(0, 2 * np.pi, 2000)
     m_b = float(np.max(np.abs(f(np.exp(1j * th)))))
     checks.append(m_b > abs(f(0.5)))
