@@ -5543,6 +5543,14 @@ from quant_fund.research.benches_w693 import (
     bench_derived_represent_family,
     bench_derived_smooth2_family,
 )
+from quant_fund.research.benches_w694 import (
+    bench_motivic_atiyah_family,
+    bench_motivic_coniveau_family,
+    bench_motivic_deligne_family,
+    bench_motivic_residue_family,
+    bench_motivic_trace_family,
+    bench_motivic_transfer2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5922,6 +5930,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_trace": bench_motivic_trace_family,
+        "motivic_transfer2": bench_motivic_transfer2_family,
+        "motivic_coniveau": bench_motivic_coniveau_family,
+        "motivic_atiyah": bench_motivic_atiyah_family,
+        "motivic_deligne": bench_motivic_deligne_family,
+        "motivic_residue": bench_motivic_residue_family,
         "derived_etale": bench_derived_etale_family,
         "derived_flat": bench_derived_flat_family,
         "derived_smooth2": bench_derived_smooth2_family,
