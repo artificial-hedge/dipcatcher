@@ -1,3 +1,4 @@
+feat(research): wave 916 — data-structures-2 canon (soft_heap, hollow_heap, rank_pairing, hollow_dsu, da_trie, fst_index) (5445->5451 families)
 feat(research): wave 915 — BVP/tree-exotics canon (superposition_bvp, continuation_bvp, robbins_bvp, bvp_eigen, loser_tree, fusion_tree) (5439->5445 families)
 feat(research): wave 914 — RK/BVP-methods-2 canon (ralston_rk, verner_rk, ralston_second, runge_kutta4, invariant_imbedding, green_function_bvp) (5433->5439 families)
 feat(research): wave 913 — interpolation-3 canon (scattered_interp, spline_interp, monotone_interp, akima_interp, pchip_interp, makima_interp) (5427->5433 families)

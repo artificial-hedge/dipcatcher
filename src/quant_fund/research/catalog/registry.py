@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-916 data-structures-2 canon.
+        "soft_heap",
+        "hollow_heap",
+        "rank_pairing",
+        "hollow_dsu",
+        "da_trie",
+        "fst_index",
         # Wave-915 BVP/tree-exotics canon.
         "superposition_bvp",
         "continuation_bvp",
