@@ -3351,6 +3351,14 @@ from quant_fund.research.benches_w419 import (
     bench_thom_space_family,
     bench_vector_bundle_family,
 )
+from quant_fund.research.benches_w420 import (
+    bench_dedekind_zeta_family,
+    bench_dirichlet_unit_family,
+    bench_ideal_class_family,
+    bench_minkowski_bound_family,
+    bench_regulator_family,
+    bench_splitting_prime_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3730,6 +3738,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dirichlet_unit": bench_dirichlet_unit_family,
+        "regulator": bench_regulator_family,
+        "ideal_class": bench_ideal_class_family,
+        "minkowski_bound": bench_minkowski_bound_family,
+        "dedekind_zeta": bench_dedekind_zeta_family,
+        "splitting_prime": bench_splitting_prime_family,
         "serre_fibration": bench_serre_fibration_family,
         "path_fibration": bench_path_fibration_family,
         "bundle_section": bench_bundle_section_family,
