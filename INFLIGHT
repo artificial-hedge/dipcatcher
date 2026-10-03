@@ -1,3 +1,4 @@
+feat(research): wave 294 — compiler-4 canon (tree_cover, modulo_sched, jump_thread, tail_dup, cfg_simplify, bb_reorder) (1737->1743 families)
 feat(research): wave 293 — graphics-3 canon (deferred_shade, sdf_raymarch, frustum_cull, lod_select, env_map, shadow_pcf) (1731->1737 families)
 feat(research): wave 292 — networking-4 canon (quic_streams, tls13_trans, qpack_pack, wg_ik, doh_wire, sctp_tsn) (1725->1731 families)
 feat(research): wave 291 — VLSI/EDA canon (netlist_parse, sta_timing, a_star_route, drc_check, place_quadratic, levelize) (1719->1725 families)

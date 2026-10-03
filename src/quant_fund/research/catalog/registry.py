@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-294 compiler-4 canon.
+        "tree_cover",
+        "modulo_sched",
+        "jump_thread",
+        "tail_dup",
+        "cfg_simplify",
+        "bb_reorder",
         # Wave-293 graphics-3 canon.
         "deferred_shade",
         "sdf_raymarch",
