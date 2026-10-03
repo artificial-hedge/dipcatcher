@@ -1,3 +1,4 @@
+feat(research): wave 434 — Langlands-toy canon (satake_iso, hecke_operator, langlands_dual, eisenstein_srs, automorphic_rep, fourier_coeff) (2559->2565 families)
 feat(research): wave 433 — p-adic-geometry canon (rigid_analytic, berkovich_space, perfectoid_space, adic_space, etale_ph2, diamond_toy) (2553->2559 families)
 feat(research): wave 432 — spectral-sequences-3 canon (atiyah_hirzebruch, serre_ss3, leary_ss, descent_ss, motivic_ss, vanishing_ss) (2547->2553 families)
 feat(research): wave 431 — motivic-homotopy canon (a1_homotopy, motivic_sphere, morel_degree, voevodsky_motive, slice_filtration, milnor_operations) (2541->2547 families)
