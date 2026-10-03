@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/corpus_real_drill.py",
-  "receipt_sha256": "e02ade2a7628dddd9e0669998ffdc7e9d0b7e93272cc1ba7adea60583d499b8d",
+  "receipt_sha256": "0318c81d28c53ce333c2c97f35eac3c9cf0323d370cbc99d7450a70767f786a2",
   "replay": {
     "argv": [
       "scripts/corpus_real_drill.py",
@@ -17,7 +17,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/corpus_real_drill.json",
-        "sha256": "25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e"
+        "sha256": "c05393795df5af2153068456ff5d3665c75a496f7f50cdd9b114a584748cc3f6"
       }
     ],
     "input_tapes": [
