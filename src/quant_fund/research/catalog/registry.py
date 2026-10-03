@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-633 motivic-11 canon.
+        "motivic_coho2",
+        "cone_theorem",
+        "motivic_landweber",
+        "motivic_abelian",
+        "motivic_compact",
+        "contr_rational",
         # Wave-632 witt-vectors-2 canon.
         "witt_len2",
         "big_witt",
