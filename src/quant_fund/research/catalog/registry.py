@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1003 MHD/plasma canon.
+        "mhd_equations",
+        "alfven_waves",
+        "parker_solar_wind",
+        "magnetic_reconnection",
+        "frozen_flux",
+        "elsaesser_vars",
         # Wave-1002 turbulence canon.
         "kolmogorov_theory",
         "reynolds_decomp",
