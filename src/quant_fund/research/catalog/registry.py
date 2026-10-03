@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-780 queueing-network canon.
+        "bcmp_net",
+        "mean_value",
+        "convoy_net",
+        "insensitive_thm",
+        "kaufman_roberts",
+        "orku_loss",
         # Wave-779 matrix-analytic canon.
         "neuts_map",
         "phase_type",
