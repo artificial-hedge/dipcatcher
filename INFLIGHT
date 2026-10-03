@@ -1,3 +1,4 @@
+feat(research): wave 485 — p-adic-4 canon (lubin_tate2, bc_space, local_shimura, scholze_weinstein, fargues_curve2, banach_colmez2) (2865->2871 families)
 feat(research): wave 484 — synthetic-math-2 canon (internal_univ, virtual_hodge, stein_space, formal_model, univalent_found, synth_stable) (2859->2865 families)
 feat(research): wave 483 — homotopy-10 canon (steenrod_ops, dyer_lashof, bar_spec, free_loop, sullivan_min, loop_functor) (2853->2859 families)
 feat(research): wave 482 — chromatic-4 canon (chromatic_fracture, morava_stabilizer, fgsl_group, tate_spec, blue_shift, red_shift) (2847->2853 families)

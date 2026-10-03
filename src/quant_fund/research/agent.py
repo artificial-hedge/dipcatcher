@@ -3871,6 +3871,14 @@ from quant_fund.research.benches_w484 import (
     bench_univalent_found_family,
     bench_virtual_hodge_family,
 )
+from quant_fund.research.benches_w485 import (
+    bench_banach_colmez2_family,
+    bench_bc_space_family,
+    bench_fargues_curve2_family,
+    bench_local_shimura_family,
+    bench_lubin_tate2_family,
+    bench_scholze_weinstein_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4250,6 +4258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lubin_tate2": bench_lubin_tate2_family,
+        "bc_space": bench_bc_space_family,
+        "local_shimura": bench_local_shimura_family,
+        "scholze_weinstein": bench_scholze_weinstein_family,
+        "fargues_curve2": bench_fargues_curve2_family,
+        "banach_colmez2": bench_banach_colmez2_family,
         "internal_univ": bench_internal_univ_family,
         "virtual_hodge": bench_virtual_hodge_family,
         "stein_space": bench_stein_space_family,
