@@ -1,3 +1,4 @@
+feat(research): wave 850 — Riemann-solver canon (roe_solver, hllc_solver, ausm_flux, lax_friedrichs, godunov_exact, osher_solver) (5049->5055 families)
 feat(research): wave 849 — finite-volume canon (fdm_grid, compact_scheme, crank_nicholson2, upwind_scheme, muscl_reconstruct, flux_splitting) (5043->5049 families)
 feat(research): wave 848 — finite-element canon (fem_assembly, isoparametric_map, quadrature_rules, triangular_basis, edge_elements, dof_management) (5037->5043 families)
 feat(research): wave 847 — perturbation-theory canon (regular_perturbation, singular_perturbation, matched_asymptotic, multiple_scales, lindstedt_poincare, boundary_layer) (5031->5037 families)
