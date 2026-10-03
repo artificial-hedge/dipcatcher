@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-290 chem-informatics canon.
+        "smiles_parse",
+        "morgan_fp",
+        "tanimoto",
+        "mol_descriptors",
+        "substruct",
+        "ring_detect",
         # Wave-289 category-theory canon.
         "fin_cat",
         "functor_check",

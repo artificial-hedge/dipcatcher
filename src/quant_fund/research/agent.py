@@ -2311,6 +2311,14 @@ from quant_fund.research.benches_w289 import (
     bench_monad_laws_family,
     bench_nat_trans_family,
 )
+from quant_fund.research.benches_w290 import (
+    bench_mol_descriptors_family,
+    bench_morgan_fp_family,
+    bench_ring_detect_family,
+    bench_smiles_parse_family,
+    bench_substruct_family,
+    bench_tanimoto_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2690,6 +2698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "smiles_parse": bench_smiles_parse_family,
+        "morgan_fp": bench_morgan_fp_family,
+        "tanimoto": bench_tanimoto_family,
+        "mol_descriptors": bench_mol_descriptors_family,
+        "substruct": bench_substruct_family,
+        "ring_detect": bench_ring_detect_family,
         "fin_cat": bench_fin_cat_family,
         "functor_check": bench_functor_check_family,
         "nat_trans": bench_nat_trans_family,
