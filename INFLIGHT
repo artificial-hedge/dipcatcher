@@ -1,3 +1,4 @@
+feat(research): wave 354 — algebraic-geometry-4 canon (sheaf_gluing, local_ring_zn, dedekind_check, divisor_group, genus_riemann, moduli_naive) (2080->2086 families)
 feat(research): wave 353 — ODE-theory canon (picard_lindelof, gronwall_lemma, sturm_liouville, phase_plane, lyapunov_stability, variation_params) (2074->2080 families)
 feat(research): wave 352 — Lie-theory canon (cartan_matrix, weyl_group_a2, killing_form, root_lattice_a2, sl2_structure, su2_algebra) (2068->2074 families)
 feat(research): wave 351 — functional-analysis canon (banach_fixed, spectral_theorem, lp_duality, fourier_finite, compact_operator, gram_schmidt) (2062->2068 families)

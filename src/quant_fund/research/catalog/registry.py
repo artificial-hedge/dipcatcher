@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-354 algebraic-geometry-4 canon.
+        "sheaf_gluing",
+        "local_ring_zn",
+        "dedekind_check",
+        "divisor_group",
+        "genus_riemann",
+        "moduli_naive",
         # Wave-353 ODE-theory canon.
         "picard_lindelof",
         "gronwall_lemma",
