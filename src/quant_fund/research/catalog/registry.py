@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-899 interpolation canon.
+        "cardinal_interp",
+        "bernstein_form",
+        "shanks_trans",
+        "chebyshev_interp",
+        "osculating_interp",
+        "rational_interp",
         # Wave-898 BVP canon.
         "shooting_bvp",
         "multiple_shooting",
