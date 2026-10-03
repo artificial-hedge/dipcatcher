@@ -2959,6 +2959,14 @@ from quant_fund.research.benches_w370 import (
     bench_turan_theorem_family,
     bench_tutte_berge_family,
 )
+from quant_fund.research.benches_w371 import (
+    bench_degree_mod2_family,
+    bench_handle_decomp_family,
+    bench_morse_theory_family,
+    bench_poincare_hopf_family,
+    bench_regular_value_family,
+    bench_transversality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3338,6 +3346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "morse_theory": bench_morse_theory_family,
+        "transversality": bench_transversality_family,
+        "regular_value": bench_regular_value_family,
+        "degree_mod2": bench_degree_mod2_family,
+        "handle_decomp": bench_handle_decomp_family,
+        "poincare_hopf": bench_poincare_hopf_family,
         "tutte_berge": bench_tutte_berge_family,
         "dirac_ore": bench_dirac_ore_family,
         "turan_theorem": bench_turan_theorem_family,
