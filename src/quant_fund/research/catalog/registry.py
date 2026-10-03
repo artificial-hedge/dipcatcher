@@ -3019,6 +3019,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "chord_look",
         "quorum_rw",
         "causal_bcast",
+        # Wave-277 signal-processing-4 canon.
+        "stft_istft",
+        "chirp_z",
+        "fir_window",
+        "prony_model",
+        "wola_synth",
+        "decimate_int",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",

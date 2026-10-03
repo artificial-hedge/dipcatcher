@@ -2207,6 +2207,14 @@ from quant_fund.research.benches_w276 import (
     bench_ra_mutex_family,
     bench_token_ring_family,
 )
+from quant_fund.research.benches_w277 import (
+    bench_chirp_z_family,
+    bench_decimate_int_family,
+    bench_fir_window_family,
+    bench_prony_model_family,
+    bench_stft_istft_family,
+    bench_wola_synth_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2550,6 +2558,12 @@ def _provenance(
         "chord_look": bench_chord_look_family,
         "quorum_rw": bench_quorum_rw_family,
         "causal_bcast": bench_causal_bcast_family,
+        "stft_istft": bench_stft_istft_family,
+        "chirp_z": bench_chirp_z_family,
+        "fir_window": bench_fir_window_family,
+        "prony_model": bench_prony_model_family,
+        "wola_synth": bench_wola_synth_family,
+        "decimate_int": bench_decimate_int_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
