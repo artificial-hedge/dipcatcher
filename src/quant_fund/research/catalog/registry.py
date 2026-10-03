@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-584 condensed-3 canon.
+        "clausen_scholze2",
+        "solid_cohom",
+        "nuclear_space",
+        "analytic_sheaf",
+        "solid_tensor2",
+        "proetale_site2",
         # Wave-583 motivic-6 canon.
         "motivic_base_change",
         "six_op_motivic",
