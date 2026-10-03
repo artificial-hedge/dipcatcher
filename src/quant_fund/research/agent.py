@@ -2800,6 +2800,14 @@ from quant_fund.research.benches_w350 import (
     bench_regular_rep_family,
     bench_schur_ortho_family,
 )
+from quant_fund.research.benches_w351 import (
+    bench_banach_fixed_family,
+    bench_compact_operator_family,
+    bench_fourier_finite_family,
+    bench_gram_schmidt_family,
+    bench_lp_duality_family,
+    bench_spectral_theorem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3179,6 +3187,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "banach_fixed": bench_banach_fixed_family,
+        "spectral_theorem": bench_spectral_theorem_family,
+        "lp_duality": bench_lp_duality_family,
+        "fourier_finite": bench_fourier_finite_family,
+        "compact_operator": bench_compact_operator_family,
+        "gram_schmidt": bench_gram_schmidt_family,
         "character_table_s3": bench_character_table_s3_family,
         "perm_rep": bench_perm_rep_family,
         "schur_ortho": bench_schur_ortho_family,

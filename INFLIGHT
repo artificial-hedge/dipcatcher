@@ -1,3 +1,4 @@
+feat(research): wave 351 — functional-analysis canon (banach_fixed, spectral_theorem, lp_duality, fourier_finite, compact_operator, gram_schmidt) (2062->2068 families)
 feat(research): wave 350 — representation-theory-2 canon (character_table_s3, perm_rep, schur_ortho, induced_rep, fourier_sn, regular_rep) (2056->2062 families)
 feat(research): wave 349 — algebraic-geometry-3 canon (zariski_topo, projective_plane, bezout_bezout, variety_dim, monomial_ideal, hilbert_poly) (2050->2056 families)
 feat(research): wave 348 — graph-theory/combinatorics-2 canon (graph_coloring, euler_trail, matroid_greedy, planar_check, poset_dimension, ramsey_r33) (2044->2050 families)
