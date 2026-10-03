@@ -6031,6 +6031,14 @@ from quant_fund.research.benches_w754 import (
     bench_hara_hara_family,
     bench_sokal_bcc_family,
 )
+from quant_fund.research.benches_w755 import (
+    bench_barlow_ust_family,
+    bench_kassel_wu_family,
+    bench_kenyon_wilson_family,
+    bench_lejan_loop_family,
+    bench_lupu_loop_family,
+    bench_lyons_peres_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6410,6 +6418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lupu_loop": bench_lupu_loop_family,
+        "lejan_loop": bench_lejan_loop_family,
+        "kassel_wu": bench_kassel_wu_family,
+        "kenyon_wilson": bench_kenyon_wilson_family,
+        "barlow_ust": bench_barlow_ust_family,
+        "lyons_peres": bench_lyons_peres_family,
         "sokal_bcc": bench_sokal_bcc_family,
         "caracciolo_pelissetto": bench_caracciolo_pelissetto_family,
         "grimmett_rc": bench_grimmett_rc_family,
