@@ -2857,6 +2857,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "atomics_tas",
         "bakery_lock",
         "channel_select",
+        # Wave-248 formal-language canon.
+        "brzozowski_deriv",
+        "cellular_automata",
+        "dfa_equiv",
+        "mealy_moore",
+        "pda_sim",
+        "turing_machine",
         "peterson_lock",
         "rw_lock",
         "work_stealing",
