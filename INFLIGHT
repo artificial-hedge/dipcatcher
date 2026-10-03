@@ -1,3 +1,4 @@
+feat(research): wave 458 — matroid-3 canon (transversal_mat, matroid_rep, tutte_poly, matroid_minor, regular_mat, delta_matroid) (2703->2709 families)
 feat(research): wave 457 — double-category/proarrow canon (proarrow, virtual_equip, fibrant_double, tabulation, companion_conj, framed_bicat) (2697->2703 families)
 feat(research): wave 456 — pure-motives canon (chow_motive, nori_motive, num_equiv, standard_conj, voev_motive, tate_motive) (2691->2697 families)
 feat(research): wave 455 — synthetic-math canon (cubical_path, hcomp_fill, glue_types, interval_obj, kan_op, transport_coe) (2685->2691 families)

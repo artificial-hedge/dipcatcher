@@ -3655,6 +3655,14 @@ from quant_fund.research.benches_w457 import (
     bench_tabulation_family,
     bench_virtual_equip_family,
 )
+from quant_fund.research.benches_w458 import (
+    bench_delta_matroid_family,
+    bench_matroid_minor_family,
+    bench_matroid_rep_family,
+    bench_regular_mat_family,
+    bench_transversal_mat_family,
+    bench_tutte_poly_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4034,6 +4042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transversal_mat": bench_transversal_mat_family,
+        "matroid_rep": bench_matroid_rep_family,
+        "tutte_poly": bench_tutte_poly_family,
+        "matroid_minor": bench_matroid_minor_family,
+        "regular_mat": bench_regular_mat_family,
+        "delta_matroid": bench_delta_matroid_family,
         "proarrow": bench_proarrow_family,
         "virtual_equip": bench_virtual_equip_family,
         "fibrant_double": bench_fibrant_double_family,
