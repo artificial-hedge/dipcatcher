@@ -7335,6 +7335,14 @@ from quant_fund.research.benches_w917 import (
     bench_shell_sort_family,
     bench_skew_list_family,
 )
+from quant_fund.research.benches_w918 import (
+    bench_fractional_cascade_family,
+    bench_free_list_family,
+    bench_halfplane_isect_family,
+    bench_object_pool_family,
+    bench_range_min_query_family,
+    bench_welzl_circle_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7706,6 +7714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fractional_cascade": bench_fractional_cascade_family,
+        "range_min_query": bench_range_min_query_family,
+        "free_list": bench_free_list_family,
+        "object_pool": bench_object_pool_family,
+        "welzl_circle": bench_welzl_circle_family,
+        "halfplane_isect": bench_halfplane_isect_family,
         "chained_hash": bench_chained_hash_family,
         "linear_probe": bench_linear_probe_family,
         "bucket_sort": bench_bucket_sort_family,
