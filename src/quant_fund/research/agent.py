@@ -6583,6 +6583,14 @@ from quant_fund.research.benches_w823 import (
     bench_support_law_family,
     bench_tight_law_family,
 )
+from quant_fund.research.benches_w824 import (
+    bench_convex_order_family,
+    bench_first_order_dom_family,
+    bench_hazard_rate_order_family,
+    bench_second_order_dom_family,
+    bench_supermodular_order_family,
+    bench_usual_stoch_order_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6954,6 +6962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "usual_stoch_order": bench_usual_stoch_order_family,
+        "first_order_dom": bench_first_order_dom_family,
+        "second_order_dom": bench_second_order_dom_family,
+        "convex_order": bench_convex_order_family,
+        "hazard_rate_order": bench_hazard_rate_order_family,
+        "supermodular_order": bench_supermodular_order_family,
         "support_law": bench_support_law_family,
         "polish_law": bench_polish_law_family,
         "tight_law": bench_tight_law_family,
