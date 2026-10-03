@@ -7183,6 +7183,14 @@ from quant_fund.research.benches_w898 import (
     bench_riccati_bvp_family,
     bench_shooting_bvp_family,
 )
+from quant_fund.research.benches_w899 import (
+    bench_bernstein_form_family,
+    bench_cardinal_interp_family,
+    bench_chebyshev_interp_family,
+    bench_osculating_interp_family,
+    bench_rational_interp_family,
+    bench_shanks_trans_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7554,6 +7562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cardinal_interp": bench_cardinal_interp_family,
+        "bernstein_form": bench_bernstein_form_family,
+        "shanks_trans": bench_shanks_trans_family,
+        "chebyshev_interp": bench_chebyshev_interp_family,
+        "osculating_interp": bench_osculating_interp_family,
+        "rational_interp": bench_rational_interp_family,
         "shooting_bvp": bench_shooting_bvp_family,
         "multiple_shooting": bench_multiple_shooting_family,
         "collocation_bvp": bench_collocation_bvp_family,
