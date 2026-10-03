@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-849 finite-volume canon.
+        "fdm_grid",
+        "compact_scheme",
+        "crank_nicholson2",
+        "upwind_scheme",
+        "muscl_reconstruct",
+        "flux_splitting",
         # Wave-848 finite-element canon.
         "fem_assembly",
         "isoparametric_map",

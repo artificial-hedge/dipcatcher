@@ -6783,6 +6783,14 @@ from quant_fund.research.benches_w848 import (
     bench_quadrature_rules_family,
     bench_triangular_basis_family,
 )
+from quant_fund.research.benches_w849 import (
+    bench_compact_scheme_family,
+    bench_crank_nicholson2_family,
+    bench_fdm_grid_family,
+    bench_flux_splitting_family,
+    bench_muscl_reconstruct_family,
+    bench_upwind_scheme_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7154,6 +7162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fdm_grid": bench_fdm_grid_family,
+        "compact_scheme": bench_compact_scheme_family,
+        "crank_nicholson2": bench_crank_nicholson2_family,
+        "upwind_scheme": bench_upwind_scheme_family,
+        "muscl_reconstruct": bench_muscl_reconstruct_family,
+        "flux_splitting": bench_flux_splitting_family,
         "fem_assembly": bench_fem_assembly_family,
         "isoparametric_map": bench_isoparametric_map_family,
         "quadrature_rules": bench_quadrature_rules_family,
