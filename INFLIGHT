@@ -1,3 +1,4 @@
+feat(research): wave 942 — primal-dual canon (primal_dual_hybrid, vu_condat, backward_forward, malitsky_golden, mann_iter, ishikawa_iter) (5601->5607 families)
 feat(research): wave 941 — nonsmooth-Newton canon (limiting_subdiff, proximal_subdiff, ekeland_var, monteiro_semismooth, semismooth_newton, augmented_lagr) (5595->5601 families)
 feat(research): wave 940 — variational-inequality canon (subgradient_extragradient, korpelevich_eg, popov_alg, tseng_fb, forward_reflected, reflected_golden) (5589->5595 families)
 feat(research): wave 939 — set-feasibility canon (split_feasibility, cq_algorithm, dykstra_proj, haugazeau_proj, parallel_prox, halpern_iter) (5583->5589 families)
