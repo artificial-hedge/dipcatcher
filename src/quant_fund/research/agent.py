@@ -1725,6 +1725,14 @@ from quant_fund.research.benches_w216 import (
     bench_wang_landau_family,
     bench_wham_family,
 )
+from quant_fund.research.benches_w217 import (
+    bench_cubature_kalman_family,
+    bench_hinf_filter_family,
+    bench_huber_filter_family,
+    bench_mhe_family,
+    bench_particle_smoother_family,
+    bench_variational_bayes_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4572,6 +4580,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "metadynamics": bench_metadynamics_family(),
         "wham": bench_wham_family(),
         "thermo_integration": bench_thermo_integration_family(),
+        "hinf_filter": bench_hinf_filter_family(),
+        "cubature_kalman": bench_cubature_kalman_family(),
+        "mhe": bench_mhe_family(),
+        "variational_bayes": bench_variational_bayes_family(),
+        "huber_filter": bench_huber_filter_family(),
+        "particle_smoother": bench_particle_smoother_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

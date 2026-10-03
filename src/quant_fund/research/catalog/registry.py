@@ -2627,6 +2627,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "metadynamics",
         "wham",
         "thermo_integration",
+        # Wave-217 estimation/filtering canon: H-inf, cubature KF,
+        # MHE, variational Bayes, Huber filter, particle smoother.
+        "hinf_filter",
+        "cubature_kalman",
+        "mhe",
+        "variational_bayes",
+        "huber_filter",
+        "particle_smoother",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
