@@ -3927,6 +3927,14 @@ from quant_fund.research.benches_w491 import (
     bench_shimura_var_family,
     bench_theta_lift_family,
 )
+from quant_fund.research.benches_w492 import (
+    bench_kato_fontaine_family,
+    bench_log_crystalline_family,
+    bench_log_derham_family,
+    bench_log_etale_family,
+    bench_log_smooth_family,
+    bench_log_structure_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4306,6 +4314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "log_structure": bench_log_structure_family,
+        "kato_fontaine": bench_kato_fontaine_family,
+        "log_smooth": bench_log_smooth_family,
+        "log_etale": bench_log_etale_family,
+        "log_derham": bench_log_derham_family,
+        "log_crystalline": bench_log_crystalline_family,
         "shimura_var": bench_shimura_var_family,
         "l_function": bench_l_function_family,
         "hecke_alg2": bench_hecke_alg2_family,

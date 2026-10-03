@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-492 log-geometry canon.
+        "log_structure",
+        "kato_fontaine",
+        "log_smooth",
+        "log_etale",
+        "log_derham",
+        "log_crystalline",
         # Wave-491 automorphic-2 canon.
         "shimura_var",
         "l_function",
