@@ -4263,6 +4263,14 @@ from quant_fund.research.benches_w533 import (
     bench_rectifiability_family,
     bench_tangent_measure_family,
 )
+from quant_fund.research.benches_w534 import (
+    bench_balayage_family,
+    bench_capacity_theory_family,
+    bench_fine_topology_family,
+    bench_green_fn_family,
+    bench_harmonic_fn_family,
+    bench_potential_thy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4642,6 +4650,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "harmonic_fn": bench_harmonic_fn_family,
+        "potential_thy": bench_potential_thy_family,
+        "capacity_theory": bench_capacity_theory_family,
+        "balayage": bench_balayage_family,
+        "green_fn": bench_green_fn_family,
+        "fine_topology": bench_fine_topology_family,
         "rectifiability": bench_rectifiability_family,
         "tangent_measure": bench_tangent_measure_family,
         "density_thm": bench_density_thm_family,
