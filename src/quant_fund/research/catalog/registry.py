@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-757 CLE canon.
+        "sheffield_werner_cle",
+        "miller_watson_cle",
+        "camia_newman",
+        "dubedat_cle",
+        "kemppainen_werner",
+        "rivera_cle",
         # Wave-756 GFF canon.
         "berestycki_gff",
         "duplantier_sheffield",
