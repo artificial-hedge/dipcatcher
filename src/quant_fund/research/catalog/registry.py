@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-346 number-theory-2/homological-2 canon.
+        "quadratic_recip",
+        "elliptic_curve",
+        "p_adic_val",
+        "cohomology_cup",
+        "koszul_complex",
+        "mayer_vietoris",
+        # Wave-345 commutative-algebra/ring-theory canon.
+        "ring_ideals",
+        "quotient_ring",
+        "pid_check",
+        "minimal_poly",
+        "norm_trace",
+        "spec_ring",
         # Wave-344 group-theory-2 canon.
         "sylow_theorems",
         "group_presentation",
