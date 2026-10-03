@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-954 matrix-approximation canon.
+        "low_rank_approx",
+        "nuclear_norm",
+        "spectral_threshold",
+        "matrix_truncate",
+        "rank_estimate",
+        "condition_number",
         # Wave-953 operator-theory canon.
         "bounded_operator",
         "operator_norm",
