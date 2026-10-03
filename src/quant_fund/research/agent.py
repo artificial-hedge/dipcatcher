@@ -2223,6 +2223,14 @@ from quant_fund.research.benches_w278 import (
     bench_solow_model_family,
     bench_taylor_rule_family,
 )
+from quant_fund.research.benches_w279 import (
+    bench_dist_obsv_family,
+    bench_flat_track_family,
+    bench_l2_gain_family,
+    bench_luen_obsv_family,
+    bench_lyap_synth_family,
+    bench_mrac_adapt_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2578,6 +2586,12 @@ def _provenance(
         "solow_model": bench_solow_model_family,
         "olg_model": bench_olg_model_family,
         "cobweb_model": bench_cobweb_model_family,
+        "luen_obsv": bench_luen_obsv_family,
+        "dist_obsv": bench_dist_obsv_family,
+        "mrac_adapt": bench_mrac_adapt_family,
+        "flat_track": bench_flat_track_family,
+        "lyap_synth": bench_lyap_synth_family,
+        "l2_gain": bench_l2_gain_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

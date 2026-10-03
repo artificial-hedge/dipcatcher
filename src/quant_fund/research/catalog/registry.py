@@ -3033,6 +3033,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "solow_model",
         "olg_model",
         "cobweb_model",
+        # Wave-279 control-theory-3 canon.
+        "luen_obsv",
+        "dist_obsv",
+        "mrac_adapt",
+        "flat_track",
+        "lyap_synth",
+        "l2_gain",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
