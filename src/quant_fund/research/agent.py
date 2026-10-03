@@ -5615,6 +5615,14 @@ from quant_fund.research.benches_w702 import (
     bench_motivic_hochschild_family,
     bench_motivic_spark_family,
 )
+from quant_fund.research.benches_w703 import (
+    bench_homotopy_fiber3_family,
+    bench_homotopy_spectrum2_family,
+    bench_homotopy_suspension2_family,
+    bench_homotopy_vn_family,
+    bench_stable_derivator_family,
+    bench_stable_excisive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5994,6 +6002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "homotopy_suspension2": bench_homotopy_suspension2_family,
+        "homotopy_fiber3": bench_homotopy_fiber3_family,
+        "stable_derivator": bench_stable_derivator_family,
+        "homotopy_spectrum2": bench_homotopy_spectrum2_family,
+        "stable_excisive": bench_stable_excisive_family,
+        "homotopy_vn": bench_homotopy_vn_family,
         "motivic_spark": bench_motivic_spark_family,
         "motivic_fundamental": bench_motivic_fundamental_family,
         "motivic_hochschild": bench_motivic_hochschild_family,
