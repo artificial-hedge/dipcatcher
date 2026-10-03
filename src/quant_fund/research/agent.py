@@ -3887,6 +3887,14 @@ from quant_fund.research.benches_w486 import (
     bench_vorst_stab_family,
     bench_waldhausen_k_family,
 )
+from quant_fund.research.benches_w487 import (
+    bench_comma_cat_family,
+    bench_compact_obj_family,
+    bench_dualizable_cat_family,
+    bench_endo_prof_family,
+    bench_exact_cat_family,
+    bench_prestack_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4266,6 +4274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "compact_obj": bench_compact_obj_family,
+        "dualizable_cat": bench_dualizable_cat_family,
+        "comma_cat": bench_comma_cat_family,
+        "prestack": bench_prestack_family,
+        "endo_prof": bench_endo_prof_family,
+        "exact_cat": bench_exact_cat_family,
         "waldhausen_k": bench_waldhausen_k_family,
         "plus_k": bench_plus_k_family,
         "kv_theory": bench_kv_theory_family,
