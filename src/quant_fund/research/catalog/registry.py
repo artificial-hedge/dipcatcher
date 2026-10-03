@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-350 representation-theory-2 canon.
+        "character_table_s3",
+        "perm_rep",
+        "schur_ortho",
+        "induced_rep",
+        "fourier_sn",
+        "regular_rep",
+        # Wave-349 algebraic-geometry-3 canon.
+        "zariski_topo",
+        "projective_plane",
+        "bezout_bezout",
+        "variety_dim",
+        "monomial_ideal",
+        "hilbert_poly",
         # Wave-348 graph-theory/combinatorics-2 canon.
         "graph_coloring",
         "euler_trail",
