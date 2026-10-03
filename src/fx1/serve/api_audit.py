@@ -3104,6 +3104,31 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         resolved and resolved[-1] == ("local_fx1", "/srv/fx1/explicit-ckpt")
     )
 
+    # DELETE /v1/models/{id} — OpenAI's models.delete for ft: names: the
+    # tombstone is real (list/retrieve/chat all go 404 after), a built-in
+    # link id refuses 400, and a ghost name fails closed 404 — a delete
+    # verdict is never fabricated.
+    dele = ft2.delete(f"/v1/models/{ftname}")
+    out["ft_model_delete_200"] = (
+        dele.status_code == 200
+        and dele.json()["id"] == ftname
+        and dele.json()["object"] == "model"
+        and dele.json()["deleted"] is True
+    )
+    out["ft_model_delete_gone"] = (
+        ft2.get(f"/v1/models/{ftname}").status_code == 404
+        and ftname not in {m["id"] for m in ft2.get("/v1/models").json()["data"]}
+        and ft2.post(
+            "/v1/chat/completions",
+            json={"model": ftname, "messages": [{"role": "user", "content": "hi"}]},
+        ).status_code
+        == 404
+    )
+    out["ft_model_delete_ghost_404"] = (
+        ft2.delete("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+    )
+    out["ft_model_delete_builtin_400"] = ft2.delete("/v1/models/fx1").status_code == 400
+
     # Terminal webhooks on the /v1 surface — the fx1 extension mirrors
     # the /harness/jobs contract: fire once at the terminal transition,
     # HMAC-signed X-Fx1-Webhook-* headers when callback_secret is set,
@@ -7280,7 +7305,11 @@ def api_audit_bench() -> dict[str, Any]:
             "digest in the final frame. Evidence citations ride "
             "X-Fx1-Receipt-Hashes for clients that can't edit the body — "
             "comma-separated digests, the same store check, a malformed "
-            "digest a fail-closed 400, and fx1.receipt_hashes wins."
+            "digest a fail-closed 400, and fx1.receipt_hashes wins. "
+            "DELETE /v1/models/{id} unregisters an ft: name with a real "
+            "tombstone (list/retrieve/chat all 404 after; built-ins "
+            "refuse 400), and every X-Fx1-* request knob is in the CORS "
+            "allow-headers list so browser clients can send them."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

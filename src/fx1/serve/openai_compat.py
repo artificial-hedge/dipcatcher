@@ -37,7 +37,6 @@ from typing import Any, Literal
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from fx1.serve.receipt_store import SHA256_HEX
 from fx1.serve.webhooks import check_callback_url
 
 __all__ = [
@@ -60,6 +59,7 @@ __all__ = [
     "OpenAIEmbeddingResponse",
     "OpenAIFx1",
     "OpenAIModel",
+    "OpenAIModelDelete",
     "OpenAIModelList",
     "OpenAIResponseRequest",
     "OpenAIResponseTool",
@@ -388,6 +388,15 @@ class OpenAIModelList(_Model):
     data: list[OpenAIModel]
 
 
+class OpenAIModelDelete(_Model):
+    """DELETE /v1/models/{id} — OpenAI's delete verdict: the removed id
+    plus the boolean tombstone."""
+
+    id: str
+    object: Literal["model"] = "model"
+    deleted: bool = True
+
+
 class OpenAIChatChoice(_Model):
     """One choice of a `chat.completion` — the gated text lands here.
     ``message`` may carry ``tool_calls`` (content then null);
@@ -603,23 +612,6 @@ def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float |
     return val
 
 
-def _resolve_receipt_hashes(ext_hashes: list[str] | None, hdrs: dict[str, str]) -> list[str] | None:
-    """Evidence citations: ``fx1.receipt_hashes`` > ``X-Fx1-Receipt-Hashes``
-    header (comma-separated sha256 digests — the knob for clients that
-    can't edit the JSON body, same channel as ``X-Fx1-Fallbacks``). A
-    malformed digest is a fail-closed 400; resolvability stays with the
-    mounted store's check downstream."""
-    if ext_hashes:
-        return list(ext_hashes)
-    raw = hdrs.get("x-fx1-receipt-hashes")
-    if raw is None:
-        return None
-    out = [h.strip() for h in raw.split(",") if h.strip()]
-    if any(SHA256_HEX.fullmatch(h) is None for h in out):
-        raise OpenAICompatError("X-Fx1-Receipt-Hashes must be comma-separated sha256 digests")
-    return out or None
-
-
 def openai_to_kwargs(
     body: OpenAIChatRequest,
     headers: Mapping[str, str] | None = None,
@@ -649,9 +641,7 @@ def openai_to_kwargs(
         "backend": backend,
         "messages": openai_messages(body.messages),
         "checkpoint_dir": checkpoint_dir,
-        "receipt_hashes": _resolve_receipt_hashes(
-            ext.receipt_hashes if ext is not None else None, hdrs
-        ),
+        "receipt_hashes": ext.receipt_hashes if ext is not None else None,
         "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
@@ -1216,9 +1206,7 @@ def response_to_kwargs(
         "backend": backend,
         "messages": response_input_to_messages(body.input, body.instructions),
         "checkpoint_dir": checkpoint_dir,
-        "receipt_hashes": _resolve_receipt_hashes(
-            ext.receipt_hashes if ext is not None else None, hdrs
-        ),
+        "receipt_hashes": ext.receipt_hashes if ext is not None else None,
         "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,

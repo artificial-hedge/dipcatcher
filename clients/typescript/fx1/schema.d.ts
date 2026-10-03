@@ -1056,7 +1056,15 @@ export interface paths {
         get: operations["openai_retrieve_model"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Openai Delete Model
+         * @description OpenAI's ``models.delete`` — unregister a fine-tuned model.
+         *     Only registered ``ft:`` names are deletable: the built-in link
+         *     ids are permanent (400) and unknown names fail closed 404 — a
+         *     delete verdict is never fabricated for a model that isn't real.
+         *     The tombstone journals, so a restart can't resurrect it.
+         */
+        delete: operations["openai_delete_model"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2586,6 +2594,26 @@ export interface components {
              * @default dipcatcher
              */
             owned_by: string;
+        };
+        /**
+         * OpenAIModelDelete
+         * @description DELETE /v1/models/{id} — OpenAI's delete verdict: the removed id
+         *     plus the boolean tombstone.
+         */
+        OpenAIModelDelete: {
+            /**
+             * Deleted
+             * @default true
+             */
+            deleted: boolean;
+            /** Id */
+            id: string;
+            /**
+             * Object
+             * @default model
+             * @constant
+             */
+            object: "model";
         };
         /**
          * OpenAIModelList
@@ -5587,6 +5615,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpenAIModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_delete_model: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIModelDelete"];
                 };
             };
             /** @description Validation Error */

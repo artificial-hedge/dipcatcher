@@ -73,6 +73,8 @@ export type OpenAIChatResponse =
   components["schemas"]["OpenAIChatResponse"];
 export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
 export type OpenAIModel = components["schemas"]["OpenAIModel"];
+export type OpenAIModelDelete =
+  components["schemas"]["OpenAIModelDelete"];
 export type OpenAIResponseRequest =
   components["schemas"]["OpenAIResponseRequest"];
 export type OpenAIBatchRequest = components["schemas"]["OpenAIBatchRequest"];
@@ -690,6 +692,21 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as OpenAIModel;
+  }
+
+  /**
+   * DELETE /v1/models/{model} — OpenAI's `models.delete`: unregister an
+   * `ft:` fine-tune. The tombstone is real (the name stops resolving on
+   * list/retrieve/chat); built-in link ids refuse with 400 and
+   * unregistered names throw the 404-class error.
+   */
+  async deleteModel(model: string): Promise<OpenAIModelDelete> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/models/${encodeURIComponent(model)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIModelDelete;
   }
 
   /**

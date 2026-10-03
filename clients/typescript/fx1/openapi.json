@@ -4197,6 +4197,32 @@
         "title": "OpenAIModel",
         "type": "object"
       },
+      "OpenAIModelDelete": {
+        "additionalProperties": false,
+        "description": "DELETE /v1/models/{id} \u2014 OpenAI's delete verdict: the removed id\nplus the boolean tombstone.",
+        "properties": {
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "object": {
+            "const": "model",
+            "default": "model",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "OpenAIModelDelete",
+        "type": "object"
+      },
       "OpenAIModelList": {
         "additionalProperties": false,
         "description": "GET /v1/models body \u2014 the OpenAI `list` envelope.",
@@ -10746,6 +10772,111 @@
       }
     },
     "/v1/models/{model}": {
+      "delete": {
+        "description": "OpenAI's ``models.delete`` \u2014 unregister a fine-tuned model.\nOnly registered ``ft:`` names are deletable: the built-in link\nids are permanent (400) and unknown names fail closed 404 \u2014 a\ndelete verdict is never fabricated for a model that isn't real.\nThe tombstone journals, so a restart can't resurrect it.",
+        "operationId": "openai_delete_model",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelDelete"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Delete Model",
+        "tags": [
+          "openai"
+        ]
+      },
       "get": {
         "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.",
         "operationId": "openai_retrieve_model",

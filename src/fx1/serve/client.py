@@ -1124,6 +1124,13 @@ class HarnessClient:
             self._json("GET", f"/v1/models/{urllib.parse.quote(model, safe='')}", idempotent=True)
         )
 
+    def delete_model(self, model: str) -> dict[str, Any]:
+        """``DELETE /v1/models/{model}`` — unregister a fine-tuned
+        ``ft:`` model (OpenAI's ``models.delete``). Built-in link ids
+        refuse 400; unregistered names fail closed 404 — the verdict is
+        real, never fabricated."""
+        return dict(self._json("DELETE", f"/v1/models/{urllib.parse.quote(model, safe='')}"))
+
     def chat_completion(
         self,
         messages: list[dict[str, Any]],

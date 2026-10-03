@@ -1739,6 +1739,22 @@ def parity_audit() -> dict[str, bool]:
             and wghost.status_code == 404
             and wghost.json()["error"]["code"] == "model_not_found"
         )
+        # models.delete parity — the ft: tombstone lands identically on
+        # both surfaces: deleted:true verdict, then the name is absent
+        # from the inventory and 404s on retrieve; built-ins refuse.
+        sdel = sdk_ft.openai_delete_model(sname)
+        wdel = remote_ft.delete_model(wname)
+        out["ft_model_delete_parity"] = (
+            sdel.id == sname
+            and sdel.deleted is True
+            and wdel["id"] == wname
+            and wdel["deleted"] is True
+            and sname not in {m.id for m in sdk_ft.openai_models().data}
+            and wname not in {m["id"] for m in remote_ft.list_models()["data"]}
+            and _raises(lambda: sdk_ft.openai_delete_model("fx1"))[0] == "OpenAICompatError"
+            and ft_wire.delete("/v1/models/fx1").status_code == 400
+            and ft_wire.delete(f"/v1/models/{wname}").status_code == 404
+        )
         # Webhook parity: the fx1 terminal-webhook extension delivers over
         # real HTTP on BOTH surfaces — in-process isn't silent — and both
         # records carry the same verdict fields + HMAC headers.
