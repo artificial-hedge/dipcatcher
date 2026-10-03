@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-445 six-functor canon.
+        "six_functors",
+        "base_change",
+        "projection_frm",
+        "verdier_dual",
+        "constructible",
+        "perverse_sh",
         # Wave-444 DAG-stacks canon.
         "derived_stack",
         "cotangent_cx",
