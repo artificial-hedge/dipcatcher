@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-392 computability canon.
+        "mu_recursion",
+        "primitive_recursion",
+        "diagonal_lemma",
+        "arithmetization",
+        "fixed_point_combinator",
+        "kleene_normal",
         # Wave-391 category-theory-3 canon.
         "monoidal_cat",
         "closed_cat",

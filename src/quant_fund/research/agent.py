@@ -3127,6 +3127,14 @@ from quant_fund.research.benches_w391 import (
     bench_monoidal_cat_family,
     bench_presheaf_family,
 )
+from quant_fund.research.benches_w392 import (
+    bench_arithmetization_family,
+    bench_diagonal_lemma_family,
+    bench_fixed_point_combinator_family,
+    bench_kleene_normal_family,
+    bench_mu_recursion_family,
+    bench_primitive_recursion_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3506,6 +3514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mu_recursion": bench_mu_recursion_family,
+        "primitive_recursion": bench_primitive_recursion_family,
+        "diagonal_lemma": bench_diagonal_lemma_family,
+        "arithmetization": bench_arithmetization_family,
+        "fixed_point_combinator": bench_fixed_point_combinator_family,
+        "kleene_normal": bench_kleene_normal_family,
         "monoidal_cat": bench_monoidal_cat_family,
         "closed_cat": bench_closed_cat_family,
         "presheaf": bench_presheaf_family,

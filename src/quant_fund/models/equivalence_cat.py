@@ -8,9 +8,7 @@ def fully_faithful(
 ) -> bool:
     """F is fully faithful iff every hom-set map is a bijection:
     |Hom(x,y)| = |Hom(Fx,Fy)| on the sampled table."""
-    return all(
-        hom_tgt.get((f[x], f[y])) == n for (x, y), n in hom_src.items()
-    )
+    return all(hom_tgt.get((f[x], f[y])) == n for (x, y), n in hom_src.items())
 
 
 def essentially_surjective(
