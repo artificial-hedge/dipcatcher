@@ -4663,6 +4663,14 @@ from quant_fund.research.benches_w583 import (
     bench_motivic_smooth_family,
     bench_six_op_motivic_family,
 )
+from quant_fund.research.benches_w584 import (
+    bench_analytic_sheaf_family,
+    bench_clausen_scholze2_family,
+    bench_nuclear_space_family,
+    bench_proetale_site2_family,
+    bench_solid_cohom_family,
+    bench_solid_tensor2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5042,6 +5050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "clausen_scholze2": bench_clausen_scholze2_family,
+        "solid_cohom": bench_solid_cohom_family,
+        "nuclear_space": bench_nuclear_space_family,
+        "analytic_sheaf": bench_analytic_sheaf_family,
+        "solid_tensor2": bench_solid_tensor2_family,
+        "proetale_site2": bench_proetale_site2_family,
         "motivic_base_change": bench_motivic_base_change_family,
         "six_op_motivic": bench_six_op_motivic_family,
         "motivic_smooth": bench_motivic_smooth_family,
