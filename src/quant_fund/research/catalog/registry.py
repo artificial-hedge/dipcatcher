@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-467 set-theory-5 canon.
+        "constructible_l",
+        "large_card",
+        "pcf_theory",
+        "proper_forcing",
+        "core_model",
+        "square_princ",
         # Wave-466 sheaf-3/microlocal canon.
         "micro_supp",
         "kashiwara_schapira",
