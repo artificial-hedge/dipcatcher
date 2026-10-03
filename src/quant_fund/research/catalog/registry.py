@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-879 exponential-time-integrator canon.
+        "expm_int",
+        "expokit",
+        "krylov_subspace_time",
+        "leja_point",
+        "phi_function",
+        "etd_rk4_classic",
         # Wave-878 low-rank/hierarchical-matrix canon.
         "low_rank_svd",
         "h_matrix",
