@@ -6695,6 +6695,14 @@ from quant_fund.research.benches_w837 import (
     bench_minkowski_sum_family,
     bench_mixed_volume_family,
 )
+from quant_fund.research.benches_w838 import (
+    bench_caratheodory_thm_family,
+    bench_farkas_lemma_family,
+    bench_lattice_point_family,
+    bench_radon_theorem_family,
+    bench_separation_thm_family,
+    bench_tverberg_thm_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7066,6 +7074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "radon_theorem": bench_radon_theorem_family,
+        "caratheodory_thm": bench_caratheodory_thm_family,
+        "farkas_lemma": bench_farkas_lemma_family,
+        "separation_thm": bench_separation_thm_family,
+        "lattice_point": bench_lattice_point_family,
+        "tverberg_thm": bench_tverberg_thm_family,
         "brunn_minkowski": bench_brunn_minkowski_family,
         "alexandrov_fenchel": bench_alexandrov_fenchel_family,
         "isoperimetric_ineq": bench_isoperimetric_ineq_family,

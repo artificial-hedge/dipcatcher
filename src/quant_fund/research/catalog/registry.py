@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-838 discrete-geometry canon.
+        "radon_theorem",
+        "caratheodory_thm",
+        "farkas_lemma",
+        "separation_thm",
+        "lattice_point",
+        "tverberg_thm",
         # Wave-837 convex-geometry canon.
         "brunn_minkowski",
         "alexandrov_fenchel",
