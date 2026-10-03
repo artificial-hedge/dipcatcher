@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-783 stochastic-order canon.
+        "semi_mart",
+        "predictable_bracket",
+        "cramer_wold",
+        "stricker_thm",
+        "likelihood_order",
+        "hazard_order",
         # Wave-782 filtration/Jacod-Shiryaev canon.
         "pinsky_proc",
         "ffusion_lims",
