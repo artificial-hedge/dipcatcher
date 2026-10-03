@@ -3327,6 +3327,14 @@ from quant_fund.research.benches_w416 import (
     bench_omitting_prime_family,
     bench_saturated_model_family,
 )
+from quant_fund.research.benches_w417 import (
+    bench_cohen_mac_family,
+    bench_depth_ring_family,
+    bench_free_resolution_family,
+    bench_groebner_syz_family,
+    bench_hilbert_syzygy_family,
+    bench_regular_seq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3706,6 +3714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "groebner_syz": bench_groebner_syz_family,
+        "free_resolution": bench_free_resolution_family,
+        "hilbert_syzygy": bench_hilbert_syzygy_family,
+        "regular_seq": bench_regular_seq_family,
+        "depth_ring": bench_depth_ring_family,
+        "cohen_mac": bench_cohen_mac_family,
         "decidable_theory": bench_decidable_theory_family,
         "indiscernible_seq": bench_indiscernible_seq_family,
         "saturated_model": bench_saturated_model_family,

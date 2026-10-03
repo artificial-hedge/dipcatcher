@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-417 commutative-algebra-3 canon.
+        "groebner_syz",
+        "free_resolution",
+        "hilbert_syzygy",
+        "regular_seq",
+        "depth_ring",
+        "cohen_mac",
         # Wave-416 model-theory-6 canon.
         "decidable_theory",
         "indiscernible_seq",

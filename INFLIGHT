@@ -1,3 +1,4 @@
+feat(research): wave 417 — commutative-algebra-3 canon (groebner_syz, free_resolution, hilbert_syzygy, regular_seq, depth_ring, cohen_mac) (2457->2463 families)
 feat(research): wave 416 — model-theory-6 canon (decidable_theory, indiscernible_seq, saturated_model, omitting_prime, interpol_thm, definable_set) (2451->2457 families)
 feat(research): wave 415 — topology-4 canon (quotient_map, open_cover, locally_compact, homeo_top, paracompact, partition_unity) (2445->2451 families)
 feat(research): wave 414 — homotopy-6 canon (exact_couple, adams_ss, stable_homotopy, whitehead_thm, obstruction, cofiber) (2439->2445 families)
