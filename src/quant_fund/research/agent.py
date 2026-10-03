@@ -7495,6 +7495,14 @@ from quant_fund.research.benches_w937 import (
     bench_peaceman_rachford_family,
     bench_tseng_split_family,
 )
+from quant_fund.research.benches_w938 import (
+    bench_averaged_operator_family,
+    bench_cocoercive_family,
+    bench_fejer_monotone_family,
+    bench_firmly_nonexpansive_family,
+    bench_monotone_inclusion_family,
+    bench_quasinonexpansive_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7866,6 +7874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fejer_monotone": bench_fejer_monotone_family,
+        "firmly_nonexpansive": bench_firmly_nonexpansive_family,
+        "averaged_operator": bench_averaged_operator_family,
+        "cocoercive": bench_cocoercive_family,
+        "quasinonexpansive": bench_quasinonexpansive_family,
+        "monotone_inclusion": bench_monotone_inclusion_family,
         "douglas_rachford": bench_douglas_rachford_family,
         "peaceman_rachford": bench_peaceman_rachford_family,
         "tseng_split": bench_tseng_split_family,
