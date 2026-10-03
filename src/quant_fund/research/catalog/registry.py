@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-452 geometric-Langlands canon.
+        "d_module",
+        "geometric_langlands",
+        "hecke_eig",
+        "opers_g",
+        "ramified_l",
+        "kernel_fun",
         # Wave-451 equivariant-homotopy canon.
         "g_spectrum",
         "mackey_functor",
