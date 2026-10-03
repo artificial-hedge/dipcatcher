@@ -5807,6 +5807,14 @@ from quant_fund.research.benches_w726 import (
     bench_wan_sss_family,
     bench_wiles_taylor_family,
 )
+from quant_fund.research.benches_w727 import (
+    bench_breuil_meizard_family,
+    bench_caruso_lebaron_family,
+    bench_galdef_ring_family,
+    bench_gee_kisin_family,
+    bench_patching_arg_family,
+    bench_taylor_wiles_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6186,6 +6194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "galdef_ring": bench_galdef_ring_family,
+        "patching_arg": bench_patching_arg_family,
+        "taylor_wiles": bench_taylor_wiles_family,
+        "breuil_meizard": bench_breuil_meizard_family,
+        "gee_kisin": bench_gee_kisin_family,
+        "caruso_lebaron": bench_caruso_lebaron_family,
         "jetchev_skinner": bench_jetchev_skinner_family,
         "wan_sss": bench_wan_sss_family,
         "wiles_taylor": bench_wiles_taylor_family,
