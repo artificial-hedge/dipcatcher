@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-815 excursion-theory canon.
+        "excursion_proc",
+        "inverse_local",
+        "ray_knight",
+        "knight_theorem",
+        "mazza_yor",
+        "pitman_thm",
         # Wave-814 stochastic-flow canon.
         "stochastic_flow",
         "kunita_flow",
