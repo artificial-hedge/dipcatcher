@@ -1862,6 +1862,14 @@ from quant_fund.research.benches_w233 import (
     bench_sccp_const_family,
     bench_ssa_construct_family,
 )
+from quant_fund.research.benches_w234 import (
+    bench_btree_index_family,
+    bench_join_algos_family,
+    bench_lsm_tree_family,
+    bench_mvcc_isolation_family,
+    bench_query_planner_family,
+    bench_wal_recovery_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4812,6 +4820,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "reg_coalesce": bench_reg_coalesce_family(),
         "instr_sched": bench_instr_sched_family(),
         "licm_hoist": bench_licm_hoist_family(),
+        "btree_index": bench_btree_index_family(),
+        "wal_recovery": bench_wal_recovery_family(),
+        "join_algos": bench_join_algos_family(),
+        "query_planner": bench_query_planner_family(),
+        "mvcc_isolation": bench_mvcc_isolation_family(),
+        "lsm_tree": bench_lsm_tree_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

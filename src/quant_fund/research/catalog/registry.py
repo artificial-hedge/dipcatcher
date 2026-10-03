@@ -2764,6 +2764,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "reg_coalesce",
         "instr_sched",
         "licm_hoist",
+        # Wave-234 database canon: B+tree, WAL, joins, planner, MVCC,
+        # LSM.
+        "btree_index",
+        "wal_recovery",
+        "join_algos",
+        "query_planner",
+        "mvcc_isolation",
+        "lsm_tree",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
