@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-420 algebraic-NT-3 canon.
+        "dirichlet_unit",
+        "regulator",
+        "ideal_class",
+        "minkowski_bound",
+        "dedekind_zeta",
+        "splitting_prime",
         # Wave-419 algebraic-topology-5 canon.
         "serre_fibration",
         "path_fibration",
