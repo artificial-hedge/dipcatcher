@@ -4383,6 +4383,14 @@ from quant_fund.research.benches_w548 import (
     bench_lagrangian_floer_family,
     bench_monopole_floer_family,
 )
+from quant_fund.research.benches_w549 import (
+    bench_analytic_torsion_family,
+    bench_atiyah_singer_family,
+    bench_dirac_op_family,
+    bench_eta_invariant_family,
+    bench_heat_kernel2_family,
+    bench_signature_op_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4762,6 +4770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "atiyah_singer": bench_atiyah_singer_family,
+        "dirac_op": bench_dirac_op_family,
+        "eta_invariant": bench_eta_invariant_family,
+        "heat_kernel2": bench_heat_kernel2_family,
+        "signature_op": bench_signature_op_family,
+        "analytic_torsion": bench_analytic_torsion_family,
         "floer_homology": bench_floer_homology_family,
         "knot_floer": bench_knot_floer_family,
         "instanton_floer": bench_instanton_floer_family,

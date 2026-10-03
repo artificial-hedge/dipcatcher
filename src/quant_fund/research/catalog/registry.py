@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-549 index-theory canon.
+        "atiyah_singer",
+        "dirac_op",
+        "eta_invariant",
+        "heat_kernel2",
+        "signature_op",
+        "analytic_torsion",
         # Wave-548 Floer-theory canon.
         "floer_homology",
         "knot_floer",
