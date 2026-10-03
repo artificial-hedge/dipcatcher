@@ -4463,6 +4463,14 @@ from quant_fund.research.benches_w558 import (
     bench_nahm_transform_family,
     bench_yang_mills_family,
 )
+from quant_fund.research.benches_w559 import (
+    bench_calabi_conjecture_family,
+    bench_calabi_yau_mfd_family,
+    bench_csck_metric_family,
+    bench_futaki_invariant_family,
+    bench_k_stability_family,
+    bench_kahler_einstein_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4842,6 +4850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "calabi_yau_mfd": bench_calabi_yau_mfd_family,
+        "calabi_conjecture": bench_calabi_conjecture_family,
+        "kahler_einstein": bench_kahler_einstein_family,
+        "k_stability": bench_k_stability_family,
+        "csck_metric": bench_csck_metric_family,
+        "futaki_invariant": bench_futaki_invariant_family,
         "yang_mills": bench_yang_mills_family,
         "instanton_moduli": bench_instanton_moduli_family,
         "anti_self_dual": bench_anti_self_dual_family,
