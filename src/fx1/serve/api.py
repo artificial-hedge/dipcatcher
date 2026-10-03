@@ -121,6 +121,7 @@ from fx1.serve.finetune import (
     FTEventList,
     FTHyperparameters,
     FTJob,
+    FTJobCheckpointList,
     FTJobEntry,
     FTJobError,
     FTJobList,
@@ -5306,6 +5307,31 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
         events, has_more = ft_store.list_events(job_id, limit=limit, after=after)
         return FTEventList(data=events, has_more=has_more)
+
+    @app.get(
+        "/v1/fine_tuning/jobs/{job_id}/checkpoints",
+        response_model=FTJobCheckpointList,
+        tags=["openai"],
+        operation_id="list_finetune_job_checkpoints",
+    )
+    def list_finetune_job_checkpoints(
+        job_id: str,
+        limit: int = Query(default=10, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> FTJobCheckpointList:
+        """OpenAI's ``fine_tuning.jobs.list_checkpoints`` — the model
+        artifacts a job registered, oldest-first. A job that produced no
+        model lists empty (never a fabricated checkpoint); a deleted
+        ``ft:`` name drops off — tombstones don't fabricate history."""
+        if ft_store.get(job_id) is None:
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        items, has_more = ft_store.checkpoints_for(job_id, limit=limit, after=after)
+        return FTJobCheckpointList(
+            data=items,
+            first_id=items[0].id if items else None,
+            last_id=items[-1].id if items else None,
+            has_more=has_more,
+        )
 
 
 def create_app(

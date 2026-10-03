@@ -770,6 +770,32 @@
         ]
       }
     },
+    "/v1/fine_tuning/jobs/{job_id}/checkpoints": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/fine_tuning/jobs/{job_id}/events": {
       "get": {
         "params": [
@@ -806,6 +832,20 @@
       }
     },
     "/v1/models/{model}": {
+      "delete": {
+        "params": [
+          {
+            "name": "model",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
       "get": {
         "params": [
           {
@@ -883,5 +923,5 @@
       }
     }
   },
-  "schema_sha256": "68b9639f6bc8d32c07addba001b2d7fe665d624cf34e13207ab9f653cb27b6fd"
+  "schema_sha256": "9b7ee11bd6dee5dfc33f7704ffd627809fbc78b82f3ff0c3c62e5c9cc3ab71a2"
 }

@@ -23,6 +23,7 @@ posture:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import threading
 import time
@@ -134,6 +135,31 @@ class FTJobList(BaseModel, extra="forbid"):
 class FTEventList(BaseModel, extra="forbid"):
     object: Literal["list"] = "list"
     data: list[FTJobEvent]
+    has_more: bool
+
+
+class FTJobCheckpoint(BaseModel, extra="forbid"):
+    """OpenAI's ``fine_tuning.job.checkpoint`` — one registered model
+    artifact a job produced. The harness records the model name and its
+    checkpoint dir, not intermediate step metrics — ``step_number`` and
+    ``metrics`` stay empty rather than fabricating numbers."""
+
+    object: Literal["fine_tuning.job.checkpoint"] = "fine_tuning.job.checkpoint"
+    id: str
+    created_at: int
+    fine_tuned_model_checkpoint: str
+    step_number: int | None = None
+    metrics: dict[str, float] = Field(default_factory=dict)
+
+
+class FTJobCheckpointList(BaseModel, extra="forbid"):
+    """OpenAI's checkpoints list envelope — ``first_id``/``last_id`` are
+    the page's edge ids (``after`` cursors), null on an empty page."""
+
+    object: Literal["list"] = "list"
+    data: list[FTJobCheckpoint]
+    first_id: str | None = None
+    last_id: str | None = None
     has_more: bool
 
 
@@ -392,6 +418,31 @@ class FTJobStore:
         """All registered ft models, sorted by id (stable list order)."""
         with self._lock:
             return [dict(self._models[k]) for k in sorted(self._models)]
+
+    def checkpoints_for(
+        self, job_id: str, *, limit: int, after: str | None
+    ) -> tuple[list[FTJobCheckpoint], bool]:
+        """Checkpoints a job registered, oldest-first — one entry per
+        model card the job produced (``GET
+        /v1/fine_tuning/jobs/{id}/checkpoints``). Deleted registrations
+        drop off the listing: a tombstone never fabricates history for a
+        model that is gone."""
+        with self._lock:
+            cards = [m for m in self._models.values() if m["job_id"] == job_id]
+        cards.sort(key=lambda m: (int(m["created"]), str(m["id"])))
+        items = [
+            FTJobCheckpoint(
+                id="ftckpt-" + hashlib.sha256(f"{job_id}:{m['id']}".encode()).hexdigest()[:24],
+                created_at=int(m["created"]),
+                fine_tuned_model_checkpoint=str(m["id"]),
+            )
+            for m in cards
+        ]
+        if after is not None:
+            idx = next((i for i, c in enumerate(items) if c.id == after), None)
+            items = items[idx + 1 :] if idx is not None else []
+        has_more = len(items) > limit
+        return items[:limit], has_more
 
     def checkpoint_for(self, name: str) -> str | None:
         """The checkpoint dir an ``ft:`` name resolves to — the piece

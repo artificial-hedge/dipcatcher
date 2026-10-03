@@ -1611,6 +1611,26 @@ def harness_ft_events(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("ft-checkpoints")
+def harness_ft_checkpoints(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    limit: int = typer.Option(10, "--limit", help="Page size (max 100)."),
+    after: str | None = typer.Option(None, "--after", help="Pagination cursor (ftckpt- id)."),
+) -> None:
+    """``GET /v1/fine_tuning/jobs/{id}/checkpoints`` — the model artifacts
+    the job registered, oldest first; empty for a job that produced none."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).finetune_job_checkpoints(
+            job_id, limit=limit, after=after
+        )
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
 @harness_app.command("ft-wait")
 def harness_ft_wait(
     job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),

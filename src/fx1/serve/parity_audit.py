@@ -1678,6 +1678,22 @@ def parity_audit() -> dict[str, bool]:
             len(remote_ft.finetune_job_events(wjob["id"])["data"]) >= 2
             and len(sdk_ft.finetune_job_events(sjob.id)) >= 2
         )
+        # checkpoints parity — list_checkpoints lists the job's produced
+        # artifact on both surfaces; unknown jobs map identically.
+        sck = sdk_ft.finetune_job_checkpoints(sjob.id)
+        wck = remote_ft.finetune_job_checkpoints(wjob["id"])
+        out["ft_checkpoints_parity"] = (
+            [c.fine_tuned_model_checkpoint for c in sck.data] == [sjob.fine_tuned_model]
+            and [c["fine_tuned_model_checkpoint"] for c in wck["data"]]
+            == [wfin["fine_tuned_model"]]
+            and sck.has_more is False
+            and wck["has_more"] is False
+            and sck.data[0].id.startswith("ftckpt-")
+            and wck["data"][0]["id"].startswith("ftckpt-")
+            and sck.data[0].object == wck["data"][0]["object"] == "fine_tuning.job.checkpoint"
+            and _raises(lambda: sdk_ft.finetune_job_checkpoints("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_ft.finetune_job_checkpoints("ftjob-nope"))[0] == "KeyError"
+        )
         out["ft_list_parity"] = wjob["id"] in {
             j["id"] for j in remote_ft.finetune_jobs()["data"]
         } and sjob.id in {j.id for j in sdk_ft.finetune_jobs()}
@@ -1754,6 +1770,8 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: sdk_ft.openai_delete_model("fx1"))[0] == "OpenAICompatError"
             and ft_wire.delete("/v1/models/fx1").status_code == 400
             and ft_wire.delete(f"/v1/models/{wname}").status_code == 404
+            and sdk_ft.finetune_job_checkpoints(sjob.id).data == []
+            and remote_ft.finetune_job_checkpoints(wjob["id"])["data"] == []
         )
         # Webhook parity: the fx1 terminal-webhook extension delivers over
         # real HTTP on BOTH surfaces — in-process isn't silent — and both
