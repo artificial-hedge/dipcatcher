@@ -7031,6 +7031,14 @@ from quant_fund.research.benches_w879 import (
     bench_leja_point_family,
     bench_phi_function_family,
 )
+from quant_fund.research.benches_w880 import (
+    bench_adaptive_quad2_family,
+    bench_cubature_rule_family,
+    bench_empirical_interp_family,
+    bench_gq_adaptive_family,
+    bench_pod_deim_family,
+    bench_tensor_interp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7402,6 +7410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gq_adaptive": bench_gq_adaptive_family,
+        "adaptive_quad2": bench_adaptive_quad2_family,
+        "pod_deim": bench_pod_deim_family,
+        "empirical_interp": bench_empirical_interp_family,
+        "cubature_rule": bench_cubature_rule_family,
+        "tensor_interp": bench_tensor_interp_family,
         "expm_int": bench_expm_int_family,
         "expokit": bench_expokit_family,
         "krylov_subspace_time": bench_krylov_subspace_time_family,
