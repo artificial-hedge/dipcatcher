@@ -11,16 +11,12 @@ PAULI = [np.eye(2), X, Y, Z]
 
 
 def bloch(rho: np.ndarray) -> np.ndarray:
-    out: np.ndarray = np.array(
-        [float(np.real(np.trace(rho @ p))) for p in (X, Y, Z)], dtype=float
-    )
+    out: np.ndarray = np.array([float(np.real(np.trace(rho @ p))) for p in (X, Y, Z)], dtype=float)
     return out
 
 
 def from_bloch(r: np.ndarray) -> np.ndarray:
-    out: np.ndarray = np.asarray(
-        0.5 * (np.eye(2) + r[0] * X + r[1] * Y + r[2] * Z), dtype=complex
-    )
+    out: np.ndarray = np.asarray(0.5 * (np.eye(2) + r[0] * X + r[1] * Y + r[2] * Z), dtype=complex)
     return out
 
 

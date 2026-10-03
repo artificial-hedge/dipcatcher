@@ -29,10 +29,7 @@ def garble(
             out_label = k_out[table[a][b]]
             msg = _k(seed, k_in[0][a] * 2 + k_in[1][b])
             ct.append(
-                bytes(
-                    x ^ y
-                    for x, y in zip(msg[:2], out_label.to_bytes(2, "big"), strict=True)
-                )
+                bytes(x ^ y for x, y in zip(msg[:2], out_label.to_bytes(2, "big"), strict=True))
             )
     return ct
 

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-335 category-2/topos canon.
+        "fin_limit",
+        "subobject_classifier",
+        "exponential_obj",
+        "yoneda_embed",
+        "adjoint_check",
+        "cat_colimit",
         # Wave-334 secure-computation canon.
         "garbled_circuit",
         "bgw_mpc",
