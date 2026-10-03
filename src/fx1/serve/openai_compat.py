@@ -25,6 +25,7 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import threading
@@ -73,6 +74,7 @@ __all__ = [
     "OpenAIBatchRequest",
     "batch_line_body",
     "batch_line_shape",
+    "chat_messages_for_store",
     "embeddings_to_kwargs",
     "openai_embedding_envelope",
     "batch_object",
@@ -90,7 +92,9 @@ __all__ = [
     "openai_response_object",
     "openai_to_kwargs",
     "openai_usage",
+    "paged_item_list",
     "OpenAIEnvelopeStore",
+    "response_input_items_for_store",
     "response_input_to_messages",
     "response_text_format",
     "response_to_kwargs",
@@ -1188,6 +1192,95 @@ def response_input_to_messages(
     return msgs
 
 
+def _stored_item_id(prefix: str, envelope_id: str, i: int) -> str:
+    """Deterministic item id for the stored-request subresources —
+    ``<prefix>_<sha256(envelope_id:i)[:24]>`` so ``after``/``before``
+    cursors stay stable across retrieval calls without extra state."""
+    digest = hashlib.sha256(f"{envelope_id}:{i}".encode()).hexdigest()[:24]
+    return f"{prefix}_{digest}"
+
+
+def chat_messages_for_store(
+    messages: Sequence[OpenAIChatMessage], *, envelope_id: str
+) -> list[dict[str, Any]]:
+    """Request messages in retrieval shape for
+    ``GET /v1/chat/completions/{id}/messages`` — verbatim as submitted
+    (``extra="allow"`` fields survive), each carrying the digest id."""
+    out: list[dict[str, Any]] = []
+    for i, msg in enumerate(messages):
+        item = msg.model_dump(mode="json", exclude_none=True)
+        item.setdefault("id", _stored_item_id("msg", envelope_id, i))
+        out.append(item)
+    return out
+
+
+def response_input_items_for_store(
+    input_: str | list[dict[str, Any]], *, rid: str
+) -> list[dict[str, Any]]:
+    """``input`` in retrieval shape for
+    ``GET /v1/responses/{id}/input_items`` — the items as submitted
+    (a plain string wraps as one user message item with ``input_text``),
+    each carrying a caller-supplied or digest ``msg_`` id."""
+    items: list[dict[str, Any]]
+    if isinstance(input_, str):
+        items = [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": input_}],
+            }
+        ]
+    else:
+        items = [dict(it) for it in input_]
+    out: list[dict[str, Any]] = []
+    for i, item in enumerate(items):
+        item.setdefault("id", _stored_item_id("msg", rid, i))
+        out.append(item)
+    return out
+
+
+def paged_item_list(
+    items: Sequence[dict[str, Any]],
+    *,
+    limit: int,
+    after: str | None = None,
+    before: str | None = None,
+    order: str = "asc",
+) -> dict[str, Any]:
+    """The shared ``{object: list, data, first_id, last_id, has_more}``
+    page shape the stored-request subresources return — ``after`` /
+    ``before`` are id cursors into the ordered list; an unknown cursor
+    fails closed ``400 invalid_cursor`` rather than silently restarting."""
+    if order not in ("asc", "desc"):
+        raise OpenAICompatError(
+            f"order must be 'asc' or 'desc', got {order!r}",
+            status=400,
+            code="invalid_cursor",
+        )
+    ordered = list(items)
+    if order == "desc":
+        ordered.reverse()
+    for cursor, keep_after in ((after, True), (before, False)):
+        if cursor is None:
+            continue
+        idx = next((k for k, it in enumerate(ordered) if it.get("id") == cursor), None)
+        if idx is None:
+            raise OpenAICompatError(
+                f"cursor {cursor!r} is not an item id in this stored request",
+                status=400,
+                code="invalid_cursor",
+            )
+        ordered = ordered[idx + 1 :] if keep_after else ordered[:idx]
+    page = ordered[:limit]
+    return {
+        "object": "list",
+        "data": page,
+        "first_id": page[0].get("id") if page else None,
+        "last_id": page[-1].get("id") if page else None,
+        "has_more": len(ordered) > limit,
+    }
+
+
 def response_text_format(body: OpenAIResponseRequest) -> dict[str, Any] | None:
     """``text.format`` → the chat-shape ``response_format`` dict
     :func:`validate_response_format` consumes (or ``None``)."""
@@ -1865,24 +1958,49 @@ class OpenAIEnvelopeStore:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, dict[str, Any]] = {}
+        # Request items backing the stored-request subresources
+        # (``/messages``, ``/input_items``). Kept OUT of the envelope dict:
+        # the envelope doubles as the POST response body, batch output
+        # line, and SSE replay source — a stash key would serialize onto
+        # the wire. Items share their envelope's lifetime.
+        self._subitems: dict[str, dict[str, list[dict[str, Any]]]] = {}
 
-    def put(self, envelope: dict[str, Any]) -> None:
+    def put(
+        self,
+        envelope: dict[str, Any],
+        *,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> None:
         eid = envelope.get("id")
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         with self._lock:
             self._items.pop(eid, None)
             self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
             while len(self._items) > self._cap:
-                self._items.pop(next(iter(self._items)))
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
 
     def get(self, envelope_id: str) -> dict[str, Any] | None:
         with self._lock:
             env = self._items.get(envelope_id)
             return dict(env) if env is not None else None
 
+    def get_items(self, envelope_id: str, key: str) -> list[dict[str, Any]] | None:
+        """The request items stored under ``key`` for ``envelope_id`` —
+        None when the envelope is gone, [] when it never carried them."""
+        with self._lock:
+            if envelope_id not in self._items:
+                return None
+            its = self._subitems.get(envelope_id, {}).get(key)
+            return [dict(it) for it in its] if its is not None else []
+
     def delete(self, envelope_id: str) -> bool:
         with self._lock:
+            self._subitems.pop(envelope_id, None)
             return self._items.pop(envelope_id, None) is not None
 
     def __len__(self) -> int:

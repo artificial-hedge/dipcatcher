@@ -1797,6 +1797,44 @@ class HarnessClient:
         """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
         return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
 
+    def chat_completion_messages(
+        self,
+        completion_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}/messages`` — the stored
+        request messages, paged by item id."""
+        cid = urllib.parse.quote(completion_id)
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/chat/completions/{cid}/messages?{q}", idempotent=True))
+
+    def response_input_items(
+        self,
+        response_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/responses/{id}/input_items`` — the stored ``input``
+        items, paged by item id."""
+        rid = urllib.parse.quote(response_id)
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/responses/{rid}/input_items?{q}", idempotent=True))
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

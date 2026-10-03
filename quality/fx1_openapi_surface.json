@@ -630,6 +630,42 @@
         ]
       }
     },
+    "/v1/chat/completions/{completion_id}/messages": {
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/embeddings": {
       "post": {
         "params": [],
@@ -921,7 +957,43 @@
           "422"
         ]
       }
+    },
+    "/v1/responses/{response_id}/input_items": {
+      "get": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "9b7ee11bd6dee5dfc33f7704ffd627809fbc78b82f3ff0c3c62e5c9cc3ab71a2"
+  "schema_sha256": "437403952d85f8a33c6963cac1a5fc1810b6c6fa073df817a2a1a54b36e45070"
 }

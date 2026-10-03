@@ -1272,6 +1272,46 @@ export class HarnessApiClient {
     return (await res.json()) as Record<string, unknown>;
   }
 
+  /**
+   * GET /v1/chat/completions/{id}/messages — the request messages a
+   * stored completion ran on, paged by item id (OpenAI's
+   * `chat.completions.messages.list`).
+   */
+  chatCompletionMessages(
+    completionId: string,
+    filter?: { limit?: number; after?: string; before?: string; order?: "asc" | "desc" },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/chat/completions/${encodeURIComponent(completionId)}/messages${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET /v1/responses/{id}/input_items — the `input` items a stored
+   * response ran on, paged by item id (OpenAI's
+   * `responses.input_items.list`).
+   */
+  responseInputItems(
+    responseId: string,
+    filter?: { limit?: number; after?: string; before?: string; order?: "asc" | "desc" },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/responses/${encodeURIComponent(responseId)}/input_items${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */

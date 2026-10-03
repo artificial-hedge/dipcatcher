@@ -2389,6 +2389,68 @@ def harness_response_delete(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("chat-messages")
+def harness_chat_messages(
+    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/chat/completions/{id}/messages`` — the request messages a
+    stored completion ran on; missing ids exit 2."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).chat_completion_messages(
+                completion_id, limit=limit, after=after, before=before, order=order
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().openai_chat_messages(
+            completion_id, limit=limit, after=after, before=before, order=order
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-input-items")
+def harness_response_input_items(
+    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/responses/{id}/input_items`` — the ``input`` items a
+    stored response ran on; missing ids exit 2."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).response_input_items(
+                response_id, limit=limit, after=after, before=before, order=order
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().openai_response_input_items(
+            response_id, limit=limit, after=after, before=before, order=order
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

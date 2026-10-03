@@ -29,7 +29,7 @@ from quant_fund.utils.reproducibility import git_revision
 __all__ = ["cli_audit", "cli_audit_bench"]
 
 
-def cli_audit() -> dict[str, Any]:
+def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     import json
 
     import typer
@@ -178,8 +178,10 @@ def cli_audit() -> dict[str, Any]:
         "moderate",
         "chat-get",
         "chat-delete",
+        "chat-messages",
         "response-get",
         "response-delete",
+        "response-input-items",
         "score",
         "commands",
     } <= hnames
@@ -291,6 +293,12 @@ def cli_audit() -> dict[str, Any]:
         out["harness_stored_missing_2"] = all(
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
             for name in ("chat-get", "chat-delete", "response-get", "response-delete")
+        )
+        # the stored-request subresources inherit the same contract —
+        # missing id is a clean 2 in-process too.
+        out["harness_items_missing_2"] = all(
+            runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
+            for name in ("chat-messages", "response-input-items")
         )
 
         # score preflight: the reward contract runs in-process with no model
@@ -1151,6 +1159,26 @@ def cli_audit() -> dict[str, Any]:
                 "deleted": True,
             }
 
+        def chat_completion_messages(self, completion_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"chat_messages": completion_id, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "msg_x", "role": "user", "content": "hi"}],
+                "first_id": "msg_x",
+                "last_id": "msg_x",
+                "has_more": False,
+            }
+
+        def response_input_items(self, response_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"input_items": response_id, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "msg_y", "type": "message", "role": "user"}],
+                "first_id": "msg_y",
+                "last_id": "msg_y",
+                "has_more": False,
+            }
+
         def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
             self.last_ft_query = {"score": input}
             items = input if isinstance(input, list) else [input]
@@ -1962,6 +1990,41 @@ def cli_audit() -> dict[str, Any]:
                 "response-delete",
             )
         )
+        # the stored-request subresources — --remote forwards id + paging
+        out["remote_chat_messages"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "chat-messages",
+                    "chatcmpl-x",
+                    "--limit",
+                    "5",
+                    "--order",
+                    "desc",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("last_id") == "msg_x" and remotes[-1].last_ft_query == {
+            "chat_messages": "chatcmpl-x",
+            "limit": 5,
+            "after": None,
+            "before": None,
+            "order": "desc",
+        }
+        out["remote_response_input_items"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "response-input-items", "resp_x", "--remote", "http://h.test"],
+            ).stdout
+        ).get("first_id") == "msg_y" and remotes[-1].last_ft_query == {
+            "input_items": "resp_x",
+            "limit": 20,
+            "after": None,
+            "before": None,
+            "order": "asc",
+        }
         _rs = json.loads(
             runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
         )
