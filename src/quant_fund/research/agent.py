@@ -7223,6 +7223,14 @@ from quant_fund.research.benches_w903 import (
     bench_robin_hood_hash_family,
     bench_swiss_table_family,
 )
+from quant_fund.research.benches_w904 import (
+    bench_aa_tree_family,
+    bench_avl_tree_family,
+    bench_red_black_tree_family,
+    bench_scapegoat_tree_family,
+    bench_splay_tree_family,
+    bench_treap_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7594,6 +7602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "avl_tree": bench_avl_tree_family,
+        "red_black_tree": bench_red_black_tree_family,
+        "splay_tree": bench_splay_tree_family,
+        "treap": bench_treap_family,
+        "scapegoat_tree": bench_scapegoat_tree_family,
+        "aa_tree": bench_aa_tree_family,
         "cuckoo_hash": bench_cuckoo_hash_family,
         "hopscotch_hash": bench_hopscotch_hash_family,
         "robin_hood_hash": bench_robin_hood_hash_family,
