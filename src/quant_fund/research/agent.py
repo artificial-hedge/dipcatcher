@@ -5487,6 +5487,14 @@ from quant_fund.research.benches_w686 import (
     bench_factorization_hom2_family,
     bench_koszul_duality2_family,
 )
+from quant_fund.research.benches_w687 import (
+    bench_cat_bicomplete_family,
+    bench_cat_cofibrant_family,
+    bench_cat_descent_family,
+    bench_cat_fibrant_obj_family,
+    bench_cat_glueable_family,
+    bench_cat_univariant_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5866,6 +5874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cat_fibrant_obj": bench_cat_fibrant_obj_family,
+        "cat_cofibrant": bench_cat_cofibrant_family,
+        "cat_bicomplete": bench_cat_bicomplete_family,
+        "cat_univariant": bench_cat_univariant_family,
+        "cat_descent": bench_cat_descent_family,
+        "cat_glueable": bench_cat_glueable_family,
         "e4_algebra": bench_e4_algebra_family,
         "centralizer_alg": bench_centralizer_alg_family,
         "delooping2": bench_delooping2_family,
