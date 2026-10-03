@@ -5839,6 +5839,14 @@ from quant_fund.research.benches_w730 import (
     bench_saito_epsilon_family,
     bench_swan_conductor_family,
 )
+from quant_fund.research.benches_w731 import (
+    bench_brylinski_kato_family,
+    bench_higher_ramif_family,
+    bench_log_ramification_family,
+    bench_neron_raynaud_family,
+    bench_semi_stable_model_family,
+    bench_temkin_alter_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6218,6 +6226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "higher_ramif": bench_higher_ramif_family,
+        "brylinski_kato": bench_brylinski_kato_family,
+        "log_ramification": bench_log_ramification_family,
+        "semi_stable_model": bench_semi_stable_model_family,
+        "neron_raynaud": bench_neron_raynaud_family,
+        "temkin_alter": bench_temkin_alter_family,
         "grothendieck_muw": bench_grothendieck_muw_family,
         "raynaud_pencil": bench_raynaud_pencil_family,
         "saito_epsilon": bench_saito_epsilon_family,
