@@ -1,3 +1,4 @@
+feat(research): wave 448 — higher-topos canon (infty_topos, univ_colimit, object_classif, trunc_modal, cohesive_top, hypercomplete) (2643->2649 families)
 feat(research): wave 447 — TQFT canon (tqft_axiom, bord_cat, frobenius_2d, extended_tqft, dw_theory, chern_simons) (2637->2643 families)
 feat(research): wave 446 — Goodwillie-calculus canon (goodwillie_tower, excisive_fn, linearization, deriv_layer, calc_converge, orth_calc) (2631->2637 families)
 feat(research): wave 445 — six-functor canon (six_functors, base_change, projection_frm, verdier_dual, constructible, perverse_sh) (2625->2631 families)

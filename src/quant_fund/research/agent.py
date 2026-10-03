@@ -3575,6 +3575,14 @@ from quant_fund.research.benches_w447 import (
     bench_frobenius_2d_family,
     bench_tqft_axiom_family,
 )
+from quant_fund.research.benches_w448 import (
+    bench_cohesive_top_family,
+    bench_hypercomplete_family,
+    bench_infty_topos_family,
+    bench_object_classif_family,
+    bench_trunc_modal_family,
+    bench_univ_colimit_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3954,6 +3962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "infty_topos": bench_infty_topos_family,
+        "univ_colimit": bench_univ_colimit_family,
+        "object_classif": bench_object_classif_family,
+        "trunc_modal": bench_trunc_modal_family,
+        "cohesive_top": bench_cohesive_top_family,
+        "hypercomplete": bench_hypercomplete_family,
         "tqft_axiom": bench_tqft_axiom_family,
         "bord_cat": bench_bord_cat_family,
         "frobenius_2d": bench_frobenius_2d_family,
