@@ -3263,6 +3263,14 @@ from quant_fund.research.benches_w408 import (
     bench_schur_functor_family,
     bench_weight_space_family,
 )
+from quant_fund.research.benches_w409 import (
+    bench_cohend_family,
+    bench_dold_kan_family,
+    bench_eilenberg_zilber_family,
+    bench_postnikov_family,
+    bench_spectral_seq2_family,
+    bench_stable_range_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3642,6 +3650,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_seq2": bench_spectral_seq2_family,
+        "eilenberg_zilber": bench_eilenberg_zilber_family,
+        "dold_kan": bench_dold_kan_family,
+        "postnikov": bench_postnikov_family,
+        "stable_range": bench_stable_range_family,
+        "cohend": bench_cohend_family,
         "schur_functor": bench_schur_functor_family,
         "brauer_alg": bench_brauer_alg_family,
         "hecke_alg": bench_hecke_alg_family,

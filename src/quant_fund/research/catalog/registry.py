@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-409 homotopy-5 canon.
+        "spectral_seq2",
+        "eilenberg_zilber",
+        "dold_kan",
+        "postnikov",
+        "stable_range",
+        "cohend",
         # Wave-408 representation-theory-4 canon.
         "schur_functor",
         "brauer_alg",
