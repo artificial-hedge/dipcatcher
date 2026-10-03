@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-955 linear-systems canon.
+        "gram_matrix",
+        "gram_determinant",
+        "householder_reflect",
+        "givens_rotation",
+        "back_substitution",
+        "forward_substitution",
         # Wave-954 matrix-approximation canon.
         "low_rank_approx",
         "nuclear_norm",
