@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-314 geometry-processing canon.
+        "nurbs_eval",
+        "catmull_clark",
+        "loop_subdiv",
+        "marching_cubes",
+        "half_edge",
+        "laplacian_smooth",
         # Wave-313 numerical-4/multigrid canon.
         "v_cycle",
         "amg_lite",
