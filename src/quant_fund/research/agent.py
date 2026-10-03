@@ -3447,6 +3447,14 @@ from quant_fund.research.benches_w431 import (
     bench_slice_filtration_family,
     bench_voevodsky_motive_family,
 )
+from quant_fund.research.benches_w432 import (
+    bench_atiyah_hirzebruch_family,
+    bench_descent_ss_family,
+    bench_leary_ss_family,
+    bench_motivic_ss_family,
+    bench_serre_ss3_family,
+    bench_vanishing_ss_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3826,6 +3834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "atiyah_hirzebruch": bench_atiyah_hirzebruch_family,
+        "serre_ss3": bench_serre_ss3_family,
+        "leary_ss": bench_leary_ss_family,
+        "descent_ss": bench_descent_ss_family,
+        "motivic_ss": bench_motivic_ss_family,
+        "vanishing_ss": bench_vanishing_ss_family,
         "a1_homotopy": bench_a1_homotopy_family,
         "motivic_sphere": bench_motivic_sphere_family,
         "morel_degree": bench_morel_degree_family,
