@@ -2536,6 +2536,22 @@ from quant_fund.research.benches_w317 import (
     bench_slic_superpixels_family,
     bench_watershed_seg_family,
 )
+from quant_fund.research.benches_w318 import (
+    bench_bidirectional_tc_family,
+    bench_dep_types_family,
+    bench_nbe_eval_family,
+    bench_proof_kernel_family,
+    bench_tactic_engine_family,
+    bench_unify_meta_family,
+)
+from quant_fund.research.benches_w319 import (
+    bench_congruence_closure_family,
+    bench_nelson_oppen_family,
+    bench_omega_lia_family,
+    bench_ring_normalize_family,
+    bench_term_rewrite_family,
+    bench_tseitin_cnf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2915,6 +2931,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "congruence_closure": bench_congruence_closure_family,
+        "ring_normalize": bench_ring_normalize_family,
+        "omega_lia": bench_omega_lia_family,
+        "nelson_oppen": bench_nelson_oppen_family,
+        "term_rewrite": bench_term_rewrite_family,
+        "tseitin_cnf": bench_tseitin_cnf_family,
+        "bidirectional_tc": bench_bidirectional_tc_family,
+        "nbe_eval": bench_nbe_eval_family,
+        "dep_types": bench_dep_types_family,
+        "unify_meta": bench_unify_meta_family,
+        "proof_kernel": bench_proof_kernel_family,
+        "tactic_engine": bench_tactic_engine_family,
         "canny_edge": bench_canny_edge_family,
         "otsu_threshold": bench_otsu_threshold_family,
         "watershed_seg": bench_watershed_seg_family,
