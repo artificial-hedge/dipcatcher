@@ -2634,3 +2634,4 @@ wave 233 (2026-10-02): compiler-2 canon — ssa_construct, sccp_const, gvn_elim,
 wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, join_algos, query_planner, mvcc_isolation, lsm_tree; 1377→1383 families.
 wave 235 (2026-10-02): OS-internals canon — round_robin_sched, cfs_scheduler, demand_paging, deadlock_detect, disk_sched, fs_journal; 1383→1389 families.
 wave 236 (2026-10-02): graphics canon — raycaster, bresenham_line, scanline_fill, zbuffer_render, quaternion_slerp, bsp_tree, mvp_transform; 1389→1395 families.
+wave 237 (2026-10-02): parser canon — recursive_descent, pratt_parser, earley_parser, slr_parser, peg_packrat, ll1_table; 1395→1401 families.

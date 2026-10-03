@@ -1887,6 +1887,14 @@ from quant_fund.research.benches_w236 import (
     bench_scanline_fill_family,
     bench_zbuffer_render_family,
 )
+from quant_fund.research.benches_w237 import (
+    bench_earley_parser_family,
+    bench_ll1_table_family,
+    bench_peg_packrat_family,
+    bench_pratt_parser_family,
+    bench_recursive_descent_family,
+    bench_slr_parser_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4856,6 +4864,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "quaternion_slerp": bench_quaternion_slerp_family(),
         "bsp_tree": bench_bsp_tree_family(),
         "mvp_transform": bench_mvp_transform_family(),
+        "recursive_descent": bench_recursive_descent_family(),
+        "pratt_parser": bench_pratt_parser_family(),
+        "earley_parser": bench_earley_parser_family(),
+        "slr_parser": bench_slr_parser_family(),
+        "peg_packrat": bench_peg_packrat_family(),
+        "ll1_table": bench_ll1_table_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
