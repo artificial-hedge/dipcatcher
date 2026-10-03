@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-731 ramification-2 canon.
+        "higher_ramif",
+        "brylinski_kato",
+        "log_ramification",
+        "semi_stable_model",
+        "neron_raynaud",
+        "temkin_alter",
         # Wave-730 ramification canon.
         "grothendieck_muw",
         "raynaud_pencil",
