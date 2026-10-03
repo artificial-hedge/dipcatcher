@@ -2431,6 +2431,14 @@ from quant_fund.research.benches_w304 import (
     bench_meanshift_track_family,
     bench_seam_carving_family,
 )
+from quant_fund.research.benches_w305 import (
+    bench_booth_rotation_family,
+    bench_lyndon_factor_family,
+    bench_palindromic_tree_family,
+    bench_suffix_array_lcp_family,
+    bench_suffix_tree_lex_family,
+    bench_z_function_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2810,6 +2818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "suffix_array_lcp": bench_suffix_array_lcp_family,
+        "z_function": bench_z_function_family,
+        "suffix_tree_lex": bench_suffix_tree_lex_family,
+        "booth_rotation": bench_booth_rotation_family,
+        "lyndon_factor": bench_lyndon_factor_family,
+        "palindromic_tree": bench_palindromic_tree_family,
         "harris_corner": bench_harris_corner_family,
         "hough_lines": bench_hough_lines_family,
         "integral_image": bench_integral_image_family,
