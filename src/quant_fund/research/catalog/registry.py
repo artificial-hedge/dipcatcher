@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-478 motivic-4 canon.
+        "levine_morel",
+        "quadratic_k",
+        "mgl_spec",
+        "cellular_motive",
+        "motivic_pi0",
+        "beilinson_con",
         # Wave-477 arithmetic-D-modules-2 canon.
         "dagger_dm",
         "spencer_dm",
