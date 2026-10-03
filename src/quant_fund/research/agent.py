@@ -3631,6 +3631,14 @@ from quant_fund.research.benches_w454 import (
     bench_riemann_hilbert_family,
     bench_vanishing_cycles_family,
 )
+from quant_fund.research.benches_w455 import (
+    bench_cubical_path_family,
+    bench_glue_types_family,
+    bench_hcomp_fill_family,
+    bench_interval_obj_family,
+    bench_kan_op_family,
+    bench_transport_coe_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4010,6 +4018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cubical_path": bench_cubical_path_family,
+        "hcomp_fill": bench_hcomp_fill_family,
+        "glue_types": bench_glue_types_family,
+        "interval_obj": bench_interval_obj_family,
+        "kan_op": bench_kan_op_family,
+        "transport_coe": bench_transport_coe_family,
         "ic_stalk": bench_ic_stalk_family,
         "decomp_thm": bench_decomp_thm_family,
         "riemann_hilbert": bench_riemann_hilbert_family,
