@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-325 PL-8 ownership/substructural canon.
+        "borrow_check",
+        "lifetime_outlives",
+        "linear_use",
+        "escape_region",
+        "capability_perm",
+        "refinement_liquid",
         # Wave-324 polyhedral-compiler canon.
         "fourier_motzkin",
         "banerjee_dep",
