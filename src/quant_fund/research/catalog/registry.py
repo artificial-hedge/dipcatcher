@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-507 quasi-category/Joyal canon.
+        "quasi_cat",
+        "joyal_model",
+        "homotopy_coherent",
+        "nerve_quasi",
+        "htc_colimit",
+        "marking_qcat",
         # Wave-506 NIP/distal model-theory canon.
         "dp_rank",
         "forking_seq",
