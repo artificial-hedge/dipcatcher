@@ -2007,6 +2007,14 @@ from quant_fund.research.benches_w251 import (
     bench_orth_iter_family,
     bench_sturm_eig_family,
 )
+from quant_fund.research.benches_w252 import (
+    bench_anf_cps_family,
+    bench_compacting_gc_family,
+    bench_dispatch_table_family,
+    bench_gen_gc_family,
+    bench_poly_inline_cache_family,
+    bench_trampoline_tc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2200,6 +2208,12 @@ def _provenance(
         "lu_pivots": bench_lu_pivots_family,
         "orth_iter": bench_orth_iter_family,
         "sturm_eig": bench_sturm_eig_family,
+        "gen_gc": bench_gen_gc_family,
+        "compacting_gc": bench_compacting_gc_family,
+        "dispatch_table": bench_dispatch_table_family,
+        "poly_inline_cache": bench_poly_inline_cache_family,
+        "anf_cps": bench_anf_cps_family,
+        "trampoline_tc": bench_trampoline_tc_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
