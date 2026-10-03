@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-460 condensed-2/analytic-rings canon.
+        "analytic_ring2",
+        "solid_tensor",
+        "trace_class",
+        "clausen_scholze",
+        "solid_derived",
+        "pyknotic",
         # Wave-459 order-theory-2/domain-theory canon.
         "fixed_points_ord",
         "chain_cond",

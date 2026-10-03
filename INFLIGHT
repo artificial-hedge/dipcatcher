@@ -1,3 +1,4 @@
+feat(research): wave 460 — condensed-2/analytic-rings canon (analytic_ring2, solid_tensor, trace_class, clausen_scholze, solid_derived, pyknotic) (2715->2721 families)
 feat(research): wave 459 — order-theory-2/domain-theory canon (fixed_points_ord, chain_cond, scott_cpo, way_below, galois_insertion, denotational) (2709->2715 families)
 feat(research): wave 458 — matroid-3 canon (transversal_mat, matroid_rep, tutte_poly, matroid_minor, regular_mat, delta_matroid) (2703->2709 families)
 feat(research): wave 457 — double-category/proarrow canon (proarrow, virtual_equip, fibrant_double, tabulation, companion_conj, framed_bicat) (2697->2703 families)
