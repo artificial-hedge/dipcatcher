@@ -1,3 +1,4 @@
+feat(research): wave 973 — Banach-space-geometry canon (banach_mazur, type_cotype, gl_property, djt_space, schauder_basis, kalton_loc) (5787->5793 families)
 feat(research): wave 972 — free-probability-2 canon (free_entropy, free_fisher_info, free_cumulant, freeness_check, matrix_model_free, free_berg) (5781->5787 families)
 feat(research): wave 971 — noncommutative-geometry canon (spectral_triple, connes_metric, index_pairing, hochschild_cycle, differential_form_nc, geodesic_nc) (5775->5781 families)
 feat(research): wave 970 — subfactor-theory canon (subfactor, standard_invariant, planar_algebra, paragroup, principal_graph, fusion_algebra) (5769->5775 families)
