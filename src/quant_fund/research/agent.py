@@ -3207,6 +3207,14 @@ from quant_fund.research.benches_w401 import (
     bench_interp_equality_family,
     bench_reverse_math_family,
 )
+from quant_fund.research.benches_w402 import (
+    bench_etale_space_family,
+    bench_geometric_morph_family,
+    bench_groth_topo_family,
+    bench_logic_topos_family,
+    bench_sheaf_cond_family,
+    bench_topos_subobj_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3586,6 +3594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "topos_subobj": bench_topos_subobj_family,
+        "groth_topo": bench_groth_topo_family,
+        "sheaf_cond": bench_sheaf_cond_family,
+        "logic_topos": bench_logic_topos_family,
+        "geometric_morph": bench_geometric_morph_family,
+        "etale_space": bench_etale_space_family,
         "herbrand_thm": bench_herbrand_thm_family,
         "interp_equality": bench_interp_equality_family,
         "cut_elim_seq": bench_cut_elim_seq_family,

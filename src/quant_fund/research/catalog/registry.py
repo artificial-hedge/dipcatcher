@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-402 topos-2 canon.
+        "topos_subobj",
+        "groth_topo",
+        "sheaf_cond",
+        "logic_topos",
+        "geometric_morph",
+        "etale_space",
         # Wave-401 proof-theory-3 canon.
         "herbrand_thm",
         "interp_equality",
