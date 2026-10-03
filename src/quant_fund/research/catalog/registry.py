@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-991 homogenization canon.
+        "homogenization",
+        "two_scale_conv",
+        "gamma_convergence",
+        "mosco_conv",
+        "bloch_decomp",
+        "h_convergence",
         # Wave-990 calculus-of-variations canon.
         "euler_lagrange",
         "legendre_cond",
