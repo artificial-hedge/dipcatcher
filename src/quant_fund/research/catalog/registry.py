@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1007 statistical-mechanics canon.
+        "ising_model",
+        "partition_function",
+        "bose_einstein",
+        "fermi_dirac",
+        "gibbs_measure",
+        "free_energy",
         # Wave-1006 quantum-mechanics canon.
         "schrodinger_eq",
         "hydrogen_atom",
