@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-695 homotopy-28 canon.
+        "homotopy_abelian",
+        "homotopy_finite",
+        "homotopy_infinite",
+        "homotopy_extended",
+        "stable_synthetic",
+        "stable_compact",
         # Wave-694 motivic-21 canon.
         "motivic_trace",
         "motivic_transfer2",

@@ -1,3 +1,4 @@
+feat(research): wave 695 — homotopy-28 canon (homotopy_abelian, homotopy_finite, homotopy_infinite, homotopy_extended, stable_synthetic, stable_compact) (4125->4131 families)
 feat(research): wave 694 — motivic-21 canon (motivic_trace, motivic_transfer2, motivic_coniveau, motivic_atiyah, motivic_deligne, motivic_residue) (4119->4125 families)
 feat(research): wave 693 — derived-geometry-8 canon (derived_etale, derived_flat, derived_smooth2, derived_quasi_coherent, derived_represent, derived_cartesian) (4113->4119 families)
 feat(research): wave 692 — higher-algebra-9 canon (e5_algebra, little_cubes2, swiss_cheese3, framed_discs, factorization_hom3, centralizer_alg2) (4107->4113 families)
