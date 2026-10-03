@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-459 order-theory-2/domain-theory canon.
+        "fixed_points_ord",
+        "chain_cond",
+        "scott_cpo",
+        "way_below",
+        "galois_insertion",
+        "denotational",
         # Wave-458 matroid-3 canon.
         "transversal_mat",
         "matroid_rep",
