@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-411 algebraic-geometry-9 canon.
+        "blow_up",
+        "intersection_mult",
+        "tangent_cone",
+        "normalization",
+        "divisor_class",
+        "dualizing",
         # Wave-410 set-theory-3 canon.
         "forcing2",
         "inner_model",
