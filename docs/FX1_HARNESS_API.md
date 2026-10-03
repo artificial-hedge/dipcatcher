@@ -168,11 +168,11 @@ same digested shape the job record embeds.
 | `GET /harness/backends` | per-backend liveness: `configured`, `circuit_open`, `cooldown_remaining_s`, `consecutive_failures`, plus `last_probe` — the most recent deep-health verdict (`ok`, `latency_ms`, `checked_at`, `error_class`; null before the first probe), so scrapes read health without spending a live call |
 | `POST /harness/backends/{name}/probe` | deep health: one live gated completion through the real resolver → `{ok, model, latency_ms, error, error_class}`; an unconfigured backend is a verdict (`ok:false, error_class:"backend_unavailable"`), not a wire fault. BYOK probes test the caller's endpoint inline; probes bypass and never feed the breaker, and land under `probe:<name>` in metrics so they can't pollute completion SLOs |
 | `POST /harness/gate/check` | pre-flight text through the honesty gate → `{ok, error}`; a refusal is a verdict, not a wire fault. Advisory: not slot-gated, stays up during drain, never metered — also `Fx1Harness.check_text` / `HarnessClient.check_text` / `fx1 harness check-text` |
-| `POST /harness/score` | run text through the deterministic reward contract → `{object:"list", data:[{object:"score", index, total, components, violations}]}` — a string scores one input, a list scores each (cap 128); honesty violations cap `total` at `-10` and empty text scores `0`. Advisory like the gate pre-flight: never touches a backend, stays up during drain — also `Fx1Harness.score` / `HarnessClient.score` / `HarnessApiClient.score` |
+| `POST /harness/score` | run text through the deterministic reward contract → `{object:"list", data:[{object:"score", index, total, components, violations}]}` — a string scores one input, a list scores each (cap 128); honesty violations cap `total` at `-10` and empty text scores `0`. Advisory like the gate pre-flight: never touches a backend, stays up during drain — also `Fx1Harness.score` / `HarnessClient.score` / `HarnessApiClient.score` / `fx1 harness score` |
 | `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
-| `GET /harness/commands` | registered commands, optional `?role=` filter |
+| `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |
 | `POST /harness/complete/batch` | up to 64 conversations over one shared backend; per-item `completion_id` + `latency_ms` |
@@ -615,7 +615,14 @@ fine-tunes. `fx1 harness respond` (`/v1/responses` — JSON items arg,
 (`/v1/embeddings` — repeatable input, `--encoding`/`--dimensions`), and
 `moderate` (`/v1/moderations` — the honesty gate as an OpenAI verdict,
 no backend needed) each run both legs: `--remote` over the wire or
-in-process through the SDK twin.
+in-process through the SDK twin. `chat-get`/`chat-delete`/
+`response-get`/`response-delete` cover the stored-object
+`GET`/`DELETE` routes (missing ids exit 2 — never a fabricated
+envelope), `fx1 harness score <text...>` scores through the
+reward contract with no model spend, `fx1 harness commands`
+lists the registry (`--role` filters; a bogus role exits 2 like
+the wire's 422), and `fx1 harness verify <dir>` posts the whole
+directory through POST /receipts/verify/batch in one call.
 
 ### Retrieval (`store` + `GET`/`DELETE`)
 

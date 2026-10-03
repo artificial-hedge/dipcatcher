@@ -176,6 +176,8 @@ def cli_audit() -> dict[str, Any]:
         "chat-delete",
         "response-get",
         "response-delete",
+        "score",
+        "commands",
     } <= hnames
 
     # the files/batches family is wire-only — no --remote is exit 2 on
@@ -284,6 +286,19 @@ def cli_audit() -> dict[str, Any]:
         out["harness_stored_missing_2"] = all(
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
             for name in ("chat-get", "chat-delete", "response-get", "response-delete")
+        )
+
+        # score preflight: the reward contract runs in-process with no model
+        # spend — banned-token text carries violations + the -10 total.
+        _sc = json.loads(runner.invoke(app, ["harness", "score", "our live sharpe is 9"]).stdout)[0]
+        out["harness_score_inprocess"] = bool(_sc["violations"]) and _sc["total"] < 0
+        # commands registry: the bogus-role fault is exit 2 (wire's 422 twin).
+        _cl = runner.invoke(app, ["harness", "commands", "--role", "evaluation"])
+        out["harness_commands_role"] = _cl.exit_code == 0 and all(
+            isinstance(n, str) for n in json.loads(_cl.stdout)["commands"]
+        )
+        out["harness_commands_bad_role_2"] = (
+            runner.invoke(app, ["harness", "commands", "--role", "bogus"]).exit_code == 2
         )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -457,6 +472,23 @@ def cli_audit() -> dict[str, Any]:
                 kind="k",
                 verdict="ok",
                 digest_convention=None,
+            )
+
+        def verify_receipts(self, receipts: list[dict[str, Any]]) -> Any:
+            from fx1.sdk import ReceiptVerdict
+
+            return tuple(
+                ReceiptVerdict(
+                    valid=i == 0,
+                    path="<cli>",
+                    errors=() if i == 0 else ("bad",),
+                    warnings=(),
+                    schema_tag="x",
+                    kind="k",
+                    verdict="ok" if i == 0 else "invalid",
+                    digest_convention=None,
+                )
+                for i, _r in enumerate(receipts)
             )
 
         def health(self) -> Any:
@@ -701,7 +733,25 @@ def cli_audit() -> dict[str, Any]:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
 
         def commands(self, role: Any = None) -> list[str]:
-            return ["cmd-a"]
+            self.last_ft_query = {"commands_role": role}
+            return ["cmd-a"] if role is None else []
+
+        def verify_receipts(self, receipts: list[dict[str, Any]]) -> Any:
+            from fx1.sdk import ReceiptVerdict
+
+            return tuple(
+                ReceiptVerdict(
+                    valid=i == 0,
+                    path="<cli>",
+                    errors=() if i == 0 else ("bad",),
+                    warnings=(),
+                    schema_tag="x",
+                    kind="k",
+                    verdict="ok" if i == 0 else "invalid",
+                    digest_convention=None,
+                )
+                for i, _r in enumerate(receipts)
+            )
 
         def health(self) -> Any:
             from fx1.sdk import HarnessHealth
@@ -1023,6 +1073,20 @@ def cli_audit() -> dict[str, Any]:
                 "object": "response.deleted",
                 "deleted": True,
             }
+
+        def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
+            self.last_ft_query = {"score": input}
+            items = input if isinstance(input, list) else [input]
+            return [
+                {
+                    "object": "score",
+                    "index": i,
+                    "total": 0.0,
+                    "components": {},
+                    "violations": [],
+                }
+                for i, _t in enumerate(items)
+            ]
 
     remotes: list[_FakeRemote] = []
 
@@ -1725,6 +1789,34 @@ def cli_audit() -> dict[str, Any]:
                 "response-delete",
             )
         )
+        _rs = json.loads(
+            runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
+        )
+        out["remote_score"] = len(_rs) == 2 and _rs[0]["object"] == "score"
+        out["remote_commands_role"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "commands",
+                        "--role",
+                        "evaluation",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["commands"]
+            == []
+        )
+        # verify on a directory is one batch call on the wire; an invalid
+        # file exits 1 without aborting the rest.
+        with _tmpf.TemporaryDirectory() as _rd_s:
+            _rd = _P(_rd_s)
+            (_rd / "a.json").write_text('{"x": 1}')
+            (_rd / "b.json").write_text('{"y": 2}')
+            _dv = runner.invoke(app, ["harness", "verify", str(_rd), "--remote", "http://h.test"])
+        out["remote_verify_dir"] = _dv.exit_code == 1 and json.loads(_dv.stdout)["files"] == 2
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

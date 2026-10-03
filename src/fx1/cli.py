@@ -17,6 +17,7 @@ import typer
 
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
+    from fx1.harness import HarnessRole
     from fx1.sdk import Fx1Harness
     from fx1.serve.client import HarnessClient
 
@@ -554,12 +555,12 @@ def harness_verify(
         if not files:
             typer.echo(f"error: no *.json receipts under {receipt_path}", err=True)
             raise typer.Exit(code=2)
-
-        def _verify_one(f: Path) -> dict[str, Any]:
-            v = _or_exit(lambda: surface.verify_receipt(json.loads(f.read_text())))
-            return {"file": f.name, "valid": v.valid}
-
-        results = [_verify_one(f) for f in files]
+        # one round-trip on the wire (receipts/verify/batch); the SDK twin
+        # loops in-process — same per-item verdict shape either way.
+        verdicts = _or_exit(
+            lambda: surface.verify_receipts([json.loads(f.read_text()) for f in files])
+        )
+        results = [{"file": f.name, "valid": v.valid} for f, v in zip(files, verdicts, strict=True)]
         typer.echo(
             json.dumps(
                 {
@@ -584,6 +585,44 @@ def harness_verify(
         )
     )
     raise typer.Exit(code=0 if verdict.valid else 1)
+
+
+@harness_app.command("score")
+def harness_score(
+    inputs: list[str] = typer.Argument(..., help="Text to score (repeatable)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /harness/score`` — the deterministic reward contract as a
+    preflight surface: per-input gate categories + reward signal, no model
+    spend. In-process by default."""
+    inp: str | list[str] = inputs[0] if len(inputs) == 1 else list(inputs)
+    surface = _surface(remote, api_key, timeout_s)
+    out = _or_exit(lambda: surface.score(inp))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("commands")
+def harness_commands(
+    role: str | None = typer.Option(
+        None, "--role", help="Filter to one role's reachable commands."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /harness/commands`` — registered command names; anything
+    unlisted is unreachable on that role."""
+    surface = _surface(remote, api_key, timeout_s)
+    role_val: HarnessRole | None = None
+    if role is not None:
+        from fx1.harness import HarnessRole
+
+        # bogus role names are an arg fault, same as the wire's 422.
+        role_val = _or_exit(lambda: HarnessRole(role))
+    names = _or_exit(lambda: surface.commands(role=role_val))
+    typer.echo(json.dumps({"count": len(names), "commands": names}, indent=2))
 
 
 @harness_app.command("receipts")
