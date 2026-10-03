@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-620 stacks-2 canon.
+        "gerbe2",
+        "band_gerbe",
+        "rigid_stack",
+        "dm_stack2",
+        "inertia_stack",
+        "root_stack",
         # Wave-619 homotopy-14 canon.
         "unstable_htpy",
         "tame_htpy",
