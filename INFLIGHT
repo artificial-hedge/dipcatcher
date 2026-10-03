@@ -1,3 +1,4 @@
+feat(research): wave 802 — neural-SDE canon (latent_sde, neural_cde, neural_rde, sde_gan, sde_matching, logsig_rde) (4767->4773 families)
 feat(research): wave 801 — rough-volatility canon (fractional_heston, rough_bergomi, rough_sabr, rough_variance, volterra_sde, multifactor_rough) (4761->4767 families)
 feat(research): wave 800 — stochastic-vol canon (heston_model, bates_model, rough_heston, sabr_model, three_two_vol, scott_vol) (4755->4761 families)
 feat(research): wave 799 — path-dependent PDE canon (path_dependent_pde, functional_ito, dupire_functional, viscosity_path, path_sobolev, kolmogorov_path) (4749->4755 families)

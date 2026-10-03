@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-802 neural-SDE canon.
+        "latent_sde",
+        "neural_cde",
+        "neural_rde",
+        "sde_gan",
+        "sde_matching",
+        "logsig_rde",
         # Wave-801 rough-volatility canon.
         "fractional_heston",
         "rough_bergomi",
