@@ -19,14 +19,17 @@ import hashlib
 from typing import Any
 
 __all__ = [
+    "BENCH_RESULT_SCHEMA",
     "COMPLETION_RECORD_SCHEMA",
     "JOB_RECORD_SCHEMA",
     "RUN_RESULT_SCHEMA",
+    "bench_receipt",
     "completion_record_receipt",
     "job_record_receipt",
     "run_result_receipt",
 ]
 
+BENCH_RESULT_SCHEMA = "fx1_bench_result.v1"
 COMPLETION_RECORD_SCHEMA = "fx1_completion_record.v1"
 JOB_RECORD_SCHEMA = "fx1_job_record.v1"
 RUN_RESULT_SCHEMA = "fx1_run_result.v1"
@@ -80,6 +83,15 @@ def _digested_run_result(result: dict[str, Any]) -> dict[str, Any]:
     if "ok" not in out and "exit_code" in result:
         out["ok"] = result["exit_code"] == 0
     return out
+
+
+def bench_receipt(record: dict[str, Any]) -> dict[str, Any]:
+    """Seal one ``harness bench`` result — ``fx1_bench_result.v1``.
+
+    The record's prompt is already a digest (``prompt_sha256``); the doc
+    seals the measured metrics + params verbatim so a deployer can hand
+    the artifact to ``verify_receipt`` as evidence of the perf gate."""
+    return _ops_receipt("fx1_bench_result", BENCH_RESULT_SCHEMA, dict(record))
 
 
 def completion_record_receipt(record: dict[str, Any]) -> dict[str, Any]:

@@ -942,6 +942,32 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             and fake.stream_calls[-1].get("temperature") == 0.6
             and fake.stream_calls[-1].get("seed") == 9
         )
+        # harness bench in-process leg: JSON record + sealed receipt + bounds
+        rbn = runner.invoke(app, ["harness", "bench", "--n", "3", "--warmup", "0"])
+        rbn_j = json.loads(rbn.stdout) if rbn.exit_code == 0 else {}
+        out["bench_local_json"] = (
+            rbn_j.get("mode") == "in_process"
+            and rbn_j.get("params", {}).get("n") == 3
+            and rbn_j.get("metrics", {}).get("measured_requests") == 3
+            and rbn_j.get("metrics", {}).get("error_count") == 0
+            and rbn_j.get("metrics", {}).get("models") == ["fake-v0"]
+        )
+        rbr = runner.invoke(app, ["harness", "bench", "--n", "1", "--warmup", "0", "--receipt"])
+        rbr_j = json.loads(rbr.stdout) if rbr.exit_code == 0 else {}
+        out["bench_receipt_sealed"] = rbr_j.get("schema") == "fx1_bench_result.v1" and bool(
+            rbr_j.get("receipt_sha256")
+        )
+        out["bench_bad_n_2"] = runner.invoke(app, ["harness", "bench", "--n", "0"]).exit_code == 2
+
+        class _FailSDK(_FakeSDK):
+            def complete(self, messages: Any, **kw: Any) -> CompletionResult:
+                raise RuntimeError("bench-boom")
+
+        with patch("fx1.sdk.Fx1Harness", return_value=_FailSDK()):
+            rbf = runner.invoke(app, ["harness", "bench", "--n", "2", "--warmup", "0"])
+        out["bench_errors_exit_1"] = rbf.exit_code == 1 and json.loads(rbf.stdout)["metrics"][
+            "errors"
+        ] == {"RuntimeError": 2}
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -1625,6 +1651,25 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             and rr.stdout.strip() == "remote-text"
             and remotes[0].base_url == "http://h.test"
             and remotes[0].api_key == "k"
+        )
+        rbw = runner.invoke(
+            app,
+            [
+                "harness",
+                "bench",
+                "--remote",
+                "http://h.test",
+                "--n",
+                "2",
+                "--warmup",
+                "0",
+            ],
+        )
+        rbw_j = json.loads(rbw.stdout) if rbw.exit_code == 0 else {}
+        out["bench_remote_mode"] = (
+            rbw_j.get("mode") == "remote"
+            and rbw_j.get("metrics", {}).get("measured_requests") == 2
+            and rbw_j.get("metrics", {}).get("models") == ["remote-v0"]
         )
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()

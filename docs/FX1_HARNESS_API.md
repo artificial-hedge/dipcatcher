@@ -869,6 +869,18 @@ flips to read-only probes against a live deployment (no model spend):
 health, version negotiation, commands, advisory surfaces, and the auth
 gate when `--api-key` is given.
 
+`fx1 harness bench` is the perf gate: it times `--n` gated `complete`
+calls at `--concurrency` workers (after `--warmup` unmeasured requests)
+and prints the latency card (p50/p90/p95/p99/max/mean), throughput,
+token rates, and an error histogram by exception class. The prompt is
+digested (`prompt_sha256`), never embedded. Both legs work: default is
+the in-process SDK, `--remote URL` benches a live deployment;
+`--backend`/`--byok-*`/`--seed`/`--max-tokens` forward per request.
+`--receipt` prints the sealed `fx1_bench_result.v1` doc (verify with
+`dipcatcher verify-receipt` / `POST /receipts/verify`). Exits 0 only
+when every measured request succeeded, 1 on any error — a deploy gate
+beside `selftest`.
+
 ## Async jobs & webhooks
 
 `POST /harness/jobs` admits under the drain + `max_inflight` gates and

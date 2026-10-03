@@ -430,6 +430,68 @@ def sdk_audit() -> dict[str, bool]:
         and sdk.upload_cancel(sdk.upload_create(bytes=4)["id"])["status"] == "cancelled"
     )
 
+    # ---- harness bench: the perf gate times gated completes on either
+    # leg and seals its record; prompts are digested, errors counted by
+    # class, bounds fail closed before any token is spent.
+    from fx1.harness_bench import run_bench as _run_bench  # noqa: PLC0415
+    from fx1.sdk import CompletionResult as _CR  # noqa: PLC0415
+    from fx1.serve.ops_receipt import bench_receipt as _bench_rcpt  # noqa: PLC0415
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        verify_receipt_payload as _vrp,
+    )
+
+    class _BenchStub:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: Any, **kw: Any) -> Any:
+            self.calls += 1
+            return _CR(
+                backend=str(kw.get("backend")),
+                model="stub-v0",
+                content="ok",
+                usage={"prompt_tokens": 5, "completion_tokens": 7},
+            )
+
+    class _BenchDead:
+        def complete(self, messages: Any, **kw: Any) -> Any:
+            raise ConnectionError("down")
+
+    _bs = _BenchStub()
+    _brec = _run_bench(
+        _bs, n=4, concurrency=2, warmup=1, prompt="probe", backend="byok", mode="remote"
+    )
+    _bm = _brec["metrics"]
+    out["bench_record_metrics"] = (
+        _bm["measured_requests"] == 4
+        and _bm["error_count"] == 0
+        and _bm["prompt_tokens_total"] == 20
+        and _bm["completion_tokens_total"] == 28
+        and _bm["usage_reported"] == 4
+        and _bm["models"] == ["stub-v0"]
+        and _bm["backends"] == ["byok"]
+        and _bs.calls == 5  # warmup + measured
+        and _brec["mode"] == "remote"
+        and "probe" not in repr(_brec)
+        and bool(_brec["params"]["prompt_sha256"])
+    )
+    _bdead = _run_bench(_BenchDead(), n=3, concurrency=1, warmup=0)
+    out["bench_error_histogram"] = (
+        _bdead["metrics"]["error_count"] == 3
+        and _bdead["metrics"]["errors"] == {"ConnectionError": 3}
+        and _bdead["metrics"]["error_rate"] == 1.0
+    )
+    out["bench_bounds_fail_closed"] = (
+        _raises(lambda: _run_bench(sdk, n=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, concurrency=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, warmup=-1)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, max_tokens=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, timeout_s=0.0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, prompt="  ")) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, mode="sideways")) == "ValueError"
+    )
+    out["bench_receipt_verifies"] = _vrp(_bench_rcpt(_brec))["valid"] is True
+
     return out
 
 

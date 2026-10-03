@@ -1044,6 +1044,66 @@ def harness_selftest(
         raise typer.Exit(code=2)
 
 
+@harness_app.command("bench")
+def harness_bench(
+    remote: str | None = typer.Option(
+        None,
+        "--remote",
+        help="Bench a live deployment; unset times the in-process SDK.",
+    ),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    n: int = typer.Option(32, "--n", help="Measured requests (1..4096)."),
+    concurrency: int = typer.Option(4, "--concurrency", help="Worker pool size (1..256)."),
+    warmup: int = typer.Option(2, "--warmup", help="Unmeasured warmup requests (0..256)."),
+    prompt: str = typer.Option(
+        "", "--prompt", help="Probe prompt (default: a fixed summary prompt)."
+    ),
+    max_tokens: int = typer.Option(32, "--max-tokens", help="Per-request token cap."),
+    backend: str = typer.Option("local_fx1", "--backend", help=_BACKEND_HELP),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Sampling seed forwarded to each request."
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    receipt: bool = typer.Option(
+        False,
+        "--receipt",
+        help="Print the sealed fx1_bench_result.v1 doc instead of the raw record.",
+    ),
+) -> None:
+    """Perf gate: time ``n`` gated completions at ``--concurrency`` workers.
+
+    Prints the latency card (p50/p90/p95/p99/max/mean), throughput, token
+    rates, and an error histogram as JSON; ``--receipt`` prints the sealed
+    fx1_bench_result.v1 document (verify with ``dipcatcher verify-receipt``).
+    Exits 0 when every measured request succeeded, 1 when any failed —
+    usable as a deploy gate alongside ``harness selftest``."""
+    from fx1.harness_bench import DEFAULT_BENCH_PROMPT, run_bench
+    from fx1.serve.ops_receipt import bench_receipt
+
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    record = _or_exit(
+        lambda: run_bench(
+            surface,
+            n=n,
+            concurrency=concurrency,
+            warmup=warmup,
+            prompt=prompt or DEFAULT_BENCH_PROMPT,
+            max_tokens=max_tokens,
+            timeout_s=timeout_s,
+            backend=backend,
+            byok=_byok_opts(byok_base_url, byok_api_key, byok_model),
+            seed=seed,
+            mode="remote" if remote else "in_process",
+        )
+    )
+    typer.echo(json.dumps(bench_receipt(record) if receipt else record, indent=2, sort_keys=True))
+    if record["metrics"]["error_count"]:
+        raise typer.Exit(code=1)
+
+
 @harness_app.command("compat")
 def harness_compat(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
