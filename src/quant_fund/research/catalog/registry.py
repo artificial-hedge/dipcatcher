@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-434 Langlands-toy canon.
+        "satake_iso",
+        "hecke_operator",
+        "langlands_dual",
+        "eisenstein_srs",
+        "automorphic_rep",
+        "fourier_coeff",
         # Wave-433 p-adic-geometry canon.
         "rigid_analytic",
         "berkovich_space",

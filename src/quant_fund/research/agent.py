@@ -3463,6 +3463,14 @@ from quant_fund.research.benches_w433 import (
     bench_perfectoid_space_family,
     bench_rigid_analytic_family,
 )
+from quant_fund.research.benches_w434 import (
+    bench_automorphic_rep_family,
+    bench_eisenstein_srs_family,
+    bench_fourier_coeff_family,
+    bench_hecke_operator_family,
+    bench_langlands_dual_family,
+    bench_satake_iso_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3842,6 +3850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "satake_iso": bench_satake_iso_family,
+        "hecke_operator": bench_hecke_operator_family,
+        "langlands_dual": bench_langlands_dual_family,
+        "eisenstein_srs": bench_eisenstein_srs_family,
+        "automorphic_rep": bench_automorphic_rep_family,
+        "fourier_coeff": bench_fourier_coeff_family,
         "rigid_analytic": bench_rigid_analytic_family,
         "berkovich_space": bench_berkovich_space_family,
         "perfectoid_space": bench_perfectoid_space_family,
