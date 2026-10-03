@@ -7695,6 +7695,14 @@ from quant_fund.research.benches_w962 import (
     bench_tomita_takesaki_family,
     bench_von_neumann_alg_family,
 )
+from quant_fund.research.benches_w963 import (
+    bench_atkinson_thm_family,
+    bench_browder_operator_family,
+    bench_essential_spectrum_family,
+    bench_fredholm_index_family,
+    bench_riesz_schauder_family,
+    bench_weyl_theorem_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8066,6 +8074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fredholm_index": bench_fredholm_index_family,
+        "weyl_theorem": bench_weyl_theorem_family,
+        "essential_spectrum": bench_essential_spectrum_family,
+        "browder_operator": bench_browder_operator_family,
+        "riesz_schauder": bench_riesz_schauder_family,
+        "atkinson_thm": bench_atkinson_thm_family,
         "von_neumann_alg": bench_von_neumann_alg_family,
         "double_commutant": bench_double_commutant_family,
         "predual_space": bench_predual_space_family,
