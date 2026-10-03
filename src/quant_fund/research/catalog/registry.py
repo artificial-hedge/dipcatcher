@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-512 super-geometry canon.
+        "super_space",
+        "super_manifold",
+        "super_lie",
+        "odd_variables",
+        "berezin_int",
+        "super_scheme",
         # Wave-511 Fargues-Scholze canon.
         "fs_diamond",
         "geometric_satake",

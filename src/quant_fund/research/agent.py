@@ -4087,6 +4087,14 @@ from quant_fund.research.benches_w511 import (
     bench_v_sheaf_family,
     bench_y_diamond_family,
 )
+from quant_fund.research.benches_w512 import (
+    bench_berezin_int_family,
+    bench_odd_variables_family,
+    bench_super_lie_family,
+    bench_super_manifold_family,
+    bench_super_scheme_family,
+    bench_super_space_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4466,6 +4474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "super_space": bench_super_space_family,
+        "super_manifold": bench_super_manifold_family,
+        "super_lie": bench_super_lie_family,
+        "odd_variables": bench_odd_variables_family,
+        "berezin_int": bench_berezin_int_family,
+        "super_scheme": bench_super_scheme_family,
         "fs_diamond": bench_fs_diamond_family,
         "geometric_satake": bench_geometric_satake_family,
         "v_sheaf": bench_v_sheaf_family,
