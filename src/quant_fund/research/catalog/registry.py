@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-709 category-22 canon.
+        "cat_univariant2",
+        "cat_ab2",
+        "cat_exact3",
+        "cat_freyd",
+        "cat_ab_loc",
+        "cat_pro_object2",
         # Wave-708 category-21 canon.
         "cat_pseudo_limit",
         "cat_weak_eq",
