@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-369 numerical-6 canon.
+        "broyden",
+        "cheb_approx",
+        "brent_root",
+        "romberg",
+        "aitken_delta",
+        "collocation_ode",
         # Wave-368 model-theory-2/logic canon.
         "unification_fol",
         "skolem_normal",
