@@ -4655,6 +4655,14 @@ from quant_fund.research.benches_w582 import (
     bench_nilp_cone_family,
     bench_spectral_bung_family,
 )
+from quant_fund.research.benches_w583 import (
+    bench_fulton_mclarty_family,
+    bench_motivic_base_change_family,
+    bench_motivic_homotopy2_family,
+    bench_motivic_proper_family,
+    bench_motivic_smooth_family,
+    bench_six_op_motivic_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5034,6 +5042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_base_change": bench_motivic_base_change_family,
+        "six_op_motivic": bench_six_op_motivic_family,
+        "motivic_smooth": bench_motivic_smooth_family,
+        "motivic_proper": bench_motivic_proper_family,
+        "fulton_mclarty": bench_fulton_mclarty_family,
+        "motivic_homotopy2": bench_motivic_homotopy2_family,
         "arinkin_gaitsgory": bench_arinkin_gaitsgory_family,
         "derived_satake": bench_derived_satake_family,
         "spectral_bung": bench_spectral_bung_family,
