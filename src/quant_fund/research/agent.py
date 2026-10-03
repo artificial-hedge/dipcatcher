@@ -3279,6 +3279,14 @@ from quant_fund.research.benches_w410 import (
     bench_proof_mining_family,
     bench_recursion3_family,
 )
+from quant_fund.research.benches_w411 import (
+    bench_blow_up_family,
+    bench_divisor_class_family,
+    bench_dualizing_family,
+    bench_intersection_mult_family,
+    bench_normalization_family,
+    bench_tangent_cone_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3658,6 +3666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "blow_up": bench_blow_up_family,
+        "intersection_mult": bench_intersection_mult_family,
+        "tangent_cone": bench_tangent_cone_family,
+        "normalization": bench_normalization_family,
+        "divisor_class": bench_divisor_class_family,
+        "dualizing": bench_dualizing_family,
         "forcing2": bench_forcing2_family,
         "inner_model": bench_inner_model_family,
         "descriptive3": bench_descriptive3_family,
