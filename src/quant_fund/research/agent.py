@@ -4103,6 +4103,14 @@ from quant_fund.research.benches_w513 import (
     bench_soergel_bim_family,
     bench_uq_sl2_family,
 )
+from quant_fund.research.benches_w514 import (
+    bench_beilinson_reg_family,
+    bench_cheeger_simons_family,
+    bench_deligne_cohom_family,
+    bench_diff_cohom_family,
+    bench_flat_bundle_family,
+    bench_secondary_inv_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4482,6 +4490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "diff_cohom": bench_diff_cohom_family,
+        "cheeger_simons": bench_cheeger_simons_family,
+        "deligne_cohom": bench_deligne_cohom_family,
+        "flat_bundle": bench_flat_bundle_family,
+        "beilinson_reg": bench_beilinson_reg_family,
+        "secondary_inv": bench_secondary_inv_family,
         "categorify": bench_categorify_family,
         "khovanov_hom": bench_khovanov_hom_family,
         "hecke_cat": bench_hecke_cat_family,
