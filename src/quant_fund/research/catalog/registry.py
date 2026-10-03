@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-617 algebraic-K-6 canon.
+        "gillet_thomason",
+        "khomo_k",
+        "k_theory4",
+        "gersen_suslin",
+        "berrick_k",
+        "hermitian_quillen",
         # Wave-616 tensor-category-2 canon.
         "multifusion",
         "premodular2",
