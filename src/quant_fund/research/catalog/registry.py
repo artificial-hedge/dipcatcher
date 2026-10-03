@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-389 number-fields canon.
+        "norm_subring",
+        "discriminant_field",
+        "decomposition_group",
+        "ramification",
+        "artin_symbol",
+        "class_group_toy",
         # Wave-388 homological-algebra-2 canon.
         "derived_functor",
         "ext_compute",

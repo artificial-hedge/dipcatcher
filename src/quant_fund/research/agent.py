@@ -3103,6 +3103,14 @@ from quant_fund.research.benches_w388 import (
     bench_spectral_seq_family,
     bench_tor_compute_family,
 )
+from quant_fund.research.benches_w389 import (
+    bench_artin_symbol_family,
+    bench_class_group_toy_family,
+    bench_decomposition_group_family,
+    bench_discriminant_field_family,
+    bench_norm_subring_family,
+    bench_ramification_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3482,6 +3490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "norm_subring": bench_norm_subring_family,
+        "discriminant_field": bench_discriminant_field_family,
+        "decomposition_group": bench_decomposition_group_family,
+        "ramification": bench_ramification_family,
+        "artin_symbol": bench_artin_symbol_family,
+        "class_group_toy": bench_class_group_toy_family,
         "derived_functor": bench_derived_functor_family,
         "ext_compute": bench_ext_compute_family,
         "tor_compute": bench_tor_compute_family,
