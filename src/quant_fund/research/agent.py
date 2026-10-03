@@ -6311,6 +6311,14 @@ from quant_fund.research.benches_w789 import (
     bench_jko_step_family,
     bench_wasserstein_grad_family,
 )
+from quant_fund.research.benches_w790 import (
+    bench_kac_theorem_family,
+    bench_mckean_vlasov_family,
+    bench_mean_field_game2_family,
+    bench_nonlinear_markov_family,
+    bench_propagation_chaos_family,
+    bench_self_stabilizing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6690,6 +6698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mckean_vlasov": bench_mckean_vlasov_family,
+        "mean_field_game2": bench_mean_field_game2_family,
+        "propagation_chaos": bench_propagation_chaos_family,
+        "kac_theorem": bench_kac_theorem_family,
+        "nonlinear_markov": bench_nonlinear_markov_family,
+        "self_stabilizing": bench_self_stabilizing_family,
         "wasserstein_grad": bench_wasserstein_grad_family,
         "jko_step": bench_jko_step_family,
         "benamou_brenier": bench_benamou_brenier_family,
