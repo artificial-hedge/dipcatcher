@@ -1,3 +1,7 @@
+feat(research): wave 327 — zero-knowledge canon (r1cs_check, qap_encode, kzg_commit, bulletproof_ip, plonkish_gate, snark_circuit) (1918->1924 families)
+feat(research): wave 326 — verification-3 canon (timed_automata, parity_game, nba_emptiness, ctl_mc, bisim_refine, wsts_cover) (1912->1918 families)
+feat(research): wave 325 — PL-8 ownership/substructural canon (borrow_check, lifetime_outlives, linear_use, escape_region, capability_perm, refinement_liquid) (1906->1912 families)
+feat(research): wave 324 — polyhedral-compiler canon (fourier_motzkin, banerjee_dep, pluto_schedule, tiling_legality, omega_test, vec_legality) (1900->1906 families)
 feat(research): wave 323 — PL-7 effect/session-types canon (free_monad, alg_effects, shift_reset, row_types, session_types, gradual_types) (1894->1900 families)
 feat(research): wave 322 — verification-2 canon (weakest_precond, sygus_synth, horn_clauses, interpolant_mc, predicate_abs, cegis_loop) (1888->1894 families)
 feat(research): wave 321 — shape-analysis canon (three_valued_logic, shape_graph, separation_logic, context_pta, recency_abstraction, interproc_summary) (1882->1888 families)
