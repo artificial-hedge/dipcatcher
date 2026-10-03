@@ -1,3 +1,4 @@
+feat(research): wave 291 — VLSI/EDA canon (netlist_parse, sta_timing, a_star_route, drc_check, place_quadratic, levelize) (1719->1725 families)
 feat(research): wave 290 — chem-informatics canon (smiles_parse, morgan_fp, tanimoto, mol_descriptors, substruct, ring_detect) (1713->1719 families)
 feat(research): wave 289 — category-theory canon (fin_cat, functor_check, nat_trans, adjunction, limit_prod, monad_laws) (1707->1713 families)
 feat(research): wave 288 — measure-theory canon (leb_measure, leb_integral, conv_prob, weak_conv, fubini_swap, radon_nikodym) (1701->1707 families)

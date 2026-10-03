@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-291 VLSI/EDA canon.
+        "netlist_parse",
+        "sta_timing",
+        "a_star_route",
+        "drc_check",
+        "place_quadratic",
+        "levelize",
         # Wave-290 chem-informatics canon.
         "smiles_parse",
         "morgan_fp",
