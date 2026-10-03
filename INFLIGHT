@@ -1,3 +1,4 @@
+feat(research): wave 270 — computational-physics-2 canon (lj_md, fdtd_wave, lattice_boltzmann, ising_metro, pic_plasma, dmc_solver) (1593->1599 families)
 feat(research): wave 269 — computer-vision canon (lk_flow, orb_feature, homography_4pt, ransac_plane, epipolar_8pt, stereo_disparity) (1587->1593 families)
 feat(research): wave 268 — crypto-4 canon (elgamal_enc, paillier_he, fiat_shamir, ot_12, chacha_stream, poly1305_mac) (1581->1587 families)
 feat(research): wave 267 — GPU-architecture canon (warp_scheduler, simt_divergence, bank_conflict, mem_coalesce, occupancy_calc, shared_mem_tile) (1575->1581 families)

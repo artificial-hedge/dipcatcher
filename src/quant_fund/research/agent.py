@@ -2151,6 +2151,14 @@ from quant_fund.research.benches_w269 import (
     bench_ransac_plane_family,
     bench_stereo_disparity_family,
 )
+from quant_fund.research.benches_w270 import (
+    bench_dmc_solver_family,
+    bench_fdtd_wave_family,
+    bench_ising_metro_family,
+    bench_lattice_boltzmann_family,
+    bench_lj_md_family,
+    bench_pic_plasma_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2452,6 +2460,12 @@ def _provenance(
         "ransac_plane": bench_ransac_plane_family,
         "epipolar_8pt": bench_epipolar_8pt_family,
         "stereo_disparity": bench_stereo_disparity_family,
+        "lj_md": bench_lj_md_family,
+        "fdtd_wave": bench_fdtd_wave_family,
+        "lattice_boltzmann": bench_lattice_boltzmann_family,
+        "ising_metro": bench_ising_metro_family,
+        "pic_plasma": bench_pic_plasma_family,
+        "dmc_solver": bench_dmc_solver_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
