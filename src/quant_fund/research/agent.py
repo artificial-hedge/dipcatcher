@@ -7727,6 +7727,14 @@ from quant_fund.research.benches_w966 import (
     bench_oh_emb_family,
     bench_operator_space_family,
 )
+from quant_fund.research.benches_w967 import (
+    bench_crossed_product_family,
+    bench_cstar_dynamics_family,
+    bench_kirchberg_absorb_family,
+    bench_rokhlin_action_family,
+    bench_taf_dim_family,
+    bench_z_stability_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8098,6 +8106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cstar_dynamics": bench_cstar_dynamics_family,
+        "crossed_product": bench_crossed_product_family,
+        "rokhlin_action": bench_rokhlin_action_family,
+        "kirchberg_absorb": bench_kirchberg_absorb_family,
+        "taf_dim": bench_taf_dim_family,
+        "z_stability": bench_z_stability_family,
         "operator_space": bench_operator_space_family,
         "cb_map": bench_cb_map_family,
         "complete_contraction": bench_complete_contraction_family,

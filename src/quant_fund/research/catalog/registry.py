@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-967 C*-dynamics canon.
+        "cstar_dynamics",
+        "crossed_product",
+        "rokhlin_action",
+        "kirchberg_absorb",
+        "taf_dim",
+        "z_stability",
         # Wave-966 operator-space canon.
         "operator_space",
         "cb_map",
