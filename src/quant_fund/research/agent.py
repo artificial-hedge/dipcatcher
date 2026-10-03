@@ -3527,6 +3527,14 @@ from quant_fund.research.benches_w441 import (
     bench_ribet_toy_family,
     bench_weil_deligne_family,
 )
+from quant_fund.research.benches_w442 import (
+    bench_cofibrant_rep_family,
+    bench_enriched_model_family,
+    bench_localization_mc_family,
+    bench_monoidal_model_family,
+    bench_quillen_equiv_family,
+    bench_reedy_model_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3906,6 +3914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cofibrant_rep": bench_cofibrant_rep_family,
+        "quillen_equiv": bench_quillen_equiv_family,
+        "monoidal_model": bench_monoidal_model_family,
+        "enriched_model": bench_enriched_model_family,
+        "reedy_model": bench_reedy_model_family,
+        "localization_mc": bench_localization_mc_family,
         "gal_rep": bench_gal_rep_family,
         "fontaine_ring": bench_fontaine_ring_family,
         "filtered_module": bench_filtered_module_family,
