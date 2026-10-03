@@ -2662,3 +2662,4 @@ wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munk
 - w261 robotics-2 canon (ekf_slam, occupancy_grid, pure_pursuit, stanley, particle_slam, frontier_explore) 1539->1545
 - w262 HPC canon (stencil_halo, mesi_cache, ring_allreduce, simd_lanes, task_dag, numa_alloc) 1545->1551
 - w263 real-time canon (edf_scheduler, rms_scheduler, wcet_est, debounce_fsm, watchdog_task, ring_buffer) 1551->1557
+- w264 numerical-linalg-3 canon (divide_conquer_eig, dqds, block_lanczos, randomized_qb, sparse_cholesky, fgmres) 1557->1563

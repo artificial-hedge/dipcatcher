@@ -2103,6 +2103,14 @@ from quant_fund.research.benches_w263 import (
     bench_watchdog_task_family,
     bench_wcet_est_family,
 )
+from quant_fund.research.benches_w264 import (
+    bench_block_lanczos_family,
+    bench_divide_conquer_eig_family,
+    bench_dqds_family,
+    bench_fgmres_family,
+    bench_randomized_qb_family,
+    bench_sparse_cholesky_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2368,6 +2376,12 @@ def _provenance(
         "debounce_fsm": bench_debounce_fsm_family,
         "watchdog_task": bench_watchdog_task_family,
         "ring_buffer": bench_ring_buffer_family,
+        "divide_conquer_eig": bench_divide_conquer_eig_family,
+        "dqds": bench_dqds_family,
+        "block_lanczos": bench_block_lanczos_family,
+        "randomized_qb": bench_randomized_qb_family,
+        "sparse_cholesky": bench_sparse_cholesky_family,
+        "fgmres": bench_fgmres_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
