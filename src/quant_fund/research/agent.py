@@ -5511,6 +5511,14 @@ from quant_fund.research.benches_w689 import (
     bench_motivic_norm_family,
     bench_motivic_ramified_family,
 )
+from quant_fund.research.benches_w690 import (
+    bench_homotopy_model_family,
+    bench_homotopy_sheaf_family,
+    bench_stable_algebra_family,
+    bench_stable_group_family,
+    bench_stable_module_family,
+    bench_stable_monoid_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5890,6 +5898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "homotopy_sheaf": bench_homotopy_sheaf_family,
+        "homotopy_model": bench_homotopy_model_family,
+        "stable_monoid": bench_stable_monoid_family,
+        "stable_group": bench_stable_group_family,
+        "stable_module": bench_stable_module_family,
+        "stable_algebra": bench_stable_algebra_family,
         "motivic_jouanolou": bench_motivic_jouanolou_family,
         "motivic_infinite2": bench_motivic_infinite2_family,
         "motivic_ext": bench_motivic_ext_family,

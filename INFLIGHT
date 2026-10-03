@@ -1,3 +1,4 @@
+feat(research): wave 690 — homotopy-27 canon (homotopy_sheaf, homotopy_model, stable_monoid, stable_group, stable_module, stable_algebra) (4095->4101 families)
 feat(research): wave 689 — motivic-20 canon (motivic_jouanolou, motivic_infinite2, motivic_ext, motivic_norm, motivic_ramified, motivic_euler) (4089->4095 families)
 feat(research): wave 688 — spectral-AG-7 canon (spectral_field, spectral_lattice, spectral_filtration, spectral_cellular, spectral_cohomological, spectral_finite) (4083->4089 families)
 feat(research): wave 687 — category-17 canon (cat_fibrant_obj, cat_cofibrant, cat_bicomplete, cat_univariant, cat_descent, cat_glueable) (4077->4083 families)
