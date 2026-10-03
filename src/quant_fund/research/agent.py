@@ -3759,6 +3759,14 @@ from quant_fund.research.benches_w470 import (
     bench_power_op_family,
     bench_rational_htpy_family,
 )
+from quant_fund.research.benches_w471 import (
+    bench_banach_colmez_family,
+    bench_breuil_kisin_family,
+    bench_diamond_geo_family,
+    bench_drinfeld_tower_family,
+    bench_integral_padic_family,
+    bench_perfectoid2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4138,6 +4146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "perfectoid2": bench_perfectoid2_family,
+        "diamond_geo": bench_diamond_geo_family,
+        "integral_padic": bench_integral_padic_family,
+        "breuil_kisin": bench_breuil_kisin_family,
+        "banach_colmez": bench_banach_colmez_family,
+        "drinfeld_tower": bench_drinfeld_tower_family,
         "e_infty2": bench_e_infty2_family,
         "power_op": bench_power_op_family,
         "obstruction_th": bench_obstruction_th_family,

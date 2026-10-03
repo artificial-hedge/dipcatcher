@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-471 p-adic-geometry-2/perfectoid canon.
+        "perfectoid2",
+        "diamond_geo",
+        "integral_padic",
+        "breuil_kisin",
+        "banach_colmez",
+        "drinfeld_tower",
         # Wave-470 homotopy-9 canon.
         "e_infty2",
         "power_op",
