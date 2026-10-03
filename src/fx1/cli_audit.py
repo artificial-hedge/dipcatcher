@@ -444,6 +444,19 @@ def cli_audit() -> dict[str, Any]:
             self.stream_calls.append(dict(kw))
             return ["chunk-a", "chunk-b"]
 
+        def openai_response_stream(
+            self, request: Any, **kw: Any
+        ) -> tuple[list[tuple[str, dict[str, Any]]], None]:
+            self.stream_calls.append({"responses": True, **dict(kw)})
+            return (
+                [
+                    ("response.output_text.delta", {"delta": "lo"}),
+                    ("response.output_text.delta", {"delta": "cal"}),
+                    ("response.completed", {"response": {}}),
+                ],
+                None,
+            )
+
         def complete_many(self, batch: Any, **kw: Any) -> list[CompletionResult]:
             self.batch_calls.append(dict(kw))
             return [
@@ -526,6 +539,10 @@ def cli_audit() -> dict[str, Any]:
         out["complete_stream_forwards_receipts"] = bool(fake.stream_calls) and (
             fake.stream_calls[0].get("receipt_hashes") == ["a" * 64]
         )
+        # respond --stream in-process: SDK (event, payload) pairs — only
+        # the .delta strings concatenate onto stdout
+        rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
+        out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
         # per-request BYOK flags pack into the byok override (all-or-none)
         rb2 = runner.invoke(
             app,
@@ -1025,6 +1042,21 @@ def cli_audit() -> dict[str, Any]:
                     ],
                 },
                 None,
+            )
+
+        def responses_create_stream(
+            self,
+            input: Any,
+            **kw: Any,  # noqa: A002
+        ) -> tuple[list[dict[str, Any]], str]:
+            self.last_ft_query = {"input": input, "stream": True, **kw}
+            return (
+                [
+                    {"type": "response.output_text.delta", "delta": "rem"},
+                    {"type": "response.output_text.delta", "delta": "ote"},
+                    {"type": "response.completed", "response": {"id": "resp_x"}},
+                ],
+                "cid-stream",
             )
 
         def embeddings_create(
@@ -1763,6 +1795,27 @@ def cli_audit() -> dict[str, Any]:
             and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
+        # respond --stream remote-side: bare payload dicts — the deltas
+        # concatenate and the flag kwargs forward verbatim
+        _rsr = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--stream",
+                "--format",
+                '{"type":"json_object"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_stream"] = (
+            _rsr.exit_code == 0
+            and _rsr.stdout == "remote\n"
+            and (remotes[-1].last_ft_query or {}).get("stream") is True
+            and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
+        )
         out["remote_embed"] = json.loads(
             runner.invoke(
                 app,
@@ -1888,7 +1941,10 @@ def cli_audit_bench() -> dict[str, Any]:
             "completion log reads cleanly (empty window + missing-id exit "
             "2 on both the record and its --receipt export); harness job "
             "--receipt prints the sealed fx1_job_record.v1 doc remote-side "
-            "and refuses without --remote (exit 2). ft-create/ft-jobs/"
+            "and refuses without --remote (exit 2). respond --stream "
+            "concatenates Responses delta frames on both surfaces "
+            "(in-process SDK pairs and remote payload dicts), forwarding "
+            "flag kwargs verbatim. ft-create/ft-jobs/"
             "ft-status/ft-events/ft-cancel hold the OpenAI job grammar "
             "remote-side (upload → submit → wait, --no-wait prints the "
             "queued record) and refuse locally without --remote. "
