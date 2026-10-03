@@ -5823,6 +5823,14 @@ from quant_fund.research.benches_w728 import (
     bench_totaro_cycle_family,
     bench_voev_homotopy_family,
 )
+from quant_fund.research.benches_w729 import (
+    bench_hauwas_nori_family,
+    bench_jogiad_motive_family,
+    bench_motivic_pipe_family,
+    bench_roald_suslin_family,
+    bench_thom_mgl2_family,
+    bench_voev_suslin_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6202,6 +6210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "roald_suslin": bench_roald_suslin_family,
+        "jogiad_motive": bench_jogiad_motive_family,
+        "hauwas_nori": bench_hauwas_nori_family,
+        "motivic_pipe": bench_motivic_pipe_family,
+        "thom_mgl2": bench_thom_mgl2_family,
+        "voev_suslin": bench_voev_suslin_family,
         "emerton_glass": bench_emerton_glass_family,
         "luan_yao": bench_luan_yao_family,
         "morel_voev": bench_morel_voev_family,

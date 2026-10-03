@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-729 motivic-A1-2 canon.
+        "roald_suslin",
+        "jogiad_motive",
+        "hauwas_nori",
+        "motivic_pipe",
+        "thom_mgl2",
+        "voev_suslin",
         # Wave-728 motivic-A1 canon.
         "emerton_glass",
         "luan_yao",
