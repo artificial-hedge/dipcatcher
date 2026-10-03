@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-968 KK-theory canon.
+        "kk_theory",
+        "kasparov_prod",
+        "ext_functor",
+        "baaj_julg",
+        "cuntz_picture",
+        "kk_duality",
         # Wave-967 C*-dynamics canon.
         "cstar_dynamics",
         "crossed_product",
