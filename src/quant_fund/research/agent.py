@@ -1758,6 +1758,14 @@ from quant_fund.research.benches_w220 import (
     bench_k_induction_family,
     bench_ranking_function_family,
 )
+from quant_fund.research.benches_w221 import (
+    bench_buchberger_family,
+    bench_gf2_factor_family,
+    bench_lll_reduce_family,
+    bench_newton_interp_family,
+    bench_poly_gcd_family,
+    bench_resultant_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4630,6 +4638,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hoare_logic": bench_hoare_logic_family(),
         "ranking_function": bench_ranking_function_family(),
         "cegar_loop": bench_cegar_loop_family(),
+        "buchberger": bench_buchberger_family(),
+        "resultant": bench_resultant_family(),
+        "poly_gcd": bench_poly_gcd_family(),
+        "gf2_factor": bench_gf2_factor_family(),
+        "lll_reduce": bench_lll_reduce_family(),
+        "newton_interp": bench_newton_interp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
