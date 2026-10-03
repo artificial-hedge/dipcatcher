@@ -1613,6 +1613,14 @@ from quant_fund.research.benches_w202 import (
     bench_stackelberg_game_family,
     bench_stochastic_game_vi_family,
 )
+from quant_fund.research.benches_w203 import (
+    bench_alpha_geodesic_family,
+    bench_bregman_nmf_family,
+    bench_fisher_rao_family,
+    bench_jko_scheme_family,
+    bench_mirror_descent_family,
+    bench_natural_gradient_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4376,6 +4384,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "stackelberg_game": bench_stackelberg_game_family(),
         "stochastic_game_vi": bench_stochastic_game_vi_family(),
         "potential_game": bench_potential_game_family(),
+        "fisher_rao": bench_fisher_rao_family(),
+        "natural_gradient": bench_natural_gradient_family(),
+        "mirror_descent": bench_mirror_descent_family(),
+        "bregman_nmf": bench_bregman_nmf_family(),
+        "alpha_geodesic": bench_alpha_geodesic_family(),
+        "jko_scheme": bench_jko_scheme_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

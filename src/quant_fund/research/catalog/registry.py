@@ -2515,6 +2515,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "stackelberg_game",
         "stochastic_game_vi",
         "potential_game",
+        # Wave-203 information-geometry canon: Fisher-Rao, natural
+        # gradient, mirror descent, Bregman NMF, alpha geodesic, JKO.
+        "fisher_rao",
+        "natural_gradient",
+        "mirror_descent",
+        "bregman_nmf",
+        "alpha_geodesic",
+        "jko_scheme",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
