@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-898 BVP canon.
+        "shooting_bvp",
+        "multiple_shooting",
+        "collocation_bvp",
+        "finite_diff_bvp",
+        "relaxation_bvp",
+        "riccati_bvp",
         # Wave-897 ODE-theory canon.
         "linear_multistep",
         "dahlquist_test",
