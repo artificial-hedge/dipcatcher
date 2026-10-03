@@ -7519,6 +7519,14 @@ from quant_fund.research.benches_w940 import (
     bench_subgradient_extragradient_family,
     bench_tseng_fb_family,
 )
+from quant_fund.research.benches_w941 import (
+    bench_augmented_lagr_family,
+    bench_ekeland_var_family,
+    bench_limiting_subdiff_family,
+    bench_monteiro_semismooth_family,
+    bench_proximal_subdiff_family,
+    bench_semismooth_newton_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7890,6 +7898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "limiting_subdiff": bench_limiting_subdiff_family,
+        "proximal_subdiff": bench_proximal_subdiff_family,
+        "ekeland_var": bench_ekeland_var_family,
+        "monteiro_semismooth": bench_monteiro_semismooth_family,
+        "semismooth_newton": bench_semismooth_newton_family,
+        "augmented_lagr": bench_augmented_lagr_family,
         "subgradient_extragradient": bench_subgradient_extragradient_family,
         "korpelevich_eg": bench_korpelevich_eg_family,
         "popov_alg": bench_popov_alg_family,
