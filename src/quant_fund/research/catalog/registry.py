@@ -3012,6 +3012,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "radix_join",
         "graceful_hash",
         "index_intersect",
+        # Wave-276 distributed-systems-3 canon.
+        "ra_mutex",
+        "token_ring",
+        "bully_elect",
+        "chord_look",
+        "quorum_rw",
+        "causal_bcast",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
