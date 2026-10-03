@@ -1,3 +1,4 @@
+feat(research): wave 341 — modal-logic/topology-2 canon (kripke_semantics, bisimulation, ef_game, fundamental_group, covering_space, topo_separation) (2002->2008 families)
 feat(research): wave 340 — homological-algebra/algebraic-geometry canon (chain_complex, tor_ext, sheaf_check, hilbert_series, snake_lemma, variety_morph) (1996->2002 families)
 feat(research): wave 339 — algebra canon (field_ext, galois_group, splitting_field, lie_bracket, rep_theory, root_system) (1990->1996 families)
 feat(research): wave 338 — set-theory canon (ordinal_arith, cardinal_arith, transfinite_induct, well_founded, v_omega, ac_choice) (1984->1990 families)
