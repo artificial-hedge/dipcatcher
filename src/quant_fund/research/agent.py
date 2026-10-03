@@ -3975,6 +3975,14 @@ from quant_fund.research.benches_w497 import (
     bench_mmp_algorithm_family,
     bench_toric_flip_family,
 )
+from quant_fund.research.benches_w498 import (
+    bench_gromov_witten_family,
+    bench_hilbert_scheme2_family,
+    bench_kuranishi_family,
+    bench_m_bar_gn_family,
+    bench_quot_scheme_family,
+    bench_stable_map_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4354,6 +4362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kuranishi": bench_kuranishi_family,
+        "hilbert_scheme2": bench_hilbert_scheme2_family,
+        "quot_scheme": bench_quot_scheme_family,
+        "m_bar_gn": bench_m_bar_gn_family,
+        "stable_map": bench_stable_map_family,
+        "gromov_witten": bench_gromov_witten_family,
         "minimal_model": bench_minimal_model_family,
         "klt_pair": bench_klt_pair_family,
         "flip_cone": bench_flip_cone_family,
