@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-627 condensed-4 canon.
+        "discrete_liquid",
+        "smith_project",
+        "condensed_ring",
+        "liquid_ring",
+        "scholze_trace",
+        "condensed_coh",
         # Wave-626 stacks-3 canon.
         "algebraic_stack2",
         "artin_stack",
