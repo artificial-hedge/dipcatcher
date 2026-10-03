@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-843 spline-theory canon.
+        "b_spline",
+        "de_boor",
+        "cardinal_spline",
+        "knot_insertion",
+        "blossoming",
+        "box_spline",
         # Wave-842 spectral-methods canon.
         "chebyshev_grid",
         "fourier_galerkin",
