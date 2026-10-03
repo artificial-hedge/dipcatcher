@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-565 arithmetic-statistics canon.
+        "bhargava_lic",
+        "cohen_lenstra",
+        "elliptic_rank",
+        "malle_conj",
+        "prime_gaps",
+        "zhang_maynard",
         # Wave-564 geometric-group-theory canon.
         "gromov_hyperbolic",
         "quasi_isometry",

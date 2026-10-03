@@ -4511,6 +4511,14 @@ from quant_fund.research.benches_w564 import (
     bench_thin_triangle_family,
     bench_word_problem_family,
 )
+from quant_fund.research.benches_w565 import (
+    bench_bhargava_lic_family,
+    bench_cohen_lenstra_family,
+    bench_elliptic_rank_family,
+    bench_malle_conj_family,
+    bench_prime_gaps_family,
+    bench_zhang_maynard_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4890,6 +4898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bhargava_lic": bench_bhargava_lic_family,
+        "cohen_lenstra": bench_cohen_lenstra_family,
+        "elliptic_rank": bench_elliptic_rank_family,
+        "malle_conj": bench_malle_conj_family,
+        "prime_gaps": bench_prime_gaps_family,
+        "zhang_maynard": bench_zhang_maynard_family,
         "gromov_hyperbolic": bench_gromov_hyperbolic_family,
         "quasi_isometry": bench_quasi_isometry_family,
         "thin_triangle": bench_thin_triangle_family,
