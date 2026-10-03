@@ -6199,6 +6199,14 @@ from quant_fund.research.benches_w775 import (
     bench_predictable_proc_family,
     bench_square_bracket_family,
 )
+from quant_fund.research.benches_w776 import (
+    bench_campbell_thm_family,
+    bench_cox_process_family,
+    bench_hawkes_point_family,
+    bench_marked_point_family,
+    bench_palm_dist_family,
+    bench_self_excite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6578,6 +6586,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cox_process": bench_cox_process_family,
+        "hawkes_point": bench_hawkes_point_family,
+        "self_excite": bench_self_excite_family,
+        "marked_point": bench_marked_point_family,
+        "campbell_thm": bench_campbell_thm_family,
+        "palm_dist": bench_palm_dist_family,
         "doleans_meas": bench_doleans_meas_family,
         "predictable_proc": bench_predictable_proc_family,
         "local_mart": bench_local_mart_family,
