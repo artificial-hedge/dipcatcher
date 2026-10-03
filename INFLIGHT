@@ -1,3 +1,4 @@
+feat(research): wave 408 — representation-theory-4 canon (schur_functor, brauer_alg, hecke_alg, casimir_op, weight_space, bz_category) (2403->2409 families)
 feat(research): wave 407 — algebraic-geometry-8 canon (cech_cohom, serre_duality, adjunction2, scheme_fiber, hilbert_scheme, flattening) (2397->2403 families)
 feat(research): wave 406 — homological-algebra-3 canon (poincare_duality2, universal_coeff, kunneth, leray_hirsch, hopf_algebra2, functor_derived) (2391->2397 families)
 feat(research): wave 405 — derived-categories canon (derived_functor2, triangulated, bounded_complex, mapping_cone_tri, koszul_dual, t_structure) (2385->2391 families)

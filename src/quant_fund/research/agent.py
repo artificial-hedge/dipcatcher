@@ -3255,6 +3255,14 @@ from quant_fund.research.benches_w407 import (
     bench_scheme_fiber_family,
     bench_serre_duality_family,
 )
+from quant_fund.research.benches_w408 import (
+    bench_brauer_alg_family,
+    bench_bz_category_family,
+    bench_casimir_op_family,
+    bench_hecke_alg_family,
+    bench_schur_functor_family,
+    bench_weight_space_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3634,6 +3642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "schur_functor": bench_schur_functor_family,
+        "brauer_alg": bench_brauer_alg_family,
+        "hecke_alg": bench_hecke_alg_family,
+        "casimir_op": bench_casimir_op_family,
+        "weight_space": bench_weight_space_family,
+        "bz_category": bench_bz_category_family,
         "cech_cohom": bench_cech_cohom_family,
         "serre_duality": bench_serre_duality_family,
         "adjunction2": bench_adjunction2_family,
