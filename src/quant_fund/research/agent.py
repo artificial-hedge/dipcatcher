@@ -5295,6 +5295,14 @@ from quant_fund.research.benches_w662 import (
     bench_hochschild_hom2_family,
     bench_little_cubes_family,
 )
+from quant_fund.research.benches_w663 import (
+    bench_dunn_additivity_family,
+    bench_e2_algebra_family,
+    bench_khovanov_2_family,
+    bench_mckay_correspond_family,
+    bench_swiss_cheese2_family,
+    bench_tensor_factorization_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5674,6 +5682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e2_algebra": bench_e2_algebra_family,
+        "dunn_additivity": bench_dunn_additivity_family,
+        "tensor_factorization": bench_tensor_factorization_family,
+        "swiss_cheese2": bench_swiss_cheese2_family,
+        "mckay_correspond": bench_mckay_correspond_family,
+        "khovanov_2": bench_khovanov_2_family,
         "bar_resolution2": bench_bar_resolution2_family,
         "hochschild_hom2": bench_hochschild_hom2_family,
         "factor_homology2": bench_factor_homology2_family,
