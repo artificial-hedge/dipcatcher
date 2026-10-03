@@ -1,3 +1,4 @@
+feat(research): wave 289 — category-theory canon (fin_cat, functor_check, nat_trans, adjunction, limit_prod, monad_laws) (1707->1713 families)
 feat(research): wave 288 — measure-theory canon (leb_measure, leb_integral, conv_prob, weak_conv, fubini_swap, radon_nikodym) (1701->1707 families)
 feat(research): wave 287 — differential-geometry canon (first_ff, gauss_curve, frenet_frame, christoffel, geodesic_sphere, surf_area) (1695->1701 families)
 feat(research): wave 286 — security-defensive canon (beacon_detect, entropy_dns, cred_stuffing, impossible_travel, exfil_zscore, sig_score) (1689->1695 families)
