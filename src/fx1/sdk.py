@@ -1742,6 +1742,7 @@ class Fx1Harness:
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
             logprobs=choice_lps,
+            metadata=body.metadata,
         )
         if body.store is not False:
             self._openai_store.put(
@@ -1820,6 +1821,7 @@ class Fx1Harness:
                 tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
                 finish_reasons=choice_reasons,
                 logprobs=choice_lps,
+                metadata=body.metadata,
             )
             self._openai_store.put(
                 env,
@@ -2138,6 +2140,30 @@ class Fx1Harness:
         if env is None or env.get("object") != "chat.completion":
             raise KeyError(f"completion {completion_id!r} not in the retrieval index")
         return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_chat_list(
+        self,
+        *,
+        model: str | None = None,
+        metadata: Mapping[str, str] | None = None,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions`` in-process — stored completions,
+        optionally filtered by ``model`` and an exact ``metadata`` subset."""
+        envs = self._openai_store.list_envelopes("chat.completion")
+        if model is not None:
+            envs = [e for e in envs if e.get("model") == model]
+        if metadata:
+            envs = [
+                e
+                for e in envs
+                if isinstance(e.get("metadata"), dict)
+                and all(e["metadata"].get(k) == v for k, v in metadata.items())
+            ]
+        return paged_item_list(envs, limit=limit, after=after, before=before, order=order)
 
     def openai_chat_delete(self, completion_id: str) -> dict[str, Any]:
         """``DELETE /v1/chat/completions/{id}`` in-process."""

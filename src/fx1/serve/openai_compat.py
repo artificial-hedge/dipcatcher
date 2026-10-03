@@ -427,6 +427,7 @@ class OpenAIChatResponse(_Model):
     system_fingerprint: str
     choices: list[OpenAIChatChoice]
     usage: dict[str, int] | None = None
+    metadata: dict[str, str] | None = None
 
 
 def openai_models(*, created: int | None = None, extra_ids: Iterable[str] = ()) -> OpenAIModelList:
@@ -767,6 +768,7 @@ def openai_envelope(
     finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
     logprobs: Sequence[dict[str, Any] | None] | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the `chat.completion` envelope. `model` reports
     the serving link's own model id (or the backend name); the completion
@@ -809,6 +811,7 @@ def openai_envelope(
         "system_fingerprint": backend,
         "choices": choices,
         "usage": openai_usage(usage),
+        "metadata": metadata,
     }
 
 
@@ -1997,6 +2000,11 @@ class OpenAIEnvelopeStore:
                 return None
             its = self._subitems.get(envelope_id, {}).get(key)
             return [dict(it) for it in its] if its is not None else []
+
+    def list_envelopes(self, object_: str) -> list[dict[str, Any]]:
+        """All stored envelopes of one ``object`` type, oldest first."""
+        with self._lock:
+            return [dict(env) for env in self._items.values() if env.get("object") == object_]
 
     def delete(self, envelope_id: str) -> bool:
         with self._lock:

@@ -3610,6 +3610,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
             logprobs=choice_lps,
+            metadata=body.metadata,
         )
         if body.store is not False:
             envelope_store.put(
@@ -4272,6 +4273,43 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 before=before,
                 order=order,
             )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
+    @app.get(
+        "/v1/chat/completions",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_list",
+    )
+    def openai_chat_list(
+        request: Request,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        model: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """Stored chat completions, oldest first — OpenAI's
+        ``chat.completions.list``. ``metadata[key]=value`` query pairs
+        filter to envelopes carrying that exact subset."""
+        meta_filter = {
+            k[9:-1]: v
+            for k, v in request.query_params.multi_items()
+            if k.startswith("metadata[") and k.endswith("]") and len(k) > 10
+        }
+        envs = envelope_store.list_envelopes("chat.completion")
+        if model is not None:
+            envs = [e for e in envs if e.get("model") == model]
+        if meta_filter:
+            envs = [
+                e
+                for e in envs
+                if isinstance(e.get("metadata"), dict)
+                and all(e["metadata"].get(k) == v for k, v in meta_filter.items())
+            ]
+        try:
+            return paged_item_list(envs, limit=limit, after=after, before=before, order=order)
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
 

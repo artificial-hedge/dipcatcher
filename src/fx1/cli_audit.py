@@ -178,6 +178,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "moderate",
         "chat-get",
         "chat-delete",
+        "chat-list",
         "chat-messages",
         "response-get",
         "response-delete",
@@ -299,6 +300,15 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         out["harness_items_missing_2"] = all(
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
             for name in ("chat-messages", "response-input-items")
+        )
+        # chat-list in-process: empty store lists [], malformed --metadata
+        # is a clean 2.
+        _cl_out = json.loads(runner.invoke(app, ["harness", "chat-list"]).stdout)
+        out["harness_chat_list_inprocess"] = (
+            _cl_out["object"] == "list"
+            and _cl_out["data"] == []
+            and _cl_out["has_more"] is False
+            and runner.invoke(app, ["harness", "chat-list", "--metadata", "nokey"]).exit_code == 2
         )
 
         # score preflight: the reward contract runs in-process with no model
@@ -1159,6 +1169,16 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "deleted": True,
             }
 
+        def list_chat_completions(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"chat_list": True, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "chatcmpl-x", "object": "chat.completion"}],
+                "first_id": "chatcmpl-x",
+                "last_id": "chatcmpl-x",
+                "has_more": False,
+            }
+
         def chat_completion_messages(self, completion_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_query = {"chat_messages": completion_id, **kw}
             return {
@@ -2012,6 +2032,31 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             "after": None,
             "before": None,
             "order": "desc",
+        }
+        out["remote_chat_list"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "chat-list",
+                    "--model",
+                    "fx1",
+                    "--metadata",
+                    "lane=lp",
+                    "--limit",
+                    "3",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("first_id") == "chatcmpl-x" and remotes[-1].last_ft_query == {
+            "chat_list": True,
+            "model": "fx1",
+            "metadata": {"lane": "lp"},
+            "limit": 3,
+            "after": None,
+            "before": None,
+            "order": "asc",
         }
         out["remote_response_input_items"] = json.loads(
             runner.invoke(

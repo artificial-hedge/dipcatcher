@@ -2969,6 +2969,36 @@ def parity_audit() -> dict[str, bool]:
         not in client.get(f"/v1/chat/completions/{_im_wire.json()['id']}").json()
         and "_fx1_input_items" not in sdk.openai_response_get(_ir_sdk["id"])
     )
+    # GET /v1/chat/completions — stored-completion listing is identical
+    # in shape and filter semantics across the wire and the SDK (each
+    # surface lists its own store — compare shape + filter behavior, not
+    # ids, which are per-surface mints)
+    _lc_req = {
+        "model": "fx1-list-parity",
+        "messages": [{"role": "user", "content": "lc"}],
+        "metadata": {"lane": "lp"},
+        "fx1": {"backend": "byok"},
+    }
+    _lc_sdk_env, _ = sdk.openai_chat(dict(_lc_req))
+    _lc_wire = client.post("/v1/chat/completions", json=_lc_req)
+    _lc_sdk_list = sdk.openai_chat_list(model=_lc_sdk_env.model)
+    _lc_wl_list = remote.list_chat_completions(model=_lc_wire.json()["model"])
+    _lc_sdk_meta = sdk.openai_chat_list(metadata={"lane": "lp"})
+    _lc_wl_meta = remote.list_chat_completions(metadata={"lane": "lp"})
+    out["list_chat_parity"] = (
+        _lc_sdk_list["object"] == _lc_wl_list["object"] == "list"
+        and any(d["id"] == _lc_sdk_env.id for d in _lc_sdk_list["data"])
+        and any(d["id"] == _lc_wire.json()["id"] for d in _lc_wl_list["data"])
+        and all(d["object"] == "chat.completion" for d in _lc_sdk_list["data"])
+        and all(d["object"] == "chat.completion" for d in _lc_wl_list["data"])
+        and all(d["model"] == _lc_sdk_env.model for d in _lc_sdk_list["data"])
+        and all(d["model"] == _lc_wire.json()["model"] for d in _lc_wl_list["data"])
+        and any(d["id"] == _lc_sdk_env.id for d in _lc_sdk_meta["data"])
+        and any(d["id"] == _lc_wire.json()["id"] for d in _lc_wl_meta["data"])
+        and sdk.openai_chat_list(model="fx1-none")["data"]
+        == remote.list_chat_completions(model="fx1-none")["data"]
+        == []
+    )
     return out
 
 

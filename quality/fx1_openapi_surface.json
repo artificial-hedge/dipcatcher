@@ -580,6 +580,40 @@
       }
     },
     "/v1/chat/completions": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
       "post": {
         "params": [
           {
@@ -995,5 +1029,5 @@
       }
     }
   },
-  "schema_sha256": "437403952d85f8a33c6963cac1a5fc1810b6c6fa073df817a2a1a54b36e45070"
+  "schema_sha256": "22cc9f55401a5783d297188d93c6c1078811cee752d1c1da1012522bafa529ad"
 }

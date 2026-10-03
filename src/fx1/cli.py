@@ -2389,6 +2389,57 @@ def harness_response_delete(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("chat-list")
+def harness_chat_list(
+    model: str | None = typer.Option(None, "--model", help="Filter to this model id."),
+    metadata: list[str] = typer.Option(
+        [], "--metadata", help="Exact-match filter, repeatable: --metadata key=value"
+    ),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a completion id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a completion id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/chat/completions`` — stored completions, filtered by
+    model and/or a ``--metadata key=value`` subset, paged by id."""
+    meta: dict[str, str] = {}
+    for pair in metadata:
+        if "=" not in pair:
+            typer.echo(f"error: --metadata expects key=value, got {pair!r}", err=True)
+            raise typer.Exit(code=2)
+        k, v = pair.split("=", 1)
+        meta[k] = v
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).list_chat_completions(
+                model=model,
+                metadata=meta or None,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().openai_chat_list(
+            model=model,
+            metadata=meta or None,
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
 @harness_app.command("chat-messages")
 def harness_chat_messages(
     completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),

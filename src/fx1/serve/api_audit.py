@@ -7356,6 +7356,58 @@ def _probe_backend_probes(
     out["items_evict_with_envelope"] = (
         ev_app.get(f"/v1/chat/completions/{ev_ids[0]}/messages").status_code == 404
     )
+    # GET /v1/chat/completions — OpenAI's stored-completion list surface:
+    # paged by completion id, filtered by model and metadata subset.
+    l_ids = [
+        fb.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1-listprobe",
+                "messages": [{"role": "user", "content": f"lp{i}"}],
+                "metadata": {"lane": "list-probe", "kind": f"k{i % 2}"},
+            },
+        ).json()["id"]
+        for i in range(3)
+    ]
+    l_all = fb.get("/v1/chat/completions?metadata[lane]=list-probe&limit=50").json()
+    l_model = l_all["data"][0]["model"]
+    out["list_chat_basic"] = (
+        l_all["object"] == "list"
+        and [d["id"] for d in l_all["data"]] == l_ids
+        and all(d["object"] == "chat.completion" for d in l_all["data"])
+        and all(
+            d["metadata"] == {"lane": "list-probe", "kind": f"k{i % 2}"}
+            for i, d in enumerate(l_all["data"])
+        )
+        and l_all["first_id"] == l_ids[0]
+        and l_all["has_more"] is False
+    )
+    lp1 = fb.get("/v1/chat/completions?metadata[lane]=list-probe&limit=2").json()
+    lp2 = fb.get(
+        f"/v1/chat/completions?metadata[lane]=list-probe&limit=2&after={lp1['last_id']}"
+    ).json()
+    out["list_chat_paged"] = (
+        lp1["has_more"] is True and lp2["data"][0]["id"] == l_ids[2] and lp2["has_more"] is False
+    )
+    out["list_chat_desc"] = (
+        fb.get("/v1/chat/completions?metadata[lane]=list-probe&order=desc").json()["data"][0]["id"]
+        == l_ids[2]
+    )
+    l_meta = fb.get("/v1/chat/completions?metadata[lane]=list-probe&metadata[kind]=k1").json()
+    out["list_chat_metadata"] = [d["id"] for d in l_meta["data"]] == [l_ids[1]]
+    out["list_chat_model"] = [
+        d["id"]
+        for d in fb.get(f"/v1/chat/completions?model={l_model}&metadata[lane]=list-probe").json()[
+            "data"
+        ]
+    ] == l_ids and fb.get(
+        "/v1/chat/completions?model=fx1-none-such&metadata[lane]=list-probe"
+    ).json()["data"] == []
+    out["list_chat_edges"] = (
+        fb.get("/v1/chat/completions?after=chatcmpl-ghost").status_code == 400
+        and fb.get("/v1/chat/completions?metadata[lane]=none-such").json()["data"] == []
+        and fb.get("/v1/chat/completions?order=sideways").status_code == 422
+    )
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()
     out["capabilities_retrieval"] = (

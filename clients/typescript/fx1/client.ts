@@ -1273,6 +1273,34 @@ export class HarnessApiClient {
   }
 
   /**
+   * GET /v1/chat/completions — stored completions, filtered by `model`
+   * and/or an exact `metadata` subset, paged by completion id (OpenAI's
+   * `chat.completions.list`).
+   */
+  listChatCompletions(filter?: {
+    model?: string;
+    metadata?: Record<string, string>;
+    limit?: number;
+    after?: string;
+    before?: string;
+    order?: "asc" | "desc";
+  }): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.model) q.set("model", filter.model);
+    for (const [k, v] of Object.entries(filter?.metadata ?? {})) {
+      q.set(`metadata[${k}]`, v);
+    }
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/v1/chat/completions${suffix}`) as Promise<
+      Record<string, unknown>
+    >;
+  }
+
+  /**
    * GET /v1/chat/completions/{id}/messages — the request messages a
    * stored completion ran on, paged by item id (OpenAI's
    * `chat.completions.messages.list`).

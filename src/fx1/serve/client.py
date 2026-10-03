@@ -1797,6 +1797,29 @@ class HarnessClient:
         """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
         return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
 
+    def list_chat_completions(
+        self,
+        *,
+        model: str | None = None,
+        metadata: Mapping[str, str] | None = None,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions`` — stored completions, filtered by
+        ``model`` and/or an exact ``metadata`` subset, paged by id."""
+        q = f"limit={limit}&order={order}"
+        if model:
+            q += f"&model={urllib.parse.quote(model)}"
+        for k, v in (metadata or {}).items():
+            q += f"&metadata[{urllib.parse.quote(k)}]={urllib.parse.quote(v)}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/chat/completions?{q}", idempotent=True))
+
     def chat_completion_messages(
         self,
         completion_id: str,
