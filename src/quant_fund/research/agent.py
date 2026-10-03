@@ -4047,6 +4047,14 @@ from quant_fund.research.benches_w506 import (
     bench_nip_formula_family,
     bench_uniform_def_family,
 )
+from quant_fund.research.benches_w507 import (
+    bench_homotopy_coherent_family,
+    bench_htc_colimit_family,
+    bench_joyal_model_family,
+    bench_marking_qcat_family,
+    bench_nerve_quasi_family,
+    bench_quasi_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4426,6 +4434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quasi_cat": bench_quasi_cat_family,
+        "joyal_model": bench_joyal_model_family,
+        "homotopy_coherent": bench_homotopy_coherent_family,
+        "nerve_quasi": bench_nerve_quasi_family,
+        "htc_colimit": bench_htc_colimit_family,
+        "marking_qcat": bench_marking_qcat_family,
         "dp_rank": bench_dp_rank_family,
         "forking_seq": bench_forking_seq_family,
         "honest_def": bench_honest_def_family,
