@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-550 characteristic-classes canon.
+        "chern_class",
+        "pontryagin_class",
+        "euler_class",
+        "todd_genus",
+        "chern_character",
+        "hirzebruch_sig",
         # Wave-549 index-theory canon.
         "atiyah_singer",
         "dirac_op",
