@@ -7599,6 +7599,14 @@ from quant_fund.research.benches_w950 import (
     bench_tensor_contraction_family,
     bench_tensor_unfold_family,
 )
+from quant_fund.research.benches_w951 import (
+    bench_determinant_cofactor_family,
+    bench_frechet_derivative_family,
+    bench_kronecker_sum_family,
+    bench_matrix_exponential_family,
+    bench_permanent_matrix_family,
+    bench_vec_operator_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7970,6 +7978,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "determinant_cofactor": bench_determinant_cofactor_family,
+        "permanent_matrix": bench_permanent_matrix_family,
+        "matrix_exponential": bench_matrix_exponential_family,
+        "frechet_derivative": bench_frechet_derivative_family,
+        "vec_operator": bench_vec_operator_family,
+        "kronecker_sum": bench_kronecker_sum_family,
         "tensor_contraction": bench_tensor_contraction_family,
         "khatri_rao": bench_khatri_rao_family,
         "kron_product": bench_kron_product_family,
