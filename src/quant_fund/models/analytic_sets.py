@@ -40,8 +40,7 @@ def _bench_analytic_sets(seed: int = 0) -> float:
     pts = frozenset({0, 1, 2})
     indiscrete = frozenset({frozenset(), pts})
     discrete: frozenset[frozenset[int]] = frozenset(
-        frozenset(s)
-        for s in [set(), {0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
+        frozenset(s) for s in [set(), {0}, {1}, {2}, {0, 1}, {0, 2}, {1, 2}, {0, 1, 2}]
     )
     checks.append(condensation(pts, indiscrete) == pts)  # no isolated points
     checks.append(condensation(pts, discrete) == frozenset())  # all isolated

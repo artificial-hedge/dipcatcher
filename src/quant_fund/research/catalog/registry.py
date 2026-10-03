@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-343 lattice/universal-algebra canon.
+        "lattice_check",
+        "galois_connection",
+        "tarski_fixed",
+        "boolean_algebra",
+        "congruence_lattice",
+        "term_algebra",
         # Wave-342 descriptive-set-theory/recursion-2 canon.
         "borel_hierarchy",
         "analytic_sets",
