@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-714 motivic-25 canon.
+        "motivic_total",
+        "motivic_partial",
+        "motivic_functor",
+        "motivic_nerve",
+        "derived_proper2",
+        "derived_separated2",
         # Wave-713 spectral-AG-10 canon.
         "spectral_semi",
         "spectral_artin",

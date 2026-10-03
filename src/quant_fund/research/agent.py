@@ -5703,6 +5703,14 @@ from quant_fund.research.benches_w713 import (
     bench_spectral_gal_family,
     bench_spectral_semi_family,
 )
+from quant_fund.research.benches_w714 import (
+    bench_derived_proper2_family,
+    bench_derived_separated2_family,
+    bench_motivic_functor_family,
+    bench_motivic_nerve_family,
+    bench_motivic_partial_family,
+    bench_motivic_total_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6082,6 +6090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_total": bench_motivic_total_family,
+        "motivic_partial": bench_motivic_partial_family,
+        "motivic_functor": bench_motivic_functor_family,
+        "motivic_nerve": bench_motivic_nerve_family,
+        "derived_proper2": bench_derived_proper2_family,
+        "derived_separated2": bench_derived_separated2_family,
         "spectral_semi": bench_spectral_semi_family,
         "spectral_artin": bench_spectral_artin_family,
         "spectral_gal": bench_spectral_gal_family,
