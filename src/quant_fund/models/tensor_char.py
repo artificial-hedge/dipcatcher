@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 
-def inner(
-    ch1: Sequence[complex], ch2: Sequence[complex], sizes: Sequence[int]
-) -> float:
+def inner(ch1: Sequence[complex], ch2: Sequence[complex], sizes: Sequence[int]) -> float:
     """<chi, psi> = (1/|G|) sum chi(g) conj(psi(g)) over class reps."""
     n = sum(sizes)
     return float(abs(sum(c * ch1[i] * ch2[i].conjugate() for i, c in enumerate(sizes)) / n))

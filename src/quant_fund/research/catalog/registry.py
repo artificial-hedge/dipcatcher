@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-399 model-theory-5 canon.
+        "ef_game_toy",
+        "vaught_test",
+        "real_closed",
+        "boolean_prime",
+        "fraisse_limit",
+        "qe_dense_order",
         # Wave-398 representation-theory-3 canon.
         "induced_char",
         "artins_theorem",
