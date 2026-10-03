@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-716 triangulated-geometry canon.
+        "exceptional_coll",
+        "spherical_functor",
+        "serre_functor",
+        "sod_decomp",
+        "fourier_mukai",
+        "semi_orthogonal",
         # Wave-715 cluster-algebra canon.
         "cluster_algebra",
         "quiver_mutation",
