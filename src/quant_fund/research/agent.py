@@ -5791,6 +5791,14 @@ from quant_fund.research.benches_w724 import (
     bench_iwasawa_lfunc_family,
     bench_kurihara_iwasawa_family,
 )
+from quant_fund.research.benches_w725 import (
+    bench_arithmetic_arnold_family,
+    bench_bertolini_darmon_family,
+    bench_darmon_point_family,
+    bench_howard_main_family,
+    bench_p_group_iwasawa_family,
+    bench_shimura_period_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6170,6 +6178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "p_group_iwasawa": bench_p_group_iwasawa_family,
+        "shimura_period": bench_shimura_period_family,
+        "arithmetic_arnold": bench_arithmetic_arnold_family,
+        "darmon_point": bench_darmon_point_family,
+        "bertolini_darmon": bench_bertolini_darmon_family,
+        "howard_main": bench_howard_main_family,
         "coates_wiles": bench_coates_wiles_family,
         "iwasawa_lfunc": bench_iwasawa_lfunc_family,
         "greenberg_selmer": bench_greenberg_selmer_family,

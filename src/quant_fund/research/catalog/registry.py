@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-725 automorphic-points canon.
+        "p_group_iwasawa",
+        "shimura_period",
+        "arithmetic_arnold",
+        "darmon_point",
+        "bertolini_darmon",
+        "howard_main",
         # Wave-724 arithmetic-cycles canon.
         "coates_wiles",
         "iwasawa_lfunc",
