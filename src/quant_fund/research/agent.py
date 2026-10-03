@@ -4807,6 +4807,14 @@ from quant_fund.research.benches_w601 import (
     bench_structured_space_family,
     bench_virtual_fund_family,
 )
+from quant_fund.research.benches_w602 import (
+    bench_cyclotomic_spec_family,
+    bench_negative_cyclic_family,
+    bench_periodic_cyclic_family,
+    bench_tate_construction_family,
+    bench_tc_spec_family,
+    bench_tr_structure_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5186,6 +5194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cyclotomic_spec": bench_cyclotomic_spec_family,
+        "tr_structure": bench_tr_structure_family,
+        "tc_spec": bench_tc_spec_family,
+        "negative_cyclic": bench_negative_cyclic_family,
+        "periodic_cyclic": bench_periodic_cyclic_family,
+        "tate_construction": bench_tate_construction_family,
         "dg_algebra": bench_dg_algebra_family,
         "derived_loop": bench_derived_loop_family,
         "derived_tangent": bench_derived_tangent_family,
