@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-883 fixed-point-acceleration canon.
+        "tangent_predictor",
+        "is_drift",
+        "cv_optimal",
+        "nest_accel",
+        "subgradient_descent",
+        "min_var_closure",
         # Wave-882 preconditioner/domain-decomposition canon.
         "spai_precond",
         "diagonal_scale",
