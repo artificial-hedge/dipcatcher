@@ -1,3 +1,4 @@
+feat(research): wave 652 — motivic-12 canon (strict_motive, sheaf_motive, numerical_motive, asymptotic_motive, exponential_motive, log_motive) (3867->3873 families)
 feat(research): wave 651 — category-10 canon (flat_functor, filtered_cat, sifted_cat2, regular_cat, abelian_cat, malcev_cat) (3861->3867 families)
 feat(research): wave 650 — homotopy-20 canon (bousfield_htpy, dror_htpy, kane_htpy, moore_htpy, neisendorfer_htpy, anick_htpy) (3855->3861 families)
 feat(research): wave 649 — prismatic-3 canon (prism_site2, cartier_prism, breuil_prism, filtered_prism, frobenius_prism, stacky_prism) (3849->3855 families)

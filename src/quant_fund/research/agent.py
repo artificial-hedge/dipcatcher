@@ -5207,6 +5207,14 @@ from quant_fund.research.benches_w651 import (
     bench_regular_cat_family,
     bench_sifted_cat2_family,
 )
+from quant_fund.research.benches_w652 import (
+    bench_asymptotic_motive_family,
+    bench_exponential_motive_family,
+    bench_log_motive_family,
+    bench_numerical_motive_family,
+    bench_sheaf_motive_family,
+    bench_strict_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5586,6 +5594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "strict_motive": bench_strict_motive_family,
+        "sheaf_motive": bench_sheaf_motive_family,
+        "numerical_motive": bench_numerical_motive_family,
+        "asymptotic_motive": bench_asymptotic_motive_family,
+        "exponential_motive": bench_exponential_motive_family,
+        "log_motive": bench_log_motive_family,
         "flat_functor": bench_flat_functor_family,
         "filtered_cat": bench_filtered_cat_family,
         "sifted_cat2": bench_sifted_cat2_family,
