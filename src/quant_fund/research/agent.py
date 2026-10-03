@@ -6439,6 +6439,14 @@ from quant_fund.research.benches_w805 import (
     bench_stratonovich_conv_family,
     bench_tanaka_meyer_family,
 )
+from quant_fund.research.benches_w806 import (
+    bench_compound_poisson_family,
+    bench_excursion_theory_family,
+    bench_jump_diffusion_family,
+    bench_kou_model_family,
+    bench_marked_hawkes_family,
+    bench_merton_jump_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6818,6 +6826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jump_diffusion": bench_jump_diffusion_family,
+        "merton_jump": bench_merton_jump_family,
+        "kou_model": bench_kou_model_family,
+        "compound_poisson": bench_compound_poisson_family,
+        "excursion_theory": bench_excursion_theory_family,
+        "marked_hawkes": bench_marked_hawkes_family,
         "ito_isometry": bench_ito_isometry_family,
         "stratonovich_conv": bench_stratonovich_conv_family,
         "tanaka_meyer": bench_tanaka_meyer_family,
