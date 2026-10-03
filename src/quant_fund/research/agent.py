@@ -3343,6 +3343,14 @@ from quant_fund.research.benches_w418 import (
     bench_uniform_lln_family,
     bench_weak_law_family,
 )
+from quant_fund.research.benches_w419 import (
+    bench_bundle_section_family,
+    bench_classify_space_family,
+    bench_path_fibration_family,
+    bench_serre_fibration_family,
+    bench_thom_space_family,
+    bench_vector_bundle_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3722,6 +3730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "serre_fibration": bench_serre_fibration_family,
+        "path_fibration": bench_path_fibration_family,
+        "bundle_section": bench_bundle_section_family,
+        "classify_space": bench_classify_space_family,
+        "vector_bundle": bench_vector_bundle_family,
+        "thom_space": bench_thom_space_family,
         "weak_law": bench_weak_law_family,
         "strong_lln": bench_strong_lln_family,
         "clt_classic": bench_clt_classic_family,
