@@ -48,8 +48,11 @@ Sealed ``parity_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import os
+import threading
+import time
 import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
@@ -65,6 +68,7 @@ if TYPE_CHECKING:
 __all__ = ["parity_audit", "parity_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
+_OBJ_UPLOAD_PART = "upload.part"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
 _LOCAL_ENVS = (
     "FX1_LOCAL_SERVE_URL",
@@ -125,8 +129,14 @@ class _NonStreamingBackend:
 
 
 class _ParityToolBackend(_ParityBackend):
-    """Tool-capable parity backend — answers one canned function call,
-    plus a canned logprobs payload when the request asks for scores."""
+    """Tool-capable parity backend — answers canned function calls,
+    plus a canned logprobs payload when the request asks for scores.
+    ``n_calls`` sets how many calls a turn emits (the multi-call variant
+    probes ``max_tool_calls``)."""
+
+    def __init__(self, n_calls: int = 1) -> None:
+        super().__init__()
+        self.n_calls = n_calls
 
     def complete_with_tools(
         self,
@@ -159,12 +169,13 @@ class _ParityToolBackend(_ParityBackend):
             }
         return ToolCompletion(
             content=None,
-            tool_calls=(
+            tool_calls=tuple(
                 {
-                    "id": "call_p",
+                    "id": f"call_{k}",
                     "type": "function",
                     "function": {"name": "calc", "arguments": '{"x": 1}'},
-                },
+                }
+                for k in range(self.n_calls)
             ),
             finish_reason="tool_calls",
             logprobs=lp,
@@ -275,6 +286,15 @@ def _raises(fn: Any) -> tuple[str, str]:
     return "", ""
 
 
+def _raises_code(fn: Any) -> tuple[str, str]:
+    """(exception class name, exc.code) — the wire/stable fault code."""
+    try:
+        fn()
+    except Exception as exc:  # noqa: BLE001 — probe captures the class
+        return type(exc).__name__, str(getattr(exc, "code", "") or "")
+    return "", ""
+
+
 def _surfaces(
     backend: Any,
     *,
@@ -358,7 +378,7 @@ def _tc_transport(client: TestClient) -> Any:
     return send
 
 
-def parity_audit() -> dict[str, bool]:
+def parity_audit() -> dict[str, bool]:  # NOSONAR
     out: dict[str, bool] = {}
     saved = {
         k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
@@ -888,6 +908,9 @@ def parity_audit() -> dict[str, bool]:
             "max_output_tokens": 32,
             "reasoning": {"effort": "low"},
             "metadata": {"lane": "78"},
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+            "text": {"verbosity": "low"},
         }
         wire_resp = client.post("/v1/responses", json=resp_body)
         sdk_resp, sdk_resp_cid = sdk.openai_response(resp_body)
@@ -901,8 +924,20 @@ def parity_audit() -> dict[str, bool]:
             and wire_rd["status"] == sdk_resp["status"] == "completed"
             and wire_rd["metadata"] == sdk_resp["metadata"] == {"lane": "78"}
             and wire_rd["reasoning"] == sdk_resp["reasoning"] == {"effort": "low"}
+            and wire_rd["prompt_cache_key"] == sdk_resp["prompt_cache_key"] == "pck"
+            and wire_rd["prompt_cache_retention"] == sdk_resp["prompt_cache_retention"] == "24h"
+            and wire_rd["text"] == sdk_resp["text"] == {"verbosity": "low"}
             and bool(sdk_resp_cid)
             and sdk.completion(sdk_resp_cid or "").metadata == {"lane": "78"}
+        )
+        # hint enum faults refuse identically on both surfaces
+        resp_bad_hint = {**resp_body, "text": {"verbosity": "extreme"}}
+        wire_bh = client.post("/v1/responses", json=resp_bad_hint)
+        sdk_bh = _raises(lambda: sdk.openai_response(resp_bad_hint))[0]
+        out["openai_response_hint_refusal_parity"] = (
+            wire_bh.status_code == 422
+            and wire_bh.json()["error"]["type"] == "invalid_request_error"
+            and sdk_bh == "ValidationError"
         )
         # refused fields refuse identically on both surfaces
         resp_tools = {**resp_body, "truncation": "auto"}
@@ -982,7 +1017,7 @@ def parity_audit() -> dict[str, bool]:
             == [
                 {
                     "type": "function_call",
-                    "call_id": "call_p",
+                    "call_id": "call_0",
                     "name": "calc",
                     "arguments": '{"x": 1}',
                     "status": "completed",
@@ -1044,6 +1079,46 @@ def parity_audit() -> dict[str, bool]:
             and [_resp_norm(p) for p in wire_rtevents] == [_resp_norm(p) for _e, p in sdk_rtevents]
             and [e for e, _p in sdk_rtevents] == [p["type"] for p in wire_rtevents]
             and "response.function_call_arguments.delta" in [p["type"] for p in wire_rtevents]
+        )
+        # lane 112: ``max_tool_calls`` truncates identically on both
+        # surfaces — same incomplete envelope, same terminal stream event
+        sdk_t3, client_t3 = _surfaces(lambda: _ParityToolBackend(n_calls=3))
+        cap_body = {**rtool_body, "max_tool_calls": 2}
+        wire_cap = client_t3.post("/v1/responses", json=cap_body)
+        sdk_cap, _ = sdk_t3.openai_response(cap_body)
+        cap_norm = {
+            "status",
+            "incomplete_details",
+            "max_tool_calls",
+            "tool_choice",
+            "parallel_tool_calls",
+        }
+        out["openai_responses_max_tool_calls_parity"] = (
+            wire_cap.status_code == 200
+            and {k: v for k, v in wire_cap.json().items() if k in cap_norm}
+            == {k: v for k, v in sdk_cap.items() if k in cap_norm}
+            == {
+                "status": "incomplete",
+                "incomplete_details": {"reason": "max_tool_calls"},
+                "max_tool_calls": 2,
+                "tool_choice": "required",
+                "parallel_tool_calls": True,
+            }
+            and len(wire_cap.json()["output"]) == len(sdk_cap["output"]) == 2
+        )
+        wire_cap_s = client_t3.post("/v1/responses", json={**cap_body, "stream": True})
+        wire_cap_events = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_cap_s.text.splitlines()
+            if ln.startswith("data: ")
+        ]
+        sdk_cap_events, _ = sdk_t3.openai_response_stream(cap_body)
+        out["openai_responses_max_tool_calls_stream_parity"] = (
+            wire_cap_s.status_code == 200
+            and [_resp_norm(p) for p in wire_cap_events]
+            == [_resp_norm(p) for _e, p in sdk_cap_events]
+            and [e for e, _p in sdk_cap_events] == [p["type"] for p in wire_cap_events]
+            and wire_cap_events[-1]["type"] == "response.incomplete"
         )
         # lane 83: the logprobs channel on /v1/responses — include +
         # top_logprobs carry identically and the provider's array lands on
@@ -1546,6 +1621,53 @@ def parity_audit() -> dict[str, bool]:
             and remote_u.complete(msg, backend="byok").sampling == {"temperature": 0.0}
         )
 
+        # provider hints resolve identically on all three surfaces — the
+        # resolved dict seals on the record; enum faults are ValueError on
+        # the SDK and the wire's 422-class error remotely
+        want_h = {
+            "temperature": 0.0,
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "verbosity": "high",
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+        }
+        hint_kw = {
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "verbosity": "high",
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+        }
+        sdk_h = sdk_u.complete(msg, backend="byok", **hint_kw).sampling
+        wire_h = uclient.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": msg, **hint_kw},
+        ).json()["sampling"]
+        remote_h = remote_u.complete(
+            msg,
+            backend="byok",
+            reasoning_effort="low",
+            service_tier="flex",
+            verbosity="high",
+            prompt_cache_key="pck",
+            prompt_cache_retention="24h",
+        ).sampling
+        out["provider_hints_parity"] = sdk_h == want_h and wire_h == want_h and remote_h == want_h
+        out["provider_hints_failclosed"] = (
+            _raises(lambda: sdk_u.complete(msg, backend="byok", verbosity="extreme"))[0]
+            == "ValueError"
+            and uclient.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": msg, "verbosity": "extreme"},
+            ).status_code
+            == 422
+            and _raises(
+                lambda: remote_u.complete(msg, backend="byok", prompt_cache_retention="forever")
+            )[0]
+            in ("HarnessApiError", "ValueError")
+        )
+
         # deep-health probe: in-process verdict mirrors the wire verdict —
         # latency differs per call so only the semantic fields are pinned.
         sdk_pr = sdk_u.probe_backend("byok")
@@ -1638,6 +1760,77 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: remote_u.diff_evals("nope", rv_b["eval_id"]))[0] == "KeyError"
         )
 
+        # /v1/evals spec+run surface: the SDK's in-process twins and the
+        # wire client mint the same wire objects — the spec carries the
+        # pinned suite knobs and the run lands the same terminal shape.
+        # Remote runs dispatch to workers; the SDK twin runs the suite
+        # synchronously — both end "completed" with the same counts.
+        s_spec = sdk_u.eval_spec_create(
+            "tooluse-par",
+            suite="tooluse",
+            seed=0,
+            testing_criteria=[{"name": "all-pass"}],
+        )
+        r_spec = remote_u.eval_spec_create(
+            "tooluse-par",
+            suite="tooluse",
+            seed=0,
+            testing_criteria=[{"name": "all-pass"}],
+        )
+
+        def _spec_norm(d: Any) -> dict[str, Any]:
+            dd = dict(d)
+            dd.pop("id", None)
+            dd.pop("created_at", None)
+            return dd
+
+        out["evalspec_parity"] = (
+            _spec_norm(s_spec) == _spec_norm(r_spec)
+            and s_spec["object"] == "eval"
+            and s_spec["data_source_config"]["item_schema"]["suite"] == "tooluse"
+        )
+        out["evalspec_update_parity"] = (
+            sdk_u.eval_spec_update(s_spec["id"], name="renamed")["name"]
+            == remote_u.eval_spec_update(r_spec["id"], name="renamed")["name"]
+            == "renamed"
+        )
+        s_run = sdk_u.eval_run_create(s_spec["id"], model="byok")
+        r_run_sub = remote_u.eval_run_create(r_spec["id"], model="byok")
+        remote_u.wait_eval(r_run_sub["id"].removeprefix("evalrun_"), timeout_s=120)
+        r_run = remote_u.eval_run_get(r_spec["id"], r_run_sub["id"])
+        out["evalrun_parity"] = (
+            s_run["status"] == r_run["status"] == "completed"
+            and s_run["result_counts"] == r_run["result_counts"]
+            and s_run["object"] == r_run["object"] == "eval.run"
+            and s_run["eval_id"] == s_spec["id"]
+            and r_run["eval_id"] == r_spec["id"]
+        )
+
+        def _item_norm(it: Any) -> dict[str, Any]:
+            dd = dict(it)
+            for k in ("id", "run_id", "eval_id", "created_at"):
+                dd.pop(k, None)
+            return dd
+
+        s_items = sdk_u.eval_run_items(s_spec["id"], s_run["id"])
+        r_items = remote_u.eval_run_output_items(r_spec["id"], r_run["id"])
+        out["evalrun_items_parity"] = (
+            [(_item_norm(it)) for it in s_items] == [_item_norm(it) for it in r_items["data"]]
+            and len(s_items) > 0
+            and all(it.get("object") == "eval.run.output_item" for it in s_items)
+            and all(any("name" in r and "passed" in r for r in it["results"]) for it in s_items)
+        )
+        out["evalrun_list_parity"] = (
+            sdk_u.eval_runs(s_spec["id"])[0]["id"] == s_run["id"]
+            and remote_u.eval_runs(r_spec["id"])["data"][0]["id"] == r_run["id"]
+        )
+        sdk_u.eval_spec_delete(s_spec["id"])
+        out["evalspec_delete_parity"] = (
+            remote_u.eval_run_delete(r_spec["id"], r_run["id"])["deleted"] is True
+            and remote_u.eval_spec_delete(r_spec["id"])["deleted"] is True
+            and _raises(lambda: sdk_u.eval_spec_get(s_spec["id"]))[0] == "KeyError"
+        )
+
         # fine-tuning surface: the in-process twin takes the corpus inline
         # and runs the same runner contract synchronously; the wire twin
         # uploads a file, submits, and polls. Both land terminal-succeeded
@@ -1706,6 +1899,56 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: remote_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
             and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
             == "HarnessTransportError"
+        )
+        # Pause/resume — wire-only verbs (the in-process twin is
+        # synchronous: no pause window, so the SDK carries no pause
+        # method — pinned as the honest contract). The remote client
+        # drives the lifecycle; fault classes map like every other ft
+        # route, and a parked job still resumes to a clean terminal.
+        _ph = threading.Event()
+        _pe = threading.Event()
+        _ph2 = threading.Event()
+
+        def _ft_pause_runner(spec: Any, *, emit: Any, should_cancel: Any, pause_gate: Any) -> Any:
+            emit("info", "stage A")
+            _ph.wait(timeout=15)
+            _pe.set()
+            if pause_gate():
+                return FTJobOutcome()
+            emit("info", "stage B")
+            # hold the worker in-flight across the resume read — the
+            # response is the record at read time, so 'running' is only
+            # observable while the runner is still live
+            _ph2.wait(timeout=15)
+            return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+        _sdk_p, _wire_p = _surfaces(_UsageBackend, ft_runner=_ft_pause_runner)
+        remote_p = HarnessClient("http://harness.test", transport=_tc_transport(_wire_p))
+        pfid = remote_p.upload_file(_corpus, filename="pc.jsonl", purpose="fine-tune")["id"]
+        pjob = remote_p.create_finetune_job(model="fx1", training_file=pfid, suffix="p")
+        ppaused = remote_p.pause_finetune_job(pjob["id"])
+        _ph.set()
+        _pe.wait(timeout=15)
+        time.sleep(0.05)
+        pheld = remote_p.finetune_job(pjob["id"])
+        presumed = remote_p.resume_finetune_job(pjob["id"])
+        _ph2.set()
+        pfin = remote_p.wait_finetune_job(pjob["id"], timeout_s=30)
+        out["ft_pause_resume_parity"] = (
+            not hasattr(sdk_ft, "pause_finetune_job")  # sync twin: no pause window
+            and ppaused["status"] == "paused"
+            and pheld["status"] == "paused"
+            and presumed["status"] in ("queued", "running")
+            and pfin["status"] == "succeeded"
+        )
+        out["ft_pause_guards_parity"] = (
+            _raises(lambda: remote_p.pause_finetune_job("ftjob-nope"))[0]
+            == "KeyError"  # 404 maps like finetune_job
+            and _raises(lambda: remote_p.resume_finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_p.resume_finetune_job(pjob["id"]))[0]
+            == "HarnessTransportError"  # terminal → 409 → transport fault
+            and _raises(lambda: remote_p.pause_finetune_job(pjob["id"]))[0]
+            == "HarnessTransportError"  # terminal → 409
         )
         # Registry parity: a succeeded job's ft: name lists + resolves on
         # both surfaces, and completions naming it land on the local_fx1
@@ -2877,6 +3120,66 @@ def parity_audit() -> dict[str, bool]:
     except ValueError:
         out["client_batch_bad_endpoint_422"] = True
 
+    # --- /v1/uploads parity: the wire client and the SDK twin run the
+    # same intent→parts→complete lifecycle, mint identical file records,
+    # and fail closed on the same violation classes.
+    _ul_body = b'{"ul":1}\n{"ul":2}\n'
+    _u_w = c_b.upload_create(bytes=len(_ul_body))
+    _pw = c_b.upload_part(_u_w["id"], _ul_body)
+    _ud_w = c_b.upload_complete(
+        _u_w["id"], [_pw["id"]], md5=hashlib.md5(_ul_body, usedforsecurity=False).hexdigest()
+    )
+    _u_s = sdk_b.upload_create(bytes=len(_ul_body))
+    _ps = sdk_b.upload_part(_u_s["id"], _ul_body)
+    _ud_s = sdk_b.upload_complete(
+        _u_s["id"],
+        [_ps["id"]],
+        md5=hashlib.md5(_ul_body, usedforsecurity=False).hexdigest(),
+    )
+    out["upload_lifecycle_parity"] = (
+        _u_w["object"] == _u_s["object"] == "upload"
+        and _u_w["id"].startswith("upload_")
+        and _u_s["id"].startswith("upload_")
+        and _pw["object"] == _ps["object"] == _OBJ_UPLOAD_PART
+        and _ud_w["status"] == _ud_s["status"] == "completed"
+        and _ud_w["file"]["bytes"] == _ud_s["file"]["bytes"] == len(_ul_body)
+        and _ud_w["file"]["id"].startswith("file-")
+        and _ud_s["file"]["id"].startswith("file-")
+        and c_b.file_content(_ud_w["file"]["id"])
+        == sdk_b.file_content(_ud_s["file"]["id"])
+        == _ul_body
+    )
+    _md5bad_w = ("", "")
+    try:
+        _u2 = c_b.upload_create(bytes=len(_ul_body) + 2)
+        _p2 = c_b.upload_part(_u2["id"], _ul_body)
+        c_b.upload_complete(_u2["id"], [_p2["id"]], md5="0" * 32)
+    except HarnessTransportError as exc:
+        _md5bad_w = ("HarnessTransportError", str(exc.code))
+    _md5bad_s = ("", "")
+    try:
+        _u3 = sdk_b.upload_create(bytes=len(_ul_body) + 2)
+        _p3 = sdk_b.upload_part(_u3["id"], _ul_body)
+        sdk_b.upload_complete(_u3["id"], [_p3["id"]], md5="0" * 32)
+    except Exception as _exc6:  # noqa: BLE001 — probe captures the class+code
+        _md5bad_s = (type(_exc6).__name__, str(getattr(_exc6, "code", "")))
+    out["upload_fail_closed_parity"] = (
+        _md5bad_w == ("HarnessTransportError", "checksum_mismatch")
+        and _md5bad_s == ("UploadStoreError", "checksum_mismatch")
+        # a bad md5 is pre-terminal: the intent stays pending and still
+        # accepts parts — only a *successful* complete is terminal
+        and c_b.upload_part(_u2["id"], b"ab")["object"] == _OBJ_UPLOAD_PART
+        and sdk_b.upload_part(_u3["id"], b"ab")["object"] == _OBJ_UPLOAD_PART
+        # cancel is terminal on both legs and replays idempotently
+        and c_b.upload_cancel(c_b.upload_create(bytes=4)["id"])["status"] == "cancelled"
+        and _raises(
+            lambda: sdk_b.upload_part(
+                sdk_b.upload_cancel(sdk_b.upload_create(bytes=4)["id"])["id"], b"ab"
+            )
+        )[0]
+        == "UploadStoreError"
+    )
+
     # --- /v1 retrieval parity: the store flag governs the index on every
     # surface — SDK, wire, and the typed remote client fetch/drop the same
     # envelope by id and miss identically.
@@ -2901,6 +3204,21 @@ def parity_audit() -> dict[str, bool]:
     out["retrieval_store_false_parity"] = (
         _raises(lambda: sdk.openai_chat_get(_ns_sdk_env.id))[0] == "KeyError"
         and client.get(f"/v1/chat/completions/{_ns_wire.json()['id']}").status_code == 404
+    )
+    # metadata update parity — POST replaces wholesale on both surfaces and
+    # a second GET reflects it; gone ids fail the same way
+    _upd_sdk = sdk.openai_chat_update(_ret_sdk_env.id, metadata={"k": "1"})
+    _upd_wire = client.post(
+        f"/v1/chat/completions/{_ret_wire.json()['id']}", json={"metadata": {"k": "1"}}
+    ).json()
+    out["retrieval_update_parity"] = (
+        _upd_sdk["metadata"] == {"k": "1"}
+        and _upd_wire["metadata"] == {"k": "1"}
+        and {kk: vv for kk, vv in _upd_sdk.items() if kk not in ("id", "created")}
+        == {kk: vv for kk, vv in _upd_wire.items() if kk not in ("id", "created")}
+        and sdk.openai_chat_get(_ret_sdk_env.id)["metadata"] == {"k": "1"}
+        and _raises(lambda: sdk.openai_chat_update("chatcmpl-miss"))[0] == "KeyError"
+        and client.post("/v1/chat/completions/chatcmpl-miss", json={}).status_code == 404
     )
     # delete parity — same tombstone shape (ids differ across calls), then
     # both surfaces miss
@@ -3221,6 +3539,16 @@ def parity_audit() -> dict[str, bool]:
         and sdk.openai_conversation_get(_cv_sdk["id"])["metadata"] == {"lane": "parity"}
         and remote.conversation_get(_cv_wl["id"])["metadata"] == {"lane": "parity"}
     )
+    # single-item retrieve — items.get on both legs returns the same
+    # minted item dict
+    _cv_iid_sdk = _cv_items_sdk[0]["id"]
+    _cv_iid_wl = _cv_items_wl[0]["id"]
+    out["conv_item_parity"] = (
+        sdk.openai_conversation_item(_cv_sdk["id"], _cv_iid_sdk)["id"] == _cv_iid_sdk
+        and remote.conversation_item(_cv_wl["id"], _cv_iid_wl)["id"] == _cv_iid_wl
+        and sdk.openai_conversation_item(_cv_sdk["id"], _cv_iid_sdk)["type"]
+        == remote.conversation_item(_cv_wl["id"], _cv_iid_wl)["type"]
+    )
     # fail-closed parity — a ghost conv and the exclusivity pair refuse
     # identically on both legs
     _cv_miss_sdk: tuple[str, str] = ("", "")
@@ -3288,6 +3616,293 @@ def parity_audit() -> dict[str, bool]:
         and _raises(lambda: remote.conversation_get(_cv_wl["id"]))[0] == "KeyError"
         and sdk.openai_response_get(_cv_r_sdk["id"])["id"] == _cv_r_sdk["id"]
         and remote.retrieve_response(_cv_r_wl["id"])["id"] == _cv_r_wl["id"]
+    )
+
+    # /v1/vector_stores — the lexical retrieval corpus is the same store
+    # on both legs: identical wire shapes, fail-closed edges, and the
+    # file_search tool turn retrieving the same document
+    _vs_sdk = sdk.vector_store_create(name="kb", metadata={"lane": "parity"})
+    _vs_wl = remote.vector_store_create(name="kb", metadata={"lane": "parity"})
+    out["vs_parity"] = (
+        _vs_sdk["id"].startswith("vs_")
+        and _vs_wl["id"].startswith("vs_")
+        and _vs_sdk["object"] == _vs_wl["object"] == "vector_store"
+        and _vs_sdk["metadata"] == _vs_wl["metadata"] == {"lane": "parity"}
+        and sdk.vector_store_update(_vs_sdk["id"], name="kb2")["name"]
+        == remote.vector_store_update(_vs_wl["id"], name="kb2")["name"]
+        == "kb2"
+        and sdk.vector_store_list(limit=1)["data"][0]["object"] == "vector_store"
+        and remote.vector_store_list(limit=1)["data"][0]["object"] == "vector_store"
+    )
+    # the upload+attach path differs per leg (multipart vs in-process
+    # record) but the attached file object is the same shape
+    _vf_sdk = sdk.vector_store_file_create(
+        _vs_sdk["id"],
+        sdk.openai_file_create(content=b"alpha beta gamma", filename="p.jsonl")["id"],
+        attributes={"kind": "docs"},
+    )
+    _vf_wl = remote.vector_store_file_create(
+        _vs_wl["id"],
+        remote.upload_file(b"alpha beta gamma", filename="p.jsonl")["id"],
+        attributes={"kind": "docs"},
+    )
+    _vfc_sdk = sdk.vector_store_file_content(_vs_sdk["id"], _vf_sdk["id"])
+    _vfc_wl = remote.vector_store_file_content(_vs_wl["id"], _vf_wl["id"])
+    out["vs_file_parity"] = (
+        _vf_sdk["object"] == _vf_wl["object"] == "vector_store.file"
+        and _vf_sdk["status"] == _vf_wl["status"] == "completed"
+        and _vf_sdk["usage_bytes"] == _vf_wl["usage_bytes"] > 0
+        and _vf_sdk["attributes"] == _vf_wl["attributes"] == {"kind": "docs"}
+        and sdk.vector_store_file_list(_vs_sdk["id"])["data"][0]["id"] == _vf_sdk["id"]
+        and remote.vector_store_file_list(_vs_wl["id"], filter="completed")["data"][0]["id"]
+        == _vf_wl["id"]
+        and _vfc_sdk["object"] == _vfc_wl["object"] == "vector_store.file_content.page"
+        and _vfc_sdk["data"] == _vfc_wl["data"]
+    )
+    out["vs_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_get("vs_ghost"))
+        == ("VectorStoreError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_get("vs_ghost")) == ("KeyError", "")
+        and _raises_code(lambda: sdk.vector_store_file_create(_vs_sdk["id"], _vf_sdk["id"]))
+        == ("VectorStoreError", "file_already_attached")
+        and _raises_code(lambda: remote.vector_store_file_create(_vs_wl["id"], _vf_wl["id"]))
+        == ("HarnessTransportError", "file_already_attached")
+        and _raises_code(lambda: sdk.vector_store_file_list(_vs_sdk["id"], filter="bogus"))
+        == ("VectorStoreError", "invalid_filters")
+        and _raises_code(lambda: remote.vector_store_file_list(_vs_wl["id"], filter="bogus"))
+        == ("HarnessTransportError", "invalid_filters")
+    )
+    _vsd_sdk = sdk.vector_store_file_delete(_vs_sdk["id"], _vf_sdk["id"])
+    _vsd_wl = remote.vector_store_file_delete(_vs_wl["id"], _vf_wl["id"])
+    _vsdel_sdk = sdk.vector_store_delete(_vs_sdk["id"])
+    _vsdel_wl = remote.vector_store_delete(_vs_wl["id"])
+    out["vs_delete_parity"] = (
+        _vsd_sdk == {"id": _vf_sdk["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and _vsd_wl == {"id": _vf_wl["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and _vsdel_sdk == {"id": _vs_sdk["id"], "object": "vector_store.deleted", "deleted": True}
+        and _vsdel_wl == {"id": _vs_wl["id"], "object": "vector_store.deleted", "deleted": True}
+        and _raises_code(lambda: sdk.vector_store_get(_vs_sdk["id"]))
+        == ("VectorStoreError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_get(_vs_wl["id"])) == ("KeyError", "")
+    )
+    # expires_after parity — both legs mint/anchor the policy and fail
+    # closed identically on a bad anchor
+    _ve_sdk = sdk.vector_store_create(
+        name="exp", expires_after={"anchor": "last_active_at", "days": 2}
+    )
+    _ve_wl = remote.vector_store_create(
+        name="exp", expires_after={"anchor": "last_active_at", "days": 2}
+    )
+    out["vs_expires_parity"] = (
+        _ve_sdk["expires_after"]
+        == _ve_wl["expires_after"]
+        == {"anchor": "last_active_at", "days": 2}
+        and _ve_sdk["expires_at"] == _ve_sdk["last_active_at"] + 2 * 86400
+        and _ve_wl["expires_at"] == _ve_wl["last_active_at"] + 2 * 86400
+        and _ve_sdk["status"] == _ve_wl["status"] == "completed"
+        and _raises_code(
+            lambda: sdk.vector_store_create(expires_after={"anchor": "bogus", "days": 1})
+        )
+        == ("VectorStoreError", "invalid_expires_after")
+        and _raises_code(
+            lambda: remote.vector_store_create(expires_after={"anchor": "bogus", "days": 1})
+        )
+        == ("HarnessTransportError", "invalid_expires_after")
+    )
+    sdk.vector_store_delete(_ve_sdk["id"])
+    remote.vector_store_delete(_ve_wl["id"])
+    # file_search on /v1/responses: same output grammar on both legs —
+    # the retrieval item precedes the message, include gates results,
+    # unknown stores fail closed the same way
+    _fs_sdk = sdk.vector_store_create(name="fskb")
+    _fs_f_sdk = sdk.vector_store_file_create(
+        _fs_sdk["id"],
+        sdk.openai_file_create(content=b"gamma delta epsilon", filename="q.jsonl")["id"],
+    )
+    _fs_wl = remote.vector_store_create(name="fskb")
+    _fs_f_wl = remote.vector_store_file_create(
+        _fs_wl["id"],
+        remote.upload_file(b"gamma delta epsilon", filename="q.jsonl")["id"],
+    )
+    _fsr_sdk, _ = sdk.openai_response(
+        {
+            "model": "fx1",
+            "input": "epsilon",
+            "tools": [{"type": "file_search", "vector_store_ids": [_fs_sdk["id"]]}],
+            "include": ["file_search_call.results"],
+        }
+    )
+    _fsr_wl, _ = remote.responses_create(
+        model="fx1",
+        input="epsilon",
+        tools=[{"type": "file_search", "vector_store_ids": [_fs_wl["id"]]}],
+        include=["file_search_call.results"],
+    )
+    _fsi_sdk = [o for o in _fsr_sdk["output"] if o["type"] == "file_search_call"]
+    _fsi_wl = [o for o in _fsr_wl["output"] if o["type"] == "file_search_call"]
+    out["file_search_parity"] = (
+        bool(_fsi_sdk)
+        and bool(_fsi_wl)
+        and _fsi_sdk[0]["queries"] == _fsi_wl[0]["queries"] == ["epsilon"]
+        and _fsi_sdk[0]["results"][0]["file_id"] == _fs_f_sdk["id"]
+        and _fsi_wl[0]["results"][0]["file_id"] == _fs_f_wl["id"]
+        and _fsi_sdk[0]["results"][0]["text"] == _fsi_wl[0]["results"][0]["text"]
+        and _fsi_sdk[0]["results"][0]["score"] == _fsi_wl[0]["results"][0]["score"]
+        and _fsr_sdk["output"][-1]["type"] == _fsr_wl["output"][-1]["type"] == "message"
+    )
+    _fsr_no_inc, _ = remote.responses_create(
+        model="fx1",
+        input="epsilon",
+        tools=[{"type": "file_search", "vector_store_ids": [_fs_wl["id"]]}],
+    )
+    out["file_search_include_parity"] = all(
+        o.get("results") is None for o in _fsr_no_inc["output"] if o["type"] == "file_search_call"
+    )
+    _fs_err_sdk = _raises_code(
+        lambda: sdk.openai_response(
+            {
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+            }
+        )
+    )
+    _fs_err_wl = _raises_code(
+        lambda: remote.responses_create(
+            model="fx1",
+            input="x",
+            tools=[{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+        )
+    )
+    out["file_search_fail_closed_parity"] = _fs_err_sdk == (
+        "OpenAICompatError",
+        "vector_store_not_found",
+    ) and _fs_err_wl == ("KeyError", "")
+
+    # POST /v1/vector_stores/{id}/search — the same ranked page on both
+    # legs (scores and content byte-identical), and the same mapped
+    # fault on a ghost store / bad filter
+    _vss_sdk = sdk.vector_store_search(_fs_sdk["id"], "epsilon")
+    _vss_wl = remote.vector_store_search(_fs_wl["id"], "epsilon")
+    out["vs_search_parity"] = (
+        _vss_sdk["object"] == _vss_wl["object"] == "vector_store.search_results.page"
+        and _vss_sdk["search_query"] == _vss_wl["search_query"] == "epsilon"
+        and _vss_sdk["data"][0]["file_id"] == _fs_f_sdk["id"]
+        and _vss_wl["data"][0]["file_id"] == _fs_f_wl["id"]
+        and _vss_sdk["data"][0]["score"] == _vss_wl["data"][0]["score"]
+        and _vss_sdk["data"][0]["content"] == _vss_wl["data"][0]["content"]
+        and _vss_sdk["has_more"] is _vss_wl["has_more"] is False
+        and _vss_sdk["next_page"] is _vss_wl["next_page"] is None
+    )
+    _vssq_sdk = sdk.vector_store_search(_fs_sdk["id"], ["gamma", "epsilon"], max_num_results=5)
+    _vssq_wl = remote.vector_store_search(_fs_wl["id"], ["gamma", "epsilon"], max_num_results=5)
+    out["vs_search_list_parity"] = (
+        _vssq_sdk["search_query"] == "gamma epsilon" == _vssq_wl["search_query"]
+        and len(_vssq_sdk["data"]) == len(_vssq_wl["data"]) > 0
+        and _vssq_sdk["data"][0]["score"] == _vssq_wl["data"][0]["score"]
+        and _vssq_sdk["data"][0]["content"] == _vssq_wl["data"][0]["content"]
+    )
+    out["vs_search_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_search("vs_ghost", "x"))
+        == ("OpenAICompatError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_search("vs_ghost", "x")) == ("KeyError", "")
+        and _raises_code(
+            lambda: sdk.vector_store_search(_fs_sdk["id"], "x", filters={"bad": "shape"})
+        )
+        == ("OpenAICompatError", "invalid_filters")
+        and _raises_code(
+            lambda: remote.vector_store_search(_fs_wl["id"], "x", filters={"bad": "shape"})
+        )
+        == ("HarnessTransportError", "invalid_filters")
+    )
+
+    # POST .../file_batches — bulk attach + frozen per-file verdicts on
+    # both legs: same object/counts shape, same fail-closed mapping
+    _fs2_sdk = sdk.openai_file_create(content=b"zeta eta theta", filename="r.jsonl")
+    _fs2_wl = remote.upload_file(b"zeta eta theta", filename="r.jsonl")
+    _fb_sdk = sdk.vector_store_file_batch_create(_fs_sdk["id"], [_fs2_sdk["id"], "file-ghost"])
+    _fb_wl = remote.vector_store_file_batch_create(_fs_wl["id"], [_fs2_wl["id"], "file-ghost"])
+    out["vs_batch_parity"] = (
+        _fb_sdk["object"] == _fb_wl["object"] == "vector_store.files_batch"
+        and _fb_sdk["id"].startswith("vsfb_")
+        and _fb_wl["id"].startswith("vsfb_")
+        and _fb_sdk["status"] == _fb_wl["status"] == "completed"
+        and _fb_sdk["file_counts"]
+        == _fb_wl["file_counts"]
+        == {"in_progress": 0, "completed": 1, "failed": 1, "cancelled": 0, "total": 2}
+        and sdk.vector_store_file_batch_get(_fs_sdk["id"], _fb_sdk["id"])["id"] == _fb_sdk["id"]
+        and remote.vector_store_file_batch_get(_fs_wl["id"], _fb_wl["id"])["id"] == _fb_wl["id"]
+    )
+    _fbf_sdk = sdk.vector_store_file_batch_files(_fs_sdk["id"], _fb_sdk["id"], filter="failed")
+    _fbf_wl = remote.vector_store_file_batch_files(_fs_wl["id"], _fb_wl["id"], filter="failed")
+    out["vs_batch_files_parity"] = (
+        _fbf_sdk["object"] == _fbf_wl["object"] == "list"
+        and [r["id"] for r in _fbf_sdk["data"]] == ["file-ghost"]
+        and [r["id"] for r in _fbf_wl["data"]] == ["file-ghost"]
+        and _fbf_sdk["data"][0]["last_error"]["code"]
+        == _fbf_wl["data"][0]["last_error"]["code"]
+        == "file_not_found"
+    )
+    out["vs_batch_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_file_batch_cancel(_fs_sdk["id"], _fb_sdk["id"]))
+        == ("OpenAICompatError", "file_batch_terminal")
+        and _raises_code(lambda: remote.vector_store_file_batch_cancel(_fs_wl["id"], _fb_wl["id"]))
+        == ("HarnessTransportError", "file_batch_terminal")
+        and _raises_code(lambda: sdk.vector_store_file_batch_get(_fs_sdk["id"], "vsfb_nope"))
+        == ("OpenAICompatError", "file_batch_not_found")
+        and _raises_code(lambda: remote.vector_store_file_batch_get(_fs_wl["id"], "vsfb_nope"))
+        == ("KeyError", "")
+        and _raises_code(lambda: sdk.vector_store_file_batch_create("vs_ghost", ["file-a"]))
+        == ("OpenAICompatError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_file_batch_create("vs_ghost", ["file-a"]))
+        == ("KeyError", "")
+    )
+
+    # /harness/keys — the managed-key lifecycle is identical on both legs:
+    # mint shows the raw secret once, list/get never carry it, revoke is a
+    # tombstone, and unknown/already-revoked fail closed the same way
+    # (KeyError; the wire maps a second revoke to a 409 refusal). The wire
+    # leg mints its first admin key through loopback (empty store ⇒
+    # loopback is admin), then operates keyed — minting turns auth on.
+    _k_sdk = sdk.key_create("parity")
+    _boot = client.post("/harness/keys", json={"name": "ops", "admin": True})
+    _admin_remote = HarnessClient(
+        "http://harness.test",
+        transport=_tc_transport(client),
+        api_key=_boot.json()["key"],
+    )
+    _k_wl = _admin_remote.key_create("parity")
+    _kid_sdk, _kid_wl = _k_sdk["id"], _k_wl["id"]
+    # declared policy rides the mint on both legs: rpm and the stamped
+    # expires_at read back identically
+    _p_sdk = sdk.key_create("policed", rpm=5, ttl_s=600.0)
+    _p_wl = _admin_remote.key_create("policed", rpm=5, ttl_s=600.0)
+    out["key_parity"] = (
+        _k_sdk["object"] == _k_wl["object"] == "key"
+        and _k_sdk["key"].startswith("fx1k_")
+        and _k_wl["key"].startswith("fx1k_")
+        and _k_sdk["prefix"] == _k_sdk["key"][:13]
+        and _k_wl["prefix"] == _k_wl["key"][:13]
+        and _k_wl["admin"] is False
+        and _boot.json()["admin"] is True
+        and _p_sdk["rpm"] == _p_wl["rpm"] == 5
+        and _p_sdk["expires_at"] is not None
+        and _p_wl["expires_at"] is not None
+        and sdk.key_get(_p_sdk["id"])["rpm"] == 5
+        and _admin_remote.key_get(_p_wl["id"])["rpm"] == 5
+        and sdk.key_get(_kid_sdk)["name"] == _admin_remote.key_get(_kid_wl)["name"] == "parity"
+        and sdk.keys()[0]["id"] == _kid_sdk
+        and _admin_remote.keys()[1]["id"] == _kid_wl
+        and _k_sdk["key"] not in str(sdk.keys())
+        and _k_wl["key"] not in str(_admin_remote.keys())
+        and sdk.key_revoke(_kid_sdk)["enabled"] is False
+        and _admin_remote.key_revoke(_kid_wl)["enabled"] is False
+        and _raises(lambda: sdk.key_get("0" * 16))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_get("0" * 16))[0] == "KeyError"
+        and _raises(lambda: sdk.key_revoke(_kid_sdk))[0] == "ValueError"
+        and _raises(lambda: _admin_remote.key_revoke(_kid_wl))[0] == "HarnessTransportError"
+        # provisioning turned auth on: the keyless remote now 401s
+        and _raises(lambda: remote.key_create("x"))[0] == "HarnessAuthError"
     )
     return out
 

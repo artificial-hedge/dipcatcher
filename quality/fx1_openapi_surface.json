@@ -398,6 +398,53 @@
         ]
       }
     },
+    "/harness/keys": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/harness/keys/{key_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [
@@ -418,6 +465,42 @@
       "post": {
         "params": [],
         "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/usage": {
+      "get": {
+        "params": [
+          {
+            "name": "backend",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "key_id",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
         "responses": [
           "200",
           "422"
@@ -662,6 +745,20 @@
           "200",
           "422"
         ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/v1/chat/completions/{completion_id}/messages": {
@@ -823,6 +920,25 @@
           "200",
           "422"
         ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/v1/embeddings": {
@@ -835,12 +951,249 @@
         ]
       }
     },
-    "/v1/files": {
+    "/v1/evals": {
       "get": {
-        "params": [],
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
         "request_body_required": null,
         "responses": [
-          "200"
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/v1/evals/{eval_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/evals/{eval_id}/runs": {
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/v1/evals/{eval_id}/runs/{run_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/evals/{eval_id}/runs/{run_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/evals/{eval_id}/runs/{run_id}/output_items": {
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
         ]
       },
       "post": {
@@ -1017,6 +1370,38 @@
         ]
       }
     },
+    "/v1/fine_tuning/jobs/{job_id}/pause": {
+      "post": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/resume": {
+      "post": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "params": [],
@@ -1168,7 +1553,384 @@
           "422"
         ]
       }
+    },
+    "/v1/uploads": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/complete": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/parts": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/file_batches": {
+      "post": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files": {
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/files": {
+      "get": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/files/{file_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/files/{file_id}/content": {
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/search": {
+      "post": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "c753f50168ba62539e73b47ddd4f826a2475196b770a65b6ec83fa47c95cc364"
+  "schema_sha256": "eb4aaba44e7a8c7ec1c3e2f89f5fb4cc4a0822b814a1924b05b1199c01682254"
 }

@@ -498,6 +498,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key List
+         * @description Every minted key's public fingerprint + metadata — never the
+         *     secret or its hash.
+         */
+        get: operations["key_list"];
+        put?: never;
+        /**
+         * Key Create
+         * @description Mint a managed API key. The raw ``key`` is returned once here
+         *     and never stored — the store keeps only its sha256. Requires the
+         *     bootstrap credential (``FX1_API_KEY``) or loopback dev mode.
+         */
+        post: operations["key_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key Get
+         * @description One key's record by its fingerprint id.
+         */
+        get: operations["key_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Key Revoke
+         * @description Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
+         *     stays so the audit trail of which keys existed survives; auth
+         *     with it fails closed immediately after.
+         */
+        delete: operations["key_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/runs": {
         parameters: {
             query?: never;
@@ -532,6 +585,31 @@ export interface paths {
          *     pre-flight: no backend, no slot, stays up during drain.
          */
         post: operations["harness_score"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usage Report
+         * @description Token/request accounting over the retained completion records —
+         *     the billing/ops view. Totals plus per-backend/per-model splits;
+         *     `records_dropped`/`ring_cap` declare a truncated window, and the
+         *     model split keys absent models as ``(none)``. `since`/`until`
+         *     are unix-second bounds on the record timestamps; since>until is
+         *     a fail-closed 400.
+         */
+        get: operations["usage_report"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -831,7 +909,12 @@ export interface paths {
          */
         get: operations["openai_chat_retrieve"];
         put?: never;
-        post?: never;
+        /**
+         * Openai Chat Update
+         * @description Update a stored chat completion's ``metadata`` (the only
+         *     mutable field — choices/usage are sealed at creation).
+         */
+        post: operations["openai_chat_update"];
         /**
          * Openai Chat Delete
          * @description Drop a stored chat completion from the retrieval index.
@@ -948,7 +1031,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Openai Conversation Item Retrieve
+         * @description One item by id — the same store the list/delete routes read.
+         *     A missing item (or wrong conversation) is a 404, never a lookup
+         *     into another conversation's namespace.
+         */
+        get: operations["openai_conversation_item_retrieve"];
         put?: never;
         post?: never;
         /**
@@ -992,6 +1081,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/evals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Spec List */
+        get: operations["listEvals"];
+        put?: never;
+        /** Eval Spec Create */
+        post: operations["createEval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/evals/{eval_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Spec Get */
+        get: operations["getEval"];
+        put?: never;
+        /** Eval Spec Update */
+        post: operations["updateEval"];
+        /** Eval Spec Delete */
+        delete: operations["deleteEval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/evals/{eval_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Run List */
+        get: operations["listEvalRuns"];
+        put?: never;
+        /**
+         * Eval Run Create
+         * @description Submit a run under the spec: ``model`` resolves to the backend
+         *     chain head, the spec's item_schema supplies the suite knobs, and
+         *     ``data_source.source`` may override them per run. Same capacity
+         *     gates as ``/harness/evals`` (503 over_capacity / draining).
+         */
+        post: operations["createEvalRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/evals/{eval_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eval Run Get */
+        get: operations["getEvalRun"];
+        put?: never;
+        post?: never;
+        /** Eval Run Delete */
+        delete: operations["deleteEvalRun"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/evals/{eval_id}/runs/{run_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Eval Run Cancel */
+        post: operations["cancelEvalRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/evals/{eval_id}/runs/{run_id}/output_items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eval Run Items
+         * @description Per-task verdict rows from the completed run's report — the
+         *     suite's raw rows verbatim, paged by cursor (index-encoded ids).
+         */
+        get: operations["listEvalRunOutputItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/files": {
         parameters: {
             query?: never;
@@ -1001,7 +1207,10 @@ export interface paths {
         };
         /**
          * Openai File List
-         * @description Newest-first file listing.
+         * @description Newest-first file listing — the shared cursor page shape
+         *     (``has_more`` + ``first_id``/``last_id``) so stock-SDK
+         *     auto-pagination terminates; ``purpose`` filters by the upload's
+         *     declared intent.
          */
         get: operations["openai_file_list"];
         put?: never;
@@ -1168,6 +1377,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/fine_tuning/jobs/{job_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Finetune Job
+         * @description Cooperative pause — a queued job parks before starting; a
+         *     running one parks at the next pipeline-stage boundary (the gate
+         *     blocks inside the runner, so an in-flight trainer call is never
+         *     interrupted mid-write). ``paused`` is non-terminal: resume
+         *     restores, cancel still wins, drain still drains. Pausing a paused
+         *     job replays its record — idempotent.
+         */
+        post: operations["pause_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fine_tuning/jobs/{job_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Finetune Job
+         * @description Resume a paused job — restores the status pause captured
+         *     (queued jobs re-queue, running jobs proceed from the boundary the
+         *     worker parked at). Resuming a non-paused job is a 409.
+         */
+        post: operations["resume_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/models": {
         parameters: {
             query?: never;
@@ -1271,6 +1527,10 @@ export interface paths {
          *     (``none``/``auto``/``required`` or ``{type: "function", name}``),
          *     ``parallel_tool_calls``, ``function_call``/``function_call_output``
          *     input items, and ``function_call`` output items are first-class —
+         *     ``max_tool_calls`` bounds the calls one response may carry; a turn
+         *     over the cap truncates and lands ``status: 'incomplete'`` with
+         *     ``incomplete_details.reason == 'max_tool_calls'`` (the stream's
+         *     terminal frame is ``response.incomplete``) —
          *     the same tool channel as ``/v1/chat/completions`` under its own
          *     grammar (a link without the channel answers 501). Same fail-closed
          *     rule as chat completions for the rest: ``truncation``/``include``
@@ -1373,10 +1633,426 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Upload Create
+         * @description Open an upload intent — parts land under ``.../parts`` until
+         *     ``complete`` assembles them into a file record.
+         */
+        post: operations["openai_upload_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/uploads/{upload_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Upload Cancel
+         * @description Cancel a pending upload — replays 200 on an already-cancelled
+         *     record, 409 once completed.
+         */
+        post: operations["openai_upload_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/uploads/{upload_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Upload Complete
+         * @description Assemble the declared parts into a ``file-`` record. The md5
+         *     check runs BEFORE the file mints so a checksum failure leaves no
+         *     orphan; the upload then transitions terminal.
+         */
+        post: operations["openai_upload_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/uploads/{upload_id}/parts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Upload Part
+         * @description Add one part (multipart ``data`` field). Blob lands durable
+         *     before the journal names it.
+         */
+        post: operations["openai_upload_part"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore List
+         * @description List vector stores — the same ``after``/``before``/``order``
+         *     cursor contract as the other list surfaces.
+         */
+        get: operations["openai_vectorstore_list"];
+        put?: never;
+        /**
+         * Openai Vectorstore Create
+         * @description Create a vector store — ``file_ids`` attach existing
+         *     ``file-*`` records; an unresolvable id fails the whole create
+         *     fail-closed (no partial store).
+         */
+        post: operations["openai_vectorstore_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore Retrieve
+         * @description Retrieve a vector store by id — ``vs_*``.
+         */
+        get: operations["openai_vectorstore_retrieve"];
+        put?: never;
+        /**
+         * Openai Vectorstore Update
+         * @description Update a vector store — ``name``/``metadata`` replace
+         *     wholesale when present.
+         */
+        post: operations["openai_vectorstore_update"];
+        /**
+         * Openai Vectorstore Delete
+         * @description Delete a vector store — member files' index entries and
+         *     chunks drop with it; the ``file-*`` records survive (the store
+         *     borrows, never owns).
+         */
+        delete: operations["openai_vectorstore_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/file_batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Vectorstore File Batch Create
+         * @description Attach many ``file-*`` records in one call — the OpenAI
+         *     ``vector_store.files_batch`` surface. Members attach
+         *     synchronously; per-file refusals (missing, already attached,
+         *     oversized, store full) count ``failed`` with ``last_error``,
+         *     never abort the batch. Status is terminal at return.
+         */
+        post: operations["openai_vectorstore_file_batch_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore File Batch Retrieve
+         * @description Retrieve one ``vsfb_*`` batch — standing status + counts.
+         */
+        get: operations["openai_vectorstore_file_batch_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Vectorstore File Batch Cancel
+         * @description Cancel a batch — members attach synchronously at create so a
+         *     batch is always terminal; the 409 reports the standing status
+         *     rather than faking a mid-flight window.
+         */
+        post: operations["openai_vectorstore_file_batch_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore File Batch Files
+         * @description List a batch's per-file verdicts — frozen at processing time,
+         *     ``filter`` takes an OpenAI status word.
+         */
+        get: operations["openai_vectorstore_file_batch_files"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore File List
+         * @description List a store's attached files — ``filter`` takes an OpenAI
+         *     status word (``in_progress|completed|cancelled|failed``).
+         */
+        get: operations["openai_vectorstore_file_list"];
+        put?: never;
+        /**
+         * Openai Vectorstore File Create
+         * @description Attach a ``file-*`` record — the file is decoded, chunked,
+         *     and indexed in-place; a file whose text is empty lands
+         *     ``status: failed`` with ``last_error``, never silently.
+         */
+        post: operations["openai_vectorstore_file_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore File Retrieve
+         * @description Retrieve one attachment — status, chunk count, attributes.
+         */
+        get: operations["openai_vectorstore_file_retrieve"];
+        put?: never;
+        post?: never;
+        /**
+         * Openai Vectorstore File Delete
+         * @description Detach a file — its chunks leave the index; the underlying
+         *     ``file-*`` record survives.
+         */
+        delete: operations["openai_vectorstore_file_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/files/{file_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Vectorstore File Content
+         * @description The stored text of one attachment — a
+         *     ``vector_store.file_content.page`` list of ``{type: 'text'}``
+         *     parts (the index holds the decoded text, not raw bytes).
+         */
+        get: operations["openai_vectorstore_file_content"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/vector_stores/{vector_store_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Vectorstore Search
+         * @description Direct store search — OpenAI's ``vector_stores.search``: the
+         *     ranked hits without spending a response turn. ``query`` may be a
+         *     string or list of strings (joined); ``filters`` evaluate against
+         *     file attributes; ``ranking_options.score_threshold`` bounds the
+         *     cosine floor.
+         */
+        post: operations["openai_vectorstore_search"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiKeyCreateRequest */
+        ApiKeyCreateRequest: {
+            /**
+             * Admin
+             * @default false
+             */
+            admin: boolean;
+            /** Name */
+            name?: string | null;
+            /** Rpm */
+            rpm?: number | null;
+            /** Ttl S */
+            ttl_s?: number | null;
+        };
+        /** ApiKeyListResponse */
+        ApiKeyListResponse: {
+            /** Data */
+            data: components["schemas"]["ApiKeyRecordModel"][];
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /**
+         * ApiKeyMintResponse
+         * @description Mint response — the only place the raw key ever appears.
+         */
+        ApiKeyMintResponse: {
+            /** Admin */
+            admin: boolean;
+            /** Created At */
+            created_at: number;
+            /** Expires At */
+            expires_at: number | null;
+            /** Id */
+            id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Object
+             * @default key
+             * @constant
+             */
+            object: "key";
+            /** Prefix */
+            prefix: string;
+            /** Rpm */
+            rpm: number | null;
+        };
+        /**
+         * ApiKeyRecordModel
+         * @description The wire view of a managed key — fingerprint + metadata only;
+         *     the sha256 and raw secret never leave the store.
+         */
+        ApiKeyRecordModel: {
+            /** Admin */
+            admin: boolean;
+            /** Created At */
+            created_at: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Expires At */
+            expires_at: number | null;
+            /** Id */
+            id: string;
+            /** Last Used At */
+            last_used_at: number | null;
+            /** Name */
+            name: string | null;
+            /**
+             * Object
+             * @default key
+             * @constant
+             */
+            object: "key";
+            /** Prefix */
+            prefix: string;
+            /** Revoked At */
+            revoked_at: number | null;
+            /** Rpm */
+            rpm: number | null;
+            /** Uses */
+            uses: number;
+        };
         /**
          * BackendAttempt
          * @description One link of a backend fallback chain: which name was tried and how
@@ -1527,6 +2203,11 @@ export interface components {
              */
             purpose: string;
         };
+        /** Body_openai_upload_part */
+        Body_openai_upload_part: {
+            /** Data */
+            data?: string | null;
+        };
         /**
          * ByokOverride
          * @description Per-request BYOK credentials — the caller's own OpenAI-compatible
@@ -1642,6 +2323,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
@@ -1660,6 +2343,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
@@ -1724,6 +2409,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
@@ -1752,6 +2439,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         };
         /** CompleteResponse */
         CompleteResponse: {
@@ -1823,6 +2512,8 @@ export interface components {
             error?: string | null;
             /** Error Class */
             error_class?: string | null;
+            /** Key Id */
+            key_id?: string | null;
             /** Latency Ms */
             latency_ms: number;
             /** Metadata */
@@ -1961,6 +2652,59 @@ export interface components {
             total: number;
         };
         /**
+         * EvalOutputItem
+         * @description One per-task verdict row — ``datasource_item`` is the suite's raw
+         *     report row, served verbatim.
+         */
+        EvalOutputItem: {
+            /** Created At */
+            created_at: number;
+            /** Datasource Item */
+            datasource_item: {
+                [key: string]: unknown;
+            };
+            /** Datasource Item Id */
+            datasource_item_id: string;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Object
+             * @default eval.run.output_item
+             * @constant
+             */
+            object: "eval.run.output_item";
+            /** Results */
+            results: {
+                [key: string]: unknown;
+            }[];
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pass" | "fail";
+        };
+        /** EvalOutputItemPage */
+        EvalOutputItemPage: {
+            /** Data */
+            data: components["schemas"]["EvalOutputItem"][];
+            /** First Id */
+            first_id?: string | null;
+            /** Has More */
+            has_more: boolean;
+            /** Last Id */
+            last_id?: string | null;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /**
          * EvalRecord
          * @description One submitted eval's durable record — sealed on receipt export.
          *
@@ -1991,6 +2735,10 @@ export interface components {
             error?: string | null;
             /** Eval Id */
             eval_id: string;
+            /** Eval Model */
+            eval_model?: string | null;
+            /** Eval Spec */
+            eval_spec?: string | null;
             /** Finished At */
             finished_at?: number | null;
             /** Report */
@@ -2010,6 +2758,279 @@ export interface components {
             status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
             /** Suite */
             suite: string;
+        };
+        /** EvalRunCounts */
+        EvalRunCounts: {
+            /** Errored */
+            errored: number;
+            /** Failed */
+            failed: number;
+            /** Passed */
+            passed: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * EvalRunCreate
+         * @description ``POST /v1/evals/{id}/runs`` — ``model`` is the eval target: a
+         *     backend link name (``hosted_k3``/``local_fx1``/``byok``), the base
+         *     ``fx1``, or a registered ``ft:`` name (resolves to local_fx1 at the
+         *     card's checkpoint — unregistered names fail closed). ``byok``
+         *     carries the credentials for a byok link — never stored on the spec
+         *     or record.
+         */
+        EvalRunCreate: {
+            byok?: components["schemas"]["ByokOverride"] | null;
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
+            data_source?: components["schemas"]["EvalRunDataSource"] | null;
+            judge_byok?: components["schemas"]["ByokOverride"] | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Model */
+            model: string;
+        };
+        /**
+         * EvalRunDataSource
+         * @description Optional run-time overrides on the spec's item_schema.
+         */
+        EvalRunDataSource: {
+            /** Source */
+            source?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Type
+             * @default custom
+             * @constant
+             */
+            type: "custom";
+        };
+        /** EvalRunDeleted */
+        EvalRunDeleted: {
+            /**
+             * Deleted
+             * @default true
+             * @constant
+             */
+            deleted: true;
+            /** Id */
+            id: string;
+            /**
+             * Object
+             * @default eval.run.deleted
+             * @constant
+             */
+            object: "eval.run.deleted";
+        };
+        /** EvalRunError */
+        EvalRunError: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * EvalRunObject
+         * @description The OpenAI ``eval.run`` object over the record.
+         */
+        EvalRunObject: {
+            /** Backend */
+            backend: string;
+            /** Created At */
+            created_at: number;
+            error?: components["schemas"]["EvalRunError"] | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Id */
+            id: string;
+            /** Model */
+            model: string;
+            /**
+             * Object
+             * @default eval.run
+             * @constant
+             */
+            object: "eval.run";
+            /**
+             * Per Testing Criteria Results
+             * @default []
+             */
+            per_testing_criteria_results: {
+                [key: string]: unknown;
+            }[];
+            /** Receipt Url */
+            receipt_url: string;
+            result_counts?: components["schemas"]["EvalRunCounts"] | null;
+            /** Seed */
+            seed: number;
+            /** Status */
+            status: string;
+            /** Suite */
+            suite: string;
+        };
+        /** EvalRunPage */
+        EvalRunPage: {
+            /** Data */
+            data: components["schemas"]["EvalRunObject"][];
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /**
+         * EvalSpecCreate
+         * @description ``POST /v1/evals`` body — name + config + criteria + metadata.
+         */
+        EvalSpecCreate: {
+            data_source_config: components["schemas"]["EvalSpecDataSource"];
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Name */
+            name: string;
+            /** Testing Criteria */
+            testing_criteria?: components["schemas"]["EvalSpecCriterion"][];
+        };
+        /**
+         * EvalSpecCriterion
+         * @description One declared testing criterion — grader kwargs ride ``extra`` (the
+         *     suite's own graders are the measurements; criteria are declarative).
+         */
+        EvalSpecCriterion: {
+            /** Name */
+            name: string;
+            /** Type */
+            type?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * EvalSpecDataSource
+         * @description ``data_source_config`` — custom type + the validated item_schema.
+         */
+        EvalSpecDataSource: {
+            /** Include Sample Schema */
+            include_sample_schema?: boolean | null;
+            item_schema: components["schemas"]["EvalSpecItemSchema"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "custom";
+        };
+        /** EvalSpecDeleted */
+        EvalSpecDeleted: {
+            /**
+             * Deleted
+             * @default true
+             * @constant
+             */
+            deleted: true;
+            /** Id */
+            id: string;
+            /**
+             * Object
+             * @default eval.deleted
+             * @constant
+             */
+            object: "eval.deleted";
+        };
+        /**
+         * EvalSpecItemSchema
+         * @description The suite knobs an eval spec pins — same fields as the
+         *     ``/harness/evals`` submission minus credentials (a spec is stored,
+         *     export-safe state: BYOK keys attach to the run body only).
+         */
+        EvalSpecItemSchema: {
+            /** Backend */
+            backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+            /** Checkpoint Dir */
+            checkpoint_dir?: string | null;
+            /** Fallbacks */
+            fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Judge Backend */
+            judge_backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+            /**
+             * Seed
+             * @default 0
+             */
+            seed: number;
+            /**
+             * Suite
+             * @enum {string}
+             */
+            suite: "capability" | "calibration" | "tooluse" | "retrieval" | "ts_reasoning" | "ext_bench" | "options_reasoning";
+            /** Timeout S */
+            timeout_s?: number | null;
+        };
+        /**
+         * EvalSpecPage
+         * @description ``{object:'list', data:[eval], has_more}`` — the OpenAI list shape.
+         */
+        EvalSpecPage: {
+            /** Data */
+            data: components["schemas"]["EvalSpecWire"][];
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /**
+         * EvalSpecUpdate
+         * @description ``POST /v1/evals/{id}`` — metadata/name edits; the datasource is
+         *     frozen (a spec's declared shape is evidence once runs bind to it).
+         */
+        EvalSpecUpdate: {
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * EvalSpecWire
+         * @description The OpenAI ``eval`` object.
+         */
+        EvalSpecWire: {
+            /** Created At */
+            created_at: number;
+            /** Data Source Config */
+            data_source_config: {
+                [key: string]: unknown;
+            };
+            /** Id */
+            id: string;
+            /** Metadata */
+            metadata: {
+                [key: string]: string;
+            };
+            /** Name */
+            name: string;
+            /**
+             * Object
+             * @default eval
+             * @constant
+             */
+            object: "eval";
+            /** Testing Criteria */
+            testing_criteria: {
+                [key: string]: unknown;
+            }[];
         };
         /**
          * EvalSubmitRequest
@@ -2148,7 +3169,7 @@ export interface components {
              * @default queued
              * @enum {string}
              */
-            status: "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            status: "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled" | "paused";
             /** Trained Tokens */
             trained_tokens?: number | null;
             /** Training File */
@@ -2682,6 +3703,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Response Format */
@@ -2719,6 +3742,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         } & {
             [key: string]: unknown;
         };
@@ -2753,6 +3778,20 @@ export interface components {
             usage?: {
                 [key: string]: number;
             } | null;
+        };
+        /**
+         * OpenAIChatUpdate
+         * @description ``POST /v1/chat/completions/{id}`` body — ``metadata`` replaces
+         *     the stored completion's metadata wholesale (OpenAI's update
+         *     semantics; the only mutable field on a stored completion).
+         */
+        OpenAIChatUpdate: {
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * OpenAIConversationCreate
@@ -2864,6 +3903,37 @@ export interface components {
             } | null;
         };
         /**
+         * OpenAIFileSearchTool
+         * @description ``tools[]`` entry — the server-side ``file_search`` tool against
+         *     ``/v1/vector_stores``. ``vector_store_ids`` bounds the corpus (≤8
+         *     stores per OpenAI's own cap); ``max_num_results`` bounds hits (≤50);
+         *     ``filters`` evaluates the file-attributes comparison grammar;
+         *     ``ranking_options`` accepts ``score_threshold`` (cosine, 0..1) —
+         *     ``ranker`` is echoed but the harness ranker is lexical, not
+         *     embedding-based (documented in FX1_HARNESS_API).
+         */
+        OpenAIFileSearchTool: {
+            /** Filters */
+            filters?: {
+                [key: string]: unknown;
+            } | null;
+            /** Max Num Results */
+            max_num_results?: number | null;
+            /** Ranking Options */
+            ranking_options?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "file_search";
+            /** Vector Store Ids */
+            vector_store_ids: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * OpenAIFx1
          * @description The ``fx1`` extension object: harness knobs that have no OpenAI
          *     field — backend selection, fallbacks, BYOK credentials, the local
@@ -2967,6 +4037,8 @@ export interface components {
             instructions?: string | null;
             /** Max Output Tokens */
             max_output_tokens?: number | null;
+            /** Max Tool Calls */
+            max_tool_calls?: number | null;
             /** Metadata */
             metadata?: {
                 [key: string]: string;
@@ -2980,6 +4052,10 @@ export interface components {
             parallel_tool_calls?: boolean | null;
             /** Previous Response Id */
             previous_response_id?: string | null;
+            /** Prompt Cache Key */
+            prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning */
             reasoning?: {
                 [key: string]: unknown;
@@ -3006,7 +4082,7 @@ export interface components {
                 [key: string]: unknown;
             } | null;
             /** Tools */
-            tools?: components["schemas"]["OpenAIResponseTool"][] | null;
+            tools?: (components["schemas"]["OpenAIResponseTool"] | components["schemas"]["OpenAIFileSearchTool"])[] | null;
             /** Top Logprobs */
             top_logprobs?: number | null;
             /** Top P */
@@ -3073,6 +4149,145 @@ export interface components {
             } | null;
             /** Strict */
             strict?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIUploadCompleteRequest
+         * @description ``POST /v1/uploads/{id}/complete`` body — the part order to
+         *     concatenate, plus an optional content md5 the store checks before
+         *     the file is minted.
+         */
+        OpenAIUploadCompleteRequest: {
+            /** Md5 */
+            md5?: string | null;
+            /** Part Ids */
+            part_ids: string[];
+        };
+        /**
+         * OpenAIUploadCreateRequest
+         * @description ``POST /v1/uploads`` body — the upload intent record.
+         */
+        OpenAIUploadCreateRequest: {
+            /** Bytes */
+            bytes: number;
+            /** Filename */
+            filename: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Purpose */
+            purpose: string;
+        };
+        /**
+         * OpenAIVectorStoreCreate
+         * @description ``POST /v1/vector_stores`` body — ``name``/``metadata`` are free
+         *     labels; ``file_ids`` attaches existing ``file-*`` records at create
+         *     time (a bogus id fails the attach honestly).
+         */
+        OpenAIVectorStoreCreate: {
+            /** Expires After */
+            expires_after?: {
+                [key: string]: unknown;
+            } | null;
+            /** File Ids */
+            file_ids?: string[] | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Name */
+            name?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIVectorStoreFileBatchCreate
+         * @description ``POST /v1/vector_stores/{id}/file_batches`` body — attach up to
+         *     500 ``file-*`` records in one call (OpenAI's cap). Members attach
+         *     synchronously; per-file failures count, never abort the batch.
+         *     ``attributes``/``chunking_strategy`` apply to every member.
+         */
+        OpenAIVectorStoreFileBatchCreate: {
+            /** Attributes */
+            attributes?: {
+                [key: string]: unknown;
+            } | null;
+            /** Chunking Strategy */
+            chunking_strategy?: {
+                [key: string]: unknown;
+            } | null;
+            /** File Ids */
+            file_ids: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIVectorStoreFileCreate
+         * @description ``POST /v1/vector_stores/{id}/files`` body — attach a ``file-*``
+         *     record. ``attributes`` are the keys ``filters`` evaluate against;
+         *     ``chunking_strategy`` is ``{"type": "auto"}`` or ``{"type":
+         *     "static", "static": {max_chunk_size_tokens, chunk_overlap_tokens}}``
+         *     (the word-window index maps token bounds ~0.75×).
+         */
+        OpenAIVectorStoreFileCreate: {
+            /** Attributes */
+            attributes?: {
+                [key: string]: unknown;
+            } | null;
+            /** Chunking Strategy */
+            chunking_strategy?: {
+                [key: string]: unknown;
+            } | null;
+            /** File Id */
+            file_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIVectorStoreSearch
+         * @description ``POST /v1/vector_stores/{id}/search`` body — query the store
+         *     directly without spending a response turn. ``query`` accepts a
+         *     string or a list of strings (joined with spaces). ``rewrite_query``
+         *     is refused: the store never rewrites the caller's query —
+         *     ``filters`` apply to file attributes (OpenAI's comparison grammar)
+         *     and ``ranking_options.score_threshold`` bounds the cosine floor
+         *     (``ranker`` accepts only ``"auto"`` — no other ranker exists).
+         */
+        OpenAIVectorStoreSearch: {
+            /** Filters */
+            filters?: {
+                [key: string]: unknown;
+            } | null;
+            /** Max Num Results */
+            max_num_results?: number | null;
+            /** Query */
+            query: string | string[];
+            /** Ranking Options */
+            ranking_options?: {
+                [key: string]: unknown;
+            } | null;
+            /** Rewrite Query */
+            rewrite_query?: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIVectorStoreUpdate
+         * @description ``POST /v1/vector_stores/{id}`` body — ``name``/``metadata``
+         *     replace wholesale when present; ``expires_after`` re-anchors the
+         *     expiry window from ``last_active_at``.
+         */
+        OpenAIVectorStoreUpdate: {
+            /** Expires After */
+            expires_after?: {
+                [key: string]: unknown;
+            } | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Name */
+            name?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -3214,6 +4429,70 @@ export interface components {
              */
             object: "list";
         };
+        /**
+         * UsageBucket
+         * @description Aggregate counters for one slice of the completion log.
+         */
+        UsageBucket: {
+            /** Completion Tokens */
+            completion_tokens: number;
+            /** Errors */
+            errors: number;
+            /** Mean Latency Ms */
+            mean_latency_ms: number | null;
+            /** Ok */
+            ok: number;
+            /** Other Usage */
+            other_usage: {
+                [key: string]: number;
+            };
+            /** Prompt Tokens */
+            prompt_tokens: number;
+            /** Requests */
+            requests: number;
+            /** Total Tokens */
+            total_tokens: number;
+            /** Usage Reported */
+            usage_reported: number;
+        };
+        /**
+         * UsageReport
+         * @description One usage aggregate: the applied filters, ring accounting, the
+         *     totals, and the per-backend/per-model splits.
+         */
+        UsageReport: {
+            /** Backend */
+            backend: string | null;
+            /** By Backend */
+            by_backend: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
+            /** By Key */
+            by_key: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
+            /** By Model */
+            by_model: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
+            /** Generated At */
+            generated_at: number;
+            /** Key Id */
+            key_id: string | null;
+            /** Model */
+            model: string | null;
+            /** Records Dropped */
+            records_dropped: number;
+            /** Records Seen */
+            records_seen: number;
+            /** Ring Cap */
+            ring_cap: number;
+            /** Since */
+            since: number | null;
+            totals: components["schemas"]["UsageBucket"];
+            /** Until */
+            until: number | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -3260,12 +4539,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3298,12 +4585,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3317,12 +4612,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3347,12 +4650,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3379,12 +4690,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3398,12 +4717,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3434,12 +4761,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3453,12 +4788,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3489,12 +4832,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3508,12 +4859,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3542,12 +4901,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3561,12 +4928,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3594,12 +4969,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3613,12 +4996,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3645,12 +5036,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3664,12 +5063,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3696,12 +5103,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3717,12 +5132,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3749,12 +5172,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3768,12 +5199,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3802,12 +5241,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3821,12 +5268,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3857,12 +5312,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3876,12 +5339,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3908,12 +5379,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3927,12 +5406,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3959,12 +5446,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -3978,12 +5473,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4011,12 +5514,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4030,12 +5541,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4062,12 +5581,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4083,12 +5610,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4117,12 +5652,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4136,12 +5679,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4170,12 +5721,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4189,12 +5748,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4227,12 +5794,20 @@ export interface operations {
                     "Cache-Control"?: string;
                     /** @description URL of the created job's status endpoint. */
                     Location?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4246,12 +5821,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4280,12 +5863,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4299,12 +5890,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4331,12 +5930,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4350,12 +5957,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4382,12 +5997,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4401,12 +6024,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4435,12 +6066,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4454,12 +6093,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4486,12 +6133,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4507,12 +6162,261 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyListResponse"];
+                };
+            };
+        };
+    };
+    key_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyMintResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4543,12 +6447,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4562,12 +6474,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4596,12 +6516,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4615,12 +6543,91 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    usage_report: {
+        parameters: {
+            query?: {
+                backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+                model?: string | null;
+                since?: number | null;
+                until?: number | null;
+                key_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4645,12 +6652,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4675,12 +6690,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4707,12 +6730,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4726,12 +6757,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4756,12 +6795,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4786,12 +6833,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4820,12 +6875,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4839,12 +6902,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4873,12 +6944,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4892,12 +6971,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4924,12 +7011,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4941,12 +7036,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4974,12 +7077,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -4993,12 +7104,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5029,12 +7148,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5048,12 +7175,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5080,12 +7215,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5099,12 +7242,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5131,12 +7282,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5150,12 +7309,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5186,12 +7353,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5205,12 +7380,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5242,12 +7425,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5261,12 +7452,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5293,12 +7492,93 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_chat_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                completion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIChatUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5312,12 +7592,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5344,12 +7632,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5363,12 +7659,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5400,12 +7704,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5419,12 +7731,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5453,12 +7773,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5472,12 +7800,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5504,12 +7840,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5523,12 +7867,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5559,12 +7911,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5578,12 +7938,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5610,12 +7978,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5629,12 +8005,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5666,12 +8050,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5685,12 +8077,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5721,12 +8121,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5740,12 +8148,88 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_conversation_item_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5773,12 +8257,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5792,12 +8284,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5826,12 +8326,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5845,12 +8353,780 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listEvals: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSpecPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createEval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalSpecCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSpecWire"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getEval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSpecWire"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateEval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalSpecUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSpecWire"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteEval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSpecDeleted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listEvalRuns: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createEvalRun: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalRunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunObject"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunObject"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunDeleted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelEvalRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRunObject"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listEvalRunOutputItems: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path: {
+                eval_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalOutputItemPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5863,7 +9139,13 @@ export interface operations {
     };
     openai_file_list: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                after?: string | null;
+                before?: string | null;
+                order?: string;
+                purpose?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -5875,18 +9157,53 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5909,12 +9226,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5928,12 +9253,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5960,12 +9293,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -5979,12 +9320,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6011,12 +9360,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6030,12 +9387,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6062,12 +9427,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6081,12 +9454,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6114,12 +9495,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6133,12 +9522,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6169,12 +9566,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6188,12 +9593,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6220,12 +9633,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6239,12 +9660,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6271,12 +9700,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6290,12 +9727,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6325,12 +9770,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6344,12 +9797,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6379,12 +9840,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6398,12 +9867,154 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6428,12 +10039,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6460,12 +10079,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6479,12 +10106,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6511,12 +10146,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6530,12 +10173,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6564,12 +10215,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6583,12 +10242,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6620,12 +10287,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6639,12 +10314,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6671,12 +10354,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6690,12 +10381,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6722,12 +10421,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6741,12 +10448,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6773,12 +10488,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6792,12 +10515,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6829,12 +10560,20 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;
@@ -6848,12 +10587,1342 @@ export interface operations {
                 headers: {
                     /** @description Always `no-store`. */
                     "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
                     /** @description Always `no-referrer`. */
                     "Referrer-Policy"?: string;
                     /** @description Always `nosniff`. */
                     "X-Content-Type-Options"?: string;
                     /** @description Wire-contract version; clients gate on it via /harness/version. */
                     "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_upload_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIUploadCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_upload_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_upload_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIUploadCompleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_upload_part: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_openai_upload_part"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+                before?: string | null;
+                order?: "asc" | "desc";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_batch_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreFileBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_batch_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_batch_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_batch_files: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+                before?: string | null;
+                order?: "asc" | "desc";
+                filter?: string | null;
+            };
+            header?: never;
+            path: {
+                vector_store_id: string;
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+                before?: string | null;
+                order?: "asc" | "desc";
+                filter?: string | null;
+            };
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreFileCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_file_content: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreSearch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
                     [name: string]: unknown;

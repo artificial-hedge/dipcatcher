@@ -7,9 +7,11 @@ manifests, and harness inspection.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Callable, Iterable
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
@@ -29,6 +31,11 @@ _TIMEOUT_HELP = "Remote request timeout in seconds."
 _BYOK_URL_HELP = "Per-request BYOK endpoint (OpenAI-compatible base URL)."
 _BYOK_KEY_HELP = "Per-request BYOK API key."
 _BYOK_MODEL_HELP = "Per-request BYOK model name."
+_LIMIT_HELP = "Page size (max 100)."
+_EVAL_ID_HELP = "eval_ id."
+_EVAL_ID_CREATE_HELP = "eval_ id from eval-spec-create."
+_EVALRUN_ID_HELP = "evalrun_ id."
+_FTJOB_ID_HELP = "ftjob- id from ft-create."
 
 
 def _byok_opts(
@@ -95,18 +102,64 @@ def _json_meta(raw: str | None) -> dict[str, str] | None:
     return meta
 
 
+def _json_obj_opt(raw: str | None, flag: str) -> dict[str, Any] | None:
+    """A JSON-object flag — object or None, clean exit on anything else."""
+    if raw is None:
+        return None
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        _bad_arg(f"{flag} must be a JSON object")
+    if not isinstance(obj, dict):
+        _bad_arg(f"{flag} must be a JSON object")
+    return obj
+
+
+def _json_list_opt(raw: str | None, flag: str) -> list[dict[str, Any]] | None:
+    """A JSON list-of-objects flag (testing_criteria entries)."""
+    if raw is None:
+        return None
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        _bad_arg(f"{flag} must be a JSON list of objects")
+    if not (isinstance(obj, list) and all(isinstance(it, dict) for it in obj)):
+        _bad_arg(f"{flag} must be a JSON list of objects")
+    return obj
+
+
+def _response_frame_of(event: Any) -> tuple[str | None, str | None]:
+    """One stream frame → ``(delta text, incomplete reason)``."""
+    payload = event[1] if isinstance(event, tuple) else event
+    if not isinstance(payload, dict):
+        return None, None
+    reason: str | None = None
+    if payload.get("type") == "response.incomplete":
+        resp = payload.get("response")
+        details = resp.get("incomplete_details") if isinstance(resp, dict) else None
+        if isinstance(details, dict) and isinstance(details.get("reason"), str):
+            reason = details["reason"]
+    delta = payload.get("delta")
+    return delta if isinstance(delta, str) else None, reason
+
+
 def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
     nothing else. Accepts bare payload dicts (remote) or ``(event,
-    payload)`` pairs (in-process SDK)."""
+    payload)`` pairs (in-process SDK). A ``response.incomplete`` terminal
+    reports its truncation reason on stderr — a quiet text stream would
+    look like a full answer."""
+    incomplete_reason: str | None = None
     for event in events:
-        payload = event[1] if isinstance(event, tuple) else event
-        if isinstance(payload, dict):
-            delta = payload.get("delta")
-            if isinstance(delta, str):
-                typer.echo(delta, nl=False)
+        delta, reason = _response_frame_of(event)
+        if delta is not None:
+            typer.echo(delta, nl=False)
+        if reason is not None:
+            incomplete_reason = reason
     typer.echo()
+    if incomplete_reason is not None:
+        typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
 
 
 app = typer.Typer(
@@ -996,6 +1049,167 @@ def harness_selftest(
         raise typer.Exit(code=2)
 
 
+@harness_app.command("bench")
+def harness_bench(
+    remote: str | None = typer.Option(
+        None,
+        "--remote",
+        help="Bench a live deployment; unset times the in-process SDK.",
+    ),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    n: int = typer.Option(32, "--n", help="Measured requests (1..4096)."),
+    concurrency: int = typer.Option(4, "--concurrency", help="Worker pool size (1..256)."),
+    warmup: int = typer.Option(2, "--warmup", help="Unmeasured warmup requests (0..256)."),
+    prompt: str = typer.Option(
+        "", "--prompt", help="Probe prompt (default: a fixed summary prompt)."
+    ),
+    max_tokens: int = typer.Option(32, "--max-tokens", help="Per-request token cap."),
+    backend: str = typer.Option("local_fx1", "--backend", help=_BACKEND_HELP),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Sampling seed forwarded to each request."
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    receipt: bool = typer.Option(
+        False,
+        "--receipt",
+        help="Print the sealed fx1_bench_result.v1 doc instead of the raw record.",
+    ),
+) -> None:
+    """Perf gate: time ``n`` gated completions at ``--concurrency`` workers.
+
+    Prints the latency card (p50/p90/p95/p99/max/mean), throughput, token
+    rates, and an error histogram as JSON; ``--receipt`` prints the sealed
+    fx1_bench_result.v1 document (verify with ``dipcatcher verify-receipt``).
+    Exits 0 when every measured request succeeded, 1 when any failed —
+    usable as a deploy gate alongside ``harness selftest``."""
+    from fx1.harness_bench import DEFAULT_BENCH_PROMPT, run_bench
+    from fx1.serve.ops_receipt import bench_receipt
+
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    record = _or_exit(
+        lambda: run_bench(
+            surface,
+            n=n,
+            concurrency=concurrency,
+            warmup=warmup,
+            prompt=prompt or DEFAULT_BENCH_PROMPT,
+            max_tokens=max_tokens,
+            timeout_s=timeout_s,
+            backend=backend,
+            byok=_byok_opts(byok_base_url, byok_api_key, byok_model),
+            seed=seed,
+            mode="remote" if remote else "in_process",
+        )
+    )
+    typer.echo(json.dumps(bench_receipt(record) if receipt else record, indent=2, sort_keys=True))
+    if record["metrics"]["error_count"]:
+        raise typer.Exit(code=1)
+
+
+@harness_app.command("usage")
+def harness_usage(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_HELP),
+    model: str | None = typer.Option(None, "--model", help="Only count this reported model."),
+    since: float | None = typer.Option(
+        None, "--since", help="Unix-second lower bound on record timestamps."
+    ),
+    until: float | None = typer.Option(
+        None, "--until", help="Unix-second upper bound on record timestamps."
+    ),
+    key_id: str | None = typer.Option(
+        None, "--key-id", help="Only count calls made under this key fingerprint."
+    ),
+) -> None:
+    """Usage accounting: token/request aggregates over the completion log.
+
+    Totals plus per-backend/per-model splits as JSON — the billing/ops
+    view of every gated call the surface served. ``records_dropped`` in
+    the report declares a truncated ring window. ``--remote`` reads the
+    server's log (``GET /harness/usage``); default reads the in-process
+    SDK's own log."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    report = _or_exit(
+        lambda: surface.usage(backend=backend, model=model, key_id=key_id, since=since, until=until)
+    )
+    typer.echo(json.dumps(report.model_dump(mode="json"), indent=2, sort_keys=True))
+
+
+@harness_app.command("key-create")
+def harness_key_create(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    name: str | None = typer.Option(None, "--name", help="Label for the key (≤128 chars)."),
+    admin: bool = typer.Option(
+        False,
+        "--admin",
+        help="Mint an admin key — it may itself mint/list/revoke keys.",
+    ),
+    rpm: int | None = typer.Option(
+        None,
+        "--rpm",
+        min=1,
+        help="Bound the key to this many requests per 60 s window (over-limit → 429).",
+    ),
+    ttl_s: float | None = typer.Option(
+        None,
+        "--ttl-s",
+        help="Key expiry in seconds from mint — the credential dies after.",
+    ),
+) -> None:
+    """Mint a managed API key — prints the mint record including the raw
+    ``key``, which is shown once and never stored server-side. On
+    ``--remote`` this needs the bootstrap credential (FX1_API_KEY)."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_create(name, admin=admin, rpm=rpm, ttl_s=ttl_s))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("keys")
+def harness_keys(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List managed API keys — fingerprint ids + metadata, never secrets."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.keys())
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-get")
+def harness_key_get(
+    key_id: str,
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """One managed key's record by its fingerprint id."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_get(key_id))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-revoke")
+def harness_key_revoke(
+    key_id: str,
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Tombstone a managed key — auth with it fails closed immediately
+    after; the record stays for audit."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_revoke(key_id))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
 @harness_app.command("compat")
 def harness_compat(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -1466,6 +1680,311 @@ def harness_eval_diff(
     typer.echo(json.dumps(st, indent=2))
 
 
+# ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ------------------
+
+
+@harness_app.command("eval-spec-create")
+def harness_eval_spec_create(
+    name: str = typer.Argument(..., help="Human label for the eval container."),
+    suite: str = typer.Option(
+        ...,
+        "--suite",
+        help="Eval suite: capability|calibration|tooluse|retrieval|ts_reasoning|ext_bench|options_reasoning.",
+    ),
+    seed: int = typer.Option(0, "--seed", help="Eval seed (the banks are seeded)."),
+    backend: str | None = typer.Option(
+        None, "--backend", help="Pin the chain head (runs may still choose another model)."
+    ),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    judge_backend: str | None = typer.Option(
+        None, "--judge-backend", help="Grader link for judge suites."
+    ),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+    criteria_json: str | None = typer.Option(
+        None, "--criteria", help='testing_criteria as a JSON list, e.g. \'[{"name": "all-pass"}]\'.'
+    ),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Spec metadata as a JSON object of string pairs."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Declare a named eval container — ``POST /v1/evals`` (remote) or the
+    in-process twin. The item_schema pins suite knobs; credentials never
+    live on a spec."""
+    criteria = _json_list_opt(criteria_json, "--criteria")
+    metadata = _json_meta(metadata_json)
+    if remote is not None:
+        spec = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_spec_create(
+                name,
+                suite=suite,
+                seed=seed,
+                backend=backend,
+                checkpoint_dir=str(checkpoint_dir) if checkpoint_dir else None,
+                judge_backend=judge_backend,
+                timeout_s=backend_timeout,
+                testing_criteria=criteria,
+                metadata=metadata,
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(
+            lambda: Fx1Harness().eval_spec_create(
+                name,
+                suite=suite,
+                seed=seed,
+                backend=backend,
+                checkpoint_dir=checkpoint_dir,
+                judge_backend=judge_backend,
+                timeout_s=backend_timeout,
+                testing_criteria=criteria,
+                metadata=metadata,
+            )
+        )
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-list")
+def harness_eval_spec_list(
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List declared eval specs (newest first) — ``GET /v1/evals``."""
+    if remote is not None:
+        page = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_specs(limit=limit))
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {"object": "list", "data": _or_exit(lambda: Fx1Harness().eval_specs(limit=limit))}
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-spec-get")
+def harness_eval_spec_get(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_CREATE_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print one eval spec — ``GET /v1/evals/{id}``."""
+    if remote is not None:
+        spec = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_spec_get(eval_id))
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(lambda: Fx1Harness().eval_spec_get(eval_id))
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-update")
+def harness_eval_spec_update(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    name: str | None = typer.Option(None, "--name", help="New display name."),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Replacement metadata as a JSON object."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Edit a spec's name/metadata — the datasource is frozen once runs bind."""
+    metadata = _json_meta(metadata_json)
+    if remote is not None:
+        spec = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_spec_update(
+                eval_id, name=name, metadata=metadata
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(
+            lambda: Fx1Harness().eval_spec_update(eval_id, name=name, metadata=metadata)
+        )
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-delete")
+def harness_eval_spec_delete(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Delete an eval spec — journaled tombstone; bound runs stay readable."""
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_spec_delete(eval_id))
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    _or_exit(lambda: Fx1Harness().eval_spec_delete(eval_id))
+    typer.echo(json.dumps({"id": eval_id, "object": "eval.deleted", "deleted": True}))
+
+
+@harness_app.command("eval-run")
+def harness_eval_run(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_CREATE_HELP),
+    model: str = typer.Option(
+        ...,
+        "--model",
+        help="Eval target: a link name (hosted_k3|local_fx1|byok), fx1, or a registered ft: name.",
+    ),
+    data_source_json: str | None = typer.Option(
+        None,
+        "--data-source",
+        help='Item-schema overrides as JSON, e.g. \'{"type":"custom","source":{"seed":1}}\'.',
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Remote: status poll interval, seconds."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Submit a run under an eval spec — ``POST /v1/evals/{id}/runs``.
+    Remote polls to the terminal run object; in-process runs are
+    synchronous (the terminal object prints directly)."""
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    data_source = _json_obj_opt(data_source_json, "--data-source")
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        run = _or_exit(
+            lambda: client.eval_run_create(eval_id, model=model, data_source=data_source, byok=byok)
+        )
+        bare = run["id"].removeprefix("evalrun_")
+        _or_exit(lambda: client.wait_eval(bare, poll_s=poll_s, timeout_s=None))
+        typer.echo(json.dumps(_or_exit(lambda: client.eval_run_get(eval_id, bare)), indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    run = _or_exit(
+        lambda: Fx1Harness().eval_run_create(
+            eval_id,
+            model=model,
+            byok=byok,
+            data_source_overrides=(data_source or {}).get("source"),
+        )
+    )
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-list")
+def harness_eval_run_list(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List a spec's runs (newest first) — ``GET /v1/evals/{id}/runs``."""
+    if remote is not None:
+        page = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_runs(eval_id, limit=limit)
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {
+            "object": "list",
+            "data": _or_exit(lambda: Fx1Harness().eval_runs(eval_id, limit=limit)),
+        }
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-run-get")
+def harness_eval_run_get(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print one run — ``GET /v1/evals/{id}/runs/{run_id}``."""
+    if remote is not None:
+        run = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_get(eval_id, run_id)
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        run = _or_exit(lambda: Fx1Harness().eval_run_get(eval_id, run_id))
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-cancel")
+def harness_eval_run_cancel(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a queued run — ``POST .../runs/{run_id}/cancel`` (remote only:
+    in-process runs are synchronous, already terminal)."""
+    _need_remote(remote)
+    run = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).eval_run_cancel(eval_id, run_id)
+    )
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-delete")
+def harness_eval_run_delete(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Delete a terminal run record — ``DELETE .../runs/{run_id}``."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_delete(eval_id, run_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    _or_exit(lambda: Fx1Harness().eval_run_delete(eval_id, run_id))
+    typer.echo(json.dumps({"id": run_id, "object": "eval.run.deleted", "deleted": True}))
+
+
+@harness_app.command("eval-run-items")
+def harness_eval_run_items(
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_HELP),
+    run_id: str = typer.Argument(..., help=_EVALRUN_ID_HELP),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Per-task verdict rows from a completed run — ``.../output_items``."""
+    if remote is not None:
+        page = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_output_items(
+                eval_id, run_id, limit=limit
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {
+            "object": "list",
+            "data": _or_exit(lambda: Fx1Harness().eval_run_items(eval_id, run_id, limit=limit)),
+        }
+    typer.echo(json.dumps(page, indent=2))
+
+
 @harness_app.command("ft-create")
 def harness_ft_create(
     training_file: str = typer.Argument(
@@ -1583,7 +2102,7 @@ def harness_ft_jobs(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (job id)."),
 ) -> None:
     """List the remote fine-tuning jobs, newest first (in-process runs
@@ -1599,7 +2118,7 @@ def harness_ft_jobs(
 
 @harness_app.command("ft-status")
 def harness_ft_status(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1612,11 +2131,11 @@ def harness_ft_status(
 
 @harness_app.command("ft-events")
 def harness_ft_events(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
 ) -> None:
     """Print a remote fine-tuning job's event feed (oldest first)."""
     _need_remote(remote)
@@ -1630,11 +2149,11 @@ def harness_ft_events(
 
 @harness_app.command("ft-checkpoints")
 def harness_ft_checkpoints(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(10, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(10, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (ftckpt- id)."),
 ) -> None:
     """``GET /v1/fine_tuning/jobs/{id}/checkpoints`` — the model artifacts
@@ -1650,7 +2169,7 @@ def harness_ft_checkpoints(
 
 @harness_app.command("ft-wait")
 def harness_ft_wait(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1672,7 +2191,7 @@ def harness_ft_wait(
 
 @harness_app.command("ft-cancel")
 def harness_ft_cancel(
-    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1682,6 +2201,38 @@ def harness_ft_cancel(
     _need_remote(remote)
     st = _or_exit(
         lambda: _remote_client(remote or "", api_key, timeout_s).cancel_finetune_job(job_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("ft-pause")
+def harness_ft_pause(
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Pause a remote fine-tuning job — queued parks before starting;
+    running parks at the next stage boundary. Idempotent on paused."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).pause_finetune_job(job_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("ft-resume")
+def harness_ft_resume(
+    job_id: str = typer.Argument(..., help=_FTJOB_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Resume a paused remote fine-tuning job — restores the status
+    pause captured (queued re-queues, running proceeds at its boundary)."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).resume_finetune_job(job_id)
     )
     typer.echo(json.dumps(st, indent=2))
 
@@ -1756,6 +2307,67 @@ def harness_file_delete(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("upload")
+def harness_upload(
+    file: Path = typer.Argument(..., help="Local .jsonl to ship in chunks."),
+    purpose: str = typer.Option("batch", "--purpose", help="File purpose: batch|fine-tune."),
+    chunk_bytes: int = typer.Option(
+        4 * 1024 * 1024, "--chunk-bytes", help="Part size for /v1/uploads parts."
+    ),
+    md5: bool = typer.Option(
+        True, "--md5/--no-md5", help="Send the content md5 on complete (fail-closed check)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Chunked upload via /v1/uploads — for files too big for one request.
+
+    Opens the upload intent, posts the file in --chunk-bytes parts, and
+    completes it into a file- record (printed on stdout; its id feeds
+    batch-submit/ft-create like any /v1/files id).
+    """
+    _need_remote(remote)
+    if chunk_bytes <= 0:
+        typer.echo("error: --chunk-bytes must be positive", err=True)
+        raise typer.Exit(code=2)
+    body = file.read_bytes() if file.exists() else None
+    if body is None:
+        typer.echo(f"error: {file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    client = _remote_client(remote or "", api_key, timeout_s)
+    up = _or_exit(
+        lambda: client.upload_create(
+            purpose=purpose,
+            filename=file.name,
+            bytes=len(body),
+            mime_type="application/jsonl",
+        )
+    )
+    uid = str(up["id"])
+    part_ids: list[str] = []
+    for off in range(0, len(body), chunk_bytes):
+        chunk = body[off : off + chunk_bytes]
+        part = _or_exit(partial(client.upload_part, uid, chunk))
+        part_ids.append(str(part["id"]))
+    digest = hashlib.md5(body, usedforsecurity=False).hexdigest() if md5 else None
+    done = _or_exit(lambda: client.upload_complete(uid, part_ids, md5=digest))
+    typer.echo(json.dumps(done, indent=2))
+
+
+@harness_app.command("upload-cancel")
+def harness_upload_cancel(
+    upload_id: str = typer.Argument(..., help="upload_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a pending chunked upload (replays 200 when already cancelled)."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).upload_cancel(upload_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
 @harness_app.command("batch-submit")
 def harness_batch_submit(
     input_file: Path = typer.Argument(
@@ -1827,7 +2439,7 @@ def harness_batches(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
     after: str | None = typer.Option(None, "--after", help="Pagination cursor (batch id)."),
 ) -> None:
     """List remote batches, newest first."""
@@ -2066,7 +2678,7 @@ def harness_model_delete(
 
 
 @harness_app.command("respond")
-def harness_respond(
+def harness_respond(  # NOSONAR
     input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
     model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
     instructions: str | None = typer.Option(
@@ -2092,6 +2704,21 @@ def harness_respond(
     tools: str | None = typer.Option(None, "--tools", help="JSON array of Responses tools."),
     tool_choice: str | None = typer.Option(
         None, "--tool-choice", help='"none"/"auto"/"required" or a JSON choice object.'
+    ),
+    max_tool_calls: int | None = typer.Option(
+        None,
+        "--max-tool-calls",
+        help="Cap the function calls one response may carry — over the cap the "
+        "turn truncates to status='incomplete'.",
+    ),
+    verbosity: str | None = typer.Option(
+        None, "--verbosity", help="Output verbosity hint: low|medium|high."
+    ),
+    prompt_cache_key: str | None = typer.Option(
+        None, "--prompt-cache-key", help="Provider prompt-cache key hint."
+    ),
+    prompt_cache_retention: str | None = typer.Option(
+        None, "--prompt-cache-retention", help="in-memory|24h."
     ),
     stream: bool = typer.Option(
         False, "--stream", help="Emit Responses event deltas instead of one JSON block."
@@ -2184,6 +2811,10 @@ def harness_respond(
                     tool_choice=tchoice,
                     previous_response_id=previous_response_id,
                     conversation=conversation,
+                    max_tool_calls=max_tool_calls,
+                    verbosity=verbosity,
+                    prompt_cache_key=prompt_cache_key,
+                    prompt_cache_retention=prompt_cache_retention,
                 )
             )
             _emit_response_deltas(events)
@@ -2207,6 +2838,10 @@ def harness_respond(
                 tool_choice=tchoice,
                 previous_response_id=previous_response_id,
                 conversation=conversation,
+                max_tool_calls=max_tool_calls,
+                verbosity=verbosity,
+                prompt_cache_key=prompt_cache_key,
+                prompt_cache_retention=prompt_cache_retention,
                 background=background,
             )
         )
@@ -2240,11 +2875,19 @@ def harness_respond(
         "tool_choice": tchoice,
         "previous_response_id": previous_response_id,
         "conversation": conversation,
+        "max_tool_calls": max_tool_calls,
+        "prompt_cache_key": prompt_cache_key,
+        "prompt_cache_retention": prompt_cache_retention,
         "background": background,
         "fx1": fx1 or None,
     }
-    if tfmt is not None:
-        body["text"] = {"format": tfmt}
+    if tfmt is not None or verbosity is not None:
+        text: dict[str, Any] = {}
+        if tfmt is not None:
+            text["format"] = tfmt
+        if verbosity is not None:
+            text["verbosity"] = verbosity
+        body["text"] = text
     if stream:
         sevents, _cid = _or_exit(lambda: Fx1Harness().openai_response_stream(body, headers=headers))
         _emit_response_deltas(sevents)
@@ -2366,6 +3009,33 @@ def harness_chat_get(
     from fx1.sdk import Fx1Harness
 
     out = _or_exit(lambda: Fx1Harness().openai_chat_get(completion_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("chat-update")
+def harness_chat_update(
+    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Replacement metadata as a JSON object of string pairs."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/chat/completions/{id}`` — replace the stored completion's
+    metadata wholesale (the only mutable field); unknown ids exit 2."""
+    metadata = _json_meta(metadata_json) if metadata_json is not None else {}
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).update_chat_completion(
+                completion_id, metadata=metadata
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_chat_update(completion_id, metadata=metadata))
     typer.echo(json.dumps(out, indent=2))
 
 
@@ -2734,6 +3404,30 @@ def harness_conv_items_add(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("conv-item")
+def harness_conv_item(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    item_id: str = typer.Argument(..., help="Item id inside the conv."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/conversations/{id}/items/{item_id}`` — one item by id;
+    prints the item."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_item(
+                conversation_id, item_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_item(conversation_id, item_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @harness_app.command("conv-items-delete")
 def harness_conv_item_delete(
     conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
@@ -2755,6 +3449,496 @@ def harness_conv_item_delete(
     from fx1.sdk import Fx1Harness
 
     out = _or_exit(lambda: Fx1Harness().openai_conversation_item_delete(conversation_id, item_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-create")
+def harness_vs_create(
+    name: str | None = typer.Option(None, "--name", help="Store name (free text)."),
+    file_ids: str | None = typer.Option(
+        None, "--file-ids", help="JSON array of file-* ids to attach at create."
+    ),
+    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    expires_after: str | None = typer.Option(
+        None,
+        "--expires-after",
+        help='JSON expiry policy — e.g. {"anchor":"last_active_at","days":7}',
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores`` — mint a ``vs_*`` retrieval store the
+    ``file_search`` tool searches on ``respond --tools``."""
+    ids: list[str] | None = None
+    if file_ids is not None:
+        try:
+            parsed_ids = json.loads(file_ids)
+        except json.JSONDecodeError:
+            _bad_arg("--file-ids must be a JSON array of file-* ids")
+            raise AssertionError("unreachable") from None
+        if not (isinstance(parsed_ids, list) and all(isinstance(i, str) for i in parsed_ids)):
+            _bad_arg("--file-ids must be a JSON array of file-* ids")
+        ids = parsed_ids
+    meta = _json_meta(metadata)
+    expiry = _json_obj_opt(expires_after, "--expires-after")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_create(
+                name=name, metadata=meta, file_ids=ids, expires_after=expiry
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_create(
+            name=name, metadata=meta, file_ids=ids, expires_after=expiry
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-get")
+def harness_vs_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}`` — the store object; missing ids
+    exit 2."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_get(vector_store_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_get(vector_store_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-update")
+def harness_vs_update(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    name: str | None = typer.Option(None, "--name", help="New name (omitted keeps current)."),
+    metadata: str | None = typer.Option(
+        None, "--metadata", help="JSON object of string pairs — replaces wholesale."
+    ),
+    expires_after: str | None = typer.Option(
+        None,
+        "--expires-after",
+        help='JSON expiry policy — e.g. {"anchor":"last_active_at","days":7}',
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}`` — set name/metadata (omitted
+    fields keep their current values); ``--expires-after`` re-anchors
+    the expiry window from the store's last activity."""
+    meta = _json_meta(metadata)
+    expiry = _json_obj_opt(expires_after, "--expires-after")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_update(
+                vector_store_id, name=name, metadata=meta, expires_after=expiry
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_update(
+            vector_store_id, name=name, metadata=meta, expires_after=expiry
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-delete")
+def harness_vs_delete(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/vector_stores/{id}`` — drop the store and its index;
+    member file-* records survive."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_delete(vector_store_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_delete(vector_store_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-list")
+def harness_vs_list(
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a vs_* id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a vs_* id."),
+    order: str = typer.Option("desc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores`` — stores, cursor-paged."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_list(
+                limit=limit, after=after, before=before, order=order
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_list(limit=limit, order=order, after=after, before=before)
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-add")
+def harness_vs_file_add(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    attributes: str | None = typer.Option(
+        None, "--attributes", help="JSON object — filter keys for file_search."
+    ),
+    chunking_strategy: str | None = typer.Option(
+        None,
+        "--chunking-strategy",
+        help='JSON: {"type":"auto"} or {"type":"static","static":{...}}.',
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/files`` — index a file record into
+    the store; empty text lands status=failed."""
+    attrs = _json_obj_opt(attributes, "--attributes")
+    strat = _json_obj_opt(chunking_strategy, "--chunking-strategy")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_create(
+                vector_store_id, file_id, attributes=attrs, chunking_strategy=strat
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_create(
+            vector_store_id, file_id, attributes=attrs, chunking_strategy=strat
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-files")
+def harness_vs_files(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a file id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a file id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    filter: str | None = typer.Option(
+        None, "--filter", help="in_progress | completed | cancelled | failed"
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files`` — attachments, paged;
+    ``--filter`` takes an OpenAI status word."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_list(
+                vector_store_id,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+                filter=filter,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_list(
+            vector_store_id, limit=limit, order=order, after=after, before=before, filter=filter
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-get")
+def harness_vs_file_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files/{file_id}`` — one attachment's
+    status/chunks/attributes."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_get(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_get(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-delete")
+def harness_vs_file_delete(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/vector_stores/{id}/files/{file_id}`` — detach; the
+    file record survives."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_delete(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_delete(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-content")
+def harness_vs_file_content(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files/{file_id}/content`` — the
+    stored decoded text as a page of text parts."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_content(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_content(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-search")
+def harness_vs_search(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    query: str = typer.Option(..., "--query", "-q", help="Search query text."),
+    max_num_results: int | None = typer.Option(
+        None, "--max-results", help="Cap on returned hits (≤50)."
+    ),
+    filters_json: str | None = typer.Option(
+        None, "--filters", help="JSON attribute-filter object."
+    ),
+    score_threshold: float | None = typer.Option(
+        None, "--score-threshold", help="Cosine floor in [0,1]."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/search`` — ranked hits without
+    spending a response turn."""
+    filters = _json_obj_opt(filters_json, "--filters")
+    ranking_options = {"score_threshold": score_threshold} if score_threshold is not None else None
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_search(
+                vector_store_id,
+                query,
+                max_num_results=max_num_results,
+                filters=filters,
+                ranking_options=ranking_options,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_search(
+            vector_store_id,
+            query,
+            max_num_results=max_num_results,
+            filters=filters,
+            ranking_options=ranking_options,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-create")
+def harness_vs_batch_create(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_ids: list[str] = typer.Argument(..., help="file-* ids to attach (1..500)."),
+    attributes: str | None = typer.Option(
+        None, "--attributes", help="JSON object applied to every member."
+    ),
+    chunking_strategy: str | None = typer.Option(
+        None, "--chunking-strategy", help="JSON object (auto|static)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/file_batches`` — attach many files
+    in one call; per-file refusals count ``failed``, never abort."""
+    attrs = _json_obj_opt(attributes, "--attributes")
+    strategy = _json_obj_opt(chunking_strategy, "--chunking-strategy")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_create(
+                vector_store_id,
+                file_ids,
+                attributes=attrs,
+                chunking_strategy=strategy,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_batch_create(
+            vector_store_id,
+            file_ids,
+            attributes=attrs,
+            chunking_strategy=strategy,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-get")
+def harness_vs_batch_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/file_batches/{batch_id}`` — status +
+    file_counts."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_get(
+                vector_store_id, batch_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_batch_get(vector_store_id, batch_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-cancel")
+def harness_vs_batch_cancel(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST .../file_batches/{batch_id}/cancel`` — members attach
+    synchronously at create, so a batch is always terminal: this
+    answers 409 ``file_batch_terminal`` (exit 2)."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_cancel(
+                vector_store_id, batch_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_batch_cancel(vector_store_id, batch_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-files")
+def harness_vs_batch_files(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a file-* id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a file-* id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    filter: str | None = typer.Option(
+        None, "--filter", help="in_progress | completed | cancelled | failed"
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET .../file_batches/{batch_id}/files`` — the frozen per-file
+    verdicts in request order."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+                filter=filter,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_batch_files(
+            vector_store_id,
+            batch_id,
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+            filter=filter,
+        )
+    )
     typer.echo(json.dumps(out, indent=2))
 
 

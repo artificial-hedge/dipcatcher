@@ -35,6 +35,7 @@ Sealed ``api_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import os
+import threading
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -47,7 +48,13 @@ if TYPE_CHECKING:
 
 __all__ = ["api_audit", "api_audit_bench"]
 
+_PATH_UPLOADS = "/v1/uploads"
+_PATH_EVALS = "/v1/evals"
+_PATH_FT_JOBS = "/v1/fine_tuning/jobs"
+_CORPUS_FILE = "c.jsonl"
+
 _API_KEY_ENV = "FX1_API_KEY"
+_CONVERSATIONS_URL = "/v1/conversations"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
 _LOCAL_ENVS = (
     "FX1_LOCAL_SERVE_URL",
@@ -1331,6 +1338,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "X-Content-Type-Options",
         "Cache-Control",
         "Referrer-Policy",
+        "Openai-Processing-Ms",
+        "X-RateLimit-Limit-Requests",
+        "X-RateLimit-Remaining-Requests",
+        "X-RateLimit-Reset-Requests",
     }
     spec_ops = [
         op
@@ -1342,6 +1353,14 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         common <= set(resp.get("headers", {}))
         for op in spec_ops
         for resp in op.get("responses", {}).values()
+    )
+    # OpenAI's processing-ms tracing header rides every response — 2xx,
+    # 4xx and 5xx alike — and parses as a non-negative int
+    _pm_ok = client.get("/harness/version")
+    _pm_4xx = client.get("/harness/jobs/does-not-exist")
+    _pm_5xx = client.post("/harness/complete", json={"prompt": "x", "seed": 1})
+    out["processing_ms_header"] = all(
+        int(r.headers["openai-processing-ms"]) >= 0 for r in (_pm_ok, _pm_4xx, _pm_5xx)
     )
     submit_op = spec_main["paths"]["/harness/jobs"]["post"]
     out["openapi_declares_location_202"] = "Location" in submit_op["responses"]["202"].get(
@@ -2502,6 +2521,175 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     out["auth_health_still_public"] = secured.get("/health").status_code == 200
 
+    # --- managed API keys --------------------------------------------------
+    # env key = bootstrap admin; minted keys serve gated routes but cannot
+    # manage keys; revocation is a tombstone; requests attribute key_id.
+    saved_api_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "k3y-material"
+    try:
+        keys_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    finally:
+        if saved_api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_api_key
+    root_h = {"X-API-Key": "k3y-material"}
+    mint = keys_client.post("/harness/keys", json={"name": "svc"}, headers=root_h)
+    mint_body = mint.json() if mint.status_code == 201 else {}
+    mkey = str(mint_body.get("key", ""))
+    kid = str(mint_body.get("id", ""))
+    out["key_mint_201_raw_once"] = mint.status_code == 201 and mkey.startswith("fx1k_")
+    out["key_mint_needs_admin"] = keys_client.post("/harness/keys", json={}).status_code == 401
+    out["key_authenticates"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": mkey}).status_code == 200
+    )
+    denied = keys_client.get("/harness/keys", headers={"X-API-Key": mkey})
+    out["key_not_admin_403"] = (
+        denied.status_code == 403 and denied.json().get("code") == "admin_required"
+    )
+    listed = keys_client.get("/harness/keys", headers=root_h)
+    listed_rows = listed.json()["data"] if listed.status_code == 200 else []
+    out["key_list_prefix_no_secret"] = (
+        listed.status_code == 200
+        and len(listed_rows) == 1
+        and listed_rows[0]["prefix"] == mkey[:13]
+        and mkey not in listed.text
+        and "sha256" not in listed.text
+    )
+    got = keys_client.get(f"/harness/keys/{kid}", headers=root_h)
+    out["key_get_by_id"] = got.status_code == 200 and got.json()["id"] == kid
+    out["key_get_unknown_404"] = (
+        keys_client.get("/harness/keys/" + "0" * 16, headers=root_h).status_code == 404
+    )
+    # an admin managed key minted by the bootstrap credential keeps the
+    # control plane — it may mint/list/revoke keys itself; a plain
+    # managed key cannot.
+    admin_mint = keys_client.post(
+        "/harness/keys", json={"name": "ops", "admin": True}, headers=root_h
+    )
+    admin_raw = str(admin_mint.json().get("key", ""))
+    out["key_admin_mint_flagged"] = (
+        admin_mint.status_code == 201 and admin_mint.json()["admin"] is True
+    )
+    out["key_admin_manages_keys"] = (
+        keys_client.post("/harness/keys", json={}, headers={"X-API-Key": admin_raw}).status_code
+        == 201
+        and keys_client.get("/harness/keys", headers={"X-API-Key": admin_raw}).status_code == 200
+    )
+    out["key_managed_cannot_mint"] = (
+        keys_client.post("/harness/keys", json={}, headers={"X-API-Key": mkey}).status_code == 403
+    )
+    # attribution: a managed-key call lands under the key's fingerprint;
+    # an env-key call lands under "env".
+    keys_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        headers={"X-API-Key": mkey},
+    )
+    keys_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        headers=root_h,
+    )
+    usage_kid = keys_client.get(f"/harness/usage?key_id={kid}", headers=root_h).json()
+    out["key_usage_filtered"] = usage_kid.get("records_seen") == 1
+    usage_all = keys_client.get("/harness/usage", headers=root_h).json()
+    out["key_usage_by_key_buckets"] = (
+        usage_all.get("by_key", {}).get(kid, {}).get("requests") == 1
+        and usage_all.get("by_key", {}).get("env", {}).get("requests") == 1
+    )
+    revoke = keys_client.delete(f"/harness/keys/{kid}", headers=root_h)
+    out["key_revoke_tombstone"] = revoke.status_code == 200 and revoke.json()["enabled"] is False
+    out["key_revoked_auth_401"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": mkey}).status_code == 401
+    )
+    out["key_revoke_again_409"] = (
+        keys_client.delete(f"/harness/keys/{kid}", headers=root_h).status_code == 409
+    )
+    out["key_revoke_unknown_404"] = (
+        keys_client.delete("/harness/keys/" + "0" * 16, headers=root_h).status_code == 404
+    )
+    # declared per-key policy: rpm bounds the key to a fixed 60 s
+    # request window — the over-limit refusal is 429 + Retry-After and
+    # never counts as a use; ttl_s bakes an expires_at into the record.
+    rpm_mint = keys_client.post("/harness/keys", json={"rpm": 1}, headers=root_h)
+    rpm_raw = str(rpm_mint.json().get("key", ""))
+    rpm_id = str(rpm_mint.json().get("id", ""))
+    first = keys_client.get("/harness/commands", headers={"X-API-Key": rpm_raw})
+    limited = keys_client.get("/harness/commands", headers={"X-API-Key": rpm_raw})
+    out["key_rpm_429"] = (
+        rpm_mint.status_code == 201
+        and rpm_mint.json()["rpm"] == 1
+        and first.status_code == 200
+        and limited.status_code == 429
+        and limited.json().get("code") == "rate_limited"
+        and int(limited.headers.get("Retry-After", "0")) >= 1
+    )
+    # a rpm-declared key answers its standing budget on every response
+    # (OpenAI's header names); the 429 still carries the declared window
+    out["key_rpm_headers"] = (
+        first.headers.get("x-ratelimit-limit-requests") == "1"
+        and first.headers.get("x-ratelimit-remaining-requests") == "0"
+        and int(first.headers.get("x-ratelimit-reset-requests", "-1")) >= 0
+        and limited.headers.get("x-ratelimit-limit-requests") == "1"
+        and limited.headers.get("x-ratelimit-remaining-requests") == "0"
+        and int(limited.headers.get("x-ratelimit-reset-requests", "-1")) >= 1
+    )
+    # keys without a declared window, the env credential, and loopback
+    # auth emit no budget headers — no false scarcity
+    plain_mint = keys_client.post("/harness/keys", json={}, headers=root_h)
+    plain_raw = str(plain_mint.json().get("key", ""))
+    plain_hit = keys_client.get("/harness/commands", headers={"X-API-Key": plain_raw})
+    env_hit = keys_client.get("/harness/commands", headers=root_h)
+    out["key_rpm_headers_absent"] = (
+        plain_mint.status_code == 201
+        and "x-ratelimit-limit-requests" not in plain_hit.headers
+        and "x-ratelimit-limit-requests" not in env_hit.headers
+    )
+    rpm_rec = keys_client.get(f"/harness/keys/{rpm_id}", headers=root_h)
+    out["key_rpm_refusal_no_burn"] = rpm_rec.status_code == 200 and rpm_rec.json()["uses"] == 1
+    out["key_policy_bad_422"] = (
+        keys_client.post("/harness/keys", json={"rpm": 0}, headers=root_h).status_code == 422
+        and keys_client.post("/harness/keys", json={"ttl_s": -1}, headers=root_h).status_code == 422
+    )
+    # an expired key fails closed — same 401 shape as revoked
+    ttl_mint = keys_client.post("/harness/keys", json={"ttl_s": 0.05}, headers=root_h)
+    ttl_raw = str(ttl_mint.json().get("key", ""))
+    ttl_ok = keys_client.get("/harness/commands", headers={"X-API-Key": ttl_raw})
+    time.sleep(0.06)
+    ttl_dead = keys_client.get("/harness/commands", headers={"X-API-Key": ttl_raw})
+    out["key_ttl_expires_401"] = (
+        ttl_mint.status_code == 201
+        and ttl_mint.json()["expires_at"] is not None
+        and ttl_ok.status_code == 200
+        and ttl_dead.status_code == 401
+    )
+    # no env key + empty store → loopback dev (admin); minting turns auth on
+    noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    minted = noenv_client.post("/harness/keys", json={})
+    m_raw = minted.json()["key"] if minted.status_code == 201 else ""
+    out["key_bootstrap_loopback_201"] = minted.status_code == 201
+    out["key_store_enables_auth"] = noenv_client.get("/harness/commands").status_code == 401
+    out["key_bootstrapped_works"] = (
+        noenv_client.get("/harness/commands", headers={"X-API-Key": m_raw}).status_code == 200
+    )
+    # the FIRST mint on a no-env deployment carries admin so the operator
+    # keeps a control plane after provisioning turns auth on
+    noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    admin_minted = noenv2.post("/harness/keys", json={"admin": True})
+    out["key_admin_loopback_manages"] = (
+        admin_minted.status_code == 201
+        and admin_minted.json()["admin"] is True
+        and noenv2.get(
+            "/harness/keys", headers={"X-API-Key": admin_minted.json()["key"]}
+        ).status_code
+        == 200
+    )
+    out["key_remote_unauthed_401"] = (
+        _TC2(noenv_client.app, client=("198.51.100.9", 7)).get("/harness/commands").status_code
+        == 401
+    )
+
     out["loopback_served"] = client.get("/harness/commands").status_code == 200
     from fastapi.testclient import TestClient as _TC
 
@@ -2870,9 +3058,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         up.status_code == 200 and up.json()["purpose"] == "fine-tune"
     )
     fid = up.json()["id"]
-    sub = ft.post(
-        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid, "suffix": "audit"}
-    )
+    sub = ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": fid, "suffix": "audit"})
     out["ft_create_200"] = (
         sub.status_code == 200
         and sub.json()["id"].startswith("ftjob-")
@@ -2904,22 +3090,22 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         and ev_msgs[-1].startswith("job succeeded")
     )
     out["ft_list_shape"] = (
-        ft.get("/v1/fine_tuning/jobs").status_code == 200
-        and ft.get("/v1/fine_tuning/jobs").json()["object"] == "list"
-        and ft.get("/v1/fine_tuning/jobs").json()["has_more"] is False
-        and ft.get("/v1/fine_tuning/jobs").json()["data"][0]["id"] == jid
+        ft.get(_PATH_FT_JOBS).status_code == 200
+        and ft.get(_PATH_FT_JOBS).json()["object"] == "list"
+        and ft.get(_PATH_FT_JOBS).json()["has_more"] is False
+        and ft.get(_PATH_FT_JOBS).json()["data"][0]["id"] == jid
     )
 
     # Fail-closed submit surface.
     out["ft_model_not_trainable_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "byok", "training_file": fid})
+        ft.post(_PATH_FT_JOBS, json={"model": "byok", "training_file": fid})
         .json()
         .get("error", {})
         .get("code")
         == "model_not_trainable"
     )
     out["ft_unknown_file_404"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": "file-nope"})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": "file-nope"})
         .json()
         .get("error", {})
         .get("code")
@@ -2927,7 +3113,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     )
     bfid = _upload(_CORPUS, purpose="batch").json()["id"]
     out["ft_wrong_purpose_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": bfid})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": bfid})
         .json()
         .get("error", {})
         .get("code")
@@ -2935,7 +3121,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     )
     mfid = _upload(b"not jsonl\n").json()["id"]
     out["ft_malformed_corpus_400"] = (
-        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": mfid})
+        ft.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": mfid})
         .json()
         .get("error", {})
         .get("code")
@@ -2944,7 +3130,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     out["ft_bad_purpose_upload_400"] = (
         ft.post(
             "/v1/files",
-            files={"file": ("c.jsonl", _CORPUS)},
+            files={"file": (_CORPUS_FILE, _CORPUS)},
             data={"purpose": "user_data"},
         ).status_code
         == 400
@@ -2964,17 +3150,17 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # body under the same key is a 409 conflict.
     ik = "ft-audit-key-1"
     r1 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid},
         headers={"Idempotency-Key": ik},
     )
     r2 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid},
         headers={"Idempotency-Key": ik},
     )
     r3 = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": fid, "suffix": "other"},
         headers={"Idempotency-Key": ik},
     )
@@ -2993,12 +3179,12 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     ftf = _TC3(api_mod.create_app(ft_runner=_boom))
     bf = ftf.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": ftf.post(
                 "/v1/files",
-                files={"file": ("c.jsonl", _CORPUS)},
+                files={"file": (_CORPUS_FILE, _CORPUS)},
                 data={"purpose": "fine-tune"},
             ).json()["id"],
         },
@@ -3026,8 +3212,10 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
 
     ftc = _TC3(api_mod.create_app(ft_runner=_gate_runner))
-    cf = ftc.post("/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"})
-    cj = ftc.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": cf.json()["id"]})
+    cf = ftc.post(
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
+    )
+    cj = ftc.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": cf.json()["id"]})
     cjid = cj.json()["id"]
     for _i in range(400):
         if ftc.get(f"/v1/fine_tuning/jobs/{cjid}").json()["status"] == "running":
@@ -3040,6 +3228,185 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             break
         time.sleep(0.02)
     out["ft_cancel_running_cooperative"] = cc.status_code == 200 and cjj["status"] == "cancelled"
+
+    # Cooperative pause/resume: a gate-aware runner parks inside
+    # pause_gate once paused — status reads 'paused' while parked and
+    # resume releases it to completion. 'paused' is non-terminal: a
+    # parked job still honors cancel, exactly once; pause on a paused
+    # job replays 200; pause or resume on a terminal job is 409; resume
+    # on a non-paused job is 409.
+    #
+    # The queued branch is probed through a store-fabricated entry:
+    # inflight == worker count, so 'queued' only exists in the scheduler
+    # gap between admission and worker dispatch — unreachable
+    # deterministically over the wire. The endpoint + store contract for
+    # it is identical (the parked worker waits on resume.wait).
+    p_hold = threading.Event()
+    p_gate = threading.Event()
+    p_hold2 = threading.Event()
+    p_gate2 = threading.Event()
+
+    def _pause_runner(spec: Any, *, emit: Any, should_cancel: Any, pause_gate: Any) -> FTJobOutcome:
+        emit("info", "stage A")
+        p_hold.wait(timeout=20)
+        p_gate.set()
+        if pause_gate():
+            return FTJobOutcome()
+        emit("info", "stage B")
+        # hold the worker in-flight across the resume read — the
+        # response body is the record at read time, so the probe can
+        # only observe the restored 'running' while the runner is live
+        p_hold2.wait(timeout=20)
+        p_gate2.set()
+        return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+    ftp_app = api_mod.create_app(ft_runner=_pause_runner, max_inflight=1)
+    ftp = _TC3(ftp_app)
+    pfid = ftp.post(
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    pa = ftp.post(
+        _PATH_FT_JOBS,
+        json={"model": "fx1", "training_file": pfid, "suffix": "pa"},
+    ).json()
+    for _i in range(400):  # pa holds the single slot, running
+        if ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    pqa = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause")
+    pqa2 = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause")
+
+    from fx1.serve.finetune import FTJob as _FTJob
+
+    qentry = ftp_app.state.ft_store.put(
+        _FTJob(
+            id="ftjob-qprobe",
+            model="fx1",
+            created_at=int(time.time()),
+            status="queued",
+            training_file=pfid,
+        ),
+        None,
+        "qprobe",
+    )
+    pqj = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/pause")
+    rqj = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/resume")
+    out["ft_pause_queued_running_200"] = (
+        pqa.status_code == 200
+        and pqa.json()["status"] == "paused"
+        and pqa2.status_code == 200
+        and pqa2.json()["status"] == "paused"  # idempotent replay
+        and pqj.status_code == 200
+        and pqj.json()["status"] == "paused"
+        and rqj.status_code == 200
+        and rqj.json()["status"] == "queued"  # resume restores paused_from
+        and qentry.paused_from is None
+    )
+    # queued resume still leaves the fabricated job queued (no worker
+    # ever ran) — pause it again and cancel from paused.
+    ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/pause")
+    cq = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/cancel")
+    out["ft_queued_cancel_terminal"] = (
+        cq.status_code == 200
+        and cq.json()["status"] == "cancelled"
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/resume").status_code == 409
+    )
+
+    p_hold.set()  # pa's runner reaches the gate and parks
+    p_gate.wait(timeout=15)
+    time.sleep(0.05)
+    out["ft_paused_holds_at_gate"] = ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()[
+        "status"
+    ] == "paused" and not any(
+        "job succeeded" in e["message"]
+        for e in ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}/events").json()["data"]
+    )
+    rpa = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/resume")
+    p_hold2.set()  # release the resumed runner to terminal
+    for _i in range(400):
+        paf = ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()
+        if paf["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    out["ft_resume_releases"] = (
+        rpa.status_code == 200
+        and rpa.json()["status"] == "running"  # restores paused_from
+        and paf["status"] == "succeeded"
+    )
+
+    # cancel against a parked worker: one 'job cancelled' event total —
+    # the store owns the terminal write, the parked worker dedupes.
+    p_hold.clear()
+    p_gate.clear()
+    p_hold2.clear()
+    p_gate2.clear()
+    pc = ftp.post(
+        _PATH_FT_JOBS,
+        json={"model": "fx1", "training_file": pfid, "suffix": "pc"},
+    ).json()
+    for _i in range(400):
+        if ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/pause")
+    p_hold.set()
+    p_gate.wait(timeout=15)
+    ccancel = ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/cancel")
+    for _i in range(400):
+        pcj = ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}").json()
+        if pcj["status"] == "cancelled":
+            break
+        time.sleep(0.02)
+    pc_events = ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}/events").json()["data"]
+    out["ft_cancel_paused_terminal"] = (
+        ccancel.status_code == 200
+        and ccancel.json()["status"] == "cancelled"
+        and pcj["status"] == "cancelled"
+        and sum("job cancelled" in e["message"] for e in pc_events) == 1
+        and ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/resume").status_code == 409
+    )
+    out["ft_pause_guards"] = (
+        ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause").json().get("error", {}).get("code")
+        == "job_terminal"
+        and ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/resume").json().get("error", {}).get("code")
+        == "job_terminal"
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-nope/pause").status_code == 404
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-nope/resume").status_code == 404
+    )
+
+    # Gate-free runners (no pause_gate kwarg) accept the pause verb but
+    # run to completion — the hook is opt-in, never a crash.
+    def _nogate_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+        deadline = time.time() + 1.5
+        while time.time() < deadline:
+            if should_cancel():
+                return FTJobOutcome()
+            time.sleep(0.02)
+        return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+    ftn = _TC3(api_mod.create_app(ft_runner=_nogate_runner))
+    nfid = ftn.post(
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    nj = ftn.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": nfid}).json()
+    for _i in range(400):
+        if ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    npa = ftn.post(f"/v1/fine_tuning/jobs/{nj['id']}/pause")
+    for _i in range(400):
+        njf = ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()
+        if njf["status"] in ("succeeded", "failed", "cancelled", "paused"):
+            break
+        time.sleep(0.02)
+    if njf["status"] == "paused":  # worker parked pre-start — release it
+        ftn.post(f"/v1/fine_tuning/jobs/{nj['id']}/resume")
+        for _i in range(400):
+            njf = ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()
+            if njf["status"] in ("succeeded", "failed", "cancelled"):
+                break
+            time.sleep(0.02)
+    out["ft_pause_gatefree_completes"] = npa.status_code == 200 and njf["status"] == "succeeded"
 
     # Model registry: a succeeded job with a checkpoint registers its
     # ft: name into the model inventory, and a request naming it resolves
@@ -3060,11 +3427,9 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     ft2 = _TC3(api_mod.create_app(backend_resolver=_spy, ft_runner=_runner))
     fid2 = ft2.post(
-        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+        "/v1/files", files={"file": (_CORPUS_FILE, _CORPUS)}, data={"purpose": "fine-tune"}
     ).json()["id"]
-    j2 = ft2.post(
-        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid2, "suffix": "r"}
-    ).json()
+    j2 = ft2.post(_PATH_FT_JOBS, json={"model": "fx1", "training_file": fid2, "suffix": "r"}).json()
     fin2 = j2
     for _i in range(400):
         fin2 = ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}").json()
@@ -3187,7 +3552,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
 
     cb_fid = _upload(_CORPUS).json()["id"]
     cb_job = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": cb_fid,
@@ -3220,7 +3585,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # 4xx is definitive — one attempt, no retry storm.
     rj_fid = _upload(_CORPUS).json()["id"]
     rj_job = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={
             "model": "fx1",
             "training_file": rj_fid,
@@ -3237,11 +3602,11 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # Submit-time guards: secret requires url; url must be http(s) with a
     # host — both as the /v1 envelope's 422, never a queued zombie.
     sec_only = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": cb_fid, "callback_secret": "x"},
     )
     bad_url = ft.post(
-        "/v1/fine_tuning/jobs",
+        _PATH_FT_JOBS,
         json={"model": "fx1", "training_file": cb_fid, "callback_url": "ftp://x"},
     )
     out["ft_webhook_guards_422"] = (
@@ -3253,7 +3618,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.server_close()
 
 
-def _probe_backend_probes(  # noqa: C901 — probe accumulator
+def _probe_backend_probes(  # NOSONAR
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415
@@ -3617,6 +3982,85 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         cap3.get("c0") is None
         and len(cap3.latest(10, None)) == 3
         and [r.completion_id for r in cap3.latest(10, None)] == ["c4", "c3", "c2"]
+        and cap3.dropped == 2
+        and cap3.cap == 3
+    )
+
+    # --- /harness/usage — token/request accounting over the ring ----------
+    # two ok calls carrying usage + one 502 — totals, splits, filters, and
+    # the truncation honesty fields all assert.
+    class _UsageBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.last_usage = {
+                "prompt_tokens": 5,
+                "completion_tokens": 7,
+                "total_tokens": 12,
+                "cached_tokens": 2,
+            }
+            return "clean"
+
+        def close(self) -> None:
+            pass
+
+    class _DeadBackend:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            raise RuntimeError("dead")
+
+        def close(self) -> None:
+            pass
+
+    u_ok = _UsageBackend()
+    u_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: u_ok if name == "byok" else _DeadBackend()
+        )
+    )
+    for _i in range(2):
+        u_app.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "hi"}]},
+        )
+    u_app.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "hi"}]},
+    )
+    u = u_app.get("/harness/usage").json()
+    out["usage_totals"] = (
+        u["totals"]["requests"] == 3
+        and u["totals"]["ok"] == 2
+        and u["totals"]["errors"] == 1
+        and u["totals"]["prompt_tokens"] == 10
+        and u["totals"]["completion_tokens"] == 14
+        and u["totals"]["total_tokens"] == 24
+        and u["totals"]["other_usage"] == {"cached_tokens": 4}
+        and u["totals"]["usage_reported"] == 2
+        and u["totals"]["mean_latency_ms"] is not None
+        and u["records_seen"] == 3
+        and u["records_dropped"] == 0
+        and u["ring_cap"] == api_mod._COMPLETION_LOG_MAX
+    )
+    out["usage_splits"] = (
+        u["by_backend"]["byok"]["requests"] == 2
+        and u["by_backend"]["hosted_k3"]["errors"] == 1
+        and u["by_model"]["fake-0"]["requests"] == 2
+    )
+    out["usage_filters"] = (
+        u_app.get("/harness/usage?backend=byok").json()["totals"]["requests"] == 2
+        and u_app.get("/harness/usage?model=fake-0").json()["totals"]["requests"] == 2
+        and u_app.get("/harness/usage?model=nope").json()["totals"]["requests"] == 0
+        and u_app.get(f"/harness/usage?since={time.time() + 60}").json()["records_seen"] == 0
+        and u_app.get("/harness/usage?until=1").json()["records_seen"] == 0
+    )
+    out["usage_bad_window_400"] = (
+        u_app.get("/harness/usage?since=2&until=1").status_code == 400
+        and u_app.get("/harness/usage?since=-1").status_code == 422
     )
 
     # --- sealed per-call receipt export -------------------------------------
@@ -4080,6 +4524,183 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         == "eval_not_terminal"
     )
 
+    # /v1/evals — the OpenAI Evals-shaped spec/run surface over the same
+    # store. Specs declare suite knobs in item_schema; runs bind a model
+    # (backend link or ft: name); everything cross-links to /harness/evals.
+    spec1 = eval_app.post(
+        _PATH_EVALS,
+        json={
+            "name": "tooluse-baseline",
+            "data_source_config": {
+                "type": "custom",
+                "item_schema": {"suite": "tooluse", "seed": 0},
+            },
+            "testing_criteria": [{"name": "all-pass"}],
+            "metadata": {"lane": "audit"},
+        },
+    )
+    spec1_j = spec1.json() if spec1.status_code == 201 else {}
+    spec1_id = spec1_j.get("id", "")
+    out["evalspec_create_201"] = (
+        spec1.status_code == 201
+        and spec1_id.startswith("eval_")
+        and spec1_j.get("object") == "eval"
+        and spec1_j.get("name") == "tooluse-baseline"
+        and spec1_j.get("metadata") == {"lane": "audit"}
+        and (spec1_j.get("data_source_config") or {}).get("item_schema", {}).get("suite")
+        == "tooluse"
+    )
+    out["evalspec_bad_suite_422"] = (
+        eval_app.post(
+            _PATH_EVALS,
+            json={
+                "name": "x",
+                "data_source_config": {"type": "custom", "item_schema": {"suite": "nope"}},
+            },
+        ).status_code
+        == 422
+    )
+    spec_list = eval_app.get("/v1/evals?limit=10").json()
+    out["evalspec_list"] = spec_list.get("object") == "list" and any(
+        s.get("id") == spec1_id for s in spec_list.get("data", [])
+    )
+    out["evalspec_get"] = (
+        eval_app.get(f"/v1/evals/{spec1_id}").json().get("id") == spec1_id
+        and eval_app.get("/v1/evals/eval_nope").status_code == 404
+    )
+    spec_upd = eval_app.post(
+        f"/v1/evals/{spec1_id}",
+        json={"name": "tooluse-baseline-v2", "metadata": {"lane": "audit", "v": "2"}},
+    )
+    out["evalspec_update"] = (
+        spec_upd.status_code == 200
+        and spec_upd.json().get("name") == "tooluse-baseline-v2"
+        and spec_upd.json().get("metadata", {}).get("v") == "2"
+        and eval_app.post(f"/v1/evals/{spec1_id}", json={}).status_code == 422
+    )
+    # A spec whose schema validator rejects a combination fail-closes 422.
+    out["evalspec_schema_validated"] = (
+        eval_app.post(
+            _PATH_EVALS,
+            json={
+                "name": "bad-chain",
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {
+                        "suite": "tooluse",
+                        "backend": "byok",
+                        "fallbacks": ["local_fx1", "local_fx1"],
+                    },
+                },
+            },
+        ).status_code
+        == 422
+    )
+
+    run1 = eval_app.post(
+        f"/v1/evals/{spec1_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    run1_j = run1.json() if run1.status_code == 201 else {}
+    run1_id = run1_j.get("id", "")
+    out["evalrun_create_201"] = (
+        run1.status_code == 201
+        and run1_id.startswith("evalrun_")
+        and run1_j.get("object") == "eval.run"
+        and run1_j.get("eval_id") == spec1_id
+        and run1_j.get("model") == "byok"
+        and run1.headers.get("location") == f"/v1/evals/{spec1_id}/runs/{run1_id[8:]}"
+    )
+    # Same key, same body → replay; same key, different body → 409.
+    run1_replay = eval_app.post(
+        f"/v1/evals/{spec1_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    out["evalrun_idem_replay"] = (
+        run1_replay.status_code == 201
+        and run1_replay.json().get("id") == run1_id
+        and eval_app.post(
+            f"/v1/evals/{spec1_id}/runs",
+            json={"model": "local_fx1"},
+            headers={"Idempotency-Key": "spec-run-1"},
+        ).status_code
+        == 409
+    )
+    ev_run_rec = _wait_eval(eval_app, run1_j.get("eval_run_id") or run1_id[8:] or "")
+    run1_term = eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}").json()
+    out["evalrun_terminal_completed"] = (
+        ev_run_rec.get("status") == "succeeded"
+        and run1_term.get("status") == "completed"
+        and (run1_term.get("result_counts") or {}).get("total", 0) > 0
+        and run1_term.get("receipt_url") == f"/harness/evals/{run1_id[8:]}/receipt"
+    )
+    out["evalrun_list"] = any(
+        r.get("id") == run1_id
+        for r in eval_app.get(f"/v1/evals/{spec1_id}/runs").json().get("data", [])
+    )
+    items = eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}/output_items").json()
+    out["evalrun_output_items"] = (
+        items.get("object") == "list"
+        and len(items.get("data", [])) > 0
+        and all(it.get("object") == "eval.run.output_item" for it in items.get("data", []))
+        and all(
+            any("name" in r and "passed" in r for r in it.get("results", []))
+            for it in items.get("data", [])
+        )
+    )
+    out["evalrun_404s"] = (
+        eval_app.get("/v1/evals/eval_nope/runs").status_code == 404
+        and eval_app.get(f"/v1/evals/{spec1_id}/runs/evalrun_nope").status_code == 404
+        and eval_app.post(f"/v1/evals/{spec1_id}/runs/evalrun_nope/cancel").status_code == 404
+    )
+
+    # A second spec namespaces idempotency and list/get — cross-spec run
+    # ids must not leak.
+    spec2_id = (
+        eval_app.post(
+            _PATH_EVALS,
+            json={
+                "name": "retrieval",
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": "retrieval", "seed": 1},
+                },
+            },
+        )
+        .json()
+        .get("id", "")
+    )
+    out["evalrun_cross_spec_404"] = (
+        eval_app.get(f"/v1/evals/{spec2_id}/runs/{run1_id}").status_code == 404
+        and eval_app.get(f"/v1/evals/{spec2_id}/runs/{run1_id}/output_items").status_code == 404
+    )
+    spec2_reuse = eval_app.post(
+        f"/v1/evals/{spec2_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    out["evalrun_idem_per_spec"] = (
+        spec2_reuse.status_code == 201 and spec2_reuse.json().get("id") != run1_id
+    )
+    eval_run_delete = eval_app.delete(f"/v1/evals/{spec1_id}/runs/{run1_id}")
+    out["evalrun_delete_terminal_200"] = (
+        eval_run_delete.status_code == 200
+        and eval_run_delete.json().get("object") == "eval.run.deleted"
+        and eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}").status_code == 404
+    )
+    spec_del = eval_app.delete(f"/v1/evals/{spec1_id}")
+    out["evalspec_delete"] = (
+        spec_del.status_code == 200
+        and spec_del.json().get("object") == "eval.deleted"
+        and spec_del.json().get("deleted") is True
+        and eval_app.get(f"/v1/evals/{spec1_id}").status_code == 404
+        # The surviving spec's runs still resolve through the run surface.
+        and eval_app.get(f"/v1/evals/{spec2_id}/runs/{spec2_reuse.json().get('id')}").status_code
+        == 200
+    )
+
     # Cancel on a running eval is 409 — suite runners have no kill handle.
     # The gate event is set before wait expires so the suite completes.
     gate_ev = _threading.Event()
@@ -4466,12 +5087,15 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
     from fx1.serve.backends import ToolCompletion as _ToolCompletion  # noqa: PLC0415
 
     class _OiToolBackend:
-        """Tool-capable stub: records the forwarded spec, answers a call.
+        """Tool-capable stub: records the forwarded spec, answers calls.
         Answers a canned ``logprobs`` payload when the request asks for
-        one — the wire's verbatim echo is what gets probed."""
+        one — the wire's verbatim echo is what gets probed. ``n_calls``
+        sets how many ``function_call`` entries one turn emits (one by
+        default — the multi-call variant probes ``max_tool_calls``)."""
 
-        def __init__(self) -> None:
+        def __init__(self, n_calls: int = 1) -> None:
             self._model = "tool-0"
+            self.n_calls = n_calls
             self.calls = 0
             self.seen_tools: list[dict[str, Any]] | None = None
             self.seen_choice: Any = None
@@ -4524,12 +5148,13 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
                 }
             return _ToolCompletion(
                 content=None,
-                tool_calls=(
+                tool_calls=tuple(
                     {
-                        "id": "call_0",
+                        "id": f"call_{k}",
                         "type": "function",
                         "function": {"name": "calc", "arguments": '{"x": 1}'},
-                    },
+                    }
+                    for k in range(self.n_calls)
                 ),
                 finish_reason="tool_calls",
                 logprobs=lp,
@@ -4673,6 +5298,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
 
     oi_tool = _OiToolBackend()
     oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    # three calls a turn — probes ``max_tool_calls`` truncation
+    oi_tool3 = _OiToolBackend(n_calls=3)
+    oi_tool3_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool3))
     oi_lp_b = _OiLpBackend()
     oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
     oi_emb_b = _OiEmbedBackend()
@@ -5363,7 +5991,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
             "logit_bias": {"42": -10},
             "reasoning_effort": "low",
             "service_tier": "flex",
+            "verbosity": "high",
             "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
             "user": "u-1",
             "metadata": {"team": "risk"},
         },
@@ -5379,7 +6009,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and seen.logit_bias == {"42": -10}
         and seen.reasoning_effort == "low"
         and seen.service_tier == "flex"
+        and seen.verbosity == "high"
         and seen.prompt_cache_key == "pck"
+        and seen.prompt_cache_retention == "24h"
         and seen.user == "u-1"
     )
     cid_dec = r.headers.get("X-Fx1-Completion-Id", "")
@@ -5394,7 +6026,26 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
             rl.status_code == 200
             and rl.json().get("sampling", {}).get("logit_bias") == {"42": -10}
             and rl.json().get("sampling", {}).get("presence_penalty") == 0.5
+            and rl.json().get("sampling", {}).get("verbosity") == "high"
+            and rl.json().get("sampling", {}).get("prompt_cache_retention") == "24h"
         )
+    # enum-valued provider hints fail closed at the model — a value
+    # outside the Literal set is a 422, never silently dropped
+    out["openai_hint_enum_422"] = all(
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("verbosity", "extreme"),
+            ("prompt_cache_retention", "forever"),
+        )
+    )
 
     # max_completion_tokens alias + disagreeing pair fails closed
     r = oi_usage.post(
@@ -6079,6 +6730,43 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         usage_be.seen is not None
         and usage_be.seen.reasoning_effort == "high"
         and usage_be.seen.max_tokens == 77
+    )
+    # request fidelity: the provider-hint knobs that extra=allow used to
+    # drop silently — prompt_cache_key/prompt_cache_retention ride the
+    # top level, text.verbosity nests under text; all three reach the
+    # backend's SamplingParams and echo on the response object
+    usage_be.seen = None
+    r = oi_usage.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "hints",
+            "prompt_cache_key": "pck2",
+            "prompt_cache_retention": "24h",
+            "text": {"verbosity": "low"},
+        },
+    )
+    out["responses_provider_hints_forwarded"] = (
+        r.status_code == 200
+        and usage_be.seen is not None
+        and usage_be.seen.prompt_cache_key == "pck2"
+        and usage_be.seen.prompt_cache_retention == "24h"
+        and usage_be.seen.verbosity == "low"
+        and r.json().get("prompt_cache_key") == "pck2"
+        and r.json().get("prompt_cache_retention") == "24h"
+        and r.json().get("text", {}).get("verbosity") == "low"
+    )
+    out["responses_hint_enum_422"] = all(
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", **bad},
+        ).status_code
+        == 422
+        for bad in (
+            {"prompt_cache_retention": "forever"},
+            {"text": {"verbosity": "extreme"}},
+            {"text": {"verbosity": 3}},
+        )
     )
     # the shorthand `{role, content: "..."}` item and multi-part input_text
     # lists join before reaching the model
@@ -7137,6 +7825,218 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and rlines[0]["response"]["body"]["output"][0]["content"][0]["text"] == "clean:hi"
     )
 
+    # ---- /v1/uploads: chunked file assembly — intent → parts →
+    # complete mints a /v1/files record; md5 checked pre-mint; terminal
+    # states and declared-byte bounds fail closed.
+    import hashlib as _hashlib  # noqa: PLC0415
+    import tempfile as _tempfile  # noqa: PLC0415
+    from pathlib import Path as _Path  # noqa: PLC0415
+
+    _ul_payload = b'{"l":1}\n{"l":2}\n{"l":3}\n'
+    ulp1, ulp2, ulp3 = _ul_payload[:8], _ul_payload[8:18], _ul_payload[18:]
+    uc = fb.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": "big.jsonl",
+            "bytes": len(_ul_payload),
+            "mime_type": "application/jsonl",
+        },
+    )
+    uobj = uc.json()
+    out["upload_create_200_shape"] = (
+        uc.status_code == 200
+        and uobj["object"] == "upload"
+        and uobj["id"].startswith("upload_")
+        and uobj["status"] == "pending"
+        and uobj["bytes"] == len(_ul_payload)
+        and uobj["expires_at"] > uobj["created_at"]
+        and uobj["file"] is None
+    )
+    out["upload_create_purpose_400"] = (
+        fb.post(
+            _PATH_UPLOADS,
+            json={
+                "purpose": "user_data",
+                "filename": "x.jsonl",
+                "bytes": 1,
+                "mime_type": "t",
+            },
+        ).status_code
+        == 400
+    )
+    out["upload_create_ext_400"] = (
+        fb.post(
+            _PATH_UPLOADS,
+            json={
+                "purpose": "batch",
+                "filename": "x.txt",
+                "bytes": 1,
+                "mime_type": "t",
+            },
+        ).status_code
+        == 400
+    )
+    uid = uobj["id"]
+    upart = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp1)})
+    out["upload_part_200_shape"] = (
+        upart.status_code == 200
+        and upart.json()["object"] == "upload.part"
+        and upart.json()["id"].startswith("part_")
+        and upart.json()["upload_id"] == uid
+    )
+    out["upload_part_missing_404"] = (
+        fb.post("/v1/uploads/upload_nope/parts", files={"data": ("p", b"x")}).status_code == 404
+        and fb.post("/v1/uploads/upload_nope/parts", files={"data": ("p", b"x")}).json()["error"][
+            "code"
+        ]
+        == "upload_not_found"
+    )
+    out["upload_part_no_field_400"] = fb.post(f"/v1/uploads/{uid}/parts").status_code == 400
+    # cumulative bytes may never exceed the declared total
+    out["upload_part_over_declared_400"] = (
+        fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", _ul_payload)}).json()["error"][
+            "code"
+        ]
+        == "part_exceeds_declared_bytes"
+    )
+    pid2 = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp2)}).json()["id"]
+    pid3 = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp3)}).json()["id"]
+    pid1 = upart.json()["id"]
+    # complete honors the caller's part order
+    udone = fb.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid3, pid1, pid2]}).json()
+    out["upload_complete_caller_order"] = (
+        udone["status"] == "completed"
+        and udone["file"]["object"] == "file"
+        and udone["file"]["id"].startswith("file-")
+        and fb.get(f"/v1/files/{udone['file']['id']}/content").content == ulp3 + ulp1 + ulp2
+    )
+    # terminal: parts and re-complete refuse on a completed record
+    out["upload_terminal_409"] = (
+        fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", b"x")}).json()["error"]["code"]
+        == "upload_terminal"
+        and fb.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid1]}).json()["error"][
+            "code"
+        ]
+        == "upload_terminal"
+    )
+    # unknown part id fails closed before the mint
+    uc2 = fb.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": "m.jsonl",
+            "bytes": 2,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    pab = fb.post(f"/v1/uploads/{uc2}/parts", files={"data": ("p", b"ab")}).json()["id"]
+    out["upload_complete_part_not_found_400"] = (
+        fb.post(f"/v1/uploads/{uc2}/complete", json={"part_ids": ["part_nope"]}).json()["error"][
+            "code"
+        ]
+        == "part_not_found"
+    )
+    # md5 mismatch refuses before the file mints; correct digest completes
+    out["upload_md5_mismatch_400"] = (
+        fb.post(
+            f"/v1/uploads/{uc2}/complete",
+            json={"part_ids": [pab], "md5": "0" * 32},
+        ).json()["error"]["code"]
+        == "checksum_mismatch"
+    )
+    uok = fb.post(
+        f"/v1/uploads/{uc2}/complete",
+        json={
+            "part_ids": [pab],
+            "md5": _hashlib.md5(b"ab", usedforsecurity=False).hexdigest(),
+        },
+    )
+    out["upload_md5_ok_completes"] = (
+        uok.status_code == 200
+        and uok.json()["status"] == "completed"
+        and uok.json()["file"]["bytes"] == 2
+    )
+    # declared-but-under-parted refuses (assembled != declared)
+    uc3 = fb.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": "d.jsonl",
+            "bytes": 64,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    pu3 = fb.post(f"/v1/uploads/{uc3}/parts", files={"data": ("p", b"short")}).json()["id"]
+    out["upload_under_declared_400"] = (
+        fb.post(f"/v1/uploads/{uc3}/complete", json={"part_ids": [pu3]}).json()["error"]["code"]
+        == "upload_incomplete"
+    )
+    # cancel is terminal and replays 200; completing a cancelled intent 409s
+    uc4 = fb.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": _CORPUS_FILE,
+            "bytes": 2,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    cnl = fb.post(f"/v1/uploads/{uc4}/cancel").json()
+    out["upload_cancel_then_409"] = (
+        cnl["status"] == "cancelled"
+        and fb.post(f"/v1/uploads/{uc4}/cancel").json()["status"] == "cancelled"
+        and fb.post(f"/v1/uploads/{uc4}/parts", files={"data": ("p", b"ab")}).json()["error"][
+            "code"
+        ]
+        == "upload_terminal"
+    )
+    out["upload_cancel_missing_404"] = fb.post("/v1/uploads/upload_nope/cancel").status_code == 404
+
+    # durability: a fresh app over the same state_dir recovers pending
+    # uploads AND their parts (blob before journal), and cancelled
+    # records stay cancelled
+    _sd = _Path(_tempfile.mkdtemp(prefix="fx1-ul-"))
+    du1 = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+    )
+    uup = du1.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": "d.jsonl",
+            "bytes": 4,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    dpart = du1.post(f"/v1/uploads/{uup}/parts", files={"data": ("p", b"ab")}).json()["id"]
+    du1.post(
+        _PATH_UPLOADS,
+        json={
+            "purpose": "batch",
+            "filename": "gone.jsonl",
+            "bytes": 1,
+            "mime_type": "t",
+        },
+    ).json()
+    du2 = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+    )
+    ddone = du2.post(
+        f"/v1/uploads/{uup}/complete",
+        json={
+            "part_ids": [
+                dpart,
+                du2.post(f"/v1/uploads/{uup}/parts", files={"data": ("p", b"cd")}).json()["id"],
+            ]
+        },
+    )
+    out["upload_state_dir_recovers"] = (
+        ddone.status_code == 200
+        and ddone.json()["status"] == "completed"
+        and du2.get(f"/v1/files/{ddone.json()['file']['id']}/content").content == b"abcd"
+    )
+
     # ---- /v1 retrieval: the `store` flag honored end-to-end — stored
     # envelopes fetch verbatim by id (sync, stream, n-fan-out, batch
     # lines, idem replays all index identically), store=false and
@@ -7150,6 +8050,38 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
     sid = s1.json()["id"]
     out["retrieve_chat_stored"] = (
         s1.status_code == 200 and fb.get(f"/v1/chat/completions/{sid}").json() == s1.json()
+    )
+    # POST /v1/chat/completions/{id} — metadata replaces wholesale; choices/
+    # usage sealed; the items subresource survives the update
+    u1 = fb.post(
+        f"/v1/chat/completions/{sid}",
+        json={"metadata": {"tenant": "t1", "trace": "abc"}},
+    )
+    u2 = fb.post(f"/v1/chat/completions/{sid}", json={"metadata": {"trace": "xyz"}})
+    u_after = fb.get(f"/v1/chat/completions/{sid}")
+    u_items = fb.get(f"/v1/chat/completions/{sid}/messages")
+    out["chat_update_metadata"] = (
+        u1.status_code == 200
+        and u1.json()["id"] == sid
+        and u1.json()["metadata"] == {"tenant": "t1", "trace": "abc"}
+        and u1.json()["choices"] == s1.json()["choices"]
+        and u1.json()["usage"] == s1.json()["usage"]
+        # wholesale replace — `tenant` is gone, not merged
+        and u2.json()["metadata"] == {"trace": "xyz"}
+        and u_after.json()["metadata"] == {"trace": "xyz"}
+        and u_items.status_code == 200
+        and len(u_items.json()["data"]) >= 1
+    )
+    # bounded + fail-closed: >16 pairs 422, a response id isn't a completion,
+    # deleted/gone ids 404
+    out["chat_update_failclosed"] = (
+        fb.post(
+            f"/v1/chat/completions/{sid}",
+            json={"metadata": {f"k{i}": "v" for i in range(17)}},
+        ).status_code
+        == 422
+        and fb.post("/v1/chat/completions/resp_deadbeef", json={}).status_code == 404
+        and fb.post("/v1/chat/completions/chatcmpl-gone", json={}).status_code == 404
     )
     # store=false keeps the call out of the index (still logged)
     s2 = fb.post(
@@ -7668,7 +8600,7 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
     # own turn back.
     cv = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
     cv0 = cv.post(
-        "/v1/conversations",
+        _CONVERSATIONS_URL,
         json={
             "items": [
                 {
@@ -7718,6 +8650,15 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and drop.json()["id"] == cid0
         and len(cv_items3) == 4
         and cv_items3[0]["content"][0]["text"] == "turn-one"
+    )
+    # single-item retrieve — OpenAI's conversations.items.retrieve: hit
+    # returns the item, a miss inside a live conv or a ghost conv 404s
+    got_item = cv.get(f"/v1/conversations/{cid0}/items/{cv_items3[0]['id']}")
+    out["conv_item_get"] = (
+        got_item.status_code == 200
+        and got_item.json()["id"] == cv_items3[0]["id"]
+        and cv.get(f"/v1/conversations/{cid0}/items/msg_ghost").status_code == 404
+        and cv.get("/v1/conversations/conv_ghost/items/msg_x").status_code == 404
     )
     # conv is its own store: a store:false response still appends its
     # turn to the conv even though the envelope itself never indexes
@@ -7778,7 +8719,7 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         == "conversation_not_found"
     )
     # background + conv: submit validates the conv, the worker appends
-    cvb = cv.post("/v1/conversations", json={})
+    cvb = cv.post(_CONVERSATIONS_URL, json={})
     cvb_id = cvb.json()["id"]
     cvb_r = cv.post(
         "/v1/responses",
@@ -7805,11 +8746,581 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         ).json()["error"]["code"]
         == "conversation_not_found"
     )
+
+    # ---- lane 112: max_tool_calls ----
+    # A caller's safety bound must not evaporate into ``extra="allow"``:
+    # over the cap the emitted call list truncates at the bound and the
+    # response lands ``status: 'incomplete'`` with
+    # ``incomplete_details.reason == 'max_tool_calls'`` — OpenAI's own
+    # truncation semantics, never a silent drop. The stream's terminal
+    # frame is ``response.incomplete``; the stored object and its conv
+    # append keep the truncation; at/under the cap the turn completes.
+    # /v1/responses takes the flattened Responses tool spec (the nested
+    # chat shape is a wire 422)
+    mt_req = {
+        "model": "fx1",
+        "input": "calls",
+        "tools": [
+            {
+                "type": "function",
+                "name": "calc",
+                "description": "arithmetic",
+                "parameters": {"type": "object"},
+            }
+        ],
+        "max_tool_calls": 2,
+    }
+    mt = oi_tool3_app.post("/v1/responses", json=mt_req)
+    mt_b = mt.json()
+    mt_out = mt_b.get("output") or []
+    mt_fc = [it for it in mt_out if it.get("type") == "function_call"]
+    mt_st = oi_tool3_app.get(f"/v1/responses/{mt_b['id']}").json()
+    out["resp_max_tool_calls_incomplete"] = (
+        mt.status_code == 200
+        and mt_b["status"] == "incomplete"
+        and mt_b["incomplete_details"] == {"reason": "max_tool_calls"}
+        and mt_b["max_tool_calls"] == 2
+        and len(mt_out) == 2
+        and [it["call_id"] for it in mt_fc] == ["call_0", "call_1"]
+        # the truncated turn has no prose — no phantom empty message item
+        and not any(it.get("type") == "message" for it in mt_out)
+        and mt_st["status"] == "incomplete"
+        and len(mt_st["output"]) == 2
+    )
+    mt0 = oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": 0}).json()
+    out["resp_max_tool_calls_zero"] = (
+        mt0["status"] == "incomplete"
+        and mt0["incomplete_details"]["reason"] == "max_tool_calls"
+        and mt0["output"] == []
+    )
+    mt_at = oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": 3}).json()
+    mt_off = oi_tool3_app.post(
+        "/v1/responses",
+        json={k: v for k, v in mt_req.items() if k != "max_tool_calls"},
+    ).json()
+    out["resp_max_tool_calls_at_or_off"] = (
+        mt_at["status"] == "completed"
+        and len(mt_at["output"]) == 3
+        and mt_at["incomplete_details"] is None
+        and mt_off["status"] == "completed"
+        and len(mt_off["output"]) == 3
+        and mt_off["max_tool_calls"] is None
+    )
+    out["resp_max_tool_calls_422"] = (
+        oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": -1}).status_code == 422
+    )
+    mt_s = oi_tool3_app.post("/v1/responses", json={**mt_req, "stream": True})
+    out["resp_max_tool_calls_stream_incomplete"] = (
+        mt_s.status_code == 200
+        and "event: response.incomplete" in mt_s.text
+        and "event: response.completed" not in mt_s.text
+    )
+    # a batch line honours the per-line cap — the output-file body is the
+    # same truncated envelope
+    mt_batch = (
+        _json3.dumps(
+            {
+                "custom_id": "cap2",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {**mt_req, "model": "fx1"},
+            }
+        )
+        + "\n"
+    ).encode()
+    mt_up = oi_tool3_app.post(
+        "/v1/files",
+        files={"file": ("cap.jsonl", mt_batch, "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    mt_bc = oi_tool3_app.post(
+        "/v1/batches",
+        json={"input_file_id": mt_up["id"], "endpoint": "/v1/responses"},
+    ).json()
+    mt_bterm = _wait_batch(oi_tool3_app, mt_bc["id"])
+    mt_line = _json3.loads(
+        oi_tool3_app.get(f"/v1/files/{mt_bterm['output_file_id']}/content").text.strip()
+    )
+    out["resp_max_tool_calls_batch_line"] = (
+        mt_bterm["status"] == "completed"
+        and mt_line["response"]["status_code"] == 200
+        and mt_line["response"]["body"]["status"] == "incomplete"
+        and mt_line["response"]["body"]["incomplete_details"]["reason"] == "max_tool_calls"
+        and len(mt_line["response"]["body"]["output"]) == 2
+    )
+    # the conv trail records the truncation, not a fake completion
+    mt_conv = oi_tool3_app.post(_CONVERSATIONS_URL, json={}).json()["id"]
+    mt_cv = oi_tool3_app.post("/v1/responses", json={**mt_req, "conversation": mt_conv}).json()
+    mt_cv_items = oi_tool3_app.get(f"/v1/conversations/{mt_conv}/items").json()["data"]
+    out["resp_max_tool_calls_conv_append"] = (
+        mt_cv["status"] == "incomplete"
+        and len([it for it in mt_cv_items if it.get("type") == "function_call"]) == 2
+        # the only message item is the request's user input — no phantom
+        # assistant message fabricated by the truncation
+        and not any(
+            it.get("type") == "message" and it.get("role") == "assistant" for it in mt_cv_items
+        )
+    )
+
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()
     out["capabilities_retrieval"] = (
-        caps["features"]["openai_retrieval"] is True and caps["limits"]["store_max"] == 256.0
+        caps["features"]["openai_retrieval"] is True and int(caps["limits"]["store_max"]) == 256
     )
+    out["capabilities_vector_stores"] = (
+        caps["features"]["openai_vector_stores"] is True
+        and caps["features"]["openai_file_search"] is True
+        and int(caps["limits"]["vs_store_max"]) == 256
+        and int(caps["limits"]["vs_file_max"]) == 32
+        and int(caps["limits"]["vs_max_results"]) == 50
+    )
+
+    # --- /v1/vector_stores + server-side file_search -----------------------
+    vs_up = fb.post(
+        "/v1/files",
+        files={"file": ("vs.jsonl", b"alpha beta gamma delta", "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    vs = fb.post("/v1/vector_stores", json={"name": "kb"}).json()
+    out["vs_create"] = vs["object"] == "vector_store" and vs["id"].startswith("vs_")
+    vs_id = str(vs["id"])
+    out["vs_retrieve_404"] = fb.get("/v1/vector_stores/vs_nope").status_code == 404
+    out["vs_update"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}", json={"name": "kb2"}).json()["name"] == "kb2"
+    )
+    vs_list = fb.get("/v1/vector_stores", params={"limit": 1}).json()
+    out["vs_list_page"] = (
+        vs_list["object"] == "list"
+        and vs_list["data"][0]["id"] == vs_id
+        and vs_list["has_more"] is False
+    )
+    vf = fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": vs_up["id"]})
+    out["vs_file_attach"] = vf.status_code == 200 and vf.json()["status"] == "completed"
+    out["vs_file_attach_409"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": vs_up["id"]}).status_code
+        == 409
+    )
+    out["vs_file_unknown_vs_404"] = (
+        fb.post("/v1/vector_stores/vs_nope/files", json={"file_id": vs_up["id"]}).status_code == 404
+    )
+    out["vs_file_unknown_file_404"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": "file-nope"}).status_code
+        == 404
+    )
+    vfiles = fb.get(f"/v1/vector_stores/{vs_id}/files").json()
+    out["vs_files_list"] = vfiles["object"] == "list" and vfiles["data"][0]["id"] == vs_up["id"]
+    out["vs_files_filter_400"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "bogus"}).status_code == 400
+    )
+    out["vs_files_filter_ok"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "completed"}).json()["data"][
+            0
+        ]["id"]
+        == vs_up["id"]
+        and fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "failed"}).json()["data"]
+        == []
+    )
+    vcontent = fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}/content")
+    out["vs_file_content"] = (
+        vcontent.status_code == 200
+        and vcontent.json()["object"] == "vector_store.file_content.page"
+        and vcontent.json()["data"][0]["type"] == "text"
+        and "alpha" in vcontent.json()["data"][0]["text"]
+    )
+    out["vs_file_get"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json()["status"] == "completed"
+    )
+    # the file_search tool turn: retrieval precedes the message, include
+    # gates the results block, the injected context lands in input_items
+    fs_req = {
+        "model": "fx1",
+        "input": "what is alpha",
+        "tools": [{"type": "file_search", "vector_store_ids": [vs_id]}],
+        "include": ["file_search_call.results"],
+    }
+    fs_r = fb.post("/v1/responses", json=fs_req)
+    fs_env = fs_r.json()
+    fs_items = [o for o in fs_env["output"] if o["type"] == "file_search_call"]
+    out["resp_file_search"] = (
+        fs_r.status_code == 200
+        and fs_items
+        and fs_items[0]["status"] == "completed"
+        and fs_items[0]["queries"] == ["what is alpha"]
+        and fs_items[0]["results"][0]["file_id"] == vs_up["id"]
+        and fs_items[0]["results"][0]["filename"] == "vs.jsonl"
+        and fs_env["output"][-1]["type"] == "message"
+        and fs_env["output"].index(fs_items[0]) < len(fs_env["output"]) - 1
+    )
+    fs_no_inc = fb.post(
+        "/v1/responses", json={k: v for k, v in fs_req.items() if k != "include"}
+    ).json()
+    out["resp_file_search_include_gate"] = all(
+        o.get("results") is None for o in fs_no_inc["output"] if o["type"] == "file_search_call"
+    )
+    fs_items_in = fb.get(f"/v1/responses/{fs_env['id']}/input_items").json()["data"]
+    out["resp_file_search_inject"] = (
+        fs_items_in[0]["role"] == "developer"
+        and "[file_search results" in str(fs_items_in[0]["content"])
+        and "alpha" in str(fs_items_in[0]["content"])
+    )
+    out["resp_file_search_unknown_vs_404"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": ["vs_nope"]}],
+            },
+        ).status_code
+        == 404
+    )
+    out["resp_tool_choice_file_search"] = (
+        fb.post(
+            "/v1/responses", json={**fs_req, "tool_choice": {"type": "file_search"}}
+        ).status_code
+        == 200
+        # drop the include so the dict choice only binds the tool spec
+    )
+    out["resp_tool_choice_file_search_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "tool_choice": {"type": "file_search"}},
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_vsids_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": []}],
+            },
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_results_cap_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [vs_id],
+                        "max_num_results": 51,
+                    }
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_threshold_400"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [vs_id],
+                        "ranking_options": {"score_threshold": 1.5},
+                    }
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    # a file_search_call item re-fed as input carries its results as
+    # system context — not a refusal
+    refeed = fb.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {
+                    "type": "file_search_call",
+                    "id": "fs_past",
+                    "queries": ["alpha"],
+                    "results": [
+                        {
+                            "file_id": "file-a",
+                            "filename": "a.jsonl",
+                            "score": 0.9,
+                            "text": "alpha context",
+                            "attributes": {},
+                        }
+                    ],
+                },
+                {"type": "message", "role": "user", "content": "next"},
+            ],
+        },
+    )
+    out["resp_file_search_refeed"] = refeed.status_code == 200
+    # SSE: the file_search item lifecycle precedes the message item
+    fs_sse = fb.post("/v1/responses", json={**fs_req, "stream": True})
+    fs_body = fs_sse.text
+    out["resp_file_search_sse"] = (
+        fs_sse.status_code == 200
+        and "response.file_search_call.in_progress" in fs_body
+        and "response.file_search_call.searching" in fs_body
+        and "response.file_search_call.completed" in fs_body
+        and fs_body.index("file_search_call") < fs_body.index("response.output_text.delta")
+    )
+    # batch line honours the tool
+    fs_batch_body = (
+        _json3.dumps(
+            {
+                "custom_id": "fs1",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {
+                    "model": "fx1",
+                    "input": "alpha",
+                    "tools": [{"type": "file_search", "vector_store_ids": [vs_id]}],
+                },
+            }
+        )
+        + "\n"
+    ).encode()
+    fs_up2 = fb.post(
+        "/v1/files",
+        files={"file": ("fsb.jsonl", fs_batch_body, "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    fs_bc = fb.post(
+        "/v1/batches", json={"input_file_id": fs_up2["id"], "endpoint": "/v1/responses"}
+    ).json()
+    fs_bterm = _wait_batch(fb, fs_bc["id"])
+    fs_line = _json3.loads(fb.get(f"/v1/files/{fs_bterm['output_file_id']}/content").text.strip())
+    out["resp_file_search_batch"] = (
+        fs_bterm["status"] == "completed"
+        and fs_line["response"]["status_code"] == 200
+        and any(o["type"] == "file_search_call" for o in fs_line["response"]["body"]["output"])
+    )
+    # --- POST /v1/vector_stores/{id}/search — ranked hits, no turn ----
+    vs_search = fb.post(f"/v1/vector_stores/{vs_id}/search", json={"query": "alpha"})
+    vs_search_page = vs_search.json()
+    out["vs_search"] = (
+        vs_search.status_code == 200
+        and vs_search_page["object"] == "vector_store.search_results.page"
+        and vs_search_page["search_query"] == "alpha"
+        and vs_search_page["data"][0]["file_id"] == vs_up["id"]
+        and vs_search_page["data"][0]["filename"] == "vs.jsonl"
+        and vs_search_page["data"][0]["content"][0]["type"] == "text"
+        and "alpha" in vs_search_page["data"][0]["content"][0]["text"]
+        and vs_search_page["has_more"] is False
+        and vs_search_page["next_page"] is None
+    )
+    vs_search_list = fb.post(
+        f"/v1/vector_stores/{vs_id}/search",
+        json={"query": ["alpha", "gamma"], "max_num_results": 5},
+    ).json()
+    out["vs_search_query_list"] = vs_search_list["search_query"] == "alpha gamma"
+    out["vs_search_threshold"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "alpha", "ranking_options": {"score_threshold": 0.999}},
+        ).json()["data"]
+        == []
+    )
+    out["vs_search_filters"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={
+                "query": "alpha",
+                "filters": {"type": "eq", "key": "team", "value": "nope"},
+            },
+        ).json()["data"]
+        == []
+        and fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "alpha", "filters": {"bad": "shape"}},
+        ).status_code
+        == 400
+    )
+    out["vs_search_404"] = (
+        fb.post("/v1/vector_stores/vs_nope/search", json={"query": "x"}).status_code == 404
+    )
+    out["vs_search_empty_400"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/search", json={"query": "  "}).status_code == 400
+    )
+    out["vs_search_rewrite_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "rewrite_query": True},
+        ).status_code
+        == 422
+    )
+    out["vs_search_ranker_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "ranking_options": {"ranker": "bm25"}},
+        ).status_code
+        == 422
+    )
+    out["vs_search_max_results_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "max_num_results": 51},
+        ).status_code
+        == 422
+    )
+    # --- /v1/vector_stores/{id}/file_batches — bulk attach, per-file verdicts
+    vs_up2 = fb.post(
+        "/v1/files",
+        files={"file": ("vs2.jsonl", b"delta docs here", "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    vs_batch = fb.post(
+        f"/v1/vector_stores/{vs_id}/file_batches",
+        json={"file_ids": [vs_up2["id"], "file-ghost"]},
+    )
+    vs_batch_body = vs_batch.json()
+    out["vs_batch_create"] = (
+        vs_batch.status_code == 200
+        and vs_batch_body["object"] == "vector_store.files_batch"
+        and vs_batch_body["id"].startswith("vsfb_")
+        and vs_batch_body["vector_store_id"] == vs_id
+        and vs_batch_body["status"] == "completed"
+        and vs_batch_body["file_counts"]
+        == {
+            "in_progress": 0,
+            "completed": 1,
+            "failed": 1,
+            "cancelled": 0,
+            "total": 2,
+        }
+    )
+    vs_batch_get = fb.get(f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}")
+    out["vs_batch_get"] = (
+        vs_batch_get.status_code == 200
+        and vs_batch_get.json()["id"] == vs_batch_body["id"]
+        and vs_batch_get.json()["status"] == "completed"
+    )
+    vs_batch_files = fb.get(
+        f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files",
+        params={"filter": "failed"},
+    )
+    out["vs_batch_files"] = (
+        vs_batch_files.status_code == 200
+        and vs_batch_files.json()["object"] == "list"
+        and [r["id"] for r in vs_batch_files.json()["data"]] == ["file-ghost"]
+        and vs_batch_files.json()["data"][0]["last_error"]["code"] == "file_not_found"
+    )
+    vs_batch_files_all = fb.get(
+        f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files"
+    ).json()
+    out["vs_batch_files_all"] = {r["id"] for r in vs_batch_files_all["data"]} == {
+        vs_up2["id"],
+        "file-ghost",
+    } and all(r["object"] == "vector_store.file" for r in vs_batch_files_all["data"])
+    out["vs_batch_cancel_409"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/cancel").status_code
+        == 409
+    )
+    out["vs_batch_404"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/file_batches/vsfb_nope").status_code == 404
+        and fb.post(
+            "/v1/vector_stores/vs_nope/file_batches", json={"file_ids": ["file-a"]}
+        ).status_code
+        == 404
+    )
+    out["vs_batch_empty_422"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/file_batches", json={"file_ids": []}).status_code == 422
+    )
+    out["vs_batch_filter_400"] = (
+        fb.get(
+            f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files",
+            params={"filter": "bogus"},
+        ).status_code
+        == 400
+    )
+    # --- expires_after / last_active_at / standing expiry -------------
+    exp_app = api_mod.create_app()
+    fbx = _TC2(exp_app)
+    vs_exp = fbx.post(
+        "/v1/vector_stores",
+        json={
+            "name": "ephemeral",
+            "expires_after": {"anchor": "last_active_at", "days": 1},
+        },
+    ).json()
+    vs_exp_id = str(vs_exp["id"])
+    out["vs_expires_after_create"] = (
+        vs_exp["expires_after"] == {"anchor": "last_active_at", "days": 1}
+        and vs_exp["expires_at"] == vs_exp["last_active_at"] + 86400
+        and vs_exp["last_active_at"] >= vs_exp["created_at"]
+        and vs_exp["status"] == "completed"
+    )
+    out["vs_expires_after_400"] = (
+        fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "created_at", "days": 1}},
+        ).status_code
+        == 400
+        and fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "last_active_at", "days": 0}},
+        ).status_code
+        == 400
+        and fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "last_active_at", "days": 366}},
+        ).status_code
+        == 400
+    )
+    # deterministic expiry: stamp expires_at in the past on the record —
+    # the store flips read-only (writes/search refuse) while reads stay
+    exp_app.state.vs_store._stores[vs_exp_id].expires_at = 1
+    out["vs_expired_status"] = (
+        fbx.get(f"/v1/vector_stores/{vs_exp_id}").json()["status"] == "expired"
+    )
+    out["vs_expired_writes_410"] = (
+        fbx.post(f"/v1/vector_stores/{vs_exp_id}/files", json={"file_id": "file-x"}).status_code
+        == 410
+        and fbx.post(
+            f"/v1/vector_stores/{vs_exp_id}/file_batches",
+            json={"file_ids": ["file-x"]},
+        ).status_code
+        == 410
+        and fbx.post(f"/v1/vector_stores/{vs_exp_id}/search", json={"query": "x"}).status_code
+        == 410
+    )
+    # reads on an expired store still resolve
+    out["vs_expired_reads_ok"] = (
+        fbx.get(f"/v1/vector_stores/{vs_exp_id}/files").status_code == 200
+        and fbx.get(f"/v1/vector_stores/{vs_exp_id}").status_code == 200
+    )
+    vs_exp_rev = fbx.post(
+        f"/v1/vector_stores/{vs_exp_id}",
+        json={"expires_after": {"anchor": "last_active_at", "days": 7}},
+    ).json()
+    out["vs_expiry_revive_update"] = (
+        vs_exp_rev["status"] == "completed"
+        and vs_exp_rev["expires_at"] == vs_exp_rev["last_active_at"] + 7 * 86400
+        and fbx.post(f"/v1/vector_stores/{vs_exp_id}/search", json={"query": "x"}).status_code
+        == 200
+    )
+    fbx.delete(f"/v1/vector_stores/{vs_exp_id}")
+    # delete tombstone + detach shape + 404 after
+    out["vs_file_detach"] = fb.delete(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json() == {
+        "id": vs_up["id"],
+        "object": "vector_store.file.deleted",
+        "deleted": True,
+    }
+    out["vs_file_gone"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").status_code == 404
+    )
+    vs_del = fb.delete(f"/v1/vector_stores/{vs_id}")
+    out["vs_delete"] = vs_del.json() == {
+        "id": vs_id,
+        "object": "vector_store.deleted",
+        "deleted": True,
+    }
+    out["vs_gone_404"] = fb.get(f"/v1/vector_stores/{vs_id}").status_code == 404
 
 
 def api_audit_bench() -> dict[str, Any]:

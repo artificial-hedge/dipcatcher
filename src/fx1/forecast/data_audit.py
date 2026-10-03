@@ -59,8 +59,8 @@ from fx1.forecast.schema import (
     validate_feature_schema,
     validate_forecast_schema,
 )
-from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.schemas.errors import LeakageError, PointInTimeError
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision
 
@@ -1121,5 +1121,5 @@ def write_forecast_data_audit_receipt(
     directory.mkdir(parents=True, exist_ok=True)
     receipt = forecast_data_audit_bench()
     path = directory / AUDIT_RECEIPT_NAME
-    _atomic_write_text(path, json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    atomic_write_text(path, json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return path

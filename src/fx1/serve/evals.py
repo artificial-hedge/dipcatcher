@@ -39,7 +39,7 @@ from math import comb
 from typing import Any, Literal
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from fx1.eval.suite import ModelFn
 from fx1.serve.backends import SamplingParams
@@ -51,13 +51,19 @@ __all__ = [
     "EvalDiffDelta",
     "EvalDiffSignificance",
     "EvalRecord",
+    "EvalSpec",
+    "EvalSpecItemSchema",
+    "EvalSpecStore",
     "EvalStore",
     "EvalTaskTransition",
     "diff_eval_records",
     "eval_record_receipt",
     "eval_runner",
     "metered_model",
+    "report_task_items",
     "run_eval_record",
+    "run_wire",
+    "spec_wire",
 ]
 
 # suite -> (module, function, accepts_judge). Lazy: importing the eval
@@ -108,6 +114,35 @@ def eval_runner(suite: str) -> Callable[..., Any]:
 
 def suite_accepts_judge(suite: str) -> bool:
     return _EVAL_RUNNERS[suite][2]
+
+
+class EvalSpecItemSchema(BaseModel):
+    """The suite knobs an eval spec pins — same fields as the
+    ``/harness/evals`` submission minus credentials (a spec is stored,
+    export-safe state: BYOK keys attach to the run body only)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    suite: EvalSuiteName
+    seed: int = Field(default=0, ge=0)
+    backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+    checkpoint_dir: str | None = None
+    judge_backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+
+    @model_validator(mode="after")
+    def _schema_valid(self) -> EvalSpecItemSchema:
+        if len(set(self.fallbacks)) != len(self.fallbacks) or self.backend in self.fallbacks:
+            raise ValueError("fallbacks must be distinct and not repeat the backend")
+        chain = {*self.fallbacks} | ({self.backend} if self.backend is not None else set())
+        if self.checkpoint_dir is not None and "local_fx1" not in chain:
+            raise ValueError("checkpoint_dir applies only to a 'local_fx1' link")
+        if self.judge_backend is not None and not suite_accepts_judge(self.suite):
+            raise ValueError("judge_backend is supported on judge suites only")
+        return self
 
 
 def _jsonable(obj: Any) -> Any:
@@ -208,6 +243,13 @@ class EvalRecord(BaseModel):
     callback_status: Literal["delivered", "failed"] | None = None
     callback_error: str | None = None
     callback_attempts: int = 0
+    # /v1/evals binding: the spec this run was created under and the
+    # model string the run requested (``backend`` records the resolved
+    # link — a 'ft:…' model maps to 'local_fx1' + the card's checkpoint,
+    # so the requested name would otherwise be unrecoverable). Both are
+    # absent on direct ``/harness/evals`` submissions.
+    eval_spec: str | None = None
+    eval_model: str | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
 
 
@@ -241,6 +283,10 @@ class EvalStore:
             for payload in res.payloads:
                 for evict in payload.get("evicted") or ():
                     self._drop(str(evict))
+                deleted = payload.get("deleted")
+                if deleted is not None:
+                    self._drop(str(deleted))
+                    continue
                 if "record" not in payload:
                     continue
                 rec = EvalRecord.model_validate(payload["record"])
@@ -298,9 +344,11 @@ class EvalStore:
         status: str | None = None,
         suite: str | None = None,
         limit: int | None = None,
+        spec: str | None = None,
     ) -> tuple[list[EvalRecord], int]:
         """Newest-first snapshot, optionally filtered; returns
-        (page, total-before-paging) like the jobs list."""
+        (page, total-before-paging) like the jobs list. ``spec`` filters
+        to the /v1/evals runs bound to one eval spec."""
         with self._lock:
             records = list(self._records.values())
         records.reverse()
@@ -308,10 +356,25 @@ class EvalStore:
             records = [r for r in records if r.status == status]
         if suite is not None:
             records = [r for r in records if r.suite == suite]
+        if spec is not None:
+            records = [r for r in records if r.eval_spec == spec]
         total = len(records)
         if limit is not None:
             records = records[:limit]
         return records, total
+
+    def delete(self, eval_id: str) -> EvalRecord | None:
+        """Remove a terminal record + its idempotency mapping — the run
+        delete for ``/v1/evals``. Journaled as a tombstone so replay
+        can't resurrect it."""
+        with self._lock:
+            rec = self._records.get(eval_id)
+            if rec is None:
+                return None
+            self._drop(eval_id)
+            if self._journal is not None:
+                self._journal.append({"deleted": eval_id})
+            return rec
 
     def cancel(self, eval_id: str) -> tuple[EvalRecord | None, str]:
         """Cooperative cancel: a 'queued' record flips to 'cancelled' (the
@@ -487,6 +550,207 @@ class EvalDiff(BaseModel):
     deltas: list[EvalDiffDelta]
     significance: EvalDiffSignificance | None
     verdict: Literal["improved", "regressed", "unchanged", "unknown"]
+
+
+def report_task_items(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """The suite's per-task verdict rows — ``[{name, passed, row}]`` over
+    the declared verdict containers. The ``/v1/evals`` output_items
+    surface serves these verbatim; an eval with no per-task array
+    returns an empty list (never fabricated rows)."""
+    for container, name_key, flag_key in _TASK_VERDICT_SHAPES:
+        items = report.get(container)
+        if not isinstance(items, list):
+            continue
+        out: list[dict[str, Any]] = []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            flag = item.get(flag_key)
+            name = item.get(name_key)
+            if isinstance(flag, bool) and isinstance(name, str):
+                out.append({"name": name, "passed": flag, "row": item})
+        if out:
+            return out
+    return []
+
+
+# ---- /v1/evals: the OpenAI Evals-shaped spec/run surface -------------------
+#
+# OpenAI's evals API separates the *eval* (a named container declaring the
+# datasource shape + grading criteria) from its *runs* (executions against
+# a model). The harness's ``/harness/evals`` record IS a run; the spec is
+# the new container: ``data_source_config.item_schema`` pins the suite
+# knobs (suite/seed/fallbacks/judge — never credentials), and each run
+# binds ``EvalRecord.eval_spec`` back to it.
+#
+# ``EvalSpecStore`` is the same bounded-LRU + hash-chained-journal
+# contract as EvalStore, minus idempotency (specs are synchronous creates
+# — the dedupe contract lives on run creation, which rides _submit_eval).
+
+
+class EvalSpec(BaseModel):
+    """A declared eval: name + datasource config + grading criteria."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    spec_id: str
+    name: str
+    # OpenAI's shape: {"type": "custom", "item_schema": {...}} — the
+    # item_schema carries the harness submission knobs (suite, seed,
+    # fallbacks, judge_backend, checkpoint_dir, timeout_s). Validated
+    # against EvalSpecItemSchema at create — never request-side creds.
+    data_source_config: dict[str, Any]
+    testing_criteria: list[dict[str, Any]]
+    metadata: dict[str, str]
+    created_at: float
+
+
+class EvalSpecStore:
+    """Bounded LRU of eval specs + tombstone-journaled deletes.
+
+    Payload kinds on ``eval_specs.jsonl``: ``{"record": spec, "evicted"?
+    : [...]}`` on write, ``{"deleted": spec_id}`` on delete. Boot replay
+    applies them in order — a deleted spec never resurrects.
+    """
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._specs: OrderedDict[str, EvalSpec] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._specs.pop(str(evict), None)
+                deleted = payload.get("deleted")
+                if deleted is not None:
+                    self._specs.pop(str(deleted), None)
+                    continue
+                if "record" not in payload:
+                    continue
+                spec = EvalSpec.model_validate(payload["record"])
+                self._specs[spec.spec_id] = spec
+                self._specs.move_to_end(spec.spec_id)
+            self._compact_locked()
+
+    def _drop(self, spec_id: str) -> None:
+        self._specs.pop(spec_id, None)
+
+    def _write(self, payload: dict[str, Any]) -> None:
+        if self._journal is not None:
+            self._journal.append(payload)
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact(
+                [{"record": s.model_dump(mode="json")} for s in self._specs.values()]
+            )
+
+    def put(self, spec: EvalSpec) -> None:
+        with self._lock:
+            self._specs[spec.spec_id] = spec
+            self._specs.move_to_end(spec.spec_id)
+            evicted: list[str] = []
+            while len(self._specs) > self._max:
+                evicted_id, _ = self._specs.popitem(last=False)
+                evicted.append(evicted_id)
+            payload: dict[str, Any] = {"record": spec.model_dump(mode="json")}
+            if evicted:
+                payload["evicted"] = evicted
+            self._write(payload)
+
+    def get(self, spec_id: str) -> EvalSpec | None:
+        with self._lock:
+            return self._specs.get(spec_id)
+
+    def update(self, spec: EvalSpec) -> None:
+        """Journal a spec mutation (name/metadata edits are durable)."""
+        with self._lock:
+            self._write({"record": spec.model_dump(mode="json")})
+
+    def delete(self, spec_id: str) -> EvalSpec | None:
+        with self._lock:
+            spec = self._specs.pop(spec_id, None)
+            if spec is not None:
+                self._write({"deleted": spec_id})
+            return spec
+
+    def list_specs(self, *, limit: int, after: str | None) -> tuple[list[EvalSpec], bool]:
+        """Newest-first page — ``after`` is a spec-id cursor like the jobs
+        list; returns (page, has_more)."""
+        with self._lock:
+            specs = list(self._specs.values())
+        specs.reverse()
+        if after is not None:
+            idx = next((i for i, s in enumerate(specs) if s.spec_id == after), None)
+            specs = specs[idx + 1 :] if idx is not None else []
+        page = specs[:limit]
+        return page, len(specs) > limit
+
+
+_RUN_STATUS: dict[str, str] = {
+    "queued": "queued",
+    "running": "in_progress",
+    "succeeded": "completed",
+    "failed": "failed",
+    "cancelled": "canceled",
+}
+
+
+def spec_wire(spec: EvalSpec) -> dict[str, Any]:
+    """The OpenAI eval object for a stored spec."""
+    return {
+        "id": spec.spec_id,
+        "object": "eval",
+        "name": spec.name,
+        "data_source_config": spec.data_source_config,
+        "testing_criteria": spec.testing_criteria,
+        "metadata": spec.metadata,
+        "created_at": int(spec.created_at),
+    }
+
+
+def run_wire(record: EvalRecord) -> dict[str, Any]:
+    """The OpenAI eval.run object over an EvalRecord.
+
+    ``result_counts`` appears only on completed runs — a failed/canceled
+    run carries ``error``, never fabricated task counts. The suites emit
+    one verdict stream per task (not a per-criterion breakdown), so
+    ``per_testing_criteria_results`` stays empty rather than pretending a
+    per-criterion measurement exists.
+    """
+    out: dict[str, Any] = {
+        "id": f"evalrun_{record.eval_id}",
+        "object": "eval.run",
+        "eval_id": record.eval_spec,
+        "model": record.eval_model or record.backend,
+        "status": _RUN_STATUS.get(record.status, record.status),
+        "created_at": int(record.created_at),
+        "suite": record.suite,
+        "seed": record.seed,
+        "backend": record.backend,
+        "per_testing_criteria_results": [],
+        # the run's sealed evidence twin — the /harness/evals receipt
+        "receipt_url": f"/harness/evals/{record.eval_id}/receipt",
+    }
+    if record.status == "succeeded" and isinstance(record.report, dict):
+        items = report_task_items(record.report)
+        passed = sum(1 for t in items if t["passed"])
+        out["result_counts"] = {
+            "total": len(items),
+            "passed": passed,
+            "failed": len(items) - passed,
+            "errored": 0,
+        }
+    if record.status in ("failed", "cancelled"):
+        out["error"] = {
+            "code": "eval_run_failed" if record.status == "failed" else "eval_run_canceled",
+            "message": record.error or record.status,
+        }
+    return out
 
 
 # Per-task verdict shapes by suite: run_suite-style ``results`` carry

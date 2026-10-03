@@ -34,8 +34,10 @@ requires ``X-API-Key``; unset, only loopback clients are served.
 from __future__ import annotations
 
 import builtins
+import contextvars
 import hashlib
 import hmac
+import inspect
 import json
 import logging
 import math
@@ -79,6 +81,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    ValidationError,
     field_validator,
     model_validator,
 )
@@ -108,12 +111,18 @@ from fx1.serve.evals import (
     EVAL_SUITES,
     EvalDiff,
     EvalRecord,
+    EvalSpec,
+    EvalSpecItemSchema,
+    EvalSpecStore,
     EvalStore,
     EvalSuiteName,
     diff_eval_records,
     eval_record_receipt,
     metered_model,
+    report_task_items,
     run_eval_record,
+    run_wire,
+    spec_wire,
     suite_accepts_judge,
 )
 from fx1.serve.finetune import (
@@ -133,6 +142,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
+from fx1.serve.keys import ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -141,6 +151,7 @@ from fx1.serve.openai_compat import (
     OpenAIBatchRequest,
     OpenAIChatRequest,
     OpenAIChatResponse,
+    OpenAIChatUpdate,
     OpenAICompatError,
     OpenAIConversationCreate,
     OpenAIConversationItemsAdd,
@@ -152,6 +163,13 @@ from fx1.serve.openai_compat import (
     OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
+    OpenAIUploadCompleteRequest,
+    OpenAIUploadCreateRequest,
+    OpenAIVectorStoreCreate,
+    OpenAIVectorStoreFileBatchCreate,
+    OpenAIVectorStoreFileCreate,
+    OpenAIVectorStoreSearch,
+    OpenAIVectorStoreUpdate,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -161,6 +179,7 @@ from fx1.serve.openai_compat import (
     conversation_id_of,
     embeddings_to_kwargs,
     file_object,
+    file_search_call_item,
     is_openai_path,
     openai_chunks,
     openai_conversation_object,
@@ -168,13 +187,14 @@ from fx1.serve.openai_compat import (
     openai_envelope,
     openai_error_body,
     openai_model,
-    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
     paged_item_list,
+    response_cap_call_items,
     response_input_item_dicts,
     response_input_items_for_store,
+    response_query_text,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
@@ -182,10 +202,29 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
+from fx1.serve.uploads import (
+    UploadStore,
+    UploadStoreError,
+    upload_object,
+    validate_upload_intent,
+)
+from fx1.serve.usage_report import UsageReport, aggregate_usage
+from fx1.serve.vectorstores import (
+    VS_MAX_RESULTS,
+    VectorStoreError,
+    VectorStoreStore,
+)
 from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
+# The authenticated credential fingerprint for the in-flight request.
+# Set by the auth middleware; read where completion records are stamped
+# so a completion is attributable to the key that made it. ``None`` on
+# the unauthenticated loopback-dev surface.
+_REQUEST_KEY_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "fx1_request_key_id", default=None
+)
 _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
@@ -212,6 +251,7 @@ _STATE_DIR_ENV = "FX1_API_STATE_DIR"
 _CORS_EXPOSE_HEADERS = [
     "ETag",
     "Location",
+    "Openai-Processing-Ms",
     "Retry-After",
     "X-Fx1-Api-Version",
     "X-Fx1-Completion-Id",
@@ -220,6 +260,9 @@ _CORS_EXPOSE_HEADERS = [
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
     "X-RateLimit-Reset",
+    "X-RateLimit-Limit-Requests",
+    "X-RateLimit-Remaining-Requests",
+    "X-RateLimit-Reset-Requests",
     "X-Request-ID",
 ]
 _CORS_ALLOW_HEADERS = [
@@ -268,6 +311,24 @@ _DECLARED_COMMON_HEADERS: dict[str, dict[str, Any]] = {
     "Referrer-Policy": {
         "schema": {"type": "string"},
         "description": "Always `no-referrer`.",
+    },
+    "Openai-Processing-Ms": {
+        "schema": {"type": "integer"},
+        "description": "Server-side wall-clock milliseconds for the request — the "
+        "OpenAI-convention tracing header, present on every response.",
+    },
+    "X-RateLimit-Limit-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Managed-key rpm window size — present only on responses "
+        "authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+    },
+    "X-RateLimit-Remaining-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Requests left in the key's fixed 60 s window after this response.",
+    },
+    "X-RateLimit-Reset-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Seconds until the key's rpm window reopens.",
     },
 }
 _DECLARED_RATELIMIT_HEADERS: dict[str, dict[str, Any]] = {
@@ -332,6 +393,10 @@ _STATUS_CODES = {
     501: "not_implemented",
     503: "unavailable",
 }
+
+
+_MSG_CALLBACK_NEEDS_URL = "callback_secret requires callback_url"
+_MSG_LIMIT_RANGE = "limit must be 1..100"
 
 
 class ApiError(HTTPException):
@@ -421,7 +486,7 @@ class HarnessRunRequest(_Model):
     @model_validator(mode="after")
     def _callback_secret_needs_url(self) -> HarnessRunRequest:
         if self.callback_secret is not None and not self.callback_url:
-            raise ValueError("callback_secret requires callback_url")
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
         return self
 
 
@@ -544,6 +609,8 @@ def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams
         reasoning_effort=body.reasoning_effort,
         service_tier=body.service_tier,
         prompt_cache_key=body.prompt_cache_key,
+        prompt_cache_retention=body.prompt_cache_retention,
+        verbosity=body.verbosity,
         user=body.user,
     )
 
@@ -585,6 +652,8 @@ class CompleteRequest(_Model):
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
     # Agent-loop tool context — the OpenAI tool-calling surface on the
@@ -707,6 +776,8 @@ class CompleteBatchRequest(_Model):
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
 
@@ -887,7 +958,7 @@ class EvalSubmitRequest(_Model):
         if self.judge_backend is not None and not suite_accepts_judge(self.suite):
             raise ValueError(f"suite '{self.suite}' takes no judge")
         if self.callback_secret is not None and not self.callback_url:
-            raise ValueError("callback_secret requires callback_url")
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
         return self
 
 
@@ -905,6 +976,214 @@ class EvalListResponse(_Model):
 
     records: list[EvalRecord]
     total: int
+
+
+# ---- /v1/evals — the OpenAI Evals-shaped spec/run surface -------------------
+#
+# OpenAI's evals API separates the eval (a named container declaring the
+# datasource shape + grading criteria) from its runs (executions against
+# a model). ``data_source_config.item_schema`` is the harness twin of the
+# submission knobs — validated fail-closed at spec create so a bad spec
+# can never exist; credentials never live on a spec (BYOK blocks attach
+# to the run body only — the spec is stored state and must stay
+# export-safe).
+
+
+class EvalSpecCriterion(_Model):
+    """One declared testing criterion — grader kwargs ride ``extra`` (the
+    suite's own graders are the measurements; criteria are declarative)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str = Field(min_length=1, max_length=255)
+    type: str | None = None
+
+
+class EvalSpecDataSource(_Model):
+    """``data_source_config`` — custom type + the validated item_schema."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["custom"]
+    item_schema: EvalSpecItemSchema
+    include_sample_schema: bool | None = None
+
+
+class EvalSpecCreate(_Model):
+    """``POST /v1/evals`` body — name + config + criteria + metadata."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=255)
+    data_source_config: EvalSpecDataSource
+    testing_criteria: list[EvalSpecCriterion] = Field(default_factory=list, max_length=64)
+    metadata: dict[str, str] | None = None
+
+
+class EvalSpecUpdate(_Model):
+    """``POST /v1/evals/{id}`` — metadata/name edits; the datasource is
+    frozen (a spec's declared shape is evidence once runs bind to it)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _some_field(self) -> EvalSpecUpdate:
+        if self.name is None and self.metadata is None:
+            raise ValueError("update must carry name or metadata")
+        return self
+
+
+class EvalSpecWire(_Model):
+    """The OpenAI ``eval`` object."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval"] = "eval"
+    name: str
+    data_source_config: dict[str, Any]
+    testing_criteria: list[dict[str, Any]]
+    metadata: dict[str, str]
+    created_at: int
+
+
+class EvalSpecPage(_Model):
+    """``{object:'list', data:[eval], has_more}`` — the OpenAI list shape."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalSpecWire]
+    has_more: bool
+
+
+class EvalSpecDeleted(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.deleted"] = "eval.deleted"
+    deleted: Literal[True] = True
+
+
+class EvalRunDataSource(_Model):
+    """Optional run-time overrides on the spec's item_schema."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["custom"] = "custom"
+    source: dict[str, Any] | None = None
+
+
+class EvalRunCreate(_Model):
+    """``POST /v1/evals/{id}/runs`` — ``model`` is the eval target: a
+    backend link name (``hosted_k3``/``local_fx1``/``byok``), the base
+    ``fx1``, or a registered ``ft:`` name (resolves to local_fx1 at the
+    card's checkpoint — unregistered names fail closed). ``byok``
+    carries the credentials for a byok link — never stored on the spec
+    or record."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(min_length=1, max_length=512)
+    data_source: EvalRunDataSource | None = None
+    byok: ByokOverride | None = None
+    judge_byok: ByokOverride | None = None
+    metadata: dict[str, str] | None = None
+    callback_url: str | None = None
+    callback_secret: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _run_callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _run_valid(self) -> EvalRunCreate:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError(_MSG_CALLBACK_NEEDS_URL)
+        return self
+
+
+class EvalRunCounts(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int
+    passed: int
+    failed: int
+    errored: int
+
+
+class EvalRunError(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class EvalRunObject(_Model):
+    """The OpenAI ``eval.run`` object over the record."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run"] = "eval.run"
+    eval_id: str | None
+    model: str
+    status: str
+    created_at: int
+    suite: str
+    seed: int
+    backend: str
+    result_counts: EvalRunCounts | None = None
+    per_testing_criteria_results: list[dict[str, Any]] = []
+    error: EvalRunError | None = None
+    receipt_url: str
+
+
+class EvalRunPage(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalRunObject]
+    has_more: bool
+
+
+class EvalOutputItem(_Model):
+    """One per-task verdict row — ``datasource_item`` is the suite's raw
+    report row, served verbatim."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run.output_item"] = "eval.run.output_item"
+    run_id: str
+    eval_id: str | None
+    created_at: int
+    status: Literal["pass", "fail"]
+    datasource_item_id: str
+    datasource_item: dict[str, Any]
+    results: list[dict[str, Any]]
+
+
+class EvalOutputItemPage(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalOutputItem]
+    has_more: bool
+    first_id: str | None = None
+    last_id: str | None = None
+
+
+class EvalRunDeleted(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run.deleted"] = "eval.run.deleted"
+    deleted: Literal[True] = True
 
 
 class CompleteBatchItem(_Model):
@@ -958,11 +1237,83 @@ class CompletionRecord(_Model):
     # pairs, when declared. Evidence fields, never returned to the model.
     user: str | None = None
     metadata: dict[str, str] | None = None
+    # Which credential made the call: ``"env"`` for the bootstrap
+    # FX1_API_KEY, the managed key's sha256 fingerprint, or ``None`` on
+    # the unauthenticated loopback-dev surface. A fingerprint is not a
+    # secret — it cannot authenticate.
+    key_id: str | None = None
 
 
 class CompletionListResponse(_Model):
     items: list[CompletionRecord]
     count: int
+
+
+class ApiKeyCreateRequest(_Model):
+    name: str | None = Field(default=None, max_length=128)
+    # admin keys may themselves manage keys — the bootstrap credential
+    # mints the first admin key so an env-key-less deployment keeps a
+    # control plane after provisioning turns auth on.
+    admin: bool = False
+    # Declared per-key policy, journaled at mint: rpm bounds the key to
+    # a fixed 60 s request window (over-limit answers 429 + Retry-After);
+    # ttl_s bakes an expiry — a dead credential fails closed like a
+    # revoked one.
+    rpm: int | None = Field(default=None, ge=1, le=1_000_000)
+    ttl_s: float | None = Field(default=None, gt=0, le=315_576_000)
+
+
+class ApiKeyMintResponse(_Model):
+    """Mint response — the only place the raw key ever appears."""
+
+    id: str
+    object: Literal["key"] = "key"
+    name: str | None
+    prefix: str
+    admin: bool
+    rpm: int | None
+    expires_at: float | None
+    created_at: float
+    key: str
+
+
+class ApiKeyRecordModel(_Model):
+    """The wire view of a managed key — fingerprint + metadata only;
+    the sha256 and raw secret never leave the store."""
+
+    id: str
+    object: Literal["key"] = "key"
+    name: str | None
+    prefix: str
+    admin: bool
+    rpm: int | None
+    expires_at: float | None
+    created_at: float
+    enabled: bool
+    revoked_at: float | None
+    uses: int
+    last_used_at: float | None
+
+
+class ApiKeyListResponse(_Model):
+    object: Literal["list"] = "list"
+    data: list[ApiKeyRecordModel]
+
+
+def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
+    return ApiKeyRecordModel(
+        id=rec["key_id"],
+        name=rec["name"],
+        prefix=rec["prefix"],
+        admin=bool(rec.get("admin")),
+        rpm=rec.get("rpm"),
+        expires_at=rec.get("expires_at"),
+        created_at=rec["created_at"],
+        enabled=rec["enabled"],
+        revoked_at=rec["revoked_at"],
+        uses=rec["uses"],
+        last_used_at=rec["last_used_at"],
+    )
 
 
 class ReceiptIndexItem(_Model):
@@ -1303,13 +1654,17 @@ def _responses_sse(
     created: int | None = None,
     skip: int = 0,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    final_status: str = "completed",
+    incomplete_details: dict[str, Any] | None = None,
 ) -> Iterator[str]:
     """Serialize ``openai_response_events`` into SSE frames —
     ``event:`` + ``id:`` + ``data:`` per frame, ``id`` equal to the
     frame index so ``Last-Event-ID`` resume works identically to the
     chat-completions stream. No ``[DONE]`` marker — ``response.completed``
-    is the terminal event."""
+    (or ``response.incomplete`` on a truncated turn) is the terminal
+    event."""
 
     def _frame(event: str, payload: dict[str, Any], seq: int) -> str:
         return f"event: {event}\nid: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
@@ -1324,7 +1679,10 @@ def _responses_sse(
             usage=usage,
             created=created,
             call_items=call_items,
+            search_items=search_items,
             logprobs=logprobs,
+            final_status=final_status,
+            incomplete_details=incomplete_details,
         )
     ):
         if seq >= skip:
@@ -1579,7 +1937,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.post(
         "/receipts/verify",
-        response_model=ReceiptVerifyResponse,
         tags=["receipts"],
         operation_id="verify_receipt",
     )
@@ -1598,7 +1955,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.post(
         "/receipts/verify/batch",
-        response_model=ReceiptVerifyBatchResponse,
         tags=["receipts"],
         operation_id="verify_receipts_batch",
     )
@@ -1644,7 +2000,6 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
 
     @app.get(
         "/receipts",
-        response_model=ReceiptIndexResponse,
         tags=["receipts"],
         operation_id="receipts_index",
     )
@@ -1808,11 +2163,7 @@ def _mount_job_routes(
             raise ApiError(404, f"unknown job_id {job_id!r}")
         return job
 
-    @app.get(
-        "/harness/jobs/{job_id}/receipt",
-        tags=["jobs"],
-        operation_id="job_receipt",
-    )
+    @app.get("/harness/jobs/{job_id}/receipt", tags=["jobs"], operation_id="job_receipt")
     def job_receipt(job_id: str) -> dict[str, Any]:
         """Export the job's ledger record as a sealed
         ``fx1_job_record.v1`` document — the terminal ``result`` embeds
@@ -1827,7 +2178,6 @@ def _mount_job_routes(
 
     @app.delete(
         "/harness/jobs/{job_id}",
-        response_model=JobStatusResponse,
         tags=["jobs"],
         operation_id="cancel_job",
     )
@@ -2510,13 +2860,17 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
+    elapsed_ms = (time.monotonic() - started) * 1000
+    # OpenAI's server-side timing header — every response carries it so
+    # clients can split transport vs processing without trusting the log
+    response.headers["Openai-Processing-Ms"] = str(int(elapsed_ms))
     request.app.state.metrics.record(response.status_code)
     logger.info(
         "request method=%s path=%s status=%d elapsed_ms=%.1f rid=%s",
         request.method,
         request.url.path,
         response.status_code,
-        (time.monotonic() - started) * 1000,
+        elapsed_ms,
         request_id,
     )
     return response
@@ -2628,12 +2982,32 @@ class _CompletionLog:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, CompletionRecord] = {}
+        self._dropped = 0
 
     def append(self, rec: CompletionRecord) -> None:
+        # Attribute to the authenticated credential: the key fingerprint
+        # rides the request contextvar — record-stamping code never sees
+        # the Request. Records that set ``key_id`` explicitly (batch
+        # workers run in a thread pool where contextvars don't propagate)
+        # keep their own.
+        if rec.key_id is None:
+            ctx_key = _REQUEST_KEY_ID.get()
+            if ctx_key is not None:
+                rec = rec.model_copy(update={"key_id": ctx_key})
         with self._lock:
             self._items[rec.completion_id] = rec
             while len(self._items) > self._cap:
                 self._items.pop(next(iter(self._items)))
+                self._dropped += 1
+
+    @property
+    def cap(self) -> int:
+        return self._cap
+
+    @property
+    def dropped(self) -> int:
+        with self._lock:
+            return self._dropped
 
     def get(self, completion_id: str) -> CompletionRecord | None:
         with self._lock:
@@ -2645,6 +3019,10 @@ class _CompletionLog:
         if backend is not None:
             items = [r for r in items if r.backend == backend]
         return items[:limit]
+
+    def all(self, backend: str | None = None) -> list[CompletionRecord]:
+        """Every retained record — the aggregation view (no limit)."""
+        return self.latest(self._cap, backend)
 
 
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
@@ -2749,6 +3127,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     jobs_executor: ThreadPoolExecutor,
     file_store: _FileStore,
     batch_store: _BatchStore,
+    upload_store: UploadStore,
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
@@ -2757,6 +3136,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ft_dir: Path,
     bg_cancel: dict[str, threading.Event],
     conv_store: OpenAIEnvelopeStore,
+    eval_spec_store: EvalSpecStore,
+    vs_store: VectorStoreStore,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -3006,11 +3387,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(404, f"unknown eval_id {eval_id!r}")
         return rec
 
-    @app.get(
-        "/harness/evals/{eval_id}/receipt",
-        tags=["evals"],
-        operation_id="eval_receipt",
-    )
+    @app.get("/harness/evals/{eval_id}/receipt", tags=["evals"], operation_id="eval_receipt")
     def eval_receipt(eval_id: str) -> dict[str, Any]:
         """Export the eval record as a sealed ``fx1_eval_record.v1``
         document — terminal records only: a still-running eval's receipt
@@ -3029,7 +3406,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/harness/evals/{eval_id}/diff/{candidate_id}",
-        response_model=EvalDiff,
         tags=["evals"],
         operation_id="diff_evals",
     )
@@ -3056,7 +3432,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/harness/evals/{eval_id}",
-        response_model=EvalRecord,
         tags=["evals"],
         operation_id="cancel_eval",
     )
@@ -3071,6 +3446,258 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(409, f"eval {eval_id!r} is {outcome}")
         _deliver_callback(rec)  # cancelled is terminal — fire the webhook
         return rec
+
+    # ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------
+
+    def _spec_or_404(eval_id: str) -> EvalSpec:
+        spec = eval_spec_store.get(eval_id)
+        if spec is None:
+            raise ApiError(404, f"eval '{eval_id}' not found", code="eval_not_found")
+        return spec
+
+    def _run_or_404(eval_id: str, run_id: str) -> EvalRecord:
+        bare = run_id.removeprefix("evalrun_")
+        rec = eval_store.get(bare)
+        if rec is None or rec.eval_spec != eval_id:
+            raise ApiError(404, f"run '{run_id}' not found", code="run_not_found")
+        return rec
+
+    def _run_model_backend(
+        model: str,
+    ) -> tuple[Literal["hosted_k3", "local_fx1", "byok"], str | None]:
+        """``model`` → (backend, checkpoint_dir): link names pass through;
+        ``fx1`` is the base checkpoint; ``ft:<name>`` resolves through the
+        model-card registry to its checkpoint (unregistered fails closed)."""
+        if model in ("hosted_k3", "local_fx1", "byok"):
+            return cast(Literal["hosted_k3", "local_fx1", "byok"], model), None
+        if model == "fx1":
+            return "local_fx1", None
+        if model.startswith("ft:"):
+            ckpt = ft_store.checkpoint_for(model)
+            if ckpt is None:
+                raise ApiError(404, f"model '{model}' not found", code="model_not_found")
+            return "local_fx1", ckpt
+        raise ApiError(400, f"unknown eval model {model!r}", code="invalid_request")
+
+    @app.post(
+        "/v1/evals",
+        status_code=201,
+        operation_id="createEval",
+        tags=["evals"],
+    )
+    def eval_spec_create(body: EvalSpecCreate) -> EvalSpecWire:
+        spec = EvalSpec(
+            spec_id=f"eval_{uuid.uuid4().hex[:24]}",
+            name=body.name,
+            data_source_config=body.data_source_config.model_dump(exclude_none=True),
+            testing_criteria=[c.model_dump(exclude_none=True) for c in body.testing_criteria],
+            metadata=body.metadata or {},
+            created_at=time.time(),
+        )
+        eval_spec_store.put(spec)
+        return EvalSpecWire.model_validate(spec_wire(spec))
+
+    @app.get("/v1/evals", operation_id="listEvals", tags=["evals"])
+    def eval_spec_list(limit: int = 20, after: str | None = None) -> EvalSpecPage:
+        if not 1 <= limit <= 100:
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
+        page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        return EvalSpecPage(
+            data=[EvalSpecWire.model_validate(spec_wire(s)) for s in page], has_more=more
+        )
+
+    @app.get("/v1/evals/{eval_id}", operation_id="getEval", tags=["evals"])
+    def eval_spec_get(eval_id: str) -> EvalSpecWire:
+        return EvalSpecWire.model_validate(spec_wire(_spec_or_404(eval_id)))
+
+    @app.post(
+        "/v1/evals/{eval_id}",
+        operation_id="updateEval",
+        tags=["evals"],
+    )
+    def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
+        spec = _spec_or_404(eval_id)
+        if body.name is not None:
+            spec.name = body.name
+        if body.metadata is not None:
+            spec.metadata = body.metadata
+        eval_spec_store.update(spec)
+        return EvalSpecWire.model_validate(spec_wire(spec))
+
+    @app.delete(
+        "/v1/evals/{eval_id}",
+        operation_id="deleteEval",
+        tags=["evals"],
+    )
+    def eval_spec_delete(eval_id: str) -> EvalSpecDeleted:
+        spec = eval_spec_store.delete(eval_id)
+        if spec is None:
+            raise ApiError(404, f"eval '{eval_id}' not found", code="eval_not_found")
+        return EvalSpecDeleted(id=eval_id)
+
+    @app.post(
+        "/v1/evals/{eval_id}/runs",
+        response_model=EvalRunObject,
+        status_code=201,
+        operation_id="createEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_create(
+        eval_id: str,
+        body: EvalRunCreate,
+        response: Response,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> EvalRunObject:
+        """Submit a run under the spec: ``model`` resolves to the backend
+        chain head, the spec's item_schema supplies the suite knobs, and
+        ``data_source.source`` may override them per run. Same capacity
+        gates as ``/harness/evals`` (503 over_capacity / draining)."""
+        spec = _spec_or_404(eval_id)
+        schema = EvalSpecItemSchema.model_validate(spec.data_source_config["item_schema"])
+        if body.data_source is not None and body.data_source.source:
+            merged = {**schema.model_dump(), **body.data_source.source}
+            try:
+                schema = EvalSpecItemSchema.model_validate(merged)
+            except ValidationError as exc:
+                raise ApiError(
+                    422, f"data_source.source failed validation: {exc.errors()[0].get('msg')}"
+                ) from exc
+        backend, ckpt = _run_model_backend(body.model)
+        if body.judge_byok is not None and schema.judge_backend != "byok":
+            raise ApiError(422, "judge_byok applies only when judge_backend='byok'")
+        sub = EvalSubmitRequest(
+            suite=schema.suite,
+            backend=backend,
+            seed=schema.seed,
+            checkpoint_dir=ckpt or schema.checkpoint_dir,
+            byok=body.byok,
+            timeout_s=schema.timeout_s,
+            fallbacks=schema.fallbacks,
+            judge_backend=schema.judge_backend,
+            judge_byok=body.judge_byok,
+            callback_url=body.callback_url,
+            callback_secret=body.callback_secret,
+        )
+        # The run's dedupe namespace is scoped to the spec — the same
+        # Idempotency-Key under a different eval is a different run.
+        scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
+        submitted = _submit_eval(sub, scoped_key)
+        rec = eval_store.get(submitted.eval_id)
+        if rec is None:
+            raise ApiError(404, f"run '{submitted.eval_id}' evicted")
+        if not submitted.replayed:
+            rec.eval_spec = spec.spec_id
+            rec.eval_model = body.model
+            eval_store.mark(rec)
+        response.headers["Location"] = f"/v1/evals/{eval_id}/runs/{rec.eval_id}"
+        return EvalRunObject.model_validate(run_wire(rec))
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs",
+        response_model=EvalRunPage,
+        operation_id="listEvalRuns",
+        tags=["evals"],
+    )
+    def eval_run_list(eval_id: str, limit: int = 20, after: str | None = None) -> EvalRunPage:
+        _spec_or_404(eval_id)
+        if not 1 <= limit <= 100:
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
+        records, _total = eval_store.list_records(spec=eval_id)
+        if after is not None:
+            idx = next((i for i, r in enumerate(records) if r.eval_id == after), None)
+            if idx is None:
+                raise ApiError(
+                    400,
+                    f"cursor {after!r} is not a run id under {eval_id!r}",
+                    code="invalid_cursor",
+                )
+            records = records[idx + 1 :]
+        page = records[:limit]
+        more = len(records) > limit
+        return EvalRunPage(
+            data=[EvalRunObject.model_validate(run_wire(r)) for r in page[:limit]],
+            has_more=more,
+        )
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs/{run_id}",
+        operation_id="getEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_get(eval_id: str, run_id: str) -> EvalRunObject:
+        _spec_or_404(eval_id)
+        return EvalRunObject.model_validate(run_wire(_run_or_404(eval_id, run_id)))
+
+    @app.post(
+        "/v1/evals/{eval_id}/runs/{run_id}/cancel",
+        operation_id="cancelEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_cancel(eval_id: str, run_id: str) -> EvalRunObject:
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        cancelled, outcome = eval_store.cancel(rec.eval_id)
+        if cancelled is None or outcome != "cancelled":
+            raise ApiError(409, f"run '{run_id}' is {outcome}")
+        _deliver_callback(cancelled)
+        return EvalRunObject.model_validate(run_wire(cancelled))
+
+    @app.delete(
+        "/v1/evals/{eval_id}/runs/{run_id}",
+        operation_id="deleteEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_delete(eval_id: str, run_id: str) -> EvalRunDeleted:
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        if rec.status not in _TERMINAL_JOB_STATUS:
+            raise ApiError(409, f"run '{run_id}' is {rec.status} — only terminal runs delete")
+        eval_store.delete(rec.eval_id)
+        return EvalRunDeleted(id=run_id)
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs/{run_id}/output_items",
+        operation_id="listEvalRunOutputItems",
+        tags=["evals"],
+    )
+    def eval_run_items(
+        eval_id: str, run_id: str, limit: int = 20, after: str | None = None
+    ) -> EvalOutputItemPage:
+        """Per-task verdict rows from the completed run's report — the
+        suite's raw rows verbatim, paged by cursor (index-encoded ids)."""
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        if not 1 <= limit <= 100:
+            raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
+        tasks = (
+            report_task_items(rec.report)
+            if rec.status == "succeeded" and isinstance(rec.report, dict)
+            else []
+        )
+        start = 0
+        if after is not None:
+            m = re.fullmatch(r"evalrun_.+-(\d+)", after)
+            start = int(m.group(1)) + 1 if m else 0
+        page = tasks[start : start + limit]
+        items = [
+            EvalOutputItem(
+                id=f"evalrun_{rec.eval_id}-{start + i}",
+                run_id=f"evalrun_{rec.eval_id}",
+                eval_id=eval_id,
+                created_at=int(rec.finished_at or rec.created_at),
+                status="pass" if t["passed"] else "fail",
+                datasource_item_id=t["name"],
+                datasource_item=t["row"],
+                results=[{"name": rec.suite, "passed": t["passed"]}],
+            )
+            for i, t in enumerate(page)
+        ]
+        return EvalOutputItemPage(
+            data=items,
+            has_more=start + len(page) < len(tasks),
+            first_id=items[0].id if items else None,
+            last_id=items[-1].id if items else None,
+        )
 
     @app.post(
         "/harness/complete",
@@ -3633,6 +4260,98 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         return envelope, cid
 
+    # Server-side ``file_search`` — the tool's retrieval runs in the
+    # harness before the backend call. Hits inject as a developer-role
+    # context item prepended to the effective input (so the stored
+    # input_items transcript carries exactly what the model saw), and
+    # one ``file_search_call`` output item per tool spec records the
+    # run. Retrieval failures fail closed — a bogus store id is a
+    # client-visible 404, not a silent miss.
+    _RETRIEVAL_INJECT_BUDGET = 32768
+
+    def _file_search_turn(
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+    ) -> tuple[list[dict[str, Any]], OpenAIResponseRequest]:
+        fs_specs = [t for t in (body.tools or []) if t.type == "file_search"]
+        if not fs_specs:
+            return [], eff_body
+        query = response_query_text(eff_body.input)
+        if not query.strip():
+            raise OpenAICompatError(
+                "file_search needs a non-empty user message to query",
+                status=400,
+                code="empty_query",
+            )
+        include_results = bool(body.include and "file_search_call.results" in body.include)
+        search_items: list[dict[str, Any]] = []
+        inject_parts: list[str] = []
+        budget = _RETRIEVAL_INJECT_BUDGET
+        for spec in fs_specs:
+            if spec.type != "file_search":
+                continue
+            ro = spec.ranking_options or {}
+            threshold = ro.get("score_threshold")
+            try:
+                hits = vs_store.search(
+                    list(spec.vector_store_ids),
+                    query,
+                    max_results=spec.max_num_results or 10,
+                    filters=spec.filters,
+                    score_threshold=float(threshold) if threshold is not None else None,
+                )
+            except VectorStoreError as exc:
+                raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+            search_items.append(
+                file_search_call_item(
+                    queries=[query],
+                    results=[
+                        {
+                            "file_id": h["file_id"],
+                            "filename": h["filename"],
+                            "vector_store_id": h["vector_store_id"],
+                            "score": h["score"],
+                            "text": h["text"],
+                            "attributes": h["attributes"],
+                        }
+                        for h in hits
+                    ]
+                    if include_results
+                    else None,
+                )
+            )
+            for h in hits:
+                piece = f"[{h['file_id']} {h['filename']} score {h['score']:.3f}] {h['text']}"
+                if len(piece) <= budget:
+                    inject_parts.append(piece)
+                    budget -= len(piece)
+        if inject_parts:
+            ctx = "[file_search results — retrieved context]\n" + "\n\n".join(inject_parts)
+            prior: list[Any] = (
+                list(eff_body.input)
+                if isinstance(eff_body.input, list)
+                else [
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": str(eff_body.input)}],
+                    }
+                ]
+            )
+            eff_body = eff_body.model_copy(
+                update={
+                    "input": [
+                        {
+                            "type": "message",
+                            "role": "developer",
+                            "content": [{"type": "input_text", "text": ctx}],
+                        },
+                        *prior,
+                    ]
+                }
+            )
+        return search_items, eff_body
+
     def _openai_response_core(
         body: OpenAIResponseRequest,
         headers: Mapping[str, str],
@@ -3693,6 +4412,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                     }
                 )
+        search_items, eff_body = _file_search_turn(body, eff_body)
         creq = CompleteRequest(
             **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
         )
@@ -3702,7 +4422,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if out.content or not out.tool_calls:
             validate_response_format(response_text_format(body), out.content)
         cid = out.completion_id or uuid.uuid4().hex
-        call_items = openai_response_call_items(out.tool_calls or [])
+        # ``max_tool_calls`` truncates a turn that emitted over the cap —
+        # the response lands 'incomplete' with the bounded call list, never
+        # a silent drop
+        call_items, inc_details = response_cap_call_items(body, out.tool_calls or [])
         lp_arr = out.logprobs.get("content") if isinstance(out.logprobs, dict) else None
         envelope = openai_response_object(
             rid=rid or f"resp_{uuid.uuid4().hex}",
@@ -3711,9 +4434,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             body=body,
             model=out.model,
             usage=out.usage,
+            status=("incomplete" if inc_details else "completed"),
             created=created,
-            call_items=call_items or None,
+            call_items=call_items,
+            search_items=search_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
+            incomplete_details=inc_details,
         )
         if body.store is not False:
             envelope_store.put(
@@ -3904,7 +4630,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/models",
-        response_model=OpenAIModelList,
         tags=["openai"],
         operation_id="openai_list_models",
     )
@@ -3920,7 +4645,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.get(
         "/v1/models/{model}",
-        response_model=OpenAIModel,
         tags=["openai"],
         operation_id="openai_retrieve_model",
     )
@@ -3939,7 +4663,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.delete(
         "/v1/models/{model}",
-        response_model=OpenAIModelDelete,
         tags=["openai"],
         operation_id="openai_delete_model",
     )
@@ -4123,6 +4846,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``none``/``auto``/``required`` or ``{type: "function", name}``),
         ``parallel_tool_calls``, ``function_call``/``function_call_output``
         input items, and ``function_call`` output items are first-class —
+        ``max_tool_calls`` bounds the calls one response may carry; a turn
+        over the cap truncates and lands ``status: 'incomplete'`` with
+        ``incomplete_details.reason == 'max_tool_calls'`` (the stream's
+        terminal frame is ``response.incomplete``) —
         the same tool channel as ``/v1/chat/completions`` under its own
         grammar (a link without the channel answers 501). Same fail-closed
         rule as chat completions for the rest: ``truncation``/``include``
@@ -4186,12 +4913,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             env_items = [it for it in env["output"] if isinstance(it, dict)]
             env_msg = next((it for it in env_items if it.get("type") == "message"), None)
             env_calls = [it for it in env_items if it.get("type") == "function_call"]
+            env_search = [it for it in env_items if it.get("type") == "file_search_call"]
             env_parts = env_msg.get("content") if isinstance(env_msg, dict) else None
             env_lp = (
                 env_parts[0].get("logprobs")
                 if isinstance(env_parts, list) and env_parts and isinstance(env_parts[0], dict)
                 else None
             )
+            # ``None`` marks a prose turn; a calls turn truncated to zero
+            # by max_tool_calls replays as the empty list — never a
+            # phantom empty message item
+            if env_calls:
+                env_call_list: list[dict[str, Any]] | None = env_calls
+            elif env.get("status") == "incomplete" and env_msg is None:
+                env_call_list = []
+            else:
+                env_call_list = None
             return _responses_sse(
                 body,
                 content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
@@ -4201,8 +4938,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
-                call_items=env_calls or None,
+                call_items=env_call_list,
+                search_items=env_search or None,
                 logprobs=(env_lp if isinstance(env_lp, list) else None),
+                # a truncated turn replays its terminal event too —
+                # response.incomplete, not response.completed
+                final_status=("incomplete" if env.get("status") == "incomplete" else "completed"),
+                incomplete_details=env.get("incomplete_details"),
             )
 
         if replay is not None:
@@ -4392,6 +5134,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             None,
         )
         env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
+        env_search_items = [it for it in envelope["output"] if it.get("type") == "file_search_call"]
+        # ``None`` marks a prose turn; a calls turn truncated to zero
+        # replays the empty list, never a phantom message item
+        if env_call_items:
+            call_list: list[dict[str, Any]] | None = env_call_items
+        elif envelope.get("status") == "incomplete" and msg_item is None:
+            call_list = []
+        else:
+            call_list = None
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -4423,7 +5174,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
-                    call_items=env_call_items or None,
+                    call_items=call_list,
+                    search_items=env_search_items or None,
                     logprobs=(
                         msg_item["content"][0].get("logprobs")
                         if isinstance(msg_item, dict)
@@ -4432,6 +5184,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         and isinstance(msg_item["content"][0], dict)
                         else None
                     ),
+                    final_status=str(envelope.get("status") or "completed"),
+                    incomplete_details=envelope.get("incomplete_details"),
                 ),
                 media_type="text/event-stream",
                 headers=headers,
@@ -4462,14 +5216,38 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         return {"id": envelope_id, "object": f"{object_}.deleted", "deleted": True}
 
     @app.get(
-        "/v1/chat/completions/{completion_id}",
-        response_model=None,
-        tags=["openai"],
-        operation_id="openai_chat_retrieve",
+        "/v1/chat/completions/{completion_id}", tags=["openai"], operation_id="openai_chat_retrieve"
     )
     def openai_chat_retrieve(completion_id: str) -> dict[str, Any]:
         """Retrieve a stored chat completion (``chatcmpl-…``)."""
         return _stored_envelope(completion_id, object_="chat.completion")
+
+    @app.post(
+        "/v1/chat/completions/{completion_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_update",
+    )
+    def openai_chat_update(completion_id: str, body: OpenAIChatUpdate) -> dict[str, Any]:
+        """Update a stored chat completion's ``metadata`` (the only
+        mutable field — choices/usage are sealed at creation)."""
+        env = envelope_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise ApiError(
+                404,
+                f"{completion_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        updated = envelope_store.update_metadata(
+            completion_id, dict(body.metadata) if body.metadata is not None else {}
+        )
+        if updated is None:
+            raise ApiError(
+                404,
+                f"{completion_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        return {k: v for k, v in updated.items() if not k.startswith("_fx1_")}
 
     @app.delete(
         "/v1/chat/completions/{completion_id}",
@@ -4582,8 +5360,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_conversation_update",
     )
     def openai_conversation_update(
-        body: OpenAIConversationUpdate,
-        conversation_id: str,
+        body: OpenAIConversationUpdate, conversation_id: str
     ) -> dict[str, Any]:
         """Update a conversation — ``metadata`` replaces wholesale."""
         conv = _stored_conversation(conversation_id)
@@ -4623,11 +5400,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         items = conv_store.get_items(conversation_id, "items")
         try:
             return paged_item_list(
-                items or [],
-                limit=limit,
-                after=after,
-                before=before,
-                order=order,
+                items or [], limit=limit, after=after, before=before, order=order
             )
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
@@ -4639,8 +5412,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_conversation_items_add",
     )
     def openai_conversation_items_add(
-        body: OpenAIConversationItemsAdd,
-        conversation_id: str,
+        body: OpenAIConversationItemsAdd, conversation_id: str
     ) -> dict[str, Any]:
         """Append items to a conversation — returns the minted items as a
         list object. ``item_ids`` (alias-by-reference) is refused: items
@@ -4657,16 +5429,30 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             "has_more": False,
         }
 
+    @app.get(
+        "/v1/conversations/{conversation_id}/items/{item_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_item_retrieve",
+    )
+    def openai_conversation_item_retrieve(conversation_id: str, item_id: str) -> dict[str, Any]:
+        """One item by id — the same store the list/delete routes read.
+        A missing item (or wrong conversation) is a 404, never a lookup
+        into another conversation's namespace."""
+        _stored_conversation(conversation_id)
+        items = conv_store.get_items(conversation_id, "items") or []
+        for it in items:
+            if it.get("id") == item_id:
+                return it
+        raise ApiError(404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found")
+
     @app.delete(
         "/v1/conversations/{conversation_id}/items/{item_id}",
         response_model=None,
         tags=["openai"],
         operation_id="openai_conversation_item_delete",
     )
-    def openai_conversation_item_delete(
-        conversation_id: str,
-        item_id: str,
-    ) -> dict[str, Any]:
+    def openai_conversation_item_delete(conversation_id: str, item_id: str) -> dict[str, Any]:
         """Delete one item from a conversation — the conv object returns;
         a missing item id is a 404."""
         conv = _stored_conversation(conversation_id)
@@ -4674,12 +5460,325 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         kept = [it for it in items if it.get("id") != item_id]
         if len(kept) == len(items):
             raise ApiError(
-                404,
-                f"item {item_id!r} not found in {conversation_id!r}",
-                code="not_found",
+                404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
             )
         conv_store.put(conv, items={"items": kept})
         return conv
+
+    # --- /v1/vector_stores ---------------------------------------------------
+    # The OpenAI vector-store surface — a journaled lexical retrieval
+    # corpus over /v1/files. Searching a store is not a wire route; it
+    # runs inside ``file_search`` on /v1/responses.
+
+    def _vs_err(exc: VectorStoreError) -> ApiError:
+        return ApiError(exc.status, str(exc), code=exc.code)
+
+    @app.post(
+        "/v1/vector_stores",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_create",
+    )
+    def openai_vectorstore_create(body: OpenAIVectorStoreCreate) -> dict[str, Any]:
+        """Create a vector store — ``file_ids`` attach existing
+        ``file-*`` records; an unresolvable id fails the whole create
+        fail-closed (no partial store)."""
+        try:
+            return vs_store.create(
+                name=body.name,
+                metadata=body.metadata,
+                file_ids=tuple(body.file_ids or ()),
+                expires_after=body.expires_after,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_retrieve",
+    )
+    def openai_vectorstore_retrieve(vector_store_id: str) -> dict[str, Any]:
+        """Retrieve a vector store by id — ``vs_*``."""
+        try:
+            return vs_store.get(vector_store_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_update",
+    )
+    def openai_vectorstore_update(
+        vector_store_id: str, body: OpenAIVectorStoreUpdate
+    ) -> dict[str, Any]:
+        """Update a vector store — ``name``/``metadata`` replace
+        wholesale when present."""
+        try:
+            return vs_store.update(
+                vector_store_id,
+                name=body.name,
+                metadata=body.metadata,
+                expires_after=body.expires_after,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.delete(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_delete",
+    )
+    def openai_vectorstore_delete(vector_store_id: str) -> dict[str, Any]:
+        """Delete a vector store — member files' index entries and
+        chunks drop with it; the ``file-*`` records survive (the store
+        borrows, never owns)."""
+        try:
+            return vs_store.delete(vector_store_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_list",
+    )
+    def openai_vectorstore_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="desc"),
+    ) -> dict[str, Any]:
+        """List vector stores — the same ``after``/``before``/``order``
+        cursor contract as the other list surfaces."""
+        try:
+            return vs_store.list_stores(limit=limit, order=order, after=after, before=before)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_create",
+    )
+    def openai_vectorstore_file_create(
+        vector_store_id: str, body: OpenAIVectorStoreFileCreate
+    ) -> dict[str, Any]:
+        """Attach a ``file-*`` record — the file is decoded, chunked,
+        and indexed in-place; a file whose text is empty lands
+        ``status: failed`` with ``last_error``, never silently."""
+        try:
+            return vs_store.attach(
+                vector_store_id,
+                body.file_id,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_list",
+    )
+    def openai_vectorstore_file_list(
+        vector_store_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        filter: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """List a store's attached files — ``filter`` takes an OpenAI
+        status word (``in_progress|completed|cancelled|failed``)."""
+        try:
+            return vs_store.list_files(
+                vector_store_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_retrieve",
+    )
+    def openai_vectorstore_file_retrieve(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """Retrieve one attachment — status, chunk count, attributes."""
+        try:
+            return vs_store.get_file(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.delete(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_delete",
+    )
+    def openai_vectorstore_file_delete(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """Detach a file — its chunks leave the index; the underlying
+        ``file-*`` record survives."""
+        try:
+            return vs_store.detach(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}/content",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_content",
+    )
+    def openai_vectorstore_file_content(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """The stored text of one attachment — a
+        ``vector_store.file_content.page`` list of ``{type: 'text'}``
+        parts (the index holds the decoded text, not raw bytes)."""
+        try:
+            return vs_store.file_content(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/search",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_search",
+    )
+    def openai_vectorstore_search(
+        vector_store_id: str, body: OpenAIVectorStoreSearch
+    ) -> dict[str, Any]:
+        """Direct store search — OpenAI's ``vector_stores.search``: the
+        ranked hits without spending a response turn. ``query`` may be a
+        string or list of strings (joined); ``filters`` evaluate against
+        file attributes; ``ranking_options.score_threshold`` bounds the
+        cosine floor."""
+        query = body.query if isinstance(body.query, str) else " ".join(str(q) for q in body.query)
+        ro = body.ranking_options or {}
+        try:
+            hits = vs_store.search(
+                [vector_store_id],
+                query,
+                max_results=body.max_num_results or 10,
+                filters=body.filters,
+                score_threshold=ro.get("score_threshold"),
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+        return {
+            "object": "vector_store.search_results.page",
+            "search_query": query,
+            "data": [
+                {
+                    "file_id": h["file_id"],
+                    "filename": h["filename"],
+                    "score": h["score"],
+                    "attributes": h["attributes"],
+                    "content": [{"type": "text", "text": h["text"]}],
+                }
+                for h in hits
+            ],
+            "has_more": False,
+            "next_page": None,
+        }
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/file_batches",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_create",
+    )
+    def openai_vectorstore_file_batch_create(
+        vector_store_id: str, body: OpenAIVectorStoreFileBatchCreate
+    ) -> dict[str, Any]:
+        """Attach many ``file-*`` records in one call — the OpenAI
+        ``vector_store.files_batch`` surface. Members attach
+        synchronously; per-file refusals (missing, already attached,
+        oversized, store full) count ``failed`` with ``last_error``,
+        never abort the batch. Status is terminal at return."""
+        try:
+            return vs_store.file_batch_create(
+                vector_store_id,
+                body.file_ids,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_retrieve",
+    )
+    def openai_vectorstore_file_batch_retrieve(
+        vector_store_id: str, batch_id: str
+    ) -> dict[str, Any]:
+        """Retrieve one ``vsfb_*`` batch — standing status + counts."""
+        try:
+            return vs_store.file_batch_get(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_cancel",
+    )
+    def openai_vectorstore_file_batch_cancel(vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """Cancel a batch — members attach synchronously at create so a
+        batch is always terminal; the 409 reports the standing status
+        rather than faking a mid-flight window."""
+        try:
+            return vs_store.file_batch_cancel(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_files",
+    )
+    def openai_vectorstore_file_batch_files(
+        vector_store_id: str,
+        batch_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        filter: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """List a batch's per-file verdicts — frozen at processing time,
+        ``filter`` takes an OpenAI status word."""
+        try:
+            return vs_store.file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
 
     def _request_items(
         envelope_id: str,
@@ -4698,13 +5797,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if items is None:
             raise ApiError(404, f"{envelope_id!r} not found", code="not_found")
         try:
-            return paged_item_list(
-                items,
-                limit=limit,
-                after=after,
-                before=before,
-                order=order,
-            )
+            return paged_item_list(items, limit=limit, after=after, before=before, order=order)
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
@@ -4847,8 +5940,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             obj = batch_line_body(line, batch.endpoint)
             if getattr(obj, "stream", False):
                 raise OpenAICompatError(
-                    "stream requests are not valid inside a batch",
-                    code="invalid_request",
+                    "stream requests are not valid inside a batch", code="invalid_request"
                 )
             if getattr(obj, "background", False):
                 raise OpenAICompatError(
@@ -5020,13 +6112,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_file_list",
     )
-    def openai_file_list() -> JSONResponse:
-        """Newest-first file listing."""
+    def openai_file_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: str = Query(default="desc"),
+        purpose: str | None = Query(default=None),
+    ) -> JSONResponse:
+        """Newest-first file listing — the shared cursor page shape
+        (``has_more`` + ``first_id``/``last_id``) so stock-SDK
+        auto-pagination terminates; ``purpose`` filters by the upload's
+        declared intent."""
+        if order not in ("asc", "desc"):
+            raise OpenAICompatError(
+                f"order must be 'asc' or 'desc', got {order!r}",
+                status=400,
+                code="invalid_cursor",
+            )
+        records = file_store.list()
+        if purpose is not None:
+            records = [r for r in records if r.purpose == purpose]
+        items = [file_object(r.model_dump()) for r in records]
+        # the store is newest-first — that IS desc; "asc" flips to
+        # oldest-first before the shared pager walks it
+        if order == "asc":
+            items.reverse()
         return JSONResponse(
-            {
-                "object": "list",
-                "data": [file_object(r.model_dump()) for r in file_store.list()],
-            }
+            paged_item_list(items, limit=limit, after=after, before=before, order="asc")
         )
 
     @app.get(
@@ -5066,6 +6178,101 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if rec is None:
             raise ApiError(404, f"file {file_id!r} not found", code="file_not_found")
         return JSONResponse({"id": file_id, "object": "file", "deleted": True})
+
+    # --- /v1/uploads ------------------------------------------------------
+    # Chunked upload surface: create an intent, add parts, complete into a
+    # /v1/files record. Same durability contract as files (journaled meta
+    # + blob parts under --state-dir). Parts are multipart `data` fields,
+    # bounded by the declared byte count — the file store's cap applies at
+    # create, so a completed upload can never exceed one file's budget.
+
+    def _upload_err(exc: UploadStoreError) -> ApiError:
+        return ApiError(exc.status, str(exc), code=exc.code)
+
+    @app.post(
+        "/v1/uploads",
+        tags=["openai"],
+        operation_id="openai_upload_create",
+    )
+    def openai_upload_create(body: OpenAIUploadCreateRequest) -> JSONResponse:
+        """Open an upload intent — parts land under ``.../parts`` until
+        ``complete`` assembles them into a file record."""
+        try:
+            validate_upload_intent(body.purpose, body.filename, OPENAI_FILE_PURPOSE_ACCEPT)
+            meta = upload_store.create(
+                purpose=body.purpose,
+                filename=body.filename,
+                nbytes=body.bytes,
+                mime_type=body.mime_type,
+            )
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(meta), status_code=200)
+
+    @app.post(
+        "/v1/uploads/{upload_id}/parts",
+        tags=["openai"],
+        operation_id="openai_upload_part",
+    )
+    async def openai_upload_part(
+        upload_id: str,
+        data: UploadFile | None = File(default=None),
+    ) -> JSONResponse:
+        """Add one part (multipart ``data`` field). Blob lands durable
+        before the journal names it."""
+        if data is None:
+            raise ApiError(400, "multipart field 'data' is required", code="invalid_request")
+        try:
+            part = upload_store.add_part(upload_id, await data.read())
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(part)
+
+    @app.post(
+        "/v1/uploads/{upload_id}/complete",
+        tags=["openai"],
+        operation_id="openai_upload_complete",
+    )
+    def openai_upload_complete(upload_id: str, body: OpenAIUploadCompleteRequest) -> JSONResponse:
+        """Assemble the declared parts into a ``file-`` record. The md5
+        check runs BEFORE the file mints so a checksum failure leaves no
+        orphan; the upload then transitions terminal."""
+        try:
+            content = upload_store.assemble(upload_id, body.part_ids)
+            meta = upload_store.get(upload_id)
+            if meta is None:  # unreachable — assemble raises first
+                raise UploadStoreError(404, "upload gone", "upload_not_found")
+            if body.md5 is not None and (
+                hashlib.md5(content, usedforsecurity=False).hexdigest() != body.md5.lower()
+            ):
+                raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
+            if len(content) != meta.nbytes:
+                raise UploadStoreError(
+                    400,
+                    f"assembled bytes {len(content)} != declared {meta.nbytes}",
+                    "upload_incomplete",
+                )
+            rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
+            done = upload_store.complete(
+                upload_id, body.part_ids, content=content, file_id=rec.file_id
+            )
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(done, file_obj=file_object(rec.model_dump())))
+
+    @app.post(
+        "/v1/uploads/{upload_id}/cancel",
+        tags=["openai"],
+        operation_id="openai_upload_cancel",
+    )
+    def openai_upload_cancel(upload_id: str) -> JSONResponse:
+        """Cancel a pending upload — replays 200 on an already-cancelled
+        record, 409 once completed."""
+        try:
+            meta = upload_store.cancel(upload_id)
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(meta))
 
     @app.post(
         "/v1/batches",
@@ -5262,6 +6469,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         sampling_fields = sampling_params.body_fields()
         usage_pre = getattr(backend, "total_usage", None)
         usage_pre = dict(usage_pre) if isinstance(usage_pre, dict) else None
+        # Key attribution must be captured here — worker threads in the
+        # pool do not inherit this request's contextvars.
+        req_key_id = _REQUEST_KEY_ID.get()
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
         # are per-slot verdicts: a gate refusal on one prompt does not lose
@@ -5294,6 +6504,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 at=time.time(),
                                 # usage is only honest at batch level (shared
                                 # endpoint attribution) — per-item stays None.
+                                key_id=req_key_id,
                                 error=err,
                                 error_class=cls,
                                 prompt_sha256=prompt_sha256,
@@ -5402,12 +6613,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             complete_batch_idem_store.put(key, body_fp, resp)
         return resp
 
-    @app.post(
-        "/harness/backends/{name}/probe",
-        response_model=BackendProbeResponse,
-        tags=["ops"],
-        operation_id="backend_probe",
-    )
+    @app.post("/harness/backends/{name}/probe", tags=["ops"], operation_id="backend_probe")
     def backend_probe(
         name: Literal["hosted_k3", "local_fx1", "byok"],
         body: BackendProbeRequest | None = None,
@@ -5582,6 +6788,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         mid-pipeline ends ``cancelled``, not ``failed``."""
         job: FTJob = entry.job
         try:
+            # a job paused while queued parks here — resume (or cancel,
+            # which also opens the gate) releases it
+            entry.resume.wait()
             if entry.cancel.is_set():
                 job.status = "cancelled"
                 job.finished_at = int(time.time())
@@ -5590,6 +6799,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             job.status = "running"
             ft_store.add_event(job.id, "info", "job started", None)
             ft_store.mark(entry)
+
+            def _pause_gate() -> bool:
+                """Block while paused; True iff a cancel landed parked."""
+                entry.resume.wait()
+                return entry.cancel.is_set()
+
+            # pause_gate is opt-in on the runner contract: runners that
+            # accept it park at stage boundaries; older runners simply
+            # can't pause mid-pipeline (queued pause still holds — the
+            # pre-start gate above is worker-side)
+            _runner_extra: dict[str, Any] = {}
+            try:
+                _sig = inspect.signature(ft_runner)
+                if "pause_gate" in _sig.parameters or any(
+                    p.kind is inspect.Parameter.VAR_KEYWORD for p in _sig.parameters.values()
+                ):
+                    _runner_extra["pause_gate"] = _pause_gate
+            except (TypeError, ValueError):  # pragma: no cover - C callables
+                _runner_extra["pause_gate"] = _pause_gate
             outcome = ft_runner(
                 spec,
                 emit=lambda level, msg, data=None: ft_store.add_event(
@@ -5599,10 +6827,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     data,
                 ),
                 should_cancel=entry.cancel.is_set,
+                **_runner_extra,
             )
             if entry.cancel.is_set():
+                # the cancel sweep can stamp the terminal status before the
+                # runner returns — read wide so the check isn't narrowed to
+                # the last in-scope assignment
+                status_now: str = job.status
+                already = status_now == "cancelled"
                 job.status = "cancelled"
-                ft_store.add_event(job.id, "info", "job cancelled", None)
+                if not already:
+                    ft_store.add_event(job.id, "info", "job cancelled", None)
             else:
                 for name, path in outcome.artifacts.items():
                     try:
@@ -5645,8 +6880,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
         except Exception as exc:  # noqa: BLE001 — a runner fault is job data
             if entry.cancel.is_set():
+                already = job.status == "cancelled"
                 job.status = "cancelled"
-                ft_store.add_event(job.id, "info", "job cancelled", None)
+                if not already:
+                    ft_store.add_event(job.id, "info", "job cancelled", None)
             else:
                 job.status = "failed"
                 job.error = FTJobError(
@@ -5664,12 +6901,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             metrics.release()
             inflight.release()
 
-    @app.post(
-        "/v1/fine_tuning/jobs",
-        response_model=FTJob,
-        tags=["openai"],
-        operation_id="create_finetune_job",
-    )
+    @app.post("/v1/fine_tuning/jobs", tags=["openai"], operation_id="create_finetune_job")
     def create_finetune_job(
         body: FTJobRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -5702,9 +6934,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         frec = file_store.get(body.training_file)
         if frec is None:
             raise ApiError(
-                404,
-                f"training file {body.training_file!r} not found",
-                code="file_not_found",
+                404, f"training file {body.training_file!r} not found", code="file_not_found"
             )
         if frec.purpose != "fine-tune":
             raise ApiError(
@@ -5815,8 +7045,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="list_finetune_jobs",
     )
     def list_finetune_jobs(
-        limit: int = Query(default=20, ge=1, le=100),
-        after: str | None = Query(default=None),
+        limit: int = Query(default=20, ge=1, le=100), after: str | None = Query(default=None)
     ) -> FTJobList:
         """Newest-first page; ``after`` is the exclusive id cursor."""
         jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
@@ -5836,7 +7065,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     @app.post(
         "/v1/fine_tuning/jobs/{job_id}/cancel",
-        response_model=FTJob,
         tags=["openai"],
         operation_id="cancel_finetune_job",
     )
@@ -5855,7 +7083,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "queued or running jobs can be cancelled",
                 code="job_terminal",
             )
-        if outcome == "queued":
+        if outcome in ("queued", "paused"):
             ft_store.add_event(job_id, "info", "job cancelled", None)
         else:
             ft_store.add_event(
@@ -5864,6 +7092,71 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "cancellation requested — takes effect at the next stage boundary",
                 None,
             )
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/pause",
+        tags=["openai"],
+        operation_id="pause_finetune_job",
+    )
+    def pause_finetune_job(job_id: str) -> FTJob:
+        """Cooperative pause — a queued job parks before starting; a
+        running one parks at the next pipeline-stage boundary (the gate
+        blocks inside the runner, so an in-flight trainer call is never
+        interrupted mid-write). ``paused`` is non-terminal: resume
+        restores, cancel still wins, drain still drains. Pausing a paused
+        job replays its record — idempotent."""
+        outcome = ft_store.request_pause(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_pause found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — only "
+                "queued or running jobs can be paused",
+                code="job_terminal",
+            )
+        if outcome == "running":
+            ft_store.add_event(
+                job_id,
+                "info",
+                "pause requested — takes effect at the next stage boundary",
+                None,
+            )
+        elif outcome == "queued":
+            ft_store.add_event(job_id, "info", "job paused — will not start until resumed", None)
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/resume",
+        tags=["openai"],
+        operation_id="resume_finetune_job",
+    )
+    def resume_finetune_job(job_id: str) -> FTJob:
+        """Resume a paused job — restores the status pause captured
+        (queued jobs re-queue, running jobs proceed from the boundary the
+        worker parked at). Resuming a non-paused job is a 409."""
+        outcome = ft_store.request_resume(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_resume found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — a terminal job cannot be resumed",
+                code="job_terminal",
+            )
+        if outcome == "not_paused":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is {entry.job.status}, not paused — "
+                "only paused jobs can be resumed",
+                code="job_not_paused",
+            )
+        ft_store.add_event(job_id, "info", "job resumed", None)
         return entry.job
 
     @app.get(
@@ -5908,6 +7201,78 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             last_id=items[-1].id if items else None,
             has_more=has_more,
         )
+
+
+def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
+    """OpenAI's standing rate-limit headers for a managed key with a
+    declared rpm window — empty for env/loopback auth or unwindowed
+    keys (no false scarcity)."""
+    if key_id in (None, "env"):
+        return {}
+    ws = key_store.window_state(key_id)
+    if ws is None:
+        return {}
+    return {
+        "X-RateLimit-Limit-Requests": str(ws[0]),
+        "X-RateLimit-Remaining-Requests": str(ws[1]),
+        "X-RateLimit-Reset-Requests": str(ws[2]),
+    }
+
+
+def _resolve_auth(
+    request: Request,
+    api_key: str | None,
+    key_store: ApiKeyStore,
+) -> tuple[str | None, bool] | JSONResponse:
+    """Resolve the request's credential → ``(key_id, admin)``, or the
+    refusal response.
+
+    - Public paths: ``(None, False)`` — no auth consumed.
+    - Auth enabled (env key set, or any managed key exists): the env key
+      resolves as ``("env", admin)``; a managed key resolves to
+      ``(key_id, admin_flag)`` — minted ``admin`` keys can manage keys
+      themselves; anything else 401s.
+    - Auth disabled: loopback resolves ``(None, admin=True)`` — the dev
+      surface is trusted and bootstraps key provisioning; non-loopback
+      403s.
+    """
+    if request.url.path in _PUBLIC_PATHS:
+        return (None, False)
+    if api_key or key_store.has_keys:
+        provided = request.headers.get("X-API-Key")
+        # OpenAI-shape clients authenticate with Authorization: Bearer
+        # — accept it on /v1 so stock SDKs work unmodified.
+        if not provided and is_openai_path(request.url.path):
+            auth_hdr = request.headers.get("Authorization", "")
+            if auth_hdr.startswith("Bearer "):
+                provided = auth_hdr[len("Bearer ") :]
+        if provided and api_key and hmac.compare_digest(provided, api_key):
+            return ("env", True)
+        if provided:
+            key_rec = key_store.authenticate(provided)
+            if key_rec is not None:
+                return (key_rec["key_id"], bool(key_rec.get("admin")))
+        content: dict[str, Any] = {
+            "detail": "invalid or missing X-API-Key",
+            "code": "unauthorized",
+        }
+        if is_openai_path(request.url.path):
+            content = openai_error_body("invalid or missing API key", 401, "unauthorized")
+        return JSONResponse(status_code=401, content=content)
+    host = (request.client.host if request.client else "") or ""
+    if host not in _LOOPBACK_HOSTS:
+        forbidden_body: dict[str, Any] = {
+            "detail": (
+                "FX1_API_KEY is unset; non-localhost clients are "
+                "refused. Set FX1_API_KEY and send X-API-Key, or "
+                "bind to 127.0.0.1 only."
+            ),
+            "code": "forbidden",
+        }
+        if is_openai_path(request.url.path):
+            forbidden_body = openai_error_body(str(forbidden_body["detail"]), 403, "forbidden")
+        return JSONResponse(status_code=403, content=forbidden_body)
+    return (None, True)
 
 
 def create_app(
@@ -6005,7 +7370,12 @@ def create_app(
     store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
     job_store = _JobStore(job_max, journal=_journal("jobs.jsonl"))
     eval_store = EvalStore(job_max, journal=_journal("evals.jsonl"))
+    eval_spec_store = EvalSpecStore(job_max, journal=_journal("eval_specs.jsonl"))
     file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
+    upload_store = UploadStore(file_max, file_bytes_max, state_dir=state_path)
+    key_store = ApiKeyStore(
+        journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
+    )
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
     # stores; the runner defaults to the real staged Pipeline (its own
@@ -6024,6 +7394,18 @@ def create_app(
     # them, ``conversation`` on a response joins one. Same bounded LRU
     # contract as the envelope store; items live in subitems.
     conv_store = OpenAIEnvelopeStore(store_max)
+    # Vector stores borrow file content through the reader closure — a
+    # deleted/oversized file fails the attach honestly rather than
+    # silently indexing nothing; journaled under state_dir like the
+    # other stores so a restart restores the corpus.
+
+    def _vs_file_reader(file_id: str) -> tuple[bytes, str] | None:
+        rec = file_store.get(file_id)
+        if rec is None:
+            return None
+        return bytes(rec.content), rec.filename
+
+    vs_store = VectorStoreStore(store_max, state_dir=state_path, file_reader=_vs_file_reader)
     # Cancel flags for background responses — a set event means the stored
     # envelope was flipped to ``cancelled`` and the worker must not
     # overwrite it with a terminal result.
@@ -6091,9 +7473,11 @@ def create_app(
     app.state.idem_store = idem_store
     app.state.job_store = job_store
     app.state.eval_store = eval_store
+    app.state.eval_spec_store = eval_spec_store
     app.state.file_store = file_store
     app.state.batch_store = batch_store
     app.state.ft_store = ft_store
+    app.state.vs_store = vs_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -6185,44 +7569,51 @@ def create_app(
                         )
                     response = JSONResponse(status_code=413, content=big_content)
                     return _finish(request, request_id, response, started)
-        if request.url.path in _PUBLIC_PATHS:
-            response = await call_next(request)
-        elif api_key:
-            provided = request.headers.get("X-API-Key")
-            # OpenAI-shape clients authenticate with Authorization: Bearer
-            # — accept it on /v1 so stock SDKs work unmodified.
-            if not provided and is_openai_path(request.url.path):
-                auth_hdr = request.headers.get("Authorization", "")
-                if auth_hdr.startswith("Bearer "):
-                    provided = auth_hdr[len("Bearer ") :]
-            if not provided or not hmac.compare_digest(provided, api_key):
-                content: dict[str, Any] = {
-                    "detail": "invalid or missing X-API-Key",
-                    "code": "unauthorized",
-                }
-                if is_openai_path(request.url.path):
-                    content = openai_error_body("invalid or missing API key", 401, "unauthorized")
-                response = JSONResponse(status_code=401, content=content)
-            else:
-                response = await call_next(request)
+        # Auth surface: ``FX1_API_KEY`` is the root credential (admin);
+        # managed keys from ``key_store`` additionally authenticate.
+        # ``request.state.admin`` gates the key-management routes — env
+        # key, or loopback dev mode (no env key and an empty store).
+        request.state.key_id = None
+        request.state.admin = False
+        try:
+            auth = _resolve_auth(request, api_key, key_store)
+        except KeyStoreError as exc:
+            # a managed key past its declared rpm refuses 429 — same
+            # fail-closed shape as the global limiter, keyed to the
+            # credential's own window; the budget headers still answer so
+            # a client learns its declared limit, not just the refusal
+            metrics.record_rate_limited()
+            wait_s = max(1, math.ceil(exc.retry_after or 1.0))
+            key_rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
+            key_rl_body: dict[str, Any] = {"detail": key_rl_msg, "code": exc.code}
+            if is_openai_path(request.url.path):
+                key_rl_body = openai_error_body(key_rl_msg, 429, exc.code)
+            over_headers = {"Retry-After": str(wait_s)}
+            over_headers.update(_key_budget_headers(key_store, exc.key_id))
+            response = JSONResponse(
+                status_code=429,
+                content=key_rl_body,
+                headers=over_headers,
+            )
+            return _finish(request, request_id, response, started)
+        if isinstance(auth, JSONResponse):
+            response = auth
         else:
-            host = (request.client.host if request.client else "") or ""
-            if host not in _LOOPBACK_HOSTS:
-                forbidden_body: dict[str, Any] = {
-                    "detail": (
-                        "FX1_API_KEY is unset; non-localhost clients are "
-                        "refused. Set FX1_API_KEY and send X-API-Key, or "
-                        "bind to 127.0.0.1 only."
-                    ),
-                    "code": "forbidden",
-                }
-                if is_openai_path(request.url.path):
-                    forbidden_body = openai_error_body(
-                        str(forbidden_body["detail"]), 403, "forbidden"
-                    )
-                response = JSONResponse(status_code=403, content=forbidden_body)
+            key_id, admin = auth
+            request.state.key_id = key_id
+            request.state.admin = admin
+            if key_id is not None:
+                ctx_token = _REQUEST_KEY_ID.set(key_id)
+                try:
+                    response = await call_next(request)
+                finally:
+                    _REQUEST_KEY_ID.reset(ctx_token)
             else:
                 response = await call_next(request)
+            # a managed key with a declared rpm window reports its
+            # standing budget on every answer (OpenAI header names) —
+            # env-key and loopback auth declare no window and get none
+            response.headers.update(_key_budget_headers(key_store, key_id))
         if rl_headers is not None:
             response.headers.update(rl_headers)
         return _finish(request, request_id, response, started)
@@ -6249,7 +7640,7 @@ def create_app(
             )
         return metrics.snapshot()
 
-    @app.get("/health", response_model=HealthResponse, tags=["ops"], operation_id="health")
+    @app.get("/health", tags=["ops"], operation_id="health")
     def health() -> HealthResponse:
         return HealthResponse(
             registered_commands=len(lab.list_commands()),
@@ -6257,7 +7648,7 @@ def create_app(
             draining=metrics.draining.is_set(),
         )
 
-    @app.get("/ready", response_model=ReadyResponse, tags=["ops"], operation_id="ready")
+    @app.get("/ready", tags=["ops"], operation_id="ready")
     def ready() -> ReadyResponse:
         """Kubernetes-style readiness: 200 while accepting work, 503 once
         drain is latched — the load balancer's signal to deregister the
@@ -6277,7 +7668,6 @@ def create_app(
 
     @app.get(
         "/harness/capabilities",
-        response_model=CapabilitiesResponse,
         tags=["ops"],
         operation_id="get_capabilities",
     )
@@ -6308,6 +7698,8 @@ def create_app(
                 "openai_logprobs": True,
                 "openai_embeddings": True,
                 "openai_moderations": True,
+                "openai_vector_stores": True,
+                "openai_file_search": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -6324,6 +7716,9 @@ def create_app(
                 "batch_max": float(batch_max),
                 "batch_line_max": float(batch_line_max),
                 "store_max": float(store_max),
+                "vs_store_max": float(vs_store.max_stores),
+                "vs_file_max": float(vs_store.max_files),
+                "vs_max_results": float(VS_MAX_RESULTS),
                 "job_batch_max": float(_JOB_BATCH_MAX),
                 "verify_batch_max": float(_VERIFY_BATCH_MAX),
                 "complete_batch_max": 64.0,
@@ -6410,6 +7805,117 @@ def create_app(
         if rec is None:
             raise ApiError(404, f"completion {completion_id!r} not in the log", code="not_found")
         return completion_record_receipt(rec.model_dump(mode="json"))
+
+    @app.get(
+        "/harness/usage",
+        response_model=UsageReport,
+        tags=["ops"],
+        operation_id="usage_report",
+    )
+    def usage_report(
+        backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None,
+        model: str | None = Query(default=None, max_length=256),
+        since: float | None = Query(default=None, ge=0.0),
+        until: float | None = Query(default=None, ge=0.0),
+        key_id: str | None = Query(default=None, max_length=64),
+    ) -> UsageReport:
+        """Token/request accounting over the retained completion records —
+        the billing/ops view. Totals plus per-backend/per-model splits;
+        `records_dropped`/`ring_cap` declare a truncated window, and the
+        model split keys absent models as ``(none)``. `since`/`until`
+        are unix-second bounds on the record timestamps; since>until is
+        a fail-closed 400."""
+        if since is not None and until is not None and since > until:
+            raise ApiError(400, "since must be <= until", code="bad_window")
+        return aggregate_usage(
+            completion_log.all(backend),
+            cap=completion_log.cap,
+            dropped=completion_log.dropped,
+            backend=backend,
+            model=model,
+            key_id=key_id,
+            since=since,
+            until=until,
+        )
+
+    def _require_admin(request: Request) -> None:
+        if not getattr(request.state, "admin", False):
+            raise ApiError(
+                403,
+                "key management requires the bootstrap credential",
+                code="admin_required",
+            )
+
+    @app.post(
+        "/harness/keys",
+        response_model=ApiKeyMintResponse,
+        status_code=201,
+        tags=["ops"],
+        operation_id="key_create",
+    )
+    def key_create(body: ApiKeyCreateRequest, request: Request) -> ApiKeyMintResponse:
+        """Mint a managed API key. The raw ``key`` is returned once here
+        and never stored — the store keeps only its sha256. Requires the
+        bootstrap credential (``FX1_API_KEY``) or loopback dev mode."""
+        _require_admin(request)
+        try:
+            raw, rec = key_store.mint(body.name, admin=body.admin, rpm=body.rpm, ttl_s=body.ttl_s)
+        except KeyStoreError as exc:
+            raise ApiError(400, str(exc), code=exc.code) from exc
+        return ApiKeyMintResponse(
+            id=rec["key_id"],
+            name=rec["name"],
+            prefix=rec["prefix"],
+            admin=bool(rec.get("admin")),
+            rpm=rec.get("rpm"),
+            expires_at=rec.get("expires_at"),
+            created_at=rec["created_at"],
+            key=raw,
+        )
+
+    @app.get(
+        "/harness/keys",
+        response_model=ApiKeyListResponse,
+        tags=["ops"],
+        operation_id="key_list",
+    )
+    def key_list(request: Request) -> ApiKeyListResponse:
+        """Every minted key's public fingerprint + metadata — never the
+        secret or its hash."""
+        _require_admin(request)
+        return ApiKeyListResponse(data=[_key_wire(r) for r in key_store.list()])
+
+    @app.get(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_get",
+    )
+    def key_get(key_id: str, request: Request) -> ApiKeyRecordModel:
+        """One key's record by its fingerprint id."""
+        _require_admin(request)
+        rec = key_store.get(key_id)
+        if rec is None:
+            raise ApiError(404, f"unknown key {key_id!r}", code="key_not_found")
+        return _key_wire(rec)
+
+    @app.delete(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_revoke",
+    )
+    def key_revoke(key_id: str, request: Request) -> ApiKeyRecordModel:
+        """Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
+        stays so the audit trail of which keys existed survives; auth
+        with it fails closed immediately after."""
+        _require_admin(request)
+        try:
+            rec = key_store.revoke(key_id)
+        except KeyStoreError as exc:
+            status = 404 if exc.code == "key_not_found" else 409
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        return _key_wire(rec)
 
     @app.post(
         "/harness/drain",
@@ -6556,6 +8062,7 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        upload_store=upload_store,
         ft_store=ft_store,
         ft_runner=ft_runner_eff,
         ft_dir=ft_work_root,
@@ -6564,6 +8071,8 @@ def create_app(
         file_bytes_max=file_bytes_max,
         bg_cancel=_bg_cancel,
         conv_store=conv_store,
+        eval_spec_store=eval_spec_store,
+        vs_store=vs_store,
     )
 
     _mount_receipt_routes(app, receipt_index)

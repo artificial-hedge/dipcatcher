@@ -116,7 +116,12 @@ response (`sampling`), the SSE `final` frame, and the `CompletionRecord`
 — the decode configuration is part of the sealed evidence. SDK
 `complete`/`complete_many`/`stream_complete` and `HarnessClient` take
 the same names as flat kwargs; the CLI takes
-`--temperature --top-p --max-tokens --seed`.
+`--temperature --top-p --max-tokens --seed`. Provider hints ride the
+same surfaces: `reasoning_effort`, `service_tier`, `verbosity`
+(`low`/`medium`/`high`), `prompt_cache_key` (≤128 chars), and
+`prompt_cache_retention` (`in-memory`/`24h`) — enums fail closed
+(422 on the wire, `ValueError` in-process) and the declared values
+land verbatim in `body_fields()` for BYOK links that support them.
 
 **Completion observability:** `GET /metrics` carries per-backend outcome
 counters (`fx1_complete_total{backend,outcome}`), a cumulative
@@ -132,13 +137,28 @@ The JSON view exposes the same data under `complete.<backend>`.
 **Per-call evidence:** every gated call (sync, stream, batch item —
 success or failure) lands in a bounded in-process log of 256 records.
 A record carries `completion_id`, backend, model, ok, `latency_ms`,
-timestamp, usage, error class, and sha256 hashes of the request
+timestamp, usage, error class, `key_id` (the caller's key fingerprint —
+`"env"` for the bootstrap credential, a managed-key id, null on
+loopback-dev), and sha256 hashes of the request
 messages and the pre-citation output — evidence handles, never
 content. The id returns on `CompleteResponse.completion_id`,
 per-item on batch results, on the stream's `final` frame, and as the
 `X-Fx1-Completion-Id` response header (idempotency replays echo the
 original id). Probes never log. In-process, `Fx1Harness.completions()`
 / `.completion(id)` return the same records.
+
+**Usage aggregation:** `GET /harness/usage` rolls the completion ring
+into a `UsageReport` — totals (requests/ok/errors/`usage_reported`,
+prompt/completion/total token sums, mean latency) plus `by_backend`,
+`by_model`, and `by_key` splits — `by_key` buckets calls under the
+managed-key fingerprint that made them (the env bootstrap credential
+lands under `"env"`, loopback-dev calls under `"(none)"`), with
+`?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters. The
+ring is bounded: `records_seen` counts only live records,
+`records_dropped` + `ring_cap` disclose evictions, and provider-
+specific counters (e.g. `cached_tokens`) land in `other_usage` rather
+than dropping silently. `since > until` fails closed 400. The
+in-process twin `Fx1Harness.usage()` aggregates the same way.
 
 **Response-side seal:** responses that carry `X-Fx1-Completion-Id` also
 carry `X-Fx1-Receipt-Sha256` — the `receipt_sha256` of the sealed
@@ -179,6 +199,11 @@ same digested shape the job record embeds.
 | `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
+| `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model`/`by_key` splits, `?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage [--key-id]` |
+| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?, rpm?, ttl_s?}`: `admin` keys may manage keys; `rpm` bounds the key to a fixed 60 s request window (over-limit → `429 rate_limited` + `Retry-After`) and every response to a rpm-declared key carries its standing budget as `X-RateLimit-Limit-Requests` / `X-RateLimit-Remaining-Requests` / `X-RateLimit-Reset-Requests` (OpenAI's header names — SDKs and dashboards read them unmodified; keys without `rpm`, the env credential, and loopback emit none — no false scarcity); `ttl_s` bakes an `expires_at` — a dead credential fails closed like a revoked one. Requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin] [--rpm] [--ttl-s]` |
+| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `rpm`, `expires_at`, `enabled`, `uses`, `last_used_at`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
+| `GET /harness/keys/{id}` | one key's record → `404 key_not_found`. `Fx1Harness.key_get` / `HarnessClient.key_get` / `fx1 harness key-get` |
+| `DELETE /harness/keys/{id}` | tombstone a key (`enabled:false` + `revoked_at`) — auth with it fails closed immediately; the record survives for audit. `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_revoke` / `HarnessClient.key_revoke` / `fx1 harness key-revoke` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |
@@ -209,6 +234,10 @@ same digested shape the job record embeds.
 | `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
 | `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
 | `DELETE /v1/files/{id}` | evict a stored file |
+| `POST /v1/uploads` | open a chunked-upload intent (`purpose`, `filename`, declared `bytes`, `mime_type`) → `upload_*` pending record — `Fx1Harness.upload_create` / `HarnessClient.upload_create` / `client.uploadCreate` / `fx1 harness upload` |
+| `POST /v1/uploads/{id}/parts` | multipart `data` field appends a part → `part_*` record; cumulative bytes may never exceed the declared total; parts on a terminal record are `409 upload_terminal` |
+| `POST /v1/uploads/{id}/complete` | assemble `part_ids` in the caller's order into a `file-*` record (optional `md5` checksum is verified pre-mint — a failed check mints no file and leaves the intent pending); `assembled == declared` enforced |
+| `POST /v1/uploads/{id}/cancel` | terminal cancel — replays 200 when already cancelled |
 | `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
@@ -217,8 +246,10 @@ same digested shape the job record embeds.
 | `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
 | `GET /v1/fine_tuning/jobs/{id}/checkpoints` | the model artifacts the job registered, oldest first (`?limit`, `?after=`); empty for a job that produced none, a deleted `ft:` name drops off |
 | `POST /v1/fine_tuning/jobs/{id}/cancel` | cooperative cancel — queued at once, running at the next stage boundary; terminal `409 job_terminal` |
+| `POST /v1/fine_tuning/jobs/{id}/pause` / `.../resume` | cooperative pause — queued parks pre-start, running parks at the next stage boundary; `paused` is non-terminal; `HarnessClient.pause_finetune_job`/`resume_finetune_job` / `fx1 harness ft-pause`/`ft-resume` |
 | `GET /v1/chat/completions` | list stored `chat.completion` envelopes, oldest first (`?limit≤100`, `?after`/`?before`/`?order`, `?model=`, `?metadata[k]=v` subset filter) — OpenAI's `chat.completions.list`; `Fx1Harness.openai_chat_list` / `HarnessClient.list_chat_completions` / `client.listChatCompletions` / `fx1 harness chat-list` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
+| `POST /v1/chat/completions/{id}` | update a stored completion — `metadata` replaces wholesale (≤16 pairs, keys ≤64 chars, values ≤512), choices/usage sealed; `Fx1Harness.openai_chat_update` / `HarnessClient.update_chat_completion` / `client.updateChatCompletion` / `fx1 harness chat-update` |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
 | `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
@@ -228,6 +259,26 @@ same digested shape the job record embeds.
 | `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
 | `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
 | `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
+| `POST /v1/vector_stores` | mint a `vs_*` retrieval store (`name`, `file_ids` seed, `metadata`, `expires_after` anchor policy) — `Fx1Harness.vector_store_create` / `HarnessClient.vector_store_create` / `client.vectorStoreCreate` / `fx1 harness vs-create` |
+| `GET` / `POST` / `DELETE` `/v1/vector_stores/{id}` | fetch / rename+remetadata+`expires_after` re-anchor / delete the store (delete detaches member files; the `file-*` records survive) |
+| `GET /v1/vector_stores` | newest-first page (`?limit≤100`, `?after`, `?before`, `?order`) — `fx1 harness vs-list` |
+| `POST /v1/vector_stores/{id}/files` | attach a `file-*` record (`attributes` string pairs ≤16, `chunking_strategy.static` overrides) → `vector_store.file`; a double-attach is `409 file_already_attached` — `fx1 harness vs-file-add` |
+| `GET /v1/vector_stores/{id}/files` | member page (`?limit`, `?after`, `?before`, `?order`, `?filter` in `in_progress|completed|cancelled|failed`) — bad filters fail closed `400 invalid_filters` |
+| `GET` / `DELETE` `/v1/vector_stores/{id}/files/{file_id}` | fetch / detach one member (`vector_store.file.deleted`) |
+| `GET /v1/vector_stores/{id}/files/{file_id}/content` | the stored decoded text as a `vector_store.file_content.page` of per-chunk `{type:"text",text}` parts — `fx1 harness vs-file-content` |
+| `POST /v1/vector_stores/{id}/search` | ranked hits without a response turn → `vector_store.search_results.page` (`query` string or list-joined, `max_num_results≤50`, `filters`, `ranking_options.score_threshold`; `rewrite_query`/non-`auto` rankers refused) — `Fx1Harness.vector_store_search` / `HarnessClient.vector_store_search` / `client.vectorStoreSearch` / `fx1 harness vs-search` |
+| `POST /v1/vector_stores/{id}/file_batches` | attach up to 500 `file-*` ids in one call → `vector_store.files_batch` (`file_ids` 1..500, shared `attributes`/`chunking_strategy`; members attach synchronously — per-file refusals count `failed` with `last_error`, never abort) — `Fx1Harness.vector_store_file_batch_create` / `HarnessClient.vector_store_file_batch_create` / `client.vectorStoreFileBatchCreate` / `fx1 harness vs-batch-create` |
+| `GET /v1/vector_stores/{id}/file_batches/{batch_id}` | the `vsfb_*` object — standing `status` + `file_counts` (`{in_progress,completed,cancelled,failed,total}`) |
+| `POST /v1/vector_stores/{id}/file_batches/{batch_id}/cancel` | batches are terminal at create, so this is always `409 file_batch_terminal` — honest, never a fake in-flight window |
+| `GET /v1/vector_stores/{id}/file_batches/{batch_id}/files` | the frozen per-file verdicts in request order (`?limit`, `?after`, `?before`, `?order`, `?filter` status word) |
+| `POST /v1/evals` | create an `eval` spec container (`name`, `data_source_config.item_schema` = suite knobs — credentials never on the spec) → `201`; `Fx1Harness.eval_spec_create` / `HarnessClient.eval_spec_create` / `client.evalSpecCreate` / `fx1 harness eval-spec-create` |
+| `GET /v1/evals` | newest-first spec page (`?limit≤100`, `?after=`); `Fx1Harness.eval_specs` / `HarnessClient.eval_specs` / `client.evalSpecs` / `fx1 harness eval-spec-list` |
+| `GET` / `POST` / `DELETE` `/v1/evals/{id}` | fetch / rename+remetadata / tombstone a spec — delete journals and orphans the `/v1` run subresources (records stay on `/harness/evals/{id}`) |
+| `POST /v1/evals/{id}/runs` | run the spec — `model` resolves to a backend (`ft:` names via the registry), `data_source.source` may override suite knobs per run, BYOK on the body; `201` + `Location` (bare id) + per-spec `Idempotency-Key` scope; `Fx1Harness.eval_run_create` / `HarnessClient.eval_run_create` / `client.evalRunCreate` / `fx1 harness eval-run` |
+| `GET /v1/evals/{id}/runs` / `.../{run_id}` | list the spec's runs / poll one (`result_counts` once `completed`, `per_testing_criteria_results: []` honest-empty) |
+| `POST /v1/evals/{id}/runs/{run_id}/cancel` | cooperative cancel of a queued run (`409` terminal); `HarnessClient.eval_run_cancel` / `client.evalRunCancel` / `fx1 harness eval-run-cancel` |
+| `DELETE /v1/evals/{id}/runs/{run_id}` | drop a terminal run's `eval.run` object (`{id, object:"eval.run", deleted:true}`, `409` non-terminal); the `/harness/evals` record survives |
+| `GET /v1/evals/{id}/runs/{run_id}/output_items` | per-task verdict rows verbatim (`?limit≤100`); `Fx1Harness.eval_run_items` / `HarnessClient.eval_run_output_items` / `client.evalRunOutputItems` / `fx1 harness eval-run-items` |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -306,8 +357,10 @@ to `GET /harness/completions/{id}` and its sealed
   sum of actual spend, and streams emit per-index frame groups;
   `presence_penalty`/`frequency_penalty` (±2) and `logit_bias`
   (token-id keys, ±100) are range-checked and forwarded verbatim;
-  `reasoning_effort`, `service_tier`, `prompt_cache_key`, and `user`
-  pass through as provider hints, and `user`/`metadata` (≤16 pairs)
+  `reasoning_effort`, `service_tier`, `prompt_cache_key`,
+  `prompt_cache_retention`, `verbosity`, and `user` pass through as
+  provider hints (enums fail closed 422), and `user`/`metadata`
+  (≤16 pairs)
   also stamp the call's audit-ledger record;
   `max_completion_tokens` is the OpenAI alias for `max_tokens` — a
   disagreeing pair is a 422, never a silent pick.
@@ -374,7 +427,9 @@ to `GET /harness/completions/{id}` and its sealed
   successful completions are pinned — a gate refusal re-executes on
   retry instead of replaying a cached error.
 - **Auth:** when `FX1_API_KEY` is set, `/v1` also accepts the OpenAI
-  `Authorization: Bearer` header in place of `X-API-Key`.
+  `Authorization: Bearer` header in place of `X-API-Key`. Managed
+  `fx1k_…` keys authenticate through both headers on `/v1` — stock
+  OpenAI SDKs work with either credential unmodified.
 
 Client-side: `HarnessClient.chat_completion` /
 `chat_completion_stream` / `list_models` / `retrieve_model` in Python;
@@ -383,7 +438,16 @@ Client-side: `HarnessClient.chat_completion` /
 `idempotency_key` /
 `idempotencyKey` and mark the call retryable for the built-in retry
 policy. Any OpenAI SDK works directly — point it at the harness
-`base_url` and use `model: "fx1"`.
+`base_url` and use `model: "fx1"`. The claim is measured, not
+asserted: `receipts/fx1_oai_sdk_audit.json`
+(`fx1.serve.oai_sdk_audit.oai_sdk_audit_bench`) drives the stock
+`openai` SDK — typed parsing, `async for` auto-pagination, SSE
+streams, typed error classes (`BadRequestError`/`ConflictError`/
+`NotFoundError`/`UnprocessableEntityError`) — through every `/v1`
+resource group: models, chat (incl. `store`+`list`), responses (incl.
+`background`+cancel+input_items), files+batches+fine-tuning,
+embeddings, moderations, uploads, evals, conversations, vector
+stores.
 
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed
@@ -416,7 +480,8 @@ same OpenAI error taxonomy:
   "output_text", …}]}], usage: {input_tokens, output_tokens,
   total_tokens} or null}` — plus request echoes (`temperature`,
   `top_p`, `max_output_tokens`, `metadata`, `instructions`,
-  `service_tier`, `reasoning`, `text`). A tool-call turn appends
+  `service_tier`, `reasoning`, `text`, `prompt_cache_key`,
+  `prompt_cache_retention`). A tool-call turn appends
   `{type: "function_call", call_id, name, arguments,
   status: "completed"}` items to `output` (a calls-only turn ships
   no message item).
@@ -432,6 +497,15 @@ same OpenAI error taxonomy:
   `tool_choice`/`parallel_tool_calls` without tools refuse 422,
   malformed `function_call`/`function_call_output` items refuse
   400.
+- **Tool-call cap:** `max_tool_calls` bounds the function calls one
+  response may carry — over the cap the emitted `output` truncates
+  at the bound and the response lands `status: "incomplete"` with
+  `incomplete_details: {"reason": "max_tool_calls"}` (OpenAI's own
+  truncation semantics — never a silent drop). A calls-only turn
+  capped at zero ships `output: []` (no phantom empty message); the
+  stream's terminal frame is `response.incomplete`; stored objects,
+  batch lines, and conversation appends keep the truncation. `ge=0`
+  validated (negative is 422).
 - **Logprobs channel:** `include: ["message.output_text.logprobs"]`
   is the only honored `include` member — it asks the provider for
   per-token scores, and `top_logprobs` (0–20) requires it. The
@@ -442,7 +516,10 @@ same OpenAI error taxonomy:
   `logprobs` field (that's the chat surface's name) refuse 422.
 - **Decode contract:** `max_output_tokens` maps to `max_tokens`;
   `reasoning.effort`, `service_tier`, `user`, `safety_identifier`,
-  `metadata` forward like their chat counterparts; `text.format`
+  `metadata`, `prompt_cache_key`, and `prompt_cache_retention`
+  forward like their chat counterparts (enums fail closed 422);
+  `text.verbosity` (`low`/`medium`/`high` — anything else is 422)
+  rides inside `text` and echoes verbatim. `text.format`
   is the same post-validated structured-output channel as
   `response_format` (`text` / `json_object` / `json_schema`, a
   violation is the same 502 `format_violation`).
@@ -566,7 +643,11 @@ artifact files.
 - **Artifacts:** each `FTJobOutcome.artifacts` entry is
   re-registered as a `purpose=fine-tune-result` file and listed in
   `result_files` — fetch bytes via `GET /v1/files/{id}/content`.
-- **Runner contract:** `FTJobRunner(spec, *, emit, should_cancel)`
+- **Runner contract:** `FTJobRunner(spec, *, emit, should_cancel, pause_gate)`
+  — `pause_gate` is optional on injected runners (the worker
+  introspects); `pause_gate()` blocks while the job is paused and
+  returns True when a cancel landed while parked — call it between
+  stages and return early on True to unwind to `cancelled`.
   — the default runner (`default_ft_runner`) executes the gated
   pipeline in-process (quality gate → baseline eval → train →
   candidate eval) and fails honestly (`status=failed`,
@@ -589,6 +670,20 @@ artifact files.
 - **Cancel:** `POST .../cancel` — queued jobs cancel at once;
   running jobs stop cooperatively when the runner's
   `should_cancel()` reports the flag (between stages).
+- **Pause/resume:** `POST .../pause` marks the job `paused`
+  (non-terminal): a queued job's worker parks at a pre-start gate —
+  no `job started` event until resumed; a running job's worker parks
+  inside `pause_gate()` at the next stage boundary — the hook is
+  opt-in on the runner contract (`FTJobRunner(..., pause_gate)`),
+  so a gate-free runner completes normally through a running-pause
+  and only queued pauses still hold. `POST .../resume` restores the
+  captured status (`queued` or `running`) and releases the gate.
+  Pausing a paused job replays its record — idempotent; pause/resume
+  on a terminal job is `409 job_terminal`, resume on a non-paused
+  job is `409 job_not_paused`. A paused job still honors cancel
+  (terminal write lands at once, the parked worker exits without a
+  duplicate event) and drain (a restart replays `paused` → `failed`
+  like every non-terminal state).
 - **Retry-safe:** `Idempotency-Key` dedups submission against the
   body fingerprint — a replay returns the same job record, a key
   reused under a different body is `409 idempotency_conflict`.
@@ -596,6 +691,9 @@ artifact files.
   runs the same runner contract in-process and synchronously — it
   returns the terminal record directly (no queue), and stores the
   record in the same `FTJobStore` for `finetune_job`/events reads.
+  Because the create is synchronous there is no pause window — the
+  SDK carries no `pause_finetune_job`; the verbs are wire-only
+  (`HarnessClient`/`client.pauseFineTuneJob`/`ft-pause`).
 
 ### Batches + files (`/v1/batches`, `/v1/files`)
 
@@ -673,16 +771,19 @@ per-endpoint request models and gate, `--backend`/`--checkpoint-dir`/
 `model <id>` expose the `/v1/models` inventory both ways — remote over
 the wire, or in-process where the `ft:` registry lists your own
 fine-tunes. `fx1 harness respond` (`/v1/responses` — JSON items arg,
-`--instructions`/`--format`/`--tools`/`--tool-choice`; `--stream` prints
+`--instructions`/`--format`/`--tools`/`--tool-choice`/
+`--max-tool-calls`/`--previous-response-id`/`--conversation`/
+`--background`/`--verbosity`/`--prompt-cache-key`/
+`--prompt-cache-retention`; `--stream` prints
 the Responses event stream's delta frames — token text and tool-call
 arguments — on either leg instead of the one-shot JSON object), `embed`
 (`/v1/embeddings` — repeatable input, `--encoding`/`--dimensions`), and
 `moderate` (`/v1/moderations` — the honesty gate as an OpenAI verdict,
 no backend needed) each run both legs: `--remote` over the wire or
-in-process through the SDK twin. `chat-get`/`chat-delete`/
+in-process through the SDK twin. `chat-get`/`chat-update`/`chat-delete`/
 `response-get`/`response-delete` cover the stored-object
-`GET`/`DELETE` routes (missing ids exit 2 — never a fabricated
-envelope), `fx1 harness score <text...>` scores through the
+`GET`/`POST`/`DELETE` routes (missing ids exit 2 — never a fabricated
+envelope; `chat-update --metadata` is a JSON object of string pairs), `fx1 harness score <text...>` scores through the
 reward contract with no model spend, `fx1 harness commands`
 lists the registry (`--role` filters; a bogus role exits 2 like
 the wire's 422), and `fx1 harness verify <dir>` posts the whole
@@ -730,12 +831,124 @@ in Python (`KeyError` on 404), `Fx1Harness.openai_chat_get` /
 `deleteChatCompletion` / `retrieveResponse` / `deleteResponse` in
 TS.
 
+### Vector stores + `file_search` (`/v1/vector_stores`)
+
+`/v1/vector_stores` is the server-side RAG surface: stores are
+journaled under `--state-dir` (`vector_stores.jsonl`, replayed on
+restart) and bounded (`FX1_API_STORE_MAX` bounds the store count —
+LRU-evicting the oldest at the cap; files per store, text bytes,
+chunks, and `vs_*` ids are fixed constants — oversized attaches
+fail closed). Attached `file-*` records are chunked (word windows
+with overlap) and indexed with a hashed bag-of-words + per-store
+idf — cosine ranking, no embedding service required.
+
+The `file_search` tool on `POST /v1/responses` searches them
+in-band:
+
+- `tools: [{"type": "file_search", "vector_store_ids": ["vs_…"]}]`
+  runs the user's latest turn as the query over the listed stores
+  (≤8 ids, `max_num_results ≤ 50`,
+  `ranking_options.score_threshold` ∈ [0,1] — violations are
+  fail-closed `422`/`400` before the model runs).
+- The call lands in `output` as a `file_search_call` item
+  *before* the assistant `message`; `include:
+  ["file_search_call.results"]` gates whether `results` carries
+  the ranked hits (`{file_id, filename, score, text}`) — absent
+  the flag, `results` is `null`.
+- The top hits are prepended to the model's context as one
+  `developer`-item (`[file_search results] …`, capped at a fixed
+  injection budget) so the gated pipeline sees the retrieval.
+- Streaming emits `response.output_item.added` →
+  `response.file_search_call.in_progress` → `.searching` →
+  `.completed` → `response.output_item.done` frames ahead of the
+  message deltas, and the `file_search_call` survives on the
+  stored/replayed envelope. Refed input items fold back into a
+  single `[prior file_search results]` system message.
+- `tool_choice: {"type": "file_search"}` forces the retrieval
+  call; any other `tool_choice`/`parallel_tool_calls` without a
+  `function` tool on the request is dropped rather than
+  mistranslated.
+
+`POST /v1/vector_stores/{id}/search` queries one store directly —
+the same ranked hits the tool turn would inject, returned as a
+`vector_store.search_results.page` (`{file_id, filename, score,
+attributes, content:[{type:text}]}` entries, `has_more:false`) —
+for callers that want retrieval without spending a response turn.
+`query` accepts a string or a list (joined on spaces);
+`max_num_results` (≤50), `filters` (the OpenAI comparison/
+condition schema — `{type: "eq", key, value}` leaves and
+`and`/`or` trees ≤4 deep), and
+`ranking_options.score_threshold` all behave exactly as on the
+tool spec. `rewrite_query` and any ranker other than `"auto"`
+are fail-closed `422`s — no silent query mutation.
+
+`POST /v1/vector_stores/{id}/file_batches` is the bulk-attach
+surface: `file_ids` (1..500, OpenAI's cap) attach one at a time
+through the same `attach` path as `…/files`, so a missing file,
+a double-attach, an oversized blob, or a full store counts
+`failed` with that refusal as the row's `last_error` — the
+batch never aborts on a bad member and never half-attaches.
+The batch object (`object: "vector_store.files_batch"`,
+`vsfb_*` id) reports `file_counts` and is terminal at return:
+`completed` when ≥1 member attached, `failed` when none did.
+`POST …/file_batches/{id}/cancel` therefore always answers
+`409 file_batch_terminal` — there is no fake in-flight window.
+`GET …/file_batches/{id}/files` pages the frozen per-file
+verdicts (`filter` accepts an OpenAI status word); the rows
+are the batch's record — a later `DELETE` of a member file
+doesn't rewrite history. Batches journal under `--state-dir`
+like the stores themselves and disappear with their store.
+
+Stores support OpenAI's standing-expiry policy:
+`expires_after: {"anchor": "last_active_at", "days": 1..365}`
+on create/update (any other anchor or bound fails closed
+`400 invalid_expires_after`). `last_active_at` bumps on every
+attach, batch create, and search, and `expires_at` re-anchors
+from it; once `now >= expires_at` the store reports
+`status: "expired"` and refuses *writes* — file attaches,
+batch creates, and search return `410 vector_store_expired` —
+while reads (`GET` store/files/content, `DELETE`) still
+resolve. An `expires_after` update re-anchors from the
+recorded `last_active_at`, which can revive an expired store
+honestly (no undelete semantics — `status` recomputes).
+Activity bumps journal as `vs_touch` lines so replay
+preserves the expiry window.
+
+Identical contract in-process: `Fx1Harness.openai_file_create`
+(content bytes → `file-*`) + `vector_store_*` twin methods drive
+the same store, and `openai_response` emits the same
+`file_search_call` grammar. `HarnessClient.vector_store_*` +
+`fx1 harness` `vs-*` cover the wire leg; TS exposes
+`vectorStoreCreate`/`…List`/`…Files`/`…FileContent`. Unknown
+stores fail closed `vector_store_not_found` (404 on the wire,
+`VectorStoreError`/`OpenAICompatError` in-process).
+
 ## Auth & safety
 
 - `fx1 harness serve` binds **loopback-only** unless `FX1_API_KEY` is
   set; with a key, every route except `/health` requires
   `X-API-Key` (constant-time compare). An empty key equals unset — never
   a bypass.
+- **Managed API keys** (`/harness/keys`) ride beside the env key: mint
+  `fx1k_…` workload keys that authenticate on every gated route like
+  `X-API-Key` (and `Authorization: Bearer` on `/v1`). A non-empty key
+  store turns remote auth on even with no `FX1_API_KEY` — provisioning
+  on loopback is the opt-in. Only the bootstrap credential (env key)
+  or loopback-dev may mint/list/revoke — `403 admin_required`
+  otherwise — and `admin:true` mints a key that can manage keys
+  itself, so a no-env-key deployment keeps a control plane. Revocation
+  is a tombstone (`enabled:false`, fail-closed); records persist under
+  `--state-dir` (journaled to `keys.jsonl`, replayed on restart —
+  `uses`/`last_used_at` are live counters, deliberately not journaled).
+  Declared policy travels with the record: `rpm` bounds the key to a
+  fixed 60 s request window — the over-limit refusal is `429
+  rate_limited` with an honest `Retry-After`, and a refused request
+  never counts as a use — and `ttl_s` stamps an `expires_at` past
+  which the key authenticates as dead (same 401 shape as revoked — no
+  oracle for which keys exist). Every completion record attributes its
+  caller's `key_id`
+  fingerprint, so `GET /harness/usage?key_id=` reads per-key spend
+  without ever exposing secrets.
 - Request bodies over 1 MiB are refused `413`; `/health` leaks only
   presence booleans.
 - The honesty gate runs before output bytes reach the caller — a
@@ -811,6 +1024,18 @@ adds a real process restart proving job-record recovery. `--remote URL`
 flips to read-only probes against a live deployment (no model spend):
 health, version negotiation, commands, advisory surfaces, and the auth
 gate when `--api-key` is given.
+
+`fx1 harness bench` is the perf gate: it times `--n` gated `complete`
+calls at `--concurrency` workers (after `--warmup` unmeasured requests)
+and prints the latency card (p50/p90/p95/p99/max/mean), throughput,
+token rates, and an error histogram by exception class. The prompt is
+digested (`prompt_sha256`), never embedded. Both legs work: default is
+the in-process SDK, `--remote URL` benches a live deployment;
+`--backend`/`--byok-*`/`--seed`/`--max-tokens` forward per request.
+`--receipt` prints the sealed `fx1_bench_result.v1` doc (verify with
+`dipcatcher verify-receipt` / `POST /receipts/verify`). Exits 0 only
+when every measured request succeeded, 1 on any error — a deploy gate
+beside `selftest`.
 
 ## Async jobs & webhooks
 

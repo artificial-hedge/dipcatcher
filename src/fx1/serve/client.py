@@ -52,6 +52,7 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.usage_report import UsageReport
 
 __all__ = [
     "EXPECTED_API_VERSION",
@@ -139,6 +140,27 @@ def _retry_after_s(headers: Mapping[str, str]) -> float | None:
             except ValueError:
                 return None
     return None
+
+
+def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
+    """Collect Responses SSE frames until the terminal event.
+
+    ``response.incomplete`` is the terminal event on a truncated turn
+    (e.g. ``max_tool_calls``) — it ends the stream like ``completed``.
+    """
+    events: list[dict[str, Any]] = []
+    saw_terminal = False
+    for line in body.decode().splitlines():
+        if not line.startswith("data: "):
+            continue
+        frame = json.loads(line[len("data: ") :])
+        events.append(frame)
+        if frame.get("type") in ("response.completed", "response.incomplete"):
+            saw_terminal = True
+            break
+    if not saw_terminal:
+        raise HarnessTransportError("stream ended without response.completed/response.incomplete")
+    return events
 
 
 class HarnessClient:
@@ -590,6 +612,164 @@ class HarnessClient:
         )
         return dict(out)
 
+    # ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------
+
+    def eval_spec_create(
+        self,
+        name: str,
+        *,
+        suite: str,
+        seed: int = 0,
+        backend: str | None = None,
+        fallbacks: list[str] | None = None,
+        checkpoint_dir: str | None = None,
+        judge_backend: str | None = None,
+        timeout_s: float | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals — declare the named eval container. The
+        item_schema pins suite knobs; credentials never live on a spec."""
+        item_schema: dict[str, Any] = {"suite": suite, "seed": seed}
+        if backend is not None:
+            item_schema["backend"] = backend
+        if fallbacks is not None:
+            item_schema["fallbacks"] = fallbacks
+        if checkpoint_dir is not None:
+            item_schema["checkpoint_dir"] = checkpoint_dir
+        if judge_backend is not None:
+            item_schema["judge_backend"] = judge_backend
+        if timeout_s is not None:
+            item_schema["timeout_s"] = timeout_s
+        body: dict[str, Any] = {
+            "name": name,
+            "data_source_config": {"type": "custom", "item_schema": item_schema},
+        }
+        if testing_criteria is not None:
+            body["testing_criteria"] = testing_criteria
+        if metadata is not None:
+            body["metadata"] = metadata
+        return dict(self._json("POST", "/v1/evals", body))
+
+    def eval_spec_get(self, eval_id: str) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}."""
+        return dict(self._json("GET", f"/v1/evals/{urllib.parse.quote(eval_id)}", idempotent=True))
+
+    def eval_specs(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
+        """GET /v1/evals — newest-first spec page."""
+        q = f"?limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        return dict(self._json("GET", f"/v1/evals{q}", idempotent=True))
+
+    def eval_spec_update(
+        self,
+        eval_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals/{eval_id} — name/metadata edits."""
+        body: dict[str, Any] = {}
+        if name is not None:
+            body["name"] = name
+        if metadata is not None:
+            body["metadata"] = metadata
+        return dict(self._json("POST", f"/v1/evals/{urllib.parse.quote(eval_id)}", body))
+
+    def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:
+        """DELETE /v1/evals/{eval_id} — journaled tombstone."""
+        return dict(self._json("DELETE", f"/v1/evals/{urllib.parse.quote(eval_id)}"))
+
+    def eval_run_create(
+        self,
+        eval_id: str,
+        *,
+        model: str,
+        data_source: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
+        judge_byok: dict[str, str] | None = None,
+        metadata: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals/{eval_id}/runs — ``model`` is a link name,
+        ``fx1``, or a registered ``ft:`` name (resolves to its
+        checkpoint). Same capacity/drain gates as ``submit_eval``."""
+        body: dict[str, Any] = {"model": model}
+        if data_source is not None:
+            body["data_source"] = data_source
+        if byok is not None:
+            body["byok"] = byok
+        if judge_byok is not None:
+            body["judge_byok"] = judge_byok
+        if metadata is not None:
+            body["metadata"] = metadata
+        if callback_url is not None:
+            body["callback_url"] = callback_url
+        if callback_secret is not None:
+            body["callback_secret"] = callback_secret
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs",
+                body,
+                extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
+            )
+        )
+
+    def eval_runs(self, eval_id: str, *, limit: int = 20) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}/runs — newest-first run page."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs?limit={limit}",
+                idempotent=True,
+            )
+        )
+
+    def eval_run_get(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}/runs/{run_id}."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+                idempotent=True,
+            )
+        )
+
+    def eval_run_cancel(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """POST .../runs/{run_id}/cancel — queued runs cancel; running or
+        terminal map the 409 through."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/cancel",
+                {},
+            )
+        )
+
+    def eval_run_delete(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """DELETE .../runs/{run_id} — terminal records only (409 live)."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+            )
+        )
+
+    def eval_run_output_items(
+        self, eval_id: str, run_id: str, *, limit: int = 20, after: str | None = None
+    ) -> dict[str, Any]:
+        """GET .../output_items — per-task verdict rows verbatim."""
+        q = f"?limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/output_items{q}",
+                idempotent=True,
+            )
+        )
+
     # ---- fine-tuning (/v1/fine_tuning/jobs) ----------------------------------
 
     def create_finetune_job(
@@ -674,6 +854,25 @@ class HarnessClient:
         out = self._json(
             "POST",
             f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/cancel",
+        )
+        return dict(out)
+
+    def pause_finetune_job(self, job_id: str) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs/{id}/pause — cooperative: queued
+        parks before starting, running parks at the next stage boundary.
+        Pausing a paused job is idempotent."""
+        out = self._json(
+            "POST",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/pause",
+        )
+        return dict(out)
+
+    def resume_finetune_job(self, job_id: str) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs/{id}/resume — restores the status
+        pause captured; resuming a non-paused job is a 409."""
+        out = self._json(
+            "POST",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/resume",
         )
         return dict(out)
 
@@ -821,7 +1020,7 @@ class HarnessClient:
 
     # ---- gated completion ------------------------------------------------
 
-    def complete(
+    def complete(  # NOSONAR(S107)
         self,
         messages: list[dict[str, str]],
         *,
@@ -836,6 +1035,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -853,6 +1057,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -938,6 +1147,73 @@ class HarnessClient:
         )
         return dict(out)
 
+    def usage(
+        self,
+        *,
+        backend: str | None = None,
+        model: str | None = None,
+        since: float | None = None,
+        until: float | None = None,
+        key_id: str | None = None,
+    ) -> UsageReport:
+        """Token/request accounting over the server's completion log —
+        ``GET /harness/usage``. `since`/`until` are unix-second bounds;
+        since>until is a fail-closed 400 on the wire. ``key_id`` filters
+        to one credential fingerprint; the report's ``by_key`` splits
+        the window per key."""
+        params: dict[str, Any] = {}
+        if backend is not None:
+            params["backend"] = backend
+        if model is not None:
+            params["model"] = model
+        if key_id is not None:
+            params["key_id"] = key_id
+        if since is not None:
+            params["since"] = since
+        if until is not None:
+            params["until"] = until
+        query = f"?{urllib.parse.urlencode(params)}" if params else ""
+        out = self._json("GET", f"/harness/usage{query}", idempotent=True)
+        return UsageReport.model_validate(out)
+
+    def key_create(
+        self,
+        name: str | None = None,
+        admin: bool = False,
+        *,
+        rpm: int | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """``POST /harness/keys`` — mint a managed API key. The raw
+        ``key`` appears once in the response; it is never stored
+        server-side. ``admin=True`` keys may manage keys on the wire;
+        ``rpm`` bounds the key's request rate (over-limit answers 429),
+        ``ttl_s`` bakes an expiry. Requires the bootstrap credential on
+        the wire."""
+        body: dict[str, Any] = {"admin": admin}
+        if name is not None:
+            body["name"] = name
+        if rpm is not None:
+            body["rpm"] = rpm
+        if ttl_s is not None:
+            body["ttl_s"] = ttl_s
+        return dict(self._json("POST", "/harness/keys", body))
+
+    def keys(self) -> list[dict[str, Any]]:
+        """``GET /harness/keys`` — every minted key's fingerprint +
+        metadata (never secrets)."""
+        out = self._json("GET", "/harness/keys", idempotent=True)
+        return list(out.get("data", []))
+
+    def key_get(self, key_id: str) -> dict[str, Any]:
+        """``GET /harness/keys/{id}`` — one key's record."""
+        return dict(self._json("GET", f"/harness/keys/{key_id}", idempotent=True))
+
+    def key_revoke(self, key_id: str) -> dict[str, Any]:
+        """``DELETE /harness/keys/{id}`` — tombstone the key; auth with
+        it fails closed immediately after."""
+        return dict(self._json("DELETE", f"/harness/keys/{key_id}"))
+
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs
         ``/harness/gate/check``; a refusal rides ``ok=False``, it never
@@ -990,7 +1266,7 @@ class HarnessClient:
             error_class=out.get("error_class"),
         )
 
-    def complete_many(
+    def complete_many(  # NOSONAR(S107)
         self,
         batch: list[list[dict[str, str]]],
         *,
@@ -1006,6 +1282,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -1034,6 +1315,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
             idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
@@ -1057,7 +1343,7 @@ class HarnessClient:
             )
         return results
 
-    def stream_complete(
+    def stream_complete(  # NOSONAR(S107)
         self,
         messages: list[dict[str, str]],
         *,
@@ -1071,6 +1357,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -1093,6 +1384,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
         )
         chunks: list[str] = []
@@ -1166,7 +1462,9 @@ class HarnessClient:
         metadata: dict[str, str] | None = None,
         service_tier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -1230,7 +1528,9 @@ class HarnessClient:
             "metadata": metadata,
             "service_tier": service_tier,
             "reasoning_effort": reasoning_effort,
+            "verbosity": verbosity,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "response_format": response_format,
             "tools": tools,
             "tool_choice": tool_choice,
@@ -1277,7 +1577,9 @@ class HarnessClient:
         metadata: dict[str, str] | None = None,
         service_tier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -1332,7 +1634,9 @@ class HarnessClient:
             "metadata": metadata,
             "service_tier": service_tier,
             "reasoning_effort": reasoning_effort,
+            "verbosity": verbosity,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "response_format": response_format,
             "tools": tools,
             "tool_choice": tool_choice,
@@ -1392,6 +1696,9 @@ class HarnessClient:
         user: str | None = None,
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         text_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
@@ -1400,6 +1707,7 @@ class HarnessClient:
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
         conversation: str | dict[str, Any] | None = None,
+        max_tool_calls: int | None = None,
         background: bool = False,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
@@ -1445,12 +1753,16 @@ class HarnessClient:
             user=user,
             safety_identifier=safety_identifier,
             reasoning_effort=reasoning_effort,
+            verbosity=verbosity,
+            prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
             text_format=text_format,
             tools=tools,
             tool_choice=tool_choice,
             parallel_tool_calls=parallel_tool_calls,
             include=include,
             top_logprobs=top_logprobs,
+            max_tool_calls=max_tool_calls,
             background=background,
             stream=False,
         )
@@ -1465,7 +1777,7 @@ class HarnessClient:
         )
         return json.loads(body), headers.get("X-Fx1-Completion-Id")
 
-    def responses_create_stream(
+    def responses_create_stream(  # NOSONAR(S3776)
         self,
         input: str | list[dict[str, Any]],
         *,
@@ -1495,19 +1807,10 @@ class HarnessClient:
             idempotent=idempotency_key is not None,
             extra_headers=extra_headers,
         )
-        events: list[dict[str, Any]] = []
-        saw_completed = False
-        for line in body.decode().splitlines():
-            if not line.startswith("data: "):
-                continue
-            frame = json.loads(line[len("data: ") :])
-            events.append(frame)
-            if frame.get("type") == "response.completed":
-                saw_completed = True
-                break
-        if not saw_completed:
-            raise HarnessTransportError("stream ended without response.completed")
-        return events, headers.get("X-Fx1-Completion-Id")
+        return (
+            _responses_sse_events(body),
+            headers.get("X-Fx1-Completion-Id"),
+        )
 
     def _responses_payload(
         self,
@@ -1529,6 +1832,9 @@ class HarnessClient:
         user: str | None = None,
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         text_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
@@ -1537,6 +1843,7 @@ class HarnessClient:
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
         conversation: str | dict[str, Any] | None = None,
+        max_tool_calls: int | None = None,
         background: bool = False,
         stream: bool = False,
     ) -> dict[str, Any]:
@@ -1566,13 +1873,21 @@ class HarnessClient:
             "safety_identifier": safety_identifier,
             "previous_response_id": previous_response_id,
             "conversation": conversation,
+            "max_tool_calls": max_tool_calls,
+            "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "background": background,
             "stream": stream,
         }
         if reasoning_effort is not None:
             payload["reasoning"] = {"effort": reasoning_effort}
-        if text_format is not None:
-            payload["text"] = {"format": text_format}
+        if text_format is not None or verbosity is not None:
+            text: dict[str, Any] = {}
+            if text_format is not None:
+                text["format"] = text_format
+            if verbosity is not None:
+                text["verbosity"] = verbosity
+            payload["text"] = text
         if tools is not None:
             payload["tools"] = tools
         if tool_choice is not None:
@@ -1696,6 +2011,74 @@ class HarnessClient:
         """``DELETE /v1/files/{id}``."""
         return dict(self._json("DELETE", f"/v1/files/{file_id}"))
 
+    # ---- uploads (chunked files) ----------------------------------------------
+
+    def upload_create(
+        self,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+        bytes: int,
+        mime_type: str = "application/jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads`` — open an upload intent for a payload
+        larger than the request cap. Parts land via ``upload_part``;
+        ``upload_complete`` mints the file.``bytes`` is the DECLARED total
+        the parts must sum to — fail-closed both ways."""
+        return dict(
+            self._json(
+                "POST",
+                "/v1/uploads",
+                {
+                    "purpose": purpose,
+                    "filename": filename,
+                    "bytes": bytes,
+                    "mime_type": mime_type,
+                },
+            )
+        )
+
+    def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/parts`` — one chunk (multipart ``data``
+        field, same hand-rolled assembly as ``upload_file``)."""
+        boundary = f"fx1{uuid.uuid4().hex}"
+        body = (
+            (
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="data"; filename="part"\r\n'
+                "Content-Type: application/octet-stream\r\n\r\n"
+            ).encode()
+            + data
+            + f"\r\n--{boundary}--\r\n".encode()
+        )
+        _status, _headers, raw = self._request(
+            "POST",
+            f"/v1/uploads/{upload_id}/parts",
+            body,
+            extra_headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        )
+        return dict(json.loads(raw))
+
+    def upload_complete(
+        self,
+        upload_id: str,
+        part_ids: list[str],
+        *,
+        md5: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/complete`` — concatenate the parts in
+        the given order into the file record. ``md5`` is checked before
+        the file mints (a mismatch leaves no orphan)."""
+        payload: dict[str, Any] = {"part_ids": part_ids}
+        if md5 is not None:
+            payload["md5"] = md5
+        return dict(self._json("POST", f"/v1/uploads/{upload_id}/complete", payload))
+
+    def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/cancel`` — terminal cancel; replays
+        200 on an already-cancelled record."""
+        return dict(self._json("POST", f"/v1/uploads/{upload_id}/cancel"))
+
     def create_batch(
         self,
         input_file_id: str,
@@ -1787,6 +2170,20 @@ class HarnessClient:
                 "GET",
                 f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
                 idempotent=True,
+            )
+        )
+
+    def update_chat_completion(
+        self, completion_id: str, *, metadata: dict[str, str] | None = None
+    ) -> dict[str, Any]:
+        """``POST /v1/chat/completions/{id}`` — replace the stored
+        completion's ``metadata`` wholesale (the only mutable field)."""
+        body: dict[str, Any] = {"metadata": dict(metadata) if metadata is not None else {}}
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                body,
             )
         )
 
@@ -1962,6 +2359,22 @@ class HarnessClient:
             )
         )
 
+    def conversation_item(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items/{item_id}`` — one item by
+        id."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
+                f"/items/{urllib.parse.quote(item_id)}",
+                idempotent=True,
+            )
+        )
+
     def conversation_item_delete(
         self,
         conversation_id: str,
@@ -1974,6 +2387,282 @@ class HarnessClient:
                 "DELETE",
                 f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
                 f"/items/{urllib.parse.quote(item_id)}",
+            )
+        )
+
+    # ---- vector stores -------------------------------------------------------
+
+    def vector_store_create(
+        self,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        file_ids: list[str] | None = None,
+        expires_after: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores`` — mint a ``vs_*`` retrieval store;
+        ``file_ids`` attach at create (a bogus id fails the call);
+        ``expires_after`` is the OpenAI anchor policy
+        ``{"anchor": "last_active_at", "days": 1..365}``."""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if file_ids is not None:
+            payload["file_ids"] = file_ids
+        if expires_after is not None:
+            payload["expires_after"] = expires_after
+        return dict(self._json("POST", "/v1/vector_stores", payload))
+
+    def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}`` — the store object."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_update(
+        self,
+        vector_store_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        expires_after: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}`` — name/metadata replace
+        wholesale when given; ``expires_after`` re-anchors the expiry
+        window (revives an expired store)."""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if expires_after is not None:
+            payload["expires_after"] = expires_after
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                payload,
+            )
+        )
+
+    def vector_store_delete(self, vector_store_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}`` — drop the store + index;
+        member ``file-*`` records survive."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+            )
+        )
+
+    def vector_store_list(
+        self,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "desc",
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores`` — cursor-paged store list."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/vector_stores?{q}", idempotent=True))
+
+    def vector_store_file_create(
+        self,
+        vector_store_id: str,
+        file_id: str,
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/files`` — index a ``file-*``
+        record into the store."""
+        payload: dict[str, Any] = {"file_id": file_id}
+        if attributes is not None:
+            payload["attributes"] = attributes
+        if chunking_strategy is not None:
+            payload["chunking_strategy"] = chunking_strategy
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files",
+                payload,
+            )
+        )
+
+    def vector_store_file_list(
+        self,
+        vector_store_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files`` — attachments, paged;
+        ``filter`` is an OpenAI status word."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        if filter:
+            q += f"&filter={urllib.parse.quote(filter)}"
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files?{q}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_get(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}`` — one
+        attachment's status/chunks/attributes."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_delete(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}/files/{file_id}`` — detach;
+        the file record survives."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}",
+            )
+        )
+
+    def vector_store_file_content(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}/content`` — the
+        stored decoded text as a page of ``{type: 'text'}`` parts."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}/content",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_search(
+        self,
+        vector_store_id: str,
+        query: str | list[str],
+        *,
+        max_num_results: int | None = None,
+        filters: dict[str, Any] | None = None,
+        ranking_options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/search`` — ranked hits without
+        spending a response turn; a ``vector_store.search_results.page``
+        dict."""
+        payload: dict[str, Any] = {"query": query}
+        if max_num_results is not None:
+            payload["max_num_results"] = max_num_results
+        if filters is not None:
+            payload["filters"] = filters
+        if ranking_options is not None:
+            payload["ranking_options"] = ranking_options
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/search",
+                payload,
+            )
+        )
+
+    def vector_store_file_batch_create(
+        self,
+        vector_store_id: str,
+        file_ids: list[str],
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/file_batches`` — attach many
+        ``file-*`` records; per-file refusals count, never abort.
+        Status is terminal at return (sync attach)."""
+        payload: dict[str, Any] = {"file_ids": file_ids}
+        if attributes is not None:
+            payload["attributes"] = attributes
+        if chunking_strategy is not None:
+            payload["chunking_strategy"] = chunking_strategy
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/file_batches",
+                payload,
+            )
+        )
+
+    def vector_store_file_batch_get(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``GET .../file_batches/{batch_id}`` — standing status +
+        file_counts."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_batch_cancel(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``POST .../file_batches/{batch_id}/cancel`` — batches are
+        terminal at create; the server answers 409 ``file_batch_terminal``."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}/cancel",
+                {},
+            )
+        )
+
+    def vector_store_file_batch_files(
+        self,
+        vector_store_id: str,
+        batch_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET .../file_batches/{batch_id}/files`` — the frozen
+        per-file verdicts, paged; ``filter`` is an OpenAI status word."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        if filter:
+            q += f"&filter={urllib.parse.quote(filter)}"
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}/files?{q}",
+                idempotent=True,
             )
         )
 

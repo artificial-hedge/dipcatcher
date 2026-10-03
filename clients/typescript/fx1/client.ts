@@ -38,6 +38,10 @@ export type CompletionRecord = components["schemas"]["CompletionRecord"];
 export type CompletionListResponse =
   components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type UsageBucket = components["schemas"]["UsageBucket"];
+export type UsageReport = components["schemas"]["UsageReport"];
+export type ApiKeyMintResponse = components["schemas"]["ApiKeyMintResponse"];
+export type ApiKeyRecord = components["schemas"]["ApiKeyRecordModel"];
 export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
 export type EvalRecord = components["schemas"]["EvalRecord"];
@@ -46,6 +50,17 @@ export type EvalSubmitRequest =
 export type EvalSubmitResponse =
   components["schemas"]["EvalSubmitResponse"];
 export type EvalSuiteName = EvalSubmitRequest["suite"];
+export type EvalSpecCreate = components["schemas"]["EvalSpecCreate"];
+export type EvalSpecUpdate = components["schemas"]["EvalSpecUpdate"];
+export type EvalSpecWire = components["schemas"]["EvalSpecWire"];
+export type EvalSpecPage = components["schemas"]["EvalSpecPage"];
+export type EvalSpecDeleted = components["schemas"]["EvalSpecDeleted"];
+export type EvalRunCreate = components["schemas"]["EvalRunCreate"];
+export type EvalRunObject = components["schemas"]["EvalRunObject"];
+export type EvalRunPage = components["schemas"]["EvalRunPage"];
+export type EvalRunDeleted = components["schemas"]["EvalRunDeleted"];
+export type EvalOutputItemPage =
+  components["schemas"]["EvalOutputItemPage"];
 export type FTEventList = components["schemas"]["FTEventList"];
 export type FTHyperparameters =
   components["schemas"]["FTHyperparameters"];
@@ -283,6 +298,13 @@ export interface SseEvent {
   event: string;
   data: string;
   id?: string;
+}
+
+function toBlob(data: string | Uint8Array | Blob, type: string): Blob {
+  if (typeof data === "string") return new Blob([data], { type });
+  if (data instanceof Uint8Array)
+    return new Blob([data as BlobPart], { type });
+  return data;
 }
 
 const DEFAULT_API_VERSION = "1";
@@ -667,6 +689,87 @@ export class HarnessApiClient {
     return this.get(`/harness/completions${suffix}`) as Promise<CompletionListResponse>;
   }
 
+  /**
+   * GET /harness/usage — token/request accounting over the server's
+   * retained completion records (totals + per-backend/per-model splits;
+   * `records_dropped`/`ring_cap` declare a truncated ring window).
+   * `since`/`until` are unix-second bounds; since>until is a 400.
+   */
+  usage(filter?: {
+    backend?: "hosted_k3" | "local_fx1" | "byok";
+    model?: string;
+    since?: number;
+    until?: number;
+    keyId?: string;
+  }): Promise<UsageReport> {
+    const q = new URLSearchParams();
+    if (filter?.backend) q.set("backend", filter.backend);
+    if (filter?.model) q.set("model", filter.model);
+    if (filter?.since !== undefined) q.set("since", String(filter.since));
+    if (filter?.until !== undefined) q.set("until", String(filter.until));
+    if (filter?.keyId) q.set("key_id", filter.keyId);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/usage${suffix}`) as Promise<UsageReport>;
+  }
+
+  /**
+   * POST /harness/keys — mint a managed API key. The raw `key` appears
+   * once in the response; the server stores only its sha256. `admin`
+   * keys may manage keys on the wire; `rpm` bounds the key to a fixed
+   * 60 s request window (over-limit answers 429 + Retry-After) and
+   * `ttlS` bakes an expiry. Needs the bootstrap credential on the wire.
+   */
+  async keyCreate(
+    name?: string,
+    admin?: boolean,
+    rpm?: number,
+    ttlS?: number,
+  ): Promise<ApiKeyMintResponse> {
+    const body: { name?: string; admin?: boolean; rpm?: number; ttl_s?: number } = {};
+    if (name !== undefined) body.name = name;
+    if (admin !== undefined) body.admin = admin;
+    if (rpm !== undefined) body.rpm = rpm;
+    if (ttlS !== undefined) body.ttl_s = ttlS;
+    const res = await this.send({
+      method: "POST",
+      path: "/harness/keys",
+      body,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyMintResponse;
+  }
+
+  /** GET /harness/keys — every minted key's fingerprint + metadata. */
+  async keys(): Promise<ApiKeyRecord[]> {
+    const res = await this.send({ method: "GET", path: "/harness/keys" });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    const out = (await res.json()) as { data: ApiKeyRecord[] };
+    return out.data;
+  }
+
+  /** GET /harness/keys/{id} — one key's record by fingerprint id. */
+  async key(keyId: string): Promise<ApiKeyRecord> {
+    const res = await this.send({
+      method: "GET",
+      path: `/harness/keys/${encodeURIComponent(keyId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRecord;
+  }
+
+  /**
+   * DELETE /harness/keys/{id} — tombstone the key (auth with it fails
+   * closed immediately; the record stays for audit).
+   */
+  async keyRevoke(keyId: string): Promise<ApiKeyRecord> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/harness/keys/${encodeURIComponent(keyId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRecord;
+  }
+
   // ---- OpenAI-compatible ingress (/v1) ------------------------------------
 
   /**
@@ -802,10 +905,13 @@ export class HarnessApiClient {
    * `instructions` prepends a system turn; `text.format` is the
    * post-validated structured-output channel. `tools` takes the
    * flattened Responses spec (`{type: "function", name, description,
-   * parameters}`), `tool_choice` is `"none" | "auto" | "required"` or
-   * `{type: "function", name}` — calls land in `output` as
-   * `function_call` items. Returns the `response` object plus the
-   * `X-Fx1-Completion-Id` handle.
+   * parameters}` — or `{type: "file_search", vector_store_ids}` which
+   * runs server-side retrieval and emits `file_search_call` output
+   * items; `include: ["file_search_call.results"]` populates
+   * `results`), `tool_choice` is `"none" | "auto" | "required"` or
+   * `{type: "function", name}` / `{type: "file_search"}` — calls land
+   * in `output` as `function_call` items. Returns the `response`
+   * object plus the `X-Fx1-Completion-Id` handle.
    */
   async responsesCreate(
     request: OpenAIResponseRequest,
@@ -835,8 +941,11 @@ export class HarnessApiClient {
   /**
    * POST /v1/responses with `stream: true` — SSE frames in the Responses
    * event grammar (`response.created` … `response.completed`; there is
-   * no `[DONE]` sentinel — the completed event is terminal). `onEvent`
-   * receives each parsed payload (every payload carries `type`).
+   * no `[DONE]` sentinel — `file_search` tool calls emit their
+   * `response.output_item.*` and `response.file_search_call.*` frames
+   * ahead of the message item — the completed event is terminal).
+   * `onEvent` receives each parsed payload (every payload carries
+   * `type`).
    * `lastEventId` resumes a dropped keyed stream exactly like
    * `chatCompletionStream` — frames carry `id:` equal to their index.
    */
@@ -869,7 +978,10 @@ export class HarnessApiClient {
     for await (const ev of readSse(res)) {
       const payload = JSON.parse(ev.data) as Record<string, unknown>;
       onEvent(payload);
-      if (payload.type === "response.completed") {
+      if (
+        payload.type === "response.completed" ||
+        payload.type === "response.incomplete"
+      ) {
         terminal = true;
         break;
       }
@@ -877,7 +989,7 @@ export class HarnessApiClient {
     if (!terminal)
       throw new HarnessApiError(
         0,
-        "responses stream ended before response.completed",
+        "responses stream ended before response.completed/response.incomplete",
       );
     return res.headers.get("X-Fx1-Completion-Id");
   }
@@ -931,12 +1043,7 @@ export class HarnessApiClient {
   ): Promise<OpenAIFileObject> {
     const form = new FormData();
     form.append("purpose", purpose);
-    const blob =
-      typeof content === "string"
-        ? new Blob([content], { type: "application/jsonl" })
-        : content instanceof Uint8Array
-          ? new Blob([content as BlobPart], { type: "application/jsonl" })
-          : content;
+    const blob = toBlob(content, "application/jsonl");
     form.append("file", blob, filename);
     const res = await this.send({
       method: "POST",
@@ -993,6 +1100,79 @@ export class HarnessApiClient {
     const res = await this.send({
       method: "DELETE",
       path: `/v1/files/${encodeURIComponent(fileId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/uploads — open a chunked-upload intent. `bytes` is the
+   * DECLARED total the parts must sum to (fail-closed both ways).
+   */
+  async uploadCreate(opts: {
+    purpose?: "batch" | "fine-tune";
+    filename?: string;
+    bytes: number;
+    mimeType?: string;
+  }): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/uploads",
+      body: {
+        purpose: opts.purpose ?? "batch",
+        filename: opts.filename ?? "input.jsonl",
+        bytes: opts.bytes,
+        mime_type: opts.mimeType ?? "application/jsonl",
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** POST /v1/uploads/{id}/parts — one chunk (multipart `data` field). */
+  async uploadPart(
+    uploadId: string,
+    data: string | Uint8Array | Blob,
+  ): Promise<Record<string, unknown>> {
+    const form = new FormData();
+    const blob = toBlob(data, "application/octet-stream");
+    form.append("data", blob);
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/parts`,
+      rawBody: form,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/uploads/{id}/complete — concatenate the parts in the given
+   * order into a `file-` record (returned on `file`). `md5` (hex) is
+   * checked before the mint, so a checksum failure leaves no orphan.
+   */
+  async uploadComplete(
+    uploadId: string,
+    partIds: string[],
+    md5?: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/complete`,
+      body: md5 ? { part_ids: partIds, md5 } : { part_ids: partIds },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/uploads/{id}/cancel — terminal cancel; replays 200 on an
+   * already-cancelled record, 409 once completed.
+   */
+  async uploadCancel(uploadId: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/cancel`,
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
@@ -1196,6 +1376,35 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/fine_tuning/jobs/{id}/pause — a queued job parks before
+   * start; a running job parks at the next pipeline-stage boundary.
+   * Pausing a paused job replays its record; terminal is a 409
+   * HarnessApiError.
+   */
+  async pauseFineTuneJob(jobId: string): Promise<FTJob> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/pause`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as FTJob;
+  }
+
+  /**
+   * POST /v1/fine_tuning/jobs/{id}/resume — restores the status the job
+   * held when paused (queued | running) and releases the gate. Resuming
+   * a job that is not paused is a 409 HarnessApiError.
+   */
+  async resumeFineTuneJob(jobId: string): Promise<FTJob> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/resume`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as FTJob;
+  }
+
+  /**
    * Poll a fine-tuning job until terminal (succeeded | failed |
    * cancelled). Terminal records are returned, not thrown — `status` +
    * `error` carry the verdict. `timeoutS` bounds the wait (0 = forever).
@@ -1230,6 +1439,24 @@ export class HarnessApiClient {
       method: "GET",
       path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
       idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/chat/completions/{id} — replace the stored completion's
+   * `metadata` wholesale (the only mutable field; ≤16 pairs, keys ≤64
+   * chars, values ≤512 — the API fails closed past the bounds).
+   */
+  async updateChatCompletion(
+    completionId: string,
+    metadata: Record<string, string> = {},
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+      body: { metadata },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
@@ -1456,6 +1683,16 @@ export class HarnessApiClient {
     return (await res.json()) as Record<string, unknown>;
   }
 
+  /** GET /v1/conversations/{id}/items/{item_id} — one item by id. */
+  conversationItem(
+    conversationId: string,
+    itemId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/conversations/${encodeURIComponent(conversationId)}/items/${encodeURIComponent(itemId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   /** DELETE /v1/conversations/{id}/items/{item_id} — drop one item. */
   async conversationItemDelete(
     conversationId: string,
@@ -1467,6 +1704,292 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
+  }
+
+  // ---- vector stores -------------------------------------------------------
+
+  /**
+   * POST /v1/vector_stores — mint a `vs_*` retrieval store the
+   * `file_search` tool searches on `responsesCreate`. `fileIds`
+   * attaches existing `file-*` records at create (a bogus id fails the
+   * whole call — no partial store).
+   */
+  async vectorStoreCreate(body?: {
+    name?: string;
+    fileIds?: string[];
+    metadata?: Record<string, string>;
+    expiresAfter?: { anchor: "last_active_at"; days: number };
+  }): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/vector_stores",
+      body: {
+        name: body?.name ?? null,
+        file_ids: body?.fileIds ?? null,
+        metadata: body?.metadata ?? null,
+        expires_after: body?.expiresAfter ?? null,
+      },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/vector_stores/{id} — the store object. */
+  vectorStoreGet(vectorStoreId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id} — set name/metadata (omitted fields keep
+   * their current values).
+   */
+  async vectorStoreUpdate(
+    vectorStoreId: string,
+    body: {
+      name?: string;
+      metadata?: Record<string, string> | null;
+      expiresAfter?: { anchor: "last_active_at"; days: number };
+    },
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+      body: {
+        name: body.name ?? null,
+        metadata: body.metadata ?? null,
+        expires_after: body.expiresAfter ?? null,
+      },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * DELETE /v1/vector_stores/{id} — drops the store and its index; the
+   * member `file-*` records survive.
+   */
+  async vectorStoreDelete(
+    vectorStoreId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/vector_stores — stores, cursor-paged (newest first). */
+  vectorStoreList(filter?: {
+    limit?: number;
+    after?: string;
+    before?: string;
+    order?: "asc" | "desc";
+  }): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/v1/vector_stores${suffix}`) as Promise<
+      Record<string, unknown>
+    >;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id}/files — index a `file-*` record into the
+   * store; `attributes` are the keys `filters` evaluate against;
+   * `chunkingStrategy` is `{type: "auto"}` or
+   * `{type: "static", static: {max_chunk_size_tokens, chunk_overlap_tokens}}`.
+   */
+  async vectorStoreFileCreate(
+    vectorStoreId: string,
+    fileId: string,
+    body?: {
+      attributes?: Record<string, unknown>;
+      chunkingStrategy?: Record<string, unknown>;
+    },
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files`,
+      body: {
+        file_id: fileId,
+        attributes: body?.attributes ?? null,
+        chunking_strategy: body?.chunkingStrategy ?? null,
+      },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files — the attachments, paged;
+   * `filter` is an OpenAI status word (in_progress|completed|cancelled|failed).
+   */
+  vectorStoreFileList(
+    vectorStoreId: string,
+    filter?: {
+      limit?: number;
+      after?: string;
+      before?: string;
+      order?: "asc" | "desc";
+      filter?: string;
+    },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    if (filter?.filter) q.set("filter", filter.filter);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files/{file_id} — one attachment's
+   * status/chunks/attributes.
+   */
+  vectorStoreFileGet(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * DELETE /v1/vector_stores/{id}/files/{file_id} — detach; the file
+   * record survives.
+   */
+  async vectorStoreFileDelete(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files/{file_id}/content — the stored
+   * decoded text as a `vector_store.file_content.page` list of
+   * `{type: "text"}` parts.
+   */
+  vectorStoreFileContent(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}/content`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id}/search — ranked hits without spending a
+   * response turn (`vector_store.search_results.page`).
+   */
+  vectorStoreSearch(
+    vectorStoreId: string,
+    body: {
+      query: string | string[];
+      max_num_results?: number;
+      filters?: Record<string, unknown>;
+      ranking_options?: { ranker?: "auto"; score_threshold?: number };
+    },
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/search`,
+      body,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id}/file_batches — attach up to 500 `file-*`
+   * records in one call; per-file refusals count `failed` with
+   * `last_error`, never abort the batch (`vector_store.files_batch`,
+   * terminal status at return).
+   */
+  vectorStoreFileBatchCreate(
+    vectorStoreId: string,
+    body: {
+      file_ids: string[];
+      attributes?: Record<string, unknown>;
+      chunking_strategy?: Record<string, unknown>;
+    },
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches`,
+      body,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /** GET /v1/vector_stores/{id}/file_batches/{batch_id} — status + counts. */
+  vectorStoreFileBatchGet(
+    vectorStoreId: string,
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST .../file_batches/{batch_id}/cancel — members attach
+   * synchronously at create, so a batch is always terminal: the server
+   * answers 409 `file_batch_terminal`.
+   */
+  vectorStoreFileBatchCancel(
+    vectorStoreId: string,
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}/cancel`,
+      {},
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET .../file_batches/{batch_id}/files — the frozen per-file verdicts,
+   * paged; `filter` takes an OpenAI status word.
+   */
+  vectorStoreFileBatchFiles(
+    vectorStoreId: string,
+    batchId: string,
+    opts?: {
+      limit?: number;
+      after?: string;
+      before?: string;
+      order?: "asc" | "desc";
+      filter?: string;
+    },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (opts?.limit !== undefined) q.set("limit", String(opts.limit));
+    if (opts?.after) q.set("after", opts.after);
+    if (opts?.before) q.set("before", opts.before);
+    if (opts?.order) q.set("order", opts.order);
+    if (opts?.filter) q.set("filter", opts.filter);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}/files${suffix}`,
+    ) as Promise<Record<string, unknown>>;
   }
 
   // ---- async jobs --------------------------------------------------------
@@ -1643,6 +2166,146 @@ export class HarnessApiClient {
       if (Date.now() >= deadline) return e;
       await new Promise((r) => setTimeout(r, pollMs));
     }
+  }
+
+  // ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------------
+
+  /**
+   * POST /v1/evals — declare a named eval container (201). The
+   * `item_schema` pins the suite knobs; credentials never live on a
+   * spec — BYOK credentials go on the run body.
+   */
+  evalSpecCreate(body: EvalSpecCreate): Promise<EvalSpecWire> {
+    return this.post("/v1/evals", body) as Promise<EvalSpecWire>;
+  }
+
+  /** GET /v1/evals — newest-first spec page (`limit` 1-100). */
+  evalSpecs(opts: { limit?: number } = {}): Promise<EvalSpecPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(`/v1/evals${suffix}`) as Promise<EvalSpecPage>;
+  }
+
+  /** GET /v1/evals/{evalId}. */
+  evalSpec(evalId: string): Promise<EvalSpecWire> {
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}`,
+    ) as Promise<EvalSpecWire>;
+  }
+
+  /**
+   * POST /v1/evals/{evalId} — edit name/metadata. The datasource
+   * (item_schema) is frozen once runs bind.
+   */
+  evalSpecUpdate(
+    evalId: string,
+    body: EvalSpecUpdate,
+  ): Promise<EvalSpecWire> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}`,
+      body,
+    ) as Promise<EvalSpecWire>;
+  }
+
+  /**
+   * DELETE /v1/evals/{evalId} — journaled tombstone; bound runs stay
+   * readable.
+   */
+  async evalSpecDelete(evalId: string): Promise<EvalSpecDeleted> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/evals/${encodeURIComponent(evalId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalSpecDeleted;
+  }
+
+  /**
+   * POST /v1/evals/{evalId}/runs — submit a suite run under the spec
+   * (201; the run object is also the Location header). `model` is a link
+   * name (hosted_k3|local_fx1|byok), `fx1`, or a registered `ft:` name.
+   * An `Idempotency-Key` dedupes retries within the spec.
+   */
+  evalRunCreate(
+    evalId: string,
+    body: EvalRunCreate,
+    idempotencyKey?: string,
+  ): Promise<EvalRunObject> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs`,
+      body,
+      idempotencyKey,
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** GET /v1/evals/{evalId}/runs — newest-first run page. */
+  evalRuns(evalId: string, opts: { limit?: number } = {}): Promise<EvalRunPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs${suffix}`,
+    ) as Promise<EvalRunPage>;
+  }
+
+  /** GET /v1/evals/{evalId}/runs/{runId} — `evalrun_` prefix optional. */
+  evalRun(evalId: string, runId: string): Promise<EvalRunObject> {
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}`,
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** POST .../runs/{runId}/cancel — cooperative cancel of a queued run. */
+  evalRunCancel(evalId: string, runId: string): Promise<EvalRunObject> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}/cancel`,
+      {},
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** DELETE .../runs/{runId} — terminal runs only (409 while live). */
+  async evalRunDelete(
+    evalId: string,
+    runId: string,
+  ): Promise<EvalRunDeleted> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalRunDeleted;
+  }
+
+  /**
+   * GET .../runs/{runId}/output_items — per-task verdict rows verbatim
+   * from the suite report (newest-openai `has_more`/`first_id`/`last_id`
+   * paging contract).
+   */
+  evalRunOutputItems(
+    evalId: string,
+    runId: string,
+    opts: { limit?: number } = {},
+  ): Promise<EvalOutputItemPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}/output_items${suffix}`,
+    ) as Promise<EvalOutputItemPage>;
+  }
+
+  /**
+   * Poll a run's record until terminal and return the terminal run
+   * object. Runs are suite records underneath — `waitEval` semantics.
+   */
+  async waitEvalRun(
+    evalId: string,
+    runId: string,
+    opts: { pollMs?: number; timeoutS?: number } = {},
+  ): Promise<EvalRunObject> {
+    const rec = await this.waitEval(
+      runId.startsWith("evalrun_") ? runId.slice(8) : runId,
+      opts,
+    );
+    return this.evalRun(evalId, rec.eval_id);
   }
 
   // ---- receipt store --------------------------------------------------------

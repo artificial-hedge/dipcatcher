@@ -21,6 +21,7 @@ Sealed ``cli_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -28,8 +29,13 @@ from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["cli_audit", "cli_audit_bench"]
 
+_JSON_OBJECT_ARG = '{"type":"json_object"}'
+_OBJ_EVAL_RUN = "eval.run"
+_OBJ_EVAL_OUTPUT_ITEM = "eval.run.output_item"
+_OBJ_FT_JOB = "fine_tuning.job"
 
-def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
+
+def cli_audit() -> dict[str, Any]:  # NOSONAR
     import json
 
     import typer
@@ -153,12 +159,25 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "eval-cancel",
         "eval-wait",
         "eval-diff",
+        "eval-spec-create",
+        "eval-spec-list",
+        "eval-spec-get",
+        "eval-spec-update",
+        "eval-spec-delete",
+        "eval-run",
+        "eval-run-list",
+        "eval-run-get",
+        "eval-run-cancel",
+        "eval-run-delete",
+        "eval-run-items",
         "ft-create",
         "ft-jobs",
         "ft-status",
         "ft-events",
         "ft-wait",
         "ft-cancel",
+        "ft-pause",
+        "ft-resume",
         "ft-checkpoints",
         "files",
         "file-upload",
@@ -177,6 +196,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "embed",
         "moderate",
         "chat-get",
+        "chat-update",
         "chat-delete",
         "chat-list",
         "chat-messages",
@@ -296,6 +316,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
             for name in (
                 "chat-get",
+                "chat-update",
                 "chat-delete",
                 "response-get",
                 "response-delete",
@@ -458,11 +479,78 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     from fx1.sdk import CompletionResult  # noqa: PLC0415
 
+    def _canned_usage() -> dict[str, Any]:
+        return {
+            "generated_at": 1.0,
+            "since": None,
+            "until": None,
+            "backend": None,
+            "model": None,
+            "key_id": None,
+            "records_seen": 2,
+            "records_dropped": 0,
+            "ring_cap": 256,
+            "totals": {
+                "requests": 2,
+                "ok": 2,
+                "errors": 0,
+                "usage_reported": 2,
+                "prompt_tokens": 8,
+                "completion_tokens": 12,
+                "total_tokens": 20,
+                "other_usage": {},
+                "mean_latency_ms": 1.5,
+            },
+            "by_backend": {
+                "byok": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
+            "by_model": {
+                "fake-v0": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
+            "by_key": {
+                "(none)": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
+        }
+
     class _FakeSDK:
         def __init__(self) -> None:
             self.stream_calls: list[dict[str, Any]] = []
             self.complete_calls: list[dict[str, Any]] = []
             self.batch_calls: list[dict[str, Any]] = []
+            self.usage_kw: dict[str, Any] | None = None
+            self.last_key_call: tuple[str, str | None] | None = None
+            self.last_key_kw: dict[str, Any] | None = None
+            self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -473,6 +561,12 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def stream_complete(self, messages: Any, **kw: Any) -> list[str]:
             self.stream_calls.append(dict(kw))
             return ["chunk-a", "chunk-b"]
+
+        def openai_response(  # NOSONAR(S1172)
+            self, request: Any, **_kw: Any
+        ) -> tuple[dict[str, Any], None]:
+            self.complete_calls.append({"responses_body": dict(request)})
+            return {"id": "resp_fake", "status": "completed"}, None
 
         def openai_response_stream(
             self, request: Any, **kw: Any
@@ -502,6 +596,127 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             from fx1.harness import HarnessResult
 
             return HarnessResult(command=name, exit_code=0, stdout="ran", stderr="")
+
+        def usage(self, **kw: Any) -> Any:
+            from fx1.serve.usage_report import UsageReport
+
+            self.usage_kw = dict(kw)
+            return UsageReport.model_validate(_canned_usage())
+
+        def _vs_note(self, op: str, args: tuple[Any, ...], kw: dict[str, Any]) -> None:
+            self.vs_calls.append((op, args, kw))
+
+        def vector_store_create(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("create", (), kw)
+            return {
+                "id": "vs_fake",
+                "object": "vector_store",
+                "name": kw.get("name"),
+                "status": "completed",
+                "file_counts": {"total": 0},
+            }
+
+        def vector_store_get(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("get", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store", "status": "completed"}
+
+        def vector_store_update(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("update", (vs_id,), kw)
+            return {"id": vs_id, "object": "vector_store", "status": "completed", **kw}
+
+        def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("delete", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+
+        def vector_store_list(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("list", (), kw)
+            return {
+                "object": "list",
+                "data": [{"id": "vs_fake", "object": "vector_store"}],
+                "has_more": False,
+            }
+
+        def vector_store_file_create(self, vs_id: str, file_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_add", (vs_id, file_id), kw)
+            return {
+                "id": file_id,
+                "object": "vector_store.file",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_list(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_list", (vs_id,), kw)
+            return {"object": "list", "data": [], "has_more": False}
+
+        def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_get", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+
+        def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_delete", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file.deleted", "deleted": True}
+
+        def vector_store_file_content(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_content", (vs_id, file_id), {})
+            return {
+                "object": "vector_store.file_content.page",
+                "data": [{"type": "text", "text": "chunk"}],
+                "has_more": False,
+                "next_page": None,
+            }
+
+        def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
+            self._vs_note("search", (vs_id, query), kw)
+            return {
+                "object": "vector_store.search_results.page",
+                "search_query": query if isinstance(query, str) else " ".join(query),
+                "data": [],
+                "has_more": False,
+                "next_page": None,
+            }
+
+        def vector_store_file_batch_create(
+            self, vs_id: str, file_ids: list[str], **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_create", (vs_id, *file_ids), kw)
+            return {
+                "id": "vsfb_fake",
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+                "file_counts": {
+                    "in_progress": 0,
+                    "completed": len(file_ids),
+                    "failed": 0,
+                    "cancelled": 0,
+                    "total": len(file_ids),
+                },
+            }
+
+        def vector_store_file_batch_get(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_get", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_batch_cancel(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_cancel", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "cancelled",
+            }
+
+        def vector_store_file_batch_files(
+            self, vs_id: str, batch_id: str, **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_files", (vs_id, batch_id), kw)
+            return {"object": "list", "data": [], "has_more": False}
 
         def verify_receipt(self, receipt: dict[str, Any]) -> Any:
             from fx1.sdk import ReceiptVerdict
@@ -544,6 +759,106 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def commands(self, role: Any = None) -> list[str]:
             return ["cmd-a", "cmd-b"]
 
+        def eval_spec_create(self, name: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_create = {"name": name, **kw}
+            return {
+                "id": "eval_x",
+                "object": "eval",
+                "name": name,
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": kw.get("suite"), "seed": kw.get("seed")},
+                },
+                "testing_criteria": kw.get("testing_criteria") or [],
+                "metadata": kw.get("metadata") or {},
+                "created_at": 1,
+            }
+
+        def eval_specs(self, **_kw: Any) -> list[dict[str, Any]]:
+            return [{"id": "eval_x", "object": "eval", "name": "t"}]
+
+        def eval_spec_get(self, spec_id: str) -> dict[str, Any]:
+            return {"id": spec_id, "object": "eval", "name": "t"}
+
+        def eval_spec_update(self, spec_id: str, **kw: Any) -> dict[str, Any]:
+            return {"id": spec_id, "object": "eval", "name": kw.get("name") or "t"}
+
+        def eval_spec_delete(self, spec_id: str) -> None:
+            self.last_spec_delete = spec_id
+
+        def eval_run_create(self, spec_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_create = {"spec_id": spec_id, **kw}
+            return {
+                "id": "evalrun_y",
+                "object": _OBJ_EVAL_RUN,
+                "eval_id": spec_id,
+                "model": kw.get("model"),
+                "status": "completed",
+                "result_counts": {"total": 1, "passed": 1, "failed": 0, "errored": 0},
+            }
+
+        def eval_runs(self, spec_id: str, **_kw: Any) -> list[dict[str, Any]]:
+            return [{"id": "evalrun_y", "object": _OBJ_EVAL_RUN, "eval_id": spec_id}]
+
+        def eval_run_get(self, spec_id: str, run_id: str) -> dict[str, Any]:
+            return {
+                "id": run_id,
+                "object": _OBJ_EVAL_RUN,
+                "eval_id": spec_id,
+                "status": "completed",
+            }
+
+        def eval_run_delete(self, spec_id: str, run_id: str) -> None:
+            self.last_run_delete = (spec_id, run_id)
+
+        def eval_run_items(self, spec_id: str, run_id: str, **_kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "evalrun_y-0",
+                    "object": _OBJ_EVAL_OUTPUT_ITEM,
+                    "run_id": run_id,
+                    "status": "fail",
+                    "datasource_item_id": "t1",
+                    "datasource_item": {"task_id": "t1"},
+                    "results": [{"name": "tooluse", "passed": False}],
+                }
+            ]
+
+        def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("create", name)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": "kfake",
+                "object": "key",
+                "name": name,
+                "prefix": "fx1k_f",
+                "created_at": 1.0,
+                "key": "fx1k_raw",
+            }
+
+        def keys(self, **_kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "kfake",
+                    "object": "key",
+                    "name": "svc",
+                    "prefix": "fx1k_f",
+                    "created_at": 1.0,
+                    "enabled": True,
+                    "revoked_at": None,
+                    "uses": 2,
+                    "last_used_at": 3.0,
+                }
+            ]
+
+        def key_get(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("get", key_id)
+            return {"id": key_id, "object": "key", "enabled": True}
+
+        def key_revoke(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("revoke", key_id)
+            return {"id": key_id, "object": "key", "enabled": False}
+
     fake = _FakeSDK()
     with patch("fx1.sdk.Fx1Harness", return_value=fake):
         out["complete_block_echoes_content"] = (
@@ -573,6 +888,108 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+
+        # /v1/evals local leg — the in-process SDK twins; bad --criteria
+        # JSON fails before the SDK is touched.
+        rsc = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-spec-create",
+                "local-eval",
+                "--suite",
+                "tooluse",
+                "--criteria",
+                '[{"name":"all-pass"}]',
+            ],
+        )
+        out["local_evalspec_create"] = (
+            rsc.exit_code == 0
+            and json.loads(rsc.stdout).get("id") == "eval_x"
+            and fake.last_spec_create["suite"] == "tooluse"
+        )
+        out["local_evalspec_bad_criteria_2"] = (
+            runner.invoke(
+                app,
+                ["harness", "eval-spec-create", "x", "--suite", "tooluse", "--criteria", "{}"],
+            ).exit_code
+            == 2
+        )
+        rer_l = runner.invoke(app, ["harness", "eval-run", "eval_x", "--model", "byok"])
+        out["local_evalrun"] = (
+            rer_l.exit_code == 0
+            and json.loads(rer_l.stdout).get("status") == "completed"
+            and fake.last_run_create["spec_id"] == "eval_x"
+        )
+        out["local_evalrun_family"] = (
+            json.loads(runner.invoke(app, ["harness", "eval-run-list", "eval_x"]).stdout).get(
+                "data"
+            )[0]["id"]
+            == "evalrun_y"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-get", "eval_x", "evalrun_y"]).stdout
+            ).get("status")
+            == "completed"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-items", "eval_x", "evalrun_y"]).stdout
+            )
+            .get("data")[0]
+            .get("object")
+            == _OBJ_EVAL_OUTPUT_ITEM
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-delete", "eval_x", "evalrun_y"]).stdout
+            ).get("deleted")
+            is True
+        )
+        rcnl = runner.invoke(app, ["harness", "eval-run-cancel", "eval_x", "evalrun_y"])
+        out["local_evalrun_cancel_refused"] = rcnl.exit_code == 2 and "--remote" in rcnl.output
+        out["local_evalspec_family"] = (
+            json.loads(runner.invoke(app, ["harness", "eval-spec-list"]).stdout)
+            .get("data")[0]
+            .get("id")
+            == "eval_x"
+            and json.loads(runner.invoke(app, ["harness", "eval-spec-get", "eval_x"]).stdout).get(
+                "id"
+            )
+            == "eval_x"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-spec-update", "eval_x", "--name", "n2"]).stdout
+            ).get("name")
+            == "n2"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-spec-delete", "eval_x"]).stdout
+            ).get("deleted")
+            is True
+        )
+        # in-process leg: hint flags land on the Responses body —
+        # verbosity nests under text (merging with --format), cache hints
+        # ride top-level
+        rl = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "hi",
+                "--verbosity",
+                "low",
+                "--format",
+                _JSON_OBJECT_ARG,
+                "--prompt-cache-key",
+                "pk2",
+                "--prompt-cache-retention",
+                "in-memory",
+            ],
+        )
+        rbody_raw = (
+            (fake.complete_calls[-1] or {}).get("responses_body") if rl.exit_code == 0 else None
+        )
+        rbody = rbody_raw if isinstance(rbody_raw, dict) else {}
+        out["respond_hints_inproc"] = (
+            rl.exit_code == 0
+            and rbody.get("text") == {"format": {"type": "json_object"}, "verbosity": "low"}
+            and rbody.get("prompt_cache_key") == "pk2"
+            and rbody.get("prompt_cache_retention") == "in-memory"
+        )
         # per-request BYOK flags pack into the byok override (all-or-none)
         rb2 = runner.invoke(
             app,
@@ -753,6 +1170,88 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and fake.stream_calls[-1].get("temperature") == 0.6
             and fake.stream_calls[-1].get("seed") == 9
         )
+        # harness bench in-process leg: JSON record + sealed receipt + bounds
+        rbn = runner.invoke(app, ["harness", "bench", "--n", "3", "--warmup", "0"])
+        rbn_j = json.loads(rbn.stdout) if rbn.exit_code == 0 else {}
+        out["bench_local_json"] = (
+            rbn_j.get("mode") == "in_process"
+            and rbn_j.get("params", {}).get("n") == 3
+            and rbn_j.get("metrics", {}).get("measured_requests") == 3
+            and rbn_j.get("metrics", {}).get("error_count") == 0
+            and rbn_j.get("metrics", {}).get("models") == ["fake-v0"]
+        )
+        rbr = runner.invoke(app, ["harness", "bench", "--n", "1", "--warmup", "0", "--receipt"])
+        rbr_j = json.loads(rbr.stdout) if rbr.exit_code == 0 else {}
+        out["bench_receipt_sealed"] = rbr_j.get("schema") == "fx1_bench_result.v1" and bool(
+            rbr_j.get("receipt_sha256")
+        )
+        out["bench_bad_n_2"] = runner.invoke(app, ["harness", "bench", "--n", "0"]).exit_code == 2
+
+        class _FailSDK(_FakeSDK):
+            def complete(self, messages: Any, **kw: Any) -> CompletionResult:
+                raise RuntimeError("bench-boom")
+
+        with patch("fx1.sdk.Fx1Harness", return_value=_FailSDK()):
+            rbf = runner.invoke(app, ["harness", "bench", "--n", "2", "--warmup", "0"])
+        out["bench_errors_exit_1"] = rbf.exit_code == 1 and json.loads(rbf.stdout)["metrics"][
+            "errors"
+        ] == {"RuntimeError": 2}
+
+        # harness usage in-process leg: aggregates print + filters forward
+        ru = runner.invoke(app, ["harness", "usage"])
+        ru_j = json.loads(ru.stdout) if ru.exit_code == 0 else {}
+        out["usage_local_json"] = (
+            ru_j.get("totals", {}).get("requests") == 2
+            and ru_j.get("by_backend", {}).get("byok", {}).get("ok") == 2
+            and ru_j.get("ring_cap") == 256
+        )
+        runner.invoke(app, ["harness", "usage", "--backend", "hosted_k3", "--since", "5"])
+        out["usage_flags_forward"] = fake.usage_kw == {
+            "backend": "hosted_k3",
+            "model": None,
+            "key_id": None,
+            "since": 5.0,
+            "until": None,
+        }
+        runner.invoke(app, ["harness", "usage", "--key-id", "kfake"])
+        out["usage_key_id_forwards"] = (
+            fake.usage_kw is not None and fake.usage_kw["key_id"] == "kfake"
+        )
+
+        # managed-key lifecycle on the in-process leg
+        kc = runner.invoke(app, ["harness", "key-create", "--name", "svc"])
+        out["key_create_json"] = (
+            kc.exit_code == 0
+            and json.loads(kc.stdout)["key"] == "fx1k_raw"
+            and fake.last_key_call == ("create", "svc")
+        )
+        kc2 = runner.invoke(
+            app,
+            ["harness", "key-create", "--name", "svc", "--rpm", "5", "--ttl-s", "60"],
+        )
+        out["key_create_policy_forwards"] = kc2.exit_code == 0 and fake.last_key_kw == {
+            "admin": False,
+            "rpm": 5,
+            "ttl_s": 60.0,
+        }
+        kl = runner.invoke(app, ["harness", "keys"])
+        out["key_list_json"] = (
+            kl.exit_code == 0
+            and json.loads(kl.stdout)[0]["id"] == "kfake"
+            and json.loads(kl.stdout)[0]["uses"] == 2
+        )
+        kg = runner.invoke(app, ["harness", "key-get", "kfake"])
+        out["key_get_json"] = (
+            kg.exit_code == 0
+            and json.loads(kg.stdout)["enabled"] is True
+            and fake.last_key_call == ("get", "kfake")
+        )
+        kr = runner.invoke(app, ["harness", "key-revoke", "kfake"])
+        out["key_revoke_json"] = (
+            kr.exit_code == 0
+            and json.loads(kr.stdout)["enabled"] is False
+            and fake.last_key_call == ("revoke", "kfake")
+        )
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -776,6 +1275,17 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_batch_create: dict[str, Any] | None = None
             self.last_batch_id: str | None = None
             self.last_wait_kw: dict[str, Any] | None = None
+            self.last_usage_kw: dict[str, Any] | None = None
+            self.last_key_call: tuple[str, str | None] | None = None
+            self.last_key_kw: dict[str, Any] | None = None
+            self.ft_actions: list[tuple[str, str]] = []
+            self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+
+        def usage(self, **kw: Any) -> Any:
+            from fx1.serve.usage_report import UsageReport
+
+            self.last_usage_kw = dict(kw)
+            return UsageReport.model_validate(_canned_usage())
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -952,7 +1462,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_ft_create = dict(kw)
             return {
                 "id": "ftjob-x",
-                "object": "fine_tuning.job",
+                "object": _OBJ_FT_JOB,
                 "status": "queued",
                 "model": kw.get("model"),
             }
@@ -962,7 +1472,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_wait_kw = dict(kw)
             return {
                 "id": job_id,
-                "object": "fine_tuning.job",
+                "object": _OBJ_FT_JOB,
                 "status": "succeeded",
                 "fine_tuned_model": "ft:fx1:x:000000000000",
             }
@@ -989,13 +1499,13 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_ft_query = dict(kw)
             return {
                 "object": "list",
-                "data": [{"id": "ftjob-x", "object": "fine_tuning.job", "status": "succeeded"}],
+                "data": [{"id": "ftjob-x", "object": _OBJ_FT_JOB, "status": "succeeded"}],
                 "has_more": False,
             }
 
         def finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "running"}
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "running"}
 
         def finetune_job_events(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
@@ -1008,7 +1518,16 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
         def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
-            return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "cancelled"}
+
+        def pause_finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "paused"}
+
+        def resume_finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            self.ft_actions.append(("resume", job_id))
+            return {"id": job_id, "object": _OBJ_FT_JOB, "status": "running"}
 
         def finetune_job_checkpoints(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
@@ -1025,6 +1544,100 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "has_more": False,
             }
 
+        def eval_spec_create(self, name: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_create = {"name": name, **kw}
+            return {
+                "id": "eval_x",
+                "object": "eval",
+                "name": name,
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": kw.get("suite"), "seed": kw.get("seed")},
+                },
+                "testing_criteria": kw.get("testing_criteria") or [],
+                "metadata": kw.get("metadata") or {},
+                "created_at": 1,
+            }
+
+        def eval_specs(self, **kw: Any) -> dict[str, Any]:
+            self.last_spec_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "eval_x", "object": "eval", "name": "t"}],
+                "has_more": False,
+            }
+
+        def eval_spec_get(self, eval_id: str) -> dict[str, Any]:
+            self.last_spec_id = eval_id
+            return {"id": eval_id, "object": "eval", "name": "t"}
+
+        def eval_spec_update(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_update = {"id": eval_id, **kw}
+            return {"id": eval_id, "object": "eval", "name": kw.get("name") or "t"}
+
+        def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:
+            self.last_spec_id = eval_id
+            return {"id": eval_id, "object": "eval.deleted", "deleted": True}
+
+        def eval_run_create(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_create = {"eval_id": eval_id, **kw}
+            return {
+                "id": "evalrun_y",
+                "object": _OBJ_EVAL_RUN,
+                "eval_id": eval_id,
+                "model": kw.get("model"),
+                "status": "queued",
+            }
+
+        def eval_runs(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_query = {"eval_id": eval_id, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "evalrun_y", "object": _OBJ_EVAL_RUN, "eval_id": eval_id}],
+                "has_more": False,
+            }
+
+        def eval_run_get(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "id": run_id,
+                "object": _OBJ_EVAL_RUN,
+                "eval_id": eval_id,
+                "status": "completed",
+            }
+
+        def eval_run_cancel(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "id": run_id,
+                "object": _OBJ_EVAL_RUN,
+                "eval_id": eval_id,
+                "status": "canceled",
+            }
+
+        def eval_run_delete(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {"id": run_id, "object": "eval.run.deleted", "deleted": True}
+
+        def eval_run_output_items(self, eval_id: str, run_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "object": "list",
+                "data": [
+                    {
+                        "id": "evalrun_y-0",
+                        "object": _OBJ_EVAL_OUTPUT_ITEM,
+                        "run_id": run_id,
+                        "eval_id": eval_id,
+                        "status": "fail",
+                        "datasource_item_id": "t1",
+                        "datasource_item": {"task_id": "t1"},
+                        "results": [{"name": "tooluse", "passed": False}],
+                    }
+                ],
+                "has_more": False,
+            }
+
         def files(self) -> list[dict[str, Any]]:
             return [{"id": "file-1", "object": "file", "purpose": "batch"}]
 
@@ -1035,6 +1648,44 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def delete_file(self, file_id: str) -> dict[str, Any]:
             self.last_file_id = file_id
             return {"id": file_id, "object": "file", "deleted": True}
+
+        def upload_create(self, **kw: Any) -> dict[str, Any]:
+            self.last_upload_create = dict(kw)
+            return {
+                "id": "upload_x",
+                "object": "upload",
+                "status": "pending",
+                "bytes": kw.get("bytes"),
+            }
+
+        def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+            self.last_upload_part = {"id": upload_id, "n_bytes": len(data)}
+            return {
+                "id": "part_a",
+                "object": "upload.part",
+                "upload_id": upload_id,
+            }
+
+        def upload_complete(self, upload_id: str, part_ids: list[str], **kw: Any) -> dict[str, Any]:
+            self.last_upload_complete = {
+                "id": upload_id,
+                "part_ids": part_ids,
+                "md5": kw.get("md5"),
+            }
+            return {
+                "id": upload_id,
+                "object": "upload",
+                "status": "completed",
+                "file": {"id": "file-up", "object": "file"},
+            }
+
+        def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+            self.last_upload_cancel = upload_id
+            return {
+                "id": upload_id,
+                "object": "upload",
+                "status": "cancelled",
+            }
 
         def create_batch(self, input_file_id: str, **kw: Any) -> dict[str, Any]:
             rec = dict(kw)
@@ -1156,6 +1807,16 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_ft_query = {"chat_get": completion_id}
             return {"id": completion_id, "object": "chat.completion"}
 
+        def update_chat_completion(
+            self, completion_id: str, *, metadata: dict[str, str] | None = None
+        ) -> dict[str, Any]:
+            self.last_ft_query = {"chat_update": completion_id, "metadata": metadata}
+            return {
+                "id": completion_id,
+                "object": "chat.completion",
+                "metadata": dict(metadata or {}),
+            }
+
         def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
             self.last_ft_query = {"chat_delete": completion_id}
             return {
@@ -1261,9 +1922,133 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "has_more": False,
             }
 
+        def conversation_item(self, conversation_id: str, item_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"conv_item": [conversation_id, item_id]}
+            return {
+                "id": item_id,
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "hi"}],
+            }
+
         def conversation_item_delete(self, conversation_id: str, item_id: str) -> dict[str, Any]:
             self.last_ft_query = {"conv_item_delete": [conversation_id, item_id]}
             return {"id": conversation_id, "object": "conversation", "metadata": {}}
+
+        def _vs_note(self, op: str, args: tuple[Any, ...], kw: dict[str, Any]) -> None:
+            self.vs_calls.append((op, args, kw))
+
+        def vector_store_create(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("create", (), kw)
+            return {
+                "id": "vs_rem",
+                "object": "vector_store",
+                "name": kw.get("name"),
+                "status": "completed",
+                "file_counts": {"total": 0},
+            }
+
+        def vector_store_get(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("get", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store", "status": "completed"}
+
+        def vector_store_update(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("update", (vs_id,), kw)
+            return {"id": vs_id, "object": "vector_store", "status": "completed", **kw}
+
+        def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("delete", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+
+        def vector_store_list(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("list", (), kw)
+            return {
+                "object": "list",
+                "data": [{"id": "vs_rem", "object": "vector_store"}],
+                "has_more": False,
+            }
+
+        def vector_store_file_create(self, vs_id: str, file_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_add", (vs_id, file_id), kw)
+            return {
+                "id": file_id,
+                "object": "vector_store.file",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_list(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_list", (vs_id,), kw)
+            return {"object": "list", "data": [], "has_more": False}
+
+        def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_get", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+
+        def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_delete", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file.deleted", "deleted": True}
+
+        def vector_store_file_content(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_content", (vs_id, file_id), {})
+            return {
+                "object": "vector_store.file_content.page",
+                "data": [{"type": "text", "text": "chunk"}],
+                "has_more": False,
+                "next_page": None,
+            }
+
+        def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
+            self._vs_note("search", (vs_id, query), kw)
+            return {
+                "object": "vector_store.search_results.page",
+                "search_query": query if isinstance(query, str) else " ".join(query),
+                "data": [],
+                "has_more": False,
+                "next_page": None,
+            }
+
+        def vector_store_file_batch_create(
+            self, vs_id: str, file_ids: list[str], **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_create", (vs_id, *file_ids), kw)
+            return {
+                "id": "vsfb_fake",
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+                "file_counts": {
+                    "in_progress": 0,
+                    "completed": len(file_ids),
+                    "failed": 0,
+                    "cancelled": 0,
+                    "total": len(file_ids),
+                },
+            }
+
+        def vector_store_file_batch_get(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_get", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_batch_cancel(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_cancel", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "cancelled",
+            }
+
+        def vector_store_file_batch_files(
+            self, vs_id: str, batch_id: str, **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_files", (vs_id, batch_id), kw)
+            return {"object": "list", "data": [], "has_more": False}
 
         def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
             self.last_ft_query = {"score": input}
@@ -1278,6 +2063,41 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 }
                 for i, _t in enumerate(items)
             ]
+
+        def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("create", name)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": "krem",
+                "object": "key",
+                "name": name,
+                "prefix": "fx1k_r",
+                "created_at": 1.0,
+                "key": "fx1k_rem",
+            }
+
+        def keys(self, **_kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "krem",
+                    "object": "key",
+                    "name": "svc",
+                    "prefix": "fx1k_r",
+                    "created_at": 1.0,
+                    "enabled": True,
+                    "revoked_at": None,
+                    "uses": 1,
+                    "last_used_at": None,
+                }
+            ]
+
+        def key_get(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("get", key_id)
+            return {"id": key_id, "object": "key", "enabled": True}
+
+        def key_revoke(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("revoke", key_id)
+            return {"id": key_id, "object": "key", "enabled": False}
 
     remotes: list[_FakeRemote] = []
 
@@ -1296,6 +2116,92 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and rr.stdout.strip() == "remote-text"
             and remotes[0].base_url == "http://h.test"
             and remotes[0].api_key == "k"
+        )
+        rbw = runner.invoke(
+            app,
+            [
+                "harness",
+                "bench",
+                "--remote",
+                "http://h.test",
+                "--n",
+                "2",
+                "--warmup",
+                "0",
+            ],
+        )
+        rbw_j = json.loads(rbw.stdout) if rbw.exit_code == 0 else {}
+        out["bench_remote_mode"] = (
+            rbw_j.get("mode") == "remote"
+            and rbw_j.get("metrics", {}).get("measured_requests") == 2
+            and rbw_j.get("metrics", {}).get("models") == ["remote-v0"]
+        )
+        ruw = runner.invoke(
+            app,
+            [
+                "harness",
+                "usage",
+                "--remote",
+                "http://h.test",
+                "--model",
+                "m1",
+                "--since",
+                "5",
+            ],
+        )
+        ruw_j = json.loads(ruw.stdout) if ruw.exit_code == 0 else {}
+        out["usage_remote_mode"] = ruw_j.get("totals", {}).get("requests") == 2 and remotes[
+            -1
+        ].last_usage_kw == {
+            "backend": None,
+            "model": "m1",
+            "key_id": None,
+            "since": 5.0,
+            "until": None,
+        }
+        runner.invoke(
+            app,
+            ["harness", "usage", "--remote", "http://h.test", "--key-id", "krem"],
+        )
+        last_usage = remotes[-1].last_usage_kw
+        out["usage_remote_key_id"] = last_usage is not None and last_usage["key_id"] == "krem"
+
+        # managed-key lifecycle on the remote leg
+        kc = runner.invoke(
+            app, ["harness", "key-create", "--remote", "http://h.test", "--name", "svc"]
+        )
+        out["key_create_remote"] = (
+            kc.exit_code == 0
+            and json.loads(kc.stdout)["key"] == "fx1k_rem"
+            and remotes[-1].last_key_call == ("create", "svc")
+        )
+        kc2 = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--remote",
+                "http://h.test",
+                "--rpm",
+                "5",
+                "--ttl-s",
+                "60",
+            ],
+        )
+        out["key_create_policy_remote"] = kc2.exit_code == 0 and remotes[-1].last_key_kw == {
+            "admin": False,
+            "rpm": 5,
+            "ttl_s": 60.0,
+        }
+        kl = runner.invoke(app, ["harness", "keys", "--remote", "http://h.test"])
+        out["key_list_remote"] = kl.exit_code == 0 and json.loads(kl.stdout)[0]["id"] == "krem"
+        kg = runner.invoke(app, ["harness", "key-get", "krem", "--remote", "http://h.test"])
+        out["key_get_remote"] = kg.exit_code == 0 and remotes[-1].last_key_call == ("get", "krem")
+        kr = runner.invoke(app, ["harness", "key-revoke", "krem", "--remote", "http://h.test"])
+        out["key_revoke_remote"] = (
+            kr.exit_code == 0
+            and json.loads(kr.stdout)["enabled"] is False
+            and remotes[-1].last_key_call == ("revoke", "krem")
         )
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
@@ -1376,6 +2282,148 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             red.exit_code == 0
             and json.loads(red.stdout).get("object") == "eval_diff"
             and remotes[-1].last_diff == ("ev-a", "ev-b")
+        )
+
+        # /v1/evals spec+run family on --remote: every verb forwards to the
+        # matching HarnessClient method and prints the wire object.
+        res = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-spec-create",
+                "my-eval",
+                "--suite",
+                "tooluse",
+                "--criteria",
+                '[{"name":"all-pass"}]',
+                "--metadata",
+                '{"lane":"a"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_evalspec_create"] = (
+            res.exit_code == 0
+            and json.loads(res.stdout).get("id") == "eval_x"
+            and remotes[-1].last_spec_create["name"] == "my-eval"
+            and remotes[-1].last_spec_create["suite"] == "tooluse"
+            and remotes[-1].last_spec_create["testing_criteria"] == [{"name": "all-pass"}]
+        )
+        out["remote_evalspec_list"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "eval-spec-list", "--remote", "http://h.test"]
+                ).stdout
+            )
+            .get("data")[0]
+            .get("id")
+            == "eval_x"
+        )
+        out["remote_evalspec_family"] = (
+            all(
+                json.loads(
+                    runner.invoke(
+                        app, ["harness", name, "eval_x", "--remote", "http://h.test"]
+                    ).stdout
+                ).get("id")
+                == "eval_x"
+                for name in ("eval-spec-get", "eval-spec-delete")
+            )
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-spec-update",
+                        "eval_x",
+                        "--name",
+                        "renamed",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("name")
+            == "renamed"
+        )
+        rer = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-run",
+                "eval_x",
+                "--model",
+                "byok",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_evalrun"] = (
+            rer.exit_code == 0
+            and remotes[-1].last_run_create["eval_id"] == "eval_x"
+            and remotes[-1].last_run_create["model"] == "byok"
+            and remotes[-1].last_job == "y"  # wait_eval re-attached to the bare id
+            and json.loads(rer.stdout).get("status") == "completed"
+        )
+        out["remote_evalrun_family"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "eval-run-list", "eval_x", "--remote", "http://h.test"]
+                ).stdout
+            )
+            .get("data")[0]
+            .get("id")
+            == "evalrun_y"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "eval-run-get", "eval_x", "evalrun_y", "--remote", "http://h.test"],
+                ).stdout
+            ).get("status")
+            == "completed"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-cancel",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("status")
+            == "canceled"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-delete",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("deleted")
+            is True
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-items",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )
+            .get("data")[0]
+            .get("object")
+            == _OBJ_EVAL_OUTPUT_ITEM
         )
 
     # ready under drain: client raises the mapped 503, CLI exits 1
@@ -1459,6 +2507,10 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["ftevents_local_refused"] = rfe_local.exit_code == 2 and "--remote" in rfe_local.output
     rfc_local = runner.invoke(app, ["harness", "ft-cancel", "ftjob-x"])
     out["ftcancel_local_refused"] = rfc_local.exit_code == 2 and "--remote" in rfc_local.output
+    rfp_local = runner.invoke(app, ["harness", "ft-pause", "ftjob-x"])
+    out["ftpause_local_refused"] = rfp_local.exit_code == 2 and "--remote" in rfp_local.output
+    rfr_local = runner.invoke(app, ["harness", "ft-resume", "ftjob-x"])
+    out["ftresume_local_refused"] = rfr_local.exit_code == 2 and "--remote" in rfr_local.output
     rew_local = runner.invoke(app, ["harness", "eval-wait", "ev-x"])
     out["evalwait_local_refused"] = rew_local.exit_code == 2 and "--remote" in rew_local.output
     rfw_local = runner.invoke(app, ["harness", "ft-wait", "ftjob-x"])
@@ -1763,6 +2815,18 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and json.loads(rfc.stdout)["status"] == "cancelled"
             and remotes[-1].last_ft_job == "ftjob-x"
         )
+        rfp = runner.invoke(app, ["harness", "ft-pause", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_pause_json"] = (
+            rfp.exit_code == 0
+            and json.loads(rfp.stdout)["status"] == "paused"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
+        rfr = runner.invoke(app, ["harness", "ft-resume", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_resume_json"] = (
+            rfr.exit_code == 0
+            and json.loads(rfr.stdout)["status"] == "running"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
 
         # the *-wait twins re-attach to a --no-wait submit: poll kwargs
         # forward, the terminal record prints, eval-wait --receipt follows.
@@ -2003,12 +3067,13 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             runner.invoke(app, ["harness", "ft-checkpoints", "ftjob-x"]).exit_code == 2
         )
 
+        _say = "say hi"
         _rr = runner.invoke(
             app,
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--model",
                 "fx1",
                 "--backend",
@@ -2018,9 +3083,15 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "--metadata",
                 '{"k":"v"}',
                 "--format",
-                '{"type":"json_object"}',
+                _JSON_OBJECT_ARG,
                 "--previous-response-id",
                 "resp_prev9",
+                "--verbosity",
+                "high",
+                "--prompt-cache-key",
+                "pck",
+                "--prompt-cache-retention",
+                "24h",
                 "--background",
                 "--remote",
                 "http://h.test",
@@ -2031,6 +3102,9 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
             and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
             and (remotes[-1].last_ft_query or {}).get("previous_response_id") == "resp_prev9"
+            and (remotes[-1].last_ft_query or {}).get("verbosity") == "high"
+            and (remotes[-1].last_ft_query or {}).get("prompt_cache_key") == "pck"
+            and (remotes[-1].last_ft_query or {}).get("prompt_cache_retention") == "24h"
             and (remotes[-1].last_ft_query or {}).get("background") is True
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
@@ -2041,7 +3115,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--conversation",
                 "conv_9",
                 "--remote",
@@ -2053,6 +3127,48 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("conversation") == "conv_9"
             and (remotes[-1].last_ft_query or {}).get("previous_response_id") is None
         )
+        # --max-tool-calls forwards verbatim on both remote legs
+        _rm = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                _say,
+                "--max-tool-calls",
+                "2",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        _rms = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                _say,
+                "--stream",
+                "--max-tool-calls",
+                "3",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_max_tool_calls"] = (
+            _rm.exit_code == 0
+            and _rms.exit_code == 0
+            and _rms.stdout == "remote\n"
+            and (remotes[-2].last_ft_query or {}).get("max_tool_calls") == 2
+            and (remotes[-1].last_ft_query or {}).get("max_tool_calls") == 3
+        )
+        # a bad enum is a request-model fault — the body never reaches
+        # a backend
+        out["respond_hints_inproc_bad_enum_2"] = (
+            runner.invoke(
+                app,
+                ["harness", "respond", "hi", "--prompt-cache-retention", "forever"],
+            ).exit_code
+            == 2
+        )
         # respond --stream remote-side: bare payload dicts — the deltas
         # concatenate and the flag kwargs forward verbatim
         _rsr = runner.invoke(
@@ -2060,10 +3176,10 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--stream",
                 "--format",
-                '{"type":"json_object"}',
+                _JSON_OBJECT_ARG,
                 "--remote",
                 "http://h.test",
             ],
@@ -2101,6 +3217,24 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "response-cancel",
             )
         )
+        # chat-update --remote forwards the metadata payload verbatim
+        out["remote_chat_update"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "chat-update",
+                    "chatcmpl-x",
+                    "--metadata",
+                    '{"a": "1"}',
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("id") == "chatcmpl-x" and remotes[-1].last_ft_query == {
+            "chat_update": "chatcmpl-x",
+            "metadata": {"a": "1"},
+        }
         # the stored-request subresources — --remote forwards id + paging
         out["remote_chat_messages"] = json.loads(
             runner.invoke(
@@ -2218,6 +3352,12 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             "conv_items_add": "conv_x",
             "items": [{"role": "user", "content": "more"}],
         }
+        out["remote_conv_item"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "conv-item", "conv_x", "msg_z", "--remote", "http://h.test"],
+            ).stdout
+        ).get("id") == "msg_z" and remotes[-1].last_ft_query == {"conv_item": ["conv_x", "msg_z"]}
         out["remote_conv_item_delete"] = json.loads(
             runner.invoke(
                 app,
@@ -2226,6 +3366,50 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         ).get("id") == "conv_x" and remotes[-1].last_ft_query == {
             "conv_item_delete": ["conv_x", "msg_z"]
         }
+        # /v1/uploads family: `harness upload` chunks a real file through
+        # create→parts→complete; --no-md5 drops the checksum; upload-cancel
+        # forwards the id
+        import tempfile as _tful  # noqa: PLC0415
+
+        with _tful.NamedTemporaryFile(mode="wb", suffix=".jsonl", delete=False) as _ulf:
+            _ulf.write(b'{"a":1}\n{"b":2}\n')
+            _ulpath = _ulf.name
+        _ulr = runner.invoke(
+            app,
+            [
+                "harness",
+                "upload",
+                _ulpath,
+                "--chunk-bytes",
+                "5",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        _ul_done = json.loads(_ulr.stdout) if _ulr.exit_code == 0 else {}
+        out["remote_upload_lifecycle"] = (
+            _ulr.exit_code == 0
+            and _ul_done.get("status") == "completed"
+            and _ul_done.get("file", {}).get("id") == "file-up"
+            and remotes[-1].last_upload_create["bytes"] == 16
+            and remotes[-1].last_upload_part == {"id": "upload_x", "n_bytes": 1}
+            and remotes[-1].last_upload_complete
+            == {
+                "id": "upload_x",
+                "part_ids": ["part_a", "part_a", "part_a", "part_a"],
+                "md5": hashlib.md5(b'{"a":1}\n{"b":2}\n', usedforsecurity=False).hexdigest(),
+            }
+        )
+        out["remote_upload_cancel"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "upload-cancel", "upload_x", "--remote", "http://h.test"],
+                ).stdout
+            ).get("status")
+            == "cancelled"
+            and remotes[-1].last_upload_cancel == "upload_x"
+        )
         # in-process leg: conv-create needs no backend; a ghost get maps
         # the SDK KeyError to exit 2 through _or_exit
         _cip = runner.invoke(app, ["harness", "conv-create", "--metadata", '{"k":"v"}'])
@@ -2237,6 +3421,302 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and json.loads(_cip.stdout).get("metadata") == {"k": "v"}
             and runner.invoke(app, ["harness", "conv-get", "conv_ghost"]).exit_code == 2
         )
+        # /v1/vector_stores — the 10 vs-* commands forward on both legs:
+        # remote hits HarnessClient.vector_store_*, in-process the SDK.
+        _n_remote0 = len(remotes)
+        _vsc = runner.invoke(
+            app,
+            ["harness", "vs-create", "--name", "kb", "--remote", "http://h.test"],
+        )
+        out["remote_vs_create"] = (
+            _vsc.exit_code == 0
+            and json.loads(_vsc.stdout)["id"] == "vs_rem"
+            and remotes[-1].vs_calls[-1]
+            == (
+                "create",
+                (),
+                {
+                    "name": "kb",
+                    "metadata": None,
+                    "file_ids": None,
+                    "expires_after": None,
+                },
+            )
+        )
+        _vsu = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-update",
+                "vs_rem",
+                "--metadata",
+                '{"t": "a"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_update"] = (
+            _vsu.exit_code == 0
+            and json.loads(_vsu.stdout)["metadata"] == {"t": "a"}
+            and remotes[-1].vs_calls[-1]
+            == (
+                "update",
+                ("vs_rem",),
+                {"name": None, "metadata": {"t": "a"}, "expires_after": None},
+            )
+        )
+        _vsx = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-create",
+                "--expires-after",
+                '{"anchor": "last_active_at", "days": 2}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_expires_after"] = _vsx.exit_code == 0 and remotes[-1].vs_calls[-1] == (
+            "create",
+            (),
+            {
+                "name": None,
+                "metadata": None,
+                "file_ids": None,
+                "expires_after": {"anchor": "last_active_at", "days": 2},
+            },
+        )
+        _vsfa = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-file-add",
+                "vs_rem",
+                "file-9",
+                "--attributes",
+                '{"team": "q"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_file_add"] = (
+            _vsfa.exit_code == 0
+            and json.loads(_vsfa.stdout)["id"] == "file-9"
+            and remotes[-1].vs_calls[-1]
+            == (
+                "file_add",
+                ("vs_rem", "file-9"),
+                {"attributes": {"team": "q"}, "chunking_strategy": None},
+            )
+        )
+        _vsfl = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-files",
+                "vs_rem",
+                "--filter",
+                "completed",
+                "--limit",
+                "7",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_files"] = (
+            _vsfl.exit_code == 0
+            and json.loads(_vsfl.stdout)["object"] == "list"
+            and remotes[-1].vs_calls[-1][0] == "file_list"
+            and remotes[-1].vs_calls[-1][2]["filter"] == "completed"
+            and remotes[-1].vs_calls[-1][2]["limit"] == 7
+        )
+        _vsl = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-list",
+                "--limit",
+                "3",
+                "--order",
+                "asc",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_list"] = (
+            _vsl.exit_code == 0
+            and json.loads(_vsl.stdout)["data"][0]["id"] == "vs_rem"
+            and remotes[-1].vs_calls[-1][0] == "list"
+            and remotes[-1].vs_calls[-1][2]["limit"] == 3
+            and remotes[-1].vs_calls[-1][2]["order"] == "asc"
+        )
+        out["remote_vs_get_content_delete"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "vs-get", "vs_rem", "--remote", "http://h.test"]
+                ).stdout
+            )["id"]
+            == "vs_rem"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "vs-file-get", "vs_rem", "file-9", "--remote", "http://h.test"],
+                ).stdout
+            )["object"]
+            == "vector_store.file"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-file-content",
+                        "vs_rem",
+                        "file-9",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["data"][0]["text"]
+            == "chunk"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-file-delete",
+                        "vs_rem",
+                        "file-9",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["deleted"]
+            is True
+            and json.loads(
+                runner.invoke(
+                    app, ["harness", "vs-delete", "vs_rem", "--remote", "http://h.test"]
+                ).stdout
+            )["object"]
+            == "vector_store.deleted"
+        )
+        _vssrch = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-search",
+                "vs_rem",
+                "--query",
+                "alpha",
+                "--max-results",
+                "5",
+                "--filters",
+                '{"type": "eq", "key": "t", "value": "v"}',
+                "--score-threshold",
+                "0.2",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_search"] = (
+            _vssrch.exit_code == 0
+            and json.loads(_vssrch.stdout)["object"] == "vector_store.search_results.page"
+            and remotes[-1].vs_calls[-1]
+            == (
+                "search",
+                ("vs_rem", "alpha"),
+                {
+                    "max_num_results": 5,
+                    "filters": {"type": "eq", "key": "t", "value": "v"},
+                    "ranking_options": {"score_threshold": 0.2},
+                },
+            )
+        )
+        _vsbc = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-create",
+                "vs_rem",
+                "file-1",
+                "file-2",
+                "--attributes",
+                '{"t": "v"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_batch_create"] = (
+            _vsbc.exit_code == 0
+            and json.loads(_vsbc.stdout)["object"] == "vector_store.files_batch"
+            and json.loads(_vsbc.stdout)["file_counts"]["total"] == 2
+            and remotes[-1].vs_calls[-1]
+            == (
+                "batch_create",
+                ("vs_rem", "file-1", "file-2"),
+                {"attributes": {"t": "v"}, "chunking_strategy": None},
+            )
+        )
+        out["remote_vs_batch_get"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-get",
+                    "vs_rem",
+                    "vsfb_9",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        )["id"] == "vsfb_9" and remotes[-1].vs_calls[-1] == (
+            "batch_get",
+            ("vs_rem", "vsfb_9"),
+            {},
+        )
+        out["remote_vs_batch_cancel"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-cancel",
+                    "vs_rem",
+                    "vsfb_9",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        )["status"] == "cancelled" and remotes[-1].vs_calls[-1] == (
+            "batch_cancel",
+            ("vs_rem", "vsfb_9"),
+            {},
+        )
+        out["remote_vs_batch_files"] = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-files",
+                "vs_rem",
+                "vsfb_9",
+                "--filter",
+                "failed",
+                "--order",
+                "desc",
+                "--remote",
+                "http://h.test",
+            ],
+        ).exit_code == 0 and remotes[-1].vs_calls[-1] == (
+            "batch_files",
+            ("vs_rem", "vsfb_9"),
+            {
+                "limit": 20,
+                "after": None,
+                "before": None,
+                "order": "desc",
+                "filter": "failed",
+            },
+        )
+        out["remote_vs_all_hit_client"] = len(remotes) > _n_remote0
+
         _rs = json.loads(
             runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
         )
@@ -2265,6 +3745,165 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             (_rd / "b.json").write_text('{"y": 2}')
             _dv = runner.invoke(app, ["harness", "verify", str(_rd), "--remote", "http://h.test"])
         out["remote_verify_dir"] = _dv.exit_code == 1 and json.loads(_dv.stdout)["files"] == 2
+
+    fake_vs = _FakeSDK()
+    with patch("fx1.sdk.Fx1Harness", return_value=fake_vs):
+        _vsc_i = runner.invoke(
+            app, ["harness", "vs-create", "--name", "kb", "--metadata", '{"a": "1"}']
+        )
+        out["inproc_vs_create"] = (
+            _vsc_i.exit_code == 0
+            and json.loads(_vsc_i.stdout)["id"] == "vs_fake"
+            and fake_vs.vs_calls[-1]
+            == (
+                "create",
+                (),
+                {
+                    "name": "kb",
+                    "metadata": {"a": "1"},
+                    "file_ids": None,
+                    "expires_after": None,
+                },
+            )
+        )
+        _vsx_i = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-update",
+                "vs_x",
+                "--expires-after",
+                '{"anchor": "last_active_at", "days": 5}',
+            ],
+        )
+        out["inproc_vs_expires_after"] = _vsx_i.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "update",
+            ("vs_x",),
+            {
+                "name": None,
+                "metadata": None,
+                "expires_after": {"anchor": "last_active_at", "days": 5},
+            },
+        )
+        _vsi = runner.invoke(
+            app, ["harness", "vs-file-add", "vs_x", "file-1", "--attributes", '{"x": "y"}']
+        )
+        out["inproc_vs_file_add"] = _vsi.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "file_add",
+            ("vs_x", "file-1"),
+            {"attributes": {"x": "y"}, "chunking_strategy": None},
+        )
+        _vsd_i = runner.invoke(app, ["harness", "vs-delete", "vs_x"])
+        out["inproc_vs_delete"] = _vsd_i.exit_code == 0 and json.loads(_vsd_i.stdout) == {
+            "id": "vs_x",
+            "object": "vector_store.deleted",
+            "deleted": True,
+        }
+        _vss_i = runner.invoke(
+            app,
+            ["harness", "vs-search", "vs_x", "--query", "alpha", "--score-threshold", "0.5"],
+        )
+        out["inproc_vs_search"] = _vss_i.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "search",
+            ("vs_x", "alpha"),
+            {
+                "max_num_results": None,
+                "filters": None,
+                "ranking_options": {"score_threshold": 0.5},
+            },
+        )
+        _vsb_i = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-create",
+                "vs_x",
+                "file-1",
+                "--chunking-strategy",
+                '{"type": "static", "static": {"max_chunk_size_tokens": 100}}',
+            ],
+        )
+        out["inproc_vs_batch_create"] = (
+            _vsb_i.exit_code == 0
+            and json.loads(_vsb_i.stdout)["id"] == "vsfb_fake"
+            and fake_vs.vs_calls[-1]
+            == (
+                "batch_create",
+                ("vs_x", "file-1"),
+                {
+                    "attributes": None,
+                    "chunking_strategy": {
+                        "type": "static",
+                        "static": {"max_chunk_size_tokens": 100},
+                    },
+                },
+            )
+        )
+        out["inproc_vs_batch_ops"] = (
+            json.loads(runner.invoke(app, ["harness", "vs-batch-get", "vs_x", "vsfb_1"]).stdout)[
+                "id"
+            ]
+            == "vsfb_1"
+            and fake_vs.vs_calls[-1] == ("batch_get", ("vs_x", "vsfb_1"), {})
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-batch-files",
+                        "vs_x",
+                        "vsfb_1",
+                        "--filter",
+                        "failed",
+                    ],
+                ).stdout
+            )["object"]
+            == "list"
+            and fake_vs.vs_calls[-1]
+            == (
+                "batch_files",
+                ("vs_x", "vsfb_1"),
+                {
+                    "limit": 20,
+                    "after": None,
+                    "before": None,
+                    "order": "asc",
+                    "filter": "failed",
+                },
+            )
+        )
+        _vscx = runner.invoke(app, ["harness", "vs-batch-cancel", "vs_x", "vsfb_1"])
+        out["inproc_vs_batch_cancel"] = (
+            _vscx.exit_code == 0
+            and json.loads(_vscx.stdout)["status"] == "cancelled"
+            and fake_vs.vs_calls[-1] == ("batch_cancel", ("vs_x", "vsfb_1"), {})
+        )
+        out["vs_bad_args_exit2"] = (
+            runner.invoke(app, ["harness", "vs-create", "--file-ids", "notjson"]).exit_code == 2
+            and runner.invoke(
+                app, ["harness", "vs-file-add", "vs_x", "file-1", "--attributes", "nope"]
+            ).exit_code
+            == 2
+            and runner.invoke(app, ["harness", "vs-update", "vs_x", "--metadata", "[1]"]).exit_code
+            == 2
+            and runner.invoke(
+                app,
+                ["harness", "vs-search", "vs_x", "--query", "x", "--filters", "nope"],
+            ).exit_code
+            == 2
+            and runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-create",
+                    "vs_x",
+                    "file-1",
+                    "--attributes",
+                    "nope",
+                ],
+            ).exit_code
+            == 2
+        )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

@@ -46,15 +46,20 @@ from __future__ import annotations
 import json
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
+if TYPE_CHECKING:
+    from fx1.serve.api import JobStatusResponse, _BatchRecord
+    from fx1.serve.evals import EvalRecord
+    from fx1.serve.finetune import FTJob
+
 __all__ = ["journal_audit", "journal_audit_bench"]
 
 
-def _mk_eval(eval_id: str, status: str = "queued", key: str | None = None):
+def _mk_eval(eval_id: str, status: str = "queued", key: str | None = None) -> EvalRecord:
     from fx1.serve.evals import EvalRecord
 
     rec = EvalRecord(
@@ -71,7 +76,7 @@ def _mk_eval(eval_id: str, status: str = "queued", key: str | None = None):
     return rec
 
 
-def _mk_batch(batch_id: str, status: str = "validating"):
+def _mk_batch(batch_id: str, status: str = "validating") -> _BatchRecord:
     from fx1.serve.api import _BatchRecord
 
     rec = _BatchRecord(
@@ -88,7 +93,7 @@ def _mk_batch(batch_id: str, status: str = "validating"):
     return rec
 
 
-def _mk_ftjob(job_id: str, status: str = "queued"):
+def _mk_ftjob(job_id: str, status: str = "queued") -> FTJob:
     from fx1.serve.finetune import FTJob
 
     job = FTJob(
@@ -103,7 +108,7 @@ def _mk_ftjob(job_id: str, status: str = "queued"):
     return job
 
 
-def _mk_job(job_id: str, status: str = "queued", key: str | None = None):
+def _mk_job(job_id: str, status: str = "queued", key: str | None = None) -> JobStatusResponse:
     from fx1.serve.api import JobStatusResponse
 
     job = JobStatusResponse(
@@ -250,13 +255,13 @@ def journal_audit() -> dict[str, Any]:
         path = Path(td) / "evals.jsonl"
         estore = EvalStore(8, journal=JobJournal(path))
         estore.put(_mk_eval("e-q", "queued", key="k-eq"), "k-eq", "efp-q")
-        done = _mk_eval("e-ok", "succeeded", key="k-eok")
-        done.finished_at = 1001.0
-        estore.put(done, "k-eok", "efp-ok")
-        running = _mk_eval("e-r", "queued")
-        estore.put(running, None, None)
-        running.status = "running"
-        estore.mark(running)
+        edone = _mk_eval("e-ok", "succeeded", key="k-eok")
+        edone.finished_at = 1001.0
+        estore.put(edone, "k-eok", "efp-ok")
+        erunning = _mk_eval("e-r", "queued")
+        estore.put(erunning, None, None)
+        erunning.status = "running"
+        estore.mark(erunning)
 
         estore2 = EvalStore(8, journal=JobJournal(path))
         erec = estore2.get("e-q")
