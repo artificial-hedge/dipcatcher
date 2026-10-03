@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-469 category-6 canon.
+        "enriched_cat",
+        "weight_lim",
+        "fibered_cat",
+        "derivator2",
+        "accessible_cat",
+        "day_conv",
         # Wave-468 model-theory-7 canon.
         "o_minimal",
         "nip_theory",

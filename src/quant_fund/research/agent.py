@@ -3743,6 +3743,14 @@ from quant_fund.research.benches_w468 import (
     bench_simple_theory_family,
     bench_tame_metric_family,
 )
+from quant_fund.research.benches_w469 import (
+    bench_accessible_cat_family,
+    bench_day_conv_family,
+    bench_derivator2_family,
+    bench_enriched_cat_family,
+    bench_fibered_cat_family,
+    bench_weight_lim_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4122,6 +4130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "enriched_cat": bench_enriched_cat_family,
+        "weight_lim": bench_weight_lim_family,
+        "fibered_cat": bench_fibered_cat_family,
+        "derivator2": bench_derivator2_family,
+        "accessible_cat": bench_accessible_cat_family,
+        "day_conv": bench_day_conv_family,
         "o_minimal": bench_o_minimal_family,
         "nip_theory": bench_nip_theory_family,
         "nonforking": bench_nonforking_family,
