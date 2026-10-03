@@ -1,31 +1,31 @@
 {
+  "kind": "fx1_contract_audit",
+  "schema": "fx1_contract_audit.v1",
+  "git_revision": "fa5e5a44e86c9bf38204acf16a1ccc916cdff8fa",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
   "claim": {
-    "ok": true,
     "results": {
       "golden_exists": true,
       "golden_parses": true,
-      "golden_self_sealed": true,
       "live_deterministic": true,
+      "golden_self_sealed": true,
+      "no_missing_routes": true,
+      "no_additive_drift": true,
       "metadata_pinned": true,
       "methods_pinned": true,
-      "no_additive_drift": true,
-      "no_missing_routes": true,
+      "params_pinned": true,
+      "responses_pinned": true,
+      "request_body_pinned": true,
+      "surface_matches_golden": true,
       "operation_ids_present_unique": true,
       "operation_tags_present": true,
-      "params_pinned": true,
-      "request_body_pinned": true,
-      "responses_pinned": true,
-      "surface_matches_golden": true,
       "ts_client_snapshot_exists": true,
       "ts_client_snapshot_fresh": true
-    }
+    },
+    "ok": true
   },
-  "data_label": "SYNTHETIC",
-  "git_revision": "2e1f6a1a865b5e95875d94446c2256db67d9d86a",
   "interpretation": "the harness API surface is pinned: routes, methods, params, declared response codes, and request bodies match the committed golden; additive or breaking drift fails the seal",
-  "kind": "fx1_contract_audit",
-  "live_pnl_claim": false,
-  "receipt_sha256": "6d8f25944a515559e775b49ba4020ff6a9c998ff919dd3ef758d75712b31e281",
-  "research_only": true,
-  "schema": "fx1_contract_audit.v1"
+  "receipt_sha256": "dea2770019e0ce5ac0a2b5d84d46aad2abdbb71d6d2e919c60addbcf2c437105"
 }

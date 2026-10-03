@@ -734,6 +734,12 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         out["drain_gate_check_up"] = (
             dclient.post("/harness/gate/check", json={"text": "ok"}).status_code == 200
         )
+        out["drain_score_up"] = (
+            dclient.post("/harness/score", json={"input": "ok"}).status_code == 200
+        )
+        out["drain_moderations_up"] = (
+            dclient.post("/v1/moderations", json={"input": "ok"}).status_code == 200
+        )
         out["drain_uncapped_routes_up"] = (
             dclient.get("/harness/commands").status_code == 200
             and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
@@ -1072,7 +1078,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         st_err: dict[str, Any] = {}
         while time.monotonic() < deadline:
             st_err = cbc.get(f"/harness/jobs/{jid_err}").json()
-            if st_err.get("callback_status") and st_err.get("callback_attempts") == 3:
+            if st_err.get("callback_attempts") == 3 and _cb_path_n.get("/fail") == 3:
                 break
             time.sleep(0.05)
         out["callback_http_error_recorded"] = (
@@ -1105,11 +1111,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         st_fk: dict[str, Any] = {}
         while time.monotonic() < deadline:
             st_fk = cbc.get(f"/harness/jobs/{jid_fk}").json()
-            if (
-                st_fk["status"] == "succeeded"
-                and st_fk.get("callback_status")
-                and st_fk.get("callback_attempts") == 3
-            ):
+            if st_fk.get("callback_status") == "delivered" and _cb_path_n.get("/flaky") == 3:
                 break
             time.sleep(0.05)
         out["callback_flaky_delivers"] = (
@@ -2720,6 +2722,116 @@ def _probe_backend_probes(
         client.post("/harness/gate/check", json={"text": "x" * 262145}).status_code == 422
     )
 
+    # score surface: the deterministic reward contract over the wire —
+    # components + violations verbatim, not a model call.
+    s_one = client.post(
+        "/harness/score",
+        json={
+            "input": "verify-research pins receipt 0123456789abcdef — "
+            "simulated evidence, CRPS 0.4, uncertainty calibrated"
+        },
+    )
+    s_many = client.post(
+        "/harness/score",
+        json={"input": ["", "Sharpe 3.2 live trading NAV up", "x"]},
+    )
+    sd_many = s_many.json()["data"]
+    out["score_single_200"] = (
+        s_one.status_code == 200
+        and s_one.json()["object"] == "list"
+        and len(s_one.json()["data"]) == 1
+        and s_one.json()["data"][0]["object"] == "score"
+        and s_one.json()["data"][0]["index"] == 0
+        and s_one.json()["data"][0]["total"] == 8.5
+    )
+    out["score_components"] = (
+        s_one.json()["data"][0]["components"].get("honesty_clean") == 4.0
+        and s_one.json()["data"][0]["components"].get("cites_receipt") == 2.0
+        and s_one.json()["data"][0]["components"].get("proper_score_vocabulary") == 1.0
+    )
+    out["score_empty_zero"] = (
+        s_many.status_code == 200
+        and len(sd_many) == 3
+        and sd_many[0]["index"] == 0
+        and sd_many[0]["total"] == 0.0
+        and sd_many[0]["components"] == {}
+    )
+    out["score_honesty_violation"] = (
+        sd_many[1]["total"] == -10.0
+        and len(sd_many[1]["violations"]) == 1
+        and "forbidden" in sd_many[1]["violations"][0]
+    )
+    out["score_input_422"] = (
+        client.post("/harness/score", json={"input": []}).status_code == 422
+        and client.post("/harness/score", json={"input": [1]}).status_code == 422
+        and client.post("/harness/score", json={"input": "x" * 262145}).status_code == 422
+        and client.post("/harness/score", json={"input": ["x"] * 129}).status_code == 422
+    )
+
+    # /v1/moderations — the honesty gate in the OpenAI moderation wire
+    # shape: per-input {flagged, categories, category_scores} and a
+    # content-derived modr- id.
+    m_flag = client.post("/v1/moderations", json={"input": "Sharpe 3.2 live trading NAV up"})
+    mr_flag = m_flag.json()["results"][0]
+    out["moderations_flagged_200"] = (
+        m_flag.status_code == 200
+        and m_flag.json()["model"] == "fx1-honesty-gate"
+        and m_flag.json()["id"].startswith("modr-")
+        and len(m_flag.json()["results"]) == 1
+        and mr_flag["flagged"] is True
+        and mr_flag["categories"]["forbidden_headline_metric"] is True
+        and mr_flag["category_scores"]["forbidden_headline_metric"] == 1.0
+        and mr_flag["category_applied_input_types"]["forbidden_headline_metric"] == ["text"]
+    )
+    m_clean = client.post(
+        "/v1/moderations",
+        json={"input": "verify-research pins receipt 0123456789abcdef — CRPS 0.4"},
+    )
+    mr_clean = m_clean.json()["results"][0]
+    out["moderations_clean"] = (
+        m_clean.status_code == 200
+        and mr_clean["flagged"] is False
+        and all(v is False for v in mr_clean["categories"].values())
+        and all(v == 0.0 for v in mr_clean["category_scores"].values())
+    )
+    m_many = client.post(
+        "/v1/moderations",
+        json={"input": ["clean text", "Sharpe 3.2 live trading NAV up", "also clean"]},
+    )
+    mr_many = m_many.json()["results"]
+    out["moderations_list"] = (
+        m_many.status_code == 200
+        and len(mr_many) == 3
+        and [r["flagged"] for r in mr_many] == [False, True, False]
+    )
+    m_same = client.post(
+        "/v1/moderations",
+        json={"input": "verify-research pins receipt 0123456789abcdef — CRPS 0.4"},
+    )
+    m_diff = client.post("/v1/moderations", json={"input": "other text"})
+    out["moderations_deterministic_id"] = (
+        m_clean.json()["id"] == m_same.json()["id"] and m_same.json()["id"] != m_diff.json()["id"]
+    )
+    m_synth = client.post(
+        "/v1/moderations",
+        json={"input": "the synthetic results show accuracy 0.99"},
+    )
+    m_labeled = client.post(
+        "/v1/moderations",
+        json={"input": "the SYNTHETIC results show accuracy 0.99"},
+    )
+    out["moderations_unlabeled_synthetic"] = (
+        m_synth.json()["results"][0]["categories"]["unlabeled_synthetic"] is True
+        and m_synth.json()["results"][0]["flagged"] is True
+        and m_labeled.json()["results"][0]["flagged"] is False
+    )
+    out["moderations_input_422"] = (
+        client.post("/v1/moderations", json={"input": []}).status_code == 422
+        and client.post("/v1/moderations", json={"input": [1]}).status_code == 422
+        and client.post("/v1/moderations", json={"input": "x" * 262145}).status_code == 422
+        and client.post("/v1/moderations", json={"input": ["x"] * 129}).status_code == 422
+    )
+
     # usage ledger: backend-reported tokens accumulate per series; the
     # usage_calls counter separates "silent provider" from "zero bill".
     m2 = uapp.get("/metrics").json()["complete"]
@@ -3192,9 +3304,11 @@ def _probe_backend_probes(
     )
     ev_j = ev_sub.json()
     ev_id = ev_j.get("eval_id", "")
+    # the eval worker can finish before the response snapshot is read on a
+    # warm process — a 202 with a terminal status is the same acceptance.
     out["eval_submit_202"] = (
         ev_sub.status_code == 202
-        and ev_j.get("status") in ("queued", "running")
+        and ev_j.get("status") in ("queued", "running", "succeeded")
         and ev_j.get("replayed") is False
         and bool(ev_id)
         and ev_sub.headers.get("location") == f"/harness/evals/{ev_id}"
@@ -4495,6 +4609,12 @@ def _probe_backend_probes(
     )
     out["capabilities_reports_openai_embeddings"] = (
         oi_clean.get("/harness/capabilities").json()["features"].get("openai_embeddings") is True
+    )
+    out["capabilities_reports_score"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("score") is True
+    )
+    out["capabilities_reports_openai_moderations"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_moderations") is True
     )
 
     # — decode contract: n / stop / penalties / bias / hints / attribution —

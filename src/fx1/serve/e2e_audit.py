@@ -201,7 +201,16 @@ def e2e_audit() -> dict[str, bool]:
         base = f"http://127.0.0.1:{port}"
         remote = HarnessClient(base, api_key=_API_KEY, timeout_s=15.0)
         msg = [{"role": "user", "content": "ping"}]
+        # The default receipts_dir resolves citations against the mounted
+        # store: cite a real seal when the checkout ships receipts, else the
+        # store is absent and citations stay advisory (pass-through either
+        # way — the probes only assert the echo).
         receipt = "a" * 64
+        from fx1.serve.receipt_store import ReceiptIndex  # noqa: PLC0415
+
+        mounted = ReceiptIndex(Path(__file__).resolve().parents[3] / "receipts")
+        if mounted.available() and mounted.items():
+            receipt = mounted.items()[0][0]
 
         # -- lifecycle over the wire --------------------------------------
         health = remote.health()
@@ -468,7 +477,9 @@ def e2e_audit() -> dict[str, bool]:
                 max_retries=4,
                 retry_backoff_s=0.05,
             )
-            results = [_raises(lambda: rl.health()) or "ok" for _ in range(6)]
+            # /health is a public path — exempt from the limiter by design;
+            # the burst must hit a metered route to prove 429s happen.
+            results = [_raises(lambda: rl.commands()) or "ok" for _ in range(6)]
             m = rl.metrics()
             out["e2e_rate_limit_retries_succeed"] = (
                 results == ["ok"] * 6 and m.rate_limited_total >= 1

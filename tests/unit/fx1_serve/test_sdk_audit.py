@@ -6,6 +6,7 @@ import os
 
 from fx1.sdk import Fx1Harness
 from fx1.sdk_audit import sdk_audit, sdk_audit_bench
+from fx1.serve.backends import SamplingParams
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
 
@@ -34,7 +35,12 @@ def test_complete_closes_backend() -> None:
         _model = "m0"
         closed = 0
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
             return "clean"
 
         def close(self) -> None:

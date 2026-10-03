@@ -22,6 +22,12 @@ export type BackendProbeResponse =
   components["schemas"]["BackendProbeResponse"];
 export type GateCheckRequest = components["schemas"]["GateCheckRequest"];
 export type GateCheckResponse = components["schemas"]["GateCheckResponse"];
+export type ScoreRequest = components["schemas"]["ScoreRequest"];
+export type ScoreItem = components["schemas"]["ScoreItem"];
+export type ScoreResponse = components["schemas"]["ScoreResponse"];
+export type ModerationRequest = components["schemas"]["ModerationRequest"];
+export type ModerationResult = components["schemas"]["ModerationResult"];
+export type ModerationResponse = components["schemas"]["ModerationResponse"];
 export type CompleteRequest = components["schemas"]["CompleteRequest"];
 export type CompleteResponse = components["schemas"]["CompleteResponse"];
 export type CompleteBatchRequest =
@@ -589,6 +595,25 @@ export class HarnessApiClient {
     return this.post("/harness/gate/check", {
       text,
     } satisfies GateCheckRequest) as Promise<GateCheckResponse>;
+  }
+
+  /**
+   * POST /harness/score — run text through the deterministic reward
+   * contract; returns the per-item breakdowns (total, components,
+   * violations). Advisory: never spends model tokens.
+   */
+  score(request: ScoreRequest): Promise<ScoreResponse> {
+    return this.post("/harness/score", request) as Promise<ScoreResponse>;
+  }
+
+  /**
+   * POST /v1/moderations — OpenAI-compatible moderation over the honesty
+   * gate: per-input {flagged, categories, category_scores} and a
+   * content-derived `modr-<sha256>` id. Advisory: never spends model
+   * tokens.
+   */
+  moderations(request: ModerationRequest): Promise<ModerationResponse> {
+    return this.post("/v1/moderations", request) as Promise<ModerationResponse>;
   }
 
   /**

@@ -85,7 +85,8 @@ from starlette.middleware.gzip import GZipMiddleware
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
+from fx1.reward import score_response
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -741,6 +742,70 @@ class GateCheckResponse(_Model):
 
     ok: bool
     error: str | None = None
+
+
+class ScoreRequest(_Model):
+    """Text to run through the reward contract — the full deterministic
+    breakdown (components, violations, total) for writers preflighting a
+    response or validators auditing one. A str is one input; a list scores
+    each element independently (cap 128)."""
+
+    input: str | list[str]
+
+    @model_validator(mode="after")
+    def _input_shape(self) -> ScoreRequest:
+        raw = self.input
+        if isinstance(raw, str):
+            if len(raw) > 262144:
+                raise ValueError("input strings must be at most 262144 characters")
+            return self
+        if not isinstance(raw, list) or len(raw) == 0 or len(raw) > 128:
+            raise ValueError("input must be a non-empty list of at most 128 items")
+        if not all(isinstance(v, str) for v in raw):
+            raise ValueError("input must be a string or a list of strings")
+        if any(len(v) > 262144 for v in raw):
+            raise ValueError("input strings must be at most 262144 characters")
+        return self
+
+
+class ScoreItem(_Model):
+    """One scored input — the reward contract's verdict verbatim."""
+
+    object: Literal["score"] = "score"
+    index: int
+    total: float
+    components: dict[str, float]
+    violations: list[str]
+
+
+class ScoreResponse(_Model):
+    object: Literal["list"]
+    data: list[ScoreItem]
+
+
+class ModerationRequest(ScoreRequest):
+    """OpenAI-compatible moderation request — ``input`` is one string or a
+    list (same caps as ``/harness/score``); ``model`` is accepted for wire
+    compatibility and reported back as the gate's canonical name."""
+
+    model: str | None = None
+
+
+class ModerationResult(_Model):
+    """One input's moderation verdict. ``category_scores`` are deterministic
+    0.0/1.0 — the gate is a lexical contract, not a learned classifier, so
+    scores carry the verdict, not a confidence."""
+
+    flagged: bool
+    categories: dict[str, bool]
+    category_scores: dict[str, float]
+    category_applied_input_types: dict[str, list[str]]
+
+
+class ModerationResponse(_Model):
+    id: str
+    model: str
+    results: list[ModerationResult]
 
 
 class EvalSubmitRequest(_Model):
@@ -4446,6 +4511,64 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return GateCheckResponse(ok=False, error=str(exc))
         return GateCheckResponse(ok=True)
 
+    @app.post(
+        "/harness/score",
+        response_model=ScoreResponse,
+        tags=["harness"],
+        operation_id="harness_score",
+    )
+    async def score(body: ScoreRequest) -> ScoreResponse:
+        """Score text through the deterministic reward contract — the same
+        breakdown the corpus and reward lanes use (honesty violation caps
+        the total at -10; empty text scores 0). Advisory like the gate
+        pre-flight: no backend, no slot, stays up during drain."""
+        texts = [body.input] if isinstance(body.input, str) else body.input
+        return ScoreResponse(
+            object="list",
+            data=[
+                ScoreItem(
+                    index=i,
+                    total=bd.total,
+                    components=bd.components,
+                    violations=bd.violations,
+                )
+                for i, bd in enumerate(score_response(t) for t in texts)
+            ],
+        )
+
+    @app.post(
+        "/v1/moderations",
+        response_model=ModerationResponse,
+        tags=["openai"],
+        operation_id="openai_create_moderation",
+    )
+    async def openai_create_moderation(body: ModerationRequest) -> ModerationResponse:
+        """OpenAI-compatible moderation surface over the honesty gate: each
+        input is classified against the three gate categories (forbidden
+        headline metric, live/synthetic-as-live claim, unlabeled synthetic
+        evidence) and flagged when any fires. The ``id`` is content-derived
+        (``modr-<sha256>``) so identical inputs get identical receipts.
+        Advisory like the other preflight surfaces: no backend, no slot,
+        stays up during drain."""
+        texts = [body.input] if isinstance(body.input, str) else body.input
+        results = []
+        for text in texts:
+            categories = honesty_categories(text)
+            results.append(
+                ModerationResult(
+                    flagged=any(categories.values()),
+                    categories=categories,
+                    category_scores={name: 1.0 if hit else 0.0 for name, hit in categories.items()},
+                    category_applied_input_types={name: ["text"] for name in categories},
+                )
+            )
+        digest = hashlib.sha256("\x1e".join(texts).encode("utf-8")).hexdigest()
+        return ModerationResponse(
+            id=f"modr-{digest[:24]}",
+            model="fx1-honesty-gate",
+            results=results,
+        )
+
 
 def create_app(
     harness: Harness | None = None,
@@ -4806,6 +4929,8 @@ def create_app(
                 "openai_responses_tools": True,
                 "openai_logprobs": True,
                 "openai_embeddings": True,
+                "openai_moderations": True,
+                "score": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

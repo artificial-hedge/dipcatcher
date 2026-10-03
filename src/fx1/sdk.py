@@ -45,7 +45,7 @@ from typing import Any
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
-from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
 from fx1.serve.backends import (
     BackendNotConfiguredError,
     EmbeddingBackend,
@@ -782,6 +782,58 @@ class Fx1Harness:
         except Fx1HonestyError as exc:
             return GateCheckResult(ok=False, error=str(exc))
         return GateCheckResult(ok=True)
+
+    def score(self, input: str | list[str]) -> list[dict[str, Any]]:  # noqa: A002
+        """Score text through the deterministic reward contract in-process
+        — same breakdown shape as ``POST /harness/score`` on the wire:
+        ``{object:"score", index, total, components, violations}`` per
+        input. Argument faults raise ``ValueError``."""
+        from fx1.reward import score_response  # noqa: PLC0415
+        from fx1.serve.api import ScoreRequest  # noqa: PLC0415
+
+        validated = ScoreRequest(input=input).input
+        items = [validated] if isinstance(validated, str) else list(validated)
+        return [
+            {
+                "object": "score",
+                "index": i,
+                "total": bd.total,
+                "components": dict(bd.components),
+                "violations": list(bd.violations),
+            }
+            for i, bd in enumerate(score_response(t) for t in items)
+        ]
+
+    def moderate(self, input: str | list[str]) -> dict[str, Any]:  # noqa: A002
+        """Classify text through the honesty gate in-process — the
+        OpenAI-moderations wire shape (``POST /v1/moderations``): one
+        ``{flagged, categories, category_scores, category_applied_input_types}``
+        result per input, plus the content-derived ``modr-<sha256>`` id the
+        wire returns for identical inputs. Argument faults raise
+        ``ValidationError``."""
+        from fx1.serve.api import ModerationRequest  # noqa: PLC0415
+
+        validated = ModerationRequest(input=input).input
+        items = [validated] if isinstance(validated, str) else list(validated)
+        results = []
+        for text in items:
+            categories = honesty_categories(text)
+            results.append(
+                {
+                    "flagged": any(categories.values()),
+                    "categories": categories,
+                    "category_scores": {
+                        name: 1.0 if hit else 0.0 for name, hit in categories.items()
+                    },
+                    "category_applied_input_types": {name: ["text"] for name in categories},
+                }
+            )
+        digest = hashlib.sha256("\x1e".join(items).encode("utf-8")).hexdigest()
+        return {
+            "id": f"modr-{digest[:24]}",
+            "model": "fx1-honesty-gate",
+            "results": results,
+        }
 
     def probe_backend(
         self,

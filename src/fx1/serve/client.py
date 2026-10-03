@@ -818,6 +818,20 @@ class HarnessClient:
         out = self._json("POST", "/harness/gate/check", {"text": text})
         return GateCheckResult(ok=out["ok"], error=out.get("error"))
 
+    def score(self, input: str | list[str]) -> list[dict[str, Any]]:  # noqa: A002
+        """Score text through the remote reward contract — POSTs
+        ``/harness/score``; returns the per-item breakdowns
+        (``total``/``components``/``violations``)."""
+        out = self._json("POST", "/harness/score", {"input": input})
+        return list(out["data"])
+
+    def moderate(self, input: str | list[str]) -> dict[str, Any]:  # noqa: A002
+        """Classify text through the remote honesty gate — POSTs
+        ``/v1/moderations``; returns the full wire payload (``id``,
+        ``model``, per-input ``results``)."""
+        out = self._json("POST", "/v1/moderations", {"input": input})
+        return dict(out)
+
     def probe_backend(
         self,
         backend: str,
