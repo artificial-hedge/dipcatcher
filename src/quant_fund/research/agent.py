@@ -5055,6 +5055,14 @@ from quant_fund.research.benches_w632 import (
     bench_tate_curve_family,
     bench_witt_len2_family,
 )
+from quant_fund.research.benches_w633 import (
+    bench_cone_theorem_family,
+    bench_contr_rational_family,
+    bench_motivic_abelian_family,
+    bench_motivic_coho2_family,
+    bench_motivic_compact_family,
+    bench_motivic_landweber_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5434,6 +5442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_coho2": bench_motivic_coho2_family,
+        "cone_theorem": bench_cone_theorem_family,
+        "motivic_landweber": bench_motivic_landweber_family,
+        "motivic_abelian": bench_motivic_abelian_family,
+        "motivic_compact": bench_motivic_compact_family,
+        "contr_rational": bench_contr_rational_family,
         "witt_len2": bench_witt_len2_family,
         "big_witt": bench_big_witt_family,
         "good_reduction": bench_good_reduction_family,
