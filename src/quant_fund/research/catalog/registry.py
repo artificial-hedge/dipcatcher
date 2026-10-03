@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-732 Hall-algebra canon.
+        "hall_algebra",
+        "ringel_hall",
+        "toen_hall",
+        "lusztig_hall",
+        "schiffmann_hall",
+        "joyce_hall",
         # Wave-731 ramification-2 canon.
         "higher_ramif",
         "brylinski_kato",
