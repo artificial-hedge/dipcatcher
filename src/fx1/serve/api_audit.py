@@ -4466,12 +4466,15 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
     from fx1.serve.backends import ToolCompletion as _ToolCompletion  # noqa: PLC0415
 
     class _OiToolBackend:
-        """Tool-capable stub: records the forwarded spec, answers a call.
+        """Tool-capable stub: records the forwarded spec, answers calls.
         Answers a canned ``logprobs`` payload when the request asks for
-        one — the wire's verbatim echo is what gets probed."""
+        one — the wire's verbatim echo is what gets probed. ``n_calls``
+        sets how many ``function_call`` entries one turn emits (one by
+        default — the multi-call variant probes ``max_tool_calls``)."""
 
-        def __init__(self) -> None:
+        def __init__(self, n_calls: int = 1) -> None:
             self._model = "tool-0"
+            self.n_calls = n_calls
             self.calls = 0
             self.seen_tools: list[dict[str, Any]] | None = None
             self.seen_choice: Any = None
@@ -4524,12 +4527,13 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
                 }
             return _ToolCompletion(
                 content=None,
-                tool_calls=(
+                tool_calls=tuple(
                     {
-                        "id": "call_0",
+                        "id": f"call_{k}",
                         "type": "function",
                         "function": {"name": "calc", "arguments": '{"x": 1}'},
-                    },
+                    }
+                    for k in range(self.n_calls)
                 ),
                 finish_reason="tool_calls",
                 logprobs=lp,
@@ -4673,6 +4677,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
 
     oi_tool = _OiToolBackend()
     oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    # three calls a turn — probes ``max_tool_calls`` truncation
+    oi_tool3 = _OiToolBackend(n_calls=3)
+    oi_tool3_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool3))
     oi_lp_b = _OiLpBackend()
     oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
     oi_emb_b = _OiEmbedBackend()
@@ -7805,6 +7812,122 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         ).json()["error"]["code"]
         == "conversation_not_found"
     )
+
+    # ---- lane 112: max_tool_calls ----
+    # A caller's safety bound must not evaporate into ``extra="allow"``:
+    # over the cap the emitted call list truncates at the bound and the
+    # response lands ``status: 'incomplete'`` with
+    # ``incomplete_details.reason == 'max_tool_calls'`` — OpenAI's own
+    # truncation semantics, never a silent drop. The stream's terminal
+    # frame is ``response.incomplete``; the stored object and its conv
+    # append keep the truncation; at/under the cap the turn completes.
+    # /v1/responses takes the flattened Responses tool spec (the nested
+    # chat shape is a wire 422)
+    mt_req = {
+        "model": "fx1",
+        "input": "calls",
+        "tools": [
+            {
+                "type": "function",
+                "name": "calc",
+                "description": "arithmetic",
+                "parameters": {"type": "object"},
+            }
+        ],
+        "max_tool_calls": 2,
+    }
+    mt = oi_tool3_app.post("/v1/responses", json=mt_req)
+    mt_b = mt.json()
+    mt_out = mt_b.get("output") or []
+    mt_fc = [it for it in mt_out if it.get("type") == "function_call"]
+    mt_st = oi_tool3_app.get(f"/v1/responses/{mt_b['id']}").json()
+    out["resp_max_tool_calls_incomplete"] = (
+        mt.status_code == 200
+        and mt_b["status"] == "incomplete"
+        and mt_b["incomplete_details"] == {"reason": "max_tool_calls"}
+        and mt_b["max_tool_calls"] == 2
+        and len(mt_out) == 2
+        and [it["call_id"] for it in mt_fc] == ["call_0", "call_1"]
+        # the truncated turn has no prose — no phantom empty message item
+        and not any(it.get("type") == "message" for it in mt_out)
+        and mt_st["status"] == "incomplete"
+        and len(mt_st["output"]) == 2
+    )
+    mt0 = oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": 0}).json()
+    out["resp_max_tool_calls_zero"] = (
+        mt0["status"] == "incomplete"
+        and mt0["incomplete_details"]["reason"] == "max_tool_calls"
+        and mt0["output"] == []
+    )
+    mt_at = oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": 3}).json()
+    mt_off = oi_tool3_app.post(
+        "/v1/responses",
+        json={k: v for k, v in mt_req.items() if k != "max_tool_calls"},
+    ).json()
+    out["resp_max_tool_calls_at_or_off"] = (
+        mt_at["status"] == "completed"
+        and len(mt_at["output"]) == 3
+        and mt_at["incomplete_details"] is None
+        and mt_off["status"] == "completed"
+        and len(mt_off["output"]) == 3
+        and mt_off["max_tool_calls"] is None
+    )
+    out["resp_max_tool_calls_422"] = (
+        oi_tool3_app.post("/v1/responses", json={**mt_req, "max_tool_calls": -1}).status_code == 422
+    )
+    mt_s = oi_tool3_app.post("/v1/responses", json={**mt_req, "stream": True})
+    out["resp_max_tool_calls_stream_incomplete"] = (
+        mt_s.status_code == 200
+        and "event: response.incomplete" in mt_s.text
+        and "event: response.completed" not in mt_s.text
+    )
+    # a batch line honours the per-line cap — the output-file body is the
+    # same truncated envelope
+    mt_batch = (
+        _json3.dumps(
+            {
+                "custom_id": "cap2",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {**mt_req, "model": "fx1"},
+            }
+        )
+        + "\n"
+    ).encode()
+    mt_up = oi_tool3_app.post(
+        "/v1/files",
+        files={"file": ("cap.jsonl", mt_batch, "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    mt_bc = oi_tool3_app.post(
+        "/v1/batches",
+        json={"input_file_id": mt_up["id"], "endpoint": "/v1/responses"},
+    ).json()
+    mt_bterm = _wait_batch(oi_tool3_app, mt_bc["id"])
+    mt_line = _json3.loads(
+        oi_tool3_app.get(f"/v1/files/{mt_bterm['output_file_id']}/content").text.strip()
+    )
+    out["resp_max_tool_calls_batch_line"] = (
+        mt_bterm["status"] == "completed"
+        and mt_line["response"]["status_code"] == 200
+        and mt_line["response"]["body"]["status"] == "incomplete"
+        and mt_line["response"]["body"]["incomplete_details"]["reason"] == "max_tool_calls"
+        and len(mt_line["response"]["body"]["output"]) == 2
+    )
+    # the conv trail records the truncation, not a fake completion
+    mt_conv = oi_tool3_app.post("/v1/conversations", json={}).json()["id"]
+    mt_cv = oi_tool3_app.post("/v1/responses", json={**mt_req, "conversation": mt_conv}).json()
+    mt_cv_items = oi_tool3_app.get(f"/v1/conversations/{mt_conv}/items").json()["data"]
+    out["resp_max_tool_calls_conv_append"] = (
+        mt_cv["status"] == "incomplete"
+        and len([it for it in mt_cv_items if it.get("type") == "function_call"]) == 2
+        # the only message item is the request's user input — no phantom
+        # assistant message fabricated by the truncation
+        and not any(
+            it.get("type") == "message" and it.get("role") == "assistant" for it in mt_cv_items
+        )
+    )
+
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()
     out["capabilities_retrieval"] = (

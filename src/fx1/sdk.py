@@ -98,11 +98,11 @@ from fx1.serve.openai_compat import (
     openai_error_body,
     openai_model,
     openai_models,
-    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
     paged_item_list,
+    response_cap_call_items,
     response_input_items_for_store,
     response_text_format,
     response_to_kwargs,
@@ -1975,7 +1975,7 @@ class Fx1Harness:
         # a tool-call turn carries no text — nothing to post-validate
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
-        call_items = openai_response_call_items(result.tool_calls or [])
+        call_items, inc_details = response_cap_call_items(body, result.tool_calls or [])
         lp_arr = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         envelope = openai_response_object(
             rid=rid or f"resp_{uuid.uuid4().hex}",
@@ -1984,9 +1984,11 @@ class Fx1Harness:
             body=body,
             model=result.model,
             usage=result.usage,
+            status=("incomplete" if inc_details else "completed"),
             created=created,
-            call_items=call_items or None,
+            call_items=call_items,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
+            incomplete_details=inc_details,
         )
         if body.store is not False:
             self._openai_store.put(
@@ -2111,7 +2113,7 @@ class Fx1Harness:
             validate_response_format(response_text_format(body), result.content)
         rid = f"resp_{uuid.uuid4().hex}"
         item_id = f"msg_{uuid.uuid4().hex}"
-        call_items = openai_response_call_items(result.tool_calls or [])
+        call_items, inc_details_s = response_cap_call_items(body, result.tool_calls or [])
         lp_arr_s = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         env_s = openai_response_object(
             rid=rid,
@@ -2120,8 +2122,10 @@ class Fx1Harness:
             body=body,
             model=result.model,
             usage=result.usage,
-            call_items=call_items or None,
+            status=("incomplete" if inc_details_s else "completed"),
+            call_items=call_items,
             logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+            incomplete_details=inc_details_s,
         )
         if body.store is not False:
             self._openai_store.put(
@@ -2137,8 +2141,10 @@ class Fx1Harness:
                 body=body,
                 model=result.model,
                 usage=result.usage,
-                call_items=call_items or None,
+                call_items=call_items,
                 logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+                final_status=("incomplete" if inc_details_s else "completed"),
+                incomplete_details=inc_details_s,
             )
         )
         if last_event_id is not None:

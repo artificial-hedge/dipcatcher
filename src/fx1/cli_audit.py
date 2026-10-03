@@ -2053,6 +2053,39 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("conversation") == "conv_9"
             and (remotes[-1].last_ft_query or {}).get("previous_response_id") is None
         )
+        # --max-tool-calls forwards verbatim on both remote legs
+        _rm = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--max-tool-calls",
+                "2",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        _rms = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--stream",
+                "--max-tool-calls",
+                "3",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_max_tool_calls"] = (
+            _rm.exit_code == 0
+            and _rms.exit_code == 0
+            and _rms.stdout == "remote\n"
+            and (remotes[-2].last_ft_query or {}).get("max_tool_calls") == 2
+            and (remotes[-1].last_ft_query or {}).get("max_tool_calls") == 3
+        )
         # respond --stream remote-side: bare payload dicts — the deltas
         # concatenate and the flag kwargs forward verbatim
         _rsr = runner.invoke(

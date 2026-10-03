@@ -168,11 +168,11 @@ from fx1.serve.openai_compat import (
     openai_envelope,
     openai_error_body,
     openai_model,
-    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
     paged_item_list,
+    response_cap_call_items,
     response_input_item_dicts,
     response_input_items_for_store,
     response_text_format,
@@ -1304,12 +1304,15 @@ def _responses_sse(
     skip: int = 0,
     call_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    final_status: str = "completed",
+    incomplete_details: dict[str, Any] | None = None,
 ) -> Iterator[str]:
     """Serialize ``openai_response_events`` into SSE frames —
     ``event:`` + ``id:`` + ``data:`` per frame, ``id`` equal to the
     frame index so ``Last-Event-ID`` resume works identically to the
     chat-completions stream. No ``[DONE]`` marker — ``response.completed``
-    is the terminal event."""
+    (or ``response.incomplete`` on a truncated turn) is the terminal
+    event."""
 
     def _frame(event: str, payload: dict[str, Any], seq: int) -> str:
         return f"event: {event}\nid: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
@@ -1325,6 +1328,8 @@ def _responses_sse(
             created=created,
             call_items=call_items,
             logprobs=logprobs,
+            final_status=final_status,
+            incomplete_details=incomplete_details,
         )
     ):
         if seq >= skip:
@@ -3702,7 +3707,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if out.content or not out.tool_calls:
             validate_response_format(response_text_format(body), out.content)
         cid = out.completion_id or uuid.uuid4().hex
-        call_items = openai_response_call_items(out.tool_calls or [])
+        # ``max_tool_calls`` truncates a turn that emitted over the cap —
+        # the response lands 'incomplete' with the bounded call list, never
+        # a silent drop
+        call_items, inc_details = response_cap_call_items(body, out.tool_calls or [])
         lp_arr = out.logprobs.get("content") if isinstance(out.logprobs, dict) else None
         envelope = openai_response_object(
             rid=rid or f"resp_{uuid.uuid4().hex}",
@@ -3711,9 +3719,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             body=body,
             model=out.model,
             usage=out.usage,
+            status=("incomplete" if inc_details else "completed"),
             created=created,
-            call_items=call_items or None,
+            call_items=call_items,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
+            incomplete_details=inc_details,
         )
         if body.store is not False:
             envelope_store.put(
@@ -4123,6 +4133,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``none``/``auto``/``required`` or ``{type: "function", name}``),
         ``parallel_tool_calls``, ``function_call``/``function_call_output``
         input items, and ``function_call`` output items are first-class —
+        ``max_tool_calls`` bounds the calls one response may carry; a turn
+        over the cap truncates and lands ``status: 'incomplete'`` with
+        ``incomplete_details.reason == 'max_tool_calls'`` (the stream's
+        terminal frame is ``response.incomplete``) —
         the same tool channel as ``/v1/chat/completions`` under its own
         grammar (a link without the channel answers 501). Same fail-closed
         rule as chat completions for the rest: ``truncation``/``include``
@@ -4201,8 +4215,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
-                call_items=env_calls or None,
+                # ``None`` marks a prose turn; a calls turn truncated to
+                # zero by max_tool_calls replays as the empty list — never
+                # a phantom empty message item
+                call_items=(
+                    env_calls
+                    if env_calls
+                    else ([] if env.get("status") == "incomplete" and env_msg is None else None)
+                ),
                 logprobs=(env_lp if isinstance(env_lp, list) else None),
+                # a truncated turn replays its terminal event too —
+                # response.incomplete, not response.completed
+                final_status=("incomplete" if env.get("status") == "incomplete" else "completed"),
+                incomplete_details=env.get("incomplete_details"),
             )
 
         if replay is not None:
@@ -4423,7 +4448,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
-                    call_items=env_call_items or None,
+                    call_items=(
+                        env_call_items
+                        if env_call_items
+                        else (
+                            []
+                            if envelope.get("status") == "incomplete" and msg_item is None
+                            else None
+                        )
+                    ),
                     logprobs=(
                         msg_item["content"][0].get("logprobs")
                         if isinstance(msg_item, dict)
@@ -4432,6 +4465,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         and isinstance(msg_item["content"][0], dict)
                         else None
                     ),
+                    final_status=str(envelope.get("status") or "completed"),
+                    incomplete_details=envelope.get("incomplete_details"),
                 ),
                 media_type="text/event-stream",
                 headers=headers,

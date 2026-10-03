@@ -1271,6 +1271,10 @@ export interface paths {
          *     (``none``/``auto``/``required`` or ``{type: "function", name}``),
          *     ``parallel_tool_calls``, ``function_call``/``function_call_output``
          *     input items, and ``function_call`` output items are first-class —
+         *     ``max_tool_calls`` bounds the calls one response may carry; a turn
+         *     over the cap truncates and lands ``status: 'incomplete'`` with
+         *     ``incomplete_details.reason == 'max_tool_calls'`` (the stream's
+         *     terminal frame is ``response.incomplete``) —
          *     the same tool channel as ``/v1/chat/completions`` under its own
          *     grammar (a link without the channel answers 501). Same fail-closed
          *     rule as chat completions for the rest: ``truncation``/``include``
@@ -2967,6 +2971,8 @@ export interface components {
             instructions?: string | null;
             /** Max Output Tokens */
             max_output_tokens?: number | null;
+            /** Max Tool Calls */
+            max_tool_calls?: number | null;
             /** Metadata */
             metadata?: {
                 [key: string]: string;

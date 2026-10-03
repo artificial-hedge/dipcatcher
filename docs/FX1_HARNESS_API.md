@@ -432,6 +432,15 @@ same OpenAI error taxonomy:
   `tool_choice`/`parallel_tool_calls` without tools refuse 422,
   malformed `function_call`/`function_call_output` items refuse
   400.
+- **Tool-call cap:** `max_tool_calls` bounds the function calls one
+  response may carry — over the cap the emitted `output` truncates
+  at the bound and the response lands `status: "incomplete"` with
+  `incomplete_details: {"reason": "max_tool_calls"}` (OpenAI's own
+  truncation semantics — never a silent drop). A calls-only turn
+  capped at zero ships `output: []` (no phantom empty message); the
+  stream's terminal frame is `response.incomplete`; stored objects,
+  batch lines, and conversation appends keep the truncation. `ge=0`
+  validated (negative is 422).
 - **Logprobs channel:** `include: ["message.output_text.logprobs"]`
   is the only honored `include` member — it asks the provider for
   per-token scores, and `top_logprobs` (0–20) requires it. The

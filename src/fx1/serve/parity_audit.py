@@ -125,8 +125,14 @@ class _NonStreamingBackend:
 
 
 class _ParityToolBackend(_ParityBackend):
-    """Tool-capable parity backend — answers one canned function call,
-    plus a canned logprobs payload when the request asks for scores."""
+    """Tool-capable parity backend — answers canned function calls,
+    plus a canned logprobs payload when the request asks for scores.
+    ``n_calls`` sets how many calls a turn emits (the multi-call variant
+    probes ``max_tool_calls``)."""
+
+    def __init__(self, n_calls: int = 1) -> None:
+        super().__init__()
+        self.n_calls = n_calls
 
     def complete_with_tools(
         self,
@@ -159,12 +165,13 @@ class _ParityToolBackend(_ParityBackend):
             }
         return ToolCompletion(
             content=None,
-            tool_calls=(
+            tool_calls=tuple(
                 {
-                    "id": "call_p",
+                    "id": f"call_{k}",
                     "type": "function",
                     "function": {"name": "calc", "arguments": '{"x": 1}'},
-                },
+                }
+                for k in range(self.n_calls)
             ),
             finish_reason="tool_calls",
             logprobs=lp,
@@ -982,7 +989,7 @@ def parity_audit() -> dict[str, bool]:
             == [
                 {
                     "type": "function_call",
-                    "call_id": "call_p",
+                    "call_id": "call_0",
                     "name": "calc",
                     "arguments": '{"x": 1}',
                     "status": "completed",
@@ -1044,6 +1051,46 @@ def parity_audit() -> dict[str, bool]:
             and [_resp_norm(p) for p in wire_rtevents] == [_resp_norm(p) for _e, p in sdk_rtevents]
             and [e for e, _p in sdk_rtevents] == [p["type"] for p in wire_rtevents]
             and "response.function_call_arguments.delta" in [p["type"] for p in wire_rtevents]
+        )
+        # lane 112: ``max_tool_calls`` truncates identically on both
+        # surfaces — same incomplete envelope, same terminal stream event
+        sdk_t3, client_t3 = _surfaces(lambda: _ParityToolBackend(n_calls=3))
+        cap_body = {**rtool_body, "max_tool_calls": 2}
+        wire_cap = client_t3.post("/v1/responses", json=cap_body)
+        sdk_cap, _ = sdk_t3.openai_response(cap_body)
+        cap_norm = {
+            "status",
+            "incomplete_details",
+            "max_tool_calls",
+            "tool_choice",
+            "parallel_tool_calls",
+        }
+        out["openai_responses_max_tool_calls_parity"] = (
+            wire_cap.status_code == 200
+            and {k: v for k, v in wire_cap.json().items() if k in cap_norm}
+            == {k: v for k, v in sdk_cap.items() if k in cap_norm}
+            == {
+                "status": "incomplete",
+                "incomplete_details": {"reason": "max_tool_calls"},
+                "max_tool_calls": 2,
+                "tool_choice": "required",
+                "parallel_tool_calls": True,
+            }
+            and len(wire_cap.json()["output"]) == len(sdk_cap["output"]) == 2
+        )
+        wire_cap_s = client_t3.post("/v1/responses", json={**cap_body, "stream": True})
+        wire_cap_events = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_cap_s.text.splitlines()
+            if ln.startswith("data: ")
+        ]
+        sdk_cap_events, _ = sdk_t3.openai_response_stream(cap_body)
+        out["openai_responses_max_tool_calls_stream_parity"] = (
+            wire_cap_s.status_code == 200
+            and [_resp_norm(p) for p in wire_cap_events]
+            == [_resp_norm(p) for _e, p in sdk_cap_events]
+            and [e for e, _p in sdk_cap_events] == [p["type"] for p in wire_cap_events]
+            and wire_cap_events[-1]["type"] == "response.incomplete"
         )
         # lane 83: the logprobs channel on /v1/responses — include +
         # top_logprobs carry identically and the provider's array lands on

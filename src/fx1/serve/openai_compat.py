@@ -101,6 +101,7 @@ __all__ = [
     "OPENAI_RESPONSE_TERMINAL",
     "chained_response_input",
     "conversation_id_of",
+    "response_cap_call_items",
     "response_input_item_dicts",
     "response_input_items_for_store",
     "response_input_to_messages",
@@ -1004,6 +1005,11 @@ class OpenAIResponseRequest(_Model):
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
     max_output_tokens: int | None = Field(default=None, gt=0, le=262144)
+    # ``max_tool_calls`` bounds the function calls one response may carry —
+    # a turn whose model emits more than the cap truncates at the bound and
+    # lands ``status: 'incomplete'`` with ``incomplete_details.reason``
+    # ``'max_tool_calls'`` (OpenAI's own semantics); 0 refuses calls outright.
+    max_tool_calls: int | None = Field(default=None, ge=0)
     stream: bool = False
     store: bool | None = None
     metadata: dict[str, str] | None = None
@@ -1451,6 +1457,7 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "parallel_tool_calls": bool(body.parallel_tool_calls),
         "include": body.include or [],
         "top_logprobs": body.top_logprobs,
+        "max_tool_calls": body.max_tool_calls,
         "truncation": "disabled",
         "background": body.background,
         "previous_response_id": body.previous_response_id,
@@ -1487,6 +1494,29 @@ def openai_response_call_items(
     return items
 
 
+def response_cap_call_items(
+    body: OpenAIResponseRequest,
+    tool_calls: Iterable[dict[str, Any]],
+) -> tuple[list[dict[str, Any]] | None, dict[str, str] | None]:
+    """Apply ``body.max_tool_calls`` — the cap on the calls one response
+    may carry. Over the cap the emitted items truncate at the bound and
+    the response lands ``status: 'incomplete'`` with
+    ``{'reason': 'max_tool_calls'}`` — OpenAI's own truncation semantics,
+    never a silent drop.
+
+    Returns ``(items, incomplete_details)`` where ``items`` is ``None``
+    when the model emitted no calls at all (a prose turn) and a list —
+    possibly empty when the cap truncated everything — when it did, so a
+    calls-only turn capped at zero ships no phantom empty message item."""
+    calls = list(tool_calls)
+    if not calls:
+        return None, None
+    items = openai_response_call_items(calls)
+    if body.max_tool_calls is not None and len(items) > body.max_tool_calls:
+        return items[: body.max_tool_calls], {"reason": "max_tool_calls"}
+    return items, None
+
+
 def openai_response_object(
     *,
     rid: str,
@@ -1500,6 +1530,7 @@ def openai_response_object(
     call_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
     error: dict[str, Any] | None = None,
+    incomplete_details: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the ``response`` object. ``output`` carries one
     ``message`` item with one ``output_text`` part — plus one
@@ -1512,7 +1543,10 @@ def openai_response_object(
     only when the provider reported scores). ``status`` is ``in_progress``
     inside the pre-completion stream events, and ``queued``/``failed``/
     ``cancelled`` on the background lifecycle (non-``completed`` ships an
-    empty ``output``; ``error`` carries the failure record when set)."""
+    empty ``output``; ``error`` carries the failure record when set).
+    ``incomplete`` is the exception — it carries the partial ``output``
+    OpenAI ships on a truncated turn (``incomplete_details`` records the
+    reason, e.g. ``{'reason': 'max_tool_calls'}``)."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
         it = usage.get("prompt_tokens")
@@ -1527,8 +1561,10 @@ def openai_response_object(
                 "total_tokens": tt if isinstance(tt, int) else i_v + o_v,
             }
     output: list[dict[str, Any]] = []
-    if status == "completed":
-        if content or not call_items:
+    if status in ("completed", "incomplete"):
+        # ``call_items is None`` marks a prose turn; a calls turn —
+        # including one the cap truncated to zero — is a non-None list
+        if content or call_items is None:
             part: dict[str, Any] = {
                 "type": "output_text",
                 "text": content,
@@ -1540,7 +1576,7 @@ def openai_response_object(
                 {
                     "type": "message",
                     "id": item_id,
-                    "status": "completed",
+                    "status": status,
                     "role": "assistant",
                     "content": [part],
                 }
@@ -1555,7 +1591,7 @@ def openai_response_object(
         "output": output,
         "usage": resp_usage,
         "error": error,
-        "incomplete_details": None,
+        "incomplete_details": incomplete_details,
         **_response_echoes(body),
     }
 
@@ -1657,12 +1693,17 @@ def openai_response_events(
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    final_status: str = "completed",
+    incomplete_details: dict[str, Any] | None = None,
 ) -> Iterator[tuple[str, dict[str, Any]]]:
     """The Responses SSE event sequence over gated text — the core grammar
     a streaming client needs: ``response.created``/``in_progress``, the
     output-item lifecycle, ``output_text.delta`` frames (the shared
-    ~64-char splitter), and ``response.completed`` carrying the full
-    response object with usage. ``logprobs`` lands on the terminal
+    ~64-char splitter), and the terminal frame carrying the full response
+    object with usage. ``final_status`` selects that terminal event —
+    ``response.completed`` normally, ``response.incomplete`` when the turn
+    truncated (``incomplete_details`` rides the terminal object, e.g.
+    ``{'reason': 'max_tool_calls'}``). ``logprobs`` lands on the terminal
     ``content_part.done`` / ``output_item.done`` payloads' ``output_text``
     part and inside ``response.completed`` — provider token boundaries
     don't align with the text deltas, so the array ships whole at
@@ -1688,7 +1729,9 @@ def openai_response_events(
         },
     )
     next_index = 0
-    if text or not call_items:
+    # ``call_items is None`` marks a prose turn — a calls turn truncated
+    # to zero by ``max_tool_calls`` ships no phantom empty message item
+    if text or call_items is None:
         yield (
             "response.output_item.added",
             {
@@ -1759,7 +1802,7 @@ def openai_response_events(
                 "item": {
                     "type": "message",
                     "id": item_id,
-                    "status": "completed",
+                    "status": "incomplete" if final_status == "incomplete" else "completed",
                     "role": "assistant",
                     "content": [done_part],
                 },
@@ -1806,10 +1849,11 @@ def openai_response_events(
                 "item": item,
             },
         )
+    terminal = "response.incomplete" if final_status == "incomplete" else "response.completed"
     yield (
-        "response.completed",
+        terminal,
         {
-            "type": "response.completed",
+            "type": terminal,
             "response": openai_response_object(
                 rid=rid,
                 item_id=item_id,
@@ -1817,10 +1861,11 @@ def openai_response_events(
                 body=body,
                 model=model,
                 usage=usage,
-                status="completed",
+                status=final_status,
                 created=created,
                 call_items=call_items,
                 logprobs=logprobs,
+                incomplete_details=incomplete_details,
             ),
         },
     )

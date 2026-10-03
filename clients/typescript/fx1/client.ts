@@ -869,7 +869,10 @@ export class HarnessApiClient {
     for await (const ev of readSse(res)) {
       const payload = JSON.parse(ev.data) as Record<string, unknown>;
       onEvent(payload);
-      if (payload.type === "response.completed") {
+      if (
+        payload.type === "response.completed" ||
+        payload.type === "response.incomplete"
+      ) {
         terminal = true;
         break;
       }
@@ -877,7 +880,7 @@ export class HarnessApiClient {
     if (!terminal)
       throw new HarnessApiError(
         0,
-        "responses stream ended before response.completed",
+        "responses stream ended before response.completed/response.incomplete",
       );
     return res.headers.get("X-Fx1-Completion-Id");
   }

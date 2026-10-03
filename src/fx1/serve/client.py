@@ -1400,6 +1400,7 @@ class HarnessClient:
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
         conversation: str | dict[str, Any] | None = None,
+        max_tool_calls: int | None = None,
         background: bool = False,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
@@ -1451,6 +1452,7 @@ class HarnessClient:
             parallel_tool_calls=parallel_tool_calls,
             include=include,
             top_logprobs=top_logprobs,
+            max_tool_calls=max_tool_calls,
             background=background,
             stream=False,
         )
@@ -1502,11 +1504,15 @@ class HarnessClient:
                 continue
             frame = json.loads(line[len("data: ") :])
             events.append(frame)
-            if frame.get("type") == "response.completed":
+            # response.incomplete is the terminal event on a truncated turn
+            # (e.g. max_tool_calls) — it ends the stream like completed
+            if frame.get("type") in ("response.completed", "response.incomplete"):
                 saw_completed = True
                 break
         if not saw_completed:
-            raise HarnessTransportError("stream ended without response.completed")
+            raise HarnessTransportError(
+                "stream ended without response.completed/response.incomplete"
+            )
         return events, headers.get("X-Fx1-Completion-Id")
 
     def _responses_payload(
@@ -1537,6 +1543,7 @@ class HarnessClient:
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
         conversation: str | dict[str, Any] | None = None,
+        max_tool_calls: int | None = None,
         background: bool = False,
         stream: bool = False,
     ) -> dict[str, Any]:
@@ -1566,6 +1573,7 @@ class HarnessClient:
             "safety_identifier": safety_identifier,
             "previous_response_id": previous_response_id,
             "conversation": conversation,
+            "max_tool_calls": max_tool_calls,
             "background": background,
             "stream": stream,
         }

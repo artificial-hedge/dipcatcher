@@ -99,14 +99,24 @@ def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
     nothing else. Accepts bare payload dicts (remote) or ``(event,
-    payload)`` pairs (in-process SDK)."""
+    payload)`` pairs (in-process SDK). A ``response.incomplete`` terminal
+    reports its truncation reason on stderr — a quiet text stream would
+    look like a full answer."""
+    incomplete_reason: str | None = None
     for event in events:
         payload = event[1] if isinstance(event, tuple) else event
         if isinstance(payload, dict):
             delta = payload.get("delta")
             if isinstance(delta, str):
                 typer.echo(delta, nl=False)
+            if payload.get("type") == "response.incomplete":
+                resp = payload.get("response")
+                details = resp.get("incomplete_details") if isinstance(resp, dict) else None
+                if isinstance(details, dict) and isinstance(details.get("reason"), str):
+                    incomplete_reason = details["reason"]
     typer.echo()
+    if incomplete_reason is not None:
+        typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
 
 
 app = typer.Typer(
@@ -2093,6 +2103,12 @@ def harness_respond(
     tool_choice: str | None = typer.Option(
         None, "--tool-choice", help='"none"/"auto"/"required" or a JSON choice object.'
     ),
+    max_tool_calls: int | None = typer.Option(
+        None,
+        "--max-tool-calls",
+        help="Cap the function calls one response may carry — over the cap the "
+        "turn truncates to status='incomplete'.",
+    ),
     stream: bool = typer.Option(
         False, "--stream", help="Emit Responses event deltas instead of one JSON block."
     ),
@@ -2184,6 +2200,7 @@ def harness_respond(
                     tool_choice=tchoice,
                     previous_response_id=previous_response_id,
                     conversation=conversation,
+                    max_tool_calls=max_tool_calls,
                 )
             )
             _emit_response_deltas(events)
@@ -2207,6 +2224,7 @@ def harness_respond(
                 tool_choice=tchoice,
                 previous_response_id=previous_response_id,
                 conversation=conversation,
+                max_tool_calls=max_tool_calls,
                 background=background,
             )
         )
@@ -2240,6 +2258,7 @@ def harness_respond(
         "tool_choice": tchoice,
         "previous_response_id": previous_response_id,
         "conversation": conversation,
+        "max_tool_calls": max_tool_calls,
         "background": background,
         "fx1": fx1 or None,
     }
