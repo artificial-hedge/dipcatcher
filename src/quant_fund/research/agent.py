@@ -7383,6 +7383,14 @@ from quant_fund.research.benches_w923 import (
     bench_pitman_yor_family,
     bench_stick_breaking_family,
 )
+from quant_fund.research.benches_w924 import (
+    bench_beta_bernoulli_family,
+    bench_crp_table_family,
+    bench_dp_mm_family,
+    bench_gem_distribution_family,
+    bench_gibbs_type_family,
+    bench_neutral_process_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7754,6 +7762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gem_distribution": bench_gem_distribution_family,
+        "dp_mm": bench_dp_mm_family,
+        "crp_table": bench_crp_table_family,
+        "beta_bernoulli": bench_beta_bernoulli_family,
+        "neutral_process": bench_neutral_process_family,
+        "gibbs_type": bench_gibbs_type_family,
         "dirichlet_process": bench_dirichlet_process_family,
         "stick_breaking": bench_stick_breaking_family,
         "pitman_yor": bench_pitman_yor_family,
