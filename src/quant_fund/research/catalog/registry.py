@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-292 networking-4 canon.
+        "quic_streams",
+        "tls13_trans",
+        "qpack_pack",
+        "wg_ik",
+        "doh_wire",
+        "sctp_tsn",
         # Wave-291 VLSI/EDA canon.
         "netlist_parse",
         "sta_timing",
