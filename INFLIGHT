@@ -1,3 +1,4 @@
+feat(research): wave 681 — homotopy-25 canon (homotopy_lift, homotopy_orbit, homotopy_fixed, stable_operad, homotopy_factor, stable_sheaf) (4041->4047 families)
 feat(research): wave 680 — spectral-AG-6 canon (spectral_perfect, spectral_smooth2, spectral_etale2, spectral_abelian, spectral_crystal, spectral_proper) (4035->4041 families)
 feat(research): wave 679 — motivic-17 canon (motivic_thh, motivic_realization, etale_motive, relative_motive, absolute_motive, motivic_heart) (4029->4035 families)
 feat(research): wave 678 — category-16 canon (simplicial_cat, homotopical_cat, relative_cat, equipment_cat, fibrant_cat, pointed_cat) (4023->4029 families)
