@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-862 sparse-grid/dimension-adaptive canon.
+        "smolyak_grid",
+        "sparse_tensor",
+        "anisotropic_quad",
+        "gerstner_griebel",
+        "combination_technique",
+        "dimension_adaptive",
         # Wave-861 time-marching/ODE canon.
         "imex_rk",
         "ssp_rk",
