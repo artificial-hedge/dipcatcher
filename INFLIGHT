@@ -1,3 +1,4 @@
+feat(research): wave 788 — Malliavin-calculus canon (clark_ocone, nualart_pardoux, divergence_op, wiener_chaos, skorohod_int, nourdin_peccati) (4683->4689 families)
 feat(research): wave 787 — regularity-structure canon (ito_signature, lyons_extension, tame_map, step_signature, gubinelli_sewing, young_integral) (4677->4683 families)
 feat(research): wave 786 — rough-path canon (rough_path, signature_transform2, controlled_path, lyons_lift, hairspring_map, area_mart) (4671->4677 families)
 feat(research): wave 785 — semimartingale-2 canon (usual_cond, dolean_mart, strong_sol, local_mart2, follmer_mart, protter_ito) (4665->4671 families)

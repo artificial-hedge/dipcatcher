@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-788 Malliavin-calculus canon.
+        "clark_ocone",
+        "nualart_pardoux",
+        "divergence_op",
+        "wiener_chaos",
+        "skorohod_int",
+        "nourdin_peccati",
         # Wave-787 regularity-structure canon.
         "ito_signature",
         "lyons_extension",
