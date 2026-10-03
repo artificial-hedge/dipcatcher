@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-432 spectral-sequences-3 canon.
+        "atiyah_hirzebruch",
+        "serre_ss3",
+        "leary_ss",
+        "descent_ss",
+        "motivic_ss",
+        "vanishing_ss",
         # Wave-431 motivic-homotopy canon.
         "a1_homotopy",
         "motivic_sphere",

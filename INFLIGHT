@@ -1,3 +1,4 @@
+feat(research): wave 432 — spectral-sequences-3 canon (atiyah_hirzebruch, serre_ss3, leary_ss, descent_ss, motivic_ss, vanishing_ss) (2547->2553 families)
 feat(research): wave 431 — motivic-homotopy canon (a1_homotopy, motivic_sphere, morel_degree, voevodsky_motive, slice_filtration, milnor_operations) (2541->2547 families)
 feat(research): wave 430 — higher-algebra canon (e_n_algebra, operad_infty, monoidal_infty, module_cat, brane_tensor, delooping) (2535->2541 families)
 feat(research): wave 429 — algebraic-K-theory canon (k0_group, k1_group, milnor_k2, quillen_q, k_theory_spec, bass_heller_swan) (2529->2535 families)
