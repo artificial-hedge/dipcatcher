@@ -1581,6 +1581,14 @@ from quant_fund.research.benches_w198 import (
     bench_spt_weighted_family,
     bench_tsp_branchbound_family,
 )
+from quant_fund.research.benches_w199 import (
+    bench_grover_search_family,
+    bench_qaoa_maxcut_family,
+    bench_qkernel_svm_family,
+    bench_qpe_phase_family,
+    bench_quantum_walk_family,
+    bench_vqe_ising_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4320,6 +4328,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "knapsack_dp": bench_knapsack_dp_family(),
         "tsp_branchbound": bench_tsp_branchbound_family(),
         "spt_weighted": bench_spt_weighted_family(),
+        "qaoa_maxcut": bench_qaoa_maxcut_family(),
+        "vqe_ising": bench_vqe_ising_family(),
+        "grover_search": bench_grover_search_family(),
+        "qpe_phase": bench_qpe_phase_family(),
+        "qkernel_svm": bench_qkernel_svm_family(),
+        "quantum_walk": bench_quantum_walk_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
