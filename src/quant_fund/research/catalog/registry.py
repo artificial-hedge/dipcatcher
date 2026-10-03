@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-436 infinity-categories-2 canon.
+        "complete_seg",
+        "cartesian_fib",
+        "straightening",
+        "presentable_cat",
+        "adjoint_functor",
+        "bousfield_loc",
         # Wave-435 derived-schemes canon.
         "derived_scheme",
         "quasi_coherent",
