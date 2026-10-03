@@ -7359,6 +7359,14 @@ from quant_fund.research.benches_w920 import (
     bench_monotone_partition_family,
     bench_polygon_triangulate_family,
 )
+from quant_fund.research.benches_w921 import (
+    bench_atomic_bcast_family,
+    bench_avalanche_consensus_family,
+    bench_honey_badger_family,
+    bench_isis_bcast_family,
+    bench_snowball_consensus_family,
+    bench_virtual_synchrony_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7730,6 +7738,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "virtual_synchrony": bench_virtual_synchrony_family,
+        "isis_bcast": bench_isis_bcast_family,
+        "atomic_bcast": bench_atomic_bcast_family,
+        "honey_badger": bench_honey_badger_family,
+        "avalanche_consensus": bench_avalanche_consensus_family,
+        "snowball_consensus": bench_snowball_consensus_family,
         "monotone_partition": bench_monotone_partition_family,
         "polygon_triangulate": bench_polygon_triangulate_family,
         "min_area_rect": bench_min_area_rect_family,

@@ -1,3 +1,4 @@
+feat(research): wave 921 — distributed-systems-5 canon (virtual_synchrony, isis_bcast, atomic_bcast, honey_badger, avalanche_consensus, snowball_consensus) (5475->5481 families)
 feat(research): wave 920 — computational-geometry-5 canon (monotone_partition, polygon_triangulate, min_area_rect, diameter_pair, alpha_shape, minkowski_sum_poly) (5469->5475 families)
 feat(research): wave 919 — computational-geometry-4 canon (voronoi_lite, delaunay_flip, convex_layers, polygon_offset, rotating_sweep, visibility_graph) (5463->5469 families)
 feat(research): wave 918 — data-structures-4/geometry-3 canon (fractional_cascade, range_min_query, free_list, object_pool, welzl_circle, halfplane_isect) (5457->5463 families)
