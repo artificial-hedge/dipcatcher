@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-541 complex-analysis-2 canon.
+        "riemann_mapping",
+        "schwarz_lemma",
+        "picard_thm",
+        "montel_normal",
+        "runge_approx",
+        "jensen_formula",
         # Wave-540 transcendence-theory canon.
         "hermite_lindemann",
         "gelfond_schneider",
