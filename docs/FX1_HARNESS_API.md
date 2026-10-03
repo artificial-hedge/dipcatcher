@@ -764,19 +764,20 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 - **Lifespan** — on shutdown the gate drains, queued jobs flip to
   `cancelled` (firing their webhooks), the executor releases pending
   futures; running jobs finish bounded by their command timeout.
-- **Durability** — with `--state-dir` (`FX1_API_STATE_DIR`) every job
-  transition and cancel/evict appends to a hash-chained JSONL journal
-  (`jobs.jsonl`, fsync'd per append). On boot the chain is verified
-  line-by-line — a torn tail or edited line truncates at the first bad
-  record — and the store is rebuilt: terminal records return as-was,
-  jobs still `queued`/`running` at the crash recover as `failed` with a
-  restart-explaining `error` (payloads are not journaled, so nothing is
-  silently re-run), and `Idempotency-Key` mappings survive so a retried
-  submission returns the lost record (`replayed: true`) instead of
-  re-running. `callback_secret` never reaches disk, so a recovered job
-  with a `callback_url` keeps it for audit but cannot deliver post-
-  restart. Boot compacts the journal to live records. Unset = the same
-  in-memory store as before.
+- **Durability** — with `--state-dir` (`FX1_API_STATE_DIR`) every job and
+  eval transition and cancel/evict appends to a hash-chained JSONL
+  journal (`jobs.jsonl` / `evals.jsonl`, fsync'd per append). On boot
+  each chain is verified line-by-line — a torn tail or edited line
+  truncates at the first bad record — and the stores are rebuilt:
+  terminal records return as-was, jobs/evals still `queued`/`running` at
+  the crash recover as `failed` with a restart-explaining `error`
+  (payloads are not journaled, so nothing is silently re-run), and
+  `Idempotency-Key` mappings survive so a retried submission returns the
+  lost record (`replayed: true`) instead of re-running.
+  `callback_secret` never reaches disk, so a recovered record with a
+  `callback_url` keeps it for audit but cannot deliver post-restart.
+  Boot compacts each journal to live records. Unset = the same in-memory
+  stores as before.
 
 The same contract applies on the OpenAI-compatible async surfaces:
 `POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept

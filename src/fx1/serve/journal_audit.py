@@ -21,6 +21,9 @@ Pinned contract:
 - Cancels and LRU evictions are journaled; boot compacts the journal to
   live records so dead history doesn't accumulate.
 - ``journal=None`` keeps the store purely in-memory (unchanged default).
+- The same binding on ``EvalStore`` (``evals.jsonl``) recovers eval
+  records identically: terminal as-was, in-flight as failed, keys and
+  cancels durable, ``callback_secret`` never on disk.
 
 Sealed ``journal_audit.v1`` (fx1-side receipt).
 """
@@ -36,6 +39,23 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["journal_audit", "journal_audit_bench"]
+
+
+def _mk_eval(eval_id: str, status: str = "queued", key: str | None = None):
+    from fx1.serve.evals import EvalRecord
+
+    rec = EvalRecord(
+        eval_id=eval_id,
+        suite="calibration",
+        backend="byok",
+        seed=0,
+        status=status,  # type: ignore[arg-type]
+        created_at=1000.0,
+        callback_url="https://cb.example/eval" if key else None,
+    )
+    if key:
+        rec._callback_secret = "esecret-" + eval_id  # noqa: SLF001
+    return rec
 
 
 def _mk_job(job_id: str, status: str = "queued", key: str | None = None):
@@ -177,6 +197,58 @@ def journal_audit() -> dict[str, Any]:
         r["no_journal_still_works"] = plain.get("j-x") is not None and not hasattr(
             _JobStore(4), "_journal_missing"
         )
+
+    # --- the same binding on EvalStore (evals.jsonl) --------------------
+    from fx1.serve.evals import EvalStore
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "evals.jsonl"
+        estore = EvalStore(8, journal=JobJournal(path))
+        estore.put(_mk_eval("e-q", "queued", key="k-eq"), "k-eq", "efp-q")
+        done = _mk_eval("e-ok", "succeeded", key="k-eok")
+        done.finished_at = 1001.0
+        estore.put(done, "k-eok", "efp-ok")
+        running = _mk_eval("e-r", "queued")
+        estore.put(running, None, None)
+        running.status = "running"
+        estore.mark(running)
+
+        estore2 = EvalStore(8, journal=JobJournal(path))
+        erec = estore2.get("e-q")
+        r["eval_queued_recovers_failed"] = (
+            erec is not None
+            and erec.status == "failed"
+            and erec.error is not None
+            and "restarted" in erec.error
+        )
+        r["eval_terminal_as_was"] = (
+            estore2.get("e-ok") is not None and estore2.get("e-ok").status == "succeeded"  # type: ignore[union-attr]
+        )
+        r["eval_running_recovers_failed"] = (
+            estore2.get("e-r") is not None and estore2.get("e-r").status == "failed"  # type: ignore[union-attr]
+        )
+        r["eval_idem_key_survives"] = estore2.get_key("k-eq") == ("efp-q", "e-q")
+        raw = path.read_bytes()
+        r["eval_secret_not_journaled"] = b"esecret-e-q" not in raw and b"esecret-e-ok" not in raw
+        erecovered = estore2.get("e-q")
+        r["eval_secret_not_recovered"] = (
+            erecovered is not None and erecovered._callback_secret is None  # noqa: SLF001
+        )
+
+        # cancel + eviction journaled on the eval store too
+        estore2.put(_mk_eval("e-c", "queued"), "k-ec", "efp-c")
+        estore2.cancel("e-c")
+        estore3 = EvalStore(8, journal=JobJournal(path))
+        r["eval_cancel_journaled"] = (
+            estore3.get("e-c") is not None and estore3.get("e-c").status == "cancelled"  # type: ignore[union-attr]
+        )
+        with tempfile.TemporaryDirectory() as td6:
+            p6 = Path(td6) / "e.jsonl"
+            es = EvalStore(2, journal=JobJournal(p6))
+            for i in range(4):
+                es.put(_mk_eval(f"e-{i}", "succeeded"), f"ek-{i}", f"efp-{i}")
+            es2 = EvalStore(2, journal=JobJournal(p6))
+            r["eval_evict_journaled"] = es2.get("e-0") is None and es2.get("e-3") is not None
 
     return r
 

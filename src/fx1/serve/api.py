@@ -2664,6 +2664,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 inflight.release()
                 return
             record.status = "running"
+            eval_store.mark(record)
             try:
                 name, backend, attempts = _resolve_chain(body)
                 record.backend = name
@@ -2702,6 +2703,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 record.status = "failed"
                 record.finished_at = time.time()
             finally:
+                eval_store.mark(record)
                 _deliver_callback(record)
             metrics.release()
             inflight.release()
@@ -5109,7 +5111,8 @@ def create_app(
     if state_dir is not None:
         job_journal = JobJournal(Path(state_dir) / "jobs.jsonl")
     job_store = _JobStore(job_max, journal=job_journal)
-    eval_store = EvalStore(job_max)
+    eval_journal = JobJournal(Path(state_dir) / "evals.jsonl") if state_dir is not None else None
+    eval_store = EvalStore(job_max, journal=eval_journal)
     file_store = _FileStore(file_max, file_bytes_max)
     batch_store = _BatchStore(batch_max)
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
