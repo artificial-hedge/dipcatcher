@@ -7807,6 +7807,14 @@ from quant_fund.research.benches_w976 import (
     bench_nuclear_map_family,
     bench_trace_duality_family,
 )
+from quant_fund.research.benches_w977 import (
+    bench_bochner_integral_family,
+    bench_bochner_meas_family,
+    bench_lusin_rep_family,
+    bench_norm_integrable_family,
+    bench_pettis_weak_family,
+    bench_radon_nikodym_prop_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8178,6 +8186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bochner_integral": bench_bochner_integral_family,
+        "lusin_rep": bench_lusin_rep_family,
+        "radon_nikodym_prop": bench_radon_nikodym_prop_family,
+        "bochner_meas": bench_bochner_meas_family,
+        "norm_integrable": bench_norm_integrable_family,
+        "pettis_weak": bench_pettis_weak_family,
         "nuclear_map": bench_nuclear_map_family,
         "frechet_nuclear": bench_frechet_nuclear_family,
         "gelfand_triple": bench_gelfand_triple_family,
