@@ -4375,6 +4375,14 @@ from quant_fund.research.benches_w547 import (
     bench_intersection_form_family,
     bench_seiberg_witten_family,
 )
+from quant_fund.research.benches_w548 import (
+    bench_floer_homology_family,
+    bench_fukaya_cat_family,
+    bench_instanton_floer_family,
+    bench_knot_floer_family,
+    bench_lagrangian_floer_family,
+    bench_monopole_floer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4754,6 +4762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "floer_homology": bench_floer_homology_family,
+        "knot_floer": bench_knot_floer_family,
+        "instanton_floer": bench_instanton_floer_family,
+        "monopole_floer": bench_monopole_floer_family,
+        "lagrangian_floer": bench_lagrangian_floer_family,
+        "fukaya_cat": bench_fukaya_cat_family,
         "four_mfd": bench_four_mfd_family,
         "donaldson_thm": bench_donaldson_thm_family,
         "seiberg_witten": bench_seiberg_witten_family,
