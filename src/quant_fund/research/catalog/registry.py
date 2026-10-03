@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-851 discontinuous-Galerkin canon.
+        "dg_discretization",
+        "numerical_flux_dg",
+        "penalty_dg",
+        "modal_basis",
+        "limiter_tvb",
+        "rkdg_step",
         # Wave-850 Riemann-solver canon.
         "roe_solver",
         "hllc_solver",
