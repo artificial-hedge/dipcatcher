@@ -3431,6 +3431,14 @@ from quant_fund.research.benches_w429 import (
     bench_milnor_k2_family,
     bench_quillen_q_family,
 )
+from quant_fund.research.benches_w430 import (
+    bench_brane_tensor_family,
+    bench_delooping_family,
+    bench_e_n_algebra_family,
+    bench_module_cat_family,
+    bench_monoidal_infty_family,
+    bench_operad_infty_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3810,6 +3818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e_n_algebra": bench_e_n_algebra_family,
+        "operad_infty": bench_operad_infty_family,
+        "monoidal_infty": bench_monoidal_infty_family,
+        "module_cat": bench_module_cat_family,
+        "brane_tensor": bench_brane_tensor_family,
+        "delooping": bench_delooping_family,
         "k0_group": bench_k0_group_family,
         "k1_group": bench_k1_group_family,
         "milnor_k2": bench_milnor_k2_family,

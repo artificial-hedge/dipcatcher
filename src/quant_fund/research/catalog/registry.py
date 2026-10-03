@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-430 higher-algebra canon.
+        "e_n_algebra",
+        "operad_infty",
+        "monoidal_infty",
+        "module_cat",
+        "brane_tensor",
+        "delooping",
         # Wave-429 algebraic-K-theory canon.
         "k0_group",
         "k1_group",
