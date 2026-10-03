@@ -6191,6 +6191,14 @@ from quant_fund.research.benches_w774 import (
     bench_spitzer_rw_family,
     bench_wiener_hopf_rw_family,
 )
+from quant_fund.research.benches_w775 import (
+    bench_burkholder_davis_family,
+    bench_doleans_meas_family,
+    bench_gundy_mart_family,
+    bench_local_mart_family,
+    bench_predictable_proc_family,
+    bench_square_bracket_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6570,6 +6578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "doleans_meas": bench_doleans_meas_family,
+        "predictable_proc": bench_predictable_proc_family,
+        "local_mart": bench_local_mart_family,
+        "square_bracket": bench_square_bracket_family,
+        "burkholder_davis": bench_burkholder_davis_family,
+        "gundy_mart": bench_gundy_mart_family,
         "sparc_rw": bench_sparc_rw_family,
         "spitzer_rw": bench_spitzer_rw_family,
         "fluctuation_rw": bench_fluctuation_rw_family,

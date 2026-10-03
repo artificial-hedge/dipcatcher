@@ -1,3 +1,4 @@
+feat(research): wave 775 — martingale-theory canon (doleans_meas, predictable_proc, local_mart, square_bracket, burkholder_davis, gundy_mart) (4605->4611 families)
 feat(research): wave 774 — random-walk canon (sparc_rw, spitzer_rw, fluctuation_rw, ladder_epoch, wiener_hopf_rw, maxwell_rw) (4599->4605 families)
 feat(research): wave 773 — queueing canon (mm1_queue, mg1_queue, gm_queue, bulk_queue, retrial_queue, priority_queue) (4593->4599 families)
 feat(research): wave 772 — branching-process canon (galton_watson, branching_imm, multi_type_branch, crump_mode, kimmel_branch, sevastyanov) (4587->4593 families)
