@@ -1258,20 +1258,11 @@ wave 55 (devin/w55-canon-integration): Diebold-Mariano + HLN
   arch diagrams regen. 46 module tests + 6 wiring tests green;
   mypy --strict clean; PR pending (w51 #690 still open).
 
-w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
-engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
-QE discretization), model_confidence_set (HLN step-down block-boot),
-christoffersen_pelletier (Weibull-duration VaR clustering backtest),
-sheppard_heavy (two-equation realized-measure vol). benches_w53 seeds
-+305..310; registry +6; audit re-pinned (metrics 98->107, models
-309->369, research 184->196).
-
 wave 54 (devin/w54-canon-integration): Pesaran-Timmermann sign test,
   Giacomini-Rossi fluctuation test, Muller-Watson low-frequency
   correlation, Romano-Wolf stepdown, Christensen-Diebold-Rudebusch
   AFNS curve, Danielsson-de Vries tail-simulation VaR — 6 modules +
   benches_w54 (scorecard 295->301 families).
-
 
 ---
 owner: devin (wave 56 canon)
@@ -1305,33 +1296,7 @@ wave 107 (2026-09-30): transport/HJB PDE canon — adi, lax_wendroff, weno, leve
 wave 108 (2026-09-30): matrix functions & equations — expm_pade, matrix_sqrt, sylvester, riccati_care, matrix_sign, toeplitz_solve; 620→626 families.
 note: canon PR to follow.
 
-  6 SOTA lanes on devin/w52-lanes: nardl (Shin-Yu-Greenwood-Nimmo
-  nonlinear ARDL — asymmetric long/short multipliers, bounds-F,
-  Wald symmetry), growth_at_risk (Adrian-Boyarchenko-Giannone —
-  Koenker-Bassett LP quantile surface, isotonic crossing fix,
-  GaR/upside/asymmetry), melick_thomas (3-component lognormal
-  implied-PDF recovery, martingale-pinned least_squares, tail
-  mass), bandi_russell (noise/volatility separation — MA(1) level
-  noise, optimal sparse sampling m*, bias-corrected RV), hong_li
-  (PIT density-forecast eval — integer-Fourier L2 M-statistic,
-  Berkowitz LR, score correlogram), beveridge_nelson (companion-
-  form permanent/transitory decomposition, closed-form Neumann
-  gain). benches_w52 adapters (seeds +299..304); registry +6
-  families (283->289 title convention); agent.py scorecard wired;
-  audit_coverage re-pinned (metrics 98->107, models 309->369,
-  research 184->196 — merged-tree drift incl. w51 pending);
-  arch diagrams regen. 46 module tests + 6 wiring tests green;
-  mypy --strict clean; PR pending (w51 #690 still open).
-
-
-w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
-engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
-QE discretization), model_confidence_set (HLN step-down block-boot),
-christoffersen_pelletier (Weibull-duration VaR clustering backtest),
-sheppard_heavy (two-equation realized-measure vol). benches_w53 seeds
-+305..310; registry +6; audit re-pinned (metrics 98->107, models
-309->369, research 184->196).
-
+---
 owner: devin (wave 57 canon)
 slice: frequency/multiresolution + robust-inference battery — MODWT
   wavelets, Geweke spectral, IVX, Bai-Ng IC, Wooldridge serial,
@@ -1364,6 +1329,7 @@ wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_w
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
 wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
+
 
 ---
 owner: devin (wave 58 canon)
@@ -2550,4 +2516,81 @@ wave 116 (2026-09-30): game-theory canon — cfr, lemke_howson, replicator, ward
 wave 117 (2026-09-30): RL canon — gae, vtrace, trpo, ppo, ddpg, td3; 674→680 families.
 wave 118 (2026-09-30): POMDP canon — qmdp, grid_pomdp, pbvi, perseus, hsvi, pomcp; 680→686 families.
 wave 119 (2026-09-30): MARL canon — vdn, qmix, coma, maddpg, mappo, mf_q; 686→692 families.
+wave 120 (2026-09-30): coop-game + mechanism canon — nucleolus, banzhaf, owen, myerson_auction, groves, envy_free; 692→698 families.
+wave 121 (2026-10-01): best-arm-ID canon — lil_ucb, sequential_halving, median_elim, ugape, ttts, track_stop; 698→704 families.
+wave 122 (2026-10-01): exec-summary SOTA — exec_rl, smart_router, order_flow_imbalance, pg_mm, options_flow, dark_pool; 704→710 families.
+wave 123 (2026-10-01): exec-summary NLP/generative — say_echo_do, multimodal_fusion, ts_diffusion, synthetic_gan, econ_calendar, quantcode_bench; 710→716 families.
 note: canon PR to follow.
+wave 124 (2026-10-02): exec-summary graph/meta/continual — asset_gnn, counterparty_gnn, maml_portfolio, continual_learning, fed_avg, insider_anomaly; 716→722 families.
+wave 125 (2026-10-02): exec-summary pricing/quantum/XAI — pinn_pricing, qubo_portfolio, xai_shap, adversarial_robust, risk_flow, causal_miner; 722→728 families.
+wave 126 (2026-10-02): exec-summary deep-DL — tft_forecaster, patchtst, lob_transformer, set_transformer, neural_ode, world_model; 728→734 families.
+wave 127 (2026-10-02): exec-summary DL-2 — contrastive_repr, hypernetwork_alloc, neural_thompson, bnn_ensemble, option_vae, diff_policy; 734→740 families.
+wave 128 (2026-10-02): exec-summary DL-3 — kan_forecaster, ts_mixer, informer_attn, cnn_alpha, mask_autoencoder, graph_temporal; 740→746 families.
+wave 129 (2026-10-02): exec-summary DL-4 — itransformer, tcn_forecaster, ft_transformer, nbeats_deep, mambats, crossformer; 746→752 families.
+wave 130 (2026-10-02): offline-RL sequence decision — decision_transformer, cql_agent, iql_agent, trajectory_transformer, sac_agent, gail_imitation; 752→758 families.
+wave 131 (2026-10-02): generative sequence — vq_vae_ts, flow_matching_ts, score_sde_ts, consistency_ts, energy_ts, perceiver_ts; 758→764 families.
+wave 132 (2026-10-02): OOD-detection canon — mahalanobis_ood, max_softmax_ood, gradient_norm_ood, energy_ood, knn_ood, vim_ood; 764→770 families.
+wave 133 (2026-10-02): neural-process + amortized-UQ canon — neural_process, attentive_np, deep_kernel_gp, convnp, meta_uq, llaplace_gp; 770→776 families.
+wave 134 (2026-10-02): differentiable-optimization canon — optnet_qp, cvxpy_layer, input_convex, deep_declarative, spd_net, diff_mpc; 776→782 families.
+wave 135 (2026-10-02): graph-neural-net canon — chebnet, graphsage, gin_gnn, graph_unet, apnp_prop, jk_net; 782→788 families.
+wave 136 (2026-10-02): attention-efficiency canon — linformer_attn, performer_attn, linear_attn, sliding_attn, sinkhorn_attn, nystrom_attn; 788→794 families.
+wave 137 (2026-10-02): distributional-RL canon — c51_dqn, qr_dqn, iqn_dqn, noisy_net, prioritized_replay, bootstrapped_dqn; 794→800 families.
+wave 138 (2026-10-02): memory + world-model canon — reformer_lsh, memorizing_transformer, ntm_memory, dnc_memory, rssm_world, mpc_planning; 800→806 families.
+wave 139 (2026-10-02): self-supervised + TTA canon — byol, barlow_twins, vicreg, tent_tta, shot_tta, ttt_layer; 806→812 families.
+wave 140 (2026-10-02): geometric + structured nets — hyperbolic_nn, capsule_dynamic, siren_inr, equivar_gnn, monotonic_net, sort_net; 812→818 families.
+wave 141 (2026-10-02): certified robustness — randomized_smoothing, ibp_bounds, crown_bound, lipschitz_net, vector_neurons, gumbel_topk; 818→824 families.
+wave 142 (2026-10-02): sequence exotics — s4_ssm, rwkv_wkv, hyena_conv, retnet_decay, delta_net, mixture_of_depths; 824→830 families.
+wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tuning, prefix_tuning, task_vector_merge; 830→836 families.
+wave 144 (2026-10-02): inference-engine canon — speculative_decoding, paged_kv_cache, flash_attn, gqa_attn, sliding_window_cache, ring_attn; 836→842 families.
+wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colbert_late, hyde_retrieval, reranker_crossenc, rrf_fusion; 842→848 families.
+wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vote, verifier_prm, mcts_reason, debate_multiagent, unlearn_ga, knowledge_graph_embed; 848→854 families.
+wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
+wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steering, probe_linear, logit_lens, patch_activation, circuit_ablation; 860→866 families.
+wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
+wave 150 (2026-10-02): compression canon — magnitude_pruning, lottery_ticket, quant_int8, kd_distill, lowrank_factor, fisher_prune; 872→878 families.
+wave 151 (2026-10-02): agentic canon — react_loop, toolformer_call, plan_search, reflexion_retry, multi_agent_pipeline, judge_pairwise; 878→884 families.
+wave 152 (2026-10-02): privacy canon — dp_sgd, secure_agg, fedavg_hetero, pate_teacher, gradient_leakage, canary_exposure; 884→890 families.
+wave 153 (2026-10-02): NAS canon — random_search_nas, evolution_nas, darts_nas, enas_controller, one_shot_nas, arch_predictor; 890→896 families.
+wave 154 (2026-10-02): vision canon — convnet_baseline, vit_classifier, clip_align, simclr_views, diffusion_ddim, attention_rollout; 896→902 families.
+wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, cevae_latent, causal_rep, policy_value; 902→908 families.
+wave 156 (2026-10-02): tabular-DL canon — tokenizer_bpe, tabular_resnet, node_net, grownet_boost, soft_tree, tabm_mini; 908→914 families.
+wave 157 (2026-10-02): anomaly-detection canon — deep_svdd, dagmm, usad, anom_transformer, rrcf, tranad; 914→920 families.
+wave 158 (2026-10-02): LTR canon — ranknet_ltr, listnet_ltr, listmle_ltr, lambdarank_ltr, approx_ndcg_ltr, neural_sort_ltr; 920→926 families.
+wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, lookahead_opt, lamb_opt, adafactor_opt; 926→932 families.
+wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, fedopt_adam, mime_lite; 932→938 families.
+wave 161 (2026-10-02): neural-operator canon — fno_1d, deeponet, lowrank_op, pino_residual, gno_lite, cno_lite; 938→944 families.
+wave 162 (2026-10-02): TS-foundation canon — chronos_lite, timesfm_lite, moirai_lite, lagllama_lite, timer_lite, moment_lite; 944→950 families.
+wave 163 (2026-10-02): lifelong-CL canon — packnet_cl, lwf_cl, der_cl, agem_cl, piggyback_cl, hat_cl; 950→956 families.
+wave 164 (2026-10-02): Bayesian-DL canon — swag_diag, mc_dropout, bbb_vi, snapshot_ens, concrete_dropout, vcl_online; 956→962 families.
+wave 165 (2026-10-02): conditional-density canon — mdn_cond, flow_regression, diffusion_regressor, het_gp, crps_net, kernel_mixture; 962→968 families.
+wave 166 (2026-10-02): meta-learning canon — reptile, protonet, matching_net, anil_meta, meta_sgd, r2d2_meta; 968→974 families.
+wave 167 (2026-10-02): graph-exotics canon — algo_reasoning, pna_agg, virtual_node, gps_transformer, oversmooth_metric, dgn_directional; 974→980 families.
+wave 168 (2026-10-02): RL-exotics canon — awac, redq, td7_lite, crossq, dr3_reg, ob2i; 980→986 families.
+wave 169 (2026-10-02): amortized-inference canon — advi_bbvi, iwae_bound, nf_vi, sparse_gp_sv, structured_vi, vrnn_seq; 986→992 families.
+wave 170 (2026-10-02): causal-DL-2 canon — xlearner, rlearner, slearner_tlearner, causal_rep_bal, cate_distill, net_drlearner; 992→998 families.
+wave 171 (2026-10-02): conformal-2 canon — cqr_pred, survival_cp, aps_cp, ltt_cp, full_cp, risk_cp; 998→1004 families.
+wave 172 (2026-10-02): bandit-exotics canon — psrl, gittins_index, whittle_restless, cucb, corrupt_bandit, neural_ucb; 1004→1010 families.
+wave 173 (2026-10-02): diffusion-exotics canon — edm_karras, rectified_flow, stoch_interp, ddim_ode, cold_diffusion, diff_distill; 1010→1016 families.
+wave 174 (2026-10-02): graph-temporal canon — dcrnn_lite, stgcn_lite, gwnet_lite, astgcn, mtgnn_lite, agcrn; 1016→1022 families.
+wave 175 (2026-10-02): LM-components canon — rope_attn, alibi_attn, swiglu_ffn, rmsnorm_block, moe_router, mup_init; 1022→1028 families.
+wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2n_scoring, forgetting_events, influence_func, proto_prune; 1028→1034 families.
+wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
+wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mtl, gradnorm_bal, nash_mtl, imtl_g; 1040→1046 families.
+wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_surv, drsa_surv, pchazard; 1046→1052 families.
+wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
+wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titans_memory, gated_deltanet, longhorn_ssm; 1058→1064 families.
+wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.
+wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.
+wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge_stability, mode_connectivity, catapult_phase, neural_grok; 1076→1082 families.
+wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
+wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.
+wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn, fbsde_solver, spectral_pde, moc_lines, feynman_kac_mc; 1094→1100 families.
+wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
+wave 189 (2026-10-02): self-play/game-AI canon — alphazero_lite, expert_iteration, nfsp, psro, deep_cfr, mccfr_outcome; 1106→1112 families.
+wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg, ica_lingam, direct_lingam, var_lingam, mmmb_select; 1112→1118 families.
+wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.
+wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, mine_mi, nwj_mi, copula_mi, lsd_deptest; 1124→1130 families.
+wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
+wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
+wave 195 (2026-10-02): ensemble/adaptive-MCMC canon — emcee_stretch, de_mcmc, dram, rjmcmc, pcn_sampler, indep_mh; 1142→1148 families.
+wave 196 (2026-10-02): eigen-decomposition canon — power_iter, inverse_iter, jacobi_eig, qr_eig, hessenberg_red, bidiag_svd; 1148→1154 families.
