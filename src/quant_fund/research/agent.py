@@ -5743,6 +5743,14 @@ from quant_fund.research.benches_w718 import (
     bench_mutation_class_family,
     bench_rep_finite_family,
 )
+from quant_fund.research.benches_w719 import (
+    bench_calabi_yau_tri_family,
+    bench_d_calabi_yau_family,
+    bench_frobenius_cat_family,
+    bench_gorenstein_proj_family,
+    bench_orbit_category_family,
+    bench_stable_category_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6122,6 +6130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "calabi_yau_tri": bench_calabi_yau_tri_family,
+        "d_calabi_yau": bench_d_calabi_yau_family,
+        "gorenstein_proj": bench_gorenstein_proj_family,
+        "frobenius_cat": bench_frobenius_cat_family,
+        "stable_category": bench_stable_category_family,
+        "orbit_category": bench_orbit_category_family,
         "helix_theory": bench_helix_theory_family,
         "mutation_class": bench_mutation_class_family,
         "rep_finite": bench_rep_finite_family,
