@@ -1,3 +1,4 @@
+feat(research): wave 999 — GMT-2 canon (currents_theory, varifold_theory, flat_chains, integral_currents, rectifiable_measures, brakke_varifolds) (5943->5949 families)
 feat(research): wave 998 — singularity/blow-up canon (semilinear_heat, fujita_exponent, singularity_formation, matched_asymptotic_pde, self_similar_blowup, regularity_critical) (5937->5943 families)
 feat(research): wave 997 — dispersive-PDE canon (nls_dispersion, kdv_dispersion, strichartz_estimates, local_smoothing, bilinear_estimates, i_method) (5931->5937 families)
 feat(research): wave 996 — Riemann-Hilbert canon (dbar_method, orthogonal_poly_rh, isomonodromy, fokas_unified, deift_zhou, small_norm_rh) (5925->5931 families)

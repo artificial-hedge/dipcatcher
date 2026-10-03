@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-999 GMT-2 canon.
+        "currents_theory",
+        "varifold_theory",
+        "flat_chains",
+        "integral_currents",
+        "rectifiable_measures",
+        "brakke_varifolds",
         # Wave-998 singularity/blow-up canon.
         "semilinear_heat",
         "fujita_exponent",
