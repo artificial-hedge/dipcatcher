@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-425 stacks/moduli canon.
+        "moduli_stack",
+        "stacky_curve",
+        "coarse_space",
+        "quotient_stack",
+        "gerbe_toy",
+        "stack_morph",
         # Wave-424 set-theory-4 canon.
         "club_set",
         "stationary_set",

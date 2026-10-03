@@ -3391,6 +3391,14 @@ from quant_fund.research.benches_w424 import (
     bench_stationary_set_family,
     bench_ultrafilter_toy_family,
 )
+from quant_fund.research.benches_w425 import (
+    bench_coarse_space_family,
+    bench_gerbe_toy_family,
+    bench_moduli_stack_family,
+    bench_quotient_stack_family,
+    bench_stack_morph_family,
+    bench_stacky_curve_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3770,6 +3778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "moduli_stack": bench_moduli_stack_family,
+        "stacky_curve": bench_stacky_curve_family,
+        "coarse_space": bench_coarse_space_family,
+        "quotient_stack": bench_quotient_stack_family,
+        "gerbe_toy": bench_gerbe_toy_family,
+        "stack_morph": bench_stack_morph_family,
         "club_set": bench_club_set_family,
         "stationary_set": bench_stationary_set_family,
         "ultrafilter_toy": bench_ultrafilter_toy_family,
