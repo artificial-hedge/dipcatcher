@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-752 UST/LERW canon.
+        "wilson_ust",
+        "lawler_lerw",
+        "benjamini_ust",
+        "kirchhoff_matrix",
+        "pemantle_ust",
+        "schramm_lerw",
         # Wave-751 dimer-2 canon.
         "kassel_kenyon",
         "ciucu_dimers",
