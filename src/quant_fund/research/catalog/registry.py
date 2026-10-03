@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-504 Steenrod/cohomology-operations canon.
+        "steenrod_algebra",
+        "adem_relations",
+        "serre_cartan",
+        "unstable_modules",
+        "lambda_algebra",
+        "bar_resolution",
         # Wave-503 elliptic-surface canon.
         "elliptic_surface",
         "weierstrass_eq",

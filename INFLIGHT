@@ -1,3 +1,4 @@
+feat(research): wave 504 — Steenrod/cohomology-operations canon (steenrod_algebra, adem_relations, serre_cartan, unstable_modules, lambda_algebra, bar_resolution) (2979->2985 families)
 feat(research): wave 503 — elliptic-surface canon (elliptic_surface, weierstrass_eq, kodaira_fiber, tate_algorithm, mordell_weil2, neron_model) (2973->2979 families)
 feat(research): wave 502 — dg-category canon (dg_cat2, dg_morita, dg_quotient, drinfeld_quotient, dg_nerve, keller_dg) (2967->2973 families)
 feat(research): wave 501 — F-singularity canon (f_regular, f_rational, f_pure, f_threshold, test_ideal, tight_closure) (2961->2967 families)
