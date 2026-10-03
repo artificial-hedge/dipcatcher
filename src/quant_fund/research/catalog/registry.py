@@ -2822,6 +2822,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mvcc_gc",
         "buffer_pool",
         "blink_tree",
+        # Wave-242 consensus/distributed-2 canon.
+        "multi_paxos",
+        "epaxos",
+        "viewstamped",
+        "zab_protocol",
+        "swim_gossip",
+        "two_three_pc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

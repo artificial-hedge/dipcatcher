@@ -2639,3 +2639,4 @@ wave 238 (2026-10-02): networking canon — tcp_aimd, sliding_window, token_buck
 wave 239 (2026-10-02): PL canon — hm_inference, tree_walk_interp, cps_transform, macro_expand, gc_marksweep, simple_types; 1407→1413 families.
 wave 240 (2026-10-02): applied-crypto canon — rsa_toy, winternitz_ots, merkle_ots, blind_sig, zkp_schnorr, commit_reveal; 1413→1419 families.
 wave 241 (2026-10-02): databases-2 canon — aries_recovery, two_phase_lock, selinger_join, mvcc_gc, buffer_pool, blink_tree; 1419→1425 families.
+wave 242 (2026-10-02): consensus-2 canon — multi_paxos, epaxos, viewstamped, zab_protocol, swim_gossip, two_three_pc; 1425→1431 families.
