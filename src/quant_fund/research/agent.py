@@ -8015,6 +8015,14 @@ from quant_fund.research.benches_w1002 import (
     bench_taylor_series_hyp_family,
     bench_wall_turbulence_family,
 )
+from quant_fund.research.benches_w1003 import (
+    bench_alfven_waves_family,
+    bench_elsaesser_vars_family,
+    bench_frozen_flux_family,
+    bench_magnetic_reconnection_family,
+    bench_mhd_equations_family,
+    bench_parker_solar_wind_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8386,6 +8394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mhd_equations": bench_mhd_equations_family,
+        "alfven_waves": bench_alfven_waves_family,
+        "parker_solar_wind": bench_parker_solar_wind_family,
+        "magnetic_reconnection": bench_magnetic_reconnection_family,
+        "frozen_flux": bench_frozen_flux_family,
+        "elsaesser_vars": bench_elsaesser_vars_family,
         "kolmogorov_theory": bench_kolmogorov_theory_family,
         "reynolds_decomp": bench_reynolds_decomp_family,
         "energy_spectrum": bench_energy_spectrum_family,
