@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-390 design-theory canon.
+        "latin_trade",
+        "steiner_system",
+        "inc_structure",
+        "orthogonal_array",
+        "hadamard_matrix",
+        "finite_difference",
         # Wave-389 number-fields canon.
         "norm_subring",
         "discriminant_field",

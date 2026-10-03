@@ -3111,6 +3111,14 @@ from quant_fund.research.benches_w389 import (
     bench_norm_subring_family,
     bench_ramification_family,
 )
+from quant_fund.research.benches_w390 import (
+    bench_finite_difference_family,
+    bench_hadamard_matrix_family,
+    bench_inc_structure_family,
+    bench_latin_trade_family,
+    bench_orthogonal_array_family,
+    bench_steiner_system_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3490,6 +3498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "latin_trade": bench_latin_trade_family,
+        "steiner_system": bench_steiner_system_family,
+        "inc_structure": bench_inc_structure_family,
+        "orthogonal_array": bench_orthogonal_array_family,
+        "hadamard_matrix": bench_hadamard_matrix_family,
+        "finite_difference": bench_finite_difference_family,
         "norm_subring": bench_norm_subring_family,
         "discriminant_field": bench_discriminant_field_family,
         "decomposition_group": bench_decomposition_group_family,
