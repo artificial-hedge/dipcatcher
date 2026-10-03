@@ -7287,6 +7287,14 @@ from quant_fund.research.benches_w911 import (
     bench_liang_barsky_family,
     bench_monotone_chain_family,
 )
+from quant_fund.research.benches_w912 import (
+    bench_hilbert_curve_family,
+    bench_morton_order_family,
+    bench_octree_index_family,
+    bench_range_tree_family,
+    bench_rstar_tree_family,
+    bench_z_curve_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7658,6 +7666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "octree_index": bench_octree_index_family,
+        "range_tree": bench_range_tree_family,
+        "hilbert_curve": bench_hilbert_curve_family,
+        "z_curve": bench_z_curve_family,
+        "morton_order": bench_morton_order_family,
+        "rstar_tree": bench_rstar_tree_family,
         "monotone_chain": bench_monotone_chain_family,
         "gift_wrap": bench_gift_wrap_family,
         "chan_hull": bench_chan_hull_family,
