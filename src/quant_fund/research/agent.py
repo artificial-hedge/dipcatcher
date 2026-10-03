@@ -6415,6 +6415,14 @@ from quant_fund.research.benches_w802 import (
     bench_sde_gan_family,
     bench_sde_matching_family,
 )
+from quant_fund.research.benches_w803 import (
+    bench_expected_sig_family,
+    bench_pde_signature_family,
+    bench_sig_inversion_family,
+    bench_signature_gan2_family,
+    bench_signature_kernel_family,
+    bench_truncated_sig_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6794,6 +6802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "signature_kernel": bench_signature_kernel_family,
+        "pde_signature": bench_pde_signature_family,
+        "truncated_sig": bench_truncated_sig_family,
+        "signature_gan2": bench_signature_gan2_family,
+        "expected_sig": bench_expected_sig_family,
+        "sig_inversion": bench_sig_inversion_family,
         "latent_sde": bench_latent_sde_family,
         "neural_cde": bench_neural_cde_family,
         "neural_rde": bench_neural_rde_family,
