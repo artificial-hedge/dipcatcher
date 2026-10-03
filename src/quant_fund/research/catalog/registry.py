@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-313 numerical-4/multigrid canon.
+        "v_cycle",
+        "amg_lite",
+        "bicgstab",
+        "minres",
+        "chebyshev_iter",
+        "ilu_precond",
         # Wave-312 distributed-4 canon.
         "hlc_clock",
         "delta_crdt",
