@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-622 prismatic canon.
+        "prism2",
+        "prismatic_site",
+        "delta_ring",
+        "prismatic_crystal",
+        "hodge_tate",
+        "nygaard2",
         # Wave-621 motivic-10 canon.
         "motivic_k",
         "motivic_borel",
