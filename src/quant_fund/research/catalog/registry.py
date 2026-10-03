@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-575 random-matrix-2 canon.
+        "circular_law",
+        "dyson_brownian",
+        "sine_kernel",
+        "airy_process",
+        "tracy_widom",
+        "beta_ensemble",
         # Wave-574 differential-topology-2 canon.
         "exotic_sphere",
         "kervaire_milnor",
