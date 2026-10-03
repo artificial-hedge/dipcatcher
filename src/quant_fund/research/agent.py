@@ -4495,6 +4495,14 @@ from quant_fund.research.benches_w562 import (
     bench_symplectic_capacity_family,
     bench_symplectic_packing_family,
 )
+from quant_fund.research.benches_w563 import (
+    bench_bubbling_hm_family,
+    bench_eells_sampson_family,
+    bench_harmonic_map_family,
+    bench_heat_flow_hm_family,
+    bench_sacks_uhlenbeck_family,
+    bench_schoen_uhlenbeck_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4874,6 +4882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "harmonic_map": bench_harmonic_map_family,
+        "eells_sampson": bench_eells_sampson_family,
+        "schoen_uhlenbeck": bench_schoen_uhlenbeck_family,
+        "bubbling_hm": bench_bubbling_hm_family,
+        "heat_flow_hm": bench_heat_flow_hm_family,
+        "sacks_uhlenbeck": bench_sacks_uhlenbeck_family,
         "gromov_width": bench_gromov_width_family,
         "hofer_metric": bench_hofer_metric_family,
         "symplectic_capacity": bench_symplectic_capacity_family,

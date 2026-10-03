@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-563 harmonic-maps canon.
+        "harmonic_map",
+        "eells_sampson",
+        "schoen_uhlenbeck",
+        "bubbling_hm",
+        "heat_flow_hm",
+        "sacks_uhlenbeck",
         # Wave-562 symplectic-geometry-2 canon.
         "gromov_width",
         "hofer_metric",
