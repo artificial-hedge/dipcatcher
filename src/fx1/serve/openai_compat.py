@@ -63,6 +63,9 @@ __all__ = [
     "OpenAIModel",
     "OpenAIModelDelete",
     "OpenAIModelList",
+    "OpenAIConversationCreate",
+    "OpenAIConversationItemsAdd",
+    "OpenAIConversationUpdate",
     "OpenAIResponseRequest",
     "OpenAIResponseTool",
     "OpenAITool",
@@ -82,6 +85,7 @@ __all__ = [
     "file_object",
     "is_openai_path",
     "openai_chunks",
+    "openai_conversation_object",
     "openai_envelope",
     "openai_error_body",
     "openai_messages",
@@ -96,6 +100,7 @@ __all__ = [
     "OpenAIEnvelopeStore",
     "OPENAI_RESPONSE_TERMINAL",
     "chained_response_input",
+    "conversation_id_of",
     "response_input_item_dicts",
     "response_input_items_for_store",
     "response_input_to_messages",
@@ -1013,6 +1018,12 @@ class OpenAIResponseRequest(_Model):
     include: list[str] | None = None
     top_logprobs: int | None = Field(default=None, ge=0, le=20)
     previous_response_id: str | None = Field(default=None, max_length=512)
+    # ``conversation`` is the named-container twin of
+    # ``previous_response_id`` — a conv id (or ``{"id": "conv_*"}``
+    # object) the turn joins; the conv's accumulated items are the
+    # context. The two chain surfaces are mutually exclusive per OpenAI's
+    # contract.
+    conversation: str | dict[str, Any] | None = None
     background: bool = Field(default=False)
     fx1: OpenAIFx1 | None = None
 
@@ -1098,6 +1109,17 @@ class OpenAIResponseRequest(_Model):
             not self.include or "message.output_text.logprobs" not in self.include
         ):
             raise ValueError("top_logprobs requires include: ['message.output_text.logprobs']")
+        if isinstance(self.conversation, dict):
+            cid = self.conversation.get("id")
+            if not isinstance(cid, str) or not cid.strip():
+                raise ValueError("conversation must be an id string or {id: 'conv_*'}")
+        if self.conversation is not None and self.previous_response_id is not None:
+            raise ValueError(
+                "conversation and previous_response_id are mutually exclusive — "
+                "a turn anchors to one context surface"
+            )
+        if isinstance(self.conversation, str) and not self.conversation.strip():
+            raise ValueError("conversation must be a non-empty id")
         present = [f for f in RESPONSES_UNSUPPORTED if getattr(self, f, None) is not None]
         extra_bad = sorted(f for f in RESPONSES_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
         bad = sorted(set(present) | set(extra_bad))
@@ -1250,6 +1272,19 @@ def response_input_items_for_store(
         item.setdefault("id", _stored_item_id("msg", rid, i))
         out.append(item)
     return out
+
+
+def conversation_id_of(
+    conversation: str | dict[str, Any] | None,
+) -> str | None:
+    """``conversation`` request field → the bare conv id (a string passes
+    through; ``{id: 'conv_*'}`` unwraps; ``None`` stays ``None``)."""
+    if conversation is None:
+        return None
+    if isinstance(conversation, str):
+        return conversation
+    cid = conversation.get("id")
+    return cid if isinstance(cid, str) else None
 
 
 def chained_response_input(
@@ -1419,6 +1454,10 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "truncation": "disabled",
         "background": body.background,
         "previous_response_id": body.previous_response_id,
+        # OpenAI echoes ``conversation: {id}`` on the response when set
+        "conversation": (
+            {"id": conversation_id_of(body.conversation)} if body.conversation is not None else None
+        ),
     }
 
 
@@ -1519,6 +1558,92 @@ def openai_response_object(
         "incomplete_details": None,
         **_response_echoes(body),
     }
+
+
+def openai_conversation_object(
+    *,
+    cid: str,
+    metadata: dict[str, str] | None = None,
+    created: int | None = None,
+) -> dict[str, Any]:
+    """A ``conversation`` object — the named container a response turn
+    can join via ``conversation``. ``items`` never ride the object; they
+    live in the store's subitems under ``"items"`` and page through
+    ``GET /v1/conversations/{id}/items``."""
+    return {
+        "id": cid,
+        "object": "conversation",
+        "created_at": int(time.time()) if created is None else created,
+        "metadata": metadata or {},
+    }
+
+
+class OpenAIConversationCreate(_Model):
+    """``POST /v1/conversations`` body — ``items`` seeds the conv's item
+    list (same item dicts a response's ``input`` accepts); ``metadata``
+    follows the same bounds as every other stamped surface."""
+
+    model_config = ConfigDict(extra="allow")
+
+    items: list[dict[str, Any]] | None = None
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationCreate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        if self.items is not None:
+            for it in self.items:
+                if not isinstance(it, dict):
+                    raise ValueError("items must be message-item dicts")
+        return self
+
+
+class OpenAIConversationUpdate(_Model):
+    """``POST /v1/conversations/{id}`` body — ``metadata`` replaces the
+    conv's metadata wholesale (OpenAI's update semantics)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationUpdate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        return self
+
+
+class OpenAIConversationItemsAdd(_Model):
+    """``POST /v1/conversations/{id}/items`` body — input items to
+    append. ``item_ids`` (reference existing stored items) is refused:
+    the harness's items are minted per turn, never aliased."""
+
+    model_config = ConfigDict(extra="allow")
+
+    items: list[dict[str, Any]] | None = None
+    item_ids: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationItemsAdd:
+        if self.item_ids is not None:
+            raise ValueError(
+                "item_ids (alias by reference) is not supported — pass full item dicts"
+            )
+        if not self.items:
+            raise ValueError("items must be a non-empty list of item dicts")
+        for it in self.items:
+            if not isinstance(it, dict):
+                raise ValueError("items must be message-item dicts")
+        return self
 
 
 def openai_response_events(

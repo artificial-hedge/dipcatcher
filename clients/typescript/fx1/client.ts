@@ -1357,6 +1357,118 @@ export class HarnessApiClient {
     ) as Promise<Record<string, unknown>>;
   }
 
+  // ---- conversations -----------------------------------------------------
+
+  /**
+   * POST /v1/conversations — mint a `conv_*` container a response joins
+   * via `conversation` on `responsesCreate`/`responsesCreateStream`.
+   * `items` seeds the conv with item dicts; `metadata` replaces wholesale
+   * on update.
+   */
+  async conversationCreate(body?: {
+    items?: Record<string, unknown>[];
+    metadata?: Record<string, string>;
+  }): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/conversations",
+      body: { items: body?.items ?? null, metadata: body?.metadata ?? null },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/conversations/{id} — the conversation object. */
+  conversationGet(conversationId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/conversations/${encodeURIComponent(conversationId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/conversations/{id} — replace the conv's metadata
+   * wholesale (`metadata: null` clears it).
+   */
+  async conversationUpdate(
+    conversationId: string,
+    body: { metadata?: Record<string, string> | null },
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/conversations/${encodeURIComponent(conversationId)}`,
+      body: { metadata: body.metadata ?? null },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * DELETE /v1/conversations/{id} — drops the container and its items;
+   * member responses stay retrievable on their own ids.
+   */
+  async conversationDelete(
+    conversationId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/conversations/${encodeURIComponent(conversationId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/conversations/{id}/items — the conv's accumulated items. */
+  conversationItems(
+    conversationId: string,
+    filter?: { limit?: number; after?: string; before?: string; order?: "asc" | "desc" },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/conversations/${encodeURIComponent(conversationId)}/items${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/conversations/{id}/items — append item dicts; resolves to
+   * the minted items as a `{object: "list", data: [...]}` page.
+   */
+  async conversationItemsAdd(
+    conversationId: string,
+    items: Record<string, unknown>[],
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/conversations/${encodeURIComponent(conversationId)}/items`,
+      body: { items },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** DELETE /v1/conversations/{id}/items/{item_id} — drop one item. */
+  async conversationItemDelete(
+    conversationId: string,
+    itemId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/conversations/${encodeURIComponent(conversationId)}/items/${encodeURIComponent(itemId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */

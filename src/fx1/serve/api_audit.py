@@ -7661,6 +7661,150 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and bg_rep.json()["status"] == "completed"
         and bg_rep.headers.get("X-Fx1-Completion-Id") is not None
     )
+
+    # /v1/conversations — the named-container twin of
+    # previous_response_id: a conv_* carries an accumulated item stream;
+    # a response anchored to it runs on the conv context and appends its
+    # own turn back.
+    cv = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
+    cv0 = cv.post(
+        "/v1/conversations",
+        json={
+            "items": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "seed-q"}],
+                }
+            ],
+            "metadata": {"lane": "conv"},
+        },
+    )
+    cid0 = cv0.json()["id"]
+    cv_seen_pre = len(_ChainBackend.seen)
+    cv_r1 = cv.post(
+        "/v1/responses", json={"model": "fx1", "input": "turn-one", "conversation": cid0}
+    )
+    cv_items = cv.get(f"/v1/conversations/{cid0}/items").json()
+    out["conv_lifecycle"] = (
+        cv0.status_code == 200
+        and cv0.json()["object"] == "conversation"
+        and cid0.startswith("conv_")
+        and cv0.json()["metadata"] == {"lane": "conv"}
+        and cv.get(f"/v1/conversations/{cid0}").json()["id"] == cid0
+        # the seeded item + the turn's input/output all landed
+        and [it["content"][0]["text"] for it in cv_items["data"]][:3]
+        == ["seed-q", "turn-one", "clean:turn-one"]
+        and cv_r1.status_code == 200
+        and cv_r1.json()["conversation"] == {"id": cid0}
+        # the model ran on the conv's context, not the bare input
+        and [m["role"] for m in _ChainBackend.seen[cv_seen_pre]] == ["user", "user"]
+        and _ChainBackend.seen[cv_seen_pre][0]["content"] == "seed-q"
+    )
+    # the conv accumulates across turns; a second turn sees turn-one's
+    # output as assistant history; item delete drops exactly one
+    cv_r2 = cv.post(
+        "/v1/responses", json={"model": "fx1", "input": "turn-two", "conversation": {"id": cid0}}
+    )
+    cv_items2 = cv.get(f"/v1/conversations/{cid0}/items").json()["data"]
+    drop = cv.delete(f"/v1/conversations/{cid0}/items/{cv_items2[0]['id']}")
+    cv_items3 = cv.get(f"/v1/conversations/{cid0}/items").json()["data"]
+    out["conv_turn_accumulates"] = (
+        cv_r2.status_code == 200
+        and len(cv_items2) == 5
+        and _ChainBackend.seen[-1][-1]["content"] == "turn-two"
+        and [m["role"] for m in _ChainBackend.seen[-1]][-2] == "assistant"
+        and drop.status_code == 200
+        and drop.json()["id"] == cid0
+        and len(cv_items3) == 4
+        and cv_items3[0]["content"][0]["text"] == "turn-one"
+    )
+    # conv is its own store: a store:false response still appends its
+    # turn to the conv even though the envelope itself never indexes
+    cv_ns = cv.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "ghost-turn", "conversation": cid0, "store": False},
+    ).json()
+    out["conv_is_own_store"] = (
+        cv_ns["id"].startswith("resp_")
+        and cv.get(f"/v1/responses/{cv_ns['id']}").status_code == 404
+        and cv.get(f"/v1/conversations/{cid0}/items?limit=100").json()["data"][-1]["content"][0][
+            "text"
+        ]
+        == "clean:ghost-turn"
+    )
+    # fail closed: unknown conv id 400s before the model runs;
+    # conversation + previous_response_id is a 422 validation pair; a
+    # batch line can't anchor to a shared container
+    cv2_seen_pre = len(_ChainBackend.seen)
+    out["conv_fail_closed"] = (
+        cv.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "conversation": "conv_ghost"},
+        ).json()["error"]["code"]
+        == "conversation_not_found"
+        and cv.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "conversation": cid0,
+                "previous_response_id": cv_r1.json()["id"],
+            },
+        ).status_code
+        == 422
+        and cv.post(
+            "/v1/responses", json={"model": "fx1", "input": "x", "conversation": {"id": 7}}
+        ).status_code
+        == 422
+        and len(_ChainBackend.seen) == cv2_seen_pre
+        and cv.delete(f"/v1/conversations/{cid0}/items/msg_ghost").status_code == 404
+        and cv.get(f"/v1/conversations/{cid0}/items?after=msg_ghost").status_code == 400
+        and cv.get("/v1/conversations/conv_ghost").status_code == 404
+        and cv.get("/v1/conversations/conv_ghost/items").status_code == 404
+    )
+    # a deleted conv orphans nothing — its member responses still GET,
+    # and the deleted conv itself refuses a turn join
+    cv_del = cv.delete(f"/v1/conversations/{cid0}")
+    out["conv_delete"] = (
+        cv_del.status_code == 200
+        and cv_del.json()["object"] == "conversation.deleted"
+        and cv_del.json()["deleted"] is True
+        and cv.get(f"/v1/conversations/{cid0}").status_code == 404
+        and cv.get(f"/v1/responses/{cv_r1.json()['id']}").status_code == 200
+        and cv.post(
+            "/v1/responses", json={"model": "fx1", "input": "x", "conversation": cid0}
+        ).json()["error"]["code"]
+        == "conversation_not_found"
+    )
+    # background + conv: submit validates the conv, the worker appends
+    cvb = cv.post("/v1/conversations", json={})
+    cvb_id = cvb.json()["id"]
+    cvb_r = cv.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "bg-conv", "conversation": cvb_id, "background": True},
+    )
+    for _ in range(500):
+        if cv.get(f"/v1/responses/{cvb_r.json()['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+    cvb_items = cv.get(f"/v1/conversations/{cvb_id}/items").json()["data"]
+    out["conv_background_turn"] = (
+        cvb_r.status_code == 200
+        and cvb_r.json()["status"] == "queued"
+        and len(cvb_items) == 2
+        and cvb_items[-1]["content"][0]["text"] == "clean:bg-conv"
+        and cv.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "conversation": "conv_ghost",
+                "background": True,
+            },
+        ).json()["error"]["code"]
+        == "conversation_not_found"
+    )
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()
     out["capabilities_retrieval"] = (
