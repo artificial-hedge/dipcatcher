@@ -1943,6 +1943,74 @@ class HarnessClient:
         """``DELETE /v1/files/{id}``."""
         return dict(self._json("DELETE", f"/v1/files/{file_id}"))
 
+    # ---- uploads (chunked files) ----------------------------------------------
+
+    def upload_create(
+        self,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+        bytes: int,
+        mime_type: str = "application/jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads`` — open an upload intent for a payload
+        larger than the request cap. Parts land via ``upload_part``;
+        ``upload_complete`` mints the file.``bytes`` is the DECLARED total
+        the parts must sum to — fail-closed both ways."""
+        return dict(
+            self._json(
+                "POST",
+                "/v1/uploads",
+                {
+                    "purpose": purpose,
+                    "filename": filename,
+                    "bytes": bytes,
+                    "mime_type": mime_type,
+                },
+            )
+        )
+
+    def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/parts`` — one chunk (multipart ``data``
+        field, same hand-rolled assembly as ``upload_file``)."""
+        boundary = f"fx1{uuid.uuid4().hex}"
+        body = (
+            (
+                f"--{boundary}\r\n"
+                'Content-Disposition: form-data; name="data"; filename="part"\r\n'
+                "Content-Type: application/octet-stream\r\n\r\n"
+            ).encode()
+            + data
+            + f"\r\n--{boundary}--\r\n".encode()
+        )
+        _status, _headers, raw = self._request(
+            "POST",
+            f"/v1/uploads/{upload_id}/parts",
+            body,
+            extra_headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        )
+        return dict(json.loads(raw))
+
+    def upload_complete(
+        self,
+        upload_id: str,
+        part_ids: list[str],
+        *,
+        md5: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/complete`` — concatenate the parts in
+        the given order into the file record. ``md5`` is checked before
+        the file mints (a mismatch leaves no orphan)."""
+        payload: dict[str, Any] = {"part_ids": part_ids}
+        if md5 is not None:
+            payload["md5"] = md5
+        return dict(self._json("POST", f"/v1/uploads/{upload_id}/complete", payload))
+
+    def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/cancel`` — terminal cancel; replays
+        200 on an already-cancelled record."""
+        return dict(self._json("POST", f"/v1/uploads/{upload_id}/cancel"))
+
     def create_batch(
         self,
         input_file_id: str,

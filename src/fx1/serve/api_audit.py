@@ -7562,6 +7562,218 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
         and rlines[0]["response"]["body"]["output"][0]["content"][0]["text"] == "clean:hi"
     )
 
+    # ---- /v1/uploads: chunked file assembly — intent → parts →
+    # complete mints a /v1/files record; md5 checked pre-mint; terminal
+    # states and declared-byte bounds fail closed.
+    import hashlib as _hashlib  # noqa: PLC0415
+    import tempfile as _tempfile  # noqa: PLC0415
+    from pathlib import Path as _Path  # noqa: PLC0415
+
+    _ul_payload = b'{"l":1}\n{"l":2}\n{"l":3}\n'
+    ulp1, ulp2, ulp3 = _ul_payload[:8], _ul_payload[8:18], _ul_payload[18:]
+    uc = fb.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "big.jsonl",
+            "bytes": len(_ul_payload),
+            "mime_type": "application/jsonl",
+        },
+    )
+    uobj = uc.json()
+    out["upload_create_200_shape"] = (
+        uc.status_code == 200
+        and uobj["object"] == "upload"
+        and uobj["id"].startswith("upload_")
+        and uobj["status"] == "pending"
+        and uobj["bytes"] == len(_ul_payload)
+        and uobj["expires_at"] > uobj["created_at"]
+        and uobj["file"] is None
+    )
+    out["upload_create_purpose_400"] = (
+        fb.post(
+            "/v1/uploads",
+            json={
+                "purpose": "user_data",
+                "filename": "x.jsonl",
+                "bytes": 1,
+                "mime_type": "t",
+            },
+        ).status_code
+        == 400
+    )
+    out["upload_create_ext_400"] = (
+        fb.post(
+            "/v1/uploads",
+            json={
+                "purpose": "batch",
+                "filename": "x.txt",
+                "bytes": 1,
+                "mime_type": "t",
+            },
+        ).status_code
+        == 400
+    )
+    uid = uobj["id"]
+    upart = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp1)})
+    out["upload_part_200_shape"] = (
+        upart.status_code == 200
+        and upart.json()["object"] == "upload.part"
+        and upart.json()["id"].startswith("part_")
+        and upart.json()["upload_id"] == uid
+    )
+    out["upload_part_missing_404"] = (
+        fb.post("/v1/uploads/upload_nope/parts", files={"data": ("p", b"x")}).status_code == 404
+        and fb.post("/v1/uploads/upload_nope/parts", files={"data": ("p", b"x")}).json()["error"][
+            "code"
+        ]
+        == "upload_not_found"
+    )
+    out["upload_part_no_field_400"] = fb.post(f"/v1/uploads/{uid}/parts").status_code == 400
+    # cumulative bytes may never exceed the declared total
+    out["upload_part_over_declared_400"] = (
+        fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", _ul_payload)}).json()["error"][
+            "code"
+        ]
+        == "part_exceeds_declared_bytes"
+    )
+    pid2 = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp2)}).json()["id"]
+    pid3 = fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", ulp3)}).json()["id"]
+    pid1 = upart.json()["id"]
+    # complete honors the caller's part order
+    udone = fb.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid3, pid1, pid2]}).json()
+    out["upload_complete_caller_order"] = (
+        udone["status"] == "completed"
+        and udone["file"]["object"] == "file"
+        and udone["file"]["id"].startswith("file-")
+        and fb.get(f"/v1/files/{udone['file']['id']}/content").content == ulp3 + ulp1 + ulp2
+    )
+    # terminal: parts and re-complete refuse on a completed record
+    out["upload_terminal_409"] = (
+        fb.post(f"/v1/uploads/{uid}/parts", files={"data": ("p", b"x")}).json()["error"]["code"]
+        == "upload_terminal"
+        and fb.post(f"/v1/uploads/{uid}/complete", json={"part_ids": [pid1]}).json()["error"][
+            "code"
+        ]
+        == "upload_terminal"
+    )
+    # unknown part id fails closed before the mint
+    uc2 = fb.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "m.jsonl",
+            "bytes": 2,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    pab = fb.post(f"/v1/uploads/{uc2}/parts", files={"data": ("p", b"ab")}).json()["id"]
+    out["upload_complete_part_not_found_400"] = (
+        fb.post(f"/v1/uploads/{uc2}/complete", json={"part_ids": ["part_nope"]}).json()["error"][
+            "code"
+        ]
+        == "part_not_found"
+    )
+    # md5 mismatch refuses before the file mints; correct digest completes
+    out["upload_md5_mismatch_400"] = (
+        fb.post(
+            f"/v1/uploads/{uc2}/complete",
+            json={"part_ids": [pab], "md5": "0" * 32},
+        ).json()["error"]["code"]
+        == "checksum_mismatch"
+    )
+    uok = fb.post(
+        f"/v1/uploads/{uc2}/complete",
+        json={
+            "part_ids": [pab],
+            "md5": _hashlib.md5(b"ab", usedforsecurity=False).hexdigest(),
+        },
+    )
+    out["upload_md5_ok_completes"] = (
+        uok.status_code == 200
+        and uok.json()["status"] == "completed"
+        and uok.json()["file"]["bytes"] == 2
+    )
+    # declared-but-under-parted refuses (assembled != declared)
+    uc3 = fb.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "d.jsonl",
+            "bytes": 64,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    pu3 = fb.post(f"/v1/uploads/{uc3}/parts", files={"data": ("p", b"short")}).json()["id"]
+    out["upload_under_declared_400"] = (
+        fb.post(f"/v1/uploads/{uc3}/complete", json={"part_ids": [pu3]}).json()["error"]["code"]
+        == "upload_incomplete"
+    )
+    # cancel is terminal and replays 200; completing a cancelled intent 409s
+    uc4 = fb.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "c.jsonl",
+            "bytes": 2,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    cnl = fb.post(f"/v1/uploads/{uc4}/cancel").json()
+    out["upload_cancel_then_409"] = (
+        cnl["status"] == "cancelled"
+        and fb.post(f"/v1/uploads/{uc4}/cancel").json()["status"] == "cancelled"
+        and fb.post(f"/v1/uploads/{uc4}/parts", files={"data": ("p", b"ab")}).json()["error"][
+            "code"
+        ]
+        == "upload_terminal"
+    )
+    out["upload_cancel_missing_404"] = fb.post("/v1/uploads/upload_nope/cancel").status_code == 404
+
+    # durability: a fresh app over the same state_dir recovers pending
+    # uploads AND their parts (blob before journal), and cancelled
+    # records stay cancelled
+    _sd = _Path(_tempfile.mkdtemp(prefix="fx1-ul-"))
+    du1 = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+    )
+    uup = du1.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "d.jsonl",
+            "bytes": 4,
+            "mime_type": "t",
+        },
+    ).json()["id"]
+    dpart = du1.post(f"/v1/uploads/{uup}/parts", files={"data": ("p", b"ab")}).json()["id"]
+    du1.post(
+        "/v1/uploads",
+        json={
+            "purpose": "batch",
+            "filename": "gone.jsonl",
+            "bytes": 1,
+            "mime_type": "t",
+        },
+    ).json()
+    du2 = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), state_dir=str(_sd))
+    )
+    ddone = du2.post(
+        f"/v1/uploads/{uup}/complete",
+        json={
+            "part_ids": [
+                dpart,
+                du2.post(f"/v1/uploads/{uup}/parts", files={"data": ("p", b"cd")}).json()["id"],
+            ]
+        },
+    )
+    out["upload_state_dir_recovers"] = (
+        ddone.status_code == 200
+        and ddone.json()["status"] == "completed"
+        and du2.get(f"/v1/files/{ddone.json()['file']['id']}/content").content == b"abcd"
+    )
+
     # ---- /v1 retrieval: the `store` flag honored end-to-end — stored
     # envelopes fetch verbatim by id (sync, stream, n-fan-out, batch
     # lines, idem replays all index identically), store=false and

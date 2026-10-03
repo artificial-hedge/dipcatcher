@@ -174,6 +174,8 @@
       "remote_response_input_items": true,
       "remote_score": true,
       "remote_stored_family": true,
+      "remote_upload_cancel": true,
+      "remote_upload_lifecycle": true,
       "remote_verify_dir": true,
       "remote_version_json": true,
       "respond_hints_inproc": true,
@@ -189,11 +191,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "14ea673d38bda5fa4d8d978b371ec62b8b086c97",
+  "git_revision": "5a1c256ae7724c085c2866ecf900c0e6421ec754",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). respond --stream concatenates Responses delta frames on both surfaces (in-process SDK pairs and remote payload dicts), forwarding flag kwargs verbatim. ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. eval-wait/ft-wait/batch-wait re-attach to a --no-wait submit: poll kwargs reach the client verbatim, the terminal record prints, and eval-wait --receipt follows with the sealed doc; all three refuse locally without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "f7775462a72f492d31274168d035aad43022d8435073002289772d8ce0843382",
+  "receipt_sha256": "e2ebc9bf48b47cd355acf20e3fdc16848ad7b7771d6a6c7b285078e214523400",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

@@ -1013,6 +1013,84 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/uploads — open a chunked-upload intent. `bytes` is the
+   * DECLARED total the parts must sum to (fail-closed both ways).
+   */
+  async uploadCreate(opts: {
+    purpose?: "batch" | "fine-tune";
+    filename?: string;
+    bytes: number;
+    mimeType?: string;
+  }): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/uploads",
+      body: {
+        purpose: opts.purpose ?? "batch",
+        filename: opts.filename ?? "input.jsonl",
+        bytes: opts.bytes,
+        mime_type: opts.mimeType ?? "application/jsonl",
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** POST /v1/uploads/{id}/parts — one chunk (multipart `data` field). */
+  async uploadPart(
+    uploadId: string,
+    data: string | Uint8Array | Blob,
+  ): Promise<Record<string, unknown>> {
+    const form = new FormData();
+    const blob =
+      typeof data === "string"
+        ? new Blob([data], { type: "application/octet-stream" })
+        : data instanceof Uint8Array
+          ? new Blob([data as BlobPart], { type: "application/octet-stream" })
+          : data;
+    form.append("data", blob);
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/parts`,
+      rawBody: form,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/uploads/{id}/complete — concatenate the parts in the given
+   * order into a `file-` record (returned on `file`). `md5` (hex) is
+   * checked before the mint, so a checksum failure leaves no orphan.
+   */
+  async uploadComplete(
+    uploadId: string,
+    partIds: string[],
+    md5?: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/complete`,
+      body: md5 ? { part_ids: partIds, md5 } : { part_ids: partIds },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/uploads/{id}/cancel — terminal cancel; replays 200 on an
+   * already-cancelled record, 409 once completed.
+   */
+  async uploadCancel(uploadId: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/uploads/${encodeURIComponent(uploadId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
    * POST /v1/batches — run an uploaded file as one batch through the
    * gated pipeline. `endpoint` is `/v1/chat/completions` or
    * `/v1/responses`; the submitter's `X-Fx1-*` headers route every line.

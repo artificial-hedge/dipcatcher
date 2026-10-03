@@ -39,6 +39,7 @@ import threading
 import time
 import urllib.parse
 import uuid
+from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -80,6 +81,8 @@ from fx1.serve.finetune import (
 from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
+    OPENAI_FILE_BYTES_MAX,
+    OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
     OPENAI_RESPONSE_TERMINAL,
     OpenAIChatRequest,
@@ -117,6 +120,12 @@ from fx1.serve.openai_compat import (
     validate_response_format,
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
+from fx1.serve.uploads import (
+    UploadStore,
+    UploadStoreError,
+    upload_object,
+    validate_upload_intent,
+)
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
@@ -480,6 +489,14 @@ class Fx1Harness:
         )
         self._ft_dir = Path(ft_dir or tempfile.gettempdir()) / "fx1_ft_sdk"
         self._ft_runner = ft_runner or default_ft_runner(self._resolve_backend)
+        # The /v1/uploads twin — chunked assembly into process-local file
+        # records; journaled under state_dir like every other store.
+        self._upload_store = UploadStore(64, OPENAI_FILE_BYTES_MAX, state_dir=state_path)
+        # File records minted by upload_complete — the wire's _FileStore
+        # twin in miniature (process-local; the upload journal is the
+        # durable half).
+        self._files: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._files_lock = threading.Lock()
 
     def _record_call(
         self,
@@ -2948,6 +2965,91 @@ class Fx1Harness:
             batch["callback_error"] = None if ok else err
             batch["callback_attempts"] = attempts
         return batch, out_lines
+
+    # ---- uploads (chunked files) ----------------------------------------
+
+    def upload_create(
+        self,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+        bytes: int,
+        mime_type: str = "application/jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads``, in-process — open a chunked-upload
+        intent. ``bytes`` is the DECLARED total the parts must sum to
+        (fail-closed both ways, same as the wire)."""
+        validate_upload_intent(purpose, filename, OPENAI_FILE_PURPOSE_ACCEPT)
+        return upload_object(
+            self._upload_store.create(
+                purpose=purpose, filename=filename, nbytes=bytes, mime_type=mime_type
+            )
+        )
+
+    def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/parts`` — one chunk, journaled under
+        ``state_dir`` exactly like the wire."""
+        return self._upload_store.add_part(upload_id, data)
+
+    def upload_complete(
+        self,
+        upload_id: str,
+        part_ids: list[str],
+        *,
+        md5: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/complete`` — assemble the parts into a
+        process-local ``file-`` record (fetch bytes back with
+        :meth:`file_content`). The md5 check runs before the mint, same
+        as the wire."""
+        content = self._upload_store.assemble(upload_id, part_ids)
+        meta = self._upload_store.get(upload_id)
+        assert meta is not None  # assemble() already raised otherwise
+        if md5 is not None and (
+            hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
+        ):
+            raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
+        if len(content) != meta.nbytes:
+            raise UploadStoreError(
+                400,
+                f"assembled bytes {len(content)} != declared {meta.nbytes}",
+                "upload_incomplete",
+            )
+        file_id = f"file-{uuid.uuid4().hex}"
+        fobj = {
+            "id": file_id,
+            "object": "file",
+            "purpose": meta.purpose,
+            "filename": meta.filename,
+            "bytes": len(content),
+            "created_at": int(time.time()),
+            "status": "processed",
+        }
+        with self._files_lock:
+            self._files[file_id] = {**fobj, "_content": content}
+            while len(self._files) > 256:
+                self._files.popitem(last=False)
+        done = self._upload_store.complete(upload_id, part_ids, content=content, file_id=file_id)
+        return upload_object(done, file_obj=fobj)
+
+    def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/cancel``."""
+        return upload_object(self._upload_store.cancel(upload_id))
+
+    def file_content(self, file_id: str) -> bytes:
+        """``GET /v1/files/{id}/content`` twin — raw bytes of an
+        upload-minted file."""
+        rec = self._files.get(file_id)
+        if rec is None:
+            raise KeyError(file_id)
+        return bytes(rec["_content"])
+
+    def file_card(self, file_id: str) -> dict[str, Any]:
+        """``GET /v1/files/{id}`` twin — the file object (no content)."""
+        rec = self._files.get(file_id)
+        if rec is None:
+            raise KeyError(file_id)
+        return {k: v for k, v in rec.items() if k != "_content"}
 
     def _resolve_chain(
         self,

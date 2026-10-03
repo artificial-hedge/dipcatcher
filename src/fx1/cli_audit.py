@@ -21,6 +21,7 @@ Sealed ``cli_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import hashlib
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -1325,6 +1326,44 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         def delete_file(self, file_id: str) -> dict[str, Any]:
             self.last_file_id = file_id
             return {"id": file_id, "object": "file", "deleted": True}
+
+        def upload_create(self, **kw: Any) -> dict[str, Any]:
+            self.last_upload_create = dict(kw)
+            return {
+                "id": "upload_x",
+                "object": "upload",
+                "status": "pending",
+                "bytes": kw.get("bytes"),
+            }
+
+        def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+            self.last_upload_part = {"id": upload_id, "n_bytes": len(data)}
+            return {
+                "id": "part_a",
+                "object": "upload.part",
+                "upload_id": upload_id,
+            }
+
+        def upload_complete(self, upload_id: str, part_ids: list[str], **kw: Any) -> dict[str, Any]:
+            self.last_upload_complete = {
+                "id": upload_id,
+                "part_ids": part_ids,
+                "md5": kw.get("md5"),
+            }
+            return {
+                "id": upload_id,
+                "object": "upload",
+                "status": "completed",
+                "file": {"id": "file-up", "object": "file"},
+            }
+
+        def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+            self.last_upload_cancel = upload_id
+            return {
+                "id": upload_id,
+                "object": "upload",
+                "status": "cancelled",
+            }
 
         def create_batch(self, input_file_id: str, **kw: Any) -> dict[str, Any]:
             rec = dict(kw)
@@ -2726,6 +2765,50 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         ).get("id") == "conv_x" and remotes[-1].last_ft_query == {
             "conv_item_delete": ["conv_x", "msg_z"]
         }
+        # /v1/uploads family: `harness upload` chunks a real file through
+        # create→parts→complete; --no-md5 drops the checksum; upload-cancel
+        # forwards the id
+        import tempfile as _tful  # noqa: PLC0415
+
+        with _tful.NamedTemporaryFile(mode="wb", suffix=".jsonl", delete=False) as _ulf:
+            _ulf.write(b'{"a":1}\n{"b":2}\n')
+            _ulpath = _ulf.name
+        _ulr = runner.invoke(
+            app,
+            [
+                "harness",
+                "upload",
+                _ulpath,
+                "--chunk-bytes",
+                "5",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        _ul_done = json.loads(_ulr.stdout) if _ulr.exit_code == 0 else {}
+        out["remote_upload_lifecycle"] = (
+            _ulr.exit_code == 0
+            and _ul_done.get("status") == "completed"
+            and _ul_done.get("file", {}).get("id") == "file-up"
+            and remotes[-1].last_upload_create["bytes"] == 16
+            and remotes[-1].last_upload_part == {"id": "upload_x", "n_bytes": 1}
+            and remotes[-1].last_upload_complete
+            == {
+                "id": "upload_x",
+                "part_ids": ["part_a", "part_a", "part_a", "part_a"],
+                "md5": hashlib.md5(b'{"a":1}\n{"b":2}\n', usedforsecurity=False).hexdigest(),
+            }
+        )
+        out["remote_upload_cancel"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "upload-cancel", "upload_x", "--remote", "http://h.test"],
+                ).stdout
+            ).get("status")
+            == "cancelled"
+            and remotes[-1].last_upload_cancel == "upload_x"
+        )
         # in-process leg: conv-create needs no backend; a ghost get maps
         # the SDK KeyError to exit 2 through _or_exit
         _cip = runner.invoke(app, ["harness", "conv-create", "--metadata", '{"k":"v"}'])

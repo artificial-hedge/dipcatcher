@@ -1,5 +1,7 @@
 {
   "openapi": "3.1.0",
+  "title": "fx-1 harness API",
+  "version": "0.4.0",
   "paths": {
     "/harness/backends": {
       "get": {
@@ -14,8 +16,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "name",
+            "in": "path",
             "required": true
           }
         ],
@@ -39,8 +41,8 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "role",
+            "in": "query",
             "required": false
           }
         ],
@@ -55,8 +57,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -71,8 +73,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -97,13 +99,13 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "backend",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -118,8 +120,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "completion_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -134,8 +136,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "completion_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -150,8 +152,8 @@
       "post": {
         "params": [
           {
-            "in": "query",
             "name": "wait_s",
+            "in": "query",
             "required": false
           }
         ],
@@ -166,18 +168,18 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "status",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "suite",
+            "in": "query",
             "required": false
           }
         ],
@@ -190,8 +192,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -206,8 +208,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -220,8 +222,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -236,13 +238,13 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "candidate_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -257,8 +259,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -283,18 +285,18 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "offset",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "status",
+            "in": "query",
             "required": false
           }
         ],
@@ -307,8 +309,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -333,8 +335,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -347,8 +349,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -363,13 +365,13 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "timeout_s",
+            "in": "query",
             "required": false
           }
         ],
@@ -384,8 +386,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -400,8 +402,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -444,8 +446,8 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "format",
+            "in": "query",
             "required": false
           }
         ],
@@ -498,8 +500,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "sha256",
+            "in": "path",
             "required": true
           }
         ],
@@ -514,13 +516,13 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -533,8 +535,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -549,8 +551,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "batch_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -565,8 +567,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "batch_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -581,28 +583,28 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "before",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "model",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "order",
+            "in": "query",
             "required": false
           }
         ],
@@ -615,13 +617,13 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           },
           {
-            "in": "header",
             "name": "Last-Event-ID",
+            "in": "header",
             "required": false
           }
         ],
@@ -636,8 +638,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "completion_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -650,8 +652,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "completion_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -666,28 +668,28 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "completion_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "before",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "order",
+            "in": "query",
             "required": false
           }
         ],
@@ -712,8 +714,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -726,8 +728,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -740,8 +742,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -756,28 +758,28 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "before",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "order",
+            "in": "query",
             "required": false
           }
         ],
@@ -790,8 +792,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -806,13 +808,13 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "conversation_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "path",
             "name": "item_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -837,13 +839,13 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -866,8 +868,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -880,8 +882,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -894,8 +896,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -910,13 +912,13 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -929,13 +931,13 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           },
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -950,13 +952,13 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "path",
             "name": "run_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -969,13 +971,13 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "path",
             "name": "run_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -990,13 +992,13 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "path",
             "name": "run_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1011,23 +1013,23 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "eval_id",
-            "required": true
-          },
-          {
             "in": "path",
-            "name": "run_id",
             "required": true
           },
           {
-            "in": "query",
+            "name": "run_id",
+            "in": "path",
+            "required": true
+          },
+          {
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -1059,8 +1061,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "file_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1073,8 +1075,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "file_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1089,8 +1091,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "file_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1105,13 +1107,13 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -1124,8 +1126,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -1140,8 +1142,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1156,8 +1158,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1172,18 +1174,18 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -1198,18 +1200,18 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           }
         ],
@@ -1224,8 +1226,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1240,8 +1242,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1265,8 +1267,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "model",
+            "in": "path",
             "required": true
           }
         ],
@@ -1279,8 +1281,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "model",
+            "in": "path",
             "required": true
           }
         ],
@@ -1305,13 +1307,13 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           },
           {
-            "in": "header",
             "name": "Last-Event-ID",
+            "in": "header",
             "required": false
           }
         ],
@@ -1326,8 +1328,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "response_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1340,8 +1342,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "response_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1356,8 +1358,8 @@
       "post": {
         "params": [
           {
-            "in": "path",
             "name": "response_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -1372,28 +1374,28 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "response_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "after",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "before",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "order",
+            "in": "query",
             "required": false
           }
         ],
@@ -1403,9 +1405,65 @@
           "422"
         ]
       }
+    },
+    "/v1/uploads": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/complete": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/uploads/{upload_id}/parts": {
+      "post": {
+        "params": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "0f0e36512bf4777639a7a6ace50dc1645cb013e87dbe27bc634d2cf3669f1460",
-  "title": "fx-1 harness API",
-  "version": "0.4.0"
+  "schema_sha256": "bac34ec26a81cae12cdb054b7b08011e8378213ff3d1071515c2828aeafd0ed6"
 }

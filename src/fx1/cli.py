@@ -7,9 +7,11 @@ manifests, and harness inspection.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Callable, Iterable
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 
@@ -2136,6 +2138,67 @@ def harness_file_delete(
     """Delete a remote file."""
     _need_remote(remote)
     st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).delete_file(file_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("upload")
+def harness_upload(
+    file: Path = typer.Argument(..., help="Local .jsonl to ship in chunks."),
+    purpose: str = typer.Option("batch", "--purpose", help="File purpose: batch|fine-tune."),
+    chunk_bytes: int = typer.Option(
+        4 * 1024 * 1024, "--chunk-bytes", help="Part size for /v1/uploads parts."
+    ),
+    md5: bool = typer.Option(
+        True, "--md5/--no-md5", help="Send the content md5 on complete (fail-closed check)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Chunked upload via /v1/uploads — for files too big for one request.
+
+    Opens the upload intent, posts the file in --chunk-bytes parts, and
+    completes it into a file- record (printed on stdout; its id feeds
+    batch-submit/ft-create like any /v1/files id).
+    """
+    _need_remote(remote)
+    if chunk_bytes <= 0:
+        typer.echo("error: --chunk-bytes must be positive", err=True)
+        raise typer.Exit(code=2)
+    body = file.read_bytes() if file.exists() else None
+    if body is None:
+        typer.echo(f"error: {file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    client = _remote_client(remote or "", api_key, timeout_s)
+    up = _or_exit(
+        lambda: client.upload_create(
+            purpose=purpose,
+            filename=file.name,
+            bytes=len(body),
+            mime_type="application/jsonl",
+        )
+    )
+    uid = str(up["id"])
+    part_ids: list[str] = []
+    for off in range(0, len(body), chunk_bytes):
+        chunk = body[off : off + chunk_bytes]
+        part = _or_exit(partial(client.upload_part, uid, chunk))
+        part_ids.append(str(part["id"]))
+    digest = hashlib.md5(body, usedforsecurity=False).hexdigest() if md5 else None
+    done = _or_exit(lambda: client.upload_complete(uid, part_ids, md5=digest))
+    typer.echo(json.dumps(done, indent=2))
+
+
+@harness_app.command("upload-cancel")
+def harness_upload_cancel(
+    upload_id: str = typer.Argument(..., help="upload_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a pending chunked upload (replays 200 when already cancelled)."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).upload_cancel(upload_id))
     typer.echo(json.dumps(st, indent=2))
 
 

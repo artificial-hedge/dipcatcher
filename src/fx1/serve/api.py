@@ -160,6 +160,8 @@ from fx1.serve.openai_compat import (
     OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
+    OpenAIUploadCompleteRequest,
+    OpenAIUploadCreateRequest,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -190,6 +192,12 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
+from fx1.serve.uploads import (
+    UploadStore,
+    UploadStoreError,
+    upload_object,
+    validate_upload_intent,
+)
 from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
@@ -2976,6 +2984,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     jobs_executor: ThreadPoolExecutor,
     file_store: _FileStore,
     batch_store: _BatchStore,
+    upload_store: UploadStore,
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
@@ -5578,6 +5587,101 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(404, f"file {file_id!r} not found", code="file_not_found")
         return JSONResponse({"id": file_id, "object": "file", "deleted": True})
 
+    # --- /v1/uploads ------------------------------------------------------
+    # Chunked upload surface: create an intent, add parts, complete into a
+    # /v1/files record. Same durability contract as files (journaled meta
+    # + blob parts under --state-dir). Parts are multipart `data` fields,
+    # bounded by the declared byte count — the file store's cap applies at
+    # create, so a completed upload can never exceed one file's budget.
+
+    def _upload_err(exc: UploadStoreError) -> ApiError:
+        return ApiError(exc.status, str(exc), code=exc.code)
+
+    @app.post(
+        "/v1/uploads",
+        tags=["openai"],
+        operation_id="openai_upload_create",
+    )
+    def openai_upload_create(body: OpenAIUploadCreateRequest) -> JSONResponse:
+        """Open an upload intent — parts land under ``.../parts`` until
+        ``complete`` assembles them into a file record."""
+        try:
+            validate_upload_intent(body.purpose, body.filename, OPENAI_FILE_PURPOSE_ACCEPT)
+            meta = upload_store.create(
+                purpose=body.purpose,
+                filename=body.filename,
+                nbytes=body.bytes,
+                mime_type=body.mime_type,
+            )
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(meta), status_code=200)
+
+    @app.post(
+        "/v1/uploads/{upload_id}/parts",
+        tags=["openai"],
+        operation_id="openai_upload_part",
+    )
+    async def openai_upload_part(
+        upload_id: str,
+        data: UploadFile | None = File(default=None),
+    ) -> JSONResponse:
+        """Add one part (multipart ``data`` field). Blob lands durable
+        before the journal names it."""
+        if data is None:
+            raise ApiError(400, "multipart field 'data' is required", code="invalid_request")
+        try:
+            part = upload_store.add_part(upload_id, await data.read())
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(part)
+
+    @app.post(
+        "/v1/uploads/{upload_id}/complete",
+        tags=["openai"],
+        operation_id="openai_upload_complete",
+    )
+    def openai_upload_complete(upload_id: str, body: OpenAIUploadCompleteRequest) -> JSONResponse:
+        """Assemble the declared parts into a ``file-`` record. The md5
+        check runs BEFORE the file mints so a checksum failure leaves no
+        orphan; the upload then transitions terminal."""
+        try:
+            content = upload_store.assemble(upload_id, body.part_ids)
+            meta = upload_store.get(upload_id)
+            if meta is None:  # unreachable — assemble raises first
+                raise UploadStoreError(404, "upload gone", "upload_not_found")
+            if body.md5 is not None and (
+                hashlib.md5(content, usedforsecurity=False).hexdigest() != body.md5.lower()
+            ):
+                raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
+            if len(content) != meta.nbytes:
+                raise UploadStoreError(
+                    400,
+                    f"assembled bytes {len(content)} != declared {meta.nbytes}",
+                    "upload_incomplete",
+                )
+            rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
+            done = upload_store.complete(
+                upload_id, body.part_ids, content=content, file_id=rec.file_id
+            )
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(done, file_obj=file_object(rec.model_dump())))
+
+    @app.post(
+        "/v1/uploads/{upload_id}/cancel",
+        tags=["openai"],
+        operation_id="openai_upload_cancel",
+    )
+    def openai_upload_cancel(upload_id: str) -> JSONResponse:
+        """Cancel a pending upload — replays 200 on an already-cancelled
+        record, 409 once completed."""
+        try:
+            meta = upload_store.cancel(upload_id)
+        except UploadStoreError as exc:
+            raise _upload_err(exc) from exc
+        return JSONResponse(upload_object(meta))
+
     @app.post(
         "/v1/batches",
         tags=["openai"],
@@ -6612,6 +6716,7 @@ def create_app(
     eval_store = EvalStore(job_max, journal=_journal("evals.jsonl"))
     eval_spec_store = EvalSpecStore(job_max, journal=_journal("eval_specs.jsonl"))
     file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
+    upload_store = UploadStore(file_max, file_bytes_max, state_dir=state_path)
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
     # stores; the runner defaults to the real staged Pipeline (its own
@@ -7163,6 +7268,7 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        upload_store=upload_store,
         ft_store=ft_store,
         ft_runner=ft_runner_eff,
         ft_dir=ft_work_root,

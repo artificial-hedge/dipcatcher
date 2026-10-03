@@ -214,6 +214,10 @@ same digested shape the job record embeds.
 | `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
 | `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
 | `DELETE /v1/files/{id}` | evict a stored file |
+| `POST /v1/uploads` | open a chunked-upload intent (`purpose`, `filename`, declared `bytes`, `mime_type`) → `upload_*` pending record — `Fx1Harness.upload_create` / `HarnessClient.upload_create` / `client.uploadCreate` / `fx1 harness upload` |
+| `POST /v1/uploads/{id}/parts` | multipart `data` field appends a part → `part_*` record; cumulative bytes may never exceed the declared total; parts on a terminal record are `409 upload_terminal` |
+| `POST /v1/uploads/{id}/complete` | assemble `part_ids` in the caller's order into a `file-*` record (optional `md5` checksum is verified pre-mint — a failed check mints no file and leaves the intent pending); `assembled == declared` enforced |
+| `POST /v1/uploads/{id}/cancel` | terminal cancel — replays 200 when already cancelled |
 | `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |

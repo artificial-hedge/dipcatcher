@@ -400,6 +400,36 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk_e.eval_spec_delete(spec["id"])) == "KeyError"
     )
 
+    # ---- /v1/uploads twin: chunked intent→parts→complete mints a file
+    # in-process; md5 prechecked; terminal + bounds fail closed.
+    import hashlib as _hashul  # noqa: PLC0415
+
+    _ub = b'{"u":1}\n{"u":2}\n'
+    _ucr = sdk.upload_create(bytes=len(_ub))
+    _up1 = sdk.upload_part(_ucr["id"], _ub[:8])
+    _up2 = sdk.upload_part(_ucr["id"], _ub[8:])
+    _udone = sdk.upload_complete(
+        _ucr["id"],
+        [_up2["id"], _up1["id"]],
+        md5=_hashul.md5(_ub[8:] + _ub[:8], usedforsecurity=False).hexdigest(),
+    )
+    out["upload_lifecycle"] = (
+        _ucr["object"] == "upload"
+        and _ucr["status"] == "pending"
+        and _up1["object"] == "upload.part"
+        and _udone["status"] == "completed"
+        and _udone["file"]["bytes"] == len(_ub)
+        and sdk.file_content(_udone["file"]["id"]) == _ub[8:] + _ub[:8]
+        and "_content" not in sdk.file_card(_udone["file"]["id"])
+    )
+    out["upload_fail_closed"] = (
+        _raises(lambda: sdk.upload_create(bytes=0)) == "UploadStoreError"
+        and _raises(lambda: sdk.upload_part("upload_ghost", b"ab")) == "UploadStoreError"
+        and _raises(lambda: sdk.upload_complete(sdk.upload_create(bytes=9)["id"], ["part_ghost"]))
+        == "UploadStoreError"
+        and sdk.upload_cancel(sdk.upload_create(bytes=4)["id"])["status"] == "cancelled"
+    )
+
     return out
 
 

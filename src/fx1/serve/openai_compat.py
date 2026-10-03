@@ -75,6 +75,8 @@ __all__ = [
     "OPENAI_FILE_BYTES_MAX",
     "OPENAI_FILE_PURPOSE_ACCEPT",
     "OpenAIBatchRequest",
+    "OpenAIUploadCompleteRequest",
+    "OpenAIUploadCreateRequest",
     "batch_line_body",
     "batch_line_shape",
     "chat_messages_for_store",
@@ -2052,6 +2054,26 @@ class OpenAIBatchRequest(_Model):
         if self.callback_secret is not None and not self.callback_url:
             raise ValueError("callback_secret requires callback_url")
         return self
+
+
+class OpenAIUploadCreateRequest(_Model):
+    """``POST /v1/uploads`` body — the upload intent record."""
+
+    model_config = ConfigDict(extra="forbid")
+    purpose: str = Field(min_length=1, max_length=32)
+    filename: str = Field(min_length=1, max_length=256)
+    bytes: int = Field(gt=0)
+    mime_type: str = Field(min_length=1, max_length=128)
+
+
+class OpenAIUploadCompleteRequest(_Model):
+    """``POST /v1/uploads/{id}/complete`` body — the part order to
+    concatenate, plus an optional content md5 the store checks before
+    the file is minted."""
+
+    model_config = ConfigDict(extra="forbid")
+    part_ids: list[str] = Field(min_length=1, max_length=64)
+    md5: str | None = Field(default=None, min_length=32, max_length=32)
 
 
 def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]:

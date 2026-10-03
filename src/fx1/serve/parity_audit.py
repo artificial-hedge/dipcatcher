@@ -48,6 +48,7 @@ Sealed ``parity_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import json
 import os
 import threading
@@ -3108,6 +3109,66 @@ def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
         c_b.create_batch(up["id"], endpoint="/v1/completions")
     except ValueError:
         out["client_batch_bad_endpoint_422"] = True
+
+    # --- /v1/uploads parity: the wire client and the SDK twin run the
+    # same intent→parts→complete lifecycle, mint identical file records,
+    # and fail closed on the same violation classes.
+    _ul_body = b'{"ul":1}\n{"ul":2}\n'
+    _u_w = c_b.upload_create(bytes=len(_ul_body))
+    _pw = c_b.upload_part(_u_w["id"], _ul_body)
+    _ud_w = c_b.upload_complete(
+        _u_w["id"], [_pw["id"]], md5=hashlib.md5(_ul_body, usedforsecurity=False).hexdigest()
+    )
+    _u_s = sdk_b.upload_create(bytes=len(_ul_body))
+    _ps = sdk_b.upload_part(_u_s["id"], _ul_body)
+    _ud_s = sdk_b.upload_complete(
+        _u_s["id"],
+        [_ps["id"]],
+        md5=hashlib.md5(_ul_body, usedforsecurity=False).hexdigest(),
+    )
+    out["upload_lifecycle_parity"] = (
+        _u_w["object"] == _u_s["object"] == "upload"
+        and _u_w["id"].startswith("upload_")
+        and _u_s["id"].startswith("upload_")
+        and _pw["object"] == _ps["object"] == "upload.part"
+        and _ud_w["status"] == _ud_s["status"] == "completed"
+        and _ud_w["file"]["bytes"] == _ud_s["file"]["bytes"] == len(_ul_body)
+        and _ud_w["file"]["id"].startswith("file-")
+        and _ud_s["file"]["id"].startswith("file-")
+        and c_b.file_content(_ud_w["file"]["id"])
+        == sdk_b.file_content(_ud_s["file"]["id"])
+        == _ul_body
+    )
+    _md5bad_w = ("", "")
+    try:
+        _u2 = c_b.upload_create(bytes=len(_ul_body) + 2)
+        _p2 = c_b.upload_part(_u2["id"], _ul_body)
+        c_b.upload_complete(_u2["id"], [_p2["id"]], md5="0" * 32)
+    except HarnessTransportError as exc:
+        _md5bad_w = ("HarnessTransportError", str(exc.code))
+    _md5bad_s = ("", "")
+    try:
+        _u3 = sdk_b.upload_create(bytes=len(_ul_body) + 2)
+        _p3 = sdk_b.upload_part(_u3["id"], _ul_body)
+        sdk_b.upload_complete(_u3["id"], [_p3["id"]], md5="0" * 32)
+    except Exception as _exc6:  # noqa: BLE001 — probe captures the class+code
+        _md5bad_s = (type(_exc6).__name__, str(getattr(_exc6, "code", "")))
+    out["upload_fail_closed_parity"] = (
+        _md5bad_w == ("HarnessTransportError", "checksum_mismatch")
+        and _md5bad_s == ("UploadStoreError", "checksum_mismatch")
+        # a bad md5 is pre-terminal: the intent stays pending and still
+        # accepts parts — only a *successful* complete is terminal
+        and c_b.upload_part(_u2["id"], b"ab")["object"] == "upload.part"
+        and sdk_b.upload_part(_u3["id"], b"ab")["object"] == "upload.part"
+        # cancel is terminal on both legs and replays idempotently
+        and c_b.upload_cancel(c_b.upload_create(bytes=4)["id"])["status"] == "cancelled"
+        and _raises(
+            lambda: sdk_b.upload_part(
+                sdk_b.upload_cancel(sdk_b.upload_create(bytes=4)["id"])["id"], b"ab"
+            )
+        )[0]
+        == "UploadStoreError"
+    )
 
     # --- /v1 retrieval parity: the store flag governs the index on every
     # surface — SDK, wire, and the typed remote client fetch/drop the same
