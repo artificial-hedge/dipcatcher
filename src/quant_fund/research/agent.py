@@ -4943,6 +4943,14 @@ from quant_fund.research.benches_w618 import (
     bench_phi_mod_family,
     bench_untilt_family,
 )
+from quant_fund.research.benches_w619 import (
+    bench_andersen_lannes_family,
+    bench_chromatic_hopkins_family,
+    bench_devissage_ss_family,
+    bench_tame_htpy_family,
+    bench_thick_spectrum_family,
+    bench_unstable_htpy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5322,6 +5330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "unstable_htpy": bench_unstable_htpy_family,
+        "tame_htpy": bench_tame_htpy_family,
+        "devissage_ss": bench_devissage_ss_family,
+        "andersen_lannes": bench_andersen_lannes_family,
+        "chromatic_hopkins": bench_chromatic_hopkins_family,
+        "thick_spectrum": bench_thick_spectrum_family,
         "fontaine_curve": bench_fontaine_curve_family,
         "untilt": bench_untilt_family,
         "perfectoid_c": bench_perfectoid_c_family,

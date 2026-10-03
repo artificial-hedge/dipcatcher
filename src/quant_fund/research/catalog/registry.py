@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-619 homotopy-14 canon.
+        "unstable_htpy",
+        "tame_htpy",
+        "devissage_ss",
+        "andersen_lannes",
+        "chromatic_hopkins",
+        "thick_spectrum",
         # Wave-618 p-adic-5 canon.
         "fontaine_curve",
         "untilt",
