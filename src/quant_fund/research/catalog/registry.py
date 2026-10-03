@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-357 differential-geometry-2 canon.
+        "connection_form",
+        "parallel_transport",
+        "holonomy",
+        "gauss_bonnet",
+        "geodesic_eq",
+        "sectional_curv",
         # Wave-356 stochastic-processes-2 canon.
         "markov_chain",
         "martingale_check",
