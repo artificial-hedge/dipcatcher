@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-994 inverse-spectral canon.
+        "inverse_scattering",
+        "marchenko_eq",
+        "gelfand_levitan",
+        "kdv_isospectral",
+        "trace_formulas",
+        "borg_levinson",
         # Wave-993 nonlinear-functional-analysis canon.
         "monotone_op",
         "degree_theory",
