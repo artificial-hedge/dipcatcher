@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-572 abelian-varieties canon.
+        "abelian_variety",
+        "isogeny_av",
+        "tate_module",
+        "shafarevich_conj",
+        "faltings_thm",
+        "mordell_weil_av",
         # Wave-571 singularity-theory canon.
         "du_val_sing",
         "rational_sing",

@@ -4567,6 +4567,14 @@ from quant_fund.research.benches_w571 import (
     bench_multiplier_ideal_family,
     bench_rational_sing_family,
 )
+from quant_fund.research.benches_w572 import (
+    bench_abelian_variety_family,
+    bench_faltings_thm_family,
+    bench_isogeny_av_family,
+    bench_mordell_weil_av_family,
+    bench_shafarevich_conj_family,
+    bench_tate_module_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4946,6 +4954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "abelian_variety": bench_abelian_variety_family,
+        "isogeny_av": bench_isogeny_av_family,
+        "tate_module": bench_tate_module_family,
+        "shafarevich_conj": bench_shafarevich_conj_family,
+        "faltings_thm": bench_faltings_thm_family,
+        "mordell_weil_av": bench_mordell_weil_av_family,
         "du_val_sing": bench_du_val_sing_family,
         "rational_sing": bench_rational_sing_family,
         "log_canonical": bench_log_canonical_family,
