@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-914 RK/BVP-methods-2 canon.
+        "ralston_rk",
+        "verner_rk",
+        "ralston_second",
+        "runge_kutta4",
+        "invariant_imbedding",
+        "green_function_bvp",
         # Wave-913 interpolation-3 canon.
         "scattered_interp",
         "spline_interp",
