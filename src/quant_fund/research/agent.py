@@ -4215,6 +4215,14 @@ from quant_fund.research.benches_w527 import (
     bench_srb_measure_family,
     bench_stable_mfld_family,
 )
+from quant_fund.research.benches_w528 import (
+    bench_equilibrium_state_family,
+    bench_lasota_yorke_family,
+    bench_pressure_thm_family,
+    bench_ruelle_zeta_family,
+    bench_thermo_formal_family,
+    bench_transfer_op_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4594,6 +4602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transfer_op": bench_transfer_op_family,
+        "thermo_formal": bench_thermo_formal_family,
+        "pressure_thm": bench_pressure_thm_family,
+        "equilibrium_state": bench_equilibrium_state_family,
+        "ruelle_zeta": bench_ruelle_zeta_family,
+        "lasota_yorke": bench_lasota_yorke_family,
         "anosov": bench_anosov_family,
         "srb_measure": bench_srb_measure_family,
         "horseshoe": bench_horseshoe_family,
