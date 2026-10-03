@@ -4991,6 +4991,14 @@ from quant_fund.research.benches_w624 import (
     bench_groth_existence_family,
     bench_raynaud_formal_family,
 )
+from quant_fund.research.benches_w625 import (
+    bench_complexity_spectrum_family,
+    bench_simplicial_htpy_family,
+    bench_small_spec_family,
+    bench_spectrum_type_family,
+    bench_stable_cohomology2_family,
+    bench_woodward_op_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5370,6 +5378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stable_cohomology2": bench_stable_cohomology2_family,
+        "woodward_op": bench_woodward_op_family,
+        "spectrum_type": bench_spectrum_type_family,
+        "complexity_spectrum": bench_complexity_spectrum_family,
+        "small_spec": bench_small_spec_family,
+        "simplicial_htpy": bench_simplicial_htpy_family,
         "raynaud_formal": bench_raynaud_formal_family,
         "formal_completion": bench_formal_completion_family,
         "adic_formal": bench_adic_formal_family,
