@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-480 infinity-topos-3 canon.
+        "etale_geom",
+        "gros_topos",
+        "local_homeo",
+        "classify_obj",
+        "pi_infty",
+        "exponentiable",
         # Wave-479 p-adic-3 canon.
         "fargues_diam",
         "tilting_equiv",
