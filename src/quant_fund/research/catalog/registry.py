@@ -2635,6 +2635,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "variational_bayes",
         "huber_filter",
         "particle_smoother",
+        # Wave-218 advanced-derivatives canon: Dupire local vol, SABR,
+        # deep hedging, Heston calib, barrier adjoint, Andreasen-Huge.
+        "dupire_localvol",
+        "sabr_calib",
+        "deep_hedge",
+        "heston_calib",
+        "barrier_adjoint",
+        "andreasen_huge",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
