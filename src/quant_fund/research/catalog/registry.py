@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-515 syzygy-theory canon.
+        "betti_series",
+        "minimal_free",
+        "auslander_buchs",
+        "serre_conj",
+        "quillen_suslin",
+        "green_koszul",
         # Wave-514 differential-cohomology canon.
         "diff_cohom",
         "cheeger_simons",

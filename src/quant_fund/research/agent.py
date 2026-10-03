@@ -4111,6 +4111,14 @@ from quant_fund.research.benches_w514 import (
     bench_flat_bundle_family,
     bench_secondary_inv_family,
 )
+from quant_fund.research.benches_w515 import (
+    bench_auslander_buchs_family,
+    bench_betti_series_family,
+    bench_green_koszul_family,
+    bench_minimal_free_family,
+    bench_quillen_suslin_family,
+    bench_serre_conj_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4490,6 +4498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "betti_series": bench_betti_series_family,
+        "minimal_free": bench_minimal_free_family,
+        "auslander_buchs": bench_auslander_buchs_family,
+        "serre_conj": bench_serre_conj_family,
+        "quillen_suslin": bench_quillen_suslin_family,
+        "green_koszul": bench_green_koszul_family,
         "diff_cohom": bench_diff_cohom_family,
         "cheeger_simons": bench_cheeger_simons_family,
         "deligne_cohom": bench_deligne_cohom_family,
