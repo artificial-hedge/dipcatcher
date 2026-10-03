@@ -5191,6 +5191,14 @@ from quant_fund.research.benches_w649 import (
     bench_prism_site2_family,
     bench_stacky_prism_family,
 )
+from quant_fund.research.benches_w650 import (
+    bench_anick_htpy_family,
+    bench_bousfield_htpy_family,
+    bench_dror_htpy_family,
+    bench_kane_htpy_family,
+    bench_moore_htpy_family,
+    bench_neisendorfer_htpy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5570,6 +5578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bousfield_htpy": bench_bousfield_htpy_family,
+        "dror_htpy": bench_dror_htpy_family,
+        "kane_htpy": bench_kane_htpy_family,
+        "moore_htpy": bench_moore_htpy_family,
+        "neisendorfer_htpy": bench_neisendorfer_htpy_family,
+        "anick_htpy": bench_anick_htpy_family,
         "prism_site2": bench_prism_site2_family,
         "cartier_prism": bench_cartier_prism_family,
         "breuil_prism": bench_breuil_prism_family,
