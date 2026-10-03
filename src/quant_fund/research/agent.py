@@ -3695,6 +3695,14 @@ from quant_fund.research.benches_w462 import (
     bench_n_localic_family,
     bench_shape_theory_family,
 )
+from quant_fund.research.benches_w463 import (
+    bench_arithmetic_dm_family,
+    bench_frobenius_dm_family,
+    bench_holonomic_dm_family,
+    bench_isocrystal_family,
+    bench_overconv_dm_family,
+    bench_rigid_dm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4074,6 +4082,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "overconv_dm": bench_overconv_dm_family,
+        "arithmetic_dm": bench_arithmetic_dm_family,
+        "frobenius_dm": bench_frobenius_dm_family,
+        "holonomic_dm": bench_holonomic_dm_family,
+        "rigid_dm": bench_rigid_dm_family,
+        "isocrystal": bench_isocrystal_family,
         "n_localic": bench_n_localic_family,
         "shape_theory": bench_shape_theory_family,
         "descent_cond": bench_descent_cond_family,
