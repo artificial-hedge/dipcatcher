@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-903 hash-table canon.
+        "cuckoo_hash",
+        "hopscotch_hash",
+        "robin_hood_hash",
+        "swiss_table",
+        "open_addr_hash",
+        "perfect_hash",
         # Wave-902 trie/string-index canon.
         "trie",
         "patricia_trie",

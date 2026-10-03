@@ -7215,6 +7215,14 @@ from quant_fund.research.benches_w902 import (
     bench_ternary_trie_family,
     bench_trie_family,
 )
+from quant_fund.research.benches_w903 import (
+    bench_cuckoo_hash_family,
+    bench_hopscotch_hash_family,
+    bench_open_addr_hash_family,
+    bench_perfect_hash_family,
+    bench_robin_hood_hash_family,
+    bench_swiss_table_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7586,6 +7594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cuckoo_hash": bench_cuckoo_hash_family,
+        "hopscotch_hash": bench_hopscotch_hash_family,
+        "robin_hood_hash": bench_robin_hood_hash_family,
+        "swiss_table": bench_swiss_table_family,
+        "open_addr_hash": bench_open_addr_hash_family,
+        "perfect_hash": bench_perfect_hash_family,
         "trie": bench_trie_family,
         "patricia_trie": bench_patricia_trie_family,
         "suffix_trie": bench_suffix_trie_family,

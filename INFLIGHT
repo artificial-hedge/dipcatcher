@@ -1,3 +1,4 @@
+feat(research): wave 903 — hash-table canon (cuckoo_hash, hopscotch_hash, robin_hood_hash, swiss_table, open_addr_hash, perfect_hash) (5367->5373 families)
 feat(research): wave 902 — trie/string-index canon (trie, patricia_trie, suffix_trie, ternary_trie, radix_trie, crit_bit_tree) (5361->5367 families)
 feat(research): wave 901 — heap canon (binary_heap, fibonacci_heap, pairing_heap, binomial_heap, leftist_heap, skew_heap) (5355->5361 families)
 feat(research): wave 900 — spatial-index canon (kd_tree, ball_tree, cover_tree, r_tree, quad_tree, vp_tree) (5349->5355 families)
