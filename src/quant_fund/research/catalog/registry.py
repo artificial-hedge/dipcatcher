@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-759 CLE-2 canon.
+        "gwynne_cle",
+        "hospitsky_cle",
+        "apu_cle",
+        "nolin_cle",
+        "sun_cle",
+        "zhan_cle",
         # Wave-758 GFF-2 canon.
         "powell_gff",
         "aru_gff",
