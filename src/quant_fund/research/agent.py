@@ -8039,6 +8039,14 @@ from quant_fund.research.benches_w1005 import (
     bench_penrose_diagrams_family,
     bench_schwarzschild_metric_family,
 )
+from quant_fund.research.benches_w1006 import (
+    bench_fock_space_family,
+    bench_harmonic_oscillator_family,
+    bench_hydrogen_atom_family,
+    bench_schrodinger_eq_family,
+    bench_spin_half_family,
+    bench_wigner_wick_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8410,6 +8418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "schrodinger_eq": bench_schrodinger_eq_family,
+        "hydrogen_atom": bench_hydrogen_atom_family,
+        "harmonic_oscillator": bench_harmonic_oscillator_family,
+        "spin_half": bench_spin_half_family,
+        "wigner_wick": bench_wigner_wick_family,
+        "fock_space": bench_fock_space_family,
         "einstein_equations": bench_einstein_equations_family,
         "schwarzschild_metric": bench_schwarzschild_metric_family,
         "friedmann_eq": bench_friedmann_eq_family,

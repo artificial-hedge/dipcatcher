@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1006 quantum-mechanics canon.
+        "schrodinger_eq",
+        "hydrogen_atom",
+        "harmonic_oscillator",
+        "spin_half",
+        "wigner_wick",
+        "fock_space",
         # Wave-1005 general-relativity canon.
         "einstein_equations",
         "schwarzschild_metric",
