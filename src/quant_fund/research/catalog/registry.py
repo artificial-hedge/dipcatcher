@@ -2740,6 +2740,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "point_in_polygon",
         "closest_pair",
         "rotating_calipers",
+        # Wave-231 architecture canon: pipeline, cache, branch
+        # prediction, Tomasulo, paging/TLB, roofline.
+        "cpu_pipeline",
+        "cache_sim",
+        "branch_predictor",
+        "tomasulo_sim",
+        "paging_sim",
+        "roofline_model",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
