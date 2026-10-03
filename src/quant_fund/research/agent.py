@@ -4999,6 +4999,14 @@ from quant_fund.research.benches_w625 import (
     bench_stable_cohomology2_family,
     bench_woodward_op_family,
 )
+from quant_fund.research.benches_w626 import (
+    bench_algebraic_stack2_family,
+    bench_artin_stack_family,
+    bench_gerbe_cohomology_family,
+    bench_orbifold_stack_family,
+    bench_quotient_stack2_family,
+    bench_stacky_point_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5378,6 +5386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "algebraic_stack2": bench_algebraic_stack2_family,
+        "artin_stack": bench_artin_stack_family,
+        "quotient_stack2": bench_quotient_stack2_family,
+        "stacky_point": bench_stacky_point_family,
+        "orbifold_stack": bench_orbifold_stack_family,
+        "gerbe_cohomology": bench_gerbe_cohomology_family,
         "stable_cohomology2": bench_stable_cohomology2_family,
         "woodward_op": bench_woodward_op_family,
         "spectrum_type": bench_spectrum_type_family,
