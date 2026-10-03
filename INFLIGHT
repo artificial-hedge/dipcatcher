@@ -1,3 +1,4 @@
+feat(research): wave 965 — Schatten/compact canon (hilbert_schmidt_op, trace_class_op, singular_value_op, schmidt_decomp, compact_normal, polar_operator) (5739->5745 families)
 feat(research): wave 964 — unbounded-operator canon (unbounded_operator, closed_operator, domain_dense, adjoint_unbounded, resolvent_op, spectral_measure) (5733->5739 families)
 feat(research): wave 963 — spectral-theory-2 canon (fredholm_index, weyl_theorem, essential_spectrum, browder_operator, riesz_schauder, atkinson_thm) (5727->5733 families)
 feat(research): wave 962 — von-Neumann-algebra canon (von_neumann_alg, double_commutant, predual_space, normal_state, tomita_takesaki, jones_index) (5721->5727 families)

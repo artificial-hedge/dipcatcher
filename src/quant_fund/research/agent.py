@@ -7711,6 +7711,14 @@ from quant_fund.research.benches_w964 import (
     bench_spectral_measure_family,
     bench_unbounded_operator_family,
 )
+from quant_fund.research.benches_w965 import (
+    bench_compact_normal_family,
+    bench_hilbert_schmidt_op_family,
+    bench_polar_operator_family,
+    bench_schmidt_decomp_family,
+    bench_singular_value_op_family,
+    bench_trace_class_op_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8082,6 +8090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hilbert_schmidt_op": bench_hilbert_schmidt_op_family,
+        "trace_class_op": bench_trace_class_op_family,
+        "singular_value_op": bench_singular_value_op_family,
+        "schmidt_decomp": bench_schmidt_decomp_family,
+        "compact_normal": bench_compact_normal_family,
+        "polar_operator": bench_polar_operator_family,
         "unbounded_operator": bench_unbounded_operator_family,
         "closed_operator": bench_closed_operator_family,
         "domain_dense": bench_domain_dense_family,
