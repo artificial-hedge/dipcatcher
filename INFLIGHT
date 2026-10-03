@@ -2621,3 +2621,4 @@ wave 220 (2026-10-02): program-verification canon — k_induction, ic3_pdr, bmc_
 wave 221 (2026-10-02): computational-algebra canon — buchberger, resultant, poly_gcd, gf2_factor, lll_reduce, newton_interp; 1299→1305 families.
 wave 222 (2026-10-02): number-theory canon — miller_rabin, pollard_rho, tonelli_shanks, continued_fraction, crt_garner, ec_scalar; 1305→1311 families.
 wave 223 (2026-10-02): distributed-systems canon — paxos, raft_election, vector_clock, consistent_hash, gossip_epidemic, pbft_lite; 1311→1317 families.
+wave 224 (2026-10-02): string-algorithm canon — aho_corasick, suffix_automaton, kmp_search, edit_distance, lz77, bwt_transform; 1317→1323 families.

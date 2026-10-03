@@ -2684,6 +2684,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "consistent_hash",
         "gossip_epidemic",
         "pbft_lite",
+        # Wave-224 string algorithms: Aho-Corasick, SAM,
+        # KMP, edit distance, LZ77, BWT.
+        "aho_corasick",
+        "suffix_automaton",
+        "kmp_search",
+        "edit_distance",
+        "lz77",
+        "bwt_transform",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
