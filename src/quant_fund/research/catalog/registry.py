@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-571 singularity-theory canon.
+        "du_val_sing",
+        "rational_sing",
+        "log_canonical",
+        "multiplier_ideal",
+        "bernstein_sato",
+        "milnor_fiber",
         # Wave-570 positivity/moduli canon.
         "hodge_index",
         "kodaira_vanishing",
