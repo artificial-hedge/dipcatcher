@@ -7679,6 +7679,14 @@ from quant_fund.research.benches_w960 import (
     bench_positive_functional_family,
     bench_spectrum_algebra_family,
 )
+from quant_fund.research.benches_w961 import (
+    bench_analytic_semigroup_family,
+    bench_c0_semigroup_family,
+    bench_cosine_family_family,
+    bench_hille_yosida_family,
+    bench_lumer_phillips_family,
+    bench_trotter_kato_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8050,6 +8058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "c0_semigroup": bench_c0_semigroup_family,
+        "hille_yosida": bench_hille_yosida_family,
+        "lumer_phillips": bench_lumer_phillips_family,
+        "analytic_semigroup": bench_analytic_semigroup_family,
+        "cosine_family": bench_cosine_family_family,
+        "trotter_kato": bench_trotter_kato_family,
         "banach_algebra": bench_banach_algebra_family,
         "gelfand_transform": bench_gelfand_transform_family,
         "c_star_algebra": bench_c_star_algebra_family,
