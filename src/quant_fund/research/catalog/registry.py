@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-481 motivic-5 canon.
+        "mtc_motive",
+        "fqmotive",
+        "triang_motive",
+        "motivic_chern",
+        "motivic_landin",
+        "higher_chow2",
         # Wave-480 infinity-topos-3 canon.
         "etale_geom",
         "gros_topos",
