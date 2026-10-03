@@ -1,3 +1,4 @@
+feat(research): wave 346 — number-theory-2/homological-2 canon (quadratic_recip, elliptic_curve, p_adic_val, cohomology_cup, koszul_complex, mayer_vietoris) (2032->2038 families)
 feat(research): wave 345 — commutative-algebra/ring-theory canon (ring_ideals, quotient_ring, pid_check, minimal_poly, norm_trace, spec_ring) (2026->2032 families)
 feat(research): wave 344 — group-theory-2 canon (sylow_theorems, group_presentation, burnside_lemma, free_group, conjugacy_classes, cayley_graph) (2020->2026 families)
 feat(research): wave 343 — lattice/universal-algebra canon (lattice_check, galois_connection, tarski_fixed, boolean_algebra, congruence_lattice, term_algebra) (2014->2020 families)
