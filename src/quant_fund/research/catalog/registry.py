@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-542 several-complex-variables canon.
+        "hartogs_thm",
+        "domain_holo",
+        "pseudoconvex",
+        "levi_problem",
+        "oka_coherence",
+        "d_bar_neumann",
         # Wave-541 complex-analysis-2 canon.
         "riemann_mapping",
         "schwarz_lemma",
