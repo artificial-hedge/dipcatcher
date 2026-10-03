@@ -1,3 +1,4 @@
+feat(research): wave 350 — representation-theory-2 canon (character_table_s3, perm_rep, schur_ortho, induced_rep, fourier_sn, regular_rep) (2056->2062 families)
 feat(research): wave 349 — algebraic-geometry-3 canon (zariski_topo, projective_plane, bezout_bezout, variety_dim, monomial_ideal, hilbert_poly) (2050->2056 families)
 feat(research): wave 348 — graph-theory/combinatorics-2 canon (graph_coloring, euler_trail, matroid_greedy, planar_check, poset_dimension, ramsey_r33) (2044->2050 families)
 feat(research): wave 347 — topology-3/point-set canon (compact_space, connected_space, quotient_topology, product_topology, convergence_space, tietze_urysohn) (2038->2044 families)
