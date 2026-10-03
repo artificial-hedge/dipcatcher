@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
-_SEED = 20261231 + 1022
-
 from quant_fund.models.sygus_synth import _eval
+
+_SEED = 20261231 + 1022
 
 
 def _lib(vars_: list[str]) -> list[Any]:
