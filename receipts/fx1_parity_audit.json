@@ -112,6 +112,8 @@
       "ft_model_route_404_parity": true,
       "ft_model_route_parity": true,
       "ft_parity": true,
+      "ft_pause_guards_parity": true,
+      "ft_pause_resume_parity": true,
       "ft_webhook_guard_parity": true,
       "ft_webhook_parity": true,
       "gate_check_parity": true,
@@ -223,11 +225,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "c06b5929ca600c8a32d65d7e13799449f6c24af0",
+  "git_revision": "542840cddd65000cf0b170435492fcc1ad4bb6d2",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Fine-tuning parity holds: the SDK's synchronous create_finetune_job produces the same terminal job fields (status, ft:-name grammar, result_files, event feed) as the wire route under the same runner, and guards map ValueError\u2194HarnessTransportError / KeyError\u2194KeyError. The model registry holds on both surfaces: a succeeded job's ft: name lists and retrieves, completions naming it resolve to local_fx1 at the job's checkpoint, and unregistered ft: names fail closed (OpenAICompatError in-process, 404 on the wire). Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "014fb02ed77b06a5893d297ce0f59ee78e46064703a0d40fb6e1b99a1793e3b3",
+  "receipt_sha256": "5134f2e8210d3653692cb3b89c0799d062e09765aa5f4c7b8b74f7c65d7ab088",
   "research_only": true,
   "schema": "parity_audit.v1"
 }
