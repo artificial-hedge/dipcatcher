@@ -3199,6 +3199,14 @@ from quant_fund.research.benches_w400 import (
     bench_picard_variety_family,
     bench_seesaw_theorem_family,
 )
+from quant_fund.research.benches_w401 import (
+    bench_cut_elim_seq_family,
+    bench_finitary_induct_family,
+    bench_herbrand_thm_family,
+    bench_hilbert_system_family,
+    bench_interp_equality_family,
+    bench_reverse_math_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3578,6 +3586,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "herbrand_thm": bench_herbrand_thm_family,
+        "interp_equality": bench_interp_equality_family,
+        "cut_elim_seq": bench_cut_elim_seq_family,
+        "finitary_induct": bench_finitary_induct_family,
+        "hilbert_system": bench_hilbert_system_family,
+        "reverse_math": bench_reverse_math_family,
         "etale_cover": bench_etale_cover_family,
         "jacobian_toy": bench_jacobian_toy_family,
         "hom_stack_toy": bench_hom_stack_toy_family,

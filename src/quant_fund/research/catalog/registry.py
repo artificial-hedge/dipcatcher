@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-401 proof-theory-3 canon.
+        "herbrand_thm",
+        "interp_equality",
+        "cut_elim_seq",
+        "finitary_induct",
+        "hilbert_system",
+        "reverse_math",
         # Wave-400 algebraic-geometry-7 canon.
         "etale_cover",
         "jacobian_toy",
