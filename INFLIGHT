@@ -1,3 +1,4 @@
+feat(research): wave 454 — intersection-cohomology-2 canon (ic_stalk, decomp_thm, riemann_hilbert, fourier_sato, vanishing_cycles, middle_ext) (2679->2685 families)
 feat(research): wave 453 — higher-algebra-2 canon (operad_koszul, bar_cobar, factor_homology, hochschild_hom, deligne_conj, primitive_elts) (2673->2679 families)
 feat(research): wave 452 — geometric-Langlands canon (d_module, geometric_langlands, hecke_eig, opers_g, ramified_l, kernel_fun) (2667->2673 families)
 feat(research): wave 451 — equivariant-homotopy canon (g_spectrum, mackey_functor, norm_map, ro_grading, wirthmuller, tom_dieck) (2661->2667 families)

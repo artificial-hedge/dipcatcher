@@ -3623,6 +3623,14 @@ from quant_fund.research.benches_w453 import (
     bench_operad_koszul_family,
     bench_primitive_elts_family,
 )
+from quant_fund.research.benches_w454 import (
+    bench_decomp_thm_family,
+    bench_fourier_sato_family,
+    bench_ic_stalk_family,
+    bench_middle_ext_family,
+    bench_riemann_hilbert_family,
+    bench_vanishing_cycles_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4002,6 +4010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ic_stalk": bench_ic_stalk_family,
+        "decomp_thm": bench_decomp_thm_family,
+        "riemann_hilbert": bench_riemann_hilbert_family,
+        "fourier_sato": bench_fourier_sato_family,
+        "vanishing_cycles": bench_vanishing_cycles_family,
+        "middle_ext": bench_middle_ext_family,
         "operad_koszul": bench_operad_koszul_family,
         "bar_cobar": bench_bar_cobar_family,
         "factor_homology": bench_factor_homology_family,
