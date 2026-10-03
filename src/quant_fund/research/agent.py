@@ -3039,6 +3039,22 @@ from quant_fund.research.benches_w380 import (
     bench_polish_topology_family,
     bench_souslin_op_family,
 )
+from quant_fund.research.benches_w381 import (
+    bench_ample_test_family,
+    bench_chow_ring_family,
+    bench_grothendieck_grp_family,
+    bench_gysin_family,
+    bench_proj_morph_family,
+    bench_toric_variety_family,
+)
+from quant_fund.research.benches_w382 import (
+    bench_back_forth_family,
+    bench_indiscernibles_family,
+    bench_omitting_types_family,
+    bench_saturation_test_family,
+    bench_stability_spec_family,
+    bench_stone_duality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3418,6 +3434,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stone_duality": bench_stone_duality_family,
+        "saturation_test": bench_saturation_test_family,
+        "omitting_types": bench_omitting_types_family,
+        "indiscernibles": bench_indiscernibles_family,
+        "stability_spec": bench_stability_spec_family,
+        "back_forth": bench_back_forth_family,
+        "grothendieck_grp": bench_grothendieck_grp_family,
+        "chow_ring": bench_chow_ring_family,
+        "gysin": bench_gysin_family,
+        "toric_variety": bench_toric_variety_family,
+        "proj_morph": bench_proj_morph_family,
+        "ample_test": bench_ample_test_family,
         "baire_space": bench_baire_space_family,
         "polish_topology": bench_polish_topology_family,
         "borel_functions": bench_borel_functions_family,

@@ -12,9 +12,7 @@ def is_isolated(x: Seq, subset: list[Seq] | tuple[Seq, ...], radius: float) -> b
     return all(x == y or baire_metric(x, y) > radius for y in subset)
 
 
-def cantor_bendixson_deriv(
-    subset: list[Seq] | tuple[Seq, ...], radius: float
-) -> list[Seq]:
+def cantor_bendixson_deriv(subset: list[Seq] | tuple[Seq, ...], radius: float) -> list[Seq]:
     """Remove isolated points."""
     return [x for x in subset if not is_isolated(x, subset, radius)]
 

@@ -1,3 +1,5 @@
+feat(research): wave 382 — model-theory-4 canon (stone_duality, saturation_test, omitting_types, indiscernibles, stability_spec, back_forth) (2247->2253 families)
+feat(research): wave 381 — algebraic-geometry-6 canon (grothendieck_grp, chow_ring, gysin, toric_variety, proj_morph, ample_test) (2241->2247 families)
 feat(research): wave 380 — descriptive-set-theory-2 canon (baire_space, polish_topology, borel_functions, souslin_op, determinacy_toy, perfect_set_prop) (2235->2241 families)
 feat(research): wave 379 — matroid-2 canon (matroid_axioms, greedy_matroid, matroid_intersect, dual_matroid, matroid_union, represented_matroid) (2229->2235 families)
 feat(research): wave 378 — set-theory-2/forcing canon (forcing_poset, dense_filter, names_eval, cohen_adds, ma_toy, large_cardinal) (2223->2229 families)
