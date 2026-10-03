@@ -3983,6 +3983,14 @@ from quant_fund.research.benches_w498 import (
     bench_quot_scheme_family,
     bench_stable_map_family,
 )
+from quant_fund.research.benches_w499 import (
+    bench_hodge_decomp_family,
+    bench_l2_hodge_family,
+    bench_limit_mhs_family,
+    bench_mixed_hodge_family,
+    bench_period_map_family,
+    bench_vhs_polarized_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4362,6 +4370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hodge_decomp": bench_hodge_decomp_family,
+        "l2_hodge": bench_l2_hodge_family,
+        "mixed_hodge": bench_mixed_hodge_family,
+        "period_map": bench_period_map_family,
+        "vhs_polarized": bench_vhs_polarized_family,
+        "limit_mhs": bench_limit_mhs_family,
         "kuranishi": bench_kuranishi_family,
         "hilbert_scheme2": bench_hilbert_scheme2_family,
         "quot_scheme": bench_quot_scheme_family,
