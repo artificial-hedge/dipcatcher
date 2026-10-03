@@ -7487,6 +7487,14 @@ from quant_fund.research.benches_w936 import (
     bench_gauge_fn_family,
     bench_subdiff_compute_family,
 )
+from quant_fund.research.benches_w937 import (
+    bench_chambolle_pock_family,
+    bench_davis_yin_family,
+    bench_douglas_rachford_family,
+    bench_forward_backward_family,
+    bench_peaceman_rachford_family,
+    bench_tseng_split_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7858,6 +7866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "douglas_rachford": bench_douglas_rachford_family,
+        "peaceman_rachford": bench_peaceman_rachford_family,
+        "tseng_split": bench_tseng_split_family,
+        "forward_backward": bench_forward_backward_family,
+        "chambolle_pock": bench_chambolle_pock_family,
+        "davis_yin": bench_davis_yin_family,
         "subdiff_compute": bench_subdiff_compute_family,
         "epigraph_proj": bench_epigraph_proj_family,
         "gauge_fn": bench_gauge_fn_family,
