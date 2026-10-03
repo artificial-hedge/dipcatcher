@@ -7583,6 +7583,14 @@ from quant_fund.research.benches_w948 import (
     bench_krylov_matrix_family,
     bench_vandermonde_matrix_family,
 )
+from quant_fund.research.benches_w949 import (
+    bench_deflating_subspace_family,
+    bench_invariant_subspace_family,
+    bench_jordan_form_family,
+    bench_kronecker_canonical_family,
+    bench_matrix_pencil_family,
+    bench_rational_canonical_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7954,6 +7962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "matrix_pencil": bench_matrix_pencil_family,
+        "kronecker_canonical": bench_kronecker_canonical_family,
+        "invariant_subspace": bench_invariant_subspace_family,
+        "deflating_subspace": bench_deflating_subspace_family,
+        "jordan_form": bench_jordan_form_family,
+        "rational_canonical": bench_rational_canonical_family,
         "circulant_matrix": bench_circulant_matrix_family,
         "companion_matrix": bench_companion_matrix_family,
         "vandermonde_matrix": bench_vandermonde_matrix_family,
