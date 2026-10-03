@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-663 higher-algebra-5 canon.
+        "e2_algebra",
+        "dunn_additivity",
+        "tensor_factorization",
+        "swiss_cheese2",
+        "mckay_correspond",
+        "khovanov_2",
         # Wave-662 higher-algebra-4 canon.
         "bar_resolution2",
         "hochschild_hom2",
