@@ -2999,6 +2999,72 @@ def parity_audit() -> dict[str, bool]:
         == remote.list_chat_completions(model="fx1-none")["data"]
         == []
     )
+    # previous_response_id — the stateful chain is identical on both
+    # legs: the child response echoes its parent, stores the full item
+    # history (parent input + parent output + new input), and a missing
+    # parent fails closed with the same code on both surfaces.
+    _ch_sdk1, _ = sdk.openai_response(
+        {"model": "hosted_k3", "input": "ch-1", "fx1": {"backend": "byok"}}
+    )
+    _ch_wl1 = client.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "ch-1", "fx1": {"backend": "byok"}},
+    )
+    _ch_sdk2, _ = sdk.openai_response(
+        {
+            "model": "hosted_k3",
+            "input": "ch-2",
+            "previous_response_id": _ch_sdk1["id"],
+            "fx1": {"backend": "byok"},
+        }
+    )
+    _ch_wl2 = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "ch-2",
+            "previous_response_id": _ch_wl1.json()["id"],
+            "fx1": {"backend": "byok"},
+        },
+    )
+    _ch_sdk_items = sdk.openai_response_input_items(_ch_sdk2["id"])["data"]
+    _ch_wl_items = remote.response_input_items(_ch_wl2.json()["id"])["data"]
+    out["response_chain_parity"] = (
+        _ch_sdk2["previous_response_id"] == _ch_sdk1["id"]
+        and _ch_wl2.json()["previous_response_id"] == _ch_wl1.json()["id"]
+        and [it.get("role") for it in _ch_sdk_items]
+        == [it.get("role") for it in _ch_wl_items]
+        == ["user", "assistant", "user"]
+    )
+    # capture the SDK exception's structured code — str(exc) carries only
+    # the human message, the wire leg reads code off the error envelope
+    try:
+        sdk.openai_response(
+            {
+                "model": "hosted_k3",
+                "input": "x",
+                "previous_response_id": "resp_ghost",
+                "fx1": {"backend": "byok"},
+            }
+        )
+        _ch_sdk_miss = ("", "")
+    except Exception as _exc:  # noqa: BLE001 — probe captures the class
+        _ch_sdk_miss = (type(_exc).__name__, str(getattr(_exc, "code", "")))
+    _ch_wl_miss = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "previous_response_id": "resp_ghost",
+            "fx1": {"backend": "byok"},
+        },
+    )
+    out["response_chain_miss_parity"] = (
+        _ch_sdk_miss[0] == "OpenAICompatError"
+        and _ch_sdk_miss[1] == "previous_response_not_found"
+        and _ch_wl_miss.status_code == 400
+        and _ch_wl_miss.json()["error"]["code"] == "previous_response_not_found"
+    )
     return out
 
 

@@ -3253,7 +3253,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.server_close()
 
 
-def _probe_backend_probes(
+def _probe_backend_probes(  # noqa: C901 — probe accumulator
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415
@@ -6102,17 +6102,18 @@ def _probe_backend_probes(
         r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:bc"
     )
     # fail closed: the fields the pipeline can't honor never reach the
-    # model — truncation/include/background/previous_response_id, a
+    # model — truncation/include/background, a
     # refused item type, an unknown item type, an empty input.
     # tools/tool_choice/parallel_tool_calls are honored (the lane-82 tool
-    # channel probes below); `store` is honored too (retrieval below).
+    # channel probes below); `store` is honored too (retrieval below),
+    # and ``previous_response_id`` is honored — the stateful chain
+    # surface probed below.
     out["responses_unsupported_refused"] = all(
         oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
         for k, v in (
             ("truncation", "auto"),
             ("include", ["output_text"]),
             ("background", True),
-            ("previous_response_id", "resp_x"),
         )
     )
     # refused item types fail at translation — a 400 invalid_request_error
@@ -7407,6 +7408,115 @@ def _probe_backend_probes(
         fb.get("/v1/chat/completions?after=chatcmpl-ghost").status_code == 400
         and fb.get("/v1/chat/completions?metadata[lane]=none-such").json()["data"] == []
         and fb.get("/v1/chat/completions?order=sideways").status_code == 422
+    )
+
+    # previous_response_id — OpenAI's stateful-agent primitive: the
+    # child's effective input is the parent's stored items + the parent's
+    # output + this request's input, and the whole history lands on the
+    # child's stored item list.
+    class _ChainBackend(_OiBackend):
+        seen: list[list[dict[str, str]]] = []
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            _ChainBackend.seen.append(list(messages))
+            return super().complete(messages, sampling=sampling)
+
+    ch = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
+    ch1 = ch.post("/v1/responses", json={"model": "fx1", "input": "chain-one"})
+    ch2 = ch.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "chain-two",
+            "previous_response_id": ch1.json()["id"],
+        },
+    )
+    ch2_items = ch.get(f"/v1/responses/{ch2.json()['id']}/input_items").json()
+    out["resp_chain_ok"] = (
+        ch1.status_code == 200
+        and ch2.status_code == 200
+        and ch1.json()["previous_response_id"] is None
+        and ch2.json()["previous_response_id"] == ch1.json()["id"]
+        and ch2.json()["output"][0]["content"][0]["text"] == "clean:chain-two"
+        # the model actually ran on the history, not just the new turn
+        and [m["role"] for m in _ChainBackend.seen[-1]] == ["user", "assistant", "user"]
+        and _ChainBackend.seen[-1][1]["content"] == "clean:chain-one"
+        # the stored item list is the full chain, deterministic ids
+        and [it.get("role") for it in ch2_items["data"]] == ["user", "assistant", "user"]
+        and [it["content"][0]["type"] for it in ch2_items["data"]]
+        == ["input_text", "output_text", "input_text"]
+        and all(it["id"].startswith("msg_") for it in ch2_items["data"])
+    )
+    # a three-hop chain keeps growing the stored list; deleting the
+    # parent can't orphan the child's self-contained items
+    ch3 = ch.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "chain-three",
+            "previous_response_id": ch2.json()["id"],
+        },
+    )
+    ch3_items = ch.get(f"/v1/responses/{ch3.json()['id']}/input_items").json()
+    ch.delete(f"/v1/responses/{ch1.json()['id']}")
+    out["resp_chain_multihop_selfcontained"] = (
+        ch3.status_code == 200
+        and len(ch3_items["data"]) == 5
+        and ch.get(f"/v1/responses/{ch3.json()['id']}/input_items").status_code == 200
+        and ch.get(f"/v1/responses/{ch1.json()['id']}").status_code == 404
+    )
+    # fail closed: unknown parent, a non-response envelope, and a
+    # store=false parent all refuse before the model runs
+    ch_ns = ch.post(
+        "/v1/responses", json={"model": "fx1", "input": "nostore", "store": False}
+    ).json()
+    ch_cc = ch.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "cmpl"}]},
+    ).json()
+    ch_seen_pre = len(_ChainBackend.seen)
+    out["resp_chain_fail_closed"] = (
+        ch.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "previous_response_id": "resp_ghost"},
+        ).json()["error"]["code"]
+        == "previous_response_not_found"
+        and ch.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "previous_response_id": ch_ns["id"],
+            },
+        ).json()["error"]["code"]
+        == "previous_response_not_found"
+        and ch.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "previous_response_id": ch_cc["id"],
+            },
+        ).json()["error"]["code"]
+        == "previous_response_not_found"
+        and len(_ChainBackend.seen) == ch_seen_pre
+    )
+    # the chained stream replays identically (terminal response.completed)
+    ch_s = ch.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "chain-stream",
+            "previous_response_id": ch2.json()["id"],
+            "stream": True,
+        },
+    )
+    out["resp_chain_stream"] = (
+        ch_s.status_code == 200
+        and "event: response.completed" in ch_s.text
+        and _ChainBackend.seen[-1][-1]["content"] == "chain-stream"
     )
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()

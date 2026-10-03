@@ -1953,6 +1953,8 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 '{"k":"v"}',
                 "--format",
                 '{"type":"json_object"}',
+                "--previous-response-id",
+                "resp_prev9",
                 "--remote",
                 "http://h.test",
             ],
@@ -1961,6 +1963,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             _rr.exit_code == 0
             and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
             and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
+            and (remotes[-1].last_ft_query or {}).get("previous_response_id") == "resp_prev9"
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
         # respond --stream remote-side: bare payload dicts — the deltas

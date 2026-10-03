@@ -86,6 +86,7 @@ from fx1.serve.openai_compat import (
     batch_line_body,
     batch_line_shape,
     batch_output_line,
+    chained_response_input,
     chat_messages_for_store,
     embeddings_to_kwargs,
     openai_chunks,
@@ -1857,7 +1858,10 @@ class Fx1Harness:
         ``request`` is the same body ``POST /v1/responses`` takes — a dict
         or a parsed :class:`OpenAIResponseRequest`. Same fail-closed
         translation as the wire (``response_to_kwargs``), same honesty
-        gate, same metering and completion log. Returns the ``response``
+        gate, same metering and completion log. ``previous_response_id``
+        chains the turn onto a stored response — the parent must sit in
+        the retrieval index (a ``store=false`` or evicted parent fails
+        closed). Returns the ``response``
         object (``id`` mints the ``resp_`` handle; ``output[0]`` is the
         message item) plus the completion-log id for receipt lookup.
         """
@@ -1866,8 +1870,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
+        eff_body = self._chain_response_input(body)
         kwargs = response_to_kwargs(
-            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+            eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
         result = self.complete(**kwargs)
         # a tool-call turn carries no text — nothing to post-validate
@@ -1890,11 +1895,36 @@ class Fx1Harness:
                 envelope,
                 items={
                     "input_items": response_input_items_for_store(
-                        body.input, rid=str(envelope["id"])
+                        eff_body.input, rid=str(envelope["id"])
                     )
                 },
             )
         return envelope, result.completion_id
+
+    def _chain_response_input(self, body: OpenAIResponseRequest) -> OpenAIResponseRequest:
+        """``previous_response_id`` → the effective input item list
+        (parent's stored input items + parent output + this request's
+        input). Fails closed when the parent isn't a stored ``response`` —
+        a ``store=false`` or evicted parent can't anchor a chain."""
+        if body.previous_response_id is None:
+            return body
+        prev = self._openai_store.get(body.previous_response_id)
+        if prev is None or prev.get("object") != "response":
+            raise OpenAICompatError(
+                f"previous_response_id {body.previous_response_id!r} not found — "
+                "the chain parent must be a stored response (store=true)",
+                status=400,
+                code="previous_response_not_found",
+            )
+        return body.model_copy(
+            update={
+                "input": chained_response_input(
+                    prev,
+                    self._openai_store.get_items(body.previous_response_id, "input_items") or [],
+                    body.input,
+                )
+            }
+        )
 
     def openai_response_stream(
         self,
@@ -1914,8 +1944,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
+        eff_body = self._chain_response_input(body)
         kwargs = response_to_kwargs(
-            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+            eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
         result = self.complete(**kwargs)
         if result.content or not result.tool_calls:
@@ -1937,7 +1968,7 @@ class Fx1Harness:
             )
             self._openai_store.put(
                 env_s,
-                items={"input_items": response_input_items_for_store(body.input, rid=rid)},
+                items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
             )
         events = list(
             openai_response_events(
