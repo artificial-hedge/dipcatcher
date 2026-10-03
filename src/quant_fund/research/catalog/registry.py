@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-945 matrix-norm canon.
+        "kyfan_norm",
+        "schatten_norm",
+        "numerical_radius",
+        "matrix_det",
+        "pfaffian_poly",
+        "hankel_op",
         # Wave-944 matrix-analysis-2 canon.
         "fan_inequality",
         "horn_inequality",
