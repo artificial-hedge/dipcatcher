@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-600 operad-theory canon.
+        "a_infty_alg",
+        "l_infty_alg",
+        "koszul_duality",
+        "minimal_model_op",
+        "operadic_bar",
+        "operad_cobar",
         # Wave-599 monad-theory canon.
         "monad_theorem",
         "klesli_cat",
