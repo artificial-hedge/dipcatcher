@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-537 Riemannian-geometry canon.
+        "riemann_metric",
+        "levi_civita",
+        "riemann_curvature",
+        "ricci_scalar",
+        "jacobi_field",
+        "comparison_thm",
         # Wave-536 symplectic-geometry canon.
         "symplectic_form",
         "lagrangian_mfd",
