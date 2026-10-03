@@ -3311,6 +3311,14 @@ from quant_fund.research.benches_w414 import (
     bench_stable_homotopy_family,
     bench_whitehead_thm_family,
 )
+from quant_fund.research.benches_w415 import (
+    bench_homeo_top_family,
+    bench_locally_compact_family,
+    bench_open_cover_family,
+    bench_paracompact_family,
+    bench_partition_unity_family,
+    bench_quotient_map_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3690,6 +3698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quotient_map": bench_quotient_map_family,
+        "open_cover": bench_open_cover_family,
+        "locally_compact": bench_locally_compact_family,
+        "homeo_top": bench_homeo_top_family,
+        "paracompact": bench_paracompact_family,
+        "partition_unity": bench_partition_unity_family,
         "exact_couple": bench_exact_couple_family,
         "adams_ss": bench_adams_ss_family,
         "stable_homotopy": bench_stable_homotopy_family,
