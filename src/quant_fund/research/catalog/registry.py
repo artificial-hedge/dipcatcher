@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-819 stopping-time canon.
+        "first_hitting",
+        "last_exit",
+        "stopping_sigma",
+        "progressive_set",
+        "debuts_theorem",
+        "accessible_time",
         # Wave-818 stochastic-integration canon.
         "ito_integral",
         "mart_meas",
