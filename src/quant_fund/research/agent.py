@@ -7119,6 +7119,14 @@ from quant_fund.research.benches_w890 import (
     bench_radon_transform_family,
     bench_zeta_fn_family,
 )
+from quant_fund.research.benches_w891 import (
+    bench_bfgs_update_family,
+    bench_iga_colloc_family,
+    bench_lebesgue_const_family,
+    bench_newton_armijo_family,
+    bench_trimmed_cad_family,
+    bench_trust_region_dogleg_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7490,6 +7498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "trust_region_dogleg": bench_trust_region_dogleg_family,
+        "bfgs_update": bench_bfgs_update_family,
+        "lebesgue_const": bench_lebesgue_const_family,
+        "iga_colloc": bench_iga_colloc_family,
+        "trimmed_cad": bench_trimmed_cad_family,
+        "newton_armijo": bench_newton_armijo_family,
         "zeta_fn": bench_zeta_fn_family,
         "elliptic_fn": bench_elliptic_fn_family,
         "hartley_transform": bench_hartley_transform_family,
