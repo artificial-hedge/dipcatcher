@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-683 chromatic-8 canon.
+        "blue_shift2",
+        "chromatic_fracture2",
+        "morava_stabilizer2",
+        "fgsl_group2",
+        "tate_spec2",
+        "k_n_local2",
         # Wave-682 motivic-18 canon.
         "motivic_tower",
         "motivic_sphere3",
