@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-316 quantum-3 canon.
+        "trotter_suzuki",
+        "qdrift",
+        "shadow_tomography",
+        "vqd_states",
+        "adapt_vqe",
+        "hhl_lite",
         # Wave-315 robotics-5 canon.
         "rmpflow",
         "ds_motion",

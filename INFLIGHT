@@ -1,3 +1,4 @@
+feat(research): wave 316 — quantum-3 canon (trotter_suzuki, qdrift, shadow_tomography, vqd_states, adapt_vqe, hhl_lite) (1864->1870 families)
 feat(research): wave 315 — robotics-5 canon (rmpflow, ds_motion, wbc_qp, grasp_epsilon, rrt_connect, dmp_control) (1858->1864 families)
 feat(research): wave 314 — geometry-processing canon (nurbs_eval, catmull_clark, loop_subdiv, marching_cubes, half_edge, laplacian_smooth) (1852->1858 families)
 feat(research): wave 313 — numerical-4/multigrid canon (v_cycle, amg_lite, bicgstab, minres, chebyshev_iter, ilu_precond) (1846->1852 families)
