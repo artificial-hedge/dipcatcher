@@ -3687,6 +3687,14 @@ from quant_fund.research.benches_w461 import (
     bench_quant_dag_family,
     bench_shifted_sympl_family,
 )
+from quant_fund.research.benches_w462 import (
+    bench_cartesian_fib2_family,
+    bench_cohesive_struct_family,
+    bench_descent_cond_family,
+    bench_lex_reflect_family,
+    bench_n_localic_family,
+    bench_shape_theory_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4066,6 +4074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "n_localic": bench_n_localic_family,
+        "shape_theory": bench_shape_theory_family,
+        "descent_cond": bench_descent_cond_family,
+        "lex_reflect": bench_lex_reflect_family,
+        "cartesian_fib2": bench_cartesian_fib2_family,
+        "cohesive_struct": bench_cohesive_struct_family,
         "shifted_sympl": bench_shifted_sympl_family,
         "lagrangian_int": bench_lagrangian_int_family,
         "derived_critical": bench_derived_critical_family,
