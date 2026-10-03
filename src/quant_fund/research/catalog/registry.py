@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-360 PDE-theory canon.
+        "energy_method",
+        "maximum_principle",
+        "heat_kernel",
+        "wave_dalembert",
+        "weak_solution",
+        "fundamental_laplace",
         # Wave-359 harmonic-analysis canon.
         "plancherel",
         "poisson_summation",
