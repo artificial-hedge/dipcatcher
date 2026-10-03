@@ -131,6 +131,7 @@ from fx1.serve.finetune import (
     default_ft_runner,
     validate_chat_jsonl,
 )
+from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -192,6 +193,7 @@ _FILE_BYTES_ENV = "FX1_API_FILE_BYTES"
 _BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
 _BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
 _STORE_MAX_ENV = "FX1_API_STORE_MAX"
+_STATE_DIR_ENV = "FX1_API_STATE_DIR"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -1477,6 +1479,7 @@ def _submit_job(
             inflight.release()
             return
         job.status = "running"
+        job_store.mark(job)
         try:
             result = lab.run(
                 body.command,
@@ -1503,6 +1506,7 @@ def _submit_job(
         finally:
             _deliver_callback(job)
         job.finished_at = time.time()
+        job_store.mark(job)
         metrics.release()
         inflight.release()
 
@@ -1952,14 +1956,75 @@ class _JobStore:
     contract as the sync route) and release it when the job finishes, so
     the queue can never grow past the declared concurrency bound. The
     store is an LRU; evicting a job also drops its idempotency mapping.
+
+    With a ``JobJournal`` bound (``--state-dir`` on serve), every
+    transition is journaled before the store mutates, and boot replays
+    the chain: terminal records come back as-was; jobs still queued or
+    running at the crash are restored as ``failed`` with an honest
+    restart error (never re-run — their payload isn't journaled), and
+    their idempotency keys still resolve so a retried submission returns
+    the lost record instead of duplicating work.
     """
 
-    def __init__(self, max_entries: int) -> None:
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._job_key: dict[str, str] = {}
+        self._job_fp: dict[str, str] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = time.time()
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._drop(str(evict))
+                if "job" not in payload:
+                    continue
+                job = JobStatusResponse.model_validate(payload["job"])
+                self._jobs[job.job_id] = job
+                self._jobs.move_to_end(job.job_id)
+                key, fp = payload.get("key"), payload.get("fp")
+                if key is not None and fp is not None:
+                    self._keys[key] = (fp, job.job_id)
+                    self._job_key[job.job_id] = key
+                    self._job_fp[job.job_id] = fp
+            for job in self._jobs.values():
+                if job.status in ("queued", "running"):
+                    job.status = "failed"
+                    job.error = "process restarted before the job reached a terminal state"
+                    job.finished_at = now
+            self._compact_locked()
+
+    def _drop(self, job_id: str) -> None:
+        self._jobs.pop(job_id, None)
+        key = self._job_key.pop(job_id, None)
+        self._job_fp.pop(job_id, None)
+        if key is not None:
+            self._keys.pop(key, None)
+
+    def _record(self, job: JobStatusResponse) -> dict[str, Any]:
+        return {
+            "job": job.model_dump(mode="json"),
+            "key": self._job_key.get(job.job_id),
+            "fp": self._job_fp.get(job.job_id),
+        }
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        post-replay so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            self._journal.compact([self._record(j) for j in self._jobs.values()])
+
+    def mark(self, job: JobStatusResponse) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``job`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(job))
 
     def get(self, job_id: str) -> JobStatusResponse | None:
         with self._lock:
@@ -1985,6 +2050,8 @@ class _JobStore:
             if job.status == "queued":
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
                 return job, "cancelled"
             return job, job.status
 
@@ -1998,6 +2065,8 @@ class _JobStore:
             for job in out:
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
             return out
 
     def get_key(self, key: str) -> tuple[str, str] | None:
@@ -2020,11 +2089,20 @@ class _JobStore:
                 self._keys[key] = (fingerprint, job.job_id)
                 self._keys.move_to_end(key)
                 self._job_key[job.job_id] = key
+                self._job_fp[job.job_id] = fingerprint
+            evicted: list[str] = []
             while len(self._jobs) > self._max:
                 old_id, _ = self._jobs.popitem(last=False)
                 old_key = self._job_key.pop(old_id, None)
+                self._job_fp.pop(old_id, None)
                 if old_key is not None:
                     self._keys.pop(old_key, None)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(job)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 class _FileRecord(_Model):
@@ -4970,6 +5048,7 @@ def create_app(
     store_max: int | None = None,
     ft_runner: FTJobRunner | None = None,
     ft_dir: str | os.PathLike[str] | None = None,
+    state_dir: str | os.PathLike[str] | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -5025,7 +5104,11 @@ def create_app(
     batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
     batch_line_max = _env_int_bound(_BATCH_LINES_ENV, 1024, batch_line_max)
     store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
-    job_store = _JobStore(job_max)
+    state_dir = state_dir or os.environ.get(_STATE_DIR_ENV) or None
+    job_journal = None
+    if state_dir is not None:
+        job_journal = JobJournal(Path(state_dir) / "jobs.jsonl")
+    job_store = _JobStore(job_max, journal=job_journal)
     eval_store = EvalStore(job_max)
     file_store = _FileStore(file_max, file_bytes_max)
     batch_store = _BatchStore(batch_max)

@@ -753,6 +753,19 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 - **Lifespan** — on shutdown the gate drains, queued jobs flip to
   `cancelled` (firing their webhooks), the executor releases pending
   futures; running jobs finish bounded by their command timeout.
+- **Durability** — with `--state-dir` (`FX1_API_STATE_DIR`) every job
+  transition and cancel/evict appends to a hash-chained JSONL journal
+  (`jobs.jsonl`, fsync'd per append). On boot the chain is verified
+  line-by-line — a torn tail or edited line truncates at the first bad
+  record — and the store is rebuilt: terminal records return as-was,
+  jobs still `queued`/`running` at the crash recover as `failed` with a
+  restart-explaining `error` (payloads are not journaled, so nothing is
+  silently re-run), and `Idempotency-Key` mappings survive so a retried
+  submission returns the lost record (`replayed: true`) instead of
+  re-running. `callback_secret` never reaches disk, so a recovered job
+  with a `callback_url` keeps it for audit but cannot deliver post-
+  restart. Boot compacts the journal to live records. Unset = the same
+  in-memory store as before.
 
 The same contract applies on the OpenAI-compatible async surfaces:
 `POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept
@@ -821,6 +834,7 @@ out-of-range values:
 | `--cors-origins` | `FX1_API_CORS_ORIGINS` | (off) | comma-separated browser origins for CORS; each must be a scheme+host URL, `*` and non-http(s) refused; preflights bypass the API-key gate (they carry no credentials), every preflight reflects the `expose` list of stamped headers |
 | `--breaker-threshold` | `FX1_API_BREAKER_THRESHOLD` | 5 | consecutive call faults that open a backend's circuit; 0 disables. While open, calls fast-fail `503 backend_unavailable` + `Retry-After` without burning an inflight slot; a single half-open probe is admitted after cooldown and closes the circuit on success. Resolution faults that surface as 503 count; client errors (404/422), capability gaps (501), and honesty-gate refusals never do |
 | `--receipts-dir` | `FX1_API_RECEIPTS_DIR` | `receipts` | sealed-receipt store backing `GET /receipts*` — `503 receipts_unavailable` when absent |
+| `--state-dir` | `FX1_API_STATE_DIR` | (off) | durable dir for the async-job journal — crash/restart recovers records + idempotency keys; unset = in-memory |
 | `--breaker-cooldown-s` | `FX1_API_BREAKER_COOLDOWN_S` | 30 | seconds an open circuit fast-fails before admitting a probe |
 
 `POST /harness/drain` is the one-way graceful-exit latch: work routes

@@ -1,0 +1,31 @@
+{
+  "claim": {
+    "ok": true,
+    "results": {
+      "boot_compacts": true,
+      "cancel_journaled": true,
+      "compact_live_only": true,
+      "evict_drops_key": true,
+      "evict_journaled": true,
+      "evict_survivors": true,
+      "idem_key_survives": true,
+      "journal_grows_on_transition": true,
+      "mid_edit_truncates": true,
+      "no_journal_still_works": true,
+      "recovers_queued_as_failed": true,
+      "recovers_terminal_as_was": true,
+      "roundtrip_order": true,
+      "secret_not_journaled": true,
+      "secret_not_recovered": true,
+      "torn_tail_truncates": true
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "9a0955112ce03f63c28a8180f8d30cc80f2955b1",
+  "interpretation": "the durable job journal holds: hash-chained replay returns records in order, torn tails and mid-file edits truncate honestly, and compaction rewrites only live state. Bound to the job store, terminal jobs come back as-was, in-flight jobs recover as failed with an honest restart error, idempotency keys still resolve, cancels and LRU evictions survive, and callback secrets never touch disk. The in-memory default is unchanged when no state dir is configured.",
+  "kind": "journal_audit",
+  "live_pnl_claim": false,
+  "receipt_sha256": "8f69b7e25e808895e5a3747dece45980575234570e5b7397c4e0844b998f78f5",
+  "research_only": true,
+  "schema": "journal_audit.v1"
+}

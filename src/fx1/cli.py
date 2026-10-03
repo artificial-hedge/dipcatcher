@@ -346,6 +346,11 @@ def harness_serve(
         None,
         help="/v1 retrieval-index capacity (env FX1_API_STORE_MAX, default 256).",
     ),
+    state_dir: str | None = typer.Option(
+        None,
+        help="Durable state dir — journals async-job transitions across restarts "
+        "(env FX1_API_STATE_DIR; unset = in-memory only).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -371,6 +376,7 @@ def harness_serve(
             breaker_cooldown_s=breaker_cooldown_s,
             receipts_dir=receipts_dir,
             store_max=store_max,
+            state_dir=state_dir,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)
