@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-296 robotics-4 canon.
+        "lqr_funnel",
+        "chomp",
+        "gjk_epa",
+        "ilqr",
+        "rts_smoother",
+        "se3_spline",
         # Wave-295 astronomy/orbital-mechanics canon.
         "orbital_elements",
         "kepler_solve",
