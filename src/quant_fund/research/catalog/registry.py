@@ -2475,6 +2475,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wagner_whitin",
         "base_stock",
         "clark_scarf",
+        # Wave-198 scheduling canon: Johnson flow-shop, NEH, LPT,
+        # knapsack DP, TSP branch-bound, WSPT.
+        "johnson_flowshop",
+        "neh_heuristic",
+        "lpt_schedule",
+        "knapsack_dp",
+        "tsp_branchbound",
+        "spt_weighted",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

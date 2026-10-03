@@ -1573,6 +1573,14 @@ from quant_fund.research.benches_w197 import (
     bench_ss_policy_family,
     bench_wagner_whitin_family,
 )
+from quant_fund.research.benches_w198 import (
+    bench_johnson_flowshop_family,
+    bench_knapsack_dp_family,
+    bench_lpt_schedule_family,
+    bench_neh_heuristic_family,
+    bench_spt_weighted_family,
+    bench_tsp_branchbound_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4306,6 +4314,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "wagner_whitin": bench_wagner_whitin_family(),
         "base_stock": bench_base_stock_family(),
         "clark_scarf": bench_clark_scarf_family(),
+        "johnson_flowshop": bench_johnson_flowshop_family(),
+        "neh_heuristic": bench_neh_heuristic_family(),
+        "lpt_schedule": bench_lpt_schedule_family(),
+        "knapsack_dp": bench_knapsack_dp_family(),
+        "tsp_branchbound": bench_tsp_branchbound_family(),
+        "spt_weighted": bench_spt_weighted_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
