@@ -45,15 +45,19 @@ def _bench_cheb_approx(seed: int = 0) -> float:
     # interpolates exactly at nodes
     nodes = cheb_nodes(12)
     checks.append(np.max(np.abs(cheb_interp(f, 12, nodes) - f(nodes))) < 1e-12)
+
     # Runge phenomenon controlled: equispaced interpolation of 1/(1+25x^2)
     # diverges at edges while Chebyshev converges
     def g(x: np.ndarray) -> np.ndarray:
         return 1.0 / (1.0 + 25.0 * x**2)
+
     c_err = np.abs(cheb_interp(g, 15, np.array([0.95])) - g(np.array([0.95])))[0]
     checks.append(c_err < 0.05)
+
     # polynomial exactness: degree-12 interp of x^5 is exact
     def h(x: np.ndarray) -> np.ndarray:
         return x**5
+
     checks.append(np.max(np.abs(cheb_interp(h, 12, xs) - h(xs))) < 1e-9)
     # error decreases with n for smooth f
     e6 = np.max(np.abs(cheb_interp(f, 6, xs) - f(xs)))
