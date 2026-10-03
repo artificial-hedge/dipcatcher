@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-419 algebraic-topology-5 canon.
+        "serre_fibration",
+        "path_fibration",
+        "bundle_section",
+        "classify_space",
+        "vector_bundle",
+        "thom_space",
         # Wave-418 probability-5 canon.
         "weak_law",
         "strong_lln",
