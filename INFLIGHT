@@ -1,3 +1,4 @@
+feat(research): wave 859 — meshfree/moving-least-squares canon (moving_least_sq, mls_shape, hp_clouds, meshless_local, point_cloud_interp, diffuse_element) (5103->5109 families)
 feat(research): wave 858 — adaptive/oscillatory-quadrature canon (adaptive_simpsons, tanh_sinh, double_exp_quad, osc_singular, filon_quad, levin_quad) (5097->5103 families)
 feat(research): wave 857 — classical-quadrature canon (gauss_legendre, gauss_chebyshev, clenshaw_curtis, newton_cotes, gauss_kronrod, fejer_quad) (5091->5097 families)
 feat(research): wave 856 — quadrature/quasi-MC canon (monte_carlo_quad, quasi_mc, halton_seq, sobol_seq, latin_hypercube, stratified_mc) (5085->5091 families)
@@ -440,7 +441,7 @@ feat(research): wave 419 — algebraic-topology-5 canon (serre_fibration, path_f
 feat(research): wave 418 — probability-5 canon (weak_law, strong_lln, clt_classic, borel_cantelli, dominated_conv, uniform_lln) (2463->2469 families)
 feat(research): wave 417 — commutative-algebra-3 canon (groebner_syz, free_resolution, hilbert_syzygy, regular_seq, depth_ring, cohen_mac) (2457->2463 families)
 feat(research): wave 416 — model-theory-6 canon (decidable_theory, indiscernible_seq, saturated_model, omitting_prime, interpol_thm, definable_set) (2451->2457 families)
-feat(research): wave 415 — topology-4 canon (quotient_map, open_cover, locally_compact, homeo_top, paracompact, partition_unity) (2445->2451 families)
+feat(research): wave 415 — topology-4 canon (quotient_map, open_cover, locally_compact, homeo_top, paracompact, hp_clouds) (2445->2451 families)
 feat(research): wave 414 — homotopy-6 canon (exact_couple, adams_ss, stable_homotopy, whitehead_thm, obstruction, cofiber) (2439->2445 families)
 feat(research): wave 413 — Galois-3 canon (artin_lemma, normal_basis, kummer_ext, abelian_ext, frobenius_el, inseparable) (2433->2439 families)
 feat(research): wave 412 — 2-category canon (two_cat, bicat_comp, mate_calc, double_cat, lax_functor, cat_enriched) (2427->2433 families)
