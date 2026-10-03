@@ -1,3 +1,4 @@
+feat(research): wave 718 — representation-theory canon (helix_theory, mutation_class, rep_finite, der_bimodule, icy_paper, higher_auslander) (4263->4269 families)
 feat(research): wave 717 — nc-motives canon (nc_motive, dg_enhancement, bondal_kapranov, enhanced_triangulated, tabuada_motive, nc_k_theory) (4257->4263 families)
 feat(research): wave 716 — triangulated-geometry canon (exceptional_coll, spherical_functor, serre_functor, sod_decomp, fourier_mukai, semi_orthogonal) (4251->4257 families)
 feat(research): wave 715 — cluster-algebra canon (cluster_algebra, quiver_mutation, tilting_object, auslander_reiten, cluster_category, silting_object) (4245->4251 families)
