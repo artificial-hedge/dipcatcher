@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-301 geophysics/seismic canon.
+        "nmo_dix",
+        "taup_transform",
+        "kirchhoff_mig",
+        "avo_shuey",
+        "vibroseis_sweep",
+        "eikonal_fmm",
         # Wave-300 astronomy-2 canon.
         "equinox_prec",
         "nutation_lite",

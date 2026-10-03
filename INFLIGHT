@@ -1,3 +1,4 @@
+feat(research): wave 301 — geophysics/seismic canon (nmo_dix, taup_transform, kirchhoff_mig, avo_shuey, vibroseis_sweep, eikonal_fmm) (1779->1785 families)
 feat(research): wave 300 — astronomy-2 canon (equinox_prec, nutation_lite, rise_set, eclipse_circ, delta_t, planet_vsop) (1773->1779 families)
 feat(research): wave 299 — game-playing-2 canon (tablebase_dtm, retrograde_wdl, rave_mc, mast_playout, expectimax, isomcts) (1767->1773 families)
 feat(research): wave 298 — medical-imaging canon (radon_fbp, art_sirt, cs_mri, hu_moments, chan_vese, mi_register) (1761->1767 families)
