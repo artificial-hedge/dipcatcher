@@ -3479,6 +3479,14 @@ from quant_fund.research.benches_w435 import (
     bench_spectral_scheme_family,
     bench_virtual_class_family,
 )
+from quant_fund.research.benches_w436 import (
+    bench_adjoint_functor_family,
+    bench_bousfield_loc_family,
+    bench_cartesian_fib_family,
+    bench_complete_seg_family,
+    bench_presentable_cat_family,
+    bench_straightening_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3858,6 +3866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "complete_seg": bench_complete_seg_family,
+        "cartesian_fib": bench_cartesian_fib_family,
+        "straightening": bench_straightening_family,
+        "presentable_cat": bench_presentable_cat_family,
+        "adjoint_functor": bench_adjoint_functor_family,
+        "bousfield_loc": bench_bousfield_loc_family,
         "derived_scheme": bench_derived_scheme_family,
         "quasi_coherent": bench_quasi_coherent_family,
         "derived_fiber": bench_derived_fiber_family,
