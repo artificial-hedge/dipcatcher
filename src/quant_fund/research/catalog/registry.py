@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-610 deformations-2 canon.
+        "schlessinger2",
+        "prorepresent",
+        "versal_def",
+        "semiuniversal",
+        "first_order",
+        "obstruction_def",
         # Wave-609 spectral-AG-2 canon.
         "e_infty_space",
         "brave_new_ring",
