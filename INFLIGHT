@@ -1,3 +1,4 @@
+feat(research): wave 284 — bioinformatics-3 canon (nj_tree, fitch_pars, seed_extend, band_align, jc69_lik, codon_usage) (1677->1683 families)
 feat(research): wave 283 — robotics-3 canon (fk_dh, ik_jac, ray_lidar, pot_field, bezier_curve, odom_comp) (1671->1677 families)
 feat(research): wave 282 — combinatorics canon (subset_sum_dp, stirling_count, gray_code, inversion_count, ramsey_bound, latin_square) (1665->1671 families)
 feat(research): wave 281 — abstract-algebra canon (group_table, perm_group, galois_field, poly_ring, ideal_member, matrix_grp) (1659->1665 families)

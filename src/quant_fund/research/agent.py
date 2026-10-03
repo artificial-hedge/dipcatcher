@@ -2263,6 +2263,14 @@ from quant_fund.research.benches_w283 import (
     bench_pot_field_family,
     bench_ray_lidar_family,
 )
+from quant_fund.research.benches_w284 import (
+    bench_band_align_family,
+    bench_codon_usage_family,
+    bench_fitch_pars_family,
+    bench_jc69_lik_family,
+    bench_nj_tree_family,
+    bench_seed_extend_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2642,6 +2650,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nj_tree": bench_nj_tree_family,
+        "fitch_pars": bench_fitch_pars_family,
+        "seed_extend": bench_seed_extend_family,
+        "band_align": bench_band_align_family,
+        "jc69_lik": bench_jc69_lik_family,
+        "codon_usage": bench_codon_usage_family,
         "fk_dh": bench_fk_dh_family,
         "ik_jac": bench_ik_jac_family,
         "ray_lidar": bench_ray_lidar_family,
