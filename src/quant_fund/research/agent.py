@@ -5727,6 +5727,14 @@ from quant_fund.research.benches_w716 import (
     bench_sod_decomp_family,
     bench_spherical_functor_family,
 )
+from quant_fund.research.benches_w717 import (
+    bench_bondal_kapranov_family,
+    bench_dg_enhancement_family,
+    bench_enhanced_triangulated_family,
+    bench_nc_k_theory_family,
+    bench_nc_motive_family,
+    bench_tabuada_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6106,6 +6114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nc_motive": bench_nc_motive_family,
+        "dg_enhancement": bench_dg_enhancement_family,
+        "bondal_kapranov": bench_bondal_kapranov_family,
+        "enhanced_triangulated": bench_enhanced_triangulated_family,
+        "tabuada_motive": bench_tabuada_motive_family,
+        "nc_k_theory": bench_nc_k_theory_family,
         "exceptional_coll": bench_exceptional_coll_family,
         "spherical_functor": bench_spherical_functor_family,
         "serre_functor": bench_serre_functor_family,
