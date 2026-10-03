@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-408 representation-theory-4 canon.
+        "schur_functor",
+        "brauer_alg",
+        "hecke_alg",
+        "casimir_op",
+        "weight_space",
+        "bz_category",
         # Wave-407 algebraic-geometry-8 canon.
         "cech_cohom",
         "serre_duality",
