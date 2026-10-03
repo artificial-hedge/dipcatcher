@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-767 Gaussian-process canon.
+        "slepian_lemma",
+        "fernique_thm",
+        "borell_tis",
+        "sudakov_min",
+        "talagrand_conc",
+        "gordon_thm",
         # Wave-766 empirical-process-2 canon.
         "dudley_theorem",
         "varadarajan_thm",
