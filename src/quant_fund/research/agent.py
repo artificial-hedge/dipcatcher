@@ -3047,6 +3047,14 @@ from quant_fund.research.benches_w381 import (
     bench_proj_morph_family,
     bench_toric_variety_family,
 )
+from quant_fund.research.benches_w382 import (
+    bench_back_forth_family,
+    bench_indiscernibles_family,
+    bench_omitting_types_family,
+    bench_saturation_test_family,
+    bench_stability_spec_family,
+    bench_stone_duality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3426,6 +3434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stone_duality": bench_stone_duality_family,
+        "saturation_test": bench_saturation_test_family,
+        "omitting_types": bench_omitting_types_family,
+        "indiscernibles": bench_indiscernibles_family,
+        "stability_spec": bench_stability_spec_family,
+        "back_forth": bench_back_forth_family,
         "grothendieck_grp": bench_grothendieck_grp_family,
         "chow_ring": bench_chow_ring_family,
         "gysin": bench_gysin_family,
