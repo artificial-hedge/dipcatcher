@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-806 jump-process canon.
+        "jump_diffusion",
+        "merton_jump",
+        "kou_model",
+        "compound_poisson",
+        "excursion_theory",
+        "marked_hawkes",
         # Wave-805 stochastic-calculus canon.
         "ito_isometry",
         "stratonovich_conv",
