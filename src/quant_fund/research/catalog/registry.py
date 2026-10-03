@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-830 concentration-of-measure canon.
+        "azuma_ineq",
+        "mcdiarmid_ineq",
+        "talagrand_ineq",
+        "efron_stein",
+        "bounded_diff",
+        "hoeffding_ineq",
         # Wave-829 continuous-martingale canon.
         "local_time_process",
         "bounded_mart",
