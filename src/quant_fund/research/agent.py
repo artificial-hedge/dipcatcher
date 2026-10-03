@@ -2271,6 +2271,14 @@ from quant_fund.research.benches_w284 import (
     bench_nj_tree_family,
     bench_seed_extend_family,
 )
+from quant_fund.research.benches_w285 import (
+    bench_blahut_arimoto_family,
+    bench_elias_gamma_family,
+    bench_kl_knn_family,
+    bench_markov_entropy_family,
+    bench_miller_madow_family,
+    bench_type_class_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2650,6 +2658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "markov_entropy": bench_markov_entropy_family,
+        "blahut_arimoto": bench_blahut_arimoto_family,
+        "kl_knn": bench_kl_knn_family,
+        "type_class": bench_type_class_family,
+        "elias_gamma": bench_elias_gamma_family,
+        "miller_madow": bench_miller_madow_family,
         "nj_tree": bench_nj_tree_family,
         "fitch_pars": bench_fitch_pars_family,
         "seed_extend": bench_seed_extend_family,
