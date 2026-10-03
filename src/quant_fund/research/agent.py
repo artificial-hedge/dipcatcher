@@ -3719,6 +3719,14 @@ from quant_fund.research.benches_w465 import (
     bench_raynaud_gen_family,
     bench_weierstrass_prep_family,
 )
+from quant_fund.research.benches_w466 import (
+    bench_kashiwara_schapira_family,
+    bench_loc_system_family,
+    bench_micro_supp_family,
+    bench_perverse_2_family,
+    bench_sheaf_homotopy_family,
+    bench_stacky_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4098,6 +4106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "micro_supp": bench_micro_supp_family,
+        "kashiwara_schapira": bench_kashiwara_schapira_family,
+        "loc_system": bench_loc_system_family,
+        "perverse_2": bench_perverse_2_family,
+        "stacky_sheaf": bench_stacky_sheaf_family,
+        "sheaf_homotopy": bench_sheaf_homotopy_family,
         "kedlaya_renorm": bench_kedlaya_renorm_family,
         "dagger_groth": bench_dagger_groth_family,
         "raynaud_gen": bench_raynaud_gen_family,

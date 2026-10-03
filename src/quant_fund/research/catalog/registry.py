@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-466 sheaf-3/microlocal canon.
+        "micro_supp",
+        "kashiwara_schapira",
+        "loc_system",
+        "perverse_2",
+        "stacky_sheaf",
+        "sheaf_homotopy",
         # Wave-465 analytic-geometry-3 canon.
         "kedlaya_renorm",
         "dagger_groth",
