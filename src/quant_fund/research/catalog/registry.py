@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-818 stochastic-integration canon.
+        "ito_integral",
+        "mart_meas",
+        "vector_mart",
+        "bounded_var",
+        "stochastic_int2",
+        "covariation",
         # Wave-817 Levy-fluctuation canon.
         "wiener_hopf_f",
         "ladder_height",

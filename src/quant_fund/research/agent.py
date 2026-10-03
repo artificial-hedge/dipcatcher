@@ -6535,6 +6535,14 @@ from quant_fund.research.benches_w817 import (
     bench_spitzer_levy_family,
     bench_wiener_hopf_f_family,
 )
+from quant_fund.research.benches_w818 import (
+    bench_bounded_var_family,
+    bench_covariation_family,
+    bench_ito_integral_family,
+    bench_mart_meas_family,
+    bench_stochastic_int2_family,
+    bench_vector_mart_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6906,6 +6914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ito_integral": bench_ito_integral_family,
+        "mart_meas": bench_mart_meas_family,
+        "vector_mart": bench_vector_mart_family,
+        "bounded_var": bench_bounded_var_family,
+        "stochastic_int2": bench_stochastic_int2_family,
+        "covariation": bench_covariation_family,
         "wiener_hopf_f": bench_wiener_hopf_f_family,
         "ladder_height": bench_ladder_height_family,
         "renewal_measure": bench_renewal_measure_family,
