@@ -4039,6 +4039,14 @@ from quant_fund.research.benches_w505 import (
     bench_thom_cob_family,
     bench_unoriented_cob_family,
 )
+from quant_fund.research.benches_w506 import (
+    bench_distality_family,
+    bench_dp_rank_family,
+    bench_forking_seq_family,
+    bench_honest_def_family,
+    bench_nip_formula_family,
+    bench_uniform_def_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4418,6 +4426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dp_rank": bench_dp_rank_family,
+        "forking_seq": bench_forking_seq_family,
+        "honest_def": bench_honest_def_family,
+        "uniform_def": bench_uniform_def_family,
+        "distality": bench_distality_family,
+        "nip_formula": bench_nip_formula_family,
         "cobordism_grp": bench_cobordism_grp_family,
         "oriented_cob": bench_oriented_cob_family,
         "unoriented_cob": bench_unoriented_cob_family,

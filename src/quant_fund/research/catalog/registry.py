@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-506 NIP/distal model-theory canon.
+        "dp_rank",
+        "forking_seq",
+        "honest_def",
+        "uniform_def",
+        "distality",
+        "nip_formula",
         # Wave-505 cobordism-theory canon.
         "cobordism_grp",
         "oriented_cob",
