@@ -7367,6 +7367,14 @@ from quant_fund.research.benches_w921 import (
     bench_snowball_consensus_family,
     bench_virtual_synchrony_family,
 )
+from quant_fund.research.benches_w922 import (
+    bench_abcast_lite_family,
+    bench_cap_theorem_family,
+    bench_cbc_bcast_family,
+    bench_lake_wisc_family,
+    bench_slush_consensus_family,
+    bench_snowflake_consensus_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7738,6 +7746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "abcast_lite": bench_abcast_lite_family,
+        "cbc_bcast": bench_cbc_bcast_family,
+        "slush_consensus": bench_slush_consensus_family,
+        "snowflake_consensus": bench_snowflake_consensus_family,
+        "cap_theorem": bench_cap_theorem_family,
+        "lake_wisc": bench_lake_wisc_family,
         "virtual_synchrony": bench_virtual_synchrony_family,
         "isis_bcast": bench_isis_bcast_family,
         "atomic_bcast": bench_atomic_bcast_family,

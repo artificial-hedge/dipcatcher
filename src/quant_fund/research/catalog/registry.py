@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-922 distributed-systems-6 canon.
+        "abcast_lite",
+        "cbc_bcast",
+        "slush_consensus",
+        "snowflake_consensus",
+        "cap_theorem",
+        "lake_wisc",
         # Wave-921 distributed-systems-5 canon.
         "virtual_synchrony",
         "isis_bcast",
