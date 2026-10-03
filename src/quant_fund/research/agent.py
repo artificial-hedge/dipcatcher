@@ -4455,6 +4455,14 @@ from quant_fund.research.benches_w557 import (
     bench_taut_foliation_family,
     bench_thin_position_family,
 )
+from quant_fund.research.benches_w558 import (
+    bench_anti_self_dual_family,
+    bench_higgs_bundle_family,
+    bench_instanton_moduli_family,
+    bench_kapustin_witten_family,
+    bench_nahm_transform_family,
+    bench_yang_mills_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4834,6 +4842,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "yang_mills": bench_yang_mills_family,
+        "instanton_moduli": bench_instanton_moduli_family,
+        "anti_self_dual": bench_anti_self_dual_family,
+        "higgs_bundle": bench_higgs_bundle_family,
+        "kapustin_witten": bench_kapustin_witten_family,
+        "nahm_transform": bench_nahm_transform_family,
         "heegaard_splitting": bench_heegaard_splitting_family,
         "dehn_surgery": bench_dehn_surgery_family,
         "sutured_mfd": bench_sutured_mfd_family,

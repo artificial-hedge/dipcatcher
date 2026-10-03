@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-558 gauge-theory canon.
+        "yang_mills",
+        "instanton_moduli",
+        "anti_self_dual",
+        "higgs_bundle",
+        "kapustin_witten",
+        "nahm_transform",
         # Wave-557 3-manifold-theory canon.
         "heegaard_splitting",
         "dehn_surgery",
