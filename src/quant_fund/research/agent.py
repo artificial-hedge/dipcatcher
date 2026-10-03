@@ -7967,6 +7967,14 @@ from quant_fund.research.benches_w996 import (
     bench_orthogonal_poly_rh_family,
     bench_small_norm_rh_family,
 )
+from quant_fund.research.benches_w997 import (
+    bench_bilinear_estimates_family,
+    bench_i_method_family,
+    bench_kdv_dispersion_family,
+    bench_local_smoothing_family,
+    bench_nls_dispersion_family,
+    bench_strichartz_estimates_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8338,6 +8346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nls_dispersion": bench_nls_dispersion_family,
+        "kdv_dispersion": bench_kdv_dispersion_family,
+        "strichartz_estimates": bench_strichartz_estimates_family,
+        "local_smoothing": bench_local_smoothing_family,
+        "bilinear_estimates": bench_bilinear_estimates_family,
+        "i_method": bench_i_method_family,
         "dbar_method": bench_dbar_method_family,
         "orthogonal_poly_rh": bench_orthogonal_poly_rh_family,
         "isomonodromy": bench_isomonodromy_family,
