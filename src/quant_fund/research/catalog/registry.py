@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-964 unbounded-operator canon.
+        "unbounded_operator",
+        "closed_operator",
+        "domain_dense",
+        "adjoint_unbounded",
+        "resolvent_op",
+        "spectral_measure",
         # Wave-963 spectral-theory-2 canon.
         "fredholm_index",
         "weyl_theorem",
