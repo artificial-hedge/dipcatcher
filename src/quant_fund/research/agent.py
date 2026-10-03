@@ -5319,6 +5319,14 @@ from quant_fund.research.benches_w665 import (
     bench_unstable_vn_family,
     bench_whitehead_product_family,
 )
+from quant_fund.research.benches_w666 import (
+    bench_cotangent_stack_family,
+    bench_derived_abelian_family,
+    bench_derived_bezout_family,
+    bench_derived_bun_family,
+    bench_derived_hecke_family,
+    bench_simplicial_comm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5698,6 +5706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_abelian": bench_derived_abelian_family,
+        "simplicial_comm": bench_simplicial_comm_family,
+        "derived_bezout": bench_derived_bezout_family,
+        "derived_hecke": bench_derived_hecke_family,
+        "cotangent_stack": bench_cotangent_stack_family,
+        "derived_bun": bench_derived_bun_family,
         "cohen_moore2": bench_cohen_moore2_family,
         "whitehead_product": bench_whitehead_product_family,
         "homotopy_decomp": bench_homotopy_decomp_family,
