@@ -1,3 +1,4 @@
+feat(research): wave 320 — abstract-interpretation canon (interval_analysis, sign_domain, zone_dbm, affine_karr, chaotic_widen, andersen_pta) (1876->1882 families)
 feat(research): wave 319 — proof-automation canon (congruence_closure, ring_normalize, omega_lia, nelson_oppen, term_rewrite, tseitin_cnf) (1870->1876 families)
 feat(research): wave 318 — type-theory canon (bidirectional_tc, nbe_eval, dep_types, unify_meta, proof_kernel, tactic_engine) (1864->1870 families)
 feat(research): wave 317 — image-processing canon (canny_edge, otsu_threshold, watershed_seg, slic_superpixels, nlm_denoise, distance_transform) (1870->1876 families)

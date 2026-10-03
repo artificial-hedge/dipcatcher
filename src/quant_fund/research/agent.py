@@ -2552,6 +2552,14 @@ from quant_fund.research.benches_w319 import (
     bench_term_rewrite_family,
     bench_tseitin_cnf_family,
 )
+from quant_fund.research.benches_w320 import (
+    bench_affine_karr_family,
+    bench_andersen_pta_family,
+    bench_chaotic_widen_family,
+    bench_interval_analysis_family,
+    bench_sign_domain_family,
+    bench_zone_dbm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2931,6 +2939,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "interval_analysis": bench_interval_analysis_family,
+        "sign_domain": bench_sign_domain_family,
+        "zone_dbm": bench_zone_dbm_family,
+        "affine_karr": bench_affine_karr_family,
+        "chaotic_widen": bench_chaotic_widen_family,
+        "andersen_pta": bench_andersen_pta_family,
         "congruence_closure": bench_congruence_closure_family,
         "ring_normalize": bench_ring_normalize_family,
         "omega_lia": bench_omega_lia_family,
