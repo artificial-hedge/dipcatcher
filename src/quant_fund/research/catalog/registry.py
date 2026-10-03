@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-303 speech/audio codec canon.
+        "mulaw_compand",
+        "adpcm_ima",
+        "lpc_analysis",
+        "celp_encode",
+        "mel_cepstrum",
+        "viterbi_vad",
         # Wave-302 compiler-5/JIT canon.
         "card_table_gc",
         "escape_analysis",
