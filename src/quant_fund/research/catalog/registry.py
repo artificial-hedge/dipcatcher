@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-655 homotopy-21 canon.
+        "devinatz_htpy",
+        "hopkins_smith",
+        "morava_stab",
+        "chromatic_square",
+        "telescope_tower",
+        "bo_htpy",
         # Wave-654 category-11 canon.
         "compactly_generated",
         "presentable_cat2",
