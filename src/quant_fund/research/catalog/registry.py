@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-298 medical-imaging canon.
+        "radon_fbp",
+        "art_sirt",
+        "cs_mri",
+        "hu_moments",
+        "chan_vese",
+        "mi_register",
         # Wave-297 post-quantum crypto canon.
         "ntt_ring",
         "kyber_kem",
