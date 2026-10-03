@@ -7039,6 +7039,14 @@ from quant_fund.research.benches_w880 import (
     bench_pod_deim_family,
     bench_tensor_interp_family,
 )
+from quant_fund.research.benches_w881 import (
+    bench_bicgstab2_family,
+    bench_block_cg_family,
+    bench_cgs_solver_family,
+    bench_minres_solver_family,
+    bench_qmr_solver_family,
+    bench_tfqmr_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7410,6 +7418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "minres_solver": bench_minres_solver_family,
+        "cgs_solver": bench_cgs_solver_family,
+        "tfqmr": bench_tfqmr_family,
+        "qmr_solver": bench_qmr_solver_family,
+        "bicgstab2": bench_bicgstab2_family,
+        "block_cg": bench_block_cg_family,
         "gq_adaptive": bench_gq_adaptive_family,
         "adaptive_quad2": bench_adaptive_quad2_family,
         "pod_deim": bench_pod_deim_family,
