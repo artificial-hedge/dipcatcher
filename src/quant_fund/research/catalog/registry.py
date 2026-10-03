@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-643 homotopy-18 canon.
+        "toda_smith",
+        "mahowald_inv",
+        "calc_tower",
+        "goodwillie_deriv",
+        "snaith_split",
+        "kervaire_inv",
         # Wave-642 prismatic-2 canon.
         "prismatic_f",
         "bhatt_scholze",
