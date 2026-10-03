@@ -3143,6 +3143,14 @@ from quant_fund.research.benches_w393 import (
     bench_serre_class_family,
     bench_thom_isom_family,
 )
+from quant_fund.research.benches_w394 import (
+    bench_birkhoff_rep_family,
+    bench_dilworth_partition_family,
+    bench_downset_lattice_family,
+    bench_linear_extension_family,
+    bench_sperner_bound_family,
+    bench_zeta_mobius_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3522,6 +3530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "downset_lattice": bench_downset_lattice_family,
+        "zeta_mobius": bench_zeta_mobius_family,
+        "linear_extension": bench_linear_extension_family,
+        "sperner_bound": bench_sperner_bound_family,
+        "dilworth_partition": bench_dilworth_partition_family,
+        "birkhoff_rep": bench_birkhoff_rep_family,
         "eilenberg_steenrod": bench_eilenberg_steenrod_family,
         "cap_product": bench_cap_product_family,
         "thom_isom": bench_thom_isom_family,
