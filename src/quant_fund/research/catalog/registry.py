@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-730 ramification canon.
+        "grothendieck_muw",
+        "raynaud_pencil",
+        "saito_epsilon",
+        "swan_conductor",
+        "groth_tame",
+        "kato_swan",
         # Wave-729 motivic-A1-2 canon.
         "roald_suslin",
         "jogiad_motive",
