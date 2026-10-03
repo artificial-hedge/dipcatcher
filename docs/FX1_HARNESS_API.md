@@ -262,6 +262,13 @@ to `GET /harness/completions/{id}` and its sealed
 - **Chain knobs:** the `fx1` extension's `fallbacks` /
   `X-Fx1-Fallbacks` (CSV), `checkpoint_dir` / `X-Fx1-Checkpoint-Dir`,
   `timeout_s`, and `receipt_hashes`.
+- **Per-request timeout:** `fx1.timeout_s` (body extension) >
+  `X-Fx1-Timeout` header (seconds). The header is the wire twin for
+  clients that can't edit the JSON payload — same deadline reaching the
+  backend resolver on chat, responses, and embeddings. A malformed,
+  non-finite, or out-of-`(0, 3600]` header is a fail-closed `400
+  invalid_request`, never a silent default. Batch submitters inherit it:
+  `X-Fx1-*` headers replay per line.
 - **Streaming:** `stream: true` returns SSE `chat.completion.chunk`
   frames — a `role` delta, ~64-char content deltas on whitespace
   boundaries, a `finish_reason: "stop"` frame, an optional
