@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-755 loop-soup canon.
+        "lupu_loop",
+        "lejan_loop",
+        "kassel_wu",
+        "kenyon_wilson",
+        "barlow_ust",
+        "lyons_peres",
         # Wave-754 random-cluster canon.
         "sokal_bcc",
         "caracciolo_pelissetto",
