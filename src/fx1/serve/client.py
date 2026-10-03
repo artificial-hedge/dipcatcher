@@ -1551,7 +1551,7 @@ class HarnessClient:
         )
         return json.loads(body), headers.get("X-Fx1-Completion-Id")
 
-    def responses_create_stream(
+    def responses_create_stream(  # NOSONAR(S3776)
         self,
         input: str | list[dict[str, Any]],
         *,
