@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-381 algebraic-geometry-6 canon.
+        "grothendieck_grp",
+        "chow_ring",
+        "gysin",
+        "toric_variety",
+        "proj_morph",
+        "ample_test",
         # Wave-380 descriptive-set-theory-2 canon.
         "baire_space",
         "polish_topology",

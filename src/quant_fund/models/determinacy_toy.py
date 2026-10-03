@@ -10,6 +10,7 @@ def minimax_winner(
 ) -> int:
     """Finite perfect-information game: player I wins iff minimax = 1.
     payoff maps terminal histories (tuples of length depth) to {0,1}."""
+
     def val(hist: tuple[int, ...], player: int) -> int:
         if len(hist) == depth:
             return payoff.get(hist, 0)
