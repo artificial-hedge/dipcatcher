@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-505 cobordism-theory canon.
+        "cobordism_grp",
+        "oriented_cob",
+        "unoriented_cob",
+        "complex_cob",
+        "framed_cob",
+        "thom_cob",
         # Wave-504 Steenrod/cohomology-operations canon.
         "steenrod_algebra",
         "adem_relations",
