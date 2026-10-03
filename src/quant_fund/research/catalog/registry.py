@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-949 matrix-pencil canon.
+        "matrix_pencil",
+        "kronecker_canonical",
+        "invariant_subspace",
+        "deflating_subspace",
+        "jordan_form",
+        "rational_canonical",
         # Wave-948 structured-matrix canon.
         "circulant_matrix",
         "companion_matrix",
