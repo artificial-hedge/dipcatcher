@@ -1151,12 +1151,23 @@ def harness_key_create(
         "--admin",
         help="Mint an admin key — it may itself mint/list/revoke keys.",
     ),
+    rpm: int | None = typer.Option(
+        None,
+        "--rpm",
+        min=1,
+        help="Bound the key to this many requests per 60 s window (over-limit → 429).",
+    ),
+    ttl_s: float | None = typer.Option(
+        None,
+        "--ttl-s",
+        help="Key expiry in seconds from mint — the credential dies after.",
+    ),
 ) -> None:
     """Mint a managed API key — prints the mint record including the raw
     ``key``, which is shown once and never stored server-side. On
     ``--remote`` this needs the bootstrap credential (FX1_API_KEY)."""
     surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
-    out = _or_exit(lambda: surface.key_create(name, admin=admin))
+    out = _or_exit(lambda: surface.key_create(name, admin=admin, rpm=rpm, ttl_s=ttl_s))
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 

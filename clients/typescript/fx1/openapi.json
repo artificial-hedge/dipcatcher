@@ -20,6 +20,32 @@
               }
             ],
             "title": "Name"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "maximum": 1000000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
+          "ttl_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 315576000.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttl S"
           }
         },
         "title": "ApiKeyCreateRequest",
@@ -60,6 +86,17 @@
             "title": "Created At",
             "type": "number"
           },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -88,6 +125,17 @@
           "prefix": {
             "title": "Prefix",
             "type": "string"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
           }
         },
         "required": [
@@ -95,6 +143,8 @@
           "name",
           "prefix",
           "admin",
+          "rpm",
+          "expires_at",
           "created_at",
           "key"
         ],
@@ -116,6 +166,17 @@
           "enabled": {
             "title": "Enabled",
             "type": "boolean"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
           },
           "id": {
             "title": "Id",
@@ -164,6 +225,17 @@
             ],
             "title": "Revoked At"
           },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
           "uses": {
             "title": "Uses",
             "type": "integer"
@@ -174,6 +246,8 @@
           "name",
           "prefix",
           "admin",
+          "rpm",
+          "expires_at",
           "created_at",
           "enabled",
           "revoked_at",

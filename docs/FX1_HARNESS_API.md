@@ -200,8 +200,8 @@ same digested shape the job record embeds.
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
 | `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model`/`by_key` splits, `?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage [--key-id]` |
-| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?}`: `admin` keys may manage keys; requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin]` |
-| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `enabled`, `uses`, `last_used_at`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
+| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?, rpm?, ttl_s?}`: `admin` keys may manage keys; `rpm` bounds the key to a fixed 60 s request window (over-limit → `429 rate_limited` + `Retry-After`); `ttl_s` bakes an `expires_at` — a dead credential fails closed like a revoked one. Requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin] [--rpm] [--ttl-s]` |
+| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `rpm`, `expires_at`, `enabled`, `uses`, `last_used_at`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
 | `GET /harness/keys/{id}` | one key's record → `404 key_not_found`. `Fx1Harness.key_get` / `HarnessClient.key_get` / `fx1 harness key-get` |
 | `DELETE /harness/keys/{id}` | tombstone a key (`enabled:false` + `revoked_at`) — auth with it fails closed immediately; the record survives for audit. `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_revoke` / `HarnessClient.key_revoke` / `fx1 harness key-revoke` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
@@ -826,7 +826,13 @@ TS.
   is a tombstone (`enabled:false`, fail-closed); records persist under
   `--state-dir` (journaled to `keys.jsonl`, replayed on restart —
   `uses`/`last_used_at` are live counters, deliberately not journaled).
-  Every completion record attributes its caller's `key_id`
+  Declared policy travels with the record: `rpm` bounds the key to a
+  fixed 60 s request window — the over-limit refusal is `429
+  rate_limited` with an honest `Retry-After`, and a refused request
+  never counts as a use — and `ttl_s` stamps an `expires_at` past
+  which the key authenticates as dead (same 401 shape as revoked — no
+  oracle for which keys exist). Every completion record attributes its
+  caller's `key_id`
   fingerprint, so `GET /harness/usage?key_id=` reads per-key spend
   without ever exposing secrets.
 - Request bodies over 1 MiB are refused `413`; `/health` leaks only

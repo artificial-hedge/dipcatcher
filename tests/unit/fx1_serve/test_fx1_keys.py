@@ -225,6 +225,80 @@ def test_keys_journal_under_state_dir(tmp_path: Path) -> None:
     assert [k["name"] for k in listed] == ["durable"]
 
 
+def test_store_rpm_window_rate_limits() -> None:
+    now = [1000.0]
+    store = ApiKeyStore(clock=lambda: now[0])
+    raw, rec = store.mint("limited", rpm=2)
+    assert rec["rpm"] == 2
+    assert store.authenticate(raw) is not None
+    assert store.authenticate(raw) is not None
+    with pytest.raises(KeyStoreError) as excinfo:
+        store.authenticate(raw)
+    assert excinfo.value.code == "rate_limited"
+    assert excinfo.value.retry_after == pytest.approx(60.0)
+    # a refused request never counts as a use
+    assert store.get(rec["key_id"])["uses"] == 2
+    # the wire view never leaks the live window counters
+    assert "_window_start" not in str(store.list())
+    # the window rolls: past 60 s the key authenticates again
+    now[0] += 61.0
+    assert store.authenticate(raw)["uses"] == 3
+
+
+def test_store_ttl_expires_fail_closed() -> None:
+    now = [1000.0]
+    store = ApiKeyStore(clock=lambda: now[0])
+    raw, rec = store.mint("ephemeral", ttl_s=30.0)
+    assert rec["expires_at"] == pytest.approx(1030.0)
+    assert store.authenticate(raw) is not None
+    now[0] += 30.0
+    # dead credential — same None refusal as revoked, no oracle
+    assert store.authenticate(raw) is None
+    assert store.get(rec["key_id"])["uses"] == 1
+
+
+def test_store_mint_rejects_bad_policy() -> None:
+    store = ApiKeyStore()
+    with pytest.raises(ValueError):
+        store.mint(rpm=0)
+    with pytest.raises(ValueError):
+        store.mint(ttl_s=0.0)
+    with pytest.raises(ValueError):
+        store.mint(ttl_s=-5.0)
+
+
+def test_store_journal_preserves_policy(tmp_path: Path) -> None:
+    now = [1000.0]
+    path = tmp_path / "keys.jsonl"
+    store = ApiKeyStore(journal=JobJournal(path), clock=lambda: now[0])
+    _, rec = store.mint("policed", rpm=5, ttl_s=600.0)
+    restored = ApiKeyStore(journal=JobJournal(path), clock=lambda: now[0])
+    again = restored.get(rec["key_id"])
+    assert again["rpm"] == 5 and again["expires_at"] == pytest.approx(1600.0)
+
+
+def test_key_rpm_wire_429() -> None:
+    client = _client()
+    root = {"X-API-Key": "root-secret"}
+    mint = client.post("/harness/keys", json={"rpm": 1}, headers=root)
+    assert mint.status_code == 201 and mint.json()["rpm"] == 1
+    raw = mint.json()["key"]
+    assert client.get("/harness/commands", headers={"X-API-Key": raw}).status_code == 200
+    limited = client.get("/harness/commands", headers={"X-API-Key": raw})
+    assert limited.status_code == 429
+    assert limited.json()["code"] == "rate_limited"
+    assert int(limited.headers["Retry-After"]) >= 1
+    # the env key is not the managed key — its own path is unaffected
+    assert client.get("/harness/commands", headers=root).status_code == 200
+
+
+def test_key_policy_validation_wire() -> None:
+    client = _client()
+    root = {"X-API-Key": "root-secret"}
+    assert client.post("/harness/keys", json={"rpm": 0}, headers=root).status_code == 422
+    assert client.post("/harness/keys", json={"ttl_s": -1}, headers=root).status_code == 422
+
+
 # ---- SDK twin --------------------------------------------------------------
 
 

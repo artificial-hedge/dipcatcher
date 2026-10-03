@@ -547,6 +547,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.batch_calls: list[dict[str, Any]] = []
             self.usage_kw: dict[str, Any] | None = None
             self.last_key_call: tuple[str, str | None] | None = None
+            self.last_key_kw: dict[str, Any] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -707,6 +708,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("create", name)
+            self.last_key_kw = dict(_kw)
             return {
                 "id": "kfake",
                 "object": "key",
@@ -1105,6 +1107,15 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(kc.stdout)["key"] == "fx1k_raw"
             and fake.last_key_call == ("create", "svc")
         )
+        kc2 = runner.invoke(
+            app,
+            ["harness", "key-create", "--name", "svc", "--rpm", "5", "--ttl-s", "60"],
+        )
+        out["key_create_policy_forwards"] = kc2.exit_code == 0 and fake.last_key_kw == {
+            "admin": False,
+            "rpm": 5,
+            "ttl_s": 60.0,
+        }
         kl = runner.invoke(app, ["harness", "keys"])
         out["key_list_json"] = (
             kl.exit_code == 0
@@ -1148,6 +1159,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_wait_kw: dict[str, Any] | None = None
             self.last_usage_kw: dict[str, Any] | None = None
             self.last_key_call: tuple[str, str | None] | None = None
+            self.last_key_kw: dict[str, Any] | None = None
             self.ft_actions: list[tuple[str, str]] = []
 
         def usage(self, **kw: Any) -> Any:
@@ -1801,6 +1813,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("create", name)
+            self.last_key_kw = dict(_kw)
             return {
                 "id": "krem",
                 "object": "key",
@@ -1909,6 +1922,24 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(kc.stdout)["key"] == "fx1k_rem"
             and remotes[-1].last_key_call == ("create", "svc")
         )
+        kc2 = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--remote",
+                "http://h.test",
+                "--rpm",
+                "5",
+                "--ttl-s",
+                "60",
+            ],
+        )
+        out["key_create_policy_remote"] = kc2.exit_code == 0 and remotes[-1].last_key_kw == {
+            "admin": False,
+            "rpm": 5,
+            "ttl_s": 60.0,
+        }
         kl = runner.invoke(app, ["harness", "keys", "--remote", "http://h.test"])
         out["key_list_remote"] = kl.exit_code == 0 and json.loads(kl.stdout)[0]["id"] == "krem"
         kg = runner.invoke(app, ["harness", "key-get", "krem", "--remote", "http://h.test"])

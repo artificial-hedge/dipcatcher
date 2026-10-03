@@ -1717,6 +1717,10 @@ export interface components {
             admin: boolean;
             /** Name */
             name?: string | null;
+            /** Rpm */
+            rpm?: number | null;
+            /** Ttl S */
+            ttl_s?: number | null;
         };
         /** ApiKeyListResponse */
         ApiKeyListResponse: {
@@ -1738,6 +1742,8 @@ export interface components {
             admin: boolean;
             /** Created At */
             created_at: number;
+            /** Expires At */
+            expires_at: number | null;
             /** Id */
             id: string;
             /** Key */
@@ -1752,6 +1758,8 @@ export interface components {
             object: "key";
             /** Prefix */
             prefix: string;
+            /** Rpm */
+            rpm: number | null;
         };
         /**
          * ApiKeyRecordModel
@@ -1765,6 +1773,8 @@ export interface components {
             created_at: number;
             /** Enabled */
             enabled: boolean;
+            /** Expires At */
+            expires_at: number | null;
             /** Id */
             id: string;
             /** Last Used At */
@@ -1781,6 +1791,8 @@ export interface components {
             prefix: string;
             /** Revoked At */
             revoked_at: number | null;
+            /** Rpm */
+            rpm: number | null;
             /** Uses */
             uses: number;
         };

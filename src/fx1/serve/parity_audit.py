@@ -3599,6 +3599,10 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     )
     _k_wl = _admin_remote.key_create("parity")
     _kid_sdk, _kid_wl = _k_sdk["id"], _k_wl["id"]
+    # declared policy rides the mint on both legs: rpm and the stamped
+    # expires_at read back identically
+    _p_sdk = sdk.key_create("policed", rpm=5, ttl_s=600.0)
+    _p_wl = _admin_remote.key_create("policed", rpm=5, ttl_s=600.0)
     out["key_parity"] = (
         _k_sdk["object"] == _k_wl["object"] == "key"
         and _k_sdk["key"].startswith("fx1k_")
@@ -3607,6 +3611,11 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _k_wl["prefix"] == _k_wl["key"][:13]
         and _k_wl["admin"] is False
         and _boot.json()["admin"] is True
+        and _p_sdk["rpm"] == _p_wl["rpm"] == 5
+        and _p_sdk["expires_at"] is not None
+        and _p_wl["expires_at"] is not None
+        and sdk.key_get(_p_sdk["id"])["rpm"] == 5
+        and _admin_remote.key_get(_p_wl["id"])["rpm"] == 5
         and sdk.key_get(_kid_sdk)["name"] == _admin_remote.key_get(_kid_wl)["name"] == "parity"
         and sdk.keys()[0]["id"] == _kid_sdk
         and _admin_remote.keys()[1]["id"] == _kid_wl

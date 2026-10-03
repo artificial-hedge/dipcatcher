@@ -2597,6 +2597,40 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["key_revoke_unknown_404"] = (
         keys_client.delete("/harness/keys/" + "0" * 16, headers=root_h).status_code == 404
     )
+    # declared per-key policy: rpm bounds the key to a fixed 60 s
+    # request window — the over-limit refusal is 429 + Retry-After and
+    # never counts as a use; ttl_s bakes an expires_at into the record.
+    rpm_mint = keys_client.post("/harness/keys", json={"rpm": 1}, headers=root_h)
+    rpm_raw = str(rpm_mint.json().get("key", ""))
+    rpm_id = str(rpm_mint.json().get("id", ""))
+    first = keys_client.get("/harness/commands", headers={"X-API-Key": rpm_raw})
+    limited = keys_client.get("/harness/commands", headers={"X-API-Key": rpm_raw})
+    out["key_rpm_429"] = (
+        rpm_mint.status_code == 201
+        and rpm_mint.json()["rpm"] == 1
+        and first.status_code == 200
+        and limited.status_code == 429
+        and limited.json().get("code") == "rate_limited"
+        and int(limited.headers.get("Retry-After", "0")) >= 1
+    )
+    rpm_rec = keys_client.get(f"/harness/keys/{rpm_id}", headers=root_h)
+    out["key_rpm_refusal_no_burn"] = rpm_rec.status_code == 200 and rpm_rec.json()["uses"] == 1
+    out["key_policy_bad_422"] = (
+        keys_client.post("/harness/keys", json={"rpm": 0}, headers=root_h).status_code == 422
+        and keys_client.post("/harness/keys", json={"ttl_s": -1}, headers=root_h).status_code == 422
+    )
+    # an expired key fails closed — same 401 shape as revoked
+    ttl_mint = keys_client.post("/harness/keys", json={"ttl_s": 0.05}, headers=root_h)
+    ttl_raw = str(ttl_mint.json().get("key", ""))
+    ttl_ok = keys_client.get("/harness/commands", headers={"X-API-Key": ttl_raw})
+    time.sleep(0.06)
+    ttl_dead = keys_client.get("/harness/commands", headers={"X-API-Key": ttl_raw})
+    out["key_ttl_expires_401"] = (
+        ttl_mint.status_code == 201
+        and ttl_mint.json()["expires_at"] is not None
+        and ttl_ok.status_code == 200
+        and ttl_dead.status_code == 401
+    )
     # no env key + empty store → loopback dev (admin); minting turns auth on
     noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
     minted = noenv_client.post("/harness/keys", json={})

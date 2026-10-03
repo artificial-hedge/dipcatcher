@@ -1220,6 +1220,12 @@ class ApiKeyCreateRequest(_Model):
     # mints the first admin key so an env-key-less deployment keeps a
     # control plane after provisioning turns auth on.
     admin: bool = False
+    # Declared per-key policy, journaled at mint: rpm bounds the key to
+    # a fixed 60 s request window (over-limit answers 429 + Retry-After);
+    # ttl_s bakes an expiry — a dead credential fails closed like a
+    # revoked one.
+    rpm: int | None = Field(default=None, ge=1, le=1_000_000)
+    ttl_s: float | None = Field(default=None, gt=0, le=315_576_000)
 
 
 class ApiKeyMintResponse(_Model):
@@ -1230,6 +1236,8 @@ class ApiKeyMintResponse(_Model):
     name: str | None
     prefix: str
     admin: bool
+    rpm: int | None
+    expires_at: float | None
     created_at: float
     key: str
 
@@ -1243,6 +1251,8 @@ class ApiKeyRecordModel(_Model):
     name: str | None
     prefix: str
     admin: bool
+    rpm: int | None
+    expires_at: float | None
     created_at: float
     enabled: bool
     revoked_at: float | None
@@ -1261,6 +1271,8 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
         name=rec["name"],
         prefix=rec["prefix"],
         admin=bool(rec.get("admin")),
+        rpm=rec.get("rpm"),
+        expires_at=rec.get("expires_at"),
         created_at=rec["created_at"],
         enabled=rec["enabled"],
         revoked_at=rec["revoked_at"],
@@ -7001,7 +7013,24 @@ def create_app(
         # key, or loopback dev mode (no env key and an empty store).
         request.state.key_id = None
         request.state.admin = False
-        auth = _resolve_auth(request, api_key, key_store)
+        try:
+            auth = _resolve_auth(request, api_key, key_store)
+        except KeyStoreError as exc:
+            # a managed key past its declared rpm refuses 429 — same
+            # fail-closed shape as the global limiter, keyed to the
+            # credential's own window
+            metrics.record_rate_limited()
+            wait_s = max(1, math.ceil(exc.retry_after or 1.0))
+            key_rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
+            key_rl_body: dict[str, Any] = {"detail": key_rl_msg, "code": exc.code}
+            if is_openai_path(request.url.path):
+                key_rl_body = openai_error_body(key_rl_msg, 429, exc.code)
+            response = JSONResponse(
+                status_code=429,
+                content=key_rl_body,
+                headers={"Retry-After": str(wait_s)},
+            )
+            return _finish(request, request_id, response, started)
         if isinstance(auth, JSONResponse):
             response = auth
         else:
@@ -7256,7 +7285,7 @@ def create_app(
         bootstrap credential (``FX1_API_KEY``) or loopback dev mode."""
         _require_admin(request)
         try:
-            raw, rec = key_store.mint(body.name, admin=body.admin)
+            raw, rec = key_store.mint(body.name, admin=body.admin, rpm=body.rpm, ttl_s=body.ttl_s)
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
         return ApiKeyMintResponse(
@@ -7264,6 +7293,8 @@ def create_app(
             name=rec["name"],
             prefix=rec["prefix"],
             admin=bool(rec.get("admin")),
+            rpm=rec.get("rpm"),
+            expires_at=rec.get("expires_at"),
             created_at=rec["created_at"],
             key=raw,
         )

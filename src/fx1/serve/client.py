@@ -1176,14 +1176,27 @@ class HarnessClient:
         out = self._json("GET", f"/harness/usage{query}", idempotent=True)
         return UsageReport.model_validate(out)
 
-    def key_create(self, name: str | None = None, admin: bool = False) -> dict[str, Any]:
+    def key_create(
+        self,
+        name: str | None = None,
+        admin: bool = False,
+        *,
+        rpm: int | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
         """``POST /harness/keys`` — mint a managed API key. The raw
         ``key`` appears once in the response; it is never stored
-        server-side. ``admin=True`` keys may manage keys on the wire.
-        Requires the bootstrap credential on the wire."""
+        server-side. ``admin=True`` keys may manage keys on the wire;
+        ``rpm`` bounds the key's request rate (over-limit answers 429),
+        ``ttl_s`` bakes an expiry. Requires the bootstrap credential on
+        the wire."""
         body: dict[str, Any] = {"admin": admin}
         if name is not None:
             body["name"] = name
+        if rpm is not None:
+            body["rpm"] = rpm
+        if ttl_s is not None:
+            body["ttl_s"] = ttl_s
         return dict(self._json("POST", "/harness/keys", body))
 
     def keys(self) -> list[dict[str, Any]]:

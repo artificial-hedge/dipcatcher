@@ -610,17 +610,28 @@ class Fx1Harness:
     # Bound to ``state_dir``'s keys.jsonl when durable, so an SDK
     # process can provision the keys a server deployment replays.
 
-    def key_create(self, name: str | None = None, admin: bool = False) -> dict[str, Any]:
+    def key_create(
+        self,
+        name: str | None = None,
+        admin: bool = False,
+        *,
+        rpm: int | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
         """Mint a managed key — returns the wire mint shape including the
         raw ``key`` (shown once, never stored). ``admin=True`` keys may
-        manage keys on the wire surface."""
-        raw, rec = self._key_store.mint(name, admin=admin)
+        manage keys on the wire surface; ``rpm`` bounds the key to a
+        fixed-window request rate and ``ttl_s`` bakes an expiry into the
+        journaled record."""
+        raw, rec = self._key_store.mint(name, admin=admin, rpm=rpm, ttl_s=ttl_s)
         return {
             "id": rec["key_id"],
             "object": "key",
             "name": rec["name"],
             "prefix": rec["prefix"],
             "admin": admin,
+            "rpm": rec.get("rpm"),
+            "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
             "key": raw,
         }
@@ -656,6 +667,8 @@ class Fx1Harness:
             "name": rec["name"],
             "prefix": rec["prefix"],
             "admin": bool(rec.get("admin")),
+            "rpm": rec.get("rpm"),
+            "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
             "enabled": rec["enabled"],
             "revoked_at": rec["revoked_at"],

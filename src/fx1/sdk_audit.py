@@ -590,6 +590,18 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk.key_revoke("0" * 16)) == "KeyError"
         and _raises(lambda: sdk.key_revoke(mint["id"])) == "ValueError"
     )
+    # declared policy rides the mint: rpm + the stamped expires_at
+    pol = sdk.key_create("policed", rpm=5, ttl_s=600.0)
+    out["key_policy_fields"] = (
+        pol["rpm"] == 5
+        and pol["expires_at"] is not None
+        and sdk.key_get(pol["id"])["rpm"] == 5
+        and "_window_start" not in str(sdk.keys())
+    )
+    out["key_policy_bad_raises"] = (
+        _raises(lambda: sdk.key_create("x", rpm=0)) == "ValueError"
+        and _raises(lambda: sdk.key_create("x", ttl_s=-1)) == "ValueError"
+    )
 
     return out
 
