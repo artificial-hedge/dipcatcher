@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-674 spectral-AG-5 canon.
+        "derived_k3",
+        "spectral_gm",
+        "analytic_spec",
+        "graded_spec",
+        "equivariant_spec",
+        "spectral_curve",
         # Wave-673 derived-geometry-6 canon.
         "derived_cohom",
         "spectral_deformation2",
