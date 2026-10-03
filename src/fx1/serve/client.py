@@ -40,7 +40,9 @@ from fx1 import __version__
 from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
 from fx1.sdk import (
+    CompletionRecord,
     CompletionResult,
+    GateCheckResult,
     HarnessHealth,
     OpsMetrics,
     ProbeResult,
@@ -61,7 +63,7 @@ __all__ = [
 ]
 
 Transport = Callable[
-    [str, str, dict[str, Any] | None, dict[str, str], float],
+    [str, str, dict[str, Any] | bytes | None, dict[str, str], float],
     "tuple[int, Mapping[str, str], bytes]",
 ]
 
@@ -104,13 +106,17 @@ class HarnessCompatError(RuntimeError):
 def _urllib_transport(
     method: str,
     url: str,
-    payload: dict[str, Any] | None,
+    payload: dict[str, Any] | bytes | None,
     headers: dict[str, str],
     timeout_s: float,
 ) -> tuple[int, Mapping[str, str], bytes]:
     req_headers = {"Accept": "application/json", **headers}
     data = None
-    if payload is not None:
+    if isinstance(payload, bytes):
+        # raw upload bytes (multipart file posts) — Content-Type rides
+        # the caller's headers, never JSON-encoded.
+        data = payload
+    elif payload is not None:
         data = json.dumps(payload).encode()
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
@@ -193,7 +199,7 @@ class HarnessClient:
         self,
         method: str,
         path: str,
-        payload: dict[str, Any] | None = None,
+        payload: dict[str, Any] | bytes | None = None,
         *,
         idempotent: bool = False,
         extra_headers: dict[str, str] | None = None,
@@ -268,6 +274,16 @@ class HarnessClient:
                 detail = "; ".join(
                     d.get("msg", str(d)) for d in detail if isinstance(d, dict)
                 ) or str(detail)
+            openai_err = parsed.get("error")
+            if isinstance(openai_err, dict):
+                # /v1 routes shape errors as {error: {message, type, code}} —
+                # the machine code and the human message live there.
+                msg = openai_err.get("message")
+                if isinstance(msg, str):
+                    detail = msg
+                raw_code = openai_err.get("code")
+                if isinstance(raw_code, str):
+                    code = raw_code
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
             detail = body.decode(errors="replace")[:500]
         if status in (401, 403):
@@ -424,6 +440,17 @@ class HarnessClient:
         )
         return dict(out)
 
+    def job_receipt(self, job_id: str) -> dict[str, Any]:
+        """Export the job's ledger record as a sealed
+        ``fx1_job_record.v1`` document — ``GET /harness/jobs/{id}/receipt``;
+        404 maps to KeyError. Feed it to :meth:`verify_receipt`."""
+        out = self._json(
+            "GET",
+            f"/harness/jobs/{urllib.parse.quote(job_id)}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
     def list_jobs(
         self,
         *,
@@ -452,6 +479,130 @@ class HarnessClient:
             f"/harness/jobs/{urllib.parse.quote(job_id)}",
         )
         return dict(out)
+
+    # ---- evals ----------------------------------------------------------
+
+    def submit_eval(
+        self,
+        suite: str,
+        *,
+        backend: str = "hosted_k3",
+        seed: int = 0,
+        checkpoint_dir: str | None = None,
+        byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
+        fallbacks: list[str] | None = None,
+        judge_backend: str | None = None,
+        judge_byok: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """POST /harness/evals — submit a seeded eval suite against a
+        backend chain (202). Returns ``{eval_id, status, replayed}``;
+        poll :meth:`eval_status` or :meth:`wait_eval` for the terminal
+        record, then export it sealed via :meth:`eval_receipt`."""
+        body: dict[str, Any] = {"suite": suite, "backend": backend, "seed": seed}
+        if checkpoint_dir is not None:
+            body["checkpoint_dir"] = checkpoint_dir
+        if byok is not None:
+            body["byok"] = byok
+        if timeout_s is not None:
+            body["timeout_s"] = timeout_s
+        if fallbacks is not None:
+            body["fallbacks"] = fallbacks
+        if judge_backend is not None:
+            body["judge_backend"] = judge_backend
+        if judge_byok is not None:
+            body["judge_byok"] = judge_byok
+        if callback_url is not None:
+            body["callback_url"] = callback_url
+        if callback_secret is not None:
+            body["callback_secret"] = callback_secret
+        out = self._json(
+            "POST",
+            "/harness/evals",
+            body,
+            extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
+        )
+        return dict(out)
+
+    def eval_status(self, eval_id: str) -> dict[str, Any]:
+        """GET /harness/evals/{eval_id} — the live EvalRecord:
+        status/report/attempts/sampling pin."""
+        out = self._json(
+            "GET",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def list_evals(
+        self,
+        *,
+        status: str | None = None,
+        suite: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """GET /harness/evals — inventory page, newest first; ``total`` is
+        the filtered count before paging."""
+        params: dict[str, Any] = {"limit": limit}
+        if status is not None:
+            params["status"] = status
+        if suite is not None:
+            params["suite"] = suite
+        out = self._json(
+            "GET",
+            "/harness/evals?" + urllib.parse.urlencode(params),
+            idempotent=True,
+        )
+        return dict(out)
+
+    def eval_receipt(self, eval_id: str) -> dict[str, Any]:
+        """GET /harness/evals/{eval_id}/receipt — the sealed
+        ``fx1_eval_record.v1`` doc (409 while the eval is non-terminal;
+        feed it to :meth:`verify_receipt`)."""
+        out = self._json(
+            "GET",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def cancel_eval(self, eval_id: str) -> dict[str, Any]:
+        """DELETE /harness/evals/{eval_id} — cooperative cancel of a
+        queued eval; running/terminal map the 409 through the error
+        table."""
+        out = self._json(
+            "DELETE",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+        )
+        return dict(out)
+
+    def wait_eval(
+        self,
+        eval_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``eval_status`` until terminal; returns the record —
+        ``report`` carries the suite output. Raises ``HarnessJobError``
+        on 'failed'/'cancelled' and ``HarnessTransportError`` on
+        ``timeout_s`` (the eval keeps running server-side)."""
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            st = self.eval_status(eval_id)
+            if st["status"] == "succeeded":
+                return st
+            if st["status"] == "failed":
+                raise HarnessJobError(f"eval {eval_id} failed: {st.get('error')}")
+            if st["status"] == "cancelled":
+                raise HarnessJobError(f"eval {eval_id} cancelled")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(f"eval {eval_id} did not finish within {timeout_s}s")
+            self._sleep(poll_s if remaining is None else min(poll_s, remaining))
 
     def wait_run(
         self,
@@ -553,6 +704,11 @@ class HarnessClient:
         idempotency_key: str | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -565,6 +721,11 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "timeout_s": timeout_s,
                 "byok": byok,
+                "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -578,7 +739,84 @@ class HarnessClient:
             receipt_hashes=tuple(out["receipt_hashes"]),
             replayed=out.get("replayed", False),
             usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
+            completion_id=out.get("completion_id"),
+            attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
+            if isinstance(out.get("attempts"), list)
+            else (),
+            sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
         )
+
+    def completion(self, completion_id: str) -> CompletionRecord:
+        """Fetch one recorded call from the server's completion log —
+        ``GET /harness/completions/{id}``; 404 maps to KeyError."""
+        out = self._json("GET", f"/harness/completions/{completion_id}", idempotent=True)
+        return CompletionRecord(
+            completion_id=out["completion_id"],
+            backend=out["backend"],
+            model=out.get("model"),
+            ok=out["ok"],
+            latency_ms=out["latency_ms"],
+            at=out["at"],
+            usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
+            error=out.get("error"),
+            error_class=out.get("error_class"),
+            prompt_sha256=out["prompt_sha256"],
+            output_sha256=out.get("output_sha256"),
+            attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
+            if isinstance(out.get("attempts"), list)
+            else None,
+            sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
+        )
+
+    def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
+        """Newest-first window on the server's completion log —
+        ``GET /harness/completions``."""
+        params: dict[str, Any] = {"limit": limit}
+        if backend is not None:
+            params["backend"] = backend
+        out = self._json(
+            "GET",
+            f"/harness/completions?{urllib.parse.urlencode(params)}",
+            idempotent=True,
+        )
+        return [
+            CompletionRecord(
+                completion_id=r["completion_id"],
+                backend=r["backend"],
+                model=r.get("model"),
+                ok=r["ok"],
+                latency_ms=r["latency_ms"],
+                at=r["at"],
+                usage=r.get("usage") if isinstance(r.get("usage"), dict) else None,
+                error=r.get("error"),
+                error_class=r.get("error_class"),
+                prompt_sha256=r["prompt_sha256"],
+                output_sha256=r.get("output_sha256"),
+                attempts=tuple(dict(a) for a in r["attempts"] if isinstance(a, dict))
+                if isinstance(r.get("attempts"), list)
+                else None,
+                sampling=r.get("sampling") if isinstance(r.get("sampling"), dict) else None,
+            )
+            for r in out["items"]
+        ]
+
+    def completion_receipt(self, completion_id: str) -> dict[str, Any]:
+        """Export one logged call's sealed ``fx1_completion_record.v1``
+        document — ``GET /harness/completions/{id}/receipt``; 404 maps to
+        KeyError. Feed it to :meth:`verify_receipt` to check the seal."""
+        out = self._json(
+            "GET",
+            f"/harness/completions/{completion_id}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def check_text(self, text: str) -> GateCheckResult:
+        """Pre-flight text through the remote honesty gate — POSTs
+        ``/harness/gate/check``; a refusal rides ``ok=False``, it never
+        raises ``Fx1HonestyError``."""
+        out = self._json("POST", "/harness/gate/check", {"text": text})
+        return GateCheckResult(ok=out["ok"], error=out.get("error"))
 
     def probe_backend(
         self,
@@ -622,6 +860,11 @@ class HarnessClient:
         idempotency_key: str | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -645,6 +888,11 @@ class HarnessClient:
                 "timeout_s": timeout_s,
                 "byok": byok,
                 "max_workers": max_workers,
+                "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
             idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
@@ -662,6 +910,8 @@ class HarnessClient:
                     model=out["model"],
                     content=item["content"],
                     receipt_hashes=tuple(out["receipt_hashes"]),
+                    completion_id=item.get("completion_id"),
+                    sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
                 )
             )
         return results
@@ -675,6 +925,11 @@ class HarnessClient:
         receipt_hashes: list[str] | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -692,6 +947,11 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "timeout_s": timeout_s,
                 "byok": byok,
+                "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
         )
         chunks: list[str] = []
@@ -717,6 +977,667 @@ class HarnessClient:
         if not saw_done:
             raise HarnessTransportError("stream ended without [DONE]")
         return chunks
+
+    # ---- OpenAI-compatible ingress (/v1) ------------------------------------
+
+    def list_models(self) -> dict[str, Any]:
+        """``GET /v1/models`` — the OpenAI ``list`` envelope: ``fx1``
+        (the default link) plus the backend names a request ``model`` may
+        carry (``hosted_k3``/``local_fx1``/``byok``)."""
+        return dict(self._json("GET", "/v1/models", idempotent=True))
+
+    def retrieve_model(self, model: str) -> dict[str, Any]:
+        """``GET /v1/models/{model}`` — OpenAI's ``models.retrieve``:
+        one card for a listed id; unknown ids raise the 404-class
+        error (``model_not_found``), never a fabricated card."""
+        return dict(
+            self._json("GET", f"/v1/models/{urllib.parse.quote(model, safe='')}", idempotent=True)
+        )
+
+    def chat_completion(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        reasoning_effort: str | None = None,
+        prompt_cache_key: str | None = None,
+        max_completion_tokens: int | None = None,
+        response_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/chat/completions`` — the OpenAI surface over the
+        gated pipeline. ``model`` selects a backend when it names one;
+        ``backend`` maps to ``X-Fx1-Backend`` and wins over ``model``, and
+        the remaining knobs ride the ``fx1`` extension object (BYOK callers
+        may instead pass ``X-Fx1-Byok-*`` via ``extra_headers``).
+
+        ``idempotency_key`` rides the ``Idempotency-Key`` header — a
+        retried call (same key + same body) replays the stored response
+        byte-identically instead of re-spending the model, and marks the
+        call retryable for the transport policy.
+
+        ``n>1`` runs n gated calls server-side — each ``choices[i]`` got
+        its own honesty-gate pass; ``stop`` cuts at the earliest match
+        (harness-enforced, so stub/local backends honor it too);
+        ``user``/``metadata`` stamp the audit record.
+        ``tools``/``tool_choice``/``parallel_tool_calls`` carry the
+        function-calling surface verbatim — agent ``tool_calls`` history
+        and ``role: 'tool'`` results ride ``messages`` itself; a link
+        without the tool channel answers 501, never a dropped tool spec.
+
+        Returns ``(chat_completion_envelope, completion_id)`` — the id
+        links the call to ``completion()``/``completion_receipt()``. Call
+        :meth:`chat_completion_stream` for SSE deltas."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "max_completion_tokens": max_completion_tokens,
+            "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "reasoning_effort": reasoning_effort,
+            "prompt_cache_key": prompt_cache_key,
+            "response_format": response_format,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "parallel_tool_calls": parallel_tool_calls,
+            "logprobs": logprobs,
+            "top_logprobs": top_logprobs,
+            "stream": False,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/chat/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        envelope = json.loads(body)
+        return envelope, headers.get("X-Fx1-Completion-Id")
+
+    def chat_completion_stream(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        reasoning_effort: str | None = None,
+        prompt_cache_key: str | None = None,
+        max_completion_tokens: int | None = None,
+        response_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
+        include_usage: bool = False,
+        idempotency_key: str | None = None,
+        last_event_id: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`chat_completion` — returns
+        ``(chunks, completion_id)`` where chunks are the parsed
+        ``chat.completion.chunk`` frames (the terminal ``include_usage``
+        chunk carries ``choices: []`` + ``usage``). The text is already
+        past the honesty gate before the first delta ships.
+
+        ``last_event_id`` resumes a dropped keyed stream: the wire's SSE
+        frames carry ``id:`` equal to their chunk index, so a caller that
+        received k chunks resends the call with the same
+        ``idempotency_key`` + ``last_event_id=k - 1`` and gets the
+        byte-identical suffix. Resume without a key fails closed 400; a
+        key with no pinned stream 409s."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "max_completion_tokens": max_completion_tokens,
+            "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "reasoning_effort": reasoning_effort,
+            "prompt_cache_key": prompt_cache_key,
+            "response_format": response_format,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "parallel_tool_calls": parallel_tool_calls,
+            "logprobs": logprobs,
+            "top_logprobs": top_logprobs,
+            "stream": True,
+            "stream_options": {"include_usage": True} if include_usage else None,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/chat/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        chunks: list[dict[str, Any]] = []
+        saw_done = False
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            frame = line[len("data: ") :].strip()
+            if frame == "[DONE]":
+                saw_done = True
+                break
+            chunks.append(json.loads(frame))
+        if not saw_done:
+            raise HarnessTransportError("stream ended without [DONE]")
+        return chunks, headers.get("X-Fx1-Completion-Id")
+
+    def responses_create(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        instructions: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        user: str | None = None,
+        safety_identifier: str | None = None,
+        reasoning_effort: str | None = None,
+        text_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+        include: list[str] | None = None,
+        top_logprobs: int | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """POST /v1/responses — the Responses API over the gated pipeline.
+
+        ``input`` is a string or a list of items
+        (``{"type": "message", "role": ..., "content": [{"type": "input_text",
+        "text": ...}]}`` or the shorthand ``{"role": ..., "content": "..."}``;
+        ``function_call``/``function_call_output`` items carry a tool
+        history into the next turn); ``instructions`` prepends a system
+        turn. ``text_format`` is the ``text.format`` object
+        (``{"type": "json_object"}`` / ``{"type": "json_schema",
+        "schema": {...}}``) — post-validated, a violation is a
+        provider-side 502. ``tools`` takes the flattened Responses spec
+        (``{"type": "function", "name", "description", "parameters"}``);
+        ``tool_choice`` is ``"none"``/``"auto"``/``"required"`` or
+        ``{"type": "function", "name": ...}``. Calls land in ``output`` as
+        ``{"type": "function_call", "call_id", "name", "arguments"}`` items.
+
+        Returns ``(response_object, completion_id)`` — the response's
+        ``output`` holds a ``message`` item whose ``content[0].text`` is
+        the gated text when the model answers in prose; the cid links to
+        the completion log. ``Idempotency-Key`` replays byte-identically.
+        """
+        payload = self._responses_payload(
+            input,
+            model=model,
+            instructions=instructions,
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
+            metadata=metadata,
+            service_tier=service_tier,
+            user=user,
+            safety_identifier=safety_identifier,
+            reasoning_effort=reasoning_effort,
+            text_format=text_format,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+            include=include,
+            top_logprobs=top_logprobs,
+            stream=False,
+        )
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/responses",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        return json.loads(body), headers.get("X-Fx1-Completion-Id")
+
+    def responses_create_stream(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        idempotency_key: str | None = None,
+        last_event_id: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`responses_create` — returns
+        ``(events, completion_id)`` where events are the parsed Responses
+        event payloads (``response.created`` … ``response.completed``,
+        each carrying ``type``). ``last_event_id`` resumes a dropped
+        keyed stream exactly like the chat surface — frames carry ``id:``
+        equal to their event index."""
+        payload = self._responses_payload(input, stream=True, **kwargs)
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/responses",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        events: list[dict[str, Any]] = []
+        saw_completed = False
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            frame = json.loads(line[len("data: ") :])
+            events.append(frame)
+            if frame.get("type") == "response.completed":
+                saw_completed = True
+                break
+        if not saw_completed:
+            raise HarnessTransportError("stream ended without response.completed")
+        return events, headers.get("X-Fx1-Completion-Id")
+
+    def _responses_payload(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        instructions: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        user: str | None = None,
+        safety_identifier: str | None = None,
+        reasoning_effort: str | None = None,
+        text_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+        include: list[str] | None = None,
+        top_logprobs: int | None = None,
+        stream: bool = False,
+    ) -> dict[str, Any]:
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": input,
+            "instructions": instructions,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_output_tokens": max_output_tokens,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "user": user,
+            "safety_identifier": safety_identifier,
+            "stream": stream,
+        }
+        if reasoning_effort is not None:
+            payload["reasoning"] = {"effort": reasoning_effort}
+        if text_format is not None:
+            payload["text"] = {"format": text_format}
+        if tools is not None:
+            payload["tools"] = tools
+        if tool_choice is not None:
+            payload["tool_choice"] = tool_choice
+        if parallel_tool_calls is not None:
+            payload["parallel_tool_calls"] = parallel_tool_calls
+        if include is not None:
+            payload["include"] = include
+        if top_logprobs is not None:
+            payload["top_logprobs"] = top_logprobs
+        if fx1:
+            payload["fx1"] = fx1
+        return payload
+
+    # ---- embeddings -----------------------------------------------------------
+
+    def embeddings_create(
+        self,
+        input: str | list[str] | list[int] | list[list[int]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        timeout_s: float | None = None,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/embeddings`` — the embedding surface over the gated
+        pipeline. ``input`` is a string, a string list, a token array, or
+        a list of token arrays — forwarded verbatim. ``model`` reaches
+        the provider verbatim (embedding models name themselves — the
+        link's chat pin does not apply); ``encoding_format``
+        (``"float"``/``"base64"``) and ``dimensions`` pass through. A
+        link without the channel answers 501, never fabricated vectors.
+
+        Returns ``(list envelope, completion_id)`` — the envelope's
+        ``data[]`` is the provider's verbatim answer; the id links the
+        completion-log record."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": input,
+            "encoding_format": encoding_format,
+            "dimensions": dimensions,
+            "user": user,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/embeddings",
+            payload,
+            extra_headers=extra_headers,
+        )
+        envelope = json.loads(body)
+        return envelope, headers.get("X-Fx1-Completion-Id")
+
+    # ---- files + batches -----------------------------------------------------
+
+    def upload_file(
+        self,
+        content: bytes,
+        *,
+        filename: str = "input.jsonl",
+        purpose: str = "batch",
+    ) -> dict[str, Any]:
+        """``POST /v1/files`` — multipart upload of a batch-input JSONL.
+
+        The multipart body is assembled here (stdlib only — no extra dep
+        on the client); the server accepts only ``purpose='batch'`` and
+        ``.jsonl`` names."""
+        boundary = f"fx1{uuid.uuid4().hex}"
+        head = (
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="purpose"\r\n\r\n'
+            f"{purpose}\r\n"
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+            "Content-Type: application/jsonl\r\n\r\n"
+        ).encode()
+        body = head + content + f"\r\n--{boundary}--\r\n".encode()
+        _status, _headers, raw = self._request(
+            "POST",
+            "/v1/files",
+            body,
+            extra_headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        )
+        return dict(json.loads(raw))
+
+    def files(self) -> list[dict[str, Any]]:
+        """``GET /v1/files`` — newest-first listing."""
+        out = self._json("GET", "/v1/files", idempotent=True)
+        return list(out["data"])
+
+    def file(self, file_id: str) -> dict[str, Any]:
+        """``GET /v1/files/{id}`` — one file's card."""
+        return dict(self._json("GET", f"/v1/files/{file_id}", idempotent=True))
+
+    def file_content(self, file_id: str) -> bytes:
+        """``GET /v1/files/{id}/content`` — raw bytes (JSONL in, JSONL out)."""
+        _status, _headers, body = self._request(
+            "GET", f"/v1/files/{file_id}/content", idempotent=True
+        )
+        return body
+
+    def delete_file(self, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/files/{id}``."""
+        return dict(self._json("DELETE", f"/v1/files/{file_id}"))
+
+    def create_batch(
+        self,
+        input_file_id: str,
+        *,
+        endpoint: str = "/v1/chat/completions",
+        metadata: dict[str, str] | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/batches`` — submit an uploaded file as one batch.
+
+        The batch runs under the caller's X-Fx1-* headers (backend/Byok
+        routing applies to every line). ``Idempotency-Key`` replays the
+        submit envelope — the shared /v1 idempotency space."""
+        payload: dict[str, Any] = {
+            "input_file_id": input_file_id,
+            "endpoint": endpoint,
+            "completion_window": "24h",
+        }
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if idempotency_key is not None:
+            hdrs = {"Idempotency-Key": idempotency_key}
+            out = self._json("POST", "/v1/batches", payload, idempotent=True, extra_headers=hdrs)
+        else:
+            out = self._json("POST", "/v1/batches", payload)
+        return dict(out)
+
+    def batch(self, batch_id: str) -> dict[str, Any]:
+        """``GET /v1/batches/{id}`` — status + request counts."""
+        return dict(self._json("GET", f"/v1/batches/{batch_id}", idempotent=True))
+
+    def batches(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
+        """``GET /v1/batches`` — newest-first page (``after`` = last id of
+        the previous page)."""
+        path = f"/v1/batches?limit={limit}"
+        if after is not None:
+            path += f"&after={urllib.parse.quote(after)}"
+        return dict(self._json("GET", path, idempotent=True))
+
+    def cancel_batch(self, batch_id: str) -> dict[str, Any]:
+        """``POST /v1/batches/{id}/cancel`` — cooperative cancel; the
+        worker checks between lines and lands 'cancelled' with partial
+        output written."""
+        return dict(self._json("POST", f"/v1/batches/{batch_id}/cancel"))
+
+    def wait_batch(
+        self,
+        batch_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``batch`` until a terminal status; returns the batch object.
+
+        Raises ``HarnessJobError`` on failed/expired/cancelled and
+        ``HarnessTransportError`` on timeout — same contract as
+        ``wait_run``/``wait_eval``."""
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            b = self.batch(batch_id)
+            if b["status"] == "completed":
+                return b
+            if b["status"] in ("failed", "expired", "cancelled"):
+                raise HarnessJobError(f"batch {batch_id} {b['status']}")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(
+                    f"batch {batch_id} still {b['status']} after {timeout_s}s"
+                )
+            self._sleep(min(poll_s, remaining) if remaining is not None else poll_s)
+
+    # ---- /v1 retrieval ------------------------------------------------------
+
+    def retrieve_chat_completion(self, completion_id: str) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}`` — the stored ``chat.completion``
+        envelope (``KeyError`` on 404: evicted, deleted, or ``store=false``)."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                idempotent=True,
+            )
+        )
+
+    def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
+        """``DELETE /v1/chat/completions/{id}`` — drop the stored envelope."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+            )
+        )
+
+    def retrieve_response(self, response_id: str) -> dict[str, Any]:
+        """``GET /v1/responses/{id}`` — the stored ``response`` object."""
+        return dict(
+            self._json("GET", f"/v1/responses/{urllib.parse.quote(response_id)}", idempotent=True)
+        )
+
+    def delete_response(self, response_id: str) -> dict[str, Any]:
+        """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
+        return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
 
     # ---- receipt store -------------------------------------------------------
 

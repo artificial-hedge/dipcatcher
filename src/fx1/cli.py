@@ -335,6 +335,10 @@ def harness_serve(
         None,
         help="Sealed-receipts directory for GET /receipts fetch (env FX1_API_RECEIPTS_DIR).",
     ),
+    store_max: int | None = typer.Option(
+        None,
+        help="/v1 retrieval-index capacity (env FX1_API_STORE_MAX, default 256).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -359,6 +363,7 @@ def harness_serve(
             breaker_threshold=breaker_threshold,
             breaker_cooldown_s=breaker_cooldown_s,
             receipts_dir=receipts_dir,
+            store_max=store_max,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)
@@ -390,6 +395,21 @@ def harness_complete(
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend to try on availability faults (repeatable, max 2).",
+    ),
+    temperature: float | None = typer.Option(
+        None, "--temperature", help="Decode temperature (default 0.0 — deterministic)."
+    ),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass (0,1]."),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", help="Completion token cap sent to the provider."
+    ),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Decode seed passed to providers that support it."
+    ),
 ) -> None:
     """One gated completion — the honesty gate runs before output."""
     surface = _surface(remote, api_key, timeout_s)
@@ -403,6 +423,11 @@ def harness_complete(
                 receipt_hashes=receipt or None,
                 byok=byok,
                 timeout_s=backend_timeout,
+                fallbacks=fallbacks or None,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                seed=seed,
             )
         )
         for chunk in chunks:
@@ -417,6 +442,11 @@ def harness_complete(
             receipt_hashes=receipt or None,
             byok=byok,
             timeout_s=backend_timeout,
+            fallbacks=fallbacks or None,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
         )
     )
     typer.echo(out.content)
@@ -442,6 +472,21 @@ def harness_batch(
     backend_timeout: float | None = typer.Option(
         None, "--backend-timeout", help="Per-call backend deadline in seconds."
     ),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend to try on availability faults (repeatable, max 2).",
+    ),
+    temperature: float | None = typer.Option(
+        None, "--temperature", help="Decode temperature (default 0.0 — deterministic)."
+    ),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass (0,1]."),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", help="Completion token cap sent to the provider."
+    ),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Decode seed passed to providers that support it."
+    ),
 ) -> None:
     """Gated batch completion — per-item failures surface as exit 2."""
     surface = _surface(remote, api_key, timeout_s)
@@ -455,6 +500,11 @@ def harness_batch(
             byok=byok,
             timeout_s=backend_timeout,
             max_workers=workers,
+            fallbacks=fallbacks or None,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
         )
     )
     payload = json.dumps(
@@ -629,6 +679,78 @@ def harness_probe(
     )
     if not out.ok:
         raise typer.Exit(code=1)
+
+
+@harness_app.command("check-text")
+def harness_check_text(
+    text: str = typer.Argument(..., help="Text to run through the honesty gate."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Pre-flight text through the honesty gate — prints the verdict JSON
+    and exits 0 when clean / 1 on refusal. In-process (no backend needed);
+    ``--remote`` checks via the wire route."""
+    surface = _surface(remote, api_key, timeout_s)
+    out = _or_exit(lambda: surface.check_text(text))
+    typer.echo(json.dumps({"ok": out.ok, "error": out.error}, indent=2))
+    if not out.ok:
+        raise typer.Exit(code=1)
+
+
+def _record_json(rec: Any) -> dict[str, Any]:
+    return {
+        "completion_id": rec.completion_id,
+        "backend": rec.backend,
+        "model": rec.model,
+        "ok": rec.ok,
+        "latency_ms": rec.latency_ms,
+        "at": rec.at,
+        "usage": rec.usage,
+        "error": rec.error,
+        "error_class": rec.error_class,
+        "prompt_sha256": rec.prompt_sha256,
+        "output_sha256": rec.output_sha256,
+    }
+
+
+@harness_app.command("completions")
+def harness_completions(
+    limit: int = typer.Option(50, "--limit", help="Newest N records (log is ring-bounded)."),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Newest-first window on the completion log — per-call evidence
+    (hashes, usage, verdict) for every gated call this surface served."""
+    surface = _surface(remote, api_key, timeout_s)
+    items = _or_exit(lambda: surface.completions(limit=limit, backend=backend))
+    typer.echo(
+        json.dumps({"count": len(items), "items": [_record_json(r) for r in items]}, indent=2)
+    )
+
+
+@harness_app.command("completion")
+def harness_completion(
+    completion_id: str = typer.Argument(..., help="Completion record id (hex)."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_completion_record.v1 doc instead."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Fetch one recorded call by id — the audit handle minted per call.
+    ``--receipt`` prints the sealed export instead (verify with
+    ``verify-research`` or ``POST /receipts/verify``)."""
+    surface = _surface(remote, api_key, timeout_s)
+    if receipt:
+        doc = _or_exit(lambda: surface.completion_receipt(completion_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
+    rec = _or_exit(lambda: surface.completion(completion_id))
+    typer.echo(json.dumps(_record_json(rec), indent=2))
 
 
 @harness_app.command("health")
@@ -904,12 +1026,21 @@ def harness_submit_batch(
 @harness_app.command("job")
 def harness_job(
     job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_job_record.v1 doc instead."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Print a job's live status record."""
+    """Print a job's live status record. ``--receipt`` prints the sealed
+    export instead (verify with ``verify-research`` /
+    ``POST /receipts/verify``)."""
     _need_remote(remote)
+    if receipt:
+        doc = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).job_receipt(job_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
     st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).job_status(job_id))
     typer.echo(json.dumps(st, indent=2))
 
@@ -1006,6 +1137,169 @@ def harness_watch(
         raise typer.Exit(code=1)
     typer.echo(f"stream ended before terminal state (last status {last['status']!r})", err=True)
     raise typer.Exit(code=1)
+
+
+@harness_app.command("eval")
+def harness_eval(
+    suite: str = typer.Argument(
+        ...,
+        help="Eval suite: capability|calibration|tooluse|retrieval|ts_reasoning|ext_bench|options_reasoning.",
+    ),
+    backend: str = typer.Option("local_fx1", help=_BACKEND_HELP),
+    seed: int = typer.Option(0, "--seed", help="Eval seed (the banks are seeded)."),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend on availability faults (repeatable, max 2).",
+    ),
+    judge_backend: str | None = typer.Option(
+        None, "--judge-backend", help="Grader link for judge suites (capability, ext_bench)."
+    ),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc after the run."
+    ),
+    no_wait: bool = typer.Option(
+        False, "--no-wait", help="Remote only: submit and return immediately."
+    ),
+    callback_url: str | None = typer.Option(
+        None,
+        "--callback-url",
+        help="Remote only: http(s) URL the finished eval record is POSTed to.",
+    ),
+    callback_secret: str | None = typer.Option(
+        None,
+        "--callback-secret",
+        help="Remote only: HMAC secret signing the callback delivery.",
+    ),
+) -> None:
+    """Run a seeded eval suite against a backend — in-process by default
+    (SDK twin), or ``--remote`` submits to POST /harness/evals and waits
+    for the terminal record. Every eval runs under the temperature=0
+    pin and lands as metered evidence on the eval/completion logs."""
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    if remote is not None:
+        from fx1.serve.client import HarnessClient
+
+        client = HarnessClient(
+            remote,
+            api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+            timeout_s=timeout_s,
+        )
+        sub = _or_exit(
+            lambda: client.submit_eval(
+                suite,
+                backend=backend,
+                seed=seed,
+                checkpoint_dir=str(checkpoint_dir) if checkpoint_dir else None,
+                byok=byok,
+                timeout_s=backend_timeout,
+                fallbacks=fallbacks or None,
+                judge_backend=judge_backend,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
+            )
+        )
+        if no_wait:
+            typer.echo(json.dumps(sub, indent=2))
+            return
+        rec = _or_exit(lambda: client.wait_eval(sub["eval_id"], timeout_s=None))
+        typer.echo(json.dumps(rec, indent=2))
+        if receipt:
+            doc = _or_exit(lambda: client.eval_receipt(sub["eval_id"]))
+            typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
+    from fx1.sdk import Fx1Harness
+
+    if callback_url is not None or callback_secret is not None:
+        typer.echo(
+            "--callback-url/--callback-secret are remote-only (webhooks need the server)",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    harness = Fx1Harness()
+    ev_rec = _or_exit(
+        lambda: harness.run_eval(
+            suite,
+            backend=backend,
+            checkpoint_dir=checkpoint_dir,
+            byok=byok,
+            timeout_s=backend_timeout,
+            fallbacks=fallbacks or None,
+            judge_backend=judge_backend,
+            seed=seed,
+        )
+    )
+    typer.echo(ev_rec.model_dump_json(indent=2))
+    if receipt:
+        doc = _or_exit(lambda: harness.eval_receipt(ev_rec.eval_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+
+
+@harness_app.command("evals")
+def harness_evals(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    status: str | None = typer.Option(
+        None, "--status", help="Filter: queued|running|succeeded|failed|cancelled."
+    ),
+    suite: str | None = typer.Option(None, "--suite", help="Filter by suite name."),
+    limit: int = typer.Option(100, "--limit", help="Page size (max 256)."),
+) -> None:
+    """List the remote eval inventory (newest first)."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).list_evals(
+            status=status, suite=suite, limit=limit
+        )
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-status")
+def harness_eval_status(
+    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc instead."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print an eval's live record; ``--receipt`` prints the sealed
+    export (409 while the eval is non-terminal)."""
+    _need_remote(remote)
+    if receipt:
+        doc = _or_exit(
+            lambda: _remote_client(remote or "", api_key, timeout_s).eval_receipt(eval_id)
+        )
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).eval_status(eval_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("eval-cancel")
+def harness_eval_cancel(
+    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a queued eval; running/terminal evals report a 409 conflict."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).cancel_eval(eval_id))
+    typer.echo(json.dumps(st, indent=2))
 
 
 @app.command("eval")

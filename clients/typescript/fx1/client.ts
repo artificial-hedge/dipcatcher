@@ -17,13 +17,28 @@ export type Backend = components["schemas"]["CompleteRequest"]["backend"];
 export type CapabilitiesResponse =
   components["schemas"]["CapabilitiesResponse"];
 export type ChatMessage = components["schemas"]["ChatMessage"];
+export type BackendProbeRequest = components["schemas"]["BackendProbeRequest"];
+export type BackendProbeResponse =
+  components["schemas"]["BackendProbeResponse"];
+export type GateCheckRequest = components["schemas"]["GateCheckRequest"];
+export type GateCheckResponse = components["schemas"]["GateCheckResponse"];
 export type CompleteRequest = components["schemas"]["CompleteRequest"];
 export type CompleteResponse = components["schemas"]["CompleteResponse"];
 export type CompleteBatchRequest =
   components["schemas"]["CompleteBatchRequest"];
 export type CompleteBatchResponse =
   components["schemas"]["CompleteBatchResponse"];
+export type CompletionRecord = components["schemas"]["CompletionRecord"];
+export type CompletionListResponse =
+  components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type EvalListResponse = components["schemas"]["EvalListResponse"];
+export type EvalRecord = components["schemas"]["EvalRecord"];
+export type EvalSubmitRequest =
+  components["schemas"]["EvalSubmitRequest"];
+export type EvalSubmitResponse =
+  components["schemas"]["EvalSubmitResponse"];
+export type EvalSuiteName = EvalSubmitRequest["suite"];
 export type HarnessCommandItem =
   components["schemas"]["HarnessCommandItem"];
 export type HarnessCommandListResponse =
@@ -38,7 +53,83 @@ export type JobListResponse = components["schemas"]["JobListResponse"];
 export type JobStatusResponse = components["schemas"]["JobStatusResponse"];
 export type JobSubmitResponse = components["schemas"]["JobSubmitResponse"];
 export type MetricsResponse = components["schemas"]["MetricsResponse"];
+export type OpenAIChatRequest = components["schemas"]["OpenAIChatRequest"];
+export type OpenAIChatResponse =
+  components["schemas"]["OpenAIChatResponse"];
+export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
+export type OpenAIModel = components["schemas"]["OpenAIModel"];
+export type OpenAIResponseRequest =
+  components["schemas"]["OpenAIResponseRequest"];
+export type OpenAIBatchRequest = components["schemas"]["OpenAIBatchRequest"];
+export type OpenAIEmbeddingRequest =
+  components["schemas"]["OpenAIEmbeddingRequest"];
+export type OpenAIEmbeddingItem =
+  components["schemas"]["OpenAIEmbeddingItem"];
+export type OpenAIEmbeddingResponse =
+  components["schemas"]["OpenAIEmbeddingResponse"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
+
+/** The OpenAI `file` object as served by POST/GET /v1/files. */
+export interface OpenAIFileObject {
+  id: string;
+  object: "file";
+  purpose: string;
+  filename: string;
+  bytes: number;
+  created_at: number;
+  status: string;
+}
+
+/** GET /v1/files listing envelope. */
+export interface OpenAIFileList {
+  object: "list";
+  data: OpenAIFileObject[];
+}
+
+/** The OpenAI `batch` object as served by /v1/batches. */
+export interface OpenAIBatchObject {
+  id: string;
+  object: "batch";
+  endpoint: string;
+  errors: unknown;
+  input_file_id: string;
+  completion_window: string;
+  status: string;
+  output_file_id: string | null;
+  error_file_id: string | null;
+  created_at: number;
+  in_progress_at: number | null;
+  expires_at: number | null;
+  finalizing_at: number | null;
+  completed_at: number | null;
+  failed_at: number | null;
+  expired_at: number | null;
+  cancelling_at: number | null;
+  cancelled_at: number | null;
+  request_counts: { total: number; completed: number; failed: number };
+  metadata: Record<string, string> | null;
+}
+
+/** GET /v1/batches listing envelope. */
+export interface OpenAIBatchList {
+  object: "list";
+  data: OpenAIBatchObject[];
+  first_id: string | null;
+  last_id: string | null;
+  has_more: boolean;
+}
+
+/** One line of a batch output file. */
+export interface OpenAIBatchOutputLine {
+  id: string;
+  custom_id: string;
+  response: {
+    status_code: number;
+    request_id: string;
+    body: Record<string, unknown>;
+  };
+  error: unknown;
+}
 export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
 export type ReceiptIndexResponse =
   components["schemas"]["ReceiptIndexResponse"];
@@ -164,10 +255,13 @@ export interface CompatReport {
   serverFx1Version: string | null;
 }
 
-/** One parsed SSE frame. */
+/** One parsed SSE frame. `id` is the frame's `id:` field — the
+ * completion stream numbers frames by chunk index, so a dropped keyed
+ * stream resumes via `chatCompletionStream`'s `lastEventId`. */
 export interface SseEvent {
   event: string;
   data: string;
+  id?: string;
 }
 
 const DEFAULT_API_VERSION = "1";
@@ -288,6 +382,8 @@ export class HarnessApiClient {
     method: string;
     path: string;
     body?: unknown;
+    /** Raw fetch body (multipart uploads) — sent verbatim, never JSON'd. */
+    rawBody?: BodyInit;
     idempotent?: boolean;
     headers?: Record<string, string>;
   }): Promise<Response> {
@@ -305,9 +401,11 @@ export class HarnessApiClient {
           res = await this.fetchImpl(this.baseUrl + init.path, {
             method: init.method,
             headers: this.headers(init.headers),
-            ...(init.body !== undefined
-              ? { body: JSON.stringify(init.body) }
-              : {}),
+            ...(init.rawBody !== undefined
+              ? { body: init.rawBody }
+              : init.body !== undefined
+                ? { body: JSON.stringify(init.body) }
+                : {}),
           });
           this.stampVersion(res);
         } catch (exc) {
@@ -468,6 +566,541 @@ export class HarnessApiClient {
     return this.post("/harness/complete/batch", request, idempotencyKey) as Promise<CompleteBatchResponse>;
   }
 
+  /**
+   * POST /harness/backends/{name}/probe — one live gated completion;
+   * the verdict (`ok:false` for an unconfigured/unreachable backend) is a
+   * payload, not a wire fault. Bypasses and never feeds the circuit.
+   */
+  probeBackend(
+    name: "hosted_k3" | "local_fx1" | "byok",
+    request?: BackendProbeRequest | null,
+  ): Promise<BackendProbeResponse> {
+    return this.post(
+      `/harness/backends/${encodeURIComponent(name)}/probe`,
+      request ?? null,
+    ) as Promise<BackendProbeResponse>;
+  }
+
+  /**
+   * POST /harness/gate/check — pre-flight text through the honesty gate
+   * without spending model tokens; a refusal rides `ok:false`.
+   */
+  checkText(text: string): Promise<GateCheckResponse> {
+    return this.post("/harness/gate/check", {
+      text,
+    } satisfies GateCheckRequest) as Promise<GateCheckResponse>;
+  }
+
+  /**
+   * GET /harness/completions/{id} — one recorded call from the server's
+   * completion log (hashes, usage, verdict; 404 on unknown ids).
+   */
+  completion(completionId: string): Promise<CompletionRecord> {
+    return this.get(
+      `/harness/completions/${encodeURIComponent(completionId)}`,
+    ) as Promise<CompletionRecord>;
+  }
+
+  /**
+   * GET /harness/completions/{id}/receipt — the logged call as a sealed
+   * `fx1_completion_record.v1` document (POST it to /receipts/verify).
+   */
+  completionReceipt(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/completions/${encodeURIComponent(completionId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET /harness/completions — newest-first window on the completion log.
+   */
+  completions(filter?: {
+    limit?: number;
+    backend?: "hosted_k3" | "local_fx1" | "byok";
+  }): Promise<CompletionListResponse> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.backend) q.set("backend", filter.backend);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/completions${suffix}`) as Promise<CompletionListResponse>;
+  }
+
+  // ---- OpenAI-compatible ingress (/v1) ------------------------------------
+
+  /**
+   * GET /v1/models — the OpenAI `list` envelope: `fx1` (the default link)
+   * plus the backend names a request's `model` may carry.
+   */
+  async listModels(): Promise<OpenAIModelList> {
+    const res = await this.send({
+      method: "GET",
+      path: "/v1/models",
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIModelList;
+  }
+
+  /**
+   * GET /v1/models/{model} — OpenAI's `models.retrieve`: one card for a
+   * listed id; unknown ids throw the 404-class error (`model_not_found`),
+   * never a fabricated card.
+   */
+  async retrieveModel(model: string): Promise<OpenAIModel> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/models/${encodeURIComponent(model)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIModel;
+  }
+
+  /**
+   * POST /v1/chat/completions — the OpenAI chat surface over the gated
+   * pipeline. Non-streaming only (`stream: true` is rejected here; use
+   * `chatCompletionStream`). `headers` carries the fx1 selectors —
+   * `X-Fx1-Backend`, `X-Fx1-Fallbacks`, `X-Fx1-Byok-*` — for callers that
+   * can't put the `fx1` extension object in the body. Returns the
+   * `chat.completion` envelope plus the `X-Fx1-Completion-Id` handle that
+   * links the call to its sealed receipt.
+   */
+  async chatCompletion(
+    request: OpenAIChatRequest,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{ response: OpenAIChatResponse; completionId: string | null }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/chat/completions",
+      body: { ...request, stream: false },
+      // A keyed call dedupes server-side — safe for the retry policy.
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as OpenAIChatResponse,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  /**
+   * POST /v1/chat/completions with `stream: true` — SSE
+   * `chat.completion.chunk` frames. `onChunk` receives each parsed chunk
+   * (an `include_usage` terminal chunk carries `choices: []` + `usage`);
+   * the promise resolves with the `X-Fx1-Completion-Id` handle.
+   *
+   * Frames carry SSE `id:` equal to the chunk index — `lastEventId`
+   * resumes a dropped keyed stream: resend the same request with the
+   * same `idempotencyKey` and the last received index; the pinned
+   * response regenerates byte-identically and already-delivered frames
+   * are dropped. Resume without the key fails closed (400); a key with
+   * no pinned stream gets 409.
+   */
+  async chatCompletionStream(
+    request: OpenAIChatRequest,
+    onChunk: (chunk: Record<string, unknown>) => void,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+    lastEventId?: number,
+  ): Promise<string | null> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/chat/completions",
+      body: { ...request, stream: true },
+      // Keyed streams replay byte-identically — safe to retry.
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+        ...(lastEventId !== undefined
+          ? { "Last-Event-ID": String(lastEventId) }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    for await (const ev of readSse(res)) {
+      if (ev.data === "[DONE]") break;
+      onChunk(JSON.parse(ev.data) as Record<string, unknown>);
+    }
+    return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  /**
+   * POST /v1/responses — the OpenAI Responses surface over the gated
+   * pipeline. Non-streaming only (`stream: true` is rejected here; use
+   * `responsesCreateStream`). `input` is a string or message-item list
+   * (`function_call`/`function_call_output` items carry a tool history);
+   * `instructions` prepends a system turn; `text.format` is the
+   * post-validated structured-output channel. `tools` takes the
+   * flattened Responses spec (`{type: "function", name, description,
+   * parameters}`), `tool_choice` is `"none" | "auto" | "required"` or
+   * `{type: "function", name}` — calls land in `output` as
+   * `function_call` items. Returns the `response` object plus the
+   * `X-Fx1-Completion-Id` handle.
+   */
+  async responsesCreate(
+    request: OpenAIResponseRequest,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{ response: Record<string, unknown>; completionId: string | null }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/responses",
+      body: { ...request, stream: false },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as Record<string, unknown>,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  /**
+   * POST /v1/responses with `stream: true` — SSE frames in the Responses
+   * event grammar (`response.created` … `response.completed`; there is
+   * no `[DONE]` sentinel — the completed event is terminal). `onEvent`
+   * receives each parsed payload (every payload carries `type`).
+   * `lastEventId` resumes a dropped keyed stream exactly like
+   * `chatCompletionStream` — frames carry `id:` equal to their index.
+   */
+  async responsesCreateStream(
+    request: OpenAIResponseRequest,
+    onEvent: (payload: Record<string, unknown>) => void,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+    lastEventId?: number,
+  ): Promise<string | null> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/responses",
+      body: { ...request, stream: true },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+        ...(lastEventId !== undefined
+          ? { "Last-Event-ID": String(lastEventId) }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    let terminal = false;
+    for await (const ev of readSse(res)) {
+      const payload = JSON.parse(ev.data) as Record<string, unknown>;
+      onEvent(payload);
+      if (payload.type === "response.completed") {
+        terminal = true;
+        break;
+      }
+    }
+    if (!terminal)
+      throw new HarnessApiError(
+        0,
+        "responses stream ended before response.completed",
+      );
+    return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  /**
+   * POST /v1/embeddings — the OpenAI embeddings surface over the link
+   * chain (`model` forwards verbatim to the provider; a link without the
+   * embeddings channel answers 501). Returns the `list` envelope and the
+   * completion-log id from `X-Fx1-Completion-Id` — the call is recorded
+   * exactly like a completion (input/output digests bind the wire).
+   */
+  async embeddingsCreate(
+    request: OpenAIEmbeddingRequest,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{
+    response: OpenAIEmbeddingResponse;
+    completionId: string | null;
+  }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/embeddings",
+      body: request,
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as OpenAIEmbeddingResponse,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  // ---- files + batches -----------------------------------------------------
+
+  /**
+   * POST /v1/files — upload a batch-input JSONL (multipart). `content` is
+   * the raw JSONL bytes; only `purpose: "batch"` and `.jsonl` filenames
+   * are served (fail-closed server-side).
+   */
+  async uploadFile(
+    content: string | Uint8Array | Blob,
+    filename = "input.jsonl",
+    purpose = "batch",
+  ): Promise<OpenAIFileObject> {
+    const form = new FormData();
+    form.append("purpose", purpose);
+    const blob =
+      typeof content === "string"
+        ? new Blob([content], { type: "application/jsonl" })
+        : content instanceof Uint8Array
+          ? new Blob([content as BlobPart], { type: "application/jsonl" })
+          : content;
+    form.append("file", blob, filename);
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/files",
+      rawBody: form,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIFileObject;
+  }
+
+  /** GET /v1/files — newest-first listing. */
+  async files(): Promise<OpenAIFileObject[]> {
+    const res = await this.send({
+      method: "GET",
+      path: "/v1/files",
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return ((await res.json()) as OpenAIFileList).data;
+  }
+
+  /** GET /v1/files/{id} — one file's card. */
+  async file(fileId: string): Promise<OpenAIFileObject> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/files/${encodeURIComponent(fileId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIFileObject;
+  }
+
+  /** GET /v1/files/{id}/content — the raw bytes (JSONL in, JSONL out). */
+  async fileContent(fileId: string): Promise<string> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/files/${encodeURIComponent(fileId)}/content`,
+      idempotent: true,
+    });
+    if (!res.ok) {
+      let detail: unknown = await res.text();
+      try {
+        detail = JSON.parse(detail as string);
+      } catch {
+        /* non-JSON body */
+      }
+      throw new HarnessApiError(res.status, detail);
+    }
+    return res.text();
+  }
+
+  /** DELETE /v1/files/{id}. */
+  async deleteFile(fileId: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/files/${encodeURIComponent(fileId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/batches — run an uploaded file as one batch through the
+   * gated pipeline. `endpoint` is `/v1/chat/completions` or
+   * `/v1/responses`; the submitter's `X-Fx1-*` headers route every line.
+   * `idempotencyKey` replays the submit envelope (shared /v1 idem space).
+   */
+  async createBatch(
+    inputFileId: string,
+    endpoint: "/v1/chat/completions" | "/v1/responses",
+    metadata?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<OpenAIBatchObject> {
+    const body: Record<string, unknown> = {
+      input_file_id: inputFileId,
+      endpoint,
+      completion_window: "24h",
+      ...(metadata !== undefined ? { metadata } : {}),
+    };
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/batches",
+      body,
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /** GET /v1/batches/{id} — status + request counts. */
+  async batch(batchId: string): Promise<OpenAIBatchObject> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/batches/${encodeURIComponent(batchId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /** GET /v1/batches — newest-first page (`after` = last id seen). */
+  async batches(filter?: {
+    limit?: number;
+    after?: string;
+  }): Promise<OpenAIBatchList> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    const qs = q.toString();
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/batches${qs ? `?${qs}` : ""}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchList;
+  }
+
+  /**
+   * POST /v1/batches/{id}/cancel — cooperative cancel; the worker checks
+   * between lines and lands 'cancelled' with partial output written.
+   */
+  async cancelBatch(batchId: string): Promise<OpenAIBatchObject> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/batches/${encodeURIComponent(batchId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /**
+   * Poll `batch` until a terminal status; resolves with the batch object
+   * on 'completed', throws `HarnessApiError` on failed/expired/cancelled,
+   * `HarnessTransportError` on timeout — the `waitRun` contract.
+   */
+  async waitBatch(
+    batchId: string,
+    pollMs = 500,
+    timeoutMs?: number,
+  ): Promise<OpenAIBatchObject> {
+    const deadline =
+      timeoutMs === undefined ? undefined : this.now() + timeoutMs;
+    for (;;) {
+      const b = await this.batch(batchId);
+      if (b.status === "completed") return b;
+      if (["failed", "expired", "cancelled"].includes(b.status))
+        throw new HarnessApiError(409, `batch ${batchId} ${b.status}`);
+      const remaining =
+        deadline === undefined ? pollMs : deadline - this.now();
+      if (remaining <= 0)
+        throw new HarnessTransportError(
+          `batch ${batchId} still ${b.status} after ${timeoutMs}ms`,
+        );
+      await this.sleep(Math.min(pollMs, remaining));
+    }
+  }
+
+  // ---- /v1 retrieval -------------------------------------------------------
+
+  /**
+   * GET /v1/chat/completions/{id} — the stored `chat.completion` envelope
+   * (404 when evicted, deleted, or the call went out with `store: false`).
+   */
+  async retrieveChatCompletion(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** DELETE /v1/chat/completions/{id} — drop the stored envelope. */
+  async deleteChatCompletion(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/responses/{id} — the stored `response` object. */
+  async retrieveResponse(
+    responseId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/responses/${encodeURIComponent(responseId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** DELETE /v1/responses/{id} — drop the stored envelope. */
+  async deleteResponse(
+    responseId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/responses/${encodeURIComponent(responseId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */
@@ -486,6 +1119,16 @@ export class HarnessApiClient {
   /** GET /harness/jobs/{id} — poll one job. */
   job(jobId: string): Promise<JobStatusResponse> {
     return this.get(`/harness/jobs/${encodeURIComponent(jobId)}`);
+  }
+
+  /**
+   * GET /harness/jobs/{id}/receipt — the job's ledger record as a sealed
+   * `fx1_job_record.v1` document (POST it to /receipts/verify).
+   */
+  jobReceipt(jobId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/jobs/${encodeURIComponent(jobId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
   }
 
   /** GET /harness/jobs — list/filter. */
@@ -535,6 +1178,89 @@ export class HarnessApiClient {
         return j;
       }
       if (Date.now() >= deadline) return j;
+      await new Promise((r) => setTimeout(r, pollMs));
+    }
+  }
+
+  // ---- eval submissions ------------------------------------------------------
+
+  /**
+   * POST /harness/evals — submit a seeded eval suite against a backend
+   * chain (202). `idempotencyKey` dedupes retries (same body replays the
+   * stored eval_id). Evals run under the temperature=0 decode pin and
+   * meter under `eval:{suite}:{backend}`.
+   */
+  submitEval(
+    request: EvalSubmitRequest,
+    idempotencyKey?: string,
+  ): Promise<EvalSubmitResponse> {
+    return this.post("/harness/evals", request, idempotencyKey) as Promise<EvalSubmitResponse>;
+  }
+
+  /** GET /harness/evals/{id} — the live eval record. */
+  eval(evalId: string): Promise<EvalRecord> {
+    return this.get(`/harness/evals/${encodeURIComponent(evalId)}`) as Promise<EvalRecord>;
+  }
+
+  /** GET /harness/evals — list/filter (status, suite). */
+  evals(filter?: {
+    status?: string;
+    suite?: EvalSuiteName;
+    limit?: number;
+  }): Promise<EvalListResponse> {
+    const q = new URLSearchParams();
+    if (filter?.status) q.set("status", filter.status);
+    if (filter?.suite) q.set("suite", filter.suite);
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/evals${suffix}`) as Promise<EvalListResponse>;
+  }
+
+  /**
+   * GET /harness/evals/{id}/receipt — the terminal record as a sealed
+   * `fx1_eval_record.v1` document (409 while non-terminal; POST the doc
+   * to /receipts/verify).
+   */
+  evalReceipt(evalId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/evals/${encodeURIComponent(evalId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /** DELETE /harness/evals/{id} — cooperative cancel of a queued eval. */
+  async cancelEval(evalId: string): Promise<EvalRecord> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/harness/evals/${encodeURIComponent(evalId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalRecord;
+  }
+
+  /**
+   * Poll an eval until terminal. `pollMs` defaults to 500ms; `timeoutS`
+   * bounds the wait (0 = forever). Terminal records are returned, not
+   * thrown — `status` + `error` carry the verdict.
+   */
+  async waitEval(
+    evalId: string,
+    opts: { pollMs?: number; timeoutS?: number } = {},
+  ): Promise<EvalRecord> {
+    const pollMs = opts.pollMs ?? 500;
+    const deadline =
+      opts.timeoutS === undefined || opts.timeoutS === 0
+        ? Infinity
+        : Date.now() + opts.timeoutS * 1000;
+    for (;;) {
+      const e = await this.eval(evalId);
+      if (
+        e.status === "succeeded" ||
+        e.status === "failed" ||
+        e.status === "cancelled"
+      ) {
+        return e;
+      }
+      if (Date.now() >= deadline) return e;
       await new Promise((r) => setTimeout(r, pollMs));
     }
   }
@@ -705,14 +1431,18 @@ async function* readSse(res: Response): AsyncGenerator<SseEvent> {
   const decoder = new TextDecoder();
   let buf = "";
   let event = "message";
+  let id: string | undefined;
   let dataLines: string[] = [];
   const flush = (): SseEvent | null => {
     if (dataLines.length === 0) {
       event = "message";
+      id = undefined;
       return null;
     }
     const out: SseEvent = { event, data: dataLines.join("\n") };
+    if (id !== undefined) out.id = id;
     event = "message";
+    id = undefined;
     dataLines = [];
     return out;
   };
@@ -733,6 +1463,8 @@ async function* readSse(res: Response): AsyncGenerator<SseEvent> {
           continue; // keepalive comment
         } else if (line.startsWith("event:")) {
           event = line.slice(6).trim();
+        } else if (line.startsWith("id:")) {
+          id = line.slice(3).trim();
         } else if (line.startsWith("data:")) {
           dataLines.push(line.slice(5).replace(/^ /, ""));
         }

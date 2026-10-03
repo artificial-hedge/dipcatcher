@@ -144,6 +144,9 @@ def cli_audit() -> dict[str, Any]:
         "verify",
         "health",
         "probe",
+        "check-text",
+        "completions",
+        "completion",
     } <= hnames
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -171,6 +174,15 @@ def cli_audit() -> dict[str, Any]:
         runner.invoke(app, ["harness", "probe", "--backend", "bogus"]).exit_code != 0
     )
 
+    # gate check-text: exit 0 clean / 1 refusal; in-process needs no backend
+    c_ok = runner.invoke(app, ["harness", "check-text", "bootstrap intervals"])
+    c_bad = runner.invoke(app, ["harness", "check-text", "we report Sharpe 2.1"])
+    cblob = json.loads(c_bad.stdout) if c_bad.stdout.strip().startswith("{") else {}
+    out["harness_check_clean"] = c_ok.exit_code == 0 and json.loads(c_ok.stdout).get("ok") is True
+    out["harness_check_refusal"] = (
+        c_bad.exit_code == 1 and cblob.get("ok") is False and isinstance(cblob.get("error"), str)
+    )
+
     h = runner.invoke(app, ["harness", "health"])
     hblob = json.loads(h.stdout) if h.exit_code == 0 else {}
     out["harness_health_json"] = hblob.get("status") in {"ok", "degraded"} and all(
@@ -179,6 +191,17 @@ def cli_audit() -> dict[str, Any]:
     sent = "deadbeefsecret-marker-do-not-leak"
     h2 = runner.invoke(app, ["harness", "health"], env={"FX1_BYOK_API_KEY": sent})
     out["harness_health_no_secret_leak"] = sent not in h2.stdout
+
+    # completion log: in-process SDK records its own calls; the log starts
+    # empty so `completions` prints a zero window and `completion` exits 2.
+    c_empty = runner.invoke(app, ["harness", "completions"])
+    out["harness_completions_empty"] = (
+        c_empty.exit_code == 0 and json.loads(c_empty.stdout).get("count") == 0
+    )
+    out["harness_completion_missing"] = (
+        runner.invoke(app, ["harness", "completion", "0" * 32]).exit_code == 2
+        and runner.invoke(app, ["harness", "completion", "0" * 32, "--receipt"]).exit_code == 2
+    )
 
     import tempfile  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
@@ -372,6 +395,40 @@ def cli_audit() -> dict[str, Any]:
         out["complete_backend_timeout_forwards"] = (
             rt.exit_code == 0 and fake.complete_calls[-1].get("timeout_s") == 7.5
         )
+        # --fallback is repeatable and packs into the chain on both surfaces.
+        rfb = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "hosted_k3",
+                "--fallback",
+                "byok",
+            ],
+        )
+        out["complete_fallback_flags_forward"] = rfb.exit_code == 0 and fake.complete_calls[-1].get(
+            "fallbacks"
+        ) == ["byok"]
+        rfb_s = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--stream",
+                "--backend",
+                "hosted_k3",
+                "--fallback",
+                "local_fx1",
+                "--fallback",
+                "byok",
+            ],
+        )
+        out["stream_fallback_flags_forward"] = rfb_s.exit_code == 0 and fake.stream_calls[-1].get(
+            "fallbacks"
+        ) == ["local_fx1", "byok"]
         # `harness batch` — JSONL/JSON prompts -> complete_many -> JSON out
         import tempfile  # noqa: PLC0415
         from pathlib import Path  # noqa: PLC0415
@@ -397,6 +454,89 @@ def cli_audit() -> dict[str, Any]:
             out["batch_backend_timeout_forwards"] = (
                 rb_t.exit_code == 0 and fake.batch_calls[-1].get("timeout_s") == 5.0
             )
+            rb_f = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch",
+                    str(pf),
+                    "--backend",
+                    "hosted_k3",
+                    "--fallback",
+                    "byok",
+                ],
+            )
+            out["batch_fallback_flags_forward"] = rb_f.exit_code == 0 and fake.batch_calls[-1].get(
+                "fallbacks"
+            ) == ["byok"]
+            rb_s = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch",
+                    str(pf),
+                    "--backend",
+                    "byok",
+                    "--temperature",
+                    "0.4",
+                    "--seed",
+                    "11",
+                ],
+            )
+            out["batch_sampling_flags_forward"] = (
+                rb_s.exit_code == 0
+                and fake.batch_calls[-1].get("temperature") == 0.4
+                and fake.batch_calls[-1].get("seed") == 11
+            )
+
+        # decode flags forward through both complete surfaces; unpinned calls
+        # send nothing (the surface resolves the temperature=0.0 default).
+        rsp = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "byok",
+                "--temperature",
+                "0.6",
+                "--top-p",
+                "0.8",
+                "--max-tokens",
+                "33",
+                "--seed",
+                "9",
+            ],
+        )
+        rsp_last = fake.complete_calls[-1]
+        out["complete_sampling_flags_forward"] = (
+            rsp.exit_code == 0
+            and rsp_last.get("temperature") == 0.6
+            and rsp_last.get("top_p") == 0.8
+            and rsp_last.get("max_tokens") == 33
+            and rsp_last.get("seed") == 9
+        )
+        rsp_s = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--stream",
+                "--backend",
+                "byok",
+                "--temperature",
+                "0.6",
+                "--seed",
+                "9",
+            ],
+        )
+        out["stream_sampling_flags_forward"] = (
+            rsp_s.exit_code == 0
+            and fake.stream_calls[-1].get("temperature") == 0.6
+            and fake.stream_calls[-1].get("seed") == 9
+        )
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -485,6 +625,15 @@ def cli_audit() -> dict[str, Any]:
         def job_status(self, job_id: str) -> dict[str, Any]:
             self.last_job = job_id
             return {"job_id": job_id, "status": "succeeded", "result": None}
+
+        def job_receipt(self, job_id: str) -> dict[str, Any]:
+            self.last_job = job_id
+            return {
+                "kind": "fx1_job_record",
+                "schema": "fx1_job_record.v1",
+                "record": {"job_id": job_id, "status": "succeeded"},
+                "receipt_sha256": "0" * 64,
+            }
 
         def list_jobs(self, **kw: Any) -> dict[str, Any]:
             self.last_jobs_query = dict(kw)
@@ -692,6 +841,8 @@ def cli_audit() -> dict[str, Any]:
     out["jobs_local_refused"] = rj_local.exit_code == 2 and "--remote" in rj_local.output
     rc_local = runner.invoke(app, ["harness", "cancel", "job-xyz"])
     out["cancel_local_refused"] = rc_local.exit_code == 2 and "--remote" in rc_local.output
+    rjr_local = runner.invoke(app, ["harness", "job", "j-9", "--receipt"])
+    out["job_receipt_local_refused"] = rjr_local.exit_code == 2 and "--remote" in rjr_local.output
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
@@ -764,6 +915,16 @@ def cli_audit() -> dict[str, Any]:
         out["cli_job_status_json"] = (
             rj.exit_code == 0
             and json.loads(rj.stdout)["status"] == "succeeded"
+            and remotes[-1].last_job == "j-9"
+        )
+        rjr = runner.invoke(
+            app,
+            ["harness", "job", "j-9", "--remote", "http://h.test", "--receipt"],
+        )
+        out["cli_job_receipt_json"] = (
+            rjr.exit_code == 0
+            and json.loads(rjr.stdout)["record"]["job_id"] == "j-9"
+            and json.loads(rjr.stdout)["schema"] == "fx1_job_record.v1"
             and remotes[-1].last_job == "j-9"
         )
         rw = runner.invoke(app, ["harness", "wait", "j-9", "--remote", "http://h.test"])
@@ -874,8 +1035,12 @@ def cli_audit_bench() -> dict[str, Any]:
             "fx1 CLI holds: bare callback + help exit clean, fetch params "
             "must be a JSON object (exit 2), unknown sources/commands fail "
             "non-zero, judge resolution fails closed, dipbench smoke is "
-            "SYNTHETIC-labeled, doctor emits presence-only JSON. Flagged "
-            "wart: the command is registered as 'maskedaEval'."
+            "SYNTHETIC-labeled, doctor emits presence-only JSON, and the "
+            "completion log reads cleanly (empty window + missing-id exit "
+            "2 on both the record and its --receipt export); harness job "
+            "--receipt prints the sealed fx1_job_record.v1 doc remote-side "
+            "and refuses without --remote (exit 2). Flagged wart: "
+            "the command is registered as 'maskedaEval'."
             if ok
             else f"CLI AUDIT DEFECT: {r}"
         ),

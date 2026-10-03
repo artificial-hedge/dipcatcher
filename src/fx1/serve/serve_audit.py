@@ -45,10 +45,13 @@ Sealed ``serve_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
+
+if TYPE_CHECKING:
+    from fx1.serve.backends import SamplingParams
 
 __all__ = ["serve_audit", "serve_audit_bench"]
 
@@ -419,7 +422,9 @@ def serve_audit() -> dict[str, Any]:
         def __init__(self, text: str) -> None:
             self._t = text
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             return self._t
 
     cited = cited_complete(_Echo("fine answer"), [], receipt_hashes=["a" * 64, "b" * 64])
