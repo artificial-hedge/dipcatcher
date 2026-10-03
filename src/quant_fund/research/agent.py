@@ -3999,6 +3999,14 @@ from quant_fund.research.benches_w500 import (
     bench_local_langlands_family,
     bench_weil_group_family,
 )
+from quant_fund.research.benches_w501 import (
+    bench_f_pure_family,
+    bench_f_rational_family,
+    bench_f_regular_family,
+    bench_f_threshold_family,
+    bench_test_ideal_family,
+    bench_tight_closure_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4378,6 +4386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "f_regular": bench_f_regular_family,
+        "f_rational": bench_f_rational_family,
+        "f_pure": bench_f_pure_family,
+        "f_threshold": bench_f_threshold_family,
+        "test_ideal": bench_test_ideal_family,
+        "tight_closure": bench_tight_closure_family,
         "local_langlands": bench_local_langlands_family,
         "harris_taylor": bench_harris_taylor_family,
         "weil_group": bench_weil_group_family,
