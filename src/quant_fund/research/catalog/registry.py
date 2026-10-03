@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-495 infinity-2-category canon.
+        "globular_model",
+        "opetopic",
+        "theta_space",
+        "complicial",
+        "verity_gray",
+        "weak_infty",
         # Wave-494 noncommutative-geometry canon.
         "hochschild_coh",
         "cyclic_coh",
