@@ -66,10 +66,14 @@ __all__ = [
     "OpenAIConversationCreate",
     "OpenAIConversationItemsAdd",
     "OpenAIConversationUpdate",
+    "OpenAIFileSearchTool",
     "OpenAIResponseRequest",
     "OpenAIResponseTool",
     "OpenAITool",
     "OpenAIToolFunction",
+    "OpenAIVectorStoreCreate",
+    "OpenAIVectorStoreFileCreate",
+    "OpenAIVectorStoreUpdate",
     "OPENAI_BATCH_ENDPOINTS",
     "OPENAI_BATCH_LINE_MAX",
     "OPENAI_FILE_BYTES_MAX",
@@ -98,7 +102,9 @@ __all__ = [
     "openai_response_object",
     "openai_to_kwargs",
     "openai_usage",
+    "file_search_call_item",
     "paged_item_list",
+    "response_query_text",
     "OpenAIEnvelopeStore",
     "OPENAI_RESPONSE_TERMINAL",
     "chained_response_input",
@@ -959,12 +965,14 @@ RESPONSES_UNSUPPORTED = (
 )
 
 # Item types inside ``input[]`` that a text-only gated pipeline cannot honor.
+# ``file_search_call`` is NOT refused: the server-side retrieval surface
+# emits them as output items, and a chained/conv turn may re-feed one —
+# it flattens into a context message carrying its prior results.
 RESPONSE_ITEM_TYPES_REFUSED = frozenset(
     {
         "item_reference",
         "reasoning",
         "web_search_call",
-        "file_search_call",
         "computer_call",
         "computer_call_output",
         "code_interpreter_call",
@@ -993,6 +1001,24 @@ class OpenAIResponseTool(OpenAIToolFunction):
     than under a ``function`` key). Same bounds as the chat spec."""
 
     type: Literal["function"] = "function"
+
+
+class OpenAIFileSearchTool(_Model):
+    """``tools[]`` entry — the server-side ``file_search`` tool against
+    ``/v1/vector_stores``. ``vector_store_ids`` bounds the corpus (≤8
+    stores per OpenAI's own cap); ``max_num_results`` bounds hits (≤50);
+    ``filters`` evaluates the file-attributes comparison grammar;
+    ``ranking_options`` accepts ``score_threshold`` (cosine, 0..1) —
+    ``ranker`` is echoed but the harness ranker is lexical, not
+    embedding-based (documented in FX1_HARNESS_API)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: Literal["file_search"]
+    vector_store_ids: list[str] = Field(min_length=1, max_length=8)
+    max_num_results: int | None = Field(default=None, ge=1, le=50)
+    filters: dict[str, Any] | None = None
+    ranking_options: dict[str, Any] | None = None
 
 
 class OpenAIResponseRequest(_Model):
@@ -1026,7 +1052,7 @@ class OpenAIResponseRequest(_Model):
     safety_identifier: str | None = Field(default=None, max_length=512)
     reasoning: dict[str, Any] | None = None
     text: dict[str, Any] | None = None
-    tools: list[OpenAIResponseTool] | None = None
+    tools: list[OpenAIResponseTool | OpenAIFileSearchTool] | None = None
     tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
     parallel_tool_calls: bool | None = None
     include: list[str] | None = None
@@ -1103,24 +1129,54 @@ class OpenAIResponseRequest(_Model):
                 raise ValueError(f"text.verbosity must be low|medium|high, got {vb!r}")
         if self.tools is not None and len(self.tools) > 128:
             raise ValueError("tools accepts at most 128 entries")
-        if isinstance(self.tool_choice, dict) and (
-            self.tool_choice.get("type") != "function"
-            or not isinstance(self.tool_choice.get("name"), str)
-        ):
-            raise ValueError(
-                "tool_choice must be 'none'|'auto'|'required' or "
-                "{type: 'function', name: 'fn_name'}"
-            )
+        if isinstance(self.tool_choice, dict):
+            tc_type = self.tool_choice.get("type")
+            if tc_type == "function":
+                if not isinstance(self.tool_choice.get("name"), str):
+                    raise ValueError("tool_choice {type: 'function'} needs a string 'name'")
+            elif tc_type == "file_search":
+                # forcing the server-side retrieval tool is meaningful —
+                # the tool always runs when advertised; a bare
+                # {type: 'file_search'} choice just asserts it exists
+                if not any(t.type == "file_search" for t in self.tools or []):
+                    raise ValueError(
+                        "tool_choice {type: 'file_search'} requires a file_search tool"
+                    )
+            else:
+                raise ValueError(
+                    "tool_choice must be 'none'|'auto'|'required', "
+                    "{type: 'function', name: 'fn_name'}, or "
+                    "{type: 'file_search'}"
+                )
         if not self.tools and (
             self.tool_choice is not None or self.parallel_tool_calls is not None
         ):
             raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
+        for t in self.tools or []:
+            if t.type == "file_search":
+                ro = t.ranking_options
+                if ro is not None:
+                    extra_ro = set(ro) - {"ranker", "score_threshold"}
+                    if extra_ro:
+                        raise ValueError(
+                            f"ranking_options keys must be ranker|score_threshold; "
+                            f"got {sorted(extra_ro)}"
+                        )
+                    st = ro.get("score_threshold")
+                    if st is not None and (
+                        not isinstance(st, (int, float))
+                        or isinstance(st, bool)
+                        or not 0.0 <= st <= 1.0
+                    ):
+                        raise ValueError("score_threshold must be a number in [0, 1]")
         if self.include is not None:
-            bad_inc = sorted(set(self.include) - {"message.output_text.logprobs"})
+            bad_inc = sorted(
+                set(self.include) - {"message.output_text.logprobs", "file_search_call.results"}
+            )
             if bad_inc:
                 raise ValueError(
-                    f"include accepts only 'message.output_text.logprobs' on this "
-                    f"surface; got {bad_inc}"
+                    "include accepts only 'message.output_text.logprobs' and "
+                    f"'file_search_call.results' on this surface; got {bad_inc}"
                 )
         if self.top_logprobs is not None and (
             not self.include or "message.output_text.logprobs" not in self.include
@@ -1206,6 +1262,24 @@ def response_input_to_messages(
             if not isinstance(output, str):
                 raise OpenAICompatError(f"input[{i}]: function_call_output needs a string output")
             msgs.append({"role": "tool", "content": output, "tool_call_id": call_id})
+            continue
+        if itype == "file_search_call":
+            # a prior turn's retrieval item re-fed as input flattens to a
+            # system context message carrying its recorded results — the
+            # same text the model originally saw
+            results = item.get("results")
+            if isinstance(results, list) and results:
+                texts: list[str] = []
+                for r in results:
+                    if isinstance(r, dict) and isinstance(r.get("text"), str):
+                        texts.append(r["text"][:4096])
+                if texts:
+                    msgs.append(
+                        {
+                            "role": "system",
+                            "content": "[prior file_search results]\n" + "\n\n".join(texts),
+                        }
+                    )
             continue
         if itype in RESPONSE_ITEM_TYPES_REFUSED:
             raise OpenAICompatError(f"input[{i}]: {itype!r} items are not supported")
@@ -1420,7 +1494,10 @@ def response_to_kwargs(
         "prompt_cache_key": body.prompt_cache_key,
         "prompt_cache_retention": body.prompt_cache_retention,
         # the flattened Responses spec nests under ``function`` for the
-        # shared tool channel; a dict tool_choice folds the same way
+        # shared tool channel; ``file_search`` entries are server-side —
+        # they never reach the backend's tool list (retrieval ran in the
+        # harness and lands as context). A dict tool_choice folds the
+        # same way; {type: 'file_search'} carries no function name.
         "tools": (
             [
                 {
@@ -1428,16 +1505,28 @@ def response_to_kwargs(
                     "function": t.model_dump(exclude_none=True, exclude={"type"}),
                 }
                 for t in body.tools
+                if t.type == "function"
             ]
-            if body.tools
+            if body.tools and any(t.type == "function" for t in body.tools)
             else None
         ),
+        # tool_choice only carries on the model channel when function
+        # tools are advertised — a choice over server-side tools
+        # ({type: 'file_search'}) or a string choice with a file-only
+        # list has nothing to bind (CompleteRequest refuses a bare
+        # tool_choice).
         "tool_choice": (
             {"type": "function", "function": {"name": body.tool_choice["name"]}}
-            if isinstance(body.tool_choice, dict)
-            else body.tool_choice
+            if isinstance(body.tool_choice, dict) and body.tool_choice.get("type") == "function"
+            else (body.tool_choice if not isinstance(body.tool_choice, dict) else None)
+            if body.tools and any(t.type == "function" for t in body.tools)
+            else None
         ),
-        "parallel_tool_calls": body.parallel_tool_calls,
+        "parallel_tool_calls": (
+            body.parallel_tool_calls
+            if body.tools and any(t.type == "function" for t in body.tools)
+            else None
+        ),
         "logprobs": (True if _wants_response_logprobs(body) else None),
         "top_logprobs": body.top_logprobs,
     }
@@ -1481,6 +1570,57 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "conversation": (
             {"id": conversation_id_of(body.conversation)} if body.conversation is not None else None
         ),
+    }
+
+
+def response_query_text(input_: str | list[dict[str, Any]]) -> str:
+    """The retrieval query for ``file_search`` — the last user-role
+    message's text (a bare string input is itself the query). Falls back
+    to the last message item's text when no user item exists; "" when
+    the input carries no message at all."""
+    if isinstance(input_, str):
+        return input_
+    user_text: str | None = None
+    last_text: str | None = None
+    for item in input_:
+        if not isinstance(item, dict):
+            continue
+        itype = item.get("type")
+        role = item.get("role")
+        if itype not in (None, "message") or not isinstance(role, str):
+            continue
+        content = item.get("content")
+        if isinstance(content, str):
+            text = content
+        elif isinstance(content, list):
+            text = "".join(
+                str(p.get("text", ""))
+                for p in content
+                if isinstance(p, dict) and p.get("type") in ("input_text", "output_text")
+            )
+        else:
+            continue
+        last_text = text
+        if role == "user":
+            user_text = text
+    return user_text if user_text is not None else (last_text or "")
+
+
+def file_search_call_item(
+    *,
+    queries: list[str],
+    results: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    """One ``file_search_call`` output item — the transcript record of
+    the server-side retrieval run. ``results`` is ``None`` unless the
+    request's ``include`` listed ``file_search_call.results`` (OpenAI's
+    own field contract)."""
+    return {
+        "type": "file_search_call",
+        "id": f"fs_{uuid.uuid4().hex}",
+        "status": "completed",
+        "queries": list(queries),
+        "results": results,
     }
 
 
@@ -1544,6 +1684,7 @@ def openai_response_object(
     status: str = "completed",
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
     error: dict[str, Any] | None = None,
     incomplete_details: dict[str, Any] | None = None,
@@ -1578,6 +1719,10 @@ def openai_response_object(
             }
     output: list[dict[str, Any]] = []
     if status in ("completed", "incomplete"):
+        # ``file_search_call`` items precede the message — retrieval
+        # runs before the model answers, so the transcript orders them
+        # first (OpenAI's own ordering)
+        output.extend(search_items or [])
         # ``call_items is None`` marks a prose turn; a calls turn —
         # including one the cap truncated to zero — is a non-None list
         if content or call_items is None:
@@ -1698,6 +1843,42 @@ class OpenAIConversationItemsAdd(_Model):
         return self
 
 
+class OpenAIVectorStoreCreate(_Model):
+    """``POST /v1/vector_stores`` body — ``name``/``metadata`` are free
+    labels; ``file_ids`` attaches existing ``file-*`` records at create
+    time (a bogus id fails the attach honestly)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = Field(default=None, max_length=512)
+    file_ids: list[str] | None = Field(default=None, max_length=64)
+    metadata: dict[str, str] | None = None
+
+
+class OpenAIVectorStoreUpdate(_Model):
+    """``POST /v1/vector_stores/{id}`` body — ``name``/``metadata``
+    replace wholesale when present."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
+
+
+class OpenAIVectorStoreFileCreate(_Model):
+    """``POST /v1/vector_stores/{id}/files`` body — attach a ``file-*``
+    record. ``attributes`` are the keys ``filters`` evaluate against;
+    ``chunking_strategy`` is ``{"type": "auto"}`` or ``{"type":
+    "static", "static": {max_chunk_size_tokens, chunk_overlap_tokens}}``
+    (the word-window index maps token bounds ~0.75×)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    file_id: str = Field(min_length=1, max_length=128)
+    attributes: dict[str, Any] | None = None
+    chunking_strategy: dict[str, Any] | None = None
+
+
 def openai_response_events(
     *,
     text: str,
@@ -1708,6 +1889,7 @@ def openai_response_events(
     usage: dict[str, int] | None,
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
     final_status: str = "completed",
     incomplete_details: dict[str, Any] | None = None,
@@ -1745,14 +1927,49 @@ def openai_response_events(
         },
     )
     next_index = 0
-    # ``call_items is None`` marks a prose turn — a calls turn truncated
-    # to zero by ``max_tool_calls`` ships no phantom empty message item
-    if text or call_items is None:
+    # ``file_search_call`` items lead the output — each emits its
+    # output_item lifecycle plus the file_search_call-specific events
+    # (in_progress → searching → completed); there is no arguments delta
+    # channel for a server-side tool
+    for item in search_items or []:
+        idx = next_index
+        next_index += 1
+        fs_id = str(item["id"])
         yield (
             "response.output_item.added",
             {
                 "type": "response.output_item.added",
-                "output_index": 0,
+                "output_index": idx,
+                "item": {**item, "status": "in_progress"},
+            },
+        )
+        for ev in (
+            "response.file_search_call.in_progress",
+            "response.file_search_call.searching",
+            "response.file_search_call.completed",
+        ):
+            yield (
+                ev,
+                {"type": ev, "output_index": idx, "item_id": fs_id},
+            )
+        yield (
+            "response.output_item.done",
+            {
+                "type": "response.output_item.done",
+                "output_index": idx,
+                "item": item,
+            },
+        )
+    # ``call_items is None`` marks a prose turn — a calls turn truncated
+    # to zero by ``max_tool_calls`` ships no phantom empty message item
+    if text or call_items is None:
+        msg_index = next_index
+        next_index += 1
+        yield (
+            "response.output_item.added",
+            {
+                "type": "response.output_item.added",
+                "output_index": msg_index,
                 "item": {
                     "type": "message",
                     "id": item_id,
@@ -1767,7 +1984,7 @@ def openai_response_events(
             {
                 "type": "response.content_part.added",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "part": {"type": "output_text", "text": "", "annotations": []},
             },
@@ -1778,7 +1995,7 @@ def openai_response_events(
                 {
                     "type": "response.output_text.delta",
                     "item_id": item_id,
-                    "output_index": 0,
+                    "output_index": msg_index,
                     "content_index": 0,
                     "delta": piece,
                 },
@@ -1788,7 +2005,7 @@ def openai_response_events(
             {
                 "type": "response.output_text.done",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "text": text,
             },
@@ -1805,7 +2022,7 @@ def openai_response_events(
             {
                 "type": "response.content_part.done",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "part": done_part,
             },
@@ -1814,7 +2031,7 @@ def openai_response_events(
             "response.output_item.done",
             {
                 "type": "response.output_item.done",
-                "output_index": 0,
+                "output_index": msg_index,
                 "item": {
                     "type": "message",
                     "id": item_id,
@@ -1824,7 +2041,6 @@ def openai_response_events(
                 },
             },
         )
-        next_index = 1
     # one output_item lifecycle per function call — arguments stream as
     # function_call_arguments.delta chunks inside it
     for k, item in enumerate(call_items or []):
@@ -1880,6 +2096,7 @@ def openai_response_events(
                 status=final_status,
                 created=created,
                 call_items=call_items,
+                search_items=search_items,
                 logprobs=logprobs,
                 incomplete_details=incomplete_details,
             ),

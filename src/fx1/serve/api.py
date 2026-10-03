@@ -164,6 +164,9 @@ from fx1.serve.openai_compat import (
     OpenAIResponseRequest,
     OpenAIUploadCompleteRequest,
     OpenAIUploadCreateRequest,
+    OpenAIVectorStoreCreate,
+    OpenAIVectorStoreFileCreate,
+    OpenAIVectorStoreUpdate,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -173,6 +176,7 @@ from fx1.serve.openai_compat import (
     conversation_id_of,
     embeddings_to_kwargs,
     file_object,
+    file_search_call_item,
     is_openai_path,
     openai_chunks,
     openai_conversation_object,
@@ -187,6 +191,7 @@ from fx1.serve.openai_compat import (
     response_cap_call_items,
     response_input_item_dicts,
     response_input_items_for_store,
+    response_query_text,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
@@ -201,6 +206,11 @@ from fx1.serve.uploads import (
     validate_upload_intent,
 )
 from fx1.serve.usage_report import UsageReport, aggregate_usage
+from fx1.serve.vectorstores import (
+    VS_MAX_RESULTS,
+    VectorStoreError,
+    VectorStoreStore,
+)
 from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
@@ -1619,6 +1629,7 @@ def _responses_sse(
     created: int | None = None,
     skip: int = 0,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
     final_status: str = "completed",
     incomplete_details: dict[str, Any] | None = None,
@@ -1643,6 +1654,7 @@ def _responses_sse(
             usage=usage,
             created=created,
             call_items=call_items,
+            search_items=search_items,
             logprobs=logprobs,
             final_status=final_status,
             incomplete_details=incomplete_details,
@@ -3096,6 +3108,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     bg_cancel: dict[str, threading.Event],
     conv_store: OpenAIEnvelopeStore,
     eval_spec_store: EvalSpecStore,
+    vs_store: VectorStoreStore,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -4208,6 +4221,98 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         return envelope, cid
 
+    # Server-side ``file_search`` — the tool's retrieval runs in the
+    # harness before the backend call. Hits inject as a developer-role
+    # context item prepended to the effective input (so the stored
+    # input_items transcript carries exactly what the model saw), and
+    # one ``file_search_call`` output item per tool spec records the
+    # run. Retrieval failures fail closed — a bogus store id is a
+    # client-visible 404, not a silent miss.
+    _RETRIEVAL_INJECT_BUDGET = 32768
+
+    def _file_search_turn(
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+    ) -> tuple[list[dict[str, Any]], OpenAIResponseRequest]:
+        fs_specs = [t for t in (body.tools or []) if t.type == "file_search"]
+        if not fs_specs:
+            return [], eff_body
+        query = response_query_text(eff_body.input)
+        if not query.strip():
+            raise OpenAICompatError(
+                "file_search needs a non-empty user message to query",
+                status=400,
+                code="empty_query",
+            )
+        include_results = bool(body.include and "file_search_call.results" in body.include)
+        search_items: list[dict[str, Any]] = []
+        inject_parts: list[str] = []
+        budget = _RETRIEVAL_INJECT_BUDGET
+        for spec in fs_specs:
+            if spec.type != "file_search":
+                continue
+            ro = spec.ranking_options or {}
+            threshold = ro.get("score_threshold")
+            try:
+                hits = vs_store.search(
+                    list(spec.vector_store_ids),
+                    query,
+                    max_results=spec.max_num_results or 10,
+                    filters=spec.filters,
+                    score_threshold=float(threshold) if threshold is not None else None,
+                )
+            except VectorStoreError as exc:
+                raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+            search_items.append(
+                file_search_call_item(
+                    queries=[query],
+                    results=[
+                        {
+                            "file_id": h["file_id"],
+                            "filename": h["filename"],
+                            "vector_store_id": h["vector_store_id"],
+                            "score": h["score"],
+                            "text": h["text"],
+                            "attributes": h["attributes"],
+                        }
+                        for h in hits
+                    ]
+                    if include_results
+                    else None,
+                )
+            )
+            for h in hits:
+                piece = f"[{h['file_id']} {h['filename']} score {h['score']:.3f}] {h['text']}"
+                if len(piece) <= budget:
+                    inject_parts.append(piece)
+                    budget -= len(piece)
+        if inject_parts:
+            ctx = "[file_search results — retrieved context]\n" + "\n\n".join(inject_parts)
+            prior: list[Any] = (
+                list(eff_body.input)
+                if isinstance(eff_body.input, list)
+                else [
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": str(eff_body.input)}],
+                    }
+                ]
+            )
+            eff_body = eff_body.model_copy(
+                update={
+                    "input": [
+                        {
+                            "type": "message",
+                            "role": "developer",
+                            "content": [{"type": "input_text", "text": ctx}],
+                        },
+                        *prior,
+                    ]
+                }
+            )
+        return search_items, eff_body
+
     def _openai_response_core(
         body: OpenAIResponseRequest,
         headers: Mapping[str, str],
@@ -4268,6 +4373,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                     }
                 )
+        search_items, eff_body = _file_search_turn(body, eff_body)
         creq = CompleteRequest(
             **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
         )
@@ -4292,6 +4398,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             status=("incomplete" if inc_details else "completed"),
             created=created,
             call_items=call_items,
+            search_items=search_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
             incomplete_details=inc_details,
         )
@@ -4767,6 +4874,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             env_items = [it for it in env["output"] if isinstance(it, dict)]
             env_msg = next((it for it in env_items if it.get("type") == "message"), None)
             env_calls = [it for it in env_items if it.get("type") == "function_call"]
+            env_search = [it for it in env_items if it.get("type") == "file_search_call"]
             env_parts = env_msg.get("content") if isinstance(env_msg, dict) else None
             env_lp = (
                 env_parts[0].get("logprobs")
@@ -4792,6 +4900,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 created=env.get("created_at"),
                 skip=drop,
                 call_items=env_call_list,
+                search_items=env_search or None,
                 logprobs=(env_lp if isinstance(env_lp, list) else None),
                 # a truncated turn replays its terminal event too —
                 # response.incomplete, not response.completed
@@ -4986,6 +5095,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             None,
         )
         env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
+        env_search_items = [it for it in envelope["output"] if it.get("type") == "file_search_call"]
         # ``None`` marks a prose turn; a calls turn truncated to zero
         # replays the empty list, never a phantom message item
         if env_call_items:
@@ -5026,6 +5136,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     usage=usage,
                     created=int(envelope["created_at"]),
                     call_items=call_list,
+                    search_items=env_search_items or None,
                     logprobs=(
                         msg_item["content"][0].get("logprobs")
                         if isinstance(msg_item, dict)
@@ -5270,6 +5381,188 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         conv_store.put(conv, items={"items": kept})
         return conv
+
+    # --- /v1/vector_stores ---------------------------------------------------
+    # The OpenAI vector-store surface — a journaled lexical retrieval
+    # corpus over /v1/files. Searching a store is not a wire route; it
+    # runs inside ``file_search`` on /v1/responses.
+
+    def _vs_err(exc: VectorStoreError) -> ApiError:
+        return ApiError(exc.status, str(exc), code=exc.code)
+
+    @app.post(
+        "/v1/vector_stores",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_create",
+    )
+    def openai_vectorstore_create(body: OpenAIVectorStoreCreate) -> dict[str, Any]:
+        """Create a vector store — ``file_ids`` attach existing
+        ``file-*`` records; an unresolvable id fails the whole create
+        fail-closed (no partial store)."""
+        try:
+            return vs_store.create(
+                name=body.name,
+                metadata=body.metadata,
+                file_ids=tuple(body.file_ids or ()),
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_retrieve",
+    )
+    def openai_vectorstore_retrieve(vector_store_id: str) -> dict[str, Any]:
+        """Retrieve a vector store by id — ``vs_*``."""
+        try:
+            return vs_store.get(vector_store_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_update",
+    )
+    def openai_vectorstore_update(
+        vector_store_id: str, body: OpenAIVectorStoreUpdate
+    ) -> dict[str, Any]:
+        """Update a vector store — ``name``/``metadata`` replace
+        wholesale when present."""
+        try:
+            return vs_store.update(vector_store_id, name=body.name, metadata=body.metadata)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.delete(
+        "/v1/vector_stores/{vector_store_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_delete",
+    )
+    def openai_vectorstore_delete(vector_store_id: str) -> dict[str, Any]:
+        """Delete a vector store — member files' index entries and
+        chunks drop with it; the ``file-*`` records survive (the store
+        borrows, never owns)."""
+        try:
+            return vs_store.delete(vector_store_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_list",
+    )
+    def openai_vectorstore_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="desc"),
+    ) -> dict[str, Any]:
+        """List vector stores — the same ``after``/``before``/``order``
+        cursor contract as the other list surfaces."""
+        try:
+            return vs_store.list_stores(limit=limit, order=order, after=after, before=before)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_create",
+    )
+    def openai_vectorstore_file_create(
+        vector_store_id: str, body: OpenAIVectorStoreFileCreate
+    ) -> dict[str, Any]:
+        """Attach a ``file-*`` record — the file is decoded, chunked,
+        and indexed in-place; a file whose text is empty lands
+        ``status: failed`` with ``last_error``, never silently."""
+        try:
+            return vs_store.attach(
+                vector_store_id,
+                body.file_id,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_list",
+    )
+    def openai_vectorstore_file_list(
+        vector_store_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        filter: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """List a store's attached files — ``filter`` takes an OpenAI
+        status word (``in_progress|completed|cancelled|failed``)."""
+        try:
+            return vs_store.list_files(
+                vector_store_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_retrieve",
+    )
+    def openai_vectorstore_file_retrieve(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """Retrieve one attachment — status, chunk count, attributes."""
+        try:
+            return vs_store.get_file(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.delete(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_delete",
+    )
+    def openai_vectorstore_file_delete(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """Detach a file — its chunks leave the index; the underlying
+        ``file-*`` record survives."""
+        try:
+            return vs_store.detach(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/files/{file_id}/content",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_content",
+    )
+    def openai_vectorstore_file_content(vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """The stored text of one attachment — a
+        ``vector_store.file_content.page`` list of ``{type: 'text'}``
+        parts (the index holds the decoded text, not raw bytes)."""
+        try:
+            return vs_store.file_content(vector_store_id, file_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
 
     def _request_items(
         envelope_id: str,
@@ -6845,6 +7138,18 @@ def create_app(
     # them, ``conversation`` on a response joins one. Same bounded LRU
     # contract as the envelope store; items live in subitems.
     conv_store = OpenAIEnvelopeStore(store_max)
+    # Vector stores borrow file content through the reader closure — a
+    # deleted/oversized file fails the attach honestly rather than
+    # silently indexing nothing; journaled under state_dir like the
+    # other stores so a restart restores the corpus.
+
+    def _vs_file_reader(file_id: str) -> tuple[bytes, str] | None:
+        rec = file_store.get(file_id)
+        if rec is None:
+            return None
+        return bytes(rec.content), rec.filename
+
+    vs_store = VectorStoreStore(store_max, state_dir=state_path, file_reader=_vs_file_reader)
     # Cancel flags for background responses — a set event means the stored
     # envelope was flipped to ``cancelled`` and the worker must not
     # overwrite it with a terminal result.
@@ -6916,6 +7221,7 @@ def create_app(
     app.state.file_store = file_store
     app.state.batch_store = batch_store
     app.state.ft_store = ft_store
+    app.state.vs_store = vs_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -7129,6 +7435,8 @@ def create_app(
                 "openai_logprobs": True,
                 "openai_embeddings": True,
                 "openai_moderations": True,
+                "openai_vector_stores": True,
+                "openai_file_search": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -7145,6 +7453,9 @@ def create_app(
                 "batch_max": float(batch_max),
                 "batch_line_max": float(batch_line_max),
                 "store_max": float(store_max),
+                "vs_store_max": float(vs_store.max_stores),
+                "vs_file_max": float(vs_store.max_files),
+                "vs_max_results": float(VS_MAX_RESULTS),
                 "job_batch_max": float(_JOB_BATCH_MAX),
                 "verify_batch_max": float(_VERIFY_BATCH_MAX),
                 "complete_batch_max": 64.0,
@@ -7498,6 +7809,7 @@ def create_app(
         bg_cancel=_bg_cancel,
         conv_store=conv_store,
         eval_spec_store=eval_spec_store,
+        vs_store=vs_store,
     )
 
     _mount_receipt_routes(app, receipt_index)

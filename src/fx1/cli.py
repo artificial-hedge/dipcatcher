@@ -3401,6 +3401,292 @@ def harness_conv_item_delete(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("vs-create")
+def harness_vs_create(
+    name: str | None = typer.Option(None, "--name", help="Store name (free text)."),
+    file_ids: str | None = typer.Option(
+        None, "--file-ids", help="JSON array of file-* ids to attach at create."
+    ),
+    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores`` — mint a ``vs_*`` retrieval store the
+    ``file_search`` tool searches on ``respond --tools``."""
+    ids: list[str] | None = None
+    if file_ids is not None:
+        try:
+            parsed_ids = json.loads(file_ids)
+        except json.JSONDecodeError:
+            _bad_arg("--file-ids must be a JSON array of file-* ids")
+            raise AssertionError("unreachable") from None
+        if not (isinstance(parsed_ids, list) and all(isinstance(i, str) for i in parsed_ids)):
+            _bad_arg("--file-ids must be a JSON array of file-* ids")
+        ids = parsed_ids
+    meta = _json_meta(metadata)
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_create(
+                name=name, metadata=meta, file_ids=ids
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_create(name=name, metadata=meta, file_ids=ids))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-get")
+def harness_vs_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}`` — the store object; missing ids
+    exit 2."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_get(vector_store_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_get(vector_store_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-update")
+def harness_vs_update(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    name: str | None = typer.Option(None, "--name", help="New name (omitted keeps current)."),
+    metadata: str | None = typer.Option(
+        None, "--metadata", help="JSON object of string pairs — replaces wholesale."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}`` — set name/metadata (omitted
+    fields keep their current values)."""
+    meta = _json_meta(metadata)
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_update(
+                vector_store_id, name=name, metadata=meta
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_update(vector_store_id, name=name, metadata=meta)
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-delete")
+def harness_vs_delete(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/vector_stores/{id}`` — drop the store and its index;
+    member file-* records survive."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_delete(vector_store_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_delete(vector_store_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-list")
+def harness_vs_list(
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a vs_* id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a vs_* id."),
+    order: str = typer.Option("desc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores`` — stores, cursor-paged."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_list(
+                limit=limit, after=after, before=before, order=order
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_list(limit=limit, order=order, after=after, before=before)
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-add")
+def harness_vs_file_add(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    attributes: str | None = typer.Option(
+        None, "--attributes", help="JSON object — filter keys for file_search."
+    ),
+    chunking_strategy: str | None = typer.Option(
+        None,
+        "--chunking-strategy",
+        help='JSON: {"type":"auto"} or {"type":"static","static":{...}}.',
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/files`` — index a file record into
+    the store; empty text lands status=failed."""
+    attrs = _json_obj_opt(attributes, "--attributes")
+    strat = _json_obj_opt(chunking_strategy, "--chunking-strategy")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_create(
+                vector_store_id, file_id, attributes=attrs, chunking_strategy=strat
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_create(
+            vector_store_id, file_id, attributes=attrs, chunking_strategy=strat
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-files")
+def harness_vs_files(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a file id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a file id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    filter: str | None = typer.Option(
+        None, "--filter", help="in_progress | completed | cancelled | failed"
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files`` — attachments, paged;
+    ``--filter`` takes an OpenAI status word."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_list(
+                vector_store_id,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+                filter=filter,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_list(
+            vector_store_id, limit=limit, order=order, after=after, before=before, filter=filter
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-get")
+def harness_vs_file_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files/{file_id}`` — one attachment's
+    status/chunks/attributes."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_get(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_get(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-delete")
+def harness_vs_file_delete(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/vector_stores/{id}/files/{file_id}`` — detach; the
+    file record survives."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_delete(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_delete(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-file-content")
+def harness_vs_file_content(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/files/{file_id}/content`` — the
+    stored decoded text as a page of text parts."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_content(
+                vector_store_id, file_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_content(vector_store_id, file_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

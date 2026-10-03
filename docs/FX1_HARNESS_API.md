@@ -258,6 +258,13 @@ same digested shape the job record embeds.
 | `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
 | `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
 | `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
+| `POST /v1/vector_stores` | mint a `vs_*` retrieval store (`name`, `file_ids` seed, `metadata`) — `Fx1Harness.vector_store_create` / `HarnessClient.vector_store_create` / `client.vectorStoreCreate` / `fx1 harness vs-create` |
+| `GET` / `POST` / `DELETE` `/v1/vector_stores/{id}` | fetch / rename+remetadata / delete the store (delete detaches member files; the `file-*` records survive) |
+| `GET /v1/vector_stores` | newest-first page (`?limit≤100`, `?after`, `?before`, `?order`) — `fx1 harness vs-list` |
+| `POST /v1/vector_stores/{id}/files` | attach a `file-*` record (`attributes` string pairs ≤16, `chunking_strategy.static` overrides) → `vector_store.file`; a double-attach is `409 file_already_attached` — `fx1 harness vs-file-add` |
+| `GET /v1/vector_stores/{id}/files` | member page (`?limit`, `?after`, `?before`, `?order`, `?filter` in `in_progress|completed|cancelled|failed`) — bad filters fail closed `400 invalid_filters` |
+| `GET` / `DELETE` `/v1/vector_stores/{id}/files/{file_id}` | fetch / detach one member (`vector_store.file.deleted`) |
+| `GET /v1/vector_stores/{id}/files/{file_id}/content` | the stored decoded text as a `vector_store.file_content.page` of per-chunk `{type:"text",text}` parts — `fx1 harness vs-file-content` |
 | `POST /v1/evals` | create an `eval` spec container (`name`, `data_source_config.item_schema` = suite knobs — credentials never on the spec) → `201`; `Fx1Harness.eval_spec_create` / `HarnessClient.eval_spec_create` / `client.evalSpecCreate` / `fx1 harness eval-spec-create` |
 | `GET /v1/evals` | newest-first spec page (`?limit≤100`, `?after=`); `Fx1Harness.eval_specs` / `HarnessClient.eval_specs` / `client.evalSpecs` / `fx1 harness eval-spec-list` |
 | `GET` / `POST` / `DELETE` `/v1/evals/{id}` | fetch / rename+remetadata / tombstone a spec — delete journals and orphans the `/v1` run subresources (records stay on `/harness/evals/{id}`) |
@@ -808,6 +815,53 @@ in Python (`KeyError` on 404), `Fx1Harness.openai_chat_get` /
 `openai_response_delete` in-process, `retrieveChatCompletion` /
 `deleteChatCompletion` / `retrieveResponse` / `deleteResponse` in
 TS.
+
+### Vector stores + `file_search` (`/v1/vector_stores`)
+
+`/v1/vector_stores` is the server-side RAG surface: stores are
+journaled under `--state-dir` (`vector_stores.jsonl`, replayed on
+restart) and bounded (`FX1_API_STORE_MAX` bounds the store count —
+LRU-evicting the oldest at the cap; files per store, text bytes,
+chunks, and `vs_*` ids are fixed constants — oversized attaches
+fail closed). Attached `file-*` records are chunked (word windows
+with overlap) and indexed with a hashed bag-of-words + per-store
+idf — cosine ranking, no embedding service required.
+
+The `file_search` tool on `POST /v1/responses` searches them
+in-band:
+
+- `tools: [{"type": "file_search", "vector_store_ids": ["vs_…"]}]`
+  runs the user's latest turn as the query over the listed stores
+  (≤8 ids, `max_num_results ≤ 50`,
+  `ranking_options.score_threshold` ∈ [0,1] — violations are
+  fail-closed `422`/`400` before the model runs).
+- The call lands in `output` as a `file_search_call` item
+  *before* the assistant `message`; `include:
+  ["file_search_call.results"]` gates whether `results` carries
+  the ranked hits (`{file_id, filename, score, text}`) — absent
+  the flag, `results` is `null`.
+- The top hits are prepended to the model's context as one
+  `developer`-item (`[file_search results] …`, capped at a fixed
+  injection budget) so the gated pipeline sees the retrieval.
+- Streaming emits `response.output_item.added` →
+  `response.file_search_call.in_progress` → `.searching` →
+  `.completed` → `response.output_item.done` frames ahead of the
+  message deltas, and the `file_search_call` survives on the
+  stored/replayed envelope. Refed input items fold back into a
+  single `[prior file_search results]` system message.
+- `tool_choice: {"type": "file_search"}` forces the retrieval
+  call; any other `tool_choice`/`parallel_tool_calls` without a
+  `function` tool on the request is dropped rather than
+  mistranslated.
+
+Identical contract in-process: `Fx1Harness.openai_file_create`
+(content bytes → `file-*`) + `vector_store_*` twin methods drive
+the same store, and `openai_response` emits the same
+`file_search_call` grammar. `HarnessClient.vector_store_*` +
+`fx1 harness vs-*` cover the wire leg; TS exposes
+`vectorStoreCreate`/`…List`/`…Files`/`…FileContent`. Unknown
+stores fail closed `vector_store_not_found` (404 on the wire,
+`VectorStoreError`/`OpenAICompatError` in-process).
 
 ## Auth & safety
 

@@ -603,6 +603,110 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk.key_create("x", ttl_s=-1)) == "ValueError"
     )
 
+    # ---- /v1/vector_stores + file_search twin -------------------------------
+    # in-process RAG: upload bytes → attach → search hits feed a
+    # file_search_call + developer-context injection on openai_response.
+    _vs_be = _FakeBackend("sdk rag answer")
+    sdk_vs = Fx1Harness(backend_resolver=lambda *a, **k: _vs_be)
+    _f = sdk_vs.openai_file_create(
+        b"epsilon transitions carry the drift signature\n", filename="kb.jsonl"
+    )
+    out["file_create_shape"] = (
+        _f["id"].startswith("file-")
+        and _f["object"] == "file"
+        and _f["filename"] == "kb.jsonl"
+        and "_content" not in _f
+    )
+    _vs = sdk_vs.vector_store_create(name="kb", metadata={"team": "q"})
+    out["vs_create_shape"] = (
+        _vs["id"].startswith("vs_")
+        and _vs["object"] == "vector_store"
+        and _vs["status"] == "completed"
+        and _vs["metadata"] == {"team": "q"}
+        and _vs["file_counts"]["total"] == 0
+    )
+    _vf = sdk_vs.vector_store_file_create(_vs["id"], _f["id"])
+    out["vs_file_attach"] = (
+        _vf["id"] == _f["id"]
+        and _vf["object"] == "vector_store.file"
+        and _vf["vector_store_id"] == _vs["id"]
+        and _vf["status"] == "completed"
+        and sdk_vs.vector_store_get(_vs["id"])["file_counts"]["total"] == 1
+    )
+    _vfc = sdk_vs.vector_store_file_content(_vs["id"], _f["id"])
+    out["vs_file_content_page"] = (
+        _vfc["object"] == "vector_store.file_content.page"
+        and _vfc["data"][0]["type"] == "text"
+        and "epsilon" in _vfc["data"][0]["text"]
+        and _vfc["has_more"] is False
+    )
+    out["vs_list_filter"] = (
+        sdk_vs.vector_store_file_list(_vs["id"], filter="completed")["data"][0]["id"] == _f["id"]
+        and sdk_vs.vector_store_file_list(_vs["id"], filter="cancelled")["data"] == []
+        and sdk_vs.vector_store_list()["data"][0]["id"] == _vs["id"]
+    )
+    out["vs_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_get("vs_ghost")) == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_create(_vs["id"], _f["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_create("vs_ghost", _f["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_list(_vs["id"], filter="bogus"))
+        == "VectorStoreError"
+    )
+    _resp, _cid = sdk_vs.openai_response(
+        {
+            "model": "fx1",
+            "input": "what drives drift?",
+            "tools": [{"type": "file_search", "vector_store_ids": [_vs["id"]]}],
+            "include": ["file_search_call.results"],
+        }
+    )
+    _fscalls = [o for o in _resp["output"] if o["type"] == "file_search_call"]
+    out["file_search_turn"] = (
+        _resp["status"] == "completed"
+        and len(_fscalls) == 1
+        and _fscalls[0]["queries"] == ["what drives drift?"]
+        and _fscalls[0]["results"][0]["file_id"] == _f["id"]
+        and "epsilon" in _fscalls[0]["results"][0]["text"]
+        and _resp["output"][-1]["type"] == "message"
+        and any(
+            "epsilon" in m.get("content", "") and "file_search results" in m.get("content", "")
+            for m in _vs_be.seen_messages
+            if m["role"] == "system"
+        )
+    )
+    _resp2, _ = sdk_vs.openai_response(
+        {
+            "model": "fx1",
+            "input": "again",
+            "tools": [{"type": "file_search", "vector_store_ids": [_vs["id"]]}],
+        }
+    )
+    out["file_search_include_gate"] = all(
+        o.get("results") is None for o in _resp2["output"] if o["type"] == "file_search_call"
+    )
+    out["file_search_fail_closed"] = (
+        _raises(
+            lambda: sdk_vs.openai_response(
+                {
+                    "model": "fx1",
+                    "input": "x",
+                    "tools": [{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+                }
+            )
+        )
+        == "OpenAICompatError"
+    )
+    out["vs_delete_lifecycle"] = (
+        sdk_vs.vector_store_file_delete(_vs["id"], _f["id"])
+        == {"id": _f["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and sdk_vs.vector_store_file_list(_vs["id"])["data"] == []
+        and sdk_vs.vector_store_delete(_vs["id"])
+        == {"id": _vs["id"], "object": "vector_store.deleted", "deleted": True}
+        and _raises(lambda: sdk_vs.vector_store_get(_vs["id"])) == "VectorStoreError"
+    )
+
     return out
 
 

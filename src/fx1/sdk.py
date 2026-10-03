@@ -101,6 +101,7 @@ from fx1.serve.openai_compat import (
     chat_messages_for_store,
     conversation_id_of,
     embeddings_to_kwargs,
+    file_search_call_item,
     openai_chunks,
     openai_conversation_object,
     openai_embedding_envelope,
@@ -114,6 +115,7 @@ from fx1.serve.openai_compat import (
     paged_item_list,
     response_cap_call_items,
     response_input_items_for_store,
+    response_query_text,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
@@ -127,6 +129,7 @@ from fx1.serve.uploads import (
     validate_upload_intent,
 )
 from fx1.serve.usage_report import UsageReport
+from fx1.serve.vectorstores import VectorStoreError, VectorStoreStore
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
@@ -524,6 +527,25 @@ class Fx1Harness:
         self._key_store = ApiKeyStore(
             journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
         )
+        # The /v1/vector_stores twin — borrows file content through a
+        # reader over ``self._files`` (the upload_complete records);
+        # journaled under state_dir like every other store. A file that
+        # isn't on disk fails the attach honestly.
+
+        def _sdk_file_reader(file_id: str) -> tuple[bytes, str] | None:
+            rec = self._files.get(file_id)
+            if rec is None:
+                return None
+            content = rec.get("_content")
+            if isinstance(content, (bytes, bytearray)):
+                data = bytes(content)
+            elif isinstance(content, str):
+                data = content.encode()
+            else:
+                return None
+            return data, str(rec.get("filename") or file_id)
+
+        self._vs_store = VectorStoreStore(512, state_dir=state_path, file_reader=_sdk_file_reader)
 
     def _record_call(
         self,
@@ -2345,6 +2367,97 @@ class Fx1Harness:
             return queued, None
         return self._openai_response_finish(body, eff_body, headers, conv_cid=conv_cid)
 
+    _RETRIEVAL_INJECT_BUDGET = 32768
+
+    def _file_search_turn(
+        self,
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+    ) -> tuple[list[dict[str, Any]], OpenAIResponseRequest]:
+        """The wire's ``_file_search_turn`` twin — runs the advertised
+        ``file_search`` tool specs against ``self._vs_store`` before the
+        backend call; hits inject as a developer context item on the
+        effective input (stored in input_items = the honest transcript)
+        and one ``file_search_call`` output item records the run."""
+        fs_specs = [t for t in (body.tools or []) if t.type == "file_search"]
+        if not fs_specs:
+            return [], eff_body
+        query = response_query_text(eff_body.input)
+        if not query.strip():
+            raise OpenAICompatError(
+                "file_search needs a non-empty user message to query",
+                status=400,
+                code="empty_query",
+            )
+        include_results = bool(body.include and "file_search_call.results" in body.include)
+        search_items: list[dict[str, Any]] = []
+        inject_parts: list[str] = []
+        budget = self._RETRIEVAL_INJECT_BUDGET
+        for spec in fs_specs:
+            if spec.type != "file_search":
+                continue
+            ro = spec.ranking_options or {}
+            threshold = ro.get("score_threshold")
+            try:
+                hits = self._vs_store.search(
+                    list(spec.vector_store_ids),
+                    query,
+                    max_results=spec.max_num_results or 10,
+                    filters=spec.filters,
+                    score_threshold=(float(threshold) if threshold is not None else None),
+                )
+            except VectorStoreError as exc:
+                raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+            search_items.append(
+                file_search_call_item(
+                    queries=[query],
+                    results=[
+                        {
+                            "file_id": h["file_id"],
+                            "filename": h["filename"],
+                            "vector_store_id": h["vector_store_id"],
+                            "score": h["score"],
+                            "text": h["text"],
+                            "attributes": h["attributes"],
+                        }
+                        for h in hits
+                    ]
+                    if include_results
+                    else None,
+                )
+            )
+            for h in hits:
+                piece = f"[{h['file_id']} {h['filename']} score {h['score']:.3f}] {h['text']}"
+                if len(piece) <= budget:
+                    inject_parts.append(piece)
+                    budget -= len(piece)
+        if inject_parts:
+            ctx = "[file_search results — retrieved context]\n" + "\n\n".join(inject_parts)
+            prior: list[Any] = (
+                list(eff_body.input)
+                if isinstance(eff_body.input, list)
+                else [
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": str(eff_body.input)}],
+                    }
+                ]
+            )
+            eff_body = eff_body.model_copy(
+                update={
+                    "input": [
+                        {
+                            "type": "message",
+                            "role": "developer",
+                            "content": [{"type": "input_text", "text": ctx}],
+                        },
+                        *prior,
+                    ]
+                }
+            )
+        return search_items, eff_body
+
     def _openai_response_finish(
         self,
         body: OpenAIResponseRequest,
@@ -2361,6 +2474,7 @@ class Fx1Harness:
         envelope's id).``conv_cid`` carries the resolved conversation
         anchor — the turn's items append onto the conv when it
         completes."""
+        search_items, eff_body = self._file_search_turn(body, eff_body)
         kwargs = response_to_kwargs(
             eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
@@ -2380,6 +2494,7 @@ class Fx1Harness:
             status=("incomplete" if inc_details else "completed"),
             created=created,
             call_items=call_items,
+            search_items=search_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
             incomplete_details=inc_details,
         )
@@ -2498,6 +2613,7 @@ class Fx1Harness:
             else OpenAIResponseRequest.model_validate(request)
         )
         eff_body, conv_cid = self._chain_response_input(body)
+        search_items_s, eff_body = self._file_search_turn(body, eff_body)
         kwargs = response_to_kwargs(
             eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
@@ -2517,6 +2633,7 @@ class Fx1Harness:
             usage=result.usage,
             status=("incomplete" if inc_details_s else "completed"),
             call_items=call_items,
+            search_items=search_items_s or None,
             logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
             incomplete_details=inc_details_s,
         )
@@ -2535,6 +2652,7 @@ class Fx1Harness:
                 model=result.model,
                 usage=result.usage,
                 call_items=call_items,
+                search_items=search_items_s or None,
                 logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
                 final_status=("incomplete" if inc_details_s else "completed"),
                 incomplete_details=inc_details_s,
@@ -2949,6 +3067,108 @@ class Fx1Harness:
         self._conv_store.put(conv, items={"items": kept})
         return conv
 
+    # --- vector stores (the /v1/vector_stores twin) --------------------------
+    # A journaled lexical retrieval corpus over the SDK's upload records —
+    # the file_search tool on openai_response searches it in-process.
+    # VectorStoreError surfaces as ValueError-class request faults with
+    # the same status/code the wire maps.
+
+    def vector_store_create(
+        self,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        file_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores`` in-process — mints a ``vs_*`` store;
+        ``file_ids`` attach at create (an unresolvable id fails closed)."""
+        return self._vs_store.create(name=name, metadata=metadata, file_ids=tuple(file_ids or ()))
+
+    def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}`` in-process."""
+        return self._vs_store.get(vector_store_id)
+
+    def vector_store_update(
+        self,
+        vector_store_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}`` in-process — name/metadata
+        replace wholesale when given."""
+        return self._vs_store.update(vector_store_id, name=name, metadata=metadata)
+
+    def vector_store_delete(self, vector_store_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}`` in-process — the store and
+        its index drop; the file records survive."""
+        return self._vs_store.delete(vector_store_id)
+
+    def vector_store_list(
+        self,
+        *,
+        limit: int = 20,
+        order: str = "desc",
+        after: str | None = None,
+        before: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores`` in-process — cursor-paged like the
+        wire."""
+        return self._vs_store.list_stores(limit=limit, order=order, after=after, before=before)
+
+    def vector_store_file_create(
+        self,
+        vector_store_id: str,
+        file_id: str,
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/files`` in-process — indexes the
+        upload record's bytes; empty text lands ``status: failed``."""
+        return self._vs_store.attach(
+            vector_store_id,
+            file_id,
+            attributes=attributes,
+            chunking_strategy=chunking_strategy,
+        )
+
+    def vector_store_file_list(
+        self,
+        vector_store_id: str,
+        *,
+        limit: int = 20,
+        order: str = "asc",
+        after: str | None = None,
+        before: str | None = None,
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files`` in-process — ``filter``
+        is an OpenAI status word (completed|failed|…)."""
+        return self._vs_store.list_files(
+            vector_store_id,
+            limit=limit,
+            order=order,
+            after=after,
+            before=before,
+            filter=filter,
+        )
+
+    def vector_store_file_get(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}`` in-process."""
+        return self._vs_store.get_file(vector_store_id, file_id)
+
+    def vector_store_file_delete(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}/files/{file_id}`` in-process —
+        the attachment's chunks leave the index; the file record
+        survives."""
+        return self._vs_store.detach(vector_store_id, file_id)
+
+    def vector_store_file_content(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}/content``
+        in-process — the stored decoded text as text parts."""
+        return self._vs_store.file_content(vector_store_id, file_id)
+
     def openai_batch(
         self,
         lines: list[dict[str, Any]],
@@ -3161,6 +3381,39 @@ class Fx1Harness:
     def upload_cancel(self, upload_id: str) -> dict[str, Any]:
         """``POST /v1/uploads/{id}/cancel``."""
         return upload_object(self._upload_store.cancel(upload_id))
+
+    def openai_file_create(
+        self,
+        content: bytes,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/files`` in-process twin — a one-shot upload
+        landing the same ``file-*`` record chunked uploads mint.
+        Same fail-closed rules as the wire: purposes in
+        ``OPENAI_FILE_PURPOSE_ACCEPT``, non-empty ``.jsonl`` bytes under
+        the 8 MiB cap."""
+        validate_upload_intent(purpose, filename, OPENAI_FILE_PURPOSE_ACCEPT)
+        if not content:
+            raise UploadStoreError(400, "file is empty", "invalid_request")
+        if len(content) > 8 << 20:
+            raise UploadStoreError(413, "file exceeds the 8 MiB cap", "file_too_large")
+        file_id = f"file-{uuid.uuid4().hex}"
+        fobj = {
+            "id": file_id,
+            "object": "file",
+            "purpose": purpose,
+            "filename": filename,
+            "bytes": len(content),
+            "created_at": int(time.time()),
+            "status": "processed",
+        }
+        with self._files_lock:
+            self._files[file_id] = {**fobj, "_content": bytes(content)}
+            while len(self._files) > 256:
+                self._files.popitem(last=False)
+        return fobj
 
     def file_content(self, file_id: str) -> bytes:
         """``GET /v1/files/{id}/content`` twin — raw bytes of an

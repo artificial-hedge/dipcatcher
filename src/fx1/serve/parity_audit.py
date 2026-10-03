@@ -286,6 +286,15 @@ def _raises(fn: Any) -> tuple[str, str]:
     return "", ""
 
 
+def _raises_code(fn: Any) -> tuple[str, str]:
+    """(exception class name, exc.code) — the wire/stable fault code."""
+    try:
+        fn()
+    except Exception as exc:  # noqa: BLE001 — probe captures the class
+        return type(exc).__name__, str(getattr(exc, "code", "") or "")
+    return "", ""
+
+
 def _surfaces(
     backend: Any,
     *,
@@ -3583,6 +3592,141 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and sdk.openai_response_get(_cv_r_sdk["id"])["id"] == _cv_r_sdk["id"]
         and remote.retrieve_response(_cv_r_wl["id"])["id"] == _cv_r_wl["id"]
     )
+
+    # /v1/vector_stores — the lexical retrieval corpus is the same store
+    # on both legs: identical wire shapes, fail-closed edges, and the
+    # file_search tool turn retrieving the same document
+    _vs_sdk = sdk.vector_store_create(name="kb", metadata={"lane": "parity"})
+    _vs_wl = remote.vector_store_create(name="kb", metadata={"lane": "parity"})
+    out["vs_parity"] = (
+        _vs_sdk["id"].startswith("vs_")
+        and _vs_wl["id"].startswith("vs_")
+        and _vs_sdk["object"] == _vs_wl["object"] == "vector_store"
+        and _vs_sdk["metadata"] == _vs_wl["metadata"] == {"lane": "parity"}
+        and sdk.vector_store_update(_vs_sdk["id"], name="kb2")["name"]
+        == remote.vector_store_update(_vs_wl["id"], name="kb2")["name"]
+        == "kb2"
+        and sdk.vector_store_list(limit=1)["data"][0]["object"] == "vector_store"
+        and remote.vector_store_list(limit=1)["data"][0]["object"] == "vector_store"
+    )
+    # the upload+attach path differs per leg (multipart vs in-process
+    # record) but the attached file object is the same shape
+    _vf_sdk = sdk.vector_store_file_create(
+        _vs_sdk["id"],
+        sdk.openai_file_create(content=b"alpha beta gamma", filename="p.jsonl")["id"],
+        attributes={"kind": "docs"},
+    )
+    _vf_wl = remote.vector_store_file_create(
+        _vs_wl["id"],
+        remote.upload_file(b"alpha beta gamma", filename="p.jsonl")["id"],
+        attributes={"kind": "docs"},
+    )
+    _vfc_sdk = sdk.vector_store_file_content(_vs_sdk["id"], _vf_sdk["id"])
+    _vfc_wl = remote.vector_store_file_content(_vs_wl["id"], _vf_wl["id"])
+    out["vs_file_parity"] = (
+        _vf_sdk["object"] == _vf_wl["object"] == "vector_store.file"
+        and _vf_sdk["status"] == _vf_wl["status"] == "completed"
+        and _vf_sdk["usage_bytes"] == _vf_wl["usage_bytes"] > 0
+        and _vf_sdk["attributes"] == _vf_wl["attributes"] == {"kind": "docs"}
+        and sdk.vector_store_file_list(_vs_sdk["id"])["data"][0]["id"] == _vf_sdk["id"]
+        and remote.vector_store_file_list(_vs_wl["id"], filter="completed")["data"][0]["id"]
+        == _vf_wl["id"]
+        and _vfc_sdk["object"] == _vfc_wl["object"] == "vector_store.file_content.page"
+        and _vfc_sdk["data"] == _vfc_wl["data"]
+    )
+    out["vs_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_get("vs_ghost"))
+        == ("VectorStoreError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_get("vs_ghost")) == ("KeyError", "")
+        and _raises_code(lambda: sdk.vector_store_file_create(_vs_sdk["id"], _vf_sdk["id"]))
+        == ("VectorStoreError", "file_already_attached")
+        and _raises_code(lambda: remote.vector_store_file_create(_vs_wl["id"], _vf_wl["id"]))
+        == ("HarnessTransportError", "file_already_attached")
+        and _raises_code(lambda: sdk.vector_store_file_list(_vs_sdk["id"], filter="bogus"))
+        == ("VectorStoreError", "invalid_filters")
+        and _raises_code(lambda: remote.vector_store_file_list(_vs_wl["id"], filter="bogus"))
+        == ("HarnessTransportError", "invalid_filters")
+    )
+    _vsd_sdk = sdk.vector_store_file_delete(_vs_sdk["id"], _vf_sdk["id"])
+    _vsd_wl = remote.vector_store_file_delete(_vs_wl["id"], _vf_wl["id"])
+    _vsdel_sdk = sdk.vector_store_delete(_vs_sdk["id"])
+    _vsdel_wl = remote.vector_store_delete(_vs_wl["id"])
+    out["vs_delete_parity"] = (
+        _vsd_sdk == {"id": _vf_sdk["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and _vsd_wl == {"id": _vf_wl["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and _vsdel_sdk == {"id": _vs_sdk["id"], "object": "vector_store.deleted", "deleted": True}
+        and _vsdel_wl == {"id": _vs_wl["id"], "object": "vector_store.deleted", "deleted": True}
+        and _raises_code(lambda: sdk.vector_store_get(_vs_sdk["id"]))
+        == ("VectorStoreError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_get(_vs_wl["id"])) == ("KeyError", "")
+    )
+    # file_search on /v1/responses: same output grammar on both legs —
+    # the retrieval item precedes the message, include gates results,
+    # unknown stores fail closed the same way
+    _fs_sdk = sdk.vector_store_create(name="fskb")
+    _fs_f_sdk = sdk.vector_store_file_create(
+        _fs_sdk["id"],
+        sdk.openai_file_create(content=b"gamma delta epsilon", filename="q.jsonl")["id"],
+    )
+    _fs_wl = remote.vector_store_create(name="fskb")
+    _fs_f_wl = remote.vector_store_file_create(
+        _fs_wl["id"],
+        remote.upload_file(b"gamma delta epsilon", filename="q.jsonl")["id"],
+    )
+    _fsr_sdk, _ = sdk.openai_response(
+        {
+            "model": "fx1",
+            "input": "epsilon",
+            "tools": [{"type": "file_search", "vector_store_ids": [_fs_sdk["id"]]}],
+            "include": ["file_search_call.results"],
+        }
+    )
+    _fsr_wl, _ = remote.responses_create(
+        model="fx1",
+        input="epsilon",
+        tools=[{"type": "file_search", "vector_store_ids": [_fs_wl["id"]]}],
+        include=["file_search_call.results"],
+    )
+    _fsi_sdk = [o for o in _fsr_sdk["output"] if o["type"] == "file_search_call"]
+    _fsi_wl = [o for o in _fsr_wl["output"] if o["type"] == "file_search_call"]
+    out["file_search_parity"] = (
+        bool(_fsi_sdk)
+        and bool(_fsi_wl)
+        and _fsi_sdk[0]["queries"] == _fsi_wl[0]["queries"] == ["epsilon"]
+        and _fsi_sdk[0]["results"][0]["file_id"] == _fs_f_sdk["id"]
+        and _fsi_wl[0]["results"][0]["file_id"] == _fs_f_wl["id"]
+        and _fsi_sdk[0]["results"][0]["text"] == _fsi_wl[0]["results"][0]["text"]
+        and _fsi_sdk[0]["results"][0]["score"] == _fsi_wl[0]["results"][0]["score"]
+        and _fsr_sdk["output"][-1]["type"] == _fsr_wl["output"][-1]["type"] == "message"
+    )
+    _fsr_no_inc, _ = remote.responses_create(
+        model="fx1",
+        input="epsilon",
+        tools=[{"type": "file_search", "vector_store_ids": [_fs_wl["id"]]}],
+    )
+    out["file_search_include_parity"] = all(
+        o.get("results") is None for o in _fsr_no_inc["output"] if o["type"] == "file_search_call"
+    )
+    _fs_err_sdk = _raises_code(
+        lambda: sdk.openai_response(
+            {
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+            }
+        )
+    )
+    _fs_err_wl = _raises_code(
+        lambda: remote.responses_create(
+            model="fx1",
+            input="x",
+            tools=[{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+        )
+    )
+    out["file_search_fail_closed_parity"] = _fs_err_sdk == (
+        "OpenAICompatError",
+        "vector_store_not_found",
+    ) and _fs_err_wl == ("KeyError", "")
 
     # /harness/keys — the managed-key lifecycle is identical on both legs:
     # mint shows the raw secret once, list/get never carry it, revoke is a

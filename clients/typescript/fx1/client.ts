@@ -905,10 +905,13 @@ export class HarnessApiClient {
    * `instructions` prepends a system turn; `text.format` is the
    * post-validated structured-output channel. `tools` takes the
    * flattened Responses spec (`{type: "function", name, description,
-   * parameters}`), `tool_choice` is `"none" | "auto" | "required"` or
-   * `{type: "function", name}` — calls land in `output` as
-   * `function_call` items. Returns the `response` object plus the
-   * `X-Fx1-Completion-Id` handle.
+   * parameters}` — or `{type: "file_search", vector_store_ids}` which
+   * runs server-side retrieval and emits `file_search_call` output
+   * items; `include: ["file_search_call.results"]` populates
+   * `results`), `tool_choice` is `"none" | "auto" | "required"` or
+   * `{type: "function", name}` / `{type: "file_search"}` — calls land
+   * in `output` as `function_call` items. Returns the `response`
+   * object plus the `X-Fx1-Completion-Id` handle.
    */
   async responsesCreate(
     request: OpenAIResponseRequest,
@@ -938,8 +941,11 @@ export class HarnessApiClient {
   /**
    * POST /v1/responses with `stream: true` — SSE frames in the Responses
    * event grammar (`response.created` … `response.completed`; there is
-   * no `[DONE]` sentinel — the completed event is terminal). `onEvent`
-   * receives each parsed payload (every payload carries `type`).
+   * no `[DONE]` sentinel — `file_search` tool calls emit their
+   * `response.output_item.*` and `response.file_search_call.*` frames
+   * ahead of the message item — the completed event is terminal).
+   * `onEvent` receives each parsed payload (every payload carries
+   * `type`).
    * `lastEventId` resumes a dropped keyed stream exactly like
    * `chatCompletionStream` — frames carry `id:` equal to their index.
    */
@@ -1670,6 +1676,191 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
+  }
+
+  // ---- vector stores -------------------------------------------------------
+
+  /**
+   * POST /v1/vector_stores — mint a `vs_*` retrieval store the
+   * `file_search` tool searches on `responsesCreate`. `fileIds`
+   * attaches existing `file-*` records at create (a bogus id fails the
+   * whole call — no partial store).
+   */
+  async vectorStoreCreate(body?: {
+    name?: string;
+    fileIds?: string[];
+    metadata?: Record<string, string>;
+  }): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/vector_stores",
+      body: {
+        name: body?.name ?? null,
+        file_ids: body?.fileIds ?? null,
+        metadata: body?.metadata ?? null,
+      },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/vector_stores/{id} — the store object. */
+  vectorStoreGet(vectorStoreId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id} — set name/metadata (omitted fields keep
+   * their current values).
+   */
+  async vectorStoreUpdate(
+    vectorStoreId: string,
+    body: { name?: string; metadata?: Record<string, string> | null },
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+      body: { name: body.name ?? null, metadata: body.metadata ?? null },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * DELETE /v1/vector_stores/{id} — drops the store and its index; the
+   * member `file-*` records survive.
+   */
+  async vectorStoreDelete(
+    vectorStoreId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/vector_stores — stores, cursor-paged (newest first). */
+  vectorStoreList(filter?: {
+    limit?: number;
+    after?: string;
+    before?: string;
+    order?: "asc" | "desc";
+  }): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/v1/vector_stores${suffix}`) as Promise<
+      Record<string, unknown>
+    >;
+  }
+
+  /**
+   * POST /v1/vector_stores/{id}/files — index a `file-*` record into the
+   * store; `attributes` are the keys `filters` evaluate against;
+   * `chunkingStrategy` is `{type: "auto"}` or
+   * `{type: "static", static: {max_chunk_size_tokens, chunk_overlap_tokens}}`.
+   */
+  async vectorStoreFileCreate(
+    vectorStoreId: string,
+    fileId: string,
+    body?: {
+      attributes?: Record<string, unknown>;
+      chunkingStrategy?: Record<string, unknown>;
+    },
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files`,
+      body: {
+        file_id: fileId,
+        attributes: body?.attributes ?? null,
+        chunking_strategy: body?.chunkingStrategy ?? null,
+      },
+      idempotent: false,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files — the attachments, paged;
+   * `filter` is an OpenAI status word (in_progress|completed|cancelled|failed).
+   */
+  vectorStoreFileList(
+    vectorStoreId: string,
+    filter?: {
+      limit?: number;
+      after?: string;
+      before?: string;
+      order?: "asc" | "desc";
+      filter?: string;
+    },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    if (filter?.before) q.set("before", filter.before);
+    if (filter?.order) q.set("order", filter.order);
+    if (filter?.filter) q.set("filter", filter.filter);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files/{file_id} — one attachment's
+   * status/chunks/attributes.
+   */
+  vectorStoreFileGet(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * DELETE /v1/vector_stores/{id}/files/{file_id} — detach; the file
+   * record survives.
+   */
+  async vectorStoreFileDelete(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/vector_stores/{id}/files/{file_id}/content — the stored
+   * decoded text as a `vector_store.file_content.page` list of
+   * `{type: "text"}` parts.
+   */
+  vectorStoreFileContent(
+    vectorStoreId: string,
+    fileId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/files/${encodeURIComponent(fileId)}/content`,
+    ) as Promise<Record<string, unknown>>;
   }
 
   // ---- async jobs --------------------------------------------------------

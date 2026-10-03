@@ -2360,6 +2360,169 @@ class HarnessClient:
             )
         )
 
+    # ---- vector stores -------------------------------------------------------
+
+    def vector_store_create(
+        self,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        file_ids: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores`` — mint a ``vs_*`` retrieval store;
+        ``file_ids`` attach at create (a bogus id fails the call)."""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if file_ids is not None:
+            payload["file_ids"] = file_ids
+        return dict(self._json("POST", "/v1/vector_stores", payload))
+
+    def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}`` — the store object."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_update(
+        self,
+        vector_store_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}`` — name/metadata replace
+        wholesale when given."""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if metadata is not None:
+            payload["metadata"] = metadata
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+                payload,
+            )
+        )
+
+    def vector_store_delete(self, vector_store_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}`` — drop the store + index;
+        member ``file-*`` records survive."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}",
+            )
+        )
+
+    def vector_store_list(
+        self,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "desc",
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores`` — cursor-paged store list."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/vector_stores?{q}", idempotent=True))
+
+    def vector_store_file_create(
+        self,
+        vector_store_id: str,
+        file_id: str,
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/files`` — index a ``file-*``
+        record into the store."""
+        payload: dict[str, Any] = {"file_id": file_id}
+        if attributes is not None:
+            payload["attributes"] = attributes
+        if chunking_strategy is not None:
+            payload["chunking_strategy"] = chunking_strategy
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files",
+                payload,
+            )
+        )
+
+    def vector_store_file_list(
+        self,
+        vector_store_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files`` — attachments, paged;
+        ``filter`` is an OpenAI status word."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        if filter:
+            q += f"&filter={urllib.parse.quote(filter)}"
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/files?{q}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_get(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}`` — one
+        attachment's status/chunks/attributes."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_delete(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}/files/{file_id}`` — detach;
+        the file record survives."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}",
+            )
+        )
+
+    def vector_store_file_content(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}/content`` — the
+        stored decoded text as a page of ``{type: 'text'}`` parts."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/files/{urllib.parse.quote(file_id)}/content",
+                idempotent=True,
+            )
+        )
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

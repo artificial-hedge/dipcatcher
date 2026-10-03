@@ -548,6 +548,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.usage_kw: dict[str, Any] | None = None
             self.last_key_call: tuple[str, str | None] | None = None
             self.last_key_kw: dict[str, Any] | None = None
+            self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -599,6 +600,69 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
             self.usage_kw = dict(kw)
             return UsageReport.model_validate(_canned_usage())
+
+        def _vs_note(self, op: str, args: tuple[Any, ...], kw: dict[str, Any]) -> None:
+            self.vs_calls.append((op, args, kw))
+
+        def vector_store_create(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("create", (), kw)
+            return {
+                "id": "vs_fake",
+                "object": "vector_store",
+                "name": kw.get("name"),
+                "status": "completed",
+                "file_counts": {"total": 0},
+            }
+
+        def vector_store_get(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("get", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store", "status": "completed"}
+
+        def vector_store_update(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("update", (vs_id,), kw)
+            return {"id": vs_id, "object": "vector_store", "status": "completed", **kw}
+
+        def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("delete", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+
+        def vector_store_list(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("list", (), kw)
+            return {
+                "object": "list",
+                "data": [{"id": "vs_fake", "object": "vector_store"}],
+                "has_more": False,
+            }
+
+        def vector_store_file_create(self, vs_id: str, file_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_add", (vs_id, file_id), kw)
+            return {
+                "id": file_id,
+                "object": "vector_store.file",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_list(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_list", (vs_id,), kw)
+            return {"object": "list", "data": [], "has_more": False}
+
+        def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_get", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+
+        def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_delete", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file.deleted", "deleted": True}
+
+        def vector_store_file_content(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_content", (vs_id, file_id), {})
+            return {
+                "object": "vector_store.file_content.page",
+                "data": [{"type": "text", "text": "chunk"}],
+                "has_more": False,
+                "next_page": None,
+            }
 
         def verify_receipt(self, receipt: dict[str, Any]) -> Any:
             from fx1.sdk import ReceiptVerdict
@@ -1161,6 +1225,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_call: tuple[str, str | None] | None = None
             self.last_key_kw: dict[str, Any] | None = None
             self.ft_actions: list[tuple[str, str]] = []
+            self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
 
         def usage(self, **kw: Any) -> Any:
             from fx1.serve.usage_report import UsageReport
@@ -1796,6 +1861,69 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def conversation_item_delete(self, conversation_id: str, item_id: str) -> dict[str, Any]:
             self.last_ft_query = {"conv_item_delete": [conversation_id, item_id]}
             return {"id": conversation_id, "object": "conversation", "metadata": {}}
+
+        def _vs_note(self, op: str, args: tuple[Any, ...], kw: dict[str, Any]) -> None:
+            self.vs_calls.append((op, args, kw))
+
+        def vector_store_create(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("create", (), kw)
+            return {
+                "id": "vs_rem",
+                "object": "vector_store",
+                "name": kw.get("name"),
+                "status": "completed",
+                "file_counts": {"total": 0},
+            }
+
+        def vector_store_get(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("get", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store", "status": "completed"}
+
+        def vector_store_update(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("update", (vs_id,), kw)
+            return {"id": vs_id, "object": "vector_store", "status": "completed", **kw}
+
+        def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
+            self._vs_note("delete", (vs_id,), {})
+            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+
+        def vector_store_list(self, **kw: Any) -> dict[str, Any]:
+            self._vs_note("list", (), kw)
+            return {
+                "object": "list",
+                "data": [{"id": "vs_rem", "object": "vector_store"}],
+                "has_more": False,
+            }
+
+        def vector_store_file_create(self, vs_id: str, file_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_add", (vs_id, file_id), kw)
+            return {
+                "id": file_id,
+                "object": "vector_store.file",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_list(self, vs_id: str, **kw: Any) -> dict[str, Any]:
+            self._vs_note("file_list", (vs_id,), kw)
+            return {"object": "list", "data": [], "has_more": False}
+
+        def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_get", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+
+        def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_delete", (vs_id, file_id), {})
+            return {"id": file_id, "object": "vector_store.file.deleted", "deleted": True}
+
+        def vector_store_file_content(self, vs_id: str, file_id: str) -> dict[str, Any]:
+            self._vs_note("file_content", (vs_id, file_id), {})
+            return {
+                "object": "vector_store.file_content.page",
+                "data": [{"type": "text", "text": "chunk"}],
+                "has_more": False,
+                "next_page": None,
+            }
 
         def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
             self.last_ft_query = {"score": input}
@@ -3144,6 +3272,152 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(_cip.stdout).get("metadata") == {"k": "v"}
             and runner.invoke(app, ["harness", "conv-get", "conv_ghost"]).exit_code == 2
         )
+        # /v1/vector_stores — the 10 vs-* commands forward on both legs:
+        # remote hits HarnessClient.vector_store_*, in-process the SDK.
+        _n_remote0 = len(remotes)
+        _vsc = runner.invoke(
+            app,
+            ["harness", "vs-create", "--name", "kb", "--remote", "http://h.test"],
+        )
+        out["remote_vs_create"] = (
+            _vsc.exit_code == 0
+            and json.loads(_vsc.stdout)["id"] == "vs_rem"
+            and remotes[-1].vs_calls[-1]
+            == ("create", (), {"name": "kb", "metadata": None, "file_ids": None})
+        )
+        _vsu = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-update",
+                "vs_rem",
+                "--metadata",
+                '{"t": "a"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_update"] = (
+            _vsu.exit_code == 0
+            and json.loads(_vsu.stdout)["metadata"] == {"t": "a"}
+            and remotes[-1].vs_calls[-1]
+            == ("update", ("vs_rem",), {"name": None, "metadata": {"t": "a"}})
+        )
+        _vsfa = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-file-add",
+                "vs_rem",
+                "file-9",
+                "--attributes",
+                '{"team": "q"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_file_add"] = (
+            _vsfa.exit_code == 0
+            and json.loads(_vsfa.stdout)["id"] == "file-9"
+            and remotes[-1].vs_calls[-1]
+            == (
+                "file_add",
+                ("vs_rem", "file-9"),
+                {"attributes": {"team": "q"}, "chunking_strategy": None},
+            )
+        )
+        _vsfl = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-files",
+                "vs_rem",
+                "--filter",
+                "completed",
+                "--limit",
+                "7",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_files"] = (
+            _vsfl.exit_code == 0
+            and json.loads(_vsfl.stdout)["object"] == "list"
+            and remotes[-1].vs_calls[-1][0] == "file_list"
+            and remotes[-1].vs_calls[-1][2]["filter"] == "completed"
+            and remotes[-1].vs_calls[-1][2]["limit"] == 7
+        )
+        _vsl = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-list",
+                "--limit",
+                "3",
+                "--order",
+                "asc",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_list"] = (
+            _vsl.exit_code == 0
+            and json.loads(_vsl.stdout)["data"][0]["id"] == "vs_rem"
+            and remotes[-1].vs_calls[-1][0] == "list"
+            and remotes[-1].vs_calls[-1][2]["limit"] == 3
+            and remotes[-1].vs_calls[-1][2]["order"] == "asc"
+        )
+        out["remote_vs_get_content_delete"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "vs-get", "vs_rem", "--remote", "http://h.test"]
+                ).stdout
+            )["id"]
+            == "vs_rem"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "vs-file-get", "vs_rem", "file-9", "--remote", "http://h.test"],
+                ).stdout
+            )["object"]
+            == "vector_store.file"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-file-content",
+                        "vs_rem",
+                        "file-9",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["data"][0]["text"]
+            == "chunk"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-file-delete",
+                        "vs_rem",
+                        "file-9",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["deleted"]
+            is True
+            and json.loads(
+                runner.invoke(
+                    app, ["harness", "vs-delete", "vs_rem", "--remote", "http://h.test"]
+                ).stdout
+            )["object"]
+            == "vector_store.deleted"
+        )
+        out["remote_vs_all_hit_client"] = len(remotes) > _n_remote0
+
         _rs = json.loads(
             runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
         )
@@ -3172,6 +3446,41 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             (_rd / "b.json").write_text('{"y": 2}')
             _dv = runner.invoke(app, ["harness", "verify", str(_rd), "--remote", "http://h.test"])
         out["remote_verify_dir"] = _dv.exit_code == 1 and json.loads(_dv.stdout)["files"] == 2
+
+    fake_vs = _FakeSDK()
+    with patch("fx1.sdk.Fx1Harness", return_value=fake_vs):
+        _vsc_i = runner.invoke(
+            app, ["harness", "vs-create", "--name", "kb", "--metadata", '{"a": "1"}']
+        )
+        out["inproc_vs_create"] = (
+            _vsc_i.exit_code == 0
+            and json.loads(_vsc_i.stdout)["id"] == "vs_fake"
+            and fake_vs.vs_calls[-1]
+            == ("create", (), {"name": "kb", "metadata": {"a": "1"}, "file_ids": None})
+        )
+        _vsi = runner.invoke(
+            app, ["harness", "vs-file-add", "vs_x", "file-1", "--attributes", '{"x": "y"}']
+        )
+        out["inproc_vs_file_add"] = _vsi.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "file_add",
+            ("vs_x", "file-1"),
+            {"attributes": {"x": "y"}, "chunking_strategy": None},
+        )
+        _vsd_i = runner.invoke(app, ["harness", "vs-delete", "vs_x"])
+        out["inproc_vs_delete"] = _vsd_i.exit_code == 0 and json.loads(_vsd_i.stdout) == {
+            "id": "vs_x",
+            "object": "vector_store.deleted",
+            "deleted": True,
+        }
+        out["vs_bad_args_exit2"] = (
+            runner.invoke(app, ["harness", "vs-create", "--file-ids", "notjson"]).exit_code == 2
+            and runner.invoke(
+                app, ["harness", "vs-file-add", "vs_x", "file-1", "--attributes", "nope"]
+            ).exit_code
+            == 2
+            and runner.invoke(app, ["harness", "vs-update", "vs_x", "--metadata", "[1]"]).exit_code
+            == 2
+        )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

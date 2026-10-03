@@ -8793,6 +8793,255 @@ def _probe_backend_probes(  # NOSONAR
     out["capabilities_retrieval"] = (
         caps["features"]["openai_retrieval"] is True and caps["limits"]["store_max"] == 256.0
     )
+    out["capabilities_vector_stores"] = (
+        caps["features"]["openai_vector_stores"] is True
+        and caps["features"]["openai_file_search"] is True
+        and caps["limits"]["vs_store_max"] == 256.0
+        and caps["limits"]["vs_file_max"] == 32.0
+        and caps["limits"]["vs_max_results"] == 50.0
+    )
+
+    # --- /v1/vector_stores + server-side file_search -----------------------
+    vs_up = fb.post(
+        "/v1/files",
+        files={"file": ("vs.jsonl", b"alpha beta gamma delta", "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    vs = fb.post("/v1/vector_stores", json={"name": "kb"}).json()
+    out["vs_create"] = vs["object"] == "vector_store" and vs["id"].startswith("vs_")
+    vs_id = str(vs["id"])
+    out["vs_retrieve_404"] = fb.get("/v1/vector_stores/vs_nope").status_code == 404
+    out["vs_update"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}", json={"name": "kb2"}).json()["name"] == "kb2"
+    )
+    vs_list = fb.get("/v1/vector_stores", params={"limit": 1}).json()
+    out["vs_list_page"] = (
+        vs_list["object"] == "list"
+        and vs_list["data"][0]["id"] == vs_id
+        and vs_list["has_more"] is False
+    )
+    vf = fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": vs_up["id"]})
+    out["vs_file_attach"] = vf.status_code == 200 and vf.json()["status"] == "completed"
+    out["vs_file_attach_409"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": vs_up["id"]}).status_code
+        == 409
+    )
+    out["vs_file_unknown_vs_404"] = (
+        fb.post("/v1/vector_stores/vs_nope/files", json={"file_id": vs_up["id"]}).status_code == 404
+    )
+    out["vs_file_unknown_file_404"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/files", json={"file_id": "file-nope"}).status_code
+        == 404
+    )
+    vfiles = fb.get(f"/v1/vector_stores/{vs_id}/files").json()
+    out["vs_files_list"] = vfiles["object"] == "list" and vfiles["data"][0]["id"] == vs_up["id"]
+    out["vs_files_filter_400"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "bogus"}).status_code == 400
+    )
+    out["vs_files_filter_ok"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "completed"}).json()["data"][
+            0
+        ]["id"]
+        == vs_up["id"]
+        and fb.get(f"/v1/vector_stores/{vs_id}/files", params={"filter": "failed"}).json()["data"]
+        == []
+    )
+    vcontent = fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}/content")
+    out["vs_file_content"] = (
+        vcontent.status_code == 200
+        and vcontent.json()["object"] == "vector_store.file_content.page"
+        and vcontent.json()["data"][0]["type"] == "text"
+        and "alpha" in vcontent.json()["data"][0]["text"]
+    )
+    out["vs_file_get"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json()["status"] == "completed"
+    )
+    # the file_search tool turn: retrieval precedes the message, include
+    # gates the results block, the injected context lands in input_items
+    fs_req = {
+        "model": "fx1",
+        "input": "what is alpha",
+        "tools": [{"type": "file_search", "vector_store_ids": [vs_id]}],
+        "include": ["file_search_call.results"],
+    }
+    fs_r = fb.post("/v1/responses", json=fs_req)
+    fs_env = fs_r.json()
+    fs_items = [o for o in fs_env["output"] if o["type"] == "file_search_call"]
+    out["resp_file_search"] = (
+        fs_r.status_code == 200
+        and fs_items
+        and fs_items[0]["status"] == "completed"
+        and fs_items[0]["queries"] == ["what is alpha"]
+        and fs_items[0]["results"][0]["file_id"] == vs_up["id"]
+        and fs_items[0]["results"][0]["filename"] == "vs.jsonl"
+        and fs_env["output"][-1]["type"] == "message"
+        and fs_env["output"].index(fs_items[0]) < len(fs_env["output"]) - 1
+    )
+    fs_no_inc = fb.post(
+        "/v1/responses", json={k: v for k, v in fs_req.items() if k != "include"}
+    ).json()
+    out["resp_file_search_include_gate"] = all(
+        o.get("results") is None for o in fs_no_inc["output"] if o["type"] == "file_search_call"
+    )
+    fs_items_in = fb.get(f"/v1/responses/{fs_env['id']}/input_items").json()["data"]
+    out["resp_file_search_inject"] = (
+        fs_items_in[0]["role"] == "developer"
+        and "[file_search results" in str(fs_items_in[0]["content"])
+        and "alpha" in str(fs_items_in[0]["content"])
+    )
+    out["resp_file_search_unknown_vs_404"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": ["vs_nope"]}],
+            },
+        ).status_code
+        == 404
+    )
+    out["resp_tool_choice_file_search"] = (
+        fb.post(
+            "/v1/responses", json={**fs_req, "tool_choice": {"type": "file_search"}}
+        ).status_code
+        == 200
+        # drop the include so the dict choice only binds the tool spec
+    )
+    out["resp_tool_choice_file_search_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "tool_choice": {"type": "file_search"}},
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_vsids_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [{"type": "file_search", "vector_store_ids": []}],
+            },
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_results_cap_422"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [vs_id],
+                        "max_num_results": 51,
+                    }
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    out["resp_file_search_threshold_400"] = (
+        fb.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "tools": [
+                    {
+                        "type": "file_search",
+                        "vector_store_ids": [vs_id],
+                        "ranking_options": {"score_threshold": 1.5},
+                    }
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    # a file_search_call item re-fed as input carries its results as
+    # system context — not a refusal
+    refeed = fb.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {
+                    "type": "file_search_call",
+                    "id": "fs_past",
+                    "queries": ["alpha"],
+                    "results": [
+                        {
+                            "file_id": "file-a",
+                            "filename": "a.jsonl",
+                            "score": 0.9,
+                            "text": "alpha context",
+                            "attributes": {},
+                        }
+                    ],
+                },
+                {"type": "message", "role": "user", "content": "next"},
+            ],
+        },
+    )
+    out["resp_file_search_refeed"] = refeed.status_code == 200
+    # SSE: the file_search item lifecycle precedes the message item
+    fs_sse = fb.post("/v1/responses", json={**fs_req, "stream": True})
+    fs_body = fs_sse.text
+    out["resp_file_search_sse"] = (
+        fs_sse.status_code == 200
+        and "response.file_search_call.in_progress" in fs_body
+        and "response.file_search_call.searching" in fs_body
+        and "response.file_search_call.completed" in fs_body
+        and fs_body.index("file_search_call") < fs_body.index("response.output_text.delta")
+    )
+    # batch line honours the tool
+    fs_batch_body = (
+        _json3.dumps(
+            {
+                "custom_id": "fs1",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {
+                    "model": "fx1",
+                    "input": "alpha",
+                    "tools": [{"type": "file_search", "vector_store_ids": [vs_id]}],
+                },
+            }
+        )
+        + "\n"
+    ).encode()
+    fs_up2 = fb.post(
+        "/v1/files",
+        files={"file": ("fsb.jsonl", fs_batch_body, "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    fs_bc = fb.post(
+        "/v1/batches", json={"input_file_id": fs_up2["id"], "endpoint": "/v1/responses"}
+    ).json()
+    fs_bterm = _wait_batch(fb, fs_bc["id"])
+    fs_line = _json3.loads(fb.get(f"/v1/files/{fs_bterm['output_file_id']}/content").text.strip())
+    out["resp_file_search_batch"] = (
+        fs_bterm["status"] == "completed"
+        and fs_line["response"]["status_code"] == 200
+        and any(o["type"] == "file_search_call" for o in fs_line["response"]["body"]["output"])
+    )
+    # delete tombstone + detach shape + 404 after
+    out["vs_file_detach"] = fb.delete(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json() == {
+        "id": vs_up["id"],
+        "object": "vector_store.file.deleted",
+        "deleted": True,
+    }
+    out["vs_file_gone"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").status_code == 404
+    )
+    vs_del = fb.delete(f"/v1/vector_stores/{vs_id}")
+    out["vs_delete"] = vs_del.json() == {
+        "id": vs_id,
+        "object": "vector_store.deleted",
+        "deleted": True,
+    }
+    out["vs_gone_404"] = fb.get(f"/v1/vector_stores/{vs_id}").status_code == 404
 
 
 def api_audit_bench() -> dict[str, Any]:
