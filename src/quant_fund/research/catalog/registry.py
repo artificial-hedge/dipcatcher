@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-888 RBF/basis canon.
+        "thin_plate_spline",
+        "polyharmonic_rbf",
+        "trefethen_diff",
+        "galerkin_projection",
+        "periodic_spline",
+        "zernike_poly",
         # Wave-887 solver/transport canon.
         "epi_rk",
         "gauss_rk",

@@ -7095,6 +7095,14 @@ from quant_fund.research.benches_w887 import (
     bench_gauss_rk_family,
     bench_importance_rel_family,
 )
+from quant_fund.research.benches_w888 import (
+    bench_galerkin_projection_family,
+    bench_periodic_spline_family,
+    bench_polyharmonic_rbf_family,
+    bench_thin_plate_spline_family,
+    bench_trefethen_diff_family,
+    bench_zernike_poly_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7466,6 +7474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "thin_plate_spline": bench_thin_plate_spline_family,
+        "polyharmonic_rbf": bench_polyharmonic_rbf_family,
+        "trefethen_diff": bench_trefethen_diff_family,
+        "galerkin_projection": bench_galerkin_projection_family,
+        "periodic_spline": bench_periodic_spline_family,
+        "zernike_poly": bench_zernike_poly_family,
         "epi_rk": bench_epi_rk_family,
         "gauss_rk": bench_gauss_rk_family,
         "adjoint_sparse": bench_adjoint_sparse_family,
