@@ -137,6 +137,36 @@ def test_unstamped_bank_diffable_when_suite_seed_match():
     assert not d.same_bank and d.comparable and d.verdict == "regressed"
 
 
+def test_significance_exact_sign_test():
+    # 8 fixed / 1 regressed discordant pairs → binomtest(1, 9, 0.5) = 0.0390625
+    a = _rec(
+        "a",
+        results=[{"task": f"t{i}", "kind": "x", "passed": i == 0} for i in range(9)],
+    )
+    b = _rec(
+        "b",
+        results=[{"task": f"t{i}", "kind": "x", "passed": i != 0} for i in range(9)],
+    )
+    d = diff_eval_records(a, b)
+    assert d.significance is not None
+    assert d.significance.n_fixed == 8 and d.significance.n_regressed == 1
+    assert d.significance.p_value == 0.0390625 and d.significance.significant_p05
+
+
+def test_significance_null_when_incomparable():
+    a = _rec("a", results=[], suite="tooluse")
+    b = _rec("b", results=[], suite="capability")
+    assert diff_eval_records(a, b).significance is None
+
+
+def test_significance_zero_discordant_is_one():
+    a = _rec("a", results=[{"task": "t", "kind": "x", "passed": True}])
+    b = _rec("b", results=[{"task": "t", "kind": "x", "passed": True}])
+    d = diff_eval_records(a, b)
+    assert d.significance is not None and d.significance.p_value == 1.0
+    assert not d.significance.significant_p05
+
+
 def test_bool_leaves_excluded_from_deltas():
     a = _rec("a", results=[], by_kind={"x": {"passed": 1, "gate": True}})
     b = _rec("b", results=[], by_kind={"x": {"passed": 1, "gate": False}})

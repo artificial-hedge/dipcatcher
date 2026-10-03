@@ -3463,6 +3463,9 @@ def _probe_backend_probes(
         and dj.get("verdict") == "unchanged"
         and dj.get("tasks_fixed") == []
         and dj.get("tasks_regressed") == []
+        # identical records: zero discordant pairs, exact sign test p = 1
+        and (dj.get("significance") or {}).get("p_value") == 1.0
+        and (dj.get("significance") or {}).get("significant_p05") is False
     )
     out["eval_diff_unknown_404"] = (
         eval_app.get(f"/harness/evals/nope/diff/{ev2_id}").status_code == 404

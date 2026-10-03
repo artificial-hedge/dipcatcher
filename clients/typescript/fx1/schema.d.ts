@@ -1589,6 +1589,7 @@ export interface components {
             same_seed: boolean;
             /** Same Suite */
             same_suite: boolean;
+            significance: components["schemas"]["EvalDiffSignificance"] | null;
             /** Tasks Fixed */
             tasks_fixed: string[];
             /** Tasks Only Base */
@@ -1616,6 +1617,26 @@ export interface components {
             delta: number;
             /** Path */
             path: string;
+        };
+        /**
+         * EvalDiffSignificance
+         * @description McNemar exact sign test on the discordant task pairs.
+         *
+         *     ``n_fixed`` tasks went fail→pass and ``n_regressed`` went pass→fail;
+         *     under the null the split is a fair coin, so ``p_value`` is the exact
+         *     two-sided sign test. ``verdict`` stays the observed direction — the
+         *     significance block is the separate evidence of whether the move is
+         *     distinguishable from noise at this bank size.
+         */
+        EvalDiffSignificance: {
+            /** N Fixed */
+            n_fixed: number;
+            /** N Regressed */
+            n_regressed: number;
+            /** P Value */
+            p_value: number;
+            /** Significant P05 */
+            significant_p05: boolean;
         };
         /**
          * EvalListResponse

@@ -189,7 +189,7 @@ same digested shape the job record embeds.
 | `GET /harness/evals/{id}` | poll the live record (status/report/attempts/sampling pin); `HarnessClient.eval_status` |
 | `GET /harness/evals/{id}/receipt` | terminal record sealed as `fx1_eval_record.v1` → `POST /receipts/verify` (`409 eval_not_terminal` until terminal); `HarnessClient.eval_receipt` / `fx1 harness eval-status --receipt` |
 | `DELETE /harness/evals/{id}` | cooperative cancel of a queued eval (running/terminal → 409); `HarnessClient.cancel_eval` / `fx1 harness eval-cancel` |
-| `GET /harness/evals/{base}/diff/{cand}` | promotion-gate diff over two terminal records — per-task pass/fail transitions, gate move, `by_kind` deltas, `verdict` (`comparable` needs same suite+seed and no bank-stamp mismatch; `404` unknown id, `409 eval_not_terminal`); `Fx1Harness.eval_diff` / `HarnessClient.diff_evals` / `client.diffEvals` / `fx1 harness eval-diff` |
+| `GET /harness/evals/{base}/diff/{cand}` | promotion-gate diff over two terminal records — per-task pass/fail transitions, gate move, `by_kind` deltas, exact sign-test `significance` on the discordant pairs, `verdict` (`comparable` needs same suite+seed and no bank-stamp mismatch; `404` unknown id, `409 eval_not_terminal`); `Fx1Harness.eval_diff` / `HarnessClient.diff_evals` / `client.diffEvals` / `fx1 harness eval-diff` |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
 | `GET /v1/models` | OpenAI `list` envelope: `fx1` + the backend names |
 | `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found` |

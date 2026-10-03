@@ -32,6 +32,7 @@ import time
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import asdict, is_dataclass
+from math import comb
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
@@ -43,6 +44,7 @@ __all__ = [
     "EVAL_SUITES",
     "EvalDiff",
     "EvalDiffDelta",
+    "EvalDiffSignificance",
     "EvalRecord",
     "EvalStore",
     "EvalTaskTransition",
@@ -337,6 +339,24 @@ class EvalDiffDelta(BaseModel):
     delta: float
 
 
+class EvalDiffSignificance(BaseModel):
+    """McNemar exact sign test on the discordant task pairs.
+
+    ``n_fixed`` tasks went fail→pass and ``n_regressed`` went pass→fail;
+    under the null the split is a fair coin, so ``p_value`` is the exact
+    two-sided sign test. ``verdict`` stays the observed direction — the
+    significance block is the separate evidence of whether the move is
+    distinguishable from noise at this bank size.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    n_fixed: int
+    n_regressed: int
+    p_value: float
+    significant_p05: bool
+
+
 class EvalDiff(BaseModel):
     """Deterministic comparison of two terminal eval records."""
 
@@ -359,6 +379,7 @@ class EvalDiff(BaseModel):
     tasks_only_base: list[str]
     tasks_only_candidate: list[str]
     deltas: list[EvalDiffDelta]
+    significance: EvalDiffSignificance | None
     verdict: Literal["improved", "regressed", "unchanged", "unknown"]
 
 
@@ -399,6 +420,23 @@ def _numeric_leaves(node: Any, prefix: str = "") -> dict[str, float]:
     elif isinstance(node, (int, float)) and not isinstance(node, bool):
         out[prefix] = float(node)
     return out
+
+
+def _sign_test_pvalue(k: int, n: int) -> float:
+    """Exact two-sided sign-test p on Binomial(n, 0.5), integer-exact.
+
+    The extreme set under the symmetric null is both tails at
+    ``|X - n/2| >= |k - n/2|`` — the tails are disjoint unless k sits on
+    the center (p = 1). Deterministic ``math.comb`` arithmetic; a float
+    binomial coefficient or a normal approximation would drift across
+    platforms.
+    """
+    if n <= 0 or 2 * k == n:
+        return 1.0
+    d = min(k, n - k)
+    tail: int = sum(comb(n, j) for j in range(d + 1))
+    p: float = min(1.0, 2.0 * tail / 2**n)
+    return p
 
 
 def diff_eval_records(base: EvalRecord, candidate: EvalRecord) -> EvalDiff:
@@ -474,12 +512,23 @@ def diff_eval_records(base: EvalRecord, candidate: EvalRecord) -> EvalDiff:
 
     if not comparable:
         verdict: Literal["improved", "regressed", "unchanged", "unknown"] = "unknown"
-    elif tasks_regressed or gate_transition == "closed":
-        verdict = "regressed"
-    elif tasks_fixed or gate_transition == "opened":
-        verdict = "improved"
+        significance = None
     else:
-        verdict = "unchanged"
+        if tasks_regressed or gate_transition == "closed":
+            verdict = "regressed"
+        elif tasks_fixed or gate_transition == "opened":
+            verdict = "improved"
+        else:
+            verdict = "unchanged"
+        n_fixed = len(tasks_fixed)
+        n_regressed = len(tasks_regressed)
+        p = _sign_test_pvalue(n_regressed, n_fixed + n_regressed)
+        significance = EvalDiffSignificance(
+            n_fixed=n_fixed,
+            n_regressed=n_regressed,
+            p_value=p,
+            significant_p05=p < 0.05,
+        )
 
     return EvalDiff(
         base_eval_id=base.eval_id,
@@ -498,5 +547,6 @@ def diff_eval_records(base: EvalRecord, candidate: EvalRecord) -> EvalDiff:
         tasks_only_base=sorted(base_tasks.keys() - cand_tasks.keys()),
         tasks_only_candidate=sorted(cand_tasks.keys() - base_tasks.keys()),
         deltas=deltas,
+        significance=significance,
         verdict=verdict,
     )

@@ -1631,6 +1631,16 @@
             "title": "Same Suite",
             "type": "boolean"
           },
+          "significance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalDiffSignificance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tasks_fixed": {
             "items": {
               "type": "string"
@@ -1687,6 +1697,7 @@
           "tasks_only_base",
           "tasks_only_candidate",
           "deltas",
+          "significance",
           "verdict"
         ],
         "title": "EvalDiff",
@@ -1720,6 +1731,36 @@
           "delta"
         ],
         "title": "EvalDiffDelta",
+        "type": "object"
+      },
+      "EvalDiffSignificance": {
+        "additionalProperties": false,
+        "description": "McNemar exact sign test on the discordant task pairs.\n\n``n_fixed`` tasks went fail\u2192pass and ``n_regressed`` went pass\u2192fail;\nunder the null the split is a fair coin, so ``p_value`` is the exact\ntwo-sided sign test. ``verdict`` stays the observed direction \u2014 the\nsignificance block is the separate evidence of whether the move is\ndistinguishable from noise at this bank size.",
+        "properties": {
+          "n_fixed": {
+            "title": "N Fixed",
+            "type": "integer"
+          },
+          "n_regressed": {
+            "title": "N Regressed",
+            "type": "integer"
+          },
+          "p_value": {
+            "title": "P Value",
+            "type": "number"
+          },
+          "significant_p05": {
+            "title": "Significant P05",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "n_fixed",
+          "n_regressed",
+          "p_value",
+          "significant_p05"
+        ],
+        "title": "EvalDiffSignificance",
         "type": "object"
       },
       "EvalListResponse": {
