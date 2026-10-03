@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-493 tropical-geometry canon.
+        "tropical_poly",
+        "berkovich_an",
+        "skeleton_trop",
+        "tropical_curve",
+        "mikhalkin",
+        "tropical_cycle",
         # Wave-492 log-geometry canon.
         "log_structure",
         "kato_fontaine",
