@@ -4727,6 +4727,14 @@ from quant_fund.research.benches_w591 import (
     bench_motivic_purity_family,
     bench_motivic_zeta_family,
 )
+from quant_fund.research.benches_w592 import (
+    bench_braided_cat_family,
+    bench_fusion_cat_family,
+    bench_premodular_family,
+    bench_rigid_cat_family,
+    bench_spherical_cat_family,
+    bench_tensor_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5106,6 +5114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tensor_cat": bench_tensor_cat_family,
+        "braided_cat": bench_braided_cat_family,
+        "rigid_cat": bench_rigid_cat_family,
+        "fusion_cat": bench_fusion_cat_family,
+        "spherical_cat": bench_spherical_cat_family,
+        "premodular": bench_premodular_family,
         "friedlander_voev": bench_friedlander_voev_family,
         "motivic_eilenberg": bench_motivic_eilenberg_family,
         "motivic_zeta": bench_motivic_zeta_family,
