@@ -7863,6 +7863,14 @@ from quant_fund.research.benches_w983 import (
     bench_triebel_lizorkin_family,
     bench_wavelet_char_family,
 )
+from quant_fund.research.benches_w984 import (
+    bench_ambiguity_fn_family,
+    bench_feichtinger_alg_family,
+    bench_gabor_frame_family,
+    bench_modulation_space_family,
+    bench_short_time_ft_family,
+    bench_wigner_dist_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8234,6 +8242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "modulation_space": bench_modulation_space_family,
+        "short_time_ft": bench_short_time_ft_family,
+        "gabor_frame": bench_gabor_frame_family,
+        "wigner_dist": bench_wigner_dist_family,
+        "ambiguity_fn": bench_ambiguity_fn_family,
+        "feichtinger_alg": bench_feichtinger_alg_family,
         "besov_space": bench_besov_space_family,
         "triebel_lizorkin": bench_triebel_lizorkin_family,
         "atoms_decomp": bench_atoms_decomp_family,

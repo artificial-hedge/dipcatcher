@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-984 modulation-spaces canon.
+        "modulation_space",
+        "short_time_ft",
+        "gabor_frame",
+        "wigner_dist",
+        "ambiguity_fn",
+        "feichtinger_alg",
         # Wave-983 Besov/Triebel-Lizorkin canon.
         "besov_space",
         "triebel_lizorkin",
