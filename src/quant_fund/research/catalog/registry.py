@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-394 order-theory canon.
+        "downset_lattice",
+        "zeta_mobius",
+        "linear_extension",
+        "sperner_bound",
+        "dilworth_partition",
+        "birkhoff_rep",
         # Wave-393 algebraic-topology-4 canon.
         "eilenberg_steenrod",
         "cap_product",

@@ -1,3 +1,4 @@
+feat(research): wave 394 — order-theory canon (downset_lattice, zeta_mobius, linear_extension, sperner_bound, dilworth_partition, birkhoff_rep) (2319->2325 families)
 feat(research): wave 393 — algebraic-topology-4 canon (eilenberg_steenrod, cap_product, thom_isom, serre_class, obstruction_toy, k_theory) (2313->2319 families)
 feat(research): wave 392 — computability canon (mu_recursion, primitive_recursion, diagonal_lemma, arithmetization, fixed_point_combinator, kleene_normal) (2307->2313 families)
 feat(research): wave 391 — category-theory-3 canon (monoidal_cat, closed_cat, presheaf, kan_extension, distributor, equivalence_cat) (2301->2307 families)
