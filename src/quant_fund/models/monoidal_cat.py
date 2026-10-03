@@ -6,9 +6,7 @@ import itertools
 from collections.abc import Iterable
 
 
-def product_set(
-    x: Iterable[object], y: Iterable[object]
-) -> set[tuple[object, object]]:
+def product_set(x: Iterable[object], y: Iterable[object]) -> set[tuple[object, object]]:
     return set(itertools.product(x, y))
 
 
