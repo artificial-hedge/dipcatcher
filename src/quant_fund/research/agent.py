@@ -6487,6 +6487,14 @@ from quant_fund.research.benches_w811 import (
     bench_papangelou_family,
     bench_void_prob_family,
 )
+from quant_fund.research.benches_w812 import (
+    bench_epsilon_coupling_family,
+    bench_nummelin_family,
+    bench_petite_set_family,
+    bench_regenerative_family,
+    bench_small_set_family,
+    bench_split_chain_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6858,6 +6866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "regenerative": bench_regenerative_family,
+        "epsilon_coupling": bench_epsilon_coupling_family,
+        "small_set": bench_small_set_family,
+        "petite_set": bench_petite_set_family,
+        "split_chain": bench_split_chain_family,
+        "nummelin": bench_nummelin_family,
         "cambrian_pp": bench_cambrian_pp_family,
         "papangelou": bench_papangelou_family,
         "gneding_metric": bench_gneding_metric_family,

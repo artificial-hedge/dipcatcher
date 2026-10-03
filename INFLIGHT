@@ -1,3 +1,4 @@
+feat(research): wave 812 — regenerative canon (regenerative, epsilon_coupling, small_set, petite_set, split_chain, nummelin) (4821->4827 families)
 feat(research): wave 811 — point-process canon (cambrian_pp, papangelou, gneding_metric, void_prob, j_function, ergodic_pp) (4815->4821 families)
 feat(research): wave 809 — Markov-chain canon (doeblin_coupling, harris_recurrent, ergodic_markov, mixing_time, drift_lyapunov, cutoff_phenomenon) (4809->4815 families)
 feat(research): wave 808 — filtering canon (zakai_eq, kushner_strat, kalman_bucy, bene_filter, hidden_markov_filter, particle_filter2) (4803->4809 families)

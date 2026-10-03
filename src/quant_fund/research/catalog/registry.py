@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-812 regenerative canon.
+        "regenerative",
+        "epsilon_coupling",
+        "small_set",
+        "petite_set",
+        "split_chain",
+        "nummelin",
         # Wave-811 point-process canon.
         "cambrian_pp",
         "papangelou",
