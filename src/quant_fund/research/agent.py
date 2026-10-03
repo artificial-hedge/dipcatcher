@@ -7847,6 +7847,14 @@ from quant_fund.research.benches_w981 import (
     bench_milman_isotropic_family,
     bench_milman_rev_thm_family,
 )
+from quant_fund.research.benches_w982 import (
+    bench_boundary_regular_family,
+    bench_capacitary_pot_family,
+    bench_dirichlet_problem_family,
+    bench_energy_principle_family,
+    bench_equilibrium_measure_family,
+    bench_thin_set_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8218,6 +8226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dirichlet_problem": bench_dirichlet_problem_family,
+        "energy_principle": bench_energy_principle_family,
+        "equilibrium_measure": bench_equilibrium_measure_family,
+        "thin_set": bench_thin_set_family,
+        "boundary_regular": bench_boundary_regular_family,
+        "capacitary_pot": bench_capacitary_pot_family,
         "john_ellipsoid": bench_john_ellipsoid_family,
         "loewner_ellipsoid": bench_loewner_ellipsoid_family,
         "milman_rev_thm": bench_milman_rev_thm_family,
