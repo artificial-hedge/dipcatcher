@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-677 category-15 canon.
+        "derivator_cat",
+        "quillen_cat",
+        "combinatorial_mc",
+        "cat_dg",
+        "univalent_cat",
+        "cat_structure",
         # Wave-676 higher-algebra-7 canon.
         "en_algebra2",
         "thom_transpose",

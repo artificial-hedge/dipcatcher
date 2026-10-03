@@ -5407,6 +5407,14 @@ from quant_fund.research.benches_w676 import (
     bench_operad_lie_family,
     bench_thom_transpose_family,
 )
+from quant_fund.research.benches_w677 import (
+    bench_cat_dg_family,
+    bench_cat_structure_family,
+    bench_combinatorial_mc_family,
+    bench_derivator_cat_family,
+    bench_quillen_cat_family,
+    bench_univalent_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5786,6 +5794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derivator_cat": bench_derivator_cat_family,
+        "quillen_cat": bench_quillen_cat_family,
+        "combinatorial_mc": bench_combinatorial_mc_family,
+        "cat_dg": bench_cat_dg_family,
+        "univalent_cat": bench_univalent_cat_family,
+        "cat_structure": bench_cat_structure_family,
         "en_algebra2": bench_en_algebra2_family,
         "thom_transpose": bench_thom_transpose_family,
         "higher_brace2": bench_higher_brace2_family,
