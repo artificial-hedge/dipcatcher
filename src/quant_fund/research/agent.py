@@ -5623,6 +5623,14 @@ from quant_fund.research.benches_w703 import (
     bench_stable_derivator_family,
     bench_stable_excisive_family,
 )
+from quant_fund.research.benches_w704 import (
+    bench_braces_e5_family,
+    bench_delooping3_family,
+    bench_higher_algebra9_family,
+    bench_koszul_duality3_family,
+    bench_operad_infty5_family,
+    bench_operad_swiss4_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6002,6 +6010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "higher_algebra9": bench_higher_algebra9_family,
+        "operad_infty5": bench_operad_infty5_family,
+        "operad_swiss4": bench_operad_swiss4_family,
+        "koszul_duality3": bench_koszul_duality3_family,
+        "braces_e5": bench_braces_e5_family,
+        "delooping3": bench_delooping3_family,
         "homotopy_suspension2": bench_homotopy_suspension2_family,
         "homotopy_fiber3": bench_homotopy_fiber3_family,
         "stable_derivator": bench_stable_derivator_family,
