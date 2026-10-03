@@ -1,3 +1,4 @@
+feat(research): wave 494 — noncommutative-geometry canon (hochschild_coh, cyclic_coh, nc_scheme, calabi_yau_alg, ginzburg_dga, connes_nc) (2919->2925 families)
 feat(research): wave 493 — tropical-geometry canon (tropical_poly, berkovich_an, skeleton_trop, tropical_curve, mikhalkin, tropical_cycle) (2913->2919 families)
 feat(research): wave 492 — log-geometry canon (log_structure, kato_fontaine, log_smooth, log_etale, log_derham, log_crystalline) (2907->2913 families)
 feat(research): wave 491 — automorphic-2 canon (shimura_var, l_function, hecke_alg2, theta_lift, arthur_param, satake_param) (2901->2907 families)
