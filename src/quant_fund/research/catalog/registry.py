@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-299 game-playing-2 canon.
+        "tablebase_dtm",
+        "retrograde_wdl",
+        "rave_mc",
+        "mast_playout",
+        "expectimax",
+        "isomcts",
         # Wave-298 medical-imaging canon.
         "radon_fbp",
         "art_sirt",
