@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-597 chromatic-homotopy canon.
+        "curtis_lower",
+        "bousfield_kan",
+        "lannes_t",
+        "dror_smith",
+        "telescope_conj",
+        "periodicity_thm",
         # Wave-596 p-adic-Hodge canon.
         "breuil_mod",
         "kisin_mod",
