@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-868 continuation/homotopy canon.
+        "arc_continuation",
+        "pseudo_arclength",
+        "deflation_method",
+        "bifurcation_track",
+        "homotopy_solver",
+        "davidenko_ode",
         # Wave-867 inverse-problem canon.
         "tikhonov_reg",
         "morozov_dp",
