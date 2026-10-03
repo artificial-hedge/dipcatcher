@@ -1,3 +1,4 @@
+feat(research): wave 825 — measurable-selection canon (measur_select, kura_ryll, castaing_rep, measurable_graph, integrand_map, stoch_open) (4899->4905 families)
 feat(research): wave 824 — stochastic-order canon (usual_stoch_order, first_order_dom, second_order_dom, convex_order, hazard_rate_order, supermodular_order) (4893->4899 families)
 feat(research): wave 823 — law-of-process canon (support_law, polish_law, tight_law, law_convergence, finite_dim, cylindrical_law) (4887->4893 families)
 feat(research): wave 822 — filtration canon (natural_filtration, right_continuous_f, usual_aug, enlargement_f, initial_enlarg, progressive_enlarg) (4881->4887 families)
