@@ -3071,6 +3071,14 @@ from quant_fund.research.benches_w384 import (
     bench_schur_multiplier_family,
     bench_transfer_hom_family,
 )
+from quant_fund.research.benches_w385 import (
+    bench_completion_ring_family,
+    bench_dimension_fiber_family,
+    bench_hilbert_samuel_family,
+    bench_krull_dim_family,
+    bench_noether_normal_family,
+    bench_primary_decomp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3450,6 +3458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hilbert_samuel": bench_hilbert_samuel_family,
+        "krull_dim": bench_krull_dim_family,
+        "noether_normal": bench_noether_normal_family,
+        "primary_decomp": bench_primary_decomp_family,
+        "completion_ring": bench_completion_ring_family,
+        "dimension_fiber": bench_dimension_fiber_family,
         "hall_subgroup": bench_hall_subgroup_family,
         "transfer_hom": bench_transfer_hom_family,
         "schur_multiplier": bench_schur_multiplier_family,

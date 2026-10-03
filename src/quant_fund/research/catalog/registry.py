@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-385 commutative-algebra-2 canon.
+        "hilbert_samuel",
+        "krull_dim",
+        "noether_normal",
+        "primary_decomp",
+        "completion_ring",
+        "dimension_fiber",
         # Wave-384 group-theory-3 canon.
         "hall_subgroup",
         "transfer_hom",
