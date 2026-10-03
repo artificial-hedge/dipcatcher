@@ -277,6 +277,8 @@ def _raises(fn: Any) -> tuple[str, str]:
 
 def _surfaces(
     backend: Any,
+    *,
+    ft_runner: Any = None,
 ) -> tuple[Any, TestClient]:
     """(Fx1Harness, TestClient) wired to one resolver returning `backend`'s class."""
     from fastapi.testclient import TestClient as _TC
@@ -293,10 +295,13 @@ def _surfaces(
             raise KeyError(name)
         return backend()
 
-    sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
+    sdk = Fx1Harness(
+        harness=Harness(runner=fake_runner), backend_resolver=resolver, ft_runner=ft_runner
+    )
     app = api_mod.create_app(
         harness=Harness(runner=fake_runner),
         backend_resolver=resolver,
+        ft_runner=ft_runner,
         # no receipt store -> receipt_hashes citations stay advisory, so these
         # probes can use synthetic hashes deterministically from any cwd.
         receipts_dir="/nonexistent-parity-store",
@@ -1608,6 +1613,58 @@ def parity_audit() -> dict[str, bool]:
             _raises(lambda: sdk_u.eval_diff("nope", ev_b.eval_id))[0] == "KeyError"
             and _raises(lambda: remote_u.diff_evals("nope", rv_b["eval_id"]))[0] == "KeyError"
         )
+
+        # fine-tuning surface: the in-process twin takes the corpus inline
+        # and runs the same runner contract synchronously; the wire twin
+        # uploads a file, submits, and polls. Both land terminal-succeeded
+        # with the same ft: model name and an event feed; the model guard,
+        # unknown-id, and terminal-cancel faults map identically (400/409 →
+        # HarnessTransportError on the wire, ValueError in-process).
+        from fx1.serve.finetune import FTJobOutcome  # noqa: PLC0415
+
+        def _ft_runner(spec: Any, *, emit: Any, should_cancel: Any) -> Any:
+            emit("info", "runner working")
+            art = spec.work_dir / "receipt.json"
+            art.write_text("{}")
+            return FTJobOutcome(
+                fine_tuned_model=spec.ft_model_name, artifacts={"receipt.json": art}
+            )
+
+        sdk_ft, ft_wire = _surfaces(_UsageBackend, ft_runner=_ft_runner)
+        remote_ft = HarnessClient("http://harness.test", transport=_tc_transport(ft_wire))
+        _corpus = (
+            b'{"messages":[{"role":"user","content":"hi"},{"role":"assistant","content":"ok"}]}\n'
+        )
+        sjob = sdk_ft.create_finetune_job(model="fx1", training_jsonl=_corpus, suffix="pp")
+        fid_w = remote_ft.upload_file(_corpus, filename="c.jsonl", purpose="fine-tune")["id"]
+        wjob = remote_ft.create_finetune_job(model="fx1", training_file=fid_w, suffix="pp")
+        wfin = remote_ft.wait_finetune_job(wjob["id"], timeout_s=30)
+        out["ft_parity"] = (
+            sjob.status == "succeeded"
+            and sjob.object == "fine_tuning.job"
+            and wfin["status"] == "succeeded"
+            and wfin["fine_tuned_model"] == f"ft:fx1:pp:{wjob['id'].split('-', 1)[1][:12]}"
+            and sjob.fine_tuned_model == f"ft:fx1:pp:{sjob.id.split('-', 1)[1][:12]}"
+            and len(wfin["result_files"]) == 1
+            and sdk_ft.finetune_job(sjob.id).id == sjob.id
+        )
+        out["ft_events_parity"] = (
+            len(remote_ft.finetune_job_events(wjob["id"])["data"]) >= 2
+            and len(sdk_ft.finetune_job_events(sjob.id)) >= 2
+        )
+        out["ft_list_parity"] = wjob["id"] in {
+            j["id"] for j in remote_ft.finetune_jobs()["data"]
+        } and sjob.id in {j.id for j in sdk_ft.finetune_jobs()}
+        out["ft_guards_parity"] = (
+            _raises(lambda: sdk_ft.create_finetune_job(model="byok", training_jsonl=_corpus))[0]
+            == "ValueError"
+            and _raises(lambda: remote_ft.create_finetune_job(model="byok", training_file=fid_w))[0]
+            == "HarnessTransportError"
+            and _raises(lambda: sdk_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
+            == "HarnessTransportError"
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (
@@ -2676,7 +2733,12 @@ def parity_audit_bench() -> dict[str, Any]:
             "doc verifiable through either surface's verifier. A terminal "
             "wire job's fx1_job_record.v1 embeds the same digested run "
             "result that Fx1Harness.run_receipt seals in-process as "
-            "fx1_run_result.v1 — identical on the shared fields. Flags: "
+            "fx1_run_result.v1 — identical on the shared fields. "
+            "Fine-tuning parity holds: the SDK's synchronous "
+            "create_finetune_job produces the same terminal job fields "
+            "(status, ft:-name grammar, result_files, event feed) as the "
+            "wire route under the same runner, and guards map "
+            "ValueError↔HarnessTransportError / KeyError↔KeyError. Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

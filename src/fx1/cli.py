@@ -1321,6 +1321,156 @@ def harness_eval_diff(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("ft-create")
+def harness_ft_create(
+    training_file: Path = typer.Argument(
+        ..., help="Chat-format .jsonl corpus ({messages:[...]} per line)."
+    ),
+    model: str = typer.Option("fx1", "--model", help="Trainable model: fx1|local_fx1."),
+    suffix: str | None = typer.Option(
+        None, "--suffix", help="Fine-tuned model name suffix (a-z0-9_-)."
+    ),
+    validation_file: Path | None = typer.Option(
+        None, "--validation-file", help="Optional held-out .jsonl corpus."
+    ),
+    seed: int | None = typer.Option(None, "--seed", help="Pipeline seed."),
+    epochs: int | None = typer.Option(None, "--epochs", help="n_epochs hyperparameter (1-50)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    no_wait: bool = typer.Option(
+        False, "--no-wait", help="Remote only: submit and return immediately."
+    ),
+) -> None:
+    """Create a gated fine-tuning job on the /v1/fine_tuning/jobs surface:
+    in-process by default (SDK twin — synchronous, returns the terminal
+    job), or ``--remote`` uploads the corpus (purpose=fine-tune) then
+    submits and waits. Corpus validation is synchronous either way — a
+    malformed file fails before the job exists."""
+    corpus = training_file.read_bytes() if training_file.exists() else None
+    if corpus is None:
+        typer.echo(f"error: {training_file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    hp = {"n_epochs": epochs} if epochs is not None else None
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        up = _or_exit(
+            lambda: client.upload_file(corpus, filename=training_file.name, purpose="fine-tune")
+        )
+        val_id = None
+        if validation_file is not None:
+            vbytes = validation_file.read_bytes() if validation_file.exists() else None
+            if vbytes is None:
+                typer.echo(f"error: {validation_file} does not exist", err=True)
+                raise typer.Exit(code=2)
+            vup = _or_exit(
+                lambda: client.upload_file(
+                    vbytes, filename=validation_file.name, purpose="fine-tune"
+                )
+            )
+            val_id = vup["id"]
+        job = _or_exit(
+            lambda: client.create_finetune_job(
+                model=model,
+                training_file=up["id"],
+                hyperparameters=hp,
+                suffix=suffix,
+                validation_file=val_id,
+                seed=seed,
+            )
+        )
+        if no_wait:
+            typer.echo(json.dumps(job, indent=2))
+            return
+        rec = _or_exit(lambda: client.wait_finetune_job(job["id"], timeout_s=None))
+        typer.echo(json.dumps(rec, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    harness = Fx1Harness()
+    from fx1.serve.finetune import FTHyperparameters
+
+    ftjob = _or_exit(
+        lambda: harness.create_finetune_job(
+            model=model,
+            training_jsonl=corpus,
+            validation_jsonl=(
+                validation_file.read_bytes() if validation_file is not None else None
+            ),
+            hyperparameters=FTHyperparameters(**hp) if hp is not None else None,
+            suffix=suffix,
+            seed=seed,
+        )
+    )
+    typer.echo(ftjob.model_dump_json(indent=2))
+
+
+@harness_app.command("ft-jobs")
+def harness_ft_jobs(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    after: str | None = typer.Option(None, "--after", help="Pagination cursor (job id)."),
+) -> None:
+    """List the remote fine-tuning jobs, newest first (in-process runs
+    are synchronous — they return their terminal record at once)."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).finetune_jobs(
+            limit=limit, after=after
+        )
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("ft-status")
+def harness_ft_status(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print a remote fine-tuning job's live record."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).finetune_job(job_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("ft-events")
+def harness_ft_events(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+) -> None:
+    """Print a remote fine-tuning job's event feed (oldest first)."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).finetune_job_events(
+            job_id, limit=limit
+        )
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("ft-cancel")
+def harness_ft_cancel(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a remote fine-tuning job — queued cancels at once; running
+    stops cooperatively at the next pipeline-stage boundary."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).cancel_finetune_job(job_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

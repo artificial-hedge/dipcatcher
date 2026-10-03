@@ -2438,7 +2438,16 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         )
         out["capabilities_features"] = all(
             capj["features"].get(f) is True
-            for f in ("idempotency", "sse", "webhooks", "batch", "jobs", "drain", "eval_diff")
+            for f in (
+                "idempotency",
+                "sse",
+                "webhooks",
+                "batch",
+                "jobs",
+                "drain",
+                "eval_diff",
+                "fine_tuning",
+            )
         )
         out["capabilities_roles_cover_registry"] = set(capj["roles"]) == {
             str(r) for r in _HarnessRole
@@ -2662,7 +2671,226 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["metrics_complete_error_outcome"] = dm["complete"]["byok"]["error"] >= 1
 
     _probe_backend_probes(client, uapp, dirty, api_mod, out)
+    _probe_finetune(api_mod, out)
     return out
+
+
+def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
+    """/v1/fine_tuning/jobs — the OpenAI fine-tune lifecycle over the
+    staged pipeline. The stub runner is hermetic; probes pin submit-time
+    validation, the event feed, cooperative cancel, idempotent replay,
+    and artifact registration into the files store."""
+    from fastapi.testclient import TestClient as _TC3
+
+    from fx1.serve.finetune import FTJobOutcome
+
+    _CORPUS = b'{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
+
+    def _runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+        emit("info", "stub train step", {"epoch": 1})
+        art = spec.work_dir / "train_receipt.json"
+        art.write_text("{}")
+        return FTJobOutcome(
+            fine_tuned_model=spec.ft_model_name,
+            artifacts={"train_receipt": art},
+            trained_tokens=None,
+            checkpoint=str(spec.work_dir / "ckpt"),
+        )
+
+    ft = _TC3(api_mod.create_app(ft_runner=_runner))
+
+    def _upload(content: bytes, purpose: str = "fine-tune") -> Any:
+        return ft.post(
+            "/v1/files",
+            files={"file": ("corpus.jsonl", content)},
+            data={"purpose": purpose},
+        )
+
+    def _wait_ft(job_id: str) -> dict[str, Any]:
+        for _i in range(400):
+            j = ft.get(f"/v1/fine_tuning/jobs/{job_id}").json()
+            if j["status"] in ("succeeded", "failed", "cancelled"):
+                return dict(j)
+            time.sleep(0.02)
+        return dict(ft.get(f"/v1/fine_tuning/jobs/{job_id}").json())
+
+    # Happy path: upload purpose=fine-tune → submit → poll → succeeded,
+    # artifacts registered into the files store.
+    up = _upload(_CORPUS)
+    out["ft_upload_finetune_purpose"] = (
+        up.status_code == 200 and up.json()["purpose"] == "fine-tune"
+    )
+    fid = up.json()["id"]
+    sub = ft.post(
+        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid, "suffix": "audit"}
+    )
+    out["ft_create_200"] = (
+        sub.status_code == 200
+        and sub.json()["id"].startswith("ftjob-")
+        and sub.json()["object"] == "fine_tuning.job"
+        and sub.json()["training_file"] == fid
+    )
+    jid = sub.json()["id"]
+    fin = _wait_ft(jid)
+    out["ft_succeeds"] = (
+        fin["status"] == "succeeded"
+        and fin["fine_tuned_model"] == f"ft:fx1:audit:{jid.split('-', 1)[1][:12]}"
+        and fin["finished_at"] is not None
+        and len(fin["result_files"]) == 1
+        and fin["trained_tokens"] is None  # no tokenizer — never fabricated
+    )
+    out["ft_artifact_downloadable"] = (
+        bool(fin["result_files"])
+        and ft.get(f"/v1/files/{fin['result_files'][0]}/content").status_code == 200
+        and ft.get(f"/v1/files/{fin['result_files'][0]}").json()["purpose"] == "fine-tune-result"
+    )
+    evs = ft.get(f"/v1/fine_tuning/jobs/{jid}/events")
+    ev_msgs = [e["message"] for e in evs.json()["data"]] if evs.status_code == 200 else []
+    out["ft_events_feed"] = (
+        evs.status_code == 200
+        and evs.json()["object"] == "list"
+        and any("validated" in m for m in ev_msgs)
+        and any("job started" in m for m in ev_msgs)
+        and any("stub train step" in m for m in ev_msgs)
+        and ev_msgs[-1].startswith("job succeeded")
+    )
+    out["ft_list_shape"] = (
+        ft.get("/v1/fine_tuning/jobs").status_code == 200
+        and ft.get("/v1/fine_tuning/jobs").json()["object"] == "list"
+        and ft.get("/v1/fine_tuning/jobs").json()["has_more"] is False
+        and ft.get("/v1/fine_tuning/jobs").json()["data"][0]["id"] == jid
+    )
+
+    # Fail-closed submit surface.
+    out["ft_model_not_trainable_400"] = (
+        ft.post("/v1/fine_tuning/jobs", json={"model": "byok", "training_file": fid})
+        .json()
+        .get("error", {})
+        .get("code")
+        == "model_not_trainable"
+    )
+    out["ft_unknown_file_404"] = (
+        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": "file-nope"})
+        .json()
+        .get("error", {})
+        .get("code")
+        == "file_not_found"
+    )
+    bfid = _upload(_CORPUS, purpose="batch").json()["id"]
+    out["ft_wrong_purpose_400"] = (
+        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": bfid})
+        .json()
+        .get("error", {})
+        .get("code")
+        == "invalid_training_file"
+    )
+    mfid = _upload(b"not jsonl\n").json()["id"]
+    out["ft_malformed_corpus_400"] = (
+        ft.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": mfid})
+        .json()
+        .get("error", {})
+        .get("code")
+        == "invalid_training_file"
+    )
+    out["ft_bad_purpose_upload_400"] = (
+        ft.post(
+            "/v1/files",
+            files={"file": ("c.jsonl", _CORPUS)},
+            data={"purpose": "user_data"},
+        ).status_code
+        == 400
+    )
+    out["ft_missing_routes_404"] = (
+        ft.get("/v1/fine_tuning/jobs/ftjob-nope").status_code == 404
+        and ft.post("/v1/fine_tuning/jobs/ftjob-nope/cancel").status_code == 404
+        and ft.get("/v1/fine_tuning/jobs/ftjob-nope/events").status_code == 404
+    )
+    out["ft_cancel_terminal_409"] = (
+        ft.post(f"/v1/fine_tuning/jobs/{jid}/cancel").status_code == 409
+        and ft.post(f"/v1/fine_tuning/jobs/{jid}/cancel").json().get("error", {}).get("code")
+        == "job_terminal"
+    )
+
+    # Idempotent replay: same key+body returns the same job; a different
+    # body under the same key is a 409 conflict.
+    ik = "ft-audit-key-1"
+    r1 = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid},
+        headers={"Idempotency-Key": ik},
+    )
+    r2 = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid},
+        headers={"Idempotency-Key": ik},
+    )
+    r3 = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid, "suffix": "other"},
+        headers={"Idempotency-Key": ik},
+    )
+    out["ft_idem_replay"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r2.json()["id"] == r1.json()["id"]
+        and r3.status_code == 409
+        and r3.json().get("error", {}).get("code") == "idempotency_conflict"
+    )
+
+    # Runner failure → failed job with the typed error + error event;
+    # never a 5xx on the submit itself.
+    def _boom(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+        raise RuntimeError("no gpu")
+
+    ftf = _TC3(api_mod.create_app(ft_runner=_boom))
+    bf = ftf.post(
+        "/v1/fine_tuning/jobs",
+        json={
+            "model": "fx1",
+            "training_file": ftf.post(
+                "/v1/files",
+                files={"file": ("c.jsonl", _CORPUS)},
+                data={"purpose": "fine-tune"},
+            ).json()["id"],
+        },
+    )
+    out["ft_runner_failure_submit_200"] = bf.status_code == 200
+    for _i in range(400):
+        jj = ftf.get(f"/v1/fine_tuning/jobs/{bf.json()['id']}").json()
+        if jj["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    out["ft_runner_failure_failed"] = (
+        jj["status"] == "failed"
+        and jj["error"]["code"] == "job_failed"
+        and "no gpu" in jj["error"]["message"]
+    )
+
+    # Cooperative cancel: a running job honors the flag at the runner's
+    # boundary and lands 'cancelled' (the runner returns early — never
+    # killed mid-write).
+    def _gate_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+        for _i in range(500):
+            if should_cancel():
+                return FTJobOutcome()
+            time.sleep(0.02)
+        return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+    ftc = _TC3(api_mod.create_app(ft_runner=_gate_runner))
+    cf = ftc.post("/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"})
+    cj = ftc.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": cf.json()["id"]})
+    cjid = cj.json()["id"]
+    for _i in range(400):
+        if ftc.get(f"/v1/fine_tuning/jobs/{cjid}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    cc = ftc.post(f"/v1/fine_tuning/jobs/{cjid}/cancel")
+    for _i in range(500):
+        cjj = ftc.get(f"/v1/fine_tuning/jobs/{cjid}").json()
+        if cjj["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    out["ft_cancel_running_cooperative"] = cc.status_code == 200 and cjj["status"] == "cancelled"
 
 
 def _probe_backend_probes(
@@ -6037,7 +6265,7 @@ def _probe_backend_probes(
     up_purpose = fb.post(
         "/v1/files",
         files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
-        data={"purpose": "fine-tune"},
+        data={"purpose": "user_data"},
     )
     out["file_upload_purpose_400"] = (
         up_purpose.status_code == 400
@@ -6614,7 +6842,12 @@ def api_audit_bench() -> dict[str, Any]:
             "byte of record tampering. Terminal jobs export the same way "
             "as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): "
             "stdout/stderr digested inside record.result, callback URL "
-            "hashed, seal re-derives and verifies, tampering breaks it."
+            "hashed, seal re-derives and verifies, tampering breaks it. "
+            "The /v1/fine_tuning surface holds the OpenAI job grammar: "
+            "synchronous corpus validation (bad corpus/model/file "
+            "fail closed 4xx before any queue), cooperative cancel, "
+            "idempotent submit, events feed, artifacts re-registered as "
+            "fine-tune-result files."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

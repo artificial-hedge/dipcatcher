@@ -46,6 +46,14 @@ export type EvalSubmitRequest =
 export type EvalSubmitResponse =
   components["schemas"]["EvalSubmitResponse"];
 export type EvalSuiteName = EvalSubmitRequest["suite"];
+export type FTEventList = components["schemas"]["FTEventList"];
+export type FTHyperparameters =
+  components["schemas"]["FTHyperparameters"];
+export type FTJob = components["schemas"]["FTJob"];
+export type FTJobError = components["schemas"]["FTJobError"];
+export type FTJobEvent = components["schemas"]["FTJobEvent"];
+export type FTJobList = components["schemas"]["FTJobList"];
+export type FTJobRequest = components["schemas"]["FTJobRequest"];
 export type HarnessCommandItem =
   components["schemas"]["HarnessCommandItem"];
 export type HarnessCommandListResponse =
@@ -892,8 +900,8 @@ export class HarnessApiClient {
 
   /**
    * POST /v1/files — upload a batch-input JSONL (multipart). `content` is
-   * the raw JSONL bytes; only `purpose: "batch"` and `.jsonl` filenames
-   * are served (fail-closed server-side).
+   * the raw JSONL bytes; `purpose` is `"batch"` or `"fine-tune"` and
+   * `.jsonl` filenames only (fail-closed server-side).
    */
   async uploadFile(
     content: string | Uint8Array | Blob,
@@ -1069,6 +1077,95 @@ export class HarnessApiClient {
           `batch ${batchId} still ${b.status} after ${timeoutMs}ms`,
         );
       await this.sleep(Math.min(pollMs, remaining));
+    }
+  }
+
+  // ---- fine-tuning ----------------------------------------------------------
+
+  /**
+   * POST /v1/fine_tuning/jobs — submit a gated fine-tuning job. The
+   * training file (and any validation file) must have been uploaded with
+   * `purpose: "fine-tune"`; corpus validation is synchronous — a
+   * malformed or wrong-purpose file is a 400 HarnessApiError, never a
+   * queued job. `idempotencyKey` replays the same submission.
+   */
+  createFineTuneJob(
+    request: FTJobRequest,
+    idempotencyKey?: string,
+  ): Promise<FTJob> {
+    return this.post(
+      "/v1/fine_tuning/jobs",
+      request,
+      idempotencyKey,
+    ) as Promise<FTJob>;
+  }
+
+  /** GET /v1/fine_tuning/jobs — newest-first page of job records. */
+  fineTuneJobs(filter?: { limit?: number; after?: string }): Promise<FTJobList> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/v1/fine_tuning/jobs${suffix}`) as Promise<FTJobList>;
+  }
+
+  /** GET /v1/fine_tuning/jobs/{id} — one job record (404 → HarnessApiError). */
+  fineTuneJob(jobId: string): Promise<FTJob> {
+    return this.get(
+      `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}`,
+    ) as Promise<FTJob>;
+  }
+
+  /**
+   * GET /v1/fine_tuning/jobs/{id}/events — the job's event feed,
+   * oldest first.
+   */
+  fineTuneJobEvents(
+    jobId: string,
+    filter?: { limit?: number; after?: string },
+  ): Promise<FTEventList> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/events${suffix}`,
+    ) as Promise<FTEventList>;
+  }
+
+  /**
+   * POST /v1/fine_tuning/jobs/{id}/cancel — queued cancels at once;
+   * running stops cooperatively at the next pipeline-stage boundary;
+   * terminal is a 409 HarnessApiError.
+   */
+  async cancelFineTuneJob(jobId: string): Promise<FTJob> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as FTJob;
+  }
+
+  /**
+   * Poll a fine-tuning job until terminal (succeeded | failed |
+   * cancelled). Terminal records are returned, not thrown — `status` +
+   * `error` carry the verdict. `timeoutS` bounds the wait (0 = forever).
+   */
+  async waitFineTuneJob(
+    jobId: string,
+    opts: { pollMs?: number; timeoutS?: number } = {},
+  ): Promise<FTJob> {
+    const pollMs = opts.pollMs ?? 500;
+    const deadline =
+      opts.timeoutS === undefined || opts.timeoutS === 0
+        ? Infinity
+        : Date.now() + opts.timeoutS * 1000;
+    for (;;) {
+      const j = await this.fineTuneJob(jobId);
+      if (["succeeded", "failed", "cancelled"].includes(j.status)) return j;
+      if (Date.now() >= deadline) return j;
+      await new Promise((r) => setTimeout(r, pollMs));
     }
   }
 

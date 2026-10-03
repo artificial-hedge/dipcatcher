@@ -197,13 +197,17 @@ same digested shape the job record embeds.
 | `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
 | `POST /v1/embeddings` | OpenAI `embeddings.create` — verbatim provider forward, 501 when the link has no embeddings channel |
 | `POST /v1/moderations` | OpenAI `moderations.create` shape over the honesty gate → per-input `{flagged, categories, category_scores, category_applied_input_types}` + content-derived `modr-<sha256>` id; categories are the gate's three checks (`forbidden_headline_metric`, `live_or_synthetic_claim`, `unlabeled_synthetic`) with deterministic 0/1 scores. Advisory: never touches a backend, stays up during drain — also `Fx1Harness.moderate` / `HarnessClient.moderate` |
-| `POST /v1/files` | multipart upload of a batch-input JSONL (`purpose=batch` only) |
+| `POST /v1/files` | multipart upload of a JSONL (`purpose=batch` or `fine-tune`) |
 | `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
 | `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
 | `DELETE /v1/files/{id}` | evict a stored file |
 | `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
+| `POST /v1/fine_tuning/jobs` | submit a gated fine-tuning job on a `purpose=fine-tune` corpus — synchronous validation, `Idempotency-Key` dedup; `Fx1Harness.create_finetune_job` (in-process, synchronous) / `HarnessClient.create_finetune_job` / `client.createFineTuneJob` / `fx1 harness ft-create` |
+| `GET /v1/fine_tuning/jobs` / `GET /v1/fine_tuning/jobs/{id}` | list (`?limit≤100`, `?after=`) / poll one job record |
+| `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
+| `POST /v1/fine_tuning/jobs/{id}/cancel` | cooperative cancel — queued at once, running at the next stage boundary; terminal `409 job_terminal` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
 | `POST /receipts/verify` | verify one receipt payload |
@@ -479,6 +483,45 @@ Client-side: `HarnessClient.embeddings_create` in Python
 (`Fx1Harness.openai_embeddings` in-process — same `(envelope, cid)`
 return); `HarnessApiClient.embeddingsCreate` in TS.
 
+### Fine-tuning (`/v1/fine_tuning/jobs`)
+
+The OpenAI fine-tuning surface over the gated training pipeline —
+upload a chat-format corpus, submit a job, poll events, collect
+artifact files.
+
+- **Corpus:** `POST /v1/files` with `purpose=fine-tune` accepts
+  chat JSONL (`{"messages": [...]}` per line); validation is
+  synchronous at submit — a malformed corpus or a file with the
+  wrong purpose is a `400 invalid_training_file`, never a queued
+  job. `model` is restricted to the trainable set (`fx1`,
+  `local_fx1`) — `byok`/`hosted_k3` is a `400
+  model_not_trainable`.
+- **Lifecycle:** `validating_files` → `queued` → `running` →
+  `succeeded|failed|cancelled`. The job holds one inflight slot on
+  the jobs executor; `429`/`503` carry `Retry-After`. Events land
+  on `GET .../events` (validated → started → runner emissions →
+  terminal).
+- **Artifacts:** each `FTJobOutcome.artifacts` entry is
+  re-registered as a `purpose=fine-tune-result` file and listed in
+  `result_files` — fetch bytes via `GET /v1/files/{id}/content`.
+- **Runner contract:** `FTJobRunner(spec, *, emit, should_cancel)`
+  — the default runner (`default_ft_runner`) executes the gated
+  pipeline in-process (quality gate → baseline eval → train →
+  candidate eval) and fails honestly (`status=failed`,
+  `error.code=job_failed`) when the trainer can't run on this
+  host. `trained_tokens` stays `null` — no tokenizer exists, and
+  the harness never fabricates counts.
+- **Cancel:** `POST .../cancel` — queued jobs cancel at once;
+  running jobs stop cooperatively when the runner's
+  `should_cancel()` reports the flag (between stages).
+- **Retry-safe:** `Idempotency-Key` dedups submission against the
+  body fingerprint — a replay returns the same job record, a key
+  reused under a different body is `409 idempotency_conflict`.
+- **SDK twin:** `Fx1Harness.create_finetune_job(training_jsonl=...)`
+  runs the same runner contract in-process and synchronously — it
+  returns the terminal record directly (no queue), and stores the
+  record in the same `FTJobStore` for `finetune_job`/events reads.
+
 ### Batches + files (`/v1/batches`, `/v1/files`)
 
 The OpenAI async-batch surface over the same gated pipeline — upload
@@ -486,7 +529,7 @@ a request JSONL once, submit it as one tracked batch, collect an
 output JSONL of per-line results.
 
 - **Files:** `POST /v1/files` takes `multipart/form-data` with a
-  `purpose` field (`"batch"` only — fail-closed) and a `.jsonl`
+  `purpose` field (`"batch"` or `"fine-tune"` — fail-closed) and a `.jsonl`
   `file` part; the response is the OpenAI `file` object. Files live
   in a bounded store (`FX1_API_FILE_MAX` entries, default 128;
   `FX1_API_FILE_BYTES` per file, default 8 MiB — LRU eviction like

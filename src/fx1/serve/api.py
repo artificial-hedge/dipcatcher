@@ -42,6 +42,7 @@ import math
 import os
 import queue
 import re
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -114,6 +115,21 @@ from fx1.serve.evals import (
     metered_model,
     run_eval_record,
     suite_accepts_judge,
+)
+from fx1.serve.finetune import (
+    TRAINABLE_MODELS,
+    FTEventList,
+    FTHyperparameters,
+    FTJob,
+    FTJobEntry,
+    FTJobError,
+    FTJobList,
+    FTJobRequest,
+    FTJobRunner,
+    FTJobSpec,
+    FTJobStore,
+    default_ft_runner,
+    validate_chat_jsonl,
 )
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
@@ -1541,6 +1557,7 @@ def _make_lifespan(
     job_store: _JobStore,
     eval_store: EvalStore,
     jobs_executor: ThreadPoolExecutor,
+    ft_store: FTJobStore | None = None,
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     """Graceful-exit contract: on shutdown the gate drains (new work gets
     503), every still-queued job flips to 'cancelled' and fires its
@@ -1556,6 +1573,8 @@ def _make_lifespan(
             _deliver_callback(pending)
         for pending_eval in eval_store.cancel_pending():
             _deliver_callback(pending_eval)
+        if ft_store is not None:
+            ft_store.cancel_pending()
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
@@ -2458,6 +2477,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
+    ft_store: FTJobStore,
+    ft_runner: FTJobRunner,
+    ft_dir: Path,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -4025,15 +4047,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         file: UploadFile | None = File(default=None),
         purpose: str = Form(default=""),
     ) -> JSONResponse:
-        """Upload a batch-input JSONL (multipart/form-data). Purpose is
-        fail-closed — only ``batch`` is served; the file is validated into
-        the store as-is (shape checks happen at batch submit)."""
+        """Upload a batch-input or fine-tuning JSONL (multipart/form-data).
+        Purpose is fail-closed — ``batch`` and ``fine-tune`` are the only
+        purposes served; the file is validated into the store as-is
+        (shape checks happen at batch submit / fine-tune submit)."""
         if file is None:
             raise ApiError(400, "multipart field 'file' is required", code="invalid_request")
-        if purpose != OPENAI_FILE_PURPOSE_ACCEPT:
+        if purpose not in OPENAI_FILE_PURPOSE_ACCEPT:
             raise ApiError(
                 400,
-                f"unsupported purpose {purpose!r} — only {OPENAI_FILE_PURPOSE_ACCEPT!r} is served",
+                f"unsupported purpose {purpose!r} — only "
+                f"{sorted(OPENAI_FILE_PURPOSE_ACCEPT)} are served",
                 code="invalid_request",
             )
         data = await file.read()
@@ -4049,10 +4073,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if not filename.endswith(".jsonl"):
             raise ApiError(
                 400,
-                f"batch input must be a .jsonl file, got {filename!r}",
+                f"input must be a .jsonl file, got {filename!r}",
                 code="invalid_request",
             )
-        rec = file_store.put(filename=filename, purpose="batch", content=data)
+        rec = file_store.put(filename=filename, purpose=purpose, content=data)
         return JSONResponse(file_object(rec.model_dump()))
 
     @app.get(
@@ -4598,6 +4622,300 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             results=results,
         )
 
+    # --- /v1/fine_tuning/jobs -------------------------------------------
+    # OpenAI's fine-tuning surface over the staged fx-1 Pipeline: quality
+    # gate -> frozen split -> base eval -> receipted train -> candidate
+    # eval -> ship-gate comparison. The training file is validated
+    # synchronously at submit (chat-format JSONL, every line), so a bad
+    # upload never reaches the queue. The runner is injectable; the
+    # shipped default wires the real stages and fails honestly at the
+    # trainer when no GPU backend is configured.
+
+    def _ft_worker(entry: FTJobEntry, spec: FTJobSpec) -> None:
+        """One inflight slot drives the staged pipeline; the runner checks
+        the entry's cancel event between stages — a job cancelled
+        mid-pipeline ends ``cancelled``, not ``failed``."""
+        job: FTJob = entry.job
+        try:
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                job.finished_at = int(time.time())
+                return
+            job.status = "running"
+            ft_store.add_event(job.id, "info", "job started", None)
+            outcome = ft_runner(
+                spec,
+                emit=lambda level, msg, data=None: ft_store.add_event(
+                    job.id,
+                    cast(Literal["info", "warn", "error"], level),
+                    msg,
+                    data,
+                ),
+                should_cancel=entry.cancel.is_set,
+            )
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                ft_store.add_event(job.id, "info", "job cancelled", None)
+            else:
+                for name, path in outcome.artifacts.items():
+                    try:
+                        content = Path(path).read_bytes()
+                    except OSError:
+                        continue
+                    rec = file_store.put(
+                        filename=f"{job.id}-{Path(path).name}",
+                        purpose="fine-tune-result",
+                        content=content,
+                    )
+                    job.result_files.append(rec.file_id)
+                    ft_store.add_event(
+                        job.id,
+                        "info",
+                        f"result artifact registered: {name}",
+                        {"file_id": rec.file_id, "path": str(path)},
+                    )
+                job.fine_tuned_model = outcome.fine_tuned_model
+                job.trained_tokens = outcome.trained_tokens
+                job.status = "succeeded"
+                ft_store.add_event(
+                    job.id,
+                    "info",
+                    "job succeeded",
+                    {"checkpoint": outcome.checkpoint},
+                )
+        except Exception as exc:  # noqa: BLE001 — a runner fault is job data
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                ft_store.add_event(job.id, "info", "job cancelled", None)
+            else:
+                job.status = "failed"
+                job.error = FTJobError(
+                    code="job_failed",
+                    message=f"{type(exc).__name__}: {exc}",
+                    param=None,
+                )
+                ft_store.add_event(
+                    job.id, "error", f"job failed: {type(exc).__name__}: {exc}", None
+                )
+        finally:
+            job.finished_at = job.finished_at or int(time.time())
+            metrics.release()
+            inflight.release()
+
+    @app.post(
+        "/v1/fine_tuning/jobs",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="create_finetune_job",
+    )
+    def create_finetune_job(
+        body: FTJobRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> FTJob:
+        """Queue a gated fine-tuning run against an uploaded chat-format
+        JSONL training file. File validation is synchronous — malformed
+        corpora 400 at submit, never limbo in ``validating_files``."""
+        body_fp = _body_fp(body)
+        if idempotency_key is not None:
+            entry = ft_store.lookup_idem(idempotency_key)
+            if entry is not None:
+                if entry.body_fp != body_fp:
+                    raise ApiError(
+                        409,
+                        "Idempotency-Key reuse with a different request body",
+                        code="idempotency_conflict",
+                    )
+                return entry.job
+        if body.model not in TRAINABLE_MODELS:
+            raise ApiError(
+                400,
+                f"model {body.model!r} is not trainable through the harness "
+                f"(trainable: {list(TRAINABLE_MODELS)})",
+                code="model_not_trainable",
+            )
+        frec = file_store.get(body.training_file)
+        if frec is None:
+            raise ApiError(
+                404,
+                f"training file {body.training_file!r} not found",
+                code="file_not_found",
+            )
+        if frec.purpose != "fine-tune":
+            raise ApiError(
+                400,
+                f"file {body.training_file!r} was uploaded with purpose "
+                f"{frec.purpose!r} — training corpora upload as 'fine-tune'",
+                code="invalid_training_file",
+            )
+        try:
+            n_examples = validate_chat_jsonl(frec.content, file_id=body.training_file)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_training_file") from exc
+        vrec = None
+        if body.validation_file is not None:
+            vrec = file_store.get(body.validation_file)
+            if vrec is None:
+                raise ApiError(
+                    404,
+                    f"validation file {body.validation_file!r} not found",
+                    code="file_not_found",
+                )
+            if vrec.purpose != "fine-tune":
+                raise ApiError(
+                    400,
+                    f"file {body.validation_file!r} was uploaded with purpose "
+                    f"{vrec.purpose!r} — training corpora upload as 'fine-tune'",
+                    code="invalid_training_file",
+                )
+            try:
+                validate_chat_jsonl(vrec.content, file_id=body.validation_file)
+            except ValueError as exc:
+                raise ApiError(400, str(exc), code="invalid_training_file") from exc
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                f"harness at max_inflight={metrics.max_inflight} — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        job = FTJob(
+            id=f"ftjob-{uuid.uuid4().hex}",
+            model=body.model,
+            created_at=int(time.time()),
+            status="queued",
+            training_file=body.training_file,
+            validation_file=body.validation_file,
+            hyperparameters=body.hyperparameters or FTHyperparameters(),
+            seed=body.seed,
+            metadata=body.metadata,
+            user_provided_suffix=body.suffix,
+        )
+        ft_name = f"ft:{body.model}:{body.suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
+        work_dir = ft_dir / job.id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        corpus_path = work_dir / "corpus.jsonl"
+        corpus_path.write_bytes(frec.content)
+        val_path = None
+        if vrec is not None:
+            val_path = work_dir / "validation.jsonl"
+            val_path.write_bytes(vrec.content)
+        spec = FTJobSpec(
+            job_id=job.id,
+            model=body.model,
+            corpus_path=corpus_path,
+            val_path=val_path,
+            hyperparameters=(
+                body.hyperparameters.model_dump(mode="json")
+                if body.hyperparameters is not None
+                else {}
+            ),
+            seed=body.seed if body.seed is not None else 17,
+            work_dir=work_dir,
+            ft_model_name=ft_name,
+        )
+        entry = ft_store.put(job, idempotency_key, body_fp)
+        hp = body.hyperparameters.model_dump() if body.hyperparameters else {}
+        if hp.get("batch_size"):
+            ft_store.add_event(
+                job.id,
+                "info",
+                "batch_size is advisory — the staged pipeline's trainer "
+                "decides batching; the value is recorded on the job",
+                {"batch_size": hp["batch_size"]},
+            )
+        ft_store.add_event(
+            job.id,
+            "info",
+            f"training file validated: {n_examples} examples",
+            {"training_file": body.training_file, "examples": n_examples},
+        )
+        try:
+            jobs_executor.submit(_ft_worker, entry, spec)
+        except RuntimeError as exc:  # executor gone (shutdown race)
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        return job
+
+    @app.get(
+        "/v1/fine_tuning/jobs",
+        response_model=FTJobList,
+        tags=["openai"],
+        operation_id="list_finetune_jobs",
+    )
+    def list_finetune_jobs(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> FTJobList:
+        """Newest-first page; ``after`` is the exclusive id cursor."""
+        jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
+        return FTJobList(data=jobs, has_more=has_more)
+
+    @app.get(
+        "/v1/fine_tuning/jobs/{job_id}",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="get_finetune_job",
+    )
+    def get_finetune_job(job_id: str) -> FTJob:
+        entry = ft_store.get(job_id)
+        if entry is None:
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/cancel",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="cancel_finetune_job",
+    )
+    def cancel_finetune_job(job_id: str) -> FTJob:
+        """Cooperative cancel — a queued job ends immediately; a running
+        one is marked and the pipeline stops at the next stage boundary."""
+        outcome = ft_store.request_cancel(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_cancel found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — only "
+                "queued or running jobs can be cancelled",
+                code="job_terminal",
+            )
+        if outcome == "queued":
+            ft_store.add_event(job_id, "info", "job cancelled", None)
+        else:
+            ft_store.add_event(
+                job_id,
+                "info",
+                "cancellation requested — takes effect at the next stage boundary",
+                None,
+            )
+        return entry.job
+
+    @app.get(
+        "/v1/fine_tuning/jobs/{job_id}/events",
+        response_model=FTEventList,
+        tags=["openai"],
+        operation_id="list_finetune_job_events",
+    )
+    def list_finetune_job_events(
+        job_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> FTEventList:
+        """Oldest-first event feed for one job (OpenAI's order)."""
+        entry = ft_store.get(job_id)
+        if entry is None:
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        events, has_more = ft_store.list_events(job_id, limit=limit, after=after)
+        return FTEventList(data=events, has_more=has_more)
+
 
 def create_app(
     harness: Harness | None = None,
@@ -4618,6 +4936,8 @@ def create_app(
     batch_max: int | None = None,
     batch_line_max: int | None = None,
     store_max: int | None = None,
+    ft_runner: FTJobRunner | None = None,
+    ft_dir: str | os.PathLike[str] | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -4677,6 +4997,16 @@ def create_app(
     eval_store = EvalStore(job_max)
     file_store = _FileStore(file_max, file_bytes_max)
     batch_store = _BatchStore(batch_max)
+    # The OpenAI-shaped fine-tuning surface: bounded like the other job
+    # stores; the runner defaults to the real staged Pipeline (its own
+    # trainer fails honestly when no GPU backend is configured).
+    ft_store = FTJobStore(job_max)
+    ft_work_root = Path(
+        ft_dir
+        if ft_dir is not None
+        else os.environ.get("FX1_FT_DIR", str(Path(tempfile.gettempdir()) / "fx1_ft"))
+    )
+    ft_runner_eff = ft_runner or default_ft_runner(resolve_backend)
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
     # and /v1/responses/{id} — `store=false` keeps a call out of it.
     envelope_store = OpenAIEnvelopeStore(store_max)
@@ -4716,7 +5046,7 @@ def create_app(
             "commands, sealed-receipt verification, and gated model "
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
-        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor),
+        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor, ft_store),
         openapi_tags=[
             {"name": "runs", "description": "Synchronous lab-command execution."},
             {"name": "jobs", "description": "Async run jobs: submit, poll, SSE, cancel, batch."},
@@ -4745,6 +5075,7 @@ def create_app(
     app.state.eval_store = eval_store
     app.state.file_store = file_store
     app.state.batch_store = batch_store
+    app.state.ft_store = ft_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -4962,6 +5293,7 @@ def create_app(
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
+                "fine_tuning": True,
             },
             eval_suites=list(EVAL_SUITES),
             limits={
@@ -5206,6 +5538,9 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        ft_store=ft_store,
+        ft_runner=ft_runner_eff,
+        ft_dir=ft_work_root,
         envelope_store=envelope_store,
         batch_line_max=batch_line_max,
         file_bytes_max=file_bytes_max,

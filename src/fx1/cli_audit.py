@@ -152,6 +152,11 @@ def cli_audit() -> dict[str, Any]:
         "eval-status",
         "eval-cancel",
         "eval-diff",
+        "ft-create",
+        "ft-jobs",
+        "ft-status",
+        "ft-events",
+        "ft-cancel",
     } <= hnames
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -557,6 +562,10 @@ def cli_audit() -> dict[str, Any]:
             self.last_cb_secret: str | None = None
             self.last_compat_strict: bool | None = None
             self.last_diff: tuple[str, str] | None = None
+            self.last_ft_create: dict[str, Any] | None = None
+            self.last_ft_job: str | None = None
+            self.last_ft_query: dict[str, Any] | None = None
+            self.last_upload: dict[str, Any] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -696,6 +705,63 @@ def cli_audit() -> dict[str, Any]:
                     },
                 },
             ]
+
+        def upload_file(self, content: bytes, **kw: Any) -> dict[str, Any]:
+            self.last_upload = {
+                "purpose": kw.get("purpose"),
+                "filename": kw.get("filename"),
+                "n_bytes": len(content),
+            }
+            return {
+                "id": "file-ft",
+                "object": "file",
+                "purpose": kw.get("purpose"),
+                "filename": kw.get("filename"),
+                "bytes": len(content),
+            }
+
+        def create_finetune_job(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_create = dict(kw)
+            return {
+                "id": "ftjob-x",
+                "object": "fine_tuning.job",
+                "status": "queued",
+                "model": kw.get("model"),
+            }
+
+        def wait_finetune_job(self, job_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {
+                "id": job_id,
+                "object": "fine_tuning.job",
+                "status": "succeeded",
+                "fine_tuned_model": "ft:fx1:x:000000000000",
+            }
+
+        def finetune_jobs(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "ftjob-x", "object": "fine_tuning.job", "status": "succeeded"}],
+                "has_more": False,
+            }
+
+        def finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {"id": job_id, "object": "fine_tuning.job", "status": "running"}
+
+        def finetune_job_events(self, job_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            self.last_ft_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "ftev-1", "object": "fine_tuning.job.event", "message": "m"}],
+                "has_more": False,
+            }
+
+        def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
 
     remotes: list[_FakeRemote] = []
 
@@ -869,6 +935,29 @@ def cli_audit() -> dict[str, Any]:
     out["job_receipt_local_refused"] = rjr_local.exit_code == 2 and "--remote" in rjr_local.output
     red_local = runner.invoke(app, ["harness", "eval-diff", "ev-a", "ev-b"])
     out["evaldiff_local_refused"] = red_local.exit_code == 2 and "--remote" in red_local.output
+    rfj_local = runner.invoke(app, ["harness", "ft-jobs"])
+    out["ftjobs_local_refused"] = rfj_local.exit_code == 2 and "--remote" in rfj_local.output
+    rfs_local = runner.invoke(app, ["harness", "ft-status", "ftjob-x"])
+    out["ftstatus_local_refused"] = rfs_local.exit_code == 2 and "--remote" in rfs_local.output
+    rfe_local = runner.invoke(app, ["harness", "ft-events", "ftjob-x"])
+    out["ftevents_local_refused"] = rfe_local.exit_code == 2 and "--remote" in rfe_local.output
+    rfc_local = runner.invoke(app, ["harness", "ft-cancel", "ftjob-x"])
+    out["ftcancel_local_refused"] = rfc_local.exit_code == 2 and "--remote" in rfc_local.output
+    # ft-create local runs the in-process SDK twin synchronously — a
+    # malformed corpus fails validation before any job exists (exit 2).
+    import tempfile  # noqa: PLC0415
+    from pathlib import Path as _Path2  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as ftd2:
+        bad_corpus = _Path2(ftd2) / "bad.jsonl"
+        bad_corpus.write_bytes(b"not jsonl\n")
+        out["ft_create_local_bad_corpus_2"] = (
+            runner.invoke(app, ["harness", "ft-create", str(bad_corpus)]).exit_code == 2
+        )
+        missing = _Path2(ftd2) / "missing.jsonl"
+        out["ft_create_local_missing_2"] = (
+            runner.invoke(app, ["harness", "ft-create", str(missing)]).exit_code == 2
+        )
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
@@ -995,6 +1084,118 @@ def cli_audit() -> dict[str, Any]:
                 == 2
             )
 
+        # fine-tuning surface on the wire: corpus upload (purpose=fine-tune),
+        # submit with flags, wait, list, status, events, cancel — all remote.
+        with tempfile.TemporaryDirectory() as ftd:
+            cpath = _Path(ftd) / "corpus.jsonl"
+            cpath.write_bytes(
+                b'{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
+            )
+            rft = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    str(cpath),
+                    "--remote",
+                    "http://h.test",
+                    "--suffix",
+                    "pp",
+                    "--epochs",
+                    "3",
+                    "--seed",
+                    "11",
+                ],
+            )
+            out["remote_ft_create_json"] = (
+                rft.exit_code == 0
+                and json.loads(rft.stdout)["status"] == "succeeded"
+                and remotes[-1].last_upload
+                == {
+                    "purpose": "fine-tune",
+                    "filename": "corpus.jsonl",
+                    "n_bytes": len(cpath.read_bytes()),
+                }
+                and remotes[-1].last_ft_create
+                == {
+                    "model": "fx1",
+                    "training_file": "file-ft",
+                    "hyperparameters": {"n_epochs": 3},
+                    "suffix": "pp",
+                    "validation_file": None,
+                    "seed": 11,
+                }
+                and remotes[-1].last_ft_job == "ftjob-x"
+            )
+            rft_nw = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    str(cpath),
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                ],
+            )
+            out["remote_ft_create_nowait"] = (
+                rft_nw.exit_code == 0
+                and json.loads(rft_nw.stdout)["status"] == "queued"
+                and remotes[-1].last_ft_job is None  # wait never ran
+            )
+            out["ft_create_missing_file_2"] = (
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "ft-create",
+                        str(_Path(ftd) / "nope.jsonl"),
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).exit_code
+                == 2
+            )
+        rfj = runner.invoke(
+            app,
+            [
+                "harness",
+                "ft-jobs",
+                "--remote",
+                "http://h.test",
+                "--limit",
+                "7",
+                "--after",
+                "ftjob-a",
+            ],
+        )
+        out["remote_ft_jobs_json"] = (
+            rfj.exit_code == 0
+            and json.loads(rfj.stdout)["data"][0]["id"] == "ftjob-x"
+            and remotes[-1].last_ft_query == {"limit": 7, "after": "ftjob-a"}
+        )
+        rfs = runner.invoke(app, ["harness", "ft-status", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_status_json"] = (
+            rfs.exit_code == 0
+            and json.loads(rfs.stdout)["status"] == "running"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
+        rfe = runner.invoke(
+            app,
+            ["harness", "ft-events", "ftjob-x", "--remote", "http://h.test", "--limit", "9"],
+        )
+        out["remote_ft_events_json"] = (
+            rfe.exit_code == 0
+            and json.loads(rfe.stdout)["data"][0]["object"] == "fine_tuning.job.event"
+            and remotes[-1].last_ft_query == {"limit": 9}
+        )
+        rfc = runner.invoke(app, ["harness", "ft-cancel", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_cancel_json"] = (
+            rfc.exit_code == 0
+            and json.loads(rfc.stdout)["status"] == "cancelled"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
+
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:
             pass
@@ -1065,7 +1266,11 @@ def cli_audit_bench() -> dict[str, Any]:
             "completion log reads cleanly (empty window + missing-id exit "
             "2 on both the record and its --receipt export); harness job "
             "--receipt prints the sealed fx1_job_record.v1 doc remote-side "
-            "and refuses without --remote (exit 2). Flagged wart: "
+            "and refuses without --remote (exit 2). ft-create/ft-jobs/"
+            "ft-status/ft-events/ft-cancel hold the OpenAI job grammar "
+            "remote-side (upload → submit → wait, --no-wait prints the "
+            "queued record) and refuse locally without --remote. "
+            "Flagged wart: "
             "the command is registered as 'maskedaEval'."
             if ok
             else f"CLI AUDIT DEFECT: {r}"

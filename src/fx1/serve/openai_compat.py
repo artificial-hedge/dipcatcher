@@ -1597,8 +1597,9 @@ OPENAI_BATCH_LINE_MAX = 1024
 OPENAI_FILE_BYTES_MAX = 8 << 20
 """Max upload size (8 MiB)."""
 
-OPENAI_FILE_PURPOSE_ACCEPT = "batch"
-"""The only upload purpose the harness serves — batch input JSONL."""
+OPENAI_FILE_PURPOSE_ACCEPT = frozenset({"batch", "fine-tune"})
+"""The upload purposes the harness serves — batch input JSONL and
+fine-tuning corpora (consumed by ``POST /v1/fine_tuning/jobs``)."""
 
 
 class OpenAIBatchRequest(_Model):

@@ -33,6 +33,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -57,6 +58,17 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.evals import EvalDiff, EvalRecord, EvalStore, diff_eval_records
+from fx1.serve.finetune import (
+    TRAINABLE_MODELS,
+    FTHyperparameters,
+    FTJob,
+    FTJobError,
+    FTJobRunner,
+    FTJobSpec,
+    FTJobStore,
+    default_ft_runner,
+    validate_chat_jsonl,
+)
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
     OpenAIChatRequest,
@@ -397,6 +409,8 @@ class Fx1Harness:
         harness: Harness | None = None,
         backend_resolver: BackendResolver | None = None,
         receipts_dir: str | Path = "receipts",
+        ft_runner: FTJobRunner | None = None,
+        ft_dir: str | Path | None = None,
     ) -> None:
         self._harness = harness or Harness()
         self._resolve_backend = backend_resolver or get_backend
@@ -406,6 +420,11 @@ class Fx1Harness:
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
+        # The /v1/fine_tuning twin — synchronous in process (no queue),
+        # same store/runner contract as the wire.
+        self._ft_store = FTJobStore(256)
+        self._ft_dir = Path(ft_dir or tempfile.gettempdir()) / "fx1_ft_sdk"
+        self._ft_runner = ft_runner or default_ft_runner(self._resolve_backend)
 
     def _record_call(
         self,
@@ -753,6 +772,126 @@ class Fx1Harness:
                     f"eval {rec.eval_id} is {rec.status} — diffs need terminal records with reports"
                 )
         return diff_eval_records(base, cand)
+
+    # ---- fine-tuning (the /v1/fine_tuning twin) ------------------------
+
+    def create_finetune_job(
+        self,
+        *,
+        model: str,
+        training_jsonl: bytes | str,
+        validation_jsonl: bytes | str | None = None,
+        hyperparameters: FTHyperparameters | None = None,
+        suffix: str | None = None,
+        seed: int | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> FTJob:
+        """The ``POST /v1/fine_tuning/jobs`` surface, weights-direct —
+        synchronous in process (there is no queue to observe): the corpus
+        is raw JSONL content here (the wire's file-upload step is an HTTP
+        artifact), the runner runs inline, and the returned job is
+        terminal. The record lands in the in-process store — the same
+        FTJobStore the wire serves — for ``finetune_job``/events reads.
+
+        ``ValueError`` is the wire's 400; a runner exception yields a
+        ``failed`` job record (never a raise — the job's own verdict is
+        the honest outcome).
+        """
+        if model not in TRAINABLE_MODELS:
+            raise ValueError(
+                f"model {model!r} is not trainable through the harness "
+                f"(trainable: {list(TRAINABLE_MODELS)})"
+            )
+        corpus = (
+            training_jsonl.encode() if isinstance(training_jsonl, str) else bytes(training_jsonl)
+        )
+        n = validate_chat_jsonl(corpus, file_id="<in-process>")
+        hp = hyperparameters or FTHyperparameters()
+        job = FTJob(
+            id=f"ftjob-{uuid.uuid4().hex}",
+            model=model,
+            created_at=int(time.time()),
+            status="running",
+            hyperparameters=hp,
+            seed=seed,
+            metadata=metadata,
+            user_provided_suffix=suffix,
+            # The wire echoes training_file=the file id; in-process carries
+            # the corpus content-length as the honest handle.
+            training_file=f"inline:{len(corpus)}B",
+        )
+        ft_name = f"ft:{model}:{suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
+        work_dir = self._ft_dir / job.id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        corpus_path = work_dir / "corpus.jsonl"
+        corpus_path.write_bytes(corpus)
+        val_path = None
+        if validation_jsonl is not None:
+            vbytes = (
+                validation_jsonl.encode()
+                if isinstance(validation_jsonl, str)
+                else bytes(validation_jsonl)
+            )
+            validate_chat_jsonl(vbytes, file_id="<validation>")
+            val_path = work_dir / "validation.jsonl"
+            val_path.write_bytes(vbytes)
+        entry = self._ft_store.put(job, None, "")
+        self._ft_store.add_event(job.id, "info", f"training corpus validated: {n} examples")
+        spec = FTJobSpec(
+            job_id=job.id,
+            model=model,
+            corpus_path=corpus_path,
+            val_path=val_path,
+            hyperparameters=hp.model_dump(mode="json"),
+            seed=seed if seed is not None else 17,
+            work_dir=work_dir,
+            ft_model_name=ft_name,
+        )
+        self._ft_store.add_event(job.id, "info", "job started")
+        try:
+            outcome = self._ft_runner(
+                spec,
+                emit=lambda level, message, data=None: self._ft_store.add_event(
+                    job.id, level, message, data
+                ),
+                should_cancel=entry.cancel.is_set,
+            )
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.fine_tuned_model = outcome.fine_tuned_model
+                job.trained_tokens = outcome.trained_tokens
+                job.status = "succeeded"
+        except Exception as exc:
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.status = "failed"
+                job.error = FTJobError(code="job_failed", message=f"{type(exc).__name__}: {exc}")
+        job.finished_at = int(time.time())
+        self._ft_store.add_event(
+            job.id, "info" if job.status == "succeeded" else "error", f"job {job.status}"
+        )
+        return job
+
+    def finetune_jobs(self, *, limit: int | None = None) -> list[FTJob]:
+        """In-process fine-tune records, newest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs``."""
+        jobs, _has_more = self._ft_store.list_jobs(limit=limit or 100, after=None)
+        return jobs
+
+    def finetune_job(self, job_id: str) -> FTJob:
+        """One job record — ``KeyError`` on unknown ids (the wire's 404)."""
+        entry = self._ft_store.get(job_id)
+        if entry is None:
+            raise KeyError(job_id)
+        return entry.job
+
+    def finetune_job_events(self, job_id: str, *, limit: int | None = None) -> list[dict[str, Any]]:
+        """The job's event feed, oldest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs/{id}/events``."""
+        events, _has_more = self._ft_store.list_events(job_id, limit=limit or 100, after=None)
+        return [e.model_dump(mode="json") for e in events]
 
     # ---- registry ------------------------------------------------------
 
