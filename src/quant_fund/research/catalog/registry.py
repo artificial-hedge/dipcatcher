@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-658 motivic-13 canon.
+        "motivic_galois",
+        "tannakian_motive",
+        "period_realization",
+        "beilinson_regulator",
+        "hodge_motive",
+        "f_motive",
         # Wave-657 homotopy-22 canon.
         "ravenel_htpy",
         "bousfield_period",
