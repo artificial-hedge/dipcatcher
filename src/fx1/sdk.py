@@ -72,12 +72,14 @@ from fx1.serve.finetune import (
 from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
+    OPENAI_MODEL_IDS,
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
     OpenAIEmbeddingRequest,
     OpenAIEnvelopeStore,
     OpenAIModel,
+    OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
     batch_line_body,
@@ -1638,6 +1640,24 @@ class Fx1Harness:
         unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
         the SDK's request-error class."""
         return openai_model(model_id, extra_ids=[m["id"] for m in self._ft_store.models()])
+
+    def openai_delete_model(self, model_id: str) -> OpenAIModelDelete:
+        """``DELETE /v1/models/{id}`` in-process — unregister an ``ft:``
+        name. Built-in link ids and unregistered names raise
+        :class:`OpenAICompatError` carrying the wire's status/code; a
+        deleted registration never resolves again."""
+        if model_id in OPENAI_MODEL_IDS:
+            raise OpenAICompatError(
+                f"the built-in link '{model_id}' is not deletable",
+                code="invalid_request",
+            )
+        if self._ft_store.unregister_model(model_id) is None:
+            raise OpenAICompatError(
+                f"The model '{model_id}' does not exist",
+                status=404,
+                code="model_not_found",
+            )
+        return OpenAIModelDelete(id=model_id)
 
     def openai_chat(
         self,

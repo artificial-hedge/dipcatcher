@@ -263,6 +263,8 @@ class FTJobStore:
                 if "ft_model" in payload:
                     ref = payload["ft_model"]
                     self._models[str(ref["id"])] = dict(ref)
+                if "ft_model_delete" in payload:
+                    self._models.pop(str(payload["ft_model_delete"]), None)
                 if "ft_event" in payload:
                     ev = payload["ft_event"]
                     host = self._entries.get(str(ev["job_id"]))
@@ -374,6 +376,17 @@ class FTJobStore:
     def get_model(self, name: str) -> dict[str, Any] | None:
         with self._lock:
             return self._models.get(name)
+
+    def unregister_model(self, name: str) -> dict[str, Any] | None:
+        """Remove an ``ft:`` model registration — the ``DELETE
+        /v1/models/{id}`` store op. Returns the dropped card or None when
+        the name was never registered; the deletion journals so a restart
+        never resurrects a deleted model."""
+        with self._lock:
+            ref = self._models.pop(name, None)
+            if ref is not None and self._journal is not None:
+                self._journal.append({"ft_model_delete": name})
+            return ref
 
     def models(self) -> list[dict[str, Any]]:
         """All registered ft models, sorted by id (stable list order)."""

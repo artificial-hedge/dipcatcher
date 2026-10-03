@@ -200,6 +200,7 @@ same digested shape the job record embeds.
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
 | `GET /v1/models` | OpenAI `list` envelope: `fx1` + the backend names |
 | `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found` |
+| `DELETE /v1/models/{id}` | `models.delete` — unregister an `ft:` name (`{id, object:"model", deleted:true}`); built-in link ids refuse `400`, unregistered names `404`, the tombstone journals so restarts never resurrect it |
 | `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
 | `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
 | `POST /v1/embeddings` | OpenAI `embeddings.create` — verbatim provider forward, 501 when the link has no embeddings channel |

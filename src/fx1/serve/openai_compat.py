@@ -60,6 +60,7 @@ __all__ = [
     "OpenAIEmbeddingResponse",
     "OpenAIFx1",
     "OpenAIModel",
+    "OpenAIModelDelete",
     "OpenAIModelList",
     "OpenAIResponseRequest",
     "OpenAIResponseTool",
@@ -386,6 +387,15 @@ class OpenAIModelList(_Model):
 
     object: Literal["list"] = "list"
     data: list[OpenAIModel]
+
+
+class OpenAIModelDelete(_Model):
+    """DELETE /v1/models/{id} — OpenAI's delete verdict: the removed id
+    plus the boolean tombstone."""
+
+    id: str
+    object: Literal["model"] = "model"
+    deleted: bool = True
 
 
 class OpenAIChatChoice(_Model):

@@ -171,6 +171,7 @@ def cli_audit() -> dict[str, Any]:
         "batch-run",
         "models",
         "model",
+        "model-delete",
         "respond",
         "embed",
         "moderate",
@@ -1046,6 +1047,10 @@ def cli_audit() -> dict[str, Any]:
             self.last_ft_query = {"model": model_id}
             return {"id": model_id, "object": "model", "created": 1, "owned_by": "fx1"}
 
+        def delete_model(self, model_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"delete": model_id}
+            return {"id": model_id, "object": "model", "deleted": True}
+
         def responses_create(
             self,
             input: Any,
@@ -1832,6 +1837,17 @@ def cli_audit() -> dict[str, Any]:
                 ).stdout
             ).get("id")
             == "ft:fx1-x"
+        )
+        out["remote_model_delete"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "model-delete", "ft:fx1-x", "--remote", "http://h.test"]
+                ).stdout
+            ).get("deleted")
+            is True
+        )
+        out["model_delete_inproc_400"] = (
+            runner.invoke(app, ["harness", "model-delete", "fx1"]).exit_code == 2
         )
 
         _rr = runner.invoke(

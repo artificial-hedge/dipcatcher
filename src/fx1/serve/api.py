@@ -144,6 +144,7 @@ from fx1.serve.openai_compat import (
     OpenAIEmbeddingResponse,
     OpenAIEnvelopeStore,
     OpenAIModel,
+    OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
     batch_line_body,
@@ -214,6 +215,16 @@ _CORS_ALLOW_HEADERS = [
     "Idempotency-Key",
     "Last-Event-ID",
     "X-API-Key",
+    # the X-Fx1-* request knobs — browser clients must be able to send
+    # backend/byok/fallbacks/checkpoint/timeout/citation headers too
+    "X-Fx1-Backend",
+    "X-Fx1-Byok-Api-Key",
+    "X-Fx1-Byok-Base-Url",
+    "X-Fx1-Byok-Model",
+    "X-Fx1-Checkpoint-Dir",
+    "X-Fx1-Fallbacks",
+    "X-Fx1-Receipt-Hashes",
+    "X-Fx1-Timeout",
     "X-Request-ID",
 ]
 _RATE_LIMIT_KEYS_MAX = 4096
@@ -3824,6 +3835,28 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
+    @app.delete(
+        "/v1/models/{model}",
+        response_model=OpenAIModelDelete,
+        tags=["openai"],
+        operation_id="openai_delete_model",
+    )
+    def openai_delete_model(model: str) -> OpenAIModelDelete:
+        """OpenAI's ``models.delete`` — unregister a fine-tuned model.
+        Only registered ``ft:`` names are deletable: the built-in link
+        ids are permanent (400) and unknown names fail closed 404 — a
+        delete verdict is never fabricated for a model that isn't real.
+        The tombstone journals, so a restart can't resurrect it."""
+        if model in OPENAI_MODEL_IDS:
+            raise ApiError(
+                400,
+                f"the built-in link '{model}' is not deletable",
+                code="invalid_request",
+            )
+        if ft_store.unregister_model(model) is None:
+            raise ApiError(404, f"The model '{model}' does not exist", code="model_not_found")
+        return OpenAIModelDelete(id=model, deleted=True)
 
     @app.post(
         "/v1/chat/completions",

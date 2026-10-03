@@ -2007,6 +2007,27 @@ def harness_model(
     typer.echo(card.model_dump_json(indent=2))
 
 
+@harness_app.command("model-delete")
+def harness_model_delete(
+    model_id: str = typer.Argument(..., help="Registered ft: name to unregister."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/models/{id}`` — unregister an ``ft:`` fine-tune. The
+    tombstone is real (the name stops resolving everywhere); built-in
+    link ids refuse (exit 2, the wire's 400) and unregistered names fail
+    closed (exit 2, the wire's 404). In-process by default."""
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).delete_model(model_id))
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    deleted = _or_exit(lambda: Fx1Harness().openai_delete_model(model_id))
+    typer.echo(deleted.model_dump_json(indent=2))
+
+
 @harness_app.command("respond")
 def harness_respond(
     input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
