@@ -34,9 +34,7 @@ def _bench_orthogonal_array(seed: int = 0) -> float:
     rep: list[tuple[int, ...]] = [(0, 0, 0)] * 4
     checks.append(not is_oa(rep, 2, 2))
     # all 8 binary triples form OA(8,3,2,2) with lambda 2
-    all3: list[tuple[int, ...]] = [
-        tuple(int(b) for b in format(i, "03b")) for i in range(8)
-    ]
+    all3: list[tuple[int, ...]] = [tuple(int(b) for b in format(i, "03b")) for i in range(8)]
     checks.append(is_oa(all3, 2, 2))
     # dropping one run breaks balance
     checks.append(not is_oa(all3[:-1], 2, 2))

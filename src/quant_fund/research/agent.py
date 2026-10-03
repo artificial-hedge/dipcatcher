@@ -3119,6 +3119,14 @@ from quant_fund.research.benches_w390 import (
     bench_orthogonal_array_family,
     bench_steiner_system_family,
 )
+from quant_fund.research.benches_w391 import (
+    bench_closed_cat_family,
+    bench_distributor_family,
+    bench_equivalence_cat_family,
+    bench_kan_extension_family,
+    bench_monoidal_cat_family,
+    bench_presheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3498,6 +3506,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "monoidal_cat": bench_monoidal_cat_family,
+        "closed_cat": bench_closed_cat_family,
+        "presheaf": bench_presheaf_family,
+        "kan_extension": bench_kan_extension_family,
+        "distributor": bench_distributor_family,
+        "equivalence_cat": bench_equivalence_cat_family,
         "latin_trade": bench_latin_trade_family,
         "steiner_system": bench_steiner_system_family,
         "inc_structure": bench_inc_structure_family,
