@@ -2700,6 +2700,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rigid_collision",
         "verlet_cloth",
         "fem_truss",
+        # Wave-226 compiler/formal-language canon: regex NFA, Hopcroft
+        # DFA minimization, CYK, dominators, liveness/DCE, linear-scan.
+        "regex_engine",
+        "dfa_minimize",
+        "cyk_parser",
+        "dominance_tree",
+        "liveness_dce",
+        "linscan_regalloc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -2623,3 +2623,4 @@ wave 222 (2026-10-02): number-theory canon — miller_rabin, pollard_rho, tonell
 wave 223 (2026-10-02): distributed-systems canon — paxos, raft_election, vector_clock, consistent_hash, gossip_epidemic, pbft_lite; 1311→1317 families.
 wave 224 (2026-10-02): string-algorithm canon — aho_corasick, suffix_automaton, kmp_search, edit_distance, lz77, bwt_transform; 1317→1323 families.
 wave 225 (2026-10-02): physics-simulation canon — nbody_leapfrog, barnes_hut, sph_fluid, rigid_collision, verlet_cloth, fem_truss; 1323→1329 families.
+wave 226 (2026-10-02): compiler/formal-language canon — regex_engine, dfa_minimize, cyk_parser, dominance_tree, liveness_dce, linscan_regalloc; 1329→1335 families.

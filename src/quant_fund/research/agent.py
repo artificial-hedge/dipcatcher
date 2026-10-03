@@ -1798,6 +1798,14 @@ from quant_fund.research.benches_w225 import (
     bench_sph_fluid_family,
     bench_verlet_cloth_family,
 )
+from quant_fund.research.benches_w226 import (
+    bench_cyk_parser_family,
+    bench_dfa_minimize_family,
+    bench_dominance_tree_family,
+    bench_linscan_regalloc_family,
+    bench_liveness_dce_family,
+    bench_regex_engine_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4700,6 +4708,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rigid_collision": bench_rigid_collision_family(),
         "verlet_cloth": bench_verlet_cloth_family(),
         "fem_truss": bench_fem_truss_family(),
+        "regex_engine": bench_regex_engine_family(),
+        "dfa_minimize": bench_dfa_minimize_family(),
+        "cyk_parser": bench_cyk_parser_family(),
+        "dominance_tree": bench_dominance_tree_family(),
+        "liveness_dce": bench_liveness_dce_family(),
+        "linscan_regalloc": bench_linscan_regalloc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
