@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1001 fluid-dynamics canon.
+        "euler_equations",
+        "navier_stokes",
+        "vorticity_form",
+        "beale_kato_majda",
+        "ladyzhenskaya_weak",
+        "leray_theory",
         # Wave-1000 elasticity canon.
         "navier_elasticity",
         "kirchhoff_plate",
