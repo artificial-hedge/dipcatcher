@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-952 spectral-decomposition canon.
+        "qr_iteration",
+        "power_deflation",
+        "schur_decomp",
+        "eigval_bounds",
+        "spectral_radius",
+        "spectral_gap",
         # Wave-951 matrix-function canon.
         "determinant_cofactor",
         "permanent_matrix",
