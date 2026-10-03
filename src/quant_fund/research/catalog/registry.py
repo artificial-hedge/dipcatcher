@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-372 stochastic-analysis canon.
+        "ito_lemma",
+        "girsanov",
+        "sde_strong",
+        "local_time",
+        "quadratic_var",
+        "malliavin",
         # Wave-371 differential-topology canon.
         "morse_theory",
         "transversality",

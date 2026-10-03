@@ -2967,6 +2967,14 @@ from quant_fund.research.benches_w371 import (
     bench_regular_value_family,
     bench_transversality_family,
 )
+from quant_fund.research.benches_w372 import (
+    bench_girsanov_family,
+    bench_ito_lemma_family,
+    bench_local_time_family,
+    bench_malliavin_family,
+    bench_quadratic_var_family,
+    bench_sde_strong_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3346,6 +3354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ito_lemma": bench_ito_lemma_family,
+        "girsanov": bench_girsanov_family,
+        "sde_strong": bench_sde_strong_family,
+        "local_time": bench_local_time_family,
+        "quadratic_var": bench_quadratic_var_family,
+        "malliavin": bench_malliavin_family,
         "morse_theory": bench_morse_theory_family,
         "transversality": bench_transversality_family,
         "regular_value": bench_regular_value_family,
