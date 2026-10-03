@@ -6527,6 +6527,14 @@ from quant_fund.research.benches_w816 import (
     bench_resolvent_markov_family,
     bench_transition_semigroup_family,
 )
+from quant_fund.research.benches_w817 import (
+    bench_ladder_height_family,
+    bench_levy_fluct_family,
+    bench_overshoot_levy_family,
+    bench_renewal_measure_family,
+    bench_spitzer_levy_family,
+    bench_wiener_hopf_f_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6898,6 +6906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wiener_hopf_f": bench_wiener_hopf_f_family,
+        "ladder_height": bench_ladder_height_family,
+        "renewal_measure": bench_renewal_measure_family,
+        "overshoot_levy": bench_overshoot_levy_family,
+        "levy_fluct": bench_levy_fluct_family,
+        "spitzer_levy": bench_spitzer_levy_family,
         "hunt_process": bench_hunt_process_family,
         "cadlag_markov": bench_cadlag_markov_family,
         "transition_semigroup": bench_transition_semigroup_family,

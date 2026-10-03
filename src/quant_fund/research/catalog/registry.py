@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-817 Levy-fluctuation canon.
+        "wiener_hopf_f",
+        "ladder_height",
+        "renewal_measure",
+        "overshoot_levy",
+        "levy_fluct",
+        "spitzer_levy",
         # Wave-816 Markov-process canon.
         "hunt_process",
         "cadlag_markov",
