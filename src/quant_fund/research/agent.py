@@ -5879,6 +5879,14 @@ from quant_fund.research.benches_w735 import (
     bench_viklund_sle_family,
     bench_zykin_sle_family,
 )
+from quant_fund.research.benches_w736 import (
+    bench_aru_powell_family,
+    bench_berestycki_sheffield_family,
+    bench_bisbisot_sheffield_family,
+    bench_dhms_lqg_family,
+    bench_huang_rhodes_family,
+    bench_sheffield_gff_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6258,6 +6266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sheffield_gff": bench_sheffield_gff_family,
+        "berestycki_sheffield": bench_berestycki_sheffield_family,
+        "aru_powell": bench_aru_powell_family,
+        "huang_rhodes": bench_huang_rhodes_family,
+        "bisbisot_sheffield": bench_bisbisot_sheffield_family,
+        "dhms_lqg": bench_dhms_lqg_family,
         "beffara_sle": bench_beffara_sle_family,
         "kemppainen_sle": bench_kemppainen_sle_family,
         "zykin_sle": bench_zykin_sle_family,
