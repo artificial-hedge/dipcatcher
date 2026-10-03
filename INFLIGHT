@@ -1,3 +1,4 @@
+feat(research): wave 689 — motivic-20 canon (motivic_jouanolou, motivic_infinite2, motivic_ext, motivic_norm, motivic_ramified, motivic_euler) (4089->4095 families)
 feat(research): wave 688 — spectral-AG-7 canon (spectral_field, spectral_lattice, spectral_filtration, spectral_cellular, spectral_cohomological, spectral_finite) (4083->4089 families)
 feat(research): wave 687 — category-17 canon (cat_fibrant_obj, cat_cofibrant, cat_bicomplete, cat_univariant, cat_descent, cat_glueable) (4077->4083 families)
 feat(research): wave 686 — higher-algebra-8 canon (e4_algebra, centralizer_alg, delooping2, factorization_hom2, koszul_duality2, braces_e4) (4071->4077 families)
