@@ -6215,6 +6215,14 @@ from quant_fund.research.benches_w777 import (
     bench_kingman_bound_family,
     bench_qed_regime_family,
 )
+from quant_fund.research.benches_w778 import (
+    bench_borel_tanner_family,
+    bench_engset_family,
+    bench_erlang_b_family,
+    bench_erlang_c_family,
+    bench_pollaczek_khinchine_family,
+    bench_takacs_vacation_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6594,6 +6602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "engset": bench_engset_family,
+        "erlang_b": bench_erlang_b_family,
+        "erlang_c": bench_erlang_c_family,
+        "pollaczek_khinchine": bench_pollaczek_khinchine_family,
+        "borel_tanner": bench_borel_tanner_family,
+        "takacs_vacation": bench_takacs_vacation_family,
         "fluid_limit": bench_fluid_limit_family,
         "heavy_traffic": bench_heavy_traffic_family,
         "diffusion_approx": bench_diffusion_approx_family,

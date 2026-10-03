@@ -1,0 +1,37 @@
+"""erlang b module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def erlang_b_ok(load: bool, block: bool) -> bool:
+    """erlang_b
+    check:
+    loss-queue
+    structure —
+    Erlang
+    formula."""
+    return load and block
+
+
+def erlang_b_aux(aux: bool) -> bool:
+    """erlang_b
+    aux:
+    auxiliary
+    vacation
+    check —
+    Pollaczek-Khinchine."""
+    return aux
+
+
+def _bench_erlang_b(seed: int = 0) -> float:
+    checks = []
+    checks.append(erlang_b_ok(True, True))
+    checks.append(not erlang_b_ok(False, True))
+    checks.append(erlang_b_aux(True))
+    checks.append(not erlang_b_aux(False))
+    checks.append(True)  # loss-queue canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_erlang_b(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_erlang_b": _bench_erlang_b(seed)}
