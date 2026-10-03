@@ -1,3 +1,4 @@
+feat(research): wave 332 — quantum-information canon (density_matrix, povm_measure, qchannel, entanglement, bell_ineq, state_tomo) (1948->1954 families)
 feat(research): wave 331 — complexity-theory canon (np_reduce, fpras_dnf, sumcheck, param_fpt, pcp_verify, circuit_lb) (1942->1948 families)
 feat(research): wave 330 — SMT-theory canon (diff_logic, array_theory, bv_ops, dpllt, lia_branch, mcsat_lite) (1936->1942 families)
 feat(research): wave 329 — proof-theory canon (nd_check, sequent_prove, cut_elim, resolution_fol, linear_logic, intuit_class) (1930->1936 families)

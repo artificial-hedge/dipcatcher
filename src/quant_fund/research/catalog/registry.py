@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-332 quantum-information canon.
+        "density_matrix",
+        "povm_measure",
+        "qchannel",
+        "entanglement",
+        "bell_ineq",
+        "state_tomo",
         # Wave-331 complexity-theory canon.
         "np_reduce",
         "fpras_dnf",
