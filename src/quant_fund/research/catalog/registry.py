@@ -2676,6 +2676,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "continued_fraction",
         "crt_garner",
         "ec_scalar",
+        # Wave-223 distributed systems: Paxos, Raft,
+        # vector clocks, consistent hashing, gossip, PBFT.
+        "paxos",
+        "raft_election",
+        "vector_clock",
+        "consistent_hash",
+        "gossip_epidemic",
+        "pbft_lite",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
