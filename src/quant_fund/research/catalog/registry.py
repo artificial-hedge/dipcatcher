@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-710 higher-algebra-11 canon.
+        "higher_algebra8",
+        "operad_infty4",
+        "floyd_farey",
+        "operad_swiss3",
+        "little_discs3",
+        "operad_twisted",
         # Wave-709 category-22 canon.
         "cat_univariant2",
         "cat_ab2",
