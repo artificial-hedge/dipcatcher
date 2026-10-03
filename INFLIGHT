@@ -1,3 +1,4 @@
+feat(research): wave 547 — 4-manifold canon (four_mfd, donaldson_thm, seiberg_witten, exotic_r4, intersection_form, freedman_thm) (3237->3243 families)
 feat(research): wave 546 — knot-theory canon (knot_invariant, jones_poly, alexander_poly, knot_group, knot_signature, vassiliev_inv) (3231->3237 families)
 feat(research): wave 545 — Thurston-geometrization canon (thurston_geometrization, eight_geometries, seifert_fibered, haken_mfd, jsj_decomp, ricci_flow) (3225->3231 families)
 feat(research): wave 544 — Kleinian-groups canon (kleinian_group, limit_set, hyperbolic_3mfd, mostow_rigidity, jorgensen_thurston, tameness_thm) (3219->3225 families)

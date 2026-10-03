@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-547 4-manifold canon.
+        "four_mfd",
+        "donaldson_thm",
+        "seiberg_witten",
+        "exotic_r4",
+        "intersection_form",
+        "freedman_thm",
         # Wave-546 knot-theory canon.
         "knot_invariant",
         "jones_poly",
