@@ -1,3 +1,4 @@
+feat(research): wave 789 — optimal-transport canon (wasserstein_grad, jko_step, benamou_brenier, entropy_regular, fokker_planck2, gradient_flow) (4689->4695 families)
 feat(research): wave 788 — Malliavin-calculus canon (clark_ocone, nualart_pardoux, divergence_op, wiener_chaos, skorohod_int, nourdin_peccati) (4683->4689 families)
 feat(research): wave 787 — regularity-structure canon (ito_signature, lyons_extension, tame_map, step_signature, gubinelli_sewing, young_integral) (4677->4683 families)
 feat(research): wave 786 — rough-path canon (rough_path, signature_transform2, controlled_path, lyons_lift, hairspring_map, area_mart) (4671->4677 families)

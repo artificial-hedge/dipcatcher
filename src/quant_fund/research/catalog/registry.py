@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-789 optimal-transport canon.
+        "wasserstein_grad",
+        "jko_step",
+        "benamou_brenier",
+        "entropy_regular",
+        "fokker_planck2",
+        "gradient_flow",
         # Wave-788 Malliavin-calculus canon.
         "clark_ocone",
         "nualart_pardoux",

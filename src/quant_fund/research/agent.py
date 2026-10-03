@@ -6303,6 +6303,14 @@ from quant_fund.research.benches_w788 import (
     bench_skorohod_int_family,
     bench_wiener_chaos_family,
 )
+from quant_fund.research.benches_w789 import (
+    bench_benamou_brenier_family,
+    bench_entropy_regular_family,
+    bench_fokker_planck2_family,
+    bench_gradient_flow_family,
+    bench_jko_step_family,
+    bench_wasserstein_grad_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6682,6 +6690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wasserstein_grad": bench_wasserstein_grad_family,
+        "jko_step": bench_jko_step_family,
+        "benamou_brenier": bench_benamou_brenier_family,
+        "entropy_regular": bench_entropy_regular_family,
+        "fokker_planck2": bench_fokker_planck2_family,
+        "gradient_flow": bench_gradient_flow_family,
         "clark_ocone": bench_clark_ocone_family,
         "nualart_pardoux": bench_nualart_pardoux_family,
         "divergence_op": bench_divergence_op_family,
