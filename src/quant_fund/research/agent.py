@@ -1919,6 +1919,14 @@ from quant_fund.research.benches_w240 import (
     bench_winternitz_ots_family,
     bench_zkp_schnorr_family,
 )
+from quant_fund.research.benches_w241 import (
+    bench_aries_recovery_family,
+    bench_blink_tree_family,
+    bench_buffer_pool_family,
+    bench_mvcc_gc_family,
+    bench_selinger_join_family,
+    bench_two_phase_lock_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4912,6 +4920,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "blind_sig": bench_blind_sig_family(),
         "zkp_schnorr": bench_zkp_schnorr_family(),
         "commit_reveal": bench_commit_reveal_family(),
+        "aries_recovery": bench_aries_recovery_family(),
+        "two_phase_lock": bench_two_phase_lock_family(),
+        "selinger_join": bench_selinger_join_family(),
+        "mvcc_gc": bench_mvcc_gc_family(),
+        "buffer_pool": bench_buffer_pool_family(),
+        "blink_tree": bench_blink_tree_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
