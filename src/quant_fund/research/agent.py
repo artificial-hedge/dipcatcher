@@ -2816,6 +2816,14 @@ from quant_fund.research.benches_w352 import (
     bench_su2_algebra_family,
     bench_weyl_group_a2_family,
 )
+from quant_fund.research.benches_w353 import (
+    bench_gronwall_lemma_family,
+    bench_lyapunov_stability_family,
+    bench_phase_plane_family,
+    bench_picard_lindelof_family,
+    bench_sturm_liouville_family,
+    bench_variation_params_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3195,6 +3203,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "picard_lindelof": bench_picard_lindelof_family,
+        "gronwall_lemma": bench_gronwall_lemma_family,
+        "sturm_liouville": bench_sturm_liouville_family,
+        "phase_plane": bench_phase_plane_family,
+        "lyapunov_stability": bench_lyapunov_stability_family,
+        "variation_params": bench_variation_params_family,
         "cartan_matrix": bench_cartan_matrix_family,
         "weyl_group_a2": bench_weyl_group_a2_family,
         "killing_form": bench_killing_form_family,

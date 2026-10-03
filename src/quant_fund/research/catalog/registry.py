@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-353 ODE-theory canon.
+        "picard_lindelof",
+        "gronwall_lemma",
+        "sturm_liouville",
+        "phase_plane",
+        "lyapunov_stability",
+        "variation_params",
         # Wave-352 Lie-theory canon.
         "cartan_matrix",
         "weyl_group_a2",
