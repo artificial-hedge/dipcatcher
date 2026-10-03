@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-306 astronomy-3/IOD canon.
+        "laplace_iod",
+        "cowell_j2",
+        "batch_od",
+        "cr3bp_dynamics",
+        "porkchop_grid",
+        "davenport_q",
         # Wave-305 text-index-2/stringology canon.
         "suffix_array_lcp",
         "z_function",

@@ -2439,6 +2439,14 @@ from quant_fund.research.benches_w305 import (
     bench_suffix_tree_lex_family,
     bench_z_function_family,
 )
+from quant_fund.research.benches_w306 import (
+    bench_batch_od_family,
+    bench_cowell_j2_family,
+    bench_cr3bp_dynamics_family,
+    bench_davenport_q_family,
+    bench_laplace_iod_family,
+    bench_porkchop_grid_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2818,6 +2826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "laplace_iod": bench_laplace_iod_family,
+        "cowell_j2": bench_cowell_j2_family,
+        "batch_od": bench_batch_od_family,
+        "cr3bp_dynamics": bench_cr3bp_dynamics_family,
+        "porkchop_grid": bench_porkchop_grid_family,
+        "davenport_q": bench_davenport_q_family,
         "suffix_array_lcp": bench_suffix_array_lcp_family,
         "z_function": bench_z_function_family,
         "suffix_tree_lex": bench_suffix_tree_lex_family,
