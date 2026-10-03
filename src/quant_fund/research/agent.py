@@ -3959,6 +3959,14 @@ from quant_fund.research.benches_w495 import (
     bench_verity_gray_family,
     bench_weak_infty_family,
 )
+from quant_fund.research.benches_w496 import (
+    bench_dag_representation_family,
+    bench_derived_deformation_family,
+    bench_derived_moduli_family,
+    bench_formal_deformation_family,
+    bench_obstruction_2_family,
+    bench_tangent_coh_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4338,6 +4346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_deformation": bench_derived_deformation_family,
+        "formal_deformation": bench_formal_deformation_family,
+        "dag_representation": bench_dag_representation_family,
+        "derived_moduli": bench_derived_moduli_family,
+        "tangent_coh": bench_tangent_coh_family,
+        "obstruction_2": bench_obstruction_2_family,
         "globular_model": bench_globular_model_family,
         "opetopic": bench_opetopic_family,
         "theta_space": bench_theta_space_family,
