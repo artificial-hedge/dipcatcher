@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-726 Galois-deformation canon.
+        "jetchev_skinner",
+        "wan_sss",
+        "wiles_taylor",
+        "diamond_taylor_wiles",
+        "kisin_crystalline",
+        "mazur_deform",
         # Wave-725 automorphic-points canon.
         "p_group_iwasawa",
         "shimura_period",
