@@ -6855,6 +6855,14 @@ from quant_fund.research.benches_w857 import (
     bench_gauss_legendre_family,
     bench_newton_cotes_family,
 )
+from quant_fund.research.benches_w858 import (
+    bench_adaptive_simpsons_family,
+    bench_double_exp_quad_family,
+    bench_filon_quad_family,
+    bench_levin_quad_family,
+    bench_osc_singular_family,
+    bench_tanh_sinh_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7226,6 +7234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "adaptive_simpsons": bench_adaptive_simpsons_family,
+        "tanh_sinh": bench_tanh_sinh_family,
+        "double_exp_quad": bench_double_exp_quad_family,
+        "osc_singular": bench_osc_singular_family,
+        "filon_quad": bench_filon_quad_family,
+        "levin_quad": bench_levin_quad_family,
         "gauss_legendre": bench_gauss_legendre_family,
         "gauss_chebyshev": bench_gauss_chebyshev_family,
         "clenshaw_curtis": bench_clenshaw_curtis_family,

@@ -1,3 +1,4 @@
+feat(research): wave 858 — adaptive/oscillatory-quadrature canon (adaptive_simpsons, tanh_sinh, double_exp_quad, osc_singular, filon_quad, levin_quad) (5097->5103 families)
 feat(research): wave 857 — classical-quadrature canon (gauss_legendre, gauss_chebyshev, clenshaw_curtis, newton_cotes, gauss_kronrod, fejer_quad) (5091->5097 families)
 feat(research): wave 856 — quadrature/quasi-MC canon (monte_carlo_quad, quasi_mc, halton_seq, sobol_seq, latin_hypercube, stratified_mc) (5085->5091 families)
 feat(research): wave 855 — wavelet-Galerkin canon (wavelet_galerkin, daubechies_basis, coiflet_basis, spline_wavelet, wavelet_collocation, adapt_wavelet) (5079->5085 families)
