@@ -1,3 +1,4 @@
+feat(research): wave 612 — commutative-algebra-4 canon (regular_ring, gorenstein_ring, normal_ring, factorial_ring, jacobson_ring, discrete_valuation) (3627->3633 families)
 feat(research): wave 611 — category-8 canon (pasting_diag, mate_dual, whisker_comp, pseudo_naturality, two_adjoint, modification) (3621->3627 families)
 feat(research): wave 610 — deformations-2 canon (schlessinger2, prorepresent, versal_def, semiuniversal, first_order, obstruction_def) (3615->3621 families)
 feat(research): wave 609 — spectral-AG-2 canon (e_infty_space, brave_new_ring, thom_constr, log_ring, orient_cohom, formal_moduli) (3609->3615 families)

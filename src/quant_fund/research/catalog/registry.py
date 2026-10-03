@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-612 commutative-algebra-4 canon.
+        "regular_ring",
+        "gorenstein_ring",
+        "normal_ring",
+        "factorial_ring",
+        "jacobson_ring",
+        "discrete_valuation",
         # Wave-611 category-8 canon.
         "pasting_diag",
         "mate_dual",
