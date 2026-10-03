@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-496 DAG-deformation canon.
+        "derived_deformation",
+        "formal_deformation",
+        "dag_representation",
+        "derived_moduli",
+        "tangent_coh",
+        "obstruction_2",
         # Wave-495 infinity-2-category canon.
         "globular_model",
         "opetopic",
