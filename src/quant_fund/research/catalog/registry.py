@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-365 probability-3 canon.
+        "optional_stopping",
+        "doob_decomp",
+        "martingale_clt",
+        "azuma",
+        "coupling_arg",
+        "ergodic_thm",
         # Wave-364 functional-analysis-3 canon.
         "hahn_banach",
         "riesz_repr",
