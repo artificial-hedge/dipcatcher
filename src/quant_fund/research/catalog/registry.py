@@ -2991,6 +2991,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "smith_predictor",
         "backstepping",
         "repetitive_ctrl",
+        # Wave-273 compiler-3 canon.
+        "partial_eval",
+        "peephole_opt",
+        "strength_red",
+        "const_fold",
+        "loop_unroll",
+        "inline_expand",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
