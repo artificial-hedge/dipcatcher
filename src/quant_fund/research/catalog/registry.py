@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-523 incidence-geometry canon.
+        "erdos_distinct",
+        "sz_trotter",
+        "kakeya",
+        "ff_kakeya",
+        "joints_thm",
+        "guth_katz",
         # Wave-522 additive-combinatorics canon.
         "freiman_thm",
         "szemeredi",
