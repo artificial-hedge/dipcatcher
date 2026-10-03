@@ -3183,6 +3183,14 @@ from quant_fund.research.benches_w398 import (
     bench_schur_index_family,
     bench_tensor_char_family,
 )
+from quant_fund.research.benches_w399 import (
+    bench_boolean_prime_family,
+    bench_ef_game_toy_family,
+    bench_fraisse_limit_family,
+    bench_qe_dense_order_family,
+    bench_real_closed_family,
+    bench_vaught_test_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3562,6 +3570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ef_game_toy": bench_ef_game_toy_family,
+        "vaught_test": bench_vaught_test_family,
+        "real_closed": bench_real_closed_family,
+        "boolean_prime": bench_boolean_prime_family,
+        "fraisse_limit": bench_fraisse_limit_family,
+        "qe_dense_order": bench_qe_dense_order_family,
         "induced_char": bench_induced_char_family,
         "artins_theorem": bench_artins_theorem_family,
         "tensor_char": bench_tensor_char_family,
