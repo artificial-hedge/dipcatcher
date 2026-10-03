@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-664 spectral-AG-4 canon.
+        "spectral_moduli",
+        "e_ring_moduli",
+        "tmf_stack",
+        "spectral_artstack",
+        "structured_spec",
+        "elliptic_spec2",
         # Wave-663 higher-algebra-5 canon.
         "e2_algebra",
         "dunn_additivity",

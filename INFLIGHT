@@ -1,3 +1,4 @@
+feat(research): wave 664 — spectral-AG-4 canon (spectral_moduli, e_ring_moduli, tmf_stack, spectral_artstack, structured_spec, elliptic_spec2) (3939->3945 families)
 feat(research): wave 663 — higher-algebra-5 canon (e2_algebra, dunn_additivity, tensor_factorization, swiss_cheese2, mckay_correspond, khovanov_2) (3933->3939 families)
 feat(research): wave 662 — higher-algebra-4 canon (bar_resolution2, hochschild_hom2, factor_homology2, deligne_conj2, braces_higher, little_cubes) (3927->3933 families)
 feat(research): wave 661 — chromatic-6 canon (ambidexterity, higher_semiadditivity, tate_height, dieudonne_module, honda_formal, raynaud_height) (3921->3927 families)
