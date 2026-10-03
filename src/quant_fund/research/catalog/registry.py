@@ -3047,6 +3047,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rips_h1",
         "graph_h1",
         "winding_deg",
+        # Wave-281 abstract-algebra canon.
+        "group_table",
+        "perm_group",
+        "galois_field",
+        "poly_ring",
+        "ideal_member",
+        "matrix_grp",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",

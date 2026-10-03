@@ -2239,6 +2239,14 @@ from quant_fund.research.benches_w280 import (
     bench_simp_betti_family,
     bench_winding_deg_family,
 )
+from quant_fund.research.benches_w281 import (
+    bench_galois_field_family,
+    bench_group_table_family,
+    bench_ideal_member_family,
+    bench_matrix_grp_family,
+    bench_perm_group_family,
+    bench_poly_ring_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2606,6 +2614,12 @@ def _provenance(
         "rips_h1": bench_rips_h1_family,
         "graph_h1": bench_graph_h1_family,
         "winding_deg": bench_winding_deg_family,
+        "group_table": bench_group_table_family,
+        "perm_group": bench_perm_group_family,
+        "galois_field": bench_galois_field_family,
+        "poly_ring": bench_poly_ring_family,
+        "ideal_member": bench_ideal_member_family,
+        "matrix_grp": bench_matrix_grp_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
