@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-441 Galois-representations canon.
+        "gal_rep",
+        "fontaine_ring",
+        "filtered_module",
+        "weil_deligne",
+        "hecke_eigensys",
+        "ribet_toy",
         # Wave-440 homotopy-8 canon.
         "thom_iso",
         "postnikov_twr",
