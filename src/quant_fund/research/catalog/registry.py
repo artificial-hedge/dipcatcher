@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-285 information-theory canon.
+        "markov_entropy",
+        "blahut_arimoto",
+        "kl_knn",
+        "type_class",
+        "elias_gamma",
+        "miller_madow",
         # Wave-284 bioinformatics-3 canon.
         "nj_tree",
         "fitch_pars",
