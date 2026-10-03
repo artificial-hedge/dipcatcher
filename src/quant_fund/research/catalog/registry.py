@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-894 interpolation canon.
+        "lagrange_interp",
+        "neville_interp",
+        "hermite_interp",
+        "divid_diff_table",
+        "barycentric_wts",
+        "floater_hormann",
         # Wave-893 collocation canon.
         "covello_est",
         "dual_goal_est",
