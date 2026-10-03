@@ -5535,6 +5535,14 @@ from quant_fund.research.benches_w692 import (
     bench_little_cubes2_family,
     bench_swiss_cheese3_family,
 )
+from quant_fund.research.benches_w693 import (
+    bench_derived_cartesian_family,
+    bench_derived_etale_family,
+    bench_derived_flat_family,
+    bench_derived_quasi_coherent_family,
+    bench_derived_represent_family,
+    bench_derived_smooth2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5914,6 +5922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_etale": bench_derived_etale_family,
+        "derived_flat": bench_derived_flat_family,
+        "derived_smooth2": bench_derived_smooth2_family,
+        "derived_quasi_coherent": bench_derived_quasi_coherent_family,
+        "derived_represent": bench_derived_represent_family,
+        "derived_cartesian": bench_derived_cartesian_family,
         "e5_algebra": bench_e5_algebra_family,
         "little_cubes2": bench_little_cubes2_family,
         "swiss_cheese3": bench_swiss_cheese3_family,

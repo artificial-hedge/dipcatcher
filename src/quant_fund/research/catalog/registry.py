@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-693 derived-geometry-8 canon.
+        "derived_etale",
+        "derived_flat",
+        "derived_smooth2",
+        "derived_quasi_coherent",
+        "derived_represent",
+        "derived_cartesian",
         # Wave-692 higher-algebra-9 canon.
         "e5_algebra",
         "little_cubes2",
