@@ -2039,6 +2039,14 @@ from quant_fund.research.benches_w255 import (
     bench_proj_gradient_family,
     bench_simplex_lp_family,
 )
+from quant_fund.research.benches_w256 import (
+    bench_epoch_reclaim_family,
+    bench_flat_combining_family,
+    bench_hazard_pointer_family,
+    bench_ms_queue_family,
+    bench_rcu_lock_family,
+    bench_seqlock_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2256,6 +2264,12 @@ def _provenance(
         "admm_lasso": bench_admm_lasso_family,
         "coord_descent": bench_coord_descent_family,
         "proj_gradient": bench_proj_gradient_family,
+        "hazard_pointer": bench_hazard_pointer_family,
+        "seqlock": bench_seqlock_family,
+        "ms_queue": bench_ms_queue_family,
+        "epoch_reclaim": bench_epoch_reclaim_family,
+        "flat_combining": bench_flat_combining_family,
+        "rcu_lock": bench_rcu_lock_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

@@ -2653,3 +2653,4 @@ wave 252 (2026-10-02): interpreters-3 canon — gen_gc, compacting_gc, dispatch_
 wave 253 (2026-10-02): automata-3 canon — tree_automata, buchi_automata, weighted_fst, cfg_pda_equiv, two_way_dfa, register_automata; 1491→1497 families.
 wave 254 (2026-10-02): applied-crypto-2 canon — tls_handshake, hmac_construct, aead_etm, merkle_damgard, cbc_padding, pbkdf2_kdf; 1497→1503 families.
 wave 255 (2026-10-02): optimization-2 canon — simplex_lp, ellipsoid_method, barrier_ip, admm_lasso, coord_descent, proj_gradient; 1503→1509 families.
+wave 256 (2026-10-02): memory-models canon — hazard_pointer, seqlock, ms_queue, epoch_reclaim, flat_combining, rcu_lock; 1509→1515 families.
