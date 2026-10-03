@@ -2864,6 +2864,22 @@ from quant_fund.research.benches_w358 import (
     bench_uniform_bounded_family,
     bench_weak_convergence_family,
 )
+from quant_fund.research.benches_w359 import (
+    bench_fejer_kernel_family,
+    bench_fourier_multiplier_family,
+    bench_plancherel_family,
+    bench_poisson_summation_family,
+    bench_sobolev_embed_family,
+    bench_uncertainty_family,
+)
+from quant_fund.research.benches_w360 import (
+    bench_energy_method_family,
+    bench_fundamental_laplace_family,
+    bench_heat_kernel_family,
+    bench_maximum_principle_family,
+    bench_wave_dalembert_family,
+    bench_weak_solution_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3243,6 +3259,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "energy_method": bench_energy_method_family,
+        "maximum_principle": bench_maximum_principle_family,
+        "heat_kernel": bench_heat_kernel_family,
+        "wave_dalembert": bench_wave_dalembert_family,
+        "weak_solution": bench_weak_solution_family,
+        "fundamental_laplace": bench_fundamental_laplace_family,
+        "plancherel": bench_plancherel_family,
+        "poisson_summation": bench_poisson_summation_family,
+        "fejer_kernel": bench_fejer_kernel_family,
+        "uncertainty": bench_uncertainty_family,
+        "fourier_multiplier": bench_fourier_multiplier_family,
+        "sobolev_embed": bench_sobolev_embed_family,
         "open_mapping": bench_open_mapping_family,
         "uniform_bounded": bench_uniform_bounded_family,
         "weak_convergence": bench_weak_convergence_family,
