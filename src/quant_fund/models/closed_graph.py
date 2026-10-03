@@ -29,14 +29,14 @@ def _bench_closed_graph(seed: int = 0) -> float:
     checks.append(bool(boundedness(a) < np.inf))
     # ||Ax|| <= ||A|| ||x||
     x = rng.normal(size=3)
-    checks.append(float(np.linalg.norm(a @ x)) <= boundedness(a) * np.linalg.norm(x) + 1e-9)
+    checks.append(bool(float(np.linalg.norm(a @ x)) <= boundedness(a) * np.linalg.norm(x) + 1e-9))
     # discontinuity impossible in finite dims: relative error of ||Ax|| bounded by ||A||
     b = np.array([[100.0, 0.0], [0.0, 0.001]])
     checks.append(bool(boundedness(b) == 100.0))
     # norm continuity: ||Ax_k - Ax|| <= ||A|| ||x_k - x||
     x2 = x + 1e-8 * rng.normal(size=3)
     checks.append(
-        float(np.linalg.norm(a @ x2 - a @ x)) <= boundedness(a) * np.linalg.norm(x2 - x) + 1e-6
+        bool(float(np.linalg.norm(a @ x2 - a @ x)) <= boundedness(a) * np.linalg.norm(x2 - x) + 1e-6)
     )
     return float(min(1.0, sum(checks) / len(checks)))
 
