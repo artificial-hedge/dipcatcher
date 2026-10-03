@@ -4015,6 +4015,14 @@ from quant_fund.research.benches_w502 import (
     bench_drinfeld_quotient_family,
     bench_keller_dg_family,
 )
+from quant_fund.research.benches_w503 import (
+    bench_elliptic_surface_family,
+    bench_kodaira_fiber_family,
+    bench_mordell_weil2_family,
+    bench_neron_model_family,
+    bench_tate_algorithm_family,
+    bench_weierstrass_eq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4394,6 +4402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "elliptic_surface": bench_elliptic_surface_family,
+        "weierstrass_eq": bench_weierstrass_eq_family,
+        "kodaira_fiber": bench_kodaira_fiber_family,
+        "tate_algorithm": bench_tate_algorithm_family,
+        "mordell_weil2": bench_mordell_weil2_family,
+        "neron_model": bench_neron_model_family,
         "dg_cat2": bench_dg_cat2_family,
         "dg_morita": bench_dg_morita_family,
         "dg_quotient": bench_dg_quotient_family,
