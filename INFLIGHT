@@ -1,3 +1,4 @@
+feat(research): wave 976 — nuclear-spaces canon (nuclear_map, frechet_nuclear, gelfand_triple, hilbert_schmidt_emb, trace_duality, diam_dim) (5805->5811 families)
 feat(research): wave 975 — distribution-theory canon (schwartz_dist, temper_dist, dist_convolution, sing_support, paley_wiener, sobolev_trace) (5799->5805 families)
 feat(research): wave 974 — interpolation-theory canon (real_interp_k, complex_interp, lorentz_space, marcinkiewicz_interp, peetre_kfunctor, reiteration_thm) (5793->5799 families)
 feat(research): wave 973 — Banach-space-geometry canon (banach_mazur, type_cotype, gl_property, djt_space, schauder_basis, kalton_loc) (5787->5793 families)
