@@ -7263,6 +7263,14 @@ from quant_fund.research.benches_w908 import (
     bench_sqrt_decomp_family,
     bench_wavelet_tree_family,
 )
+from quant_fund.research.benches_w909 import (
+    bench_deque_array_family,
+    bench_doubly_linked_list_family,
+    bench_gap_buffer_family,
+    bench_piece_table_family,
+    bench_unrolled_list_family,
+    bench_xor_linked_list_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7634,6 +7642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "doubly_linked_list": bench_doubly_linked_list_family,
+        "unrolled_list": bench_unrolled_list_family,
+        "gap_buffer": bench_gap_buffer_family,
+        "piece_table": bench_piece_table_family,
+        "deque_array": bench_deque_array_family,
+        "xor_linked_list": bench_xor_linked_list_family,
         "segment_tree": bench_segment_tree_family,
         "fenwick_tree": bench_fenwick_tree_family,
         "sparse_table": bench_sparse_table_family,

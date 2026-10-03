@@ -1,3 +1,4 @@
+feat(research): wave 909 — deque/linked-structure canon (doubly_linked_list, unrolled_list, gap_buffer, piece_table, deque_array, xor_linked_list) (5403->5409 families)
 feat(research): wave 908 — range-query canon (segment_tree, fenwick_tree, sparse_table, sqrt_decomp, wavelet_tree, merge_sort_tree) (5397->5403 families)
 feat(research): wave 907 — union-find + priority-queue canon (union_find, dsu_rollback, potential_dsu, van_emde_boas, interval_heap, weak_heap) (5391->5397 families)
 feat(research): wave 906 — persistent-structure canon (skip_list, persistent_array, finger_tree, rope_string, vlist, pure_queue) (5385->5391 families)
