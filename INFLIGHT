@@ -1,3 +1,4 @@
+feat(research): wave 844 — asymptotic-analysis canon (asymptotic_series, poincare_expansion, steepest_descent, stationary_phase, borel_resum, wkb_approx) (5013->5019 families)
 feat(research): wave 843 — spline-theory canon (b_spline, de_boor, cardinal_spline, knot_insertion, blossoming, box_spline) (5007->5013 families)
 feat(research): wave 842 — spectral-methods canon (chebyshev_grid, fourier_galerkin, legendre_tau, chebyshev_collocation, spectral_deriv, dealiasing) (5001->5007 families)
 feat(research): wave 841 — orthogonal-polynomial canon (legendre_poly, chebyshev_t, hermite_poly, laguerre_poly, jacobi_poly, gegenbauer_poly) (4995->5001 families)
