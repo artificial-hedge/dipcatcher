@@ -4063,6 +4063,14 @@ from quant_fund.research.benches_w508 import (
     bench_section_conj_family,
     bench_tamagawa_mochi_family,
 )
+from quant_fund.research.benches_w509 import (
+    bench_deligne_weil2_family,
+    bench_etale_site2_family,
+    bench_frobenius_action_family,
+    bench_groth_lefschetz_family,
+    bench_l_adic_sheaf_family,
+    bench_purity_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4442,6 +4450,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_site2": bench_etale_site2_family,
+        "l_adic_sheaf": bench_l_adic_sheaf_family,
+        "frobenius_action": bench_frobenius_action_family,
+        "groth_lefschetz": bench_groth_lefschetz_family,
+        "deligne_weil2": bench_deligne_weil2_family,
+        "purity_thm": bench_purity_thm_family,
         "anabelian_geo": bench_anabelian_geo_family,
         "section_conj": bench_section_conj_family,
         "fundamental_grp": bench_fundamental_grp_family,
