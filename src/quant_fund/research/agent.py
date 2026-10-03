@@ -3935,6 +3935,14 @@ from quant_fund.research.benches_w492 import (
     bench_log_smooth_family,
     bench_log_structure_family,
 )
+from quant_fund.research.benches_w493 import (
+    bench_berkovich_an_family,
+    bench_mikhalkin_family,
+    bench_skeleton_trop_family,
+    bench_tropical_curve_family,
+    bench_tropical_cycle_family,
+    bench_tropical_poly_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4314,6 +4322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tropical_poly": bench_tropical_poly_family,
+        "berkovich_an": bench_berkovich_an_family,
+        "skeleton_trop": bench_skeleton_trop_family,
+        "tropical_curve": bench_tropical_curve_family,
+        "mikhalkin": bench_mikhalkin_family,
+        "tropical_cycle": bench_tropical_cycle_family,
         "log_structure": bench_log_structure_family,
         "kato_fontaine": bench_kato_fontaine_family,
         "log_smooth": bench_log_smooth_family,
