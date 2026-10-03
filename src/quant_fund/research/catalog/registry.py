@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-328 homotopy-type-theory canon.
+        "path_types",
+        "hlevel_check",
+        "univalence_toy",
+        "kan_hcomp",
+        "funext_toy",
+        "hit_quotient",
         # Wave-327 zero-knowledge canon.
         "r1cs_check",
         "qap_encode",

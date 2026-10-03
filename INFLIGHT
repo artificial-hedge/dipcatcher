@@ -1,3 +1,4 @@
+feat(research): wave 328 — homotopy-type-theory canon (path_types, hlevel_check, univalence_toy, kan_hcomp, funext_toy, hit_quotient) (1924->1930 families)
 feat(research): wave 327 — zero-knowledge canon (r1cs_check, qap_encode, kzg_commit, bulletproof_ip, plonkish_gate, snark_circuit) (1918->1924 families)
 feat(research): wave 326 — verification-3 canon (timed_automata, parity_game, nba_emptiness, ctl_mc, bisim_refine, wsts_cover) (1912->1918 families)
 feat(research): wave 325 — PL-8 ownership/substructural canon (borrow_check, lifetime_outlives, linear_use, escape_region, capability_perm, refinement_liquid) (1906->1912 families)
