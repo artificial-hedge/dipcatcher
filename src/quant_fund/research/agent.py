@@ -3319,6 +3319,14 @@ from quant_fund.research.benches_w415 import (
     bench_partition_unity_family,
     bench_quotient_map_family,
 )
+from quant_fund.research.benches_w416 import (
+    bench_decidable_theory_family,
+    bench_definable_set_family,
+    bench_indiscernible_seq_family,
+    bench_interpol_thm_family,
+    bench_omitting_prime_family,
+    bench_saturated_model_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3698,6 +3706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "decidable_theory": bench_decidable_theory_family,
+        "indiscernible_seq": bench_indiscernible_seq_family,
+        "saturated_model": bench_saturated_model_family,
+        "omitting_prime": bench_omitting_prime_family,
+        "interpol_thm": bench_interpol_thm_family,
+        "definable_set": bench_definable_set_family,
         "quotient_map": bench_quotient_map_family,
         "open_cover": bench_open_cover_family,
         "locally_compact": bench_locally_compact_family,
