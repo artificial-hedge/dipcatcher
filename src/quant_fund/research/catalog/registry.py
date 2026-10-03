@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-334 secure-computation canon.
+        "garbled_circuit",
+        "bgw_mpc",
+        "beaver_triple",
+        "ot_extension",
+        "spdz_mac",
+        "psi_intersect",
         # Wave-333 computer-algebra-2 canon.
         "poly_factor_fp",
         "hensel_lift",

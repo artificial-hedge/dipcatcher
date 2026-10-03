@@ -1,3 +1,4 @@
+feat(research): wave 334 — secure-computation canon (garbled_circuit, bgw_mpc, beaver_triple, ot_extension, spdz_mac, psi_intersect) (1960->1966 families)
 feat(research): wave 333 — computer-algebra-2 canon (poly_factor_fp, hensel_lift, poly_crt, subresultant, sparse_interp, poly_eval_interp) (1954->1960 families)
 feat(research): wave 332 — quantum-information canon (density_matrix, povm_measure, qchannel, entanglement, bell_ineq, state_tomo) (1948->1954 families)
 feat(research): wave 331 — complexity-theory canon (np_reduce, fpras_dnf, sumcheck, param_fpt, pcp_verify, circuit_lb) (1942->1948 families)
