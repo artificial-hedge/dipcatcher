@@ -1,3 +1,4 @@
+feat(research): wave 366 — algebraic-topology-3 canon (singular_homology, cw_complex, spectral_seq_toy, homotopy_group, excision, poincare_dual) (2152->2158 families)
 feat(research): wave 365 — probability-3 canon (optional_stopping, doob_decomp, martingale_clt, azuma, coupling_arg, ergodic_thm) (2146->2152 families)
 feat(research): wave 364 — functional-analysis-3 canon (hahn_banach, riesz_repr, adjoint_op, selfadjoint_spectrum, compact_resolvent, projection_thm) (2140->2146 families)
 feat(research): wave 363 — real-analysis canon (cantor_set, baire_category, vitali_set, egorov_thm, fatou_lemma, monotone_conv) (2134->2140 families)

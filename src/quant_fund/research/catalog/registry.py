@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-366 algebraic-topology-3 canon.
+        "singular_homology",
+        "cw_complex",
+        "spectral_seq_toy",
+        "homotopy_group",
+        "excision",
+        "poincare_dual",
         # Wave-365 probability-3 canon.
         "optional_stopping",
         "doob_decomp",
