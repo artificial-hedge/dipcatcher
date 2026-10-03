@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-966 operator-space canon.
+        "operator_space",
+        "cb_map",
+        "complete_contraction",
+        "injective_space",
+        "noncommutative_lp",
+        "oh_emb",
         # Wave-965 Schatten/compact canon.
         "hilbert_schmidt_op",
         "trace_class_op",
