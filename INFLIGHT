@@ -1,3 +1,4 @@
+feat(research): wave 828 — projection/section canon (projection_theorem, uniform_section, dellacherie_section, cross_section, maharam_lift, von_neumann_sel) (4917->4923 families)
 feat(research): wave 827 — random-series canon (three_series, kolmogorov_two, ito_nisio, chung_series, ortega_series, salem_zygmund) (4911->4917 families)
 feat(research): wave 826 — maximal-inequality canon (doob_ineq, max_ineq, bj_ineq, kolmogorov_ineq, etemadi_ineq, levy_ineq) (4905->4911 families)
 feat(research): wave 825 — measurable-selection canon (measur_select, kura_ryll, castaing_rep, measurable_graph, integrand_map, stoch_open) (4899->4905 families)
