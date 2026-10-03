@@ -3061,6 +3061,12 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-368 model-theory-2/logic canon.
+        "unification_fol",
+        "skolem_normal",
+        "herbrand_model",
+        "presburger",
+        "los_theorem",
         # Wave-367 Galois-2/field-theory canon.
         "finite_field",
         "galois_corresp",
