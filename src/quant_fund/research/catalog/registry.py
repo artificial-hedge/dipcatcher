@@ -2723,6 +2723,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lww_map",
         "twopset",
         "rga_sequence",
+        # Wave-229 probabilistic-membership canon: Bloom, cuckoo,
+        # XOR/quotient filters, MinHash-LSH, SimHash.
+        "bloom_filter",
+        "cuckoo_filter",
+        "xor_filter",
+        "quotient_filter",
+        "minhash_lsh",
+        "simhash",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
