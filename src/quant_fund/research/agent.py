@@ -4023,6 +4023,14 @@ from quant_fund.research.benches_w503 import (
     bench_tate_algorithm_family,
     bench_weierstrass_eq_family,
 )
+from quant_fund.research.benches_w504 import (
+    bench_adem_relations_family,
+    bench_bar_resolution_family,
+    bench_lambda_algebra_family,
+    bench_serre_cartan_family,
+    bench_steenrod_algebra_family,
+    bench_unstable_modules_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4402,6 +4410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "steenrod_algebra": bench_steenrod_algebra_family,
+        "adem_relations": bench_adem_relations_family,
+        "serre_cartan": bench_serre_cartan_family,
+        "unstable_modules": bench_unstable_modules_family,
+        "lambda_algebra": bench_lambda_algebra_family,
+        "bar_resolution": bench_bar_resolution_family,
         "elliptic_surface": bench_elliptic_surface_family,
         "weierstrass_eq": bench_weierstrass_eq_family,
         "kodaira_fiber": bench_kodaira_fiber_family,
