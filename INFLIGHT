@@ -1,3 +1,4 @@
+feat(research): wave 915 — BVP/tree-exotics canon (superposition_bvp, continuation_bvp, robbins_bvp, bvp_eigen, loser_tree, fusion_tree) (5439->5445 families)
 feat(research): wave 914 — RK/BVP-methods-2 canon (ralston_rk, verner_rk, ralston_second, runge_kutta4, invariant_imbedding, green_function_bvp) (5433->5439 families)
 feat(research): wave 913 — interpolation-3 canon (scattered_interp, spline_interp, monotone_interp, akima_interp, pchip_interp, makima_interp) (5427->5433 families)
 feat(research): wave 912 — spatial-index-2 canon (octree_index, range_tree, hilbert_curve, z_curve, morton_order, rstar_tree) (5421->5427 families)
