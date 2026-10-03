@@ -2295,6 +2295,14 @@ from quant_fund.research.benches_w287 import (
     bench_geodesic_sphere_family,
     bench_surf_area_family,
 )
+from quant_fund.research.benches_w288 import (
+    bench_conv_prob_family,
+    bench_fubini_swap_family,
+    bench_leb_integral_family,
+    bench_leb_measure_family,
+    bench_radon_nikodym_family,
+    bench_weak_conv_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2674,6 +2682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "leb_measure": bench_leb_measure_family,
+        "leb_integral": bench_leb_integral_family,
+        "conv_prob": bench_conv_prob_family,
+        "weak_conv": bench_weak_conv_family,
+        "fubini_swap": bench_fubini_swap_family,
+        "radon_nikodym": bench_radon_nikodym_family,
         "first_ff": bench_first_ff_family,
         "gauss_curve": bench_gauss_curve_family,
         "frenet_frame": bench_frenet_frame_family,

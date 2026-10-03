@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-288 measure-theory canon.
+        "leb_measure",
+        "leb_integral",
+        "conv_prob",
+        "weak_conv",
+        "fubini_swap",
+        "radon_nikodym",
         # Wave-287 differential-geometry canon.
         "first_ff",
         "gauss_curve",
