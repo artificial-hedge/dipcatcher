@@ -2595,6 +2595,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fptas_knapsack",
         "local_search_maxcut",
         "christofides_tsp",
+        # Wave-213 SDP/relaxation canon: Goemans-Williamson SDP,
+        # eigenvalue opt, SoS, Shor QCQP, spectral bisection, Hoffman.
+        "sdp_maxcut",
+        "eigenvalue_opt",
+        "sos_certificate",
+        "qcqp_relax",
+        "spectral_bisection",
+        "hoffman_bound",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
