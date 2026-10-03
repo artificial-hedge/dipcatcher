@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-910 b-tree family canon.
+        "b_tree",
+        "b_plus_tree",
+        "b_star_tree",
+        "weight_balanced_tree",
+        "wavl_tree",
+        "tango_tree",
         # Wave-909 deque/linked-structure canon.
         "doubly_linked_list",
         "unrolled_list",
