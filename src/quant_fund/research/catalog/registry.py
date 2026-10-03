@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-932 local-search-3 canon.
+        "vns_search",
+        "large_neighborhood",
+        "ruin_recreate",
+        "path_relinking",
+        "guided_local",
+        "simulated_annealing",
         # Wave-931 population-metaheuristics canon.
         "ant_colony",
         "pso_swarm",
