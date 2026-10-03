@@ -2031,6 +2031,14 @@ from quant_fund.research.benches_w254 import (
     bench_pbkdf2_kdf_family,
     bench_tls_handshake_family,
 )
+from quant_fund.research.benches_w255 import (
+    bench_admm_lasso_family,
+    bench_barrier_ip_family,
+    bench_coord_descent_family,
+    bench_ellipsoid_method_family,
+    bench_proj_gradient_family,
+    bench_simplex_lp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2242,6 +2250,12 @@ def _provenance(
         "merkle_damgard": bench_merkle_damgard_family,
         "cbc_padding": bench_cbc_padding_family,
         "pbkdf2_kdf": bench_pbkdf2_kdf_family,
+        "simplex_lp": bench_simplex_lp_family,
+        "ellipsoid_method": bench_ellipsoid_method_family,
+        "barrier_ip": bench_barrier_ip_family,
+        "admm_lasso": bench_admm_lasso_family,
+        "coord_descent": bench_coord_descent_family,
+        "proj_gradient": bench_proj_gradient_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

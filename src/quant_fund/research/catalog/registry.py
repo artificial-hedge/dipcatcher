@@ -2895,6 +2895,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "merkle_damgard",
         "cbc_padding",
         "pbkdf2_kdf",
+        # Wave-255 optimization-2 canon.
+        "simplex_lp",
+        "ellipsoid_method",
+        "barrier_ip",
+        "admm_lasso",
+        "coord_descent",
+        "proj_gradient",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
