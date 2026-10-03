@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-302 compiler-5/JIT canon.
+        "card_table_gc",
+        "escape_analysis",
+        "osr_deopt",
+        "trace_tree",
+        "ssa_repair",
+        "gvn_pre",
         # Wave-301 geophysics/seismic canon.
         "nmo_dix",
         "taup_transform",
