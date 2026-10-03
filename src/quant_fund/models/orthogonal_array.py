@@ -41,7 +41,9 @@ def _bench_orthogonal_array(seed: int = 0) -> float:
     # dropping one run breaks balance
     checks.append(not is_oa(all3[:-1], 2, 2))
     # OA(9,4,3,2) = affine plane rows: (x, y, x+y, x+2y) over F_3
-    runs3 = [(x, y, (x + y) % 3, (x + 2 * y) % 3) for x in range(3) for y in range(3)]
+    runs3: list[tuple[int, ...]] = [
+        (x, y, (x + y) % 3, (x + 2 * y) % 3) for x in range(3) for y in range(3)
+    ]
     checks.append(is_oa(runs3, 3, 2))
     return float(sum(checks) / len(checks))
 
