@@ -4327,6 +4327,14 @@ from quant_fund.research.benches_w541 import (
     bench_runge_approx_family,
     bench_schwarz_lemma_family,
 )
+from quant_fund.research.benches_w542 import (
+    bench_d_bar_neumann_family,
+    bench_domain_holo_family,
+    bench_hartogs_thm_family,
+    bench_levi_problem_family,
+    bench_oka_coherence_family,
+    bench_pseudoconvex_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4706,6 +4714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hartogs_thm": bench_hartogs_thm_family,
+        "domain_holo": bench_domain_holo_family,
+        "pseudoconvex": bench_pseudoconvex_family,
+        "levi_problem": bench_levi_problem_family,
+        "oka_coherence": bench_oka_coherence_family,
+        "d_bar_neumann": bench_d_bar_neumann_family,
         "riemann_mapping": bench_riemann_mapping_family,
         "schwarz_lemma": bench_schwarz_lemma_family,
         "picard_thm": bench_picard_thm_family,
