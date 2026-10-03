@@ -4599,6 +4599,14 @@ from quant_fund.research.benches_w575 import (
     bench_sine_kernel_family,
     bench_tracy_widom_family,
 )
+from quant_fund.research.benches_w576 import (
+    bench_free_convolution_family,
+    bench_free_prob_family,
+    bench_operator_valued_family,
+    bench_r_transform_family,
+    bench_s_transform_family,
+    bench_voiculescu_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4978,6 +4986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "free_prob": bench_free_prob_family,
+        "r_transform": bench_r_transform_family,
+        "s_transform": bench_s_transform_family,
+        "free_convolution": bench_free_convolution_family,
+        "voiculescu_thm": bench_voiculescu_thm_family,
+        "operator_valued": bench_operator_valued_family,
         "circular_law": bench_circular_law_family,
         "dyson_brownian": bench_dyson_brownian_family,
         "sine_kernel": bench_sine_kernel_family,
