@@ -3005,6 +3005,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orf_find",
         "kmer_count",
         "seq_logo",
+        # Wave-275 databases-4 canon.
+        "columnar_scan",
+        "simd_filter",
+        "late_materialize",
+        "radix_join",
+        "graceful_hash",
+        "index_intersect",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
