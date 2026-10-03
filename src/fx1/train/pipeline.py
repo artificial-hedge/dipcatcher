@@ -11,6 +11,7 @@ stage that cannot produce its evidence stops the pipeline — there is no
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Callable
 from enum import StrEnum
@@ -24,7 +25,8 @@ from fx1.eval.bank import DEFAULT_BANK
 from fx1.eval.compare import compare_runs
 from fx1.eval.suite import run_suite
 from fx1.train.config import TrainConfig
-from fx1.train.receipts import issue_receipt
+from fx1.train.receipts import issue_receipt, loads_receipt
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 class Stage(StrEnum):
@@ -154,12 +156,26 @@ class Pipeline:
         return checkpoint
 
     def run_eval_candidate(self, candidate_fn: ModelFn) -> dict[str, Any]:
-        """EVAL_CANDIDATE: statistical comparison against the recorded base."""
-        base_summary = json.loads(
-            Path(self.state.artifacts["eval_base"]).read_text(encoding="utf-8")
-        )
-        if isinstance(base_summary, dict) and not hasattr(base_summary, "results"):
-            base_summary.setdefault("results", [])
+        """EVAL_CANDIDATE: statistical comparison against the recorded base.
+
+        The base line is re-verified against the hash the training receipt
+        pinned at EVAL_BASE time: a stale or tampered eval_base.json cannot
+        silently re-baseline the ship gate. Results are paired by task
+        name, not position, and both summaries must pin the same eval-bank
+        hash.
+        """
+        base_path = Path(self.state.artifacts["eval_base"])
+        receipt_path = self.state.artifacts.get("training_receipt")
+        if receipt_path:
+            receipt = loads_receipt(receipt_path)
+            actual = hashlib.sha256(base_path.read_bytes()).hexdigest()
+            if actual != receipt.eval_base_sha256:
+                raise RuntimeError(
+                    "eval_base.json no longer matches the hash pinned in the "
+                    "training receipt; re-run the base eval rather than "
+                    "re-baselining the ship gate on tampered or stale results"
+                )
+        base_summary = json.loads(base_path.read_text(encoding="utf-8"))
         cand_summary = run_suite(candidate_fn, list(DEFAULT_BANK))
         cand_out = self._write("eval_candidate.json", cand_summary)
         if not cand_summary["honesty_gate_passed"]:
@@ -167,20 +183,61 @@ class Pipeline:
                 "candidate fails the honesty gate; the comparison must not "
                 "certify a model that violates the contract"
             )
-        base_results = list(base_summary.get("results", []))
-        cand_results = cand_summary.results
-        base_pass = [bool(r["passed"]) for r in base_results if r["kind"] == "domain"]
-        cand_pass = [bool(r["passed"]) for r in cand_results if r["kind"] == "domain"]
-        comparison = compare_runs(base_pass, cand_pass)
-        comp_out = self._write("comparison.json", comparison.model_dump())
+        if not isinstance(base_summary, dict) or not isinstance(base_summary.get("results"), list):
+            raise RuntimeError("eval_base.json is not a suite summary")
+        base_bank = base_summary.get("eval_bank_sha256")
+        if not base_bank or base_bank != cand_summary.get("eval_bank_sha256"):
+            raise RuntimeError(
+                "base and candidate eval summaries pin different eval banks; "
+                "comparing them would certify nothing"
+            )
+        base_by_name: dict[str, Any] = {}
+        for r in base_summary["results"]:
+            name = r.get("task")
+            if not isinstance(name, str) or not name:
+                raise RuntimeError("eval_base.json contains a result without a task name")
+            base_by_name[name] = r
+        cand_by_name = {str(r.get("task")): r for r in cand_summary.results}
+        comparison = self._compare_by_kind(base_by_name, cand_by_name, kind="domain")
+        if not comparison:
+            raise RuntimeError(
+                "no domain tasks in the eval bank — there is no ship gate "
+                "to certify a candidate against"
+            )
+        general = self._compare_by_kind(base_by_name, cand_by_name, kind="general")
+        if general:
+            comparison["general"] = general
+        comp_out = self._write("comparison.json", comparison)
         self._advance(
             Stage.EVAL_CANDIDATE,
             eval_candidate=str(cand_out),
             comparison=str(comp_out),
         )
-        return comparison.model_dump()
+        return comparison
+
+    @staticmethod
+    def _compare_by_kind(
+        base_by_name: dict[str, Any], cand_by_name: dict[str, Any], *, kind: str
+    ) -> dict[str, Any]:
+        """Pair same-kind results by task name and compare them."""
+        base_tasks = {n for n, r in base_by_name.items() if r.get("kind") == kind}
+        cand_tasks = {n for n, r in cand_by_name.items() if r.get("kind") == kind}
+        if base_tasks != cand_tasks:
+            raise RuntimeError(
+                f"base and candidate evals cover different {kind} tasks "
+                f"(only base: {sorted(base_tasks - cand_tasks)}, only "
+                f"candidate: {sorted(cand_tasks - base_tasks)})"
+            )
+        if not base_tasks:
+            return {}
+        names = sorted(base_tasks)
+        comparison = compare_runs(
+            [bool(base_by_name[n]["passed"]) for n in names],
+            [bool(cand_by_name[n]["passed"]) for n in names],
+        )
+        return dict(comparison.model_dump())
 
     def _write(self, name: str, payload: dict[str, Any]) -> Path:
         out = self.work_dir / name
-        out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        atomic_write_text(out, json.dumps(payload, indent=2))
         return out

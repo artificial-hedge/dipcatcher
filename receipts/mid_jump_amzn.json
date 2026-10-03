@@ -1,0 +1,84 @@
+{
+  "claim": "mid_jump_distribution_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_jump_mean_ratio_0.48"
+  ],
+  "git_revision": "e93e1034063f9ec42e6a3690b3891fa29d1b92ac",
+  "interpretation": "Wide-book stocks take multi-tick mid steps; tight books rarely jump >1 tick. The histogram is a liquidity-regime fingerprint.",
+  "kind": "mid_jump",
+  "real": {
+    "jump_hist": {
+      "0": 0.8978,
+      "1": 0.0645,
+      "10-20": 0.0008,
+      "2": 0.0189,
+      "3-4": 0.0128,
+      "5-9": 0.005,
+      ">20": 0.0001
+    },
+    "mean_abs_jump_ticks": 1.4904,
+    "mean_move_gap_s": 0.8492,
+    "move_share": 0.1022,
+    "n_mid_moves": 27557,
+    "n_obs": 269747,
+    "p95_jump_ticks": 4.5
+  },
+  "receipt_sha256": "9fb46405f3c80561438e94e14e7f489897c183cfcc1b82de79126476f05847cd",
+  "research_only": true,
+  "schema": "mid_jump.v1",
+  "sim_arms": {
+    "iid": {
+      "jump_hist": {
+        "0": 0.8189,
+        "1": 0.1665,
+        "10-20": 0.0,
+        "2": 0.0139,
+        "3-4": 0.0004,
+        "5-9": 0.0005,
+        ">20": 0.0
+      },
+      "mean_abs_jump_ticks": 0.7095,
+      "mean_move_gap_s": 4.6262,
+      "move_share": 0.1811,
+      "n_mid_moves": 3609,
+      "n_obs": 19926,
+      "p95_jump_ticks": 1.5
+    },
+    "regime": {
+      "jump_hist": {
+        "0": 0.7964,
+        "1": 0.177,
+        "10-20": 0.0,
+        "2": 0.0229,
+        "3-4": 0.0033,
+        "5-9": 0.0004,
+        ">20": 0.0
+      },
+      "mean_abs_jump_ticks": 0.7781,
+      "mean_move_gap_s": 4.1699,
+      "move_share": 0.2036,
+      "n_mid_moves": 3973,
+      "n_obs": 19510,
+      "p95_jump_ticks": 1.5
+    },
+    "split": {
+      "jump_hist": {
+        "0": 0.6967,
+        "1": 0.2406,
+        "10-20": 0.0,
+        "2": 0.0538,
+        "3-4": 0.0078,
+        "5-9": 0.0011,
+        ">20": 0.0
+      },
+      "mean_abs_jump_ticks": 0.9126,
+      "mean_move_gap_s": 3.3032,
+      "move_share": 0.3033,
+      "n_mid_moves": 4601,
+      "n_obs": 15172,
+      "p95_jump_ticks": 2.0
+    }
+  },
+  "ticker": "AMZN"
+}

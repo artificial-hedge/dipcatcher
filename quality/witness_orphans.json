@@ -1,0 +1,11 @@
+{
+  "schema": "witness_orphans.v1",
+  "orphans": {
+    "631b76393d80123ee1f4d9b8a91f157aa74c1626b97422c7db5846f9e32ade9f": {
+      "uuid": "108e9186e8c5677a0d480b232367deab863ffbad81376e6d2c56fd841b1a8852b29719cf4f5efcfc",
+      "log_index": 3006938319,
+      "integrated_time": 1790719733,
+      "note": "first witness entry, pre-archive era: attested a checkpoint that was superseded before the spine existed — the checkpoint record was never committed, so the digest is ours but unclaimable"
+    }
+  }
+}

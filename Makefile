@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all
 
 .DEFAULT_GOAL := help
 
@@ -15,6 +15,13 @@ test: ## PR-gate lab tests (not network, not slow; xdist)
 test-full: ## Full offline lab suite, including slow tests
 	uv run pytest -n auto --dist loadfile -m "not network"
 
+test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
+	# PR gate first, then slow tests so schedule/full shards stay balanced too.
+	uv run pytest -n auto --dist loadfile -m "not network and not slow" \
+		--store-durations --durations-path .test_durations --clean-durations
+	uv run pytest -n auto --dist loadfile -m "slow and not network" \
+		--store-durations --durations-path .test_durations
+
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
 	uv run pytest -q tests/unit/parity
 	uv run python -m quant_fund.parity smoke --out data/metadata/parity-smoke
@@ -29,6 +36,7 @@ lint: ## Ruff check + format check on src/ and tests/
 	uv run ruff check src tests
 	uv run ruff format --check src tests
 	uv run python scripts/check_mypy_strict_allowlist.py
+	uv run python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format
 	uv run ruff check --fix src tests
@@ -48,9 +56,30 @@ audit-obs: ## Audit ledger and observability tests
 	uv run pytest tests/unit/audit tests/unit/observe -q
 	uv run mypy src/quant_fund/audit src/quant_fund/observe
 
-audit: ## Locked-deps vulnerability audit (pip-audit)
-	uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups \
-		| uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+# Remove export markers before scanning so Windows/Linux extras are audited
+# on every host. --disable-pip --no-deps queries the exported pins directly.
+audit: ## All-platform locked Python dependency vulnerability audit (pip-audit)
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements" "$$requirements.all"' EXIT; \
+		uv export --frozen --quiet --format requirements.txt --no-hashes --no-emit-project \
+		--all-extras --all-groups -o "$$requirements"; \
+		sed 's/ ;.*//' "$$requirements" > "$$requirements.all"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements.all"
+
+audit-js: ## Audit all three locked npm dependency trees
+	cd web && npm audit
+	cd replay && npm audit
+	cd clients/typescript && npm audit
+
+audit-rust: ## Audit the native extension (requires cargo-audit)
+	cargo audit --file rust/quant_core/Cargo.lock
+
+audit-kronos: ## Resolve and audit the independent vendored Kronos dependencies
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements"' EXIT; \
+		uv pip compile third_party/kronos/webui/requirements.txt --python-version 3.12 \
+		--quiet -o "$$requirements"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements"
+
+audit-all: audit audit-js audit-rust audit-kronos ## Repository-wide dependency audits
 
 doctor: ## Harness environment check
 	uv run dipcatcher doctor
@@ -66,6 +95,9 @@ evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
 ci: lint typecheck coverage ## Local mirror of the CI gate
+
+code-inventory: ## Report tracked semantic Python LOC and feature/test counts
+	uv run python scripts/code_quality_inventory.py --summary-only
 
 formal: ## TLC order-lifecycle check + Z3/conformance/stateful tests
 	bash scripts/run_tlc.sh
@@ -147,8 +179,13 @@ PROOFCORE_DB ?= data/metadata/proofcore.duckdb
 DEFAULT_PROOFCORE_DB := data/metadata/proofcore.duckdb
 COMMITTED_TRIAL_LEDGER ?= research/reality/trials.jsonl
 
-proofcore-test: ## PROOFCORE W5 tests: contracts, provenance DB, CI helpers, layering gate
-	uv run pytest tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py -q
+proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 scheduler/runner/estimators + W7 replay + W8 guard/fixes + wave-2 e2e
+	uv run pytest tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py \
+		tests/unit/test_scheduler.py tests/unit/test_proven_runner.py \
+		tests/unit/test_estimators.py tests/unit/test_replay_engine.py \
+		tests/unit/test_io_guard.py tests/unit/test_cscv_combo_guard.py \
+		tests/unit/test_fingerprint_fallback.py tests/unit/test_wave2_e2e.py \
+		tests/property/test_replay_determinism.py -q
 
 proofcore-coverage: ## Per-package coverage floors (A3 #2): pit/proof/reality/proofcore 90, leakage 85
 	# Subset run over the PROOFCORE test lanes; the global 80% floor still
@@ -201,6 +238,97 @@ receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verif
 
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
+	uv run dipcatcher corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json --require-stamped
+	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json --require-stamped
+	uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
+	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
+	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
+	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
+	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped
+	for spec in "src" "tests" "scripts" "docs" "research" "replay" "reports" "notebooks" "examples" "clients" "typings" "spec" "docker" "deploy" "third_party" "rust" "web" ".box-soft-verify" ".cursor" ".github"; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates || exit 1; \
+	done
+	uv run dipcatcher crown-jewels --check
+	uv run dipcatcher verify-witness
+	uv run dipcatcher verify-repo
+	uv run dipcatcher checkpoint-chain
+	uv run dipcatcher verify-rotations
+	uv run dipcatcher tamper-drill
+	uv run dipcatcher fuzz-drill --seed 7
+
+checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds
+	uv run dipcatcher checkpoint-chain
+
+verify-rotations: ## Verify the gate-key rotation chain — dual-signed links, spine-anchored genesis, live key is terminus
+	uv run dipcatcher verify-rotations
+
+rotate-key: ## Record an authorized gate-key rotation (needs GATE_SIGNING_KEY + GATE_SIGNING_KEY_NEW); then re-sign pins + checkpoint
+	uv run dipcatcher rotate-key
+
+tamper-drill: ## Self-attack: clone the integrity state, land every probe mutation, require verify-repo flags each
+	uv run dipcatcher tamper-drill
+
+fuzz-drill: ## Metamorphic self-fuzz: seeded mutations classified must-fail vs must-pass — catches a verifier that is too strict OR too blind
+	uv run dipcatcher fuzz-drill --seed 7
+
+fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receipt, re-seals honestly — maps which claims contracts re-derive vs which stay self-attested
+	uv run dipcatcher fuzz-receipts --seed 7
+
+epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
+	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
+	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*" "src:*" "tests:*" "scripts:*" "docs:*" "research:*" "replay:*" "reports:*" "notebooks:*" "examples:*" "clients:*" "typings:*" "spec:*" "docker:*" "deploy:*" "third_party:*" "rust:*" "web:*" ".box-soft-verify:*" ".cursor:*" ".github:*"; do \
+	  dir=$${spec%%:*}; glob=$${spec##*:}; \
+	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
+	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
+	  proof="$${RUNNER_TEMP:-/tmp}/consistency_$$(echo $$dir | tr '/.' '__').json"; \
+	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --from-epoch "$$head" --out "$$proof" >/dev/null || exit 1; \
+	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \
+	done
+
+stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any covered dir
+	uv run dipcatcher corpus-epoch --corpus-dir receipts --out-dir receipts --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --out-dir verifier --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir quality --out-dir quality --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --out-dir .github/workflows --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --out-dir configs --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --out-dir artifacts --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --out-dir .dsh-24x7 --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --out-dir data/metadata --heads-pin quality/epoch_heads.json
+	for spec in src tests scripts docs research replay reports notebooks examples clients typings spec docker deploy third_party rust web .box-soft-verify .cursor .github; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
+	done
+
+sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
+	uv run dipcatcher sign-pins
+
+anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); run after sign-pins, at quiet points only — every stamp-epochs stales the anchors
+	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json
+	uv run dipcatcher anchor-timestamp --file quality/crown_jewels.json
+
+checkpoint: ## Sign the pin state into quality/checkpoint.json (needs GATE_SIGNING_KEY); run LAST — it binds the current signature
+	uv run dipcatcher checkpoint
+
+anchor-checkpoint: ## RFC 3161-anchor the checkpoint (network); one token time-binds the whole pin state
+	uv run dipcatcher checkpoint --anchor
+
+witness-checkpoint: ## Witness the checkpoint into the public Rekor transparency log (network; needs WITNESS_SIGNING_KEY); commits a self-verifying proof under quality/witness/
+	uv run dipcatcher witness-checkpoint
+
+verify-witness: ## Verify committed Rekor witness proofs offline — RFC 6962 inclusion + Rekor SET/note signatures
+	uv run dipcatcher verify-witness
+
+witness-bundle: ## Emit the zero-trust auditor bundle (one JSON: checkpoint + pins + pubkeys + freshest Rekor proof)
+	uv run dipcatcher witness-bundle --out auditor_bundle.json
+
+verify-bundle: ## Verify an auditor bundle with zero trusted repo input (BUNDLE=path)
+	uv run dipcatcher verify-bundle $(BUNDLE)
+
+evidence-bundle: ## Export the evidence store as a portable third-party bundle (BUNDLE_DIR=path)
+	uv run dipcatcher evidence-export --out "$${BUNDLE_DIR:-evidence-bundle}"
+
+bundle-verify: ## Audit an exported evidence bundle — stdlib script, no repo imports (BUNDLE_DIR=path)
+	uv run python scripts/verify_evidence_bundle.py --root "$${BUNDLE_DIR:-evidence-bundle}"
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \
@@ -210,6 +338,18 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or all-skip
 	uv run dipcatcher replay-all --strict \
 		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
+
+ADMISSION_BASE ?= origin/main
+admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
+		| grep '^receipts/[^/]*\.json$$' || true); \
+	if [ -n "$$changed" ]; then \
+		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
+			--known-inconsistent quality/lattice_known_inconsistent.json \
+			--out-dir "$${RUNNER_TEMP:-/tmp}/admission"; \
+	else \
+		echo "admission-gate: no corpus receipt changes vs $(ADMISSION_BASE)"; \
+	fi
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

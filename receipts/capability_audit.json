@@ -1,0 +1,26 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "covers_all": true,
+   "deterministic": true,
+   "gap_memorizer_flags": true,
+   "gap_value_reflects": true,
+   "memorizer_may_flag": true,
+   "orphan_refuses": true,
+   "passed_implies_gates": true,
+   "subgates_visible": true,
+   "twins_inherit": true,
+   "violating_closes_honesty": true,
+   "violating_fails": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "ea1e22a98aa0897a9b524e38f1df11e735b6bc6d",
+ "interpretation": "Capability battery holds: a violating model closes the honesty gate and fails the report; ``passed`` requires all sub-gates; rephrased twins inherit the full contract and orphans refuse.",
+ "kind": "capability_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "d5d7f2790f3ba62b9115c1d100ec3681ac1eb646d222e99f386fc7f6dbd942b7",
+ "research_only": true,
+ "schema": "capability_audit.v1"
+}

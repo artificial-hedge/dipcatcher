@@ -343,6 +343,7 @@ def write_cached_symbol(
     # Layering: data/ reaches proofcore lazily (§1.3 — only cli/ may
     # top-level-import the proofcore packages).
     from quant_fund.proofcore.contracts import sha256_hex_bytes
+    from quant_fund.utils.hashing import canonical_json_bytes
 
     digest = sha256_hex_bytes(paths.bars.read_bytes())
     receipt = {
@@ -361,6 +362,7 @@ def write_cached_symbol(
         "retrieved_at": datetime.now(UTC).isoformat(),
         "provenance": provenance,
     }
+    receipt["receipt_sha256"] = sha256_hex_bytes(canonical_json_bytes(receipt))
     receipt_tmp = paths.receipt.with_name(paths.receipt.name + ".tmp")
     receipt_tmp.write_text(
         json.dumps(receipt, indent=2, sort_keys=True, default=str) + "\n",

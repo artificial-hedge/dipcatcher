@@ -1,0 +1,41 @@
+{
+  "schema": "maker_age.v1",
+  "kind": "maker_age",
+  "horizon": 1500.0,
+  "seed": 13,
+  "arms": {
+    "unit_lot": {
+      "n_fills": 703,
+      "n_cancels": 5486,
+      "p50_executed_s": 5.6966006217087255,
+      "p50_deleted_s": 7.8600264712541446,
+      "p90_all_s": 32.71731984046543
+    },
+    "empirical_mo_sizes": {
+      "n_fills": 1970,
+      "n_cancels": 3492,
+      "p50_executed_s": 2.2232648013081757,
+      "p50_deleted_s": 1.8853582571111929,
+      "p90_all_s": 11.253534657582776
+    }
+  },
+  "real_tape_targets": {
+    "p50_executed_s": 2.213,
+    "p50_deleted_s": 0.7996,
+    "p90_all_s": 13.6712
+  },
+  "divergences": [
+    "unit_p50_executed=+1.574",
+    "sized_p50_deleted=+1.358"
+  ],
+  "claims": {
+    "unit_lot_overshoots_median": true,
+    "sized_matches_median": true,
+    "cancel_age_faster_than_fill": true
+  },
+  "interpretation": "Unit-lot market orders leave makers waiting ~6x too long. The empirical multi-unit size mix sweeps several queued orders per event, dropping the executed-maker median onto the tape's 2.2s. Canceled-order lifetimes run faster than filled ones in the sized arm, matching the real ordering; the residual deleted-median gap is logged rather than claimed closed.",
+  "git_revision": "bf24cbd1fefa40d8cfdee9c3911a347608c54a12",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "bf83eddcec2b7c4badab7516dc08c62375745a5a5f7221eaf475ca4ee4b5ba01"
+}

@@ -12,7 +12,7 @@ test.describe("research explorer", () => {
     await expect(table.locator("tbody tr")).toHaveCount(9);
     await expect(
       page.getByTestId("receipt-summary-table").locator("tbody tr"),
-    ).toHaveCount(10);
+    ).toHaveCount(56);
   });
 
   test("navigates to a strategy detail and renders charts", async ({
@@ -56,16 +56,16 @@ test.describe("research explorer", () => {
   test("receipt list and verification panel render", async ({ page }) => {
     await page.goto("/#/receipts");
     const table = page.getByTestId("receipt-table");
-    await expect(table.locator("tbody tr")).toHaveCount(10);
+    await expect(table.locator("tbody tr")).toHaveCount(56);
     await table
-      .getByRole("link", { name: "adaptive_mix_20asset_1d_20260922" })
+      .getByRole("link", { name: "corpus_epoch_d479e96760271bba" })
       .click();
     await expect(page).toHaveURL(
-      /#\/receipt\/adaptive_mix_20asset_1d_20260922$/,
+      /#\/receipt\/corpus_epoch_d479e96760271bba$/,
     );
     // verification surfaces: meta, client checks, digest table
     await expect(page.getByTestId("meta-panel")).toContainText(
-      "adaptive_mix_replay.v1",
+      "corpus_epoch.v1",
     );
     const checks = page.getByTestId("checks-panel");
     await expect(checks).toContainText("research_only = true");
@@ -75,18 +75,18 @@ test.describe("research explorer", () => {
       /^[0-9a-f]{64}$/,
     );
     const hashPanel = page.getByTestId("hash-panel");
-    await expect(hashPanel).toContainText("script_sha256");
+    await expect(hashPanel).toContainText("epoch_root_sha256");
     // fast_replay embeds code_sha256 entries; public.py resolves at HEAD
-    await page.goto("/#/receipt/fast_replay_p42_conformance_20260927");
+    await page.goto("/#/receipt/fast_replay_p42_conformance_20260928");
     const fastHash = page.getByTestId("hash-panel");
     await expect(fastHash).toContainText("src/quant_fund/public.py");
     await expect(
       page.getByTestId("checks-panel"),
-    ).toContainText("1/5 digests match a committed file");
+    ).toContainText("1/6 digests match a committed file");
   });
 
   test("hash routing handles direct loads and bad ids", async ({ page }) => {
-    await page.goto("/#/receipt/dip_bench_crypto_1d_20260925");
+    await page.goto("/#/receipt/verdict_real_drill");
     await expect(page.getByTestId("receipt-page")).toBeVisible();
     await page.goto("/#/strategy/does-not-exist");
     await expect(page.getByText("Unknown strategy")).toBeVisible();
@@ -103,7 +103,7 @@ test.describe("research explorer", () => {
     await page.goto("/");
     await page.goto("/#/strategy/carry_expanded");
     await page.goto("/#/receipts");
-    await page.goto("/#/receipt/incumbent_bench_qlib");
+    await page.goto("/#/receipt/mcs_real_drill");
     await expect(page.getByTestId("receipt-page")).toBeVisible();
     expect(errors).toEqual([]);
   });

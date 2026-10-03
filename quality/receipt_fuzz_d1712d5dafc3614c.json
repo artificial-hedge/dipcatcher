@@ -1,0 +1,484 @@
+{
+  "data_label": "CORPUS",
+  "live_pnl_claim": false,
+  "mutations": [
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:taus.0",
+      "outcome": "escaped",
+      "receipt": "calib_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "row_participation_cap_invalid",
+        "results[3].days_to_trade",
+        "results[3].feasible"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.participation_cap",
+      "outcome": "correct",
+      "receipt": "capacity_eval_cd0854242ed8a9ec.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:12.pinball_0.50",
+      "outcome": "escaped",
+      "receipt": "coherence_2dd641ab766a536a.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "concordant_mismatch:iid_gaussian"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:0.concordant",
+      "outcome": "correct",
+      "receipt": "concordance_df424fa2f6b1c4e9.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "alpha_out_of_unit_interval"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:alpha",
+      "outcome": "correct",
+      "receipt": "conformal_real_drill_gaussian_minus_conf_t_pinball.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "live_pnl_claim_not_false",
+        "live_pnl_claim_true",
+        "live_pnl_claim_not_false"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:live_pnl_claim",
+      "outcome": "correct",
+      "receipt": "conformal_real_drill_gaussian_pit.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "environment_fingerprint_mismatch"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:lapack.found",
+      "outcome": "correct",
+      "receipt": "corpus_proof_a56dff22d5b4931c.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:1.value",
+      "outcome": "escaped",
+      "receipt": "corpus_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "results_row:roll_n_fills_not_positive"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.n_fills",
+      "outcome": "correct",
+      "receipt": "cost_calibration_eval_df9b8d7068bf709b.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_eval",
+      "outcome": "escaped",
+      "receipt": "coverage_cs_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "levels_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:levels.0",
+      "outcome": "correct",
+      "receipt": "coverage_real_drill.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "missing_params"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:log_evalues.111",
+      "outcome": "correct",
+      "receipt": "cp_real_drill_gaussian_minus_conf_t_pinball.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "missing_params"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:log_evalues.21",
+      "outcome": "correct",
+      "receipt": "cp_real_drill_gaussian_pit.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "results:bandit.loc_not_positive"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:bandit.loc",
+      "outcome": "correct",
+      "receipt": "deps_security_hygiene_f3b4e6fd22e439b7.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:page_hinkley.final_statistic",
+      "outcome": "escaped",
+      "receipt": "drift_real_drill_gaussian_minus_conf_t_pinball.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:page_hinkley.final_statistic",
+      "outcome": "escaped",
+      "receipt": "drift_real_drill_gaussian_pit.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:conf_t.e_product_diagnostics_only",
+      "outcome": "escaped",
+      "receipt": "emerge_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_field_edit:0.verdict",
+      "outcome": "escaped",
+      "receipt": "evidence_audit_3464d8f8197bf737.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "receipt_v2_schema:live_pnl_claim:Input should be False"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:live_pnl_claim",
+      "outcome": "correct",
+      "receipt": "evidence_audit_d449e1ca0cc119a6.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "live_pnl_claim_not_false",
+        "live_pnl_claim"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:live_pnl_claim",
+      "outcome": "correct",
+      "receipt": "fast_replay_p42_conformance_20260928.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "row_coverage_80_out_of_unit_interval:qar:regime_switch"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:58.coverage_80",
+      "outcome": "correct",
+      "receipt": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:empirical.promote_evalue_product",
+      "outcome": "escaped",
+      "receipt": "fleet_race_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:params.n_eval",
+      "outcome": "escaped",
+      "receipt": "honest_verdict_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:null_alarm_rate.conformal_monitor",
+      "outcome": "escaped",
+      "receipt": "lane_power_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "groups[19].verdict",
+        "n_consistent_groups"
+      ],
+      "expect": "fail",
+      "mutation": "v1_field_edit:19.verdict",
+      "outcome": "correct",
+      "receipt": "lattice_drill_verdict.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:0.dm_qlike_mean",
+      "outcome": "escaped",
+      "receipt": "lattice_drill_vol_bench_a.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:4.qlike",
+      "outcome": "escaped",
+      "receipt": "lattice_drill_vol_bench_b.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "alpha_invalid"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:alpha",
+      "outcome": "correct",
+      "receipt": "loss_cs_real_drill_conf_t_vs_empirical.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "cs_bounds_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:cs_low",
+      "outcome": "correct",
+      "receipt": "loss_cs_real_drill_gaussian_vs_conf_t.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_eval",
+      "outcome": "escaped",
+      "receipt": "mcs_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:n_eliminated",
+      "outcome": "escaped",
+      "receipt": "mcs_vol_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_bool_flip:lanes_available.emerge",
+      "outcome": "escaped",
+      "receipt": "monitor_run_drill_clean.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "params.alpha_out_of_unit_interval"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:params.alpha",
+      "outcome": "correct",
+      "receipt": "monitor_run_drill_defect.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "params.seed_bad"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:params.seed",
+      "outcome": "correct",
+      "receipt": "monitor_run_real_drill.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:181.n_eval",
+      "outcome": "escaped",
+      "receipt": "multih_fleet_eval_5db1cab214e291d7.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "receipt_v2_schema:verdict:Input should be 'pass', 'fail' or 'blocked'"
+      ],
+      "expect": "fail",
+      "mutation": "v1_field_edit:verdict",
+      "outcome": "correct",
+      "receipt": "nautilus_conformance_7bf19a08c147547b.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:2.mean_breach_rate",
+      "outcome": "escaped",
+      "receipt": "panel_audit_real_drill.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "row_mean_pearson_invalid:weak_signal:identity:20",
+        "results[62].mean_pearson"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:62.mean_pearson",
+      "outcome": "correct",
+      "receipt": "rankic_eval_9ebdad7da83e7348.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:train.rows",
+      "outcome": "escaped",
+      "receipt": "real_benchmark_us_wide_manifest.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "live_pnl_claim_not_false"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:live_pnl_claim",
+      "outcome": "correct",
+      "receipt": "real_benchmark_us_wide_test.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:historical_mean.date_equal_weight_mae",
+      "outcome": "escaped",
+      "receipt": "real_benchmark_us_wide_validation.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_pit_nan_dropped",
+      "outcome": "escaped",
+      "receipt": "serial_watch_140b073ea589b0c7.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.pos",
+      "outcome": "escaped",
+      "receipt": "serial_watch_1e8e1446e506fce1.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.pos",
+      "outcome": "escaped",
+      "receipt": "serial_watch_2c14615c26efd19b.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:4.neg",
+      "outcome": "escaped",
+      "receipt": "serial_watch_46445c3b227aa15e.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:lam",
+      "outcome": "escaped",
+      "receipt": "serial_watch_47297eff3cb55178.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:1.neg",
+      "outcome": "escaped",
+      "receipt": "serial_watch_4f4a495b59d022fb.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_pit_nan_dropped",
+      "outcome": "escaped",
+      "receipt": "serial_watch_771602cd1580476c.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.neg",
+      "outcome": "escaped",
+      "receipt": "serial_watch_85db152db863d25d.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_bool_flip:5.alarmed",
+      "outcome": "escaped",
+      "receipt": "serial_watch_8977244ef78bfd2f.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_pit",
+      "outcome": "escaped",
+      "receipt": "serial_watch_a6fd40311ce0fa04.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:3.pos",
+      "outcome": "escaped",
+      "receipt": "serial_watch_d311f5ea367a66a9.json",
+      "verifier_ok": true
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_bool_flip:any_lag_alarmed",
+      "outcome": "escaped",
+      "receipt": "serial_watch_dbd21a6c99c81e00.json",
+      "verifier_ok": true
+    },
+    {
+      "errors": [
+        "pooled_alarmed_without_pooled_evalue"
+      ],
+      "expect": "fail",
+      "mutation": "v1_bool_flip:pooled_alarmed",
+      "outcome": "correct",
+      "receipt": "suite_health_drill.json",
+      "verifier_ok": false
+    },
+    {
+      "errors": [
+        "params_alpha_out_of_unit_interval"
+      ],
+      "expect": "fail",
+      "mutation": "v1_metric_edit:params.alpha",
+      "outcome": "correct",
+      "receipt": "tail_real_drill.json",
+      "verifier_ok": false
+    },
+    {
+      "expect": "fail",
+      "mutation": "v1_metric_edit:drill.n_stream",
+      "outcome": "escaped",
+      "receipt": "verdict_real_drill.json",
+      "verifier_ok": true
+    }
+  ],
+  "n_escaped": 33,
+  "n_false_positive": 0,
+  "n_mutations": 56,
+  "ok": false,
+  "receipt_sha256": "0799a69f4ba8fde284ebe9ce1056366921a3d07b5002f45a2644c2d949343517",
+  "research_only": true,
+  "schema": "receipt_fuzz.v1",
+  "seed": 7,
+  "simulated_only": false,
+  "verdict": "miscalibrated"
+}

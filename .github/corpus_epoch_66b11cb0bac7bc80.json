@@ -1,0 +1,45 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "e76fa3ce7a8b6ccdf91c6dafec51769c9cb64b6e6f1b624b8ec6792a3753d90b",
+  "inputs_sha256": "64faff681bc07abe12ac05ff9fb9ddd852b8de41919993c15be4c3cb288b3793",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "cfee8c751903a6b9901eb16bdf6bf2a274ebcc21703e3e3077ac8db6d6fa0f07",
+  "members": [
+    {
+      "name": "HISTORY_REWRITE_PLAN.md",
+      "sha256": "2f8ab97634040aab5853a8423c417b45206dcaa4ee31acea1280d0eecd4b9f54"
+    },
+    {
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "sha256": "b758ec958f9d43f8b32f85f39fe53da4958d147922444eb809b5de364b51e345"
+    },
+    {
+      "name": "codeql/codeql-config.yml",
+      "sha256": "6161b0f5c3279766ddbfbe9e7ad0a77ebab208afb5ab0617ad27ad8e713b1a7e"
+    },
+    {
+      "name": "dependabot.yml",
+      "sha256": "a7ba5d4145a5b183c3763b5a2d540c40849d7153385f7e0404733203106261c4"
+    }
+  ],
+  "members_added": [
+    "HISTORY_REWRITE_PLAN.md",
+    "PULL_REQUEST_TEMPLATE.md",
+    "codeql/codeql-config.yml",
+    "dependabot.yml"
+  ],
+  "members_removed": [],
+  "n_members": 4,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "66b11cb0bac7bc80aec22fdb951cd2ad71cf214ad4af6c3fc8219743dc292561",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

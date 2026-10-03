@@ -1,0 +1,31 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "artifact_hashes_real": true,
+   "failed_card_vetoed": true,
+   "flagged_reported": true,
+   "flagged_ship_vetoed": true,
+   "full_dossier": {
+    "complete": true,
+    "n_sections": 5,
+    "ship_eligible": true
+   },
+   "incomplete_not_complete": true,
+   "incomplete_vetoes_ship": true,
+   "laundered_flagged": true,
+   "laundered_ship_vetoed": true,
+   "malformed_declared_flagged": true,
+   "missing_artifact_raises": "raise:FileNotFoundError",
+   "missing_flag_declared_flagged": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "abacb4b45374f8d5b1ea4737360768fbcfb4c043",
+ "interpretation": "MRM dossier contract holds: contamination (declared, malformed, missing-flag, or laundered under another activity) vetoes ship; incomplete evidence vetoes ship; missing artifacts fail closed.",
+ "kind": "mrm_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "4e2fa6570d4342048413da100f17cf70003c9f66b2ec1250385ca0e0212951da",
+ "research_only": true,
+ "schema": "mrm_audit.v1"
+}

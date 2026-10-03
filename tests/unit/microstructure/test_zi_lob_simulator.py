@@ -13,7 +13,10 @@ fixtures. Pure numpy.
 
 from __future__ import annotations
 
+import hashlib
 import math
+from dataclasses import replace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -162,6 +165,8 @@ def test_santa_fe_calibration_matches_paper() -> None:
         {"band": 0},
         {"density_exponent": -1.0},
         {"ref_halflife": -5.0},
+        {"ref_fill_gain": -0.1},
+        {"ref_fill_gain": float("nan")},
         {"anchor": "sideways"},
         {"init_levels": 2, "init_depth": 0},
         {"seed": 1.5},
@@ -595,6 +600,27 @@ def test_session_honesty_no_forbidden_headline_keys(mm_results: dict) -> None:
         assert r["data_source"] == "SYNTHETIC_ZI_LOB_v1"
 
 
+def test_ref_fill_gain_moves_reference_per_fill() -> None:
+    """Each fill shifts _ref_ema by exactly ref_fill_gain in its direction."""
+    cfg = replace(santa_fe_config(seed=4), anchor="ref", ref_halflife=0.0, ref_fill_gain=0.25)
+    sim = ZILobSimulator(cfg)
+    sim.run(200.0)
+    net = sum(1 if t.aggressor == "buy" else -1 for t in sim.trades)
+    assert sim._ref_ema == pytest.approx(0.25 * net)
+    assert sim.n_fills > 0
+
+
+def test_ref_fill_gain_zero_is_bit_identical() -> None:
+    a = ZILobSimulator(santa_fe_config(seed=8))
+    a.run(150.0)
+    b = ZILobSimulator(replace(santa_fe_config(seed=8), ref_fill_gain=0.0))
+    b.run(150.0)
+    assert [(t.t, t.price, t.level) for t in a.trades] == [
+        (t.t, t.price, t.level) for t in b.trades
+    ]
+    assert a._ref_ema == b._ref_ema
+
+
 def test_session_fail_closed() -> None:
     cfg = santa_fe_config(seed=1)
     pol = _glft_pol()
@@ -606,3 +632,53 @@ def test_session_fail_closed() -> None:
         run_mm_session(config=cfg, policy=pol, horizon=100.0, inventory_cap=0)
     with pytest.raises(TypeError):
         run_mm_session(config=cfg, policy="not-callable", horizon=100.0)  # type: ignore[arg-type]
+
+
+def test_repost_frac_zero_is_bit_identical() -> None:
+    a = ZILobSimulator(santa_fe_config(seed=11))
+    a.run(300.0)
+    b = ZILobSimulator(
+        replace(santa_fe_config(seed=11), repost_frac=0.0, repost_window=500, repost_band=3)
+    )
+    b.run(300.0)
+    assert [(t.price, t.level, t.aggressor) for t in a.trades] == [
+        (t.price, t.level, t.aggressor) for t in b.trades
+    ]
+
+
+def test_repost_reseeds_emptied_levels() -> None:
+    sim = ZILobSimulator(replace(santa_fe_config(seed=11), repost_frac=0.8, repost_window=500))
+    sim.run(400.0)
+    ec = sim.event_counts()
+    # n_lo_reposts counts reposted rests, bounded by LO arrivals.
+    assert 0 < ec["n_lo_reposts"] <= ec["n_lo_arrivals"]
+
+
+def test_paired_pull_zero_is_bit_identical() -> None:
+    def digest(cfg: Any) -> str:
+        sim = ZILobSimulator(cfg)
+        for _ in range(3000):
+            sim.step()
+        return hashlib.sha256(
+            repr([(t.price, t.level, t.aggressor, t.qty) for t in sim.trades]).encode()
+        ).hexdigest()
+
+    a = digest(santa_fe_config(seed=11))
+    b = digest(replace(santa_fe_config(seed=11), paired_pull_frac=0.0, paired_pull_band=2))
+    assert a == b
+
+
+def test_paired_pull_cancels_unhit_side() -> None:
+    cfg = replace(
+        santa_fe_config(seed=17),
+        fill_repost_frac=0.5,
+        fill_repost_delay=100,
+        paired_pull_frac=0.9,
+        paired_pull_band=4,
+    )
+    sim = ZILobSimulator(cfg)
+    for _ in range(20000):
+        sim.step()
+    ec = sim.event_counts()
+    assert ec["n_paired_pulls"] > 0
+    assert ec["n_fills"] > 0

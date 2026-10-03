@@ -241,6 +241,11 @@ def test_mrm_cli_compiles_dossier(tmp_path: Path):
     card = _ship_eligible_card(tmp_path)
     contamination = tmp_path / "contamination_report.json"
     contamination.write_text(json.dumps({"overall_flagged": False}), encoding="utf-8")
+    extras = []
+    for activity in ("development", "implementation", "monitoring"):
+        p = tmp_path / f"{activity}.json"
+        p.write_text("{}", encoding="utf-8")
+        extras += ["--artifact", f"{activity}={p}"]
     out = tmp_path / "dossier.json"
     result = runner.invoke(
         app,
@@ -252,11 +257,34 @@ def test_mrm_cli_compiles_dossier(tmp_path: Path):
             str(contamination),
             "--out",
             str(out),
+            *extras,
         ],
     )
     assert result.exit_code == 0
     report = json.loads(result.stdout)
     assert report["complete"] and report["contamination_flagged"] is False
+    assert report["ship_eligible"] is True
+
+
+def test_mrm_cli_validation_only_reports_incomplete(tmp_path: Path):
+    card = _ship_eligible_card(tmp_path)
+    contamination = tmp_path / "contamination_report.json"
+    contamination.write_text(json.dumps({"overall_flagged": False}), encoding="utf-8")
+    result = runner.invoke(
+        app,
+        [
+            "mrm",
+            "--modelcard",
+            str(card),
+            "--validation-artifact",
+            str(contamination),
+            "--out",
+            str(tmp_path / "dossier.json"),
+        ],
+    )
+    assert result.exit_code == 0
+    report = json.loads(result.stdout)
+    assert report["complete"] is False and report["ship_eligible"] is False
 
 
 def test_eval_cli_fails_closed_without_hosted_key(monkeypatch, tmp_path: Path):

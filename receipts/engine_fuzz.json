@@ -1,0 +1,85 @@
+{
+ "claim": {
+  "first_violations": [],
+  "invariant": "book uncrossed + registry consistent + edges fail closed, every step",
+  "ok": true,
+  "per_seed": [
+   {
+    "counters": {
+     "cancels_dead": 19,
+     "cancels_live": 79,
+     "market_orders": 106,
+     "rejections_marketable": 64,
+     "rejections_qty": 102,
+     "steps": 102,
+     "submits": 92
+    },
+    "depth": 1,
+    "fills": 99,
+    "seed": 0,
+    "violations": 0
+   },
+   {
+    "counters": {
+     "cancels_dead": 26,
+     "cancels_live": 73,
+     "market_orders": 101,
+     "rejections_marketable": 61,
+     "rejections_qty": 108,
+     "steps": 93,
+     "submits": 99
+    },
+    "depth": 5,
+    "fills": 101,
+    "seed": 1,
+    "violations": 0
+   },
+   {
+    "counters": {
+     "cancels_dead": 22,
+     "cancels_live": 75,
+     "market_orders": 109,
+     "rejections_marketable": 61,
+     "rejections_qty": 111,
+     "steps": 95,
+     "submits": 88
+    },
+    "depth": 6,
+    "fills": 95,
+    "seed": 2,
+    "violations": 0
+   },
+   {
+    "counters": {
+     "cancels_dead": 16,
+     "cancels_live": 71,
+     "market_orders": 115,
+     "rejections_marketable": 58,
+     "rejections_qty": 89,
+     "steps": 91,
+     "submits": 118
+    },
+    "depth": 4,
+    "fills": 116,
+    "seed": 3,
+    "violations": 0
+   }
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "steps_per_seed": 500,
+  "total_violations": 0
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "bbb2ea4393aa9ce9c1348f0b93d889c8ff589856",
+ "interpretation": "4 seeds \u00d7 500 ops: 0 invariant violations. Engine state machine sound under random legal ops.",
+ "kind": "engine_fuzz",
+ "live_pnl_claim": false,
+ "receipt_sha256": "04acafe49abc3ea6aef5da2433c8e312cb8ad252a20dc2dbce7753e5f7857d6a",
+ "research_only": true,
+ "schema": "engine_fuzz.v1"
+}

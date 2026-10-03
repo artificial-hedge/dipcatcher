@@ -1,0 +1,61 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "96c1138c5b6f93376018bc8dd59211b86c3b612d4b8c2f27a7ef4a3246e024fd",
+  "inputs_sha256": "5f5ba69a36a374769a3cced3c5c0b6823b34b46c1011dee883d80dad8aa993bd",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [
+    {
+      "name": "audit_coverage.json",
+      "sha256": "06f7efe5c6f52639f4f3699f2822bf65ec81140d05d7fc4cb170ec740958f65d"
+    },
+    {
+      "name": "audit_coverage_fx1.json",
+      "sha256": "fc8fd25fc58d928284effa716493741a0a873f83451d2f962b7904a4c475d061"
+    },
+    {
+      "name": "corpus_epoch_5da8d034442419cd.json",
+      "sha256": "7da46746f1e3ec217f0a4926787a950fbfbb501f106b19af4ef5d69c06154b6b"
+    },
+    {
+      "name": "corpus_epoch_96a80946be3a61cc.json",
+      "sha256": "a68065b39940a15aea78657d3d6bb376995418c9e3f60366964d70ab362891cb"
+    },
+    {
+      "name": "corpus_epoch_a6a2f06843a428b3.json",
+      "sha256": "c7a66291df9a8755827a079939b13608535727816df68b75cde7723e154596a9"
+    },
+    {
+      "name": "corpus_epoch_fb571fde15aff42e.json",
+      "sha256": "36965798743d26e0b27fd27d0ae9e061aa85f11fa4f699d7c813f276d3b8894e"
+    },
+    {
+      "name": "crown_jewels.json",
+      "sha256": "dafe60c62d23762e400a2595a3b9a66e86a3f6f9330dad6ac562ece2f40b15ae"
+    },
+    {
+      "name": "lattice_known_inconsistent.json",
+      "sha256": "0b8a1221b7133842211d9d9d085fd166119b896706b79921587341bd3f247c58"
+    },
+    {
+      "name": "legacy_quarantine.json",
+      "sha256": "1614aced1a4eb83f36ee0e006debe1f3617c987b4a87ce6ba858e699952ecd7b"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_fb571fde15aff42e.json"
+  ],
+  "members_removed": [],
+  "n_members": 9,
+  "params": {
+    "head_sha": "f9882671e299c389ba84ece15d0661475542c12e",
+    "pattern": "*.json"
+  },
+  "prev_epoch_receipt": "corpus_epoch_fb571fde15aff42e.json",
+  "prev_epoch_sha256": "a838a889b1819a4cb70ab82c59034c9177c5b66008d2718308eaf15e53307e17",
+  "receipt_sha256": "9bd59a99ac50cd752b3a70e6fe3f6171a5b7446d6f15753a9822da7ca4fad18a",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

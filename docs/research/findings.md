@@ -27,6 +27,7 @@ does not score them.
 
 - `research/reality/trials.jsonl`: absent
 - `data/metadata/real_benchmark/us_wide_20260925/manifest.json`: no candidate_count and benchmark; not a trial batch
+- `receipts/basis_carry_dd7705fc0f2f1c25.json`: basis_carry.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/calib_real_drill.json`: calibration_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_3622d0c059d42009.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -34,12 +35,53 @@ does not score them.
 - `receipts/concordance_df424fa2f6b1c4e9.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/conformal_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_absence_exemplar.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_0a2e8964712cfb0a.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_0af2a2d5723b14ae.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_1384f0d99dac82aa.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_2b5db388ddee23aa.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_2ca91405e468cc6b.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_2ddb4fe7154677d3.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_2ecce33392960d8d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_404d16a7af1d3862.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_4a75066db56e52fd.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_4a79ac4ed05777f5.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_54c82d2a8bcb86ed.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_568c538fcf4b21cd.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_574953afdf88a0f6.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_5c9754ab2a9408a1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_63761c8b4e63992b.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_6cf185cfb5466dd7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_6f8420fc2959f4e7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_6fb596b0230e9f17.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_721e9b4fb855e1a1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_84384f73f7d8e9d6.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_96ba030697ddf0ff.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_9d41d1d7410eb02d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_9fd864d30fda3c69.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_a0e901c74a5f29c4.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_a1a8323db3be4842.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_a5d113f0994c74b5.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_a83ba798e9abd892.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_ab1470227e387e4d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_ac21f22e90c58c53.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_c5a45fd1b73737dc.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_cb39a076f3287171.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_d1e7bb2567019bf7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_d479e96760271bba.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_e0f905c031ef39b1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_fbb352a23e62d321.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_fbbcd3c1e840e14d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_proof_a56dff22d5b4931c.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_proof_exemplar.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cost_calibration_eval_f130c7e871e9aa64.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coverage_cs_real_drill.json`: coverage_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coverage_real_drill.json`: coverage_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_pit.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/crossvenue_basis_3f4ff76f517655a7.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search

@@ -19,6 +19,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from quant_fund.utils.atomicio import atomic_write_text
+
 _TOKEN_RE = re.compile(r"\w+")
 
 
@@ -48,6 +50,8 @@ class QualityReport(BaseModel):
     exact_duplicates_removed: int
     near_duplicates_removed: int
     contaminated_removed: int
+    over_length_removed: int = 0
+    empty_removed: int = 0
     kept: int
     token_length_p50: int
     token_length_p99: int
@@ -64,34 +68,54 @@ def dedup_and_filter(
     """Dedup + decontaminate + length-filter. Fail-closed on eval overlap."""
     seen_exact: set[str] = set()
     kept: list[dict[str, Any]] = []
-    shingle_index: list[set[str]] = []
-    eval_shingles: set[str] = set()
-    for prompt in eval_prompts:
-        eval_shingles |= _shingles(prompt)
-    exact_dupes = near_dupes = contaminated = 0
+    kept_shingles: list[set[str]] = []
+    # Inverted index shingle -> kept-example positions, so the near-duplicate
+    # check compares a candidate against EVERY kept example that shares a
+    # shingle — no distance-bounded window for a duplicate to slip past.
+    shingle_to_kept: dict[str, list[int]] = {}
+    # Per-item shingle sets — contamination is measured as how much of an
+    # eval ITEM is embedded in the doc (|doc ∩ item| / |item|), not how much
+    # of the doc overlaps the pooled union. A long doc embedding one verbatim
+    # eval prompt must flag; fragments of unrelated prompts must not sum to
+    # a hit.
+    eval_sets: list[set[str]] = [_shingles(prompt) for prompt in eval_prompts]
+    eval_sets = [s for s in eval_sets if s]
+    exact_dupes = near_dupes = contaminated = over_length = empty = 0
     lengths: list[int] = []
     for example in examples:
         text = _text_of(example)
+        if not text.strip():
+            empty += 1
+            continue
         digest = hashlib.sha256(text.encode()).hexdigest()
         if digest in seen_exact:
             exact_dupes += 1
             continue
         shingles = _shingles(text)
-        if shingles and eval_shingles:
-            overlap = len(shingles & eval_shingles) / len(shingles)
-            if overlap >= containment_threshold:
-                contaminated += 1
-                continue
+        if (
+            shingles
+            and eval_sets
+            and any(len(shingles & item) / len(item) >= containment_threshold for item in eval_sets)
+        ):
+            contaminated += 1
+            continue
+        candidates: set[int] = set()
+        for shingle in shingles:
+            candidates.update(shingle_to_kept.get(shingle, ()))
         if any(
-            shingles and len(shingles & prior) / max(len(shingles | prior), 1) >= 0.9
-            for prior in shingle_index[-500:]
+            len(shingles & kept_shingles[i]) / len(shingles | kept_shingles[i]) >= 0.9
+            for i in candidates
         ):
             near_dupes += 1
             continue
         if len(text) > max_len_chars:
+            over_length += 1
             continue
         seen_exact.add(digest)
-        shingle_index.append(shingles)
+        position = len(kept_shingles)
+        kept_shingles.append(shingles)
+        for shingle in shingles:
+            shingle_to_kept.setdefault(shingle, []).append(position)
         lengths.append(len(text.split()))
         kept.append(example)
     lengths.sort()
@@ -102,6 +126,8 @@ def dedup_and_filter(
         exact_duplicates_removed=exact_dupes,
         near_duplicates_removed=near_dupes,
         contaminated_removed=contaminated,
+        over_length_removed=over_length,
+        empty_removed=empty,
         kept=len(kept),
         token_length_p50=p50,
         token_length_p99=p99,
@@ -121,7 +147,13 @@ class SplitManifest(BaseModel):
 
 
 def _hash_lines(lines: list[str]) -> str:
-    return hashlib.sha256("".join(lines).encode()).hexdigest()
+    """SHA-256 of the exact bytes the split writer emits for *lines*.
+
+    The manifest must pin the file on disk, not an ambiguous
+    concatenation — ``["ab", "c"]`` and ``["a", "bc"]`` are different
+    files and must not share a digest.
+    """
+    return hashlib.sha256(("\n".join(lines) + "\n").encode()).hexdigest()
 
 
 def frozen_split(
@@ -138,12 +170,17 @@ def frozen_split(
     random.Random(seed).shuffle(indices)
     cut = max(1, int(len(indices) * val_fraction)) if len(indices) > 1 else 0
     val_idx, train_idx = set(indices[:cut]), set(indices[cut:])
+    if not val_idx or not train_idx:
+        raise ValueError(
+            "frozen split needs at least 2 examples — an empty train or val "
+            "file certifies a split that never happened"
+        )
     train_lines = [json.dumps(examples[i], sort_keys=True) for i in sorted(train_idx)]
     val_lines = [json.dumps(examples[i], sort_keys=True) for i in sorted(val_idx)]
     prefix = Path(out_prefix)
     prefix.parent.mkdir(parents=True, exist_ok=True)
-    Path(f"{prefix}.train.jsonl").write_text("\n".join(train_lines) + "\n")
-    Path(f"{prefix}.val.jsonl").write_text("\n".join(val_lines) + "\n")
+    atomic_write_text(Path(f"{prefix}.train.jsonl"), "\n".join(train_lines) + "\n")
+    atomic_write_text(Path(f"{prefix}.val.jsonl"), "\n".join(val_lines) + "\n")
     manifest = SplitManifest(
         seed=seed,
         train_sha256=_hash_lines(train_lines),
@@ -151,5 +188,5 @@ def frozen_split(
         train_count=len(train_lines),
         val_count=len(val_lines),
     )
-    Path(f"{prefix}.split.json").write_text(manifest.model_dump_json(indent=2))
+    atomic_write_text(Path(f"{prefix}.split.json"), manifest.model_dump_json(indent=2))
     return manifest

@@ -1,0 +1,6451 @@
+"""api_audit — adversarial probes on the fx-1 harness HTTP surface.
+
+The harness API (``fx1.serve.api``) is the network half of the harness
+contract: anything reachable over the socket must be exactly what the
+in-process ``Harness`` allows — no more. These probes pin that parity:
+
+- *Registry parity* — every command in ``HARNESS_REGISTRY`` is listed and
+  executable; unregistered names 404 over the wire exactly as ``Harness.get``
+  raises in-process.
+- *Containment parity* — ``config`` / ``extra_args=--config`` escapes hit
+  the same ``configs/`` allowlist and 422; a config keyword on a non-local
+  backend is refused.
+- *Fail-closed shape* — wrong field types, unknown keys, empty message
+  lists, oversized bodies, and bad methods all 4xx uniformly; nothing
+  reaches a route handler malformed.
+- *Completion gate* — completions run through ``cited_complete``, so a
+  backend that emits a forbidden headline is cut off at the gate (502)
+  rather than served; unconfigured BYOK/hosted creds surface as 503, a
+  backend that doesn't exist as 422. ``local_fx1`` completes through an
+  attached/spawned OpenAI-compatible engine: no ``FX1_LOCAL_SERVE_URL`` /
+  ``FX1_LOCAL_SERVE_CMD`` → 503, a dead engine → 502, a live one → 200
+  with the card's version as the model id; ``/health`` reports
+  ``local_fx1`` ready only when a card'd checkpoint *and* engine config
+  are both present.
+- *Verification surface* — ``POST /receipts/verify`` verifies arbitrary
+  payloads through the same ``verify_receipt_payload`` the CLI uses;
+  malformed receipts fail closed, never crash.
+- *Auth posture* — ``/health`` is the only public route; ``FX1_API_KEY``
+  set → every other route requires ``X-API-Key`` (compare_digest); unset →
+  non-loopback clients 403. Security headers on every response.
+
+Sealed ``api_audit.v1`` (fx1-side receipt).
+"""
+
+from __future__ import annotations
+
+import os
+import time
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from fastapi.testclient import TestClient
+
+    from fx1.serve.backends import SamplingParams
+
+__all__ = ["api_audit", "api_audit_bench"]
+
+_API_KEY_ENV = "FX1_API_KEY"
+_BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+_LOCAL_ENVS = (
+    "FX1_LOCAL_SERVE_URL",
+    "FX1_LOCAL_SERVE_CMD",
+    "FX1_LOCAL_MODEL",
+    "FX1_LOCAL_API_KEY",
+    "FX1_CHECKPOINT_DIR",
+)
+
+
+def _client(
+    api_key: str | None = None,
+) -> tuple[TestClient, ModuleType]:
+    """(TestClient, api_module) — isolated env per construction."""
+    from fastapi.testclient import TestClient
+
+    import fx1.serve.api as api_mod
+    from fx1.harness import Harness
+
+    # An injected runner keeps the audit hermetic — probes never spawn real
+    # lab processes, exactly like harness_audit's in-process probes.
+    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
+        return 0, f"ran:{' '.join(argv)}", ""
+
+    saved = {
+        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
+    }
+    try:
+        if api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = api_key
+        app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        return TestClient(app, raise_server_exceptions=False), api_mod
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
+    out: dict[str, Any] = {}
+
+    client, api_mod = _client()
+    from fx1.harness import HARNESS_REGISTRY
+
+    # --- registry parity ---------------------------------------------------
+    resp = client.get("/harness/commands")
+    names = {c["name"] for c in resp.json()["items"]}
+    out["commands_all_listed"] = resp.status_code == 200 and names == {
+        c.name for c in HARNESS_REGISTRY
+    }
+    resp = client.get("/harness/commands", params={"role": "verification"})
+    out["commands_role_filter"] = resp.status_code == 200 and all(
+        c["role"] == "verification" for c in resp.json()["items"]
+    )
+    out["commands_role_bad_422"] = (
+        client.get("/harness/commands", params={"role": "bogus"}).status_code == 422
+    )
+
+    # --- execution surface ---------------------------------------------------
+    resp = client.post("/harness/runs", json={"command": "doctor"})
+    body = resp.json()
+    out["run_executes"] = (
+        resp.status_code == 200
+        and body["ok"] is True
+        and body["exit_code"] == 0
+        and "doctor" in body["stdout"]
+    )
+    out["run_unknown_404"] = (
+        client.post("/harness/runs", json={"command": "pwn"}).status_code == 404
+    )
+    out["run_extra_key_422"] = (
+        client.post("/harness/runs", json={"command": "doctor", "evil": True}).status_code == 422
+    )
+    out["run_args_wrongtype_422"] = (
+        client.post(
+            "/harness/runs", json={"command": "doctor", "extra_args": "rm -rf /"}
+        ).status_code
+        == 422
+    )
+    out["run_method_shape"] = client.get("/harness/runs").status_code == 405
+    out["run_timeout_pinned"] = resp.json()["timeout_s"] > 0 if resp.status_code == 200 else False
+
+    # --- containment parity ------------------------------------------------
+    out["config_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "config": "/etc/passwd"},
+        ).status_code
+        == 422
+    )
+    out["extra_args_config_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--config", "/etc/passwd"]},
+        ).status_code
+        == 422
+    )
+    out["extra_args_config_eq_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--config=/etc/passwd"]},
+        ).status_code
+        == 422
+    )
+
+    # --- completion surface --------------------------------------------------
+    for name in _BYOK_ENVS:
+        os.environ.pop(name, None)
+    os.environ.pop("MOONSHOT_API_KEY", None)
+    out["complete_byok_unconfigured_503"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 503
+    )
+    out["complete_hosted_unconfigured_503"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 503
+    )
+    out["complete_unknown_backend_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "bogus",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 422
+    )
+    out["complete_empty_messages_422"] = (
+        client.post("/harness/complete", json={"backend": "byok", "messages": []}).status_code
+        == 422
+    )
+    out["complete_checkpoint_misplaced_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "ping"}],
+                "checkpoint_dir": "./no-such-dir",
+            },
+        ).status_code
+        == 422
+    )
+    out["complete_local_no_checkpoint_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "local_fx1",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 422
+    )
+
+    # --- complete idempotency: retried submits must not re-bill the model ---
+    from fastapi.testclient import TestClient as _IdemTC  # noqa: PLC0415
+
+    class _IdemBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            return f"clean:{messages[-1]['content']}"
+
+    _idem_backend = _IdemBackend()
+    idem_resolves = {"n": 0}
+
+    def _counting_resolver(*a: Any, **k: Any) -> Any:
+        idem_resolves["n"] += 1
+        return _idem_backend
+
+    idem_api = api_mod.create_app(backend_resolver=_counting_resolver)
+    ic = _IdemTC(idem_api)
+    cbody = {"backend": "byok", "messages": [{"role": "user", "content": "ping"}]}
+    c1 = ic.post("/harness/complete", json=cbody, headers={"Idempotency-Key": "ck1"})
+    c2 = ic.post("/harness/complete", json=cbody, headers={"Idempotency-Key": "ck1"})
+    out["complete_idem_replay"] = (
+        idem_resolves["n"] == 1
+        and _idem_backend.calls == 1
+        and c2.json()["replayed"] is True
+        and c2.json()["content"] == c1.json()["content"]
+    )
+    out["complete_idem_conflict_409"] = (
+        ic.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "other"}]},
+            headers={"Idempotency-Key": "ck1"},
+        ).status_code
+        == 409
+    )
+    before = idem_resolves["n"]
+    ic.post("/harness/complete", json=cbody)
+    ic.post("/harness/complete", json=cbody)
+    out["complete_no_key_reexecutes"] = idem_resolves["n"] == before + 2
+    bbody = {"backend": "byok", "batch": [[{"role": "user", "content": "p"}]]}
+    ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"})
+    cb2 = ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"}).json()
+    out["complete_batch_idem_replay"] = cb2["replayed"] is True
+    out["complete_reports_latency_ms"] = (
+        isinstance(c1.json()["latency_ms"], (int, float)) and c1.json()["latency_ms"] >= 0
+    )
+    out["complete_replay_reuses_latency_ms"] = c2.json()["latency_ms"] == c1.json()["latency_ms"]
+
+    # --- local weights surface: card'd checkpoint + engine attach ----------
+    import json as _json
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from fx1.modelcard import EvalDelta, ModelCard
+
+    card = ModelCard(
+        version="fx-1.v0.1",
+        corpus_sha256="a" * 64,
+        corpus_receipt_range="aa..bb",
+        training_manifest_sha256="b" * 64,
+        eval_delta=EvalDelta(
+            domain_pass_rate_base=0.5,
+            domain_pass_rate_candidate=0.6,
+            general_pass_rate_base=0.5,
+            general_pass_rate_candidate=0.5,
+            honesty_gate_candidate=True,
+        ),
+    )
+    with tempfile.TemporaryDirectory() as td:
+        ckpt = Path(td) / "ckpt"
+        ckpt.mkdir()
+        card.save(ckpt / "modelcard.json")
+
+        out["local_unconfigured_503"] = (
+            client.post(
+                "/harness/complete",
+                json={
+                    "backend": "local_fx1",
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "checkpoint_dir": str(ckpt),
+                },
+            ).status_code
+            == 503
+        )
+        os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
+        try:
+            out["health_local_needs_engine"] = (
+                client.get("/health").json()["backends"]["local_fx1"] is False
+            )
+        finally:
+            os.environ.pop("FX1_CHECKPOINT_DIR", None)
+
+        class _Resp:
+            def read(self) -> bytes:
+                return _json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
+
+            def __enter__(self) -> _Resp:
+                return self
+
+            def __exit__(self, *a: Any) -> None:
+                return None
+
+        def fake_urlopen(req: Any, **kw: Any) -> _Resp:
+            return _Resp()
+
+        import urllib.request  # noqa: PLC0415
+
+        os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
+        os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
+        try:
+            with patch.object(urllib.request, "urlopen", fake_urlopen):
+                resp = client.post(
+                    "/harness/complete",
+                    json={
+                        "backend": "local_fx1",
+                        "messages": [{"role": "user", "content": "ping"}],
+                        "checkpoint_dir": str(ckpt),
+                    },
+                )
+            body = resp.json()
+            out["local_attach_complete_200"] = (
+                resp.status_code == 200
+                and body["content"].startswith("answer")
+                and body["model"] == "fx-1.v0.1"
+            )
+            out["health_local_configured"] = (
+                client.get("/health").json()["backends"]["local_fx1"] is True
+            )
+        finally:
+            os.environ.pop("FX1_CHECKPOINT_DIR", None)
+            os.environ.pop("FX1_LOCAL_SERVE_URL", None)
+        os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:9/v1"
+        try:
+            out["local_engine_down_502"] = (
+                client.post(
+                    "/harness/complete",
+                    json={
+                        "backend": "local_fx1",
+                        "messages": [{"role": "user", "content": "ping"}],
+                        "checkpoint_dir": str(ckpt),
+                    },
+                ).status_code
+                == 502
+            )
+        finally:
+            os.environ.pop("FX1_LOCAL_SERVE_URL", None)
+
+    # honesty gate fires over the wire: a backend emitting a forbidden
+    # headline must not serve it.
+    class _DirtyBackend:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "The strategy achieved a sharpe of 2.1 on the tape."
+
+    # Injected resolver — the honesty gate must hold even when the model
+    # behind the socket is adversarial.
+    from fastapi.testclient import TestClient as _TC2
+
+    dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyBackend()))
+    out["complete_honesty_gate_502"] = (
+        dirty.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "report"}],
+            },
+        ).status_code
+        == 502
+    )
+
+    # --- batch completions ----------------------------------------------------
+    # One backend instance serves the whole batch; per-item verdicts.
+    class _CleanBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+            self.calls = 0
+            self.closed = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            return f"clean:{messages[-1]['content']}"
+
+        def close(self) -> None:
+            self.closed += 1
+
+    clean = _CleanBackend()
+    resolves = [0]
+
+    def _resolve_once(*a: Any, **k: Any) -> _CleanBackend:
+        resolves[0] += 1
+        return clean
+
+    batch_client = _TC2(api_mod.create_app(backend_resolver=_resolve_once))
+    r = batch_client.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "user", "content": f"q{i}"}] for i in range(3)],
+        },
+    )
+    bj = r.json()
+    out["batch_complete_200"] = (
+        r.status_code == 200 and len(bj["results"]) == 3 and all(i["ok"] for i in bj["results"])
+    )
+    out["batch_in_order"] = [i["content"] for i in bj["results"]] == [
+        "clean:q0",
+        "clean:q1",
+        "clean:q2",
+    ]
+    out["batch_one_backend"] = resolves[0] == 1 and clean.calls == 3
+    out["batch_closed_once"] = clean.closed == 1
+    out["batch_item_latency_ms"] = all(
+        isinstance(i["latency_ms"], (int, float)) and i["latency_ms"] >= 0 for i in bj["results"]
+    )
+    out["batch_empty_422"] = (
+        batch_client.post(
+            "/harness/complete/batch", json={"backend": "byok", "batch": []}
+        ).status_code
+        == 422
+    )
+    out["batch_local_no_checkpoint_422"] = (
+        batch_client.post(
+            "/harness/complete/batch",
+            json={
+                "backend": "local_fx1",
+                "batch": [[{"role": "user", "content": "x"}]],
+            },
+        ).status_code
+        == 422
+    )
+    out["batch_unknown_backend_422"] = (
+        batch_client.post(
+            "/harness/complete/batch",
+            json={"backend": "bogus", "batch": [[{"role": "u", "content": "x"}]]},
+        ).status_code
+        == 422
+    )
+
+    # Per-slot verdicts: a refusal on one item doesn't lose the batch.
+    class _PartialBackend(_CleanBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            if messages[-1]["content"] == "bad":
+                return "total Sharpe 4.2 on NAV"  # forbidden headline
+            return super().complete(messages)
+
+    partial_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _PartialBackend()))
+    r2 = partial_client.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [
+                [{"role": "user", "content": "good"}],
+                [{"role": "user", "content": "bad"}],
+                [{"role": "user", "content": "good2"}],
+            ],
+        },
+    )
+    rj = r2.json()["results"]
+    out["batch_per_item_verdicts"] = (
+        r2.status_code == 200
+        and rj[0]["ok"]
+        and rj[2]["ok"]
+        and not rj[1]["ok"]
+        and rj[1]["error_class"] == "honesty_refusal"
+    )
+
+    # --- SSE streaming ---------------------------------------------------------
+    class _StreamBackend(_CleanBackend):
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            yield "tok-a"
+            yield "tok-b"
+
+    # no receipt store -> the synthetic citation below is advisory, not 422.
+    stream_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _StreamBackend(),
+            receipts_dir="/nonexistent-stream-store",
+        )
+    )
+    rs = stream_client.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "hi"}],
+            "receipt_hashes": ["a" * 64],
+        },
+    )
+    body_text = rs.text
+    frames = [ln for ln in body_text.split("\n\n") if ln.strip()]
+    out["stream_200_sse"] = (
+        rs.status_code == 200
+        and rs.headers.get("content-type", "").startswith("text/event-stream")
+        and len(frames) == 5  # 2 tokens + footer + final + [DONE]
+    )
+    payloads = [
+        _json.loads(ln[len("data: ") :])
+        for ln in frames
+        if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["stream_token_order"] = [p["content"] for p in payloads if p.get("type") == "token"][
+        :2
+    ] == ["tok-a", "tok-b"]
+    out["stream_final_envelope"] = payloads[-1].get("type") == "final" and payloads[-1].get(
+        "receipt_hashes"
+    ) == ["a" * 64]
+    out["stream_done_terminates"] = frames[-1].strip() == "data: [DONE]"
+    out["stream_footer_cited"] = any("Evidence:" in p.get("content", "") for p in payloads)
+    out["stream_final_reports_latency_ms"] = (
+        isinstance(payloads[-1].get("latency_ms"), (int, float)) and payloads[-1]["latency_ms"] >= 0
+    )
+
+    class _DirtyStreamBackend(_DirtyBackend):
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            yield "total Sharpe 4.2 on NAV"
+
+    dirty_stream = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyStreamBackend()))
+    rd = dirty_stream.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    # Gate fires before any SSE frame is emitted — the refusal is a plain
+    # JSON error, never a truncated event stream.
+    out["stream_gate_502_json"] = (
+        rd.status_code == 502
+        and not rd.headers.get("content-type", "").startswith("text/event-stream")
+        and "total Sharpe" not in rd.text
+    )
+    out["stream_local_no_checkpoint_422"] = (
+        stream_client.post(
+            "/harness/complete/stream",
+            json={"backend": "local_fx1", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 422
+    )
+    out["stream_unsupported_501"] = (
+        batch_client.post(  # _CleanBackend has no stream()
+            "/harness/complete/stream",
+            json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 501
+    )
+
+    # --- SSE keepalive (grace window → comment frames → in-band errors) ----
+    class _SlowStreamBackend(_CleanBackend):
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            time.sleep(0.3)
+            yield "slow-tok"
+
+    ka_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _SlowStreamBackend(),
+            sse_keepalive_s=0.05,
+        )
+    )
+    rk = ka_client.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    ka_frames = [ln for ln in rk.text.split("\n\n") if ln.strip()]
+    out["stream_keepalive_comments"] = (
+        rk.status_code == 200
+        and rk.headers.get("content-type", "").startswith("text/event-stream")
+        and any(ln.strip() == ": keepalive" for ln in ka_frames)
+        and '"type": "final"' in rk.text
+        and ka_frames[-1].strip() == "data: [DONE]"
+    )
+
+    class _SlowFailBackend(_CleanBackend):
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            time.sleep(0.3)
+            raise RuntimeError("engine died mid-generation")
+
+    ka_fail = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _SlowFailBackend(),
+            sse_keepalive_s=0.05,
+        )
+    )
+    rf = ka_fail.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    err_frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in rf.text.split("\n\n")
+        if ln.startswith("data: ") and '"type": "error"' in ln
+    ]
+    out["stream_keepalive_error_inband"] = (
+        rf.status_code == 200
+        and len(err_frames) == 1
+        and err_frames[0]["status"] == 502
+        and "engine died" in err_frames[0]["detail"]
+        and rf.text.rstrip().endswith("data: [DONE]")
+    )
+
+    # Resolved inside the grace window → the synchronous contract holds:
+    # refusals are still JSON errors, completions still plain SSE.
+    ka_dirty = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
+            sse_keepalive_s=5.0,
+        )
+    )
+    rg = ka_dirty.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["stream_keepalive_grace_json_error"] = (
+        rg.status_code == 502
+        and not rg.headers.get("content-type", "").startswith("text/event-stream")
+        and "total Sharpe" not in rg.text
+    )
+    ka_fast = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _StreamBackend(),
+            sse_keepalive_s=5.0,
+        )
+    )
+    rfast = ka_fast.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["stream_keepalive_grace_sse"] = (
+        rfast.status_code == 200
+        and ": keepalive" not in rfast.text
+        and rfast.text.rstrip().endswith("data: [DONE]")
+    )
+
+    # Disabled → fully synchronous; misconfig fails closed.
+    off_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
+            sse_keepalive_s=0,
+        )
+    )
+    out["stream_keepalive_off_json_error"] = (
+        off_client.post(
+            "/harness/complete/stream",
+            json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 502
+    )
+    try:
+        api_mod.create_app(sse_keepalive_s=-1.0)
+        out["stream_keepalive_negative_rejected"] = False
+    except ValueError:
+        out["stream_keepalive_negative_rejected"] = True
+    keep_env = os.environ.get("FX1_API_SSE_KEEPALIVE_S")
+    os.environ["FX1_API_SSE_KEEPALIVE_S"] = "7.5"
+    try:
+        out["stream_keepalive_env_config"] = api_mod.create_app().state.sse_keepalive_s == 7.5
+    finally:
+        if keep_env is None:
+            os.environ.pop("FX1_API_SSE_KEEPALIVE_S", None)
+        else:
+            os.environ["FX1_API_SSE_KEEPALIVE_S"] = keep_env
+
+    # --- drain: one-way latch, gated routes refuse, ops routes stay up ----
+    from fx1.harness import Harness as _Harness  # noqa: PLC0415
+
+    drain_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    dclient = _TC2(drain_app)
+    drain_app.state.metrics.acquire()  # pretend one request is in-flight
+    # a stored key must still serve its replay while draining
+    dclient.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "pre-drain-key"},
+    )
+    try:
+        ready0 = dclient.get("/ready")
+        out["ready_200"] = (
+            ready0.status_code == 200
+            and ready0.json()["ready"] is True
+            and ready0.json()["inflight"] >= 1
+        )
+        d0 = dclient.post("/harness/drain")
+        out["drain_response_shape"] = (
+            d0.status_code == 200
+            and d0.json()["draining"] is True
+            and isinstance(d0.json()["inflight"], int)
+        )
+        out["drain_reports_inflight"] = d0.json()["inflight"] >= 1
+        out["drain_complete_refused_503"] = (
+            dclient.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+            ).status_code
+            == 503
+        )
+        out["drain_runs_refused_503"] = (
+            dclient.post("/harness/runs", json={"command": "x"}).status_code == 503
+        )
+        out["drain_gate_check_up"] = (
+            dclient.post("/harness/gate/check", json={"text": "ok"}).status_code == 200
+        )
+        out["drain_uncapped_routes_up"] = (
+            dclient.get("/harness/commands").status_code == 200
+            and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
+        )
+        out["drain_health_reports"] = (
+            dclient.get("/health").status_code == 200
+            and dclient.get("/health").json()["draining"] is True
+        )
+        out["drain_metrics_reports"] = dclient.get("/metrics").json()["draining"] is True
+        out["drain_idempotent"] = dclient.post("/harness/drain").json()["draining"] is True
+        out["ready_under_drain_503"] = dclient.get("/ready").status_code == 503
+        out["error_code_draining"] = (
+            dclient.post("/harness/runs", json={"command": "x"}).json()["code"] == "draining"
+        )
+        replayed = dclient.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "pre-drain-key"},
+        )
+        out["drain_replay_served"] = (
+            replayed.status_code == 200 and replayed.json()["replayed"] is True
+        )
+    finally:
+        drain_app.state.metrics.release()
+
+    # --- drain wait_s: server-side wait for the in-flight pool --------------
+    import time as _time  # noqa: PLC0415
+
+    def _slow_runner(a: list[str], t: float) -> tuple[int, str, str]:
+        _time.sleep(0.4)
+        return (0, "ran:" + " ".join(a), "")
+
+    wait_app = api_mod.create_app(
+        harness=_Harness(runner=_slow_runner),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    wclient = _TC2(wait_app)
+    wjob = wclient.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    w0 = wclient.post("/harness/drain?wait_s=0.01")
+    out["drain_wait_s_timeout_reports_not_drained"] = (
+        w0.status_code == 200 and w0.json()["drained"] is False
+    )
+    w1 = wclient.post("/harness/drain?wait_s=5")
+    out["drain_wait_s_blocks_until_empty"] = (
+        w1.status_code == 200 and w1.json()["drained"] is True and w1.json()["inflight"] == 0
+    )
+    out["drain_wait_s_job_completes"] = (
+        wclient.get(f"/harness/jobs/{wjob}").json()["status"] == "succeeded"
+    )
+    out["drain_wait_s_validated"] = wclient.post("/harness/drain?wait_s=-1").status_code == 422
+
+    # --- idempotency keys: dedup retries of a submitted run ------------------
+    r1 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-1"},
+    )
+    r2 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-1"},
+    )
+    out["idem_same_key_replays"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.json()["replayed"] is False
+        and r2.json()["replayed"] is True
+        and r2.json()["stdout"] == r1.json()["stdout"]
+    )
+    r3 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-2"},
+    )
+    out["idem_distinct_keys_fresh"] = r3.json()["replayed"] is False
+    out["idem_absent_ok"] = (
+        client.post("/harness/runs", json={"command": "doctor"}).json()["replayed"] is False
+    )
+    out["idem_oversized_400"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "k" * 300},
+        ).status_code
+        == 400
+    )
+    tiny_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        idem_max=2,
+    )
+    tc = _TC2(tiny_app)
+    for k_ in ("tk1", "tk2", "tk3"):
+        tc.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": k_},
+        )
+    out["idem_bound_evicts_oldest"] = (
+        tc.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "tk1"},
+        ).json()["replayed"]
+        is False
+    )
+    try:
+        api_mod.create_app(idem_max=0)
+        out["idem_max_validated"] = False
+    except ValueError:
+        out["idem_max_validated"] = True
+
+    # --- async jobs ------------------------------------------------------------
+    jobs_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    jclient = _TC2(jobs_app)
+    submit = jclient.post("/harness/jobs", json={"command": "doctor"})
+    out["job_submit_202"] = submit.status_code == 202
+    job_id = submit.json()["job_id"]
+    out["job_id_shape"] = bool(job_id) and len(job_id) == 32
+    job = None
+    deadline = time.monotonic() + 10.0
+    while time.monotonic() < deadline:
+        job = jclient.get(f"/harness/jobs/{job_id}").json()
+        if job["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(0.02)
+    out["job_completes_succeeded"] = job is not None and job["status"] == "succeeded"
+    out["job_result_fields"] = (
+        job is not None
+        and job["result"] is not None
+        and job["result"]["command"] == "doctor"
+        and job["result"]["ok"] is True
+        and job["finished_at"] is not None
+    )
+    out["job_unknown_submit_404"] = (
+        jclient.post("/harness/jobs", json={"command": "nope-nope"}).status_code == 404
+    )
+    out["job_status_unknown_404"] = jclient.get("/harness/jobs/does-not-exist").status_code == 404
+    replay = jclient.post(
+        "/harness/jobs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "job-key-1"},
+    )
+    replay2 = jclient.post(
+        "/harness/jobs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "job-key-1"},
+    )
+    out["job_idem_replay"] = (
+        replay.status_code == 202
+        and replay2.json()["job_id"] == replay.json()["job_id"]
+        and replay2.json()["replayed"] is True
+    )
+    out["job_idem_conflict_409"] = (
+        jclient.post(
+            "/harness/jobs",
+            json={"command": "doctor", "extra_args": ["--x"]},
+            headers={"Idempotency-Key": "job-key-1"},
+        ).status_code
+        == 409
+    )
+    # inventory: newest-first listing with status filter + offset/limit paging
+    lst = jclient.get("/harness/jobs").json()
+    out["job_list_200"] = "jobs" in lst and isinstance(lst["total"], int) and lst["total"] >= 1
+    out["job_list_status_filter"] = all(
+        j["status"] == "succeeded"
+        for j in jclient.get("/harness/jobs", params={"status": "succeeded"}).json()["jobs"]
+    )
+    page1 = jclient.get("/harness/jobs", params={"limit": 1}).json()
+    page2 = jclient.get("/harness/jobs", params={"limit": 1, "offset": 1}).json()
+    out["job_list_paging"] = (
+        len(page1["jobs"]) == 1
+        and page2["jobs"]
+        and page1["jobs"][0]["job_id"] != page2["jobs"][0]["job_id"]
+    )
+    out["job_list_bad_status_422"] = (
+        jclient.get("/harness/jobs", params={"status": "bogus"}).status_code == 422
+    )
+    # drain: new submissions refused; existing records still readable
+    jclient.post("/harness/drain")
+    out["job_drain_refuses_submit"] = (
+        jclient.post("/harness/jobs", json={"command": "doctor"}).status_code == 503
+    )
+    out["job_status_under_drain"] = jclient.get(f"/harness/jobs/{job_id}").status_code == 200
+    out["job_replay_under_drain"] = (
+        jclient.post(
+            "/harness/jobs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "job-key-1"},
+        ).json()["replayed"]
+        is True
+    )
+    # store bound: evicting the oldest job drops its idem mapping
+    tiny_jobs = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        job_max=2,
+    )
+    tc3 = _TC2(tiny_jobs)
+    ids = [tc3.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"] for _ in range(3)]
+    out["job_bound_evicts"] = (
+        tc3.get(f"/harness/jobs/{ids[0]}").status_code == 404
+        and tc3.get(f"/harness/jobs/{ids[2]}").status_code == 200
+    )
+    try:
+        api_mod.create_app(job_max=0)
+        out["job_max_validated"] = False
+    except ValueError:
+        out["job_max_validated"] = True
+
+    # cooperative cancel: occupy both executor workers without slots
+    # (slots == workers, so jobs only stay queued when a worker is busy
+    # without holding one) -> both jobs queue deterministically.
+    qapp = api_mod.create_app(
+        harness=_Harness(runner=_slow_runner),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=2,
+    )
+    qc = _TC2(qapp)
+    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    j1 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    j2 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    out["job_queues_when_workers_busy"] = (
+        qc.get(f"/harness/jobs/{j2}").json()["status"] == "queued"
+        and qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued"
+    )
+    cancelled = qc.delete(f"/harness/jobs/{j2}")
+    out["job_cancel_queued_200"] = (
+        cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
+    )
+    # DELETE is idempotent: re-cancelling the cancelled job re-reads 200
+    out["job_cancel_idempotent_200"] = qc.delete(f"/harness/jobs/{j2}").status_code == 200
+    out["job_cancel_unknown_404"] = qc.delete("/harness/jobs/nope").status_code == 404
+    out["job_cancelled_never_runs"] = (
+        qc.get(f"/harness/jobs/{j2}").json()["result"] is None
+        and qc.get(f"/harness/jobs/{j2}").json()["finished_at"] is not None
+    )
+    # once a worker frees, j1 dequeues; deleting a live or finished job is 409
+    dl = time.monotonic() + 10.0
+    while qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued" and time.monotonic() < dl:
+        time.sleep(0.05)
+    out["job_cancel_active_409"] = qc.delete(f"/harness/jobs/{j1}").status_code == 409
+    dl = time.monotonic() + 10.0
+    while qc.get(f"/harness/jobs/{j1}").json()["status"] not in ("succeeded", "failed") and (
+        time.monotonic() < dl
+    ):
+        time.sleep(0.05)
+    out["job_cancel_succeeded_409"] = qc.delete(f"/harness/jobs/{j1}").status_code == 409
+    # the cancelled job's slot frees once its executor task dequeues
+    dl = time.monotonic() + 10.0
+    while qc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
+        time.sleep(0.1)
+    out["job_cancel_slot_recovered"] = qc.get("/metrics").json()["inflight"] == 0
+
+    # --- webhooks: terminal-state job callbacks --------------------------------
+    # A submitted job's record is POSTed to its callback_url on every
+    # terminal transition (succeeded/failed/cancelled); delivery is
+    # best-effort — a dead or erroring endpoint is recorded on the job,
+    # never raised into the worker.
+    import json as _json  # noqa: PLC0415
+    import socket as _socket  # noqa: PLC0415
+    import threading as _threading  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    _cb_hits: list[dict[str, Any]] = []
+    _cb_raw: list[bytes] = []
+    _cb_hdrs: list[dict[str, str]] = []
+    _cb_path_n: dict[str, int] = {}
+
+    class _JobHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            n = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(n)
+            _cb_raw.append(raw)
+            _cb_hdrs.append(dict(self.headers.items()))
+            _cb_hits.append(_json.loads(raw))
+            _cb_path_n[self.path] = _cb_path_n.get(self.path, 0) + 1
+            if self.path == "/fail":
+                self.send_response(500)
+            elif self.path == "/flaky":
+                self.send_response(500 if _cb_path_n[self.path] < 3 else 200)
+            elif self.path == "/reject":
+                self.send_response(404)
+            else:
+                self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    cb_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=2,
+    )
+    cbc = _TC2(cb_app)
+    cb_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
+    cb_thread = _threading.Thread(target=cb_srv.serve_forever, daemon=True)
+    cb_thread.start()
+    cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
+    _dead_sock = _socket.socket()
+    _dead_sock.bind(("127.0.0.1", 0))
+    _dead_port = _dead_sock.getsockname()[1]
+    _dead_sock.close()
+    try:
+        ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
+        jid_cb = ok_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_cb: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_cb = cbc.get(f"/harness/jobs/{jid_cb}").json()
+            if st_cb["status"] == "succeeded" and st_cb.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_delivered_on_success"] = (
+            ok_job.status_code == 202
+            and ok_job.headers.get("location") == f"/harness/jobs/{jid_cb}"
+            and st_cb.get("callback_status") == "delivered"
+            and st_cb.get("callback_url") == cb_url
+            and len(_cb_hits) == 1
+            and _cb_hits[0]["job_id"] == jid_cb
+            and _cb_hits[0]["status"] == "succeeded"
+            and _cb_hits[0]["result"]["ok"] is True
+        )
+        # endpoint returning 5xx -> recorded as failed, job unaffected
+        err_job = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": cb_url.replace("/hook", "/fail")},
+        )
+        jid_err = err_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_err: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_err = cbc.get(f"/harness/jobs/{jid_err}").json()
+            if st_err.get("callback_status") and st_err.get("callback_attempts") == 3:
+                break
+            time.sleep(0.05)
+        out["callback_http_error_recorded"] = (
+            st_err["status"] == "succeeded"
+            and st_err.get("callback_status") == "failed"
+            and "500" in (st_err.get("callback_error") or "")
+        )
+        out["callback_5xx_retried_3x"] = (
+            _cb_path_n.get("/fail") == 3 and st_err.get("callback_attempts") == 3
+        )
+
+        # transient 5xx sequence eventually delivers; 4xx never retries.
+        # Delivery retries hold a worker briefly — a submit can race a
+        # saturated inflight cap, so re-submit until a slot frees.
+        def _submit_cb(url: str) -> str:
+            end = time.monotonic() + 10.0
+            while True:
+                r = cbc.post(
+                    "/harness/jobs",
+                    json={"command": "doctor", "callback_url": url},
+                )
+                if r.status_code == 202:
+                    return str(r.json()["job_id"])
+                if r.status_code != 503 or time.monotonic() > end:
+                    raise AssertionError(f"callback submit failed: {r.status_code} {r.text}")
+                time.sleep(0.1)
+
+        jid_fk = _submit_cb(cb_url.replace("/hook", "/flaky"))
+        deadline = time.monotonic() + 10.0
+        st_fk: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_fk = cbc.get(f"/harness/jobs/{jid_fk}").json()
+            if (
+                st_fk["status"] == "succeeded"
+                and st_fk.get("callback_status")
+                and st_fk.get("callback_attempts") == 3
+            ):
+                break
+            time.sleep(0.05)
+        out["callback_flaky_delivers"] = (
+            st_fk.get("callback_status") == "delivered"
+            and st_fk.get("callback_attempts") == 3
+            and _cb_path_n.get("/flaky") == 3
+        )
+        jid_rj = _submit_cb(cb_url.replace("/hook", "/reject"))
+        deadline = time.monotonic() + 10.0
+        st_rj: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_rj = cbc.get(f"/harness/jobs/{jid_rj}").json()
+            if st_rj["status"] == "succeeded" and st_rj.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_4xx_never_retried"] = (
+            st_rj.get("callback_status") == "failed"
+            and st_rj.get("callback_attempts") == 1
+            and _cb_path_n.get("/reject") == 1
+        )
+        # dead endpoint -> connection error recorded, job unaffected
+        jid_dead = _submit_cb(f"http://127.0.0.1:{_dead_port}/hook")
+        deadline = time.monotonic() + 15.0
+        st_dead: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_dead = cbc.get(f"/harness/jobs/{jid_dead}").json()
+            if (
+                st_dead["status"] == "succeeded"
+                and st_dead.get("callback_status")
+                and st_dead.get("callback_attempts") == 3
+            ):
+                break
+            time.sleep(0.05)
+        out["callback_dead_endpoint_recorded"] = (
+            st_dead["status"] == "succeeded"
+            and st_dead.get("callback_status") == "failed"
+            and bool(st_dead.get("callback_error"))
+        )
+        # cancelling a queued job is a terminal transition — it fires too
+        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        qid = _submit_cb(cb_url)
+        cxl = cbc.delete(f"/harness/jobs/{qid}")
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and (
+            len(_cb_hits) < 3 or _cb_hits[-1].get("job_id") != qid
+        ):
+            time.sleep(0.05)
+        out["callback_fires_on_cancel"] = (
+            cxl.status_code == 200
+            and cxl.json()["status"] == "cancelled"
+            and cxl.json().get("callback_status") == "delivered"
+            and _cb_hits[-1]["job_id"] == qid
+            and _cb_hits[-1]["status"] == "cancelled"
+        )
+        dl = time.monotonic() + 10.0
+        while cbc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
+            time.sleep(0.1)
+        bad = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": "ftp://x/hook"},
+        )
+        nohost = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": "http:///hook"},
+        )
+        out["callback_bad_url_422"] = bad.status_code == 422 and nohost.status_code == 422
+        # unsigned deliveries carry no signature headers
+        out["callback_unsigned_no_sig"] = (
+            "X-Fx1-Webhook-Signature" not in _cb_hdrs[0]
+            and "X-Fx1-Webhook-Timestamp" not in _cb_hdrs[0]
+        )
+        # callback_secret HMAC-signs the delivery; receivers verify the raw
+        # body — the job record itself never echoes the secret.
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        sig_job = cbc.post(
+            "/harness/jobs",
+            json={
+                "command": "doctor",
+                "callback_url": cb_url,
+                "callback_secret": "whsec-test",
+            },
+        )
+        jid_sig = sig_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_sig: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_sig = cbc.get(f"/harness/jobs/{jid_sig}").json()
+            if st_sig["status"] == "succeeded" and st_sig.get("callback_status"):
+                break
+            time.sleep(0.05)
+        sig_hdrs = _cb_hdrs[-1]
+        out["callback_signed_verifies"] = (
+            st_sig.get("callback_status") == "delivered"
+            and sig_hdrs.get("X-Fx1-Webhook-Signature", "").startswith("sha256=")
+            and verify_webhook(
+                "whsec-test",
+                sig_hdrs.get("X-Fx1-Webhook-Timestamp"),
+                sig_hdrs.get("X-Fx1-Webhook-Signature"),
+                _cb_raw[-1],
+            )
+        )
+        out["callback_secret_not_echoed"] = (
+            "callback_secret" not in st_sig
+            and "whsec-test" not in cbc.get(f"/harness/jobs/{jid_sig}").text
+            and b"whsec-test" not in _cb_raw[-1]
+        )
+        good_sig = sig_hdrs.get("X-Fx1-Webhook-Signature")
+        good_ts = sig_hdrs.get("X-Fx1-Webhook-Timestamp")
+        out["webhook_verify_tampered_body"] = not verify_webhook(
+            "whsec-test", good_ts, good_sig, _cb_raw[-1] + b" "
+        )
+        out["webhook_verify_wrong_secret"] = not verify_webhook(
+            "whsec-other", good_ts, good_sig, _cb_raw[-1]
+        )
+        out["webhook_verify_stale_ts"] = not verify_webhook(
+            "whsec-test", "1", good_sig, _cb_raw[-1]
+        )
+        out["webhook_verify_malformed"] = not verify_webhook(
+            "whsec-test", good_ts, "nonsense", _cb_raw[-1]
+        ) and not verify_webhook("whsec-test", good_ts, None, _cb_raw[-1])
+        sec_no_url = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_secret": "whsec-test"},
+        )
+        out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
+    finally:
+        cb_srv.shutdown()
+        cb_srv.server_close()
+
+    # --- rate limiting: per-client-host token bucket ----------------------------
+    out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
+    try:
+        api_mod.create_app(rate_limit_rps=-1)
+        out["rate_limit_negative_rejected"] = False
+    except ValueError:
+        out["rate_limit_negative_rejected"] = True
+    limited = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=5.0,
+    )
+    lc = _TC2(limited)
+    hits = [lc.get("/harness/version").status_code for _ in range(7)]
+    denied = lc.get("/harness/version")
+    out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
+    out["rate_limit_envelope"] = (
+        denied.status_code == 429
+        and denied.json()["code"] == "too_many_requests"
+        and denied.headers.get("retry-after") is not None
+        and int(denied.headers["retry-after"]) >= 1
+    )
+    time.sleep(0.3)
+    out["rate_limit_recovers"] = lc.get("/harness/version").status_code == 200
+    # X-RateLimit-* headers on every response while the limiter is active
+    limited3 = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=10.0,
+    )
+    lc3 = _TC2(limited3)
+    spec_limited = lc3.get("/openapi.json").json()
+    first = lc3.get("/harness/version")
+    second = lc3.get("/harness/version")
+    out["rate_limit_headers_on_success"] = (
+        first.status_code == 200
+        and first.headers.get("x-ratelimit-limit") == "10"
+        and first.headers.get("x-ratelimit-remaining") == "8"
+        and int(first.headers["x-ratelimit-reset"]) >= 0
+        and int(second.headers["x-ratelimit-remaining"]) == 7
+    )
+    while lc3.get("/harness/version").status_code == 200:
+        pass
+    denied3 = lc3.get("/harness/version")
+    out["rate_limit_headers_on_429"] = (
+        denied3.status_code == 429
+        and denied3.headers.get("x-ratelimit-limit") == "10"
+        and denied3.headers.get("x-ratelimit-remaining") == "0"
+        and int(denied3.headers["x-ratelimit-reset"]) >= 1
+    )
+    out["rate_limit_headers_absent_when_off"] = (
+        "x-ratelimit-limit" not in client.get("/health").headers
+    )
+    # public paths are exempt: a health probe must not consume the budget —
+    # with a 1 rps bucket, /version takes the only token, /health still 200s
+    # (no bucket touch, no limiter headers), and the next /version 429s.
+    lim_pub = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=1.0,
+    )
+    lp = _TC2(lim_pub)
+    lp.get("/harness/version")
+    h_exempt = lp.get("/health")
+    v_after = lp.get("/harness/version")
+    out["rate_limit_public_path_exempt"] = (
+        h_exempt.status_code == 200
+        and "x-ratelimit-limit" not in h_exempt.headers
+        and v_after.status_code == 429
+    )
+    # the spec declares the headers the middleware sets — generated clients
+    # see them typed instead of having to know
+    spec_main = client.get("/openapi.json").json()
+    common = {
+        "X-Request-ID",
+        "X-Fx1-Api-Version",
+        "X-Content-Type-Options",
+        "Cache-Control",
+        "Referrer-Policy",
+    }
+    spec_ops = [
+        op
+        for item in spec_main.get("paths", {}).values()
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    out["openapi_declares_common_headers"] = bool(spec_ops) and all(
+        common <= set(resp.get("headers", {}))
+        for op in spec_ops
+        for resp in op.get("responses", {}).values()
+    )
+    submit_op = spec_main["paths"]["/harness/jobs"]["post"]
+    out["openapi_declares_location_202"] = "Location" in submit_op["responses"]["202"].get(
+        "headers", {}
+    )
+    out["openapi_declares_retry_after_503"] = all(
+        "Retry-After" in resp.get("headers", {})
+        for op in spec_ops
+        for code, resp in op.get("responses", {}).items()
+        if code in ("429", "503")
+    )
+    out["openapi_ratelimit_absent_when_off"] = all(
+        "X-RateLimit-Limit" not in resp.get("headers", {})
+        for op in spec_ops
+        for resp in op.get("responses", {}).values()
+    )
+    out["openapi_ratelimit_present_when_on"] = all(
+        {"X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"}
+        <= set(resp.get("headers", {}))
+        for item in spec_limited.get("paths", {}).values()
+        for op in item.values()
+        if isinstance(op, dict)
+        for resp in op.get("responses", {}).values()
+    )
+    # CORS: closed by default; explicit origins only; preflight handled
+    # before the auth layer (preflights carry no credentials)
+    pre_off = client.options(
+        "/health",
+        headers={
+            "Origin": "https://fx1.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    out["cors_off_by_default"] = "access-control-allow-origin" not in pre_off.headers
+    cors_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        cors_origins="https://fx1.example.com, https://ops.internal:8443",
+    )
+    cc = _TC2(cors_app)
+    pre_on = cc.options(
+        "/health",
+        headers={
+            "Origin": "https://fx1.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    out["cors_preflight_ok"] = (
+        pre_on.status_code == 200
+        and pre_on.headers.get("access-control-allow-origin") == "https://fx1.example.com"
+        and "POST" in pre_on.headers.get("access-control-allow-methods", "")
+    )
+    actual_resp = cc.get("/health", headers={"Origin": "https://fx1.example.com"})
+    out["cors_exposes_stamped_headers"] = (
+        "x-fx1-api-version" in actual_resp.headers.get("access-control-expose-headers", "").lower()
+    )
+    out["cors_wrong_origin_refused"] = (
+        "access-control-allow-origin"
+        not in cc.options(
+            "/health",
+            headers={
+                "Origin": "https://evil.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        ).headers
+    )
+    out["cors_actual_response_marked"] = (
+        actual_resp.headers.get("access-control-allow-origin") == "https://fx1.example.com"
+    )
+    try:
+        api_mod.create_app(cors_origins="*")
+        out["cors_wildcard_refused"] = False
+    except ValueError:
+        out["cors_wildcard_refused"] = True
+    out["capabilities_reports_cors"] = (
+        client.get("/harness/capabilities").json()["features"]["cors"] is False
+        and cc.get("/harness/capabilities").json()["features"]["cors"] is True
+    )
+
+    # Backend circuit breaker: consecutive call faults open the circuit —
+    # later calls fast-fail 503 + Retry-After without touching the backend;
+    # a half-open probe admits after cooldown and closes on success.
+    class _FlakyBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            if self.calls <= 2:
+                raise RuntimeError("backend exploded")
+            return "ok"
+
+    _flaky = _FlakyBackend()
+    brk_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda name, *a, **k: _flaky if name == "byok" else _CleanBackend(),
+        breaker_threshold=2,
+        breaker_cooldown_s=60.0,
+    )
+    bc = _TC2(brk_app)
+    cp_body = {"backend": "byok", "messages": [{"role": "user", "content": "x"}]}
+    r_fail1 = bc.post("/harness/complete", json=cp_body)
+    r_fail2 = bc.post("/harness/complete", json=cp_body)
+    r_open = bc.post("/harness/complete", json=cp_body)
+    out["breaker_opens_at_threshold"] = (
+        r_fail1.status_code == 502
+        and r_fail2.status_code == 502
+        and r_open.status_code == 503
+        and r_open.json()["code"] == "backend_unavailable"
+        and "circuit open" in r_open.json()["detail"]
+        and "retry-after" in {k.lower() for k in r_open.headers}
+        and _flaky.calls == 2  # the open-circuit call never reached the backend
+    )
+    st = bc.get("/harness/backends").json()
+    out["backends_route_reports_state"] = (
+        set(st) == {"hosted_k3", "byok", "local_fx1"}
+        and st["byok"]["circuit_open"] is True
+        and st["byok"]["consecutive_failures"] >= 2
+        and st["hosted_k3"]["circuit_open"] is False
+    )
+    r_other = bc.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "x"}]},
+    )
+    out["breaker_isolated_per_backend"] = r_other.status_code == 200
+    caps_brk = bc.get("/harness/capabilities").json()
+    out["capabilities_reports_breaker"] = (
+        caps_brk["features"]["breaker"] is True
+        and caps_brk["limits"]["breaker_threshold"] == 2.0
+        and caps_brk["limits"]["breaker_cooldown_s"] == 60.0
+    )
+    brk = api_mod._BackendBreaker(2, 0.05)
+    brk.report("x", False)
+    brk.report("x", False)
+    opened = brk.check("x") > 0
+    time.sleep(0.06)
+    probe1 = brk.check("x")  # admits the single half-open probe
+    probe2 = brk.check("x")  # a second concurrent caller fast-fails
+    brk.report("x", True)  # probe succeeded → closed
+    closed = brk.check("x") == 0 and brk.state("x")[0] is False
+    out["breaker_half_open_recovers"] = opened and probe1 == 0.0 and probe2 > 0 and closed
+    off_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        breaker_threshold=0,
+    )
+    oc = _TC2(off_app)
+    out["breaker_disabled_by_zero"] = (
+        oc.get("/harness/capabilities").json()["features"]["breaker"] is False
+        and oc.get("/harness/backends").json()["byok"]["circuit_open"] is False
+    )
+    # honesty-gate refusals are model output, not backend health — they
+    # must never trip the circuit.
+    dirty_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _DirtyBackend(),
+        breaker_threshold=2,
+        breaker_cooldown_s=60.0,
+    )
+    dc = _TC2(dirty_app)
+    gate_fails = [
+        dc.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "x"}]},
+        ).status_code
+        for _ in range(3)
+    ]
+    out["breaker_ignores_honesty_gate"] = (
+        gate_fails == [502, 502, 502]
+        and dc.get("/harness/backends").json()["byok"]["circuit_open"] is False
+    )
+
+    # Backend fallback chain: `fallbacks` advances only on availability
+    # faults — unconfigured (503 resolve), call faults (502/503), or an
+    # open circuit. A gate refusal or client error is a verdict, not a
+    # retry signal, and never reaches the next link. Every tried link is
+    # sealed in `attempts` on the response AND the completion record.
+    class _BoomBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            raise RuntimeError("backend exploded")
+
+    _boom = _BoomBackend()
+    chain_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: _boom if name == "hosted_k3" else _CleanBackend()
+        )
+    )
+    r_chain = chain_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    chain_body = r_chain.json()
+    out["fallback_serves_next_link"] = (
+        r_chain.status_code == 200
+        and chain_body["backend"] == "byok"
+        and chain_body["content"] == "clean:hi"
+        and [(a["backend"], a["ok"]) for a in chain_body["attempts"]]
+        == [("hosted_k3", False), ("byok", True)]
+        and chain_body["attempts"][0]["error_class"] == "RuntimeError"
+    )
+    # the sealed completion record carries the same chain evidence and is
+    # filed under the serving backend.
+    rec_chain = chain_app.get("/harness/completions?limit=1").json()["items"][0]
+    out["fallback_record_carries_attempts"] = (
+        rec_chain["backend"] == "byok"
+        and [a["backend"] for a in rec_chain["attempts"]] == ["hosted_k3", "byok"]
+        and chain_body["completion_id"] == rec_chain["completion_id"]
+    )
+
+    # resolve-level fallback: a 503 from resolution (unconfigured primary)
+    # advances the chain before any model call.
+    def _resolve_dies(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return _CleanBackend()
+        raise RuntimeError("primary unconfigured")
+
+    res_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies))
+    r_res = res_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    res_body = r_res.json()
+    out["fallback_resolve_503_advances"] = (
+        r_res.status_code == 200
+        and res_body["backend"] == "byok"
+        and res_body["attempts"][0]["backend"] == "hosted_k3"
+        and res_body["attempts"][0]["error_class"] == "backend_unavailable"
+    )
+    # a gate refusal is a verdict — the request aborts, the fallback is
+    # never spent.
+    _clean_spy = _CleanBackend()
+    ref_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: (
+                _DirtyBackend() if name == "hosted_k3" else _clean_spy
+            )
+        )
+    )
+    r_ref = ref_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    out["fallback_no_retry_on_honesty_gate"] = (
+        r_ref.status_code == 502
+        and r_ref.json()["code"] == "honesty_gate"
+        and _clean_spy.calls == 0
+    )
+    # a client error (bad citation) likewise aborts before any backend.
+    r_bad = chain_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+            "receipt_hashes": ["0" * 64],
+        },
+    )
+    out["fallback_client_error_aborts"] = r_bad.status_code == 422
+    # every link dead → the last retriable verdict surfaces, with the full
+    # chain sealed on the record.
+    dead_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BoomBackend()))
+    r_dead = dead_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["local_fx1", "byok"],
+            # lets the local_fx1 link resolve (resolver ignores kwargs —
+            # every link faults at the call itself)
+            "checkpoint_dir": "/nonexistent/fx1-cp",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    dead_rec = dead_app.get("/harness/completions?limit=1").json()["items"][0]
+    out["fallback_exhausted_502"] = (
+        r_dead.status_code == 502
+        and r_dead.json()["code"] == "backend_failure"
+        and [a["backend"] for a in dead_rec["attempts"]] == ["hosted_k3", "local_fx1", "byok"]
+        and all(a["ok"] is False for a in dead_rec["attempts"])
+    )
+    # an open primary circuit advances the chain — a downed backend's
+    # breaker never blocks a healthy fallback.
+    open_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: (
+                _boom if name == "hosted_k3" else _CleanBackend()
+            ),
+            breaker_threshold=1,
+            breaker_cooldown_s=60.0,
+        )
+    )
+    open_app.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "x"}]},
+    )
+    r_open_fb = open_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    fb_body = r_open_fb.json()
+    out["fallback_skips_open_circuit"] = (
+        r_open_fb.status_code == 200
+        and fb_body["backend"] == "byok"
+        and fb_body["attempts"][0]["error_class"] == "backend_unavailable"
+    )
+    # chain validation: repeats, self-reference, over-cap, and kwargs
+    # bound to a link absent from the chain all fail closed at 422.
+    _msgs = [{"role": "user", "content": "x"}]
+    bad_chains: list[dict[str, Any]] = [
+        {"backend": "byok", "fallbacks": ["byok"], "messages": _msgs},
+        {"backend": "byok", "fallbacks": ["hosted_k3", "hosted_k3"], "messages": _msgs},
+        {
+            "backend": "byok",
+            "fallbacks": ["hosted_k3", "local_fx1", "byok"],
+            "messages": _msgs,
+        },
+        {
+            "backend": "hosted_k3",
+            "messages": _msgs,
+            "byok": {"base_url": "https://x.example.com", "api_key": "k", "model": "m"},
+        },
+        {"backend": "hosted_k3", "messages": _msgs, "checkpoint_dir": "/x"},
+        {
+            "backend": "hosted_k3",
+            "fallbacks": ["hosted_k3"],
+            "messages": _msgs,
+        },
+    ]
+    out["fallback_validation_422"] = all(
+        chain_app.post("/harness/complete", json=b).status_code == 422 for b in bad_chains
+    ) and all(
+        res_app.post(
+            "/harness/complete/batch",
+            json={k: v for k, v in b.items() if k != "messages"} | {"batch": [_msgs]},
+        ).status_code
+        == 422
+        for b in bad_chains
+    )
+    # batch applies the chain at resolve level — one link serves the whole
+    # batch, per-item usage attribution stays honest.
+    r_batch_fb = res_app.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "batch": [[{"role": "user", "content": "a"}]],
+        },
+    )
+    batch_fb = r_batch_fb.json()
+    out["fallback_batch_resolve_level"] = (
+        r_batch_fb.status_code == 200
+        and batch_fb["backend"] == "byok"
+        and batch_fb["results"][0]["ok"] is True
+        and [a["backend"] for a in batch_fb["attempts"]] == ["hosted_k3", "byok"]
+    )
+
+    # streaming resolves through the same chain before any byte commits.
+    def _resolve_dies_stream(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return _StreamBackend()
+        raise RuntimeError("primary unconfigured")
+
+    stream_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies_stream))
+    r_stream_fb = stream_app.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    stream_lines = [ln for ln in r_stream_fb.text.splitlines() if ln.startswith("data: ")]
+    out["fallback_stream_resolves"] = r_stream_fb.status_code == 200 and any(
+        '"type": "final"' in ln for ln in stream_lines
+    )
+
+    # Per-request BYOK: the caller's {base_url, api_key, model} rides the
+    # request body and reaches the backend factory; overrides are validated
+    # (422, never breaker-counted), gated by a server flag, and breaker-
+    # isolated per endpoint so one tenant's dead endpoint can't fast-fail
+    # another's.
+    _cap: list[dict[str, Any]] = []
+    _flaky2 = _FlakyBackend()
+    _flaky2.calls = 0
+
+    def _cap_resolver(name: str, cp: str | None = None, **kw: Any) -> Any:
+        _cap.append(kw)
+        if name == "byok" and "dead" in kw.get("base_url", ""):
+            return _flaky2
+        return _CleanBackend()
+
+    bapp = _TC2(api_mod.create_app(backend_resolver=_cap_resolver))
+    ovr = {"base_url": "https://llm.example.com/v1", "api_key": "sk-live-x", "model": "m1"}
+    ok = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_reaches_backend"] = ok.status_code == 200 and _cap[-1] == ovr
+    wrong_be = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_non_byok_422"] = wrong_be.status_code == 422
+    out["byok_override_bad_url_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "byok": {**ovr, "base_url": "ftp://x"},
+            },
+        ).status_code
+        == 422
+    )
+    out["byok_override_partial_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "byok": {"base_url": "https://e.com", "api_key": "k"},
+            },
+        ).status_code
+        == 422
+    )
+    disabled = _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+    dresp = disabled.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_disabled_422"] = (
+        dresp.status_code == 422 and dresp.json().get("code") == "byok_override_disabled"
+    )
+    caps_byok = bapp.get("/harness/capabilities").json()["features"]
+    out["capabilities_reports_byok_override"] = (
+        caps_byok["byok_override"] is True
+        and _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+        .get("/harness/capabilities")
+        .json()["features"]["byok_override"]
+        is False
+    )
+    # Per-request backend deadline — flows into resolver kwargs on every
+    # surface; out-of-range values are model-level 422s.
+    _cap.clear()
+    t_ok = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+            "timeout_s": 2.5,
+        },
+    )
+    out["timeout_s_reaches_backend"] = t_ok.status_code == 200 and _cap[-1].get("timeout_s") == 2.5
+    out["timeout_s_nonpositive_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "timeout_s": 0,
+            },
+        ).status_code
+        == 422
+    )
+    out["timeout_s_over_cap_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "timeout_s": 99999,
+            },
+        ).status_code
+        == 422
+    )
+    _cap.clear()
+    bapp.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "user", "content": "x"}]],
+            "byok": ovr,
+            "timeout_s": 7.0,
+        },
+    )
+    out["timeout_s_batch_reaches_backend"] = _cap[-1].get("timeout_s") == 7.0
+    _cap.clear()
+    bapp.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+            "timeout_s": 3.0,
+        },
+    )
+    # _CleanBackend lacks stream() — the resolver still saw the deadline
+    # before the 501.
+    out["timeout_s_stream_reaches_backend"] = _cap[-1].get("timeout_s") == 3.0
+    # The hosted backend honors the knob it previously hardcoded.
+    import fx1.serve.backends as be_mod  # noqa: PLC0415
+
+    out["timeout_s_hosted_backend"] = (
+        be_mod.HostedK3Backend(api_key="k", timeout_s=9.0)._timeout_s == 9.0
+    )
+    # Isolated circuits per endpoint: the dead override opens its own
+    # breaker key while the healthy override (and the env default) pass.
+    bapp_brk = _TC2(
+        api_mod.create_app(
+            backend_resolver=_cap_resolver,
+            breaker_threshold=2,
+            breaker_cooldown_s=60.0,
+        )
+    )
+    dead = {"base_url": "https://dead.example.com/v1", "api_key": "k", "model": "m"}
+    dead_body = {"backend": "byok", "messages": [{"role": "user", "content": "x"}], "byok": dead}
+    bapp_brk.post("/harness/complete", json=dead_body)
+    bapp_brk.post("/harness/complete", json=dead_body)
+    open_dead = bapp_brk.post("/harness/complete", json=dead_body)
+    ok_live = bapp_brk.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_breaker_isolated"] = (
+        open_dead.status_code == 503 and ok_live.status_code == 200
+    )
+    # Idempotency still works with an override on the body — same body
+    # replays, a different key inside byok gets the 409.
+    idem_byok = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    k_body = {
+        "backend": "byok",
+        "messages": [{"role": "user", "content": "x"}],
+        "byok": ovr,
+    }
+    i1 = idem_byok.post("/harness/complete", json=k_body, headers={"Idempotency-Key": "bk1"})
+    i2 = idem_byok.post("/harness/complete", json=k_body, headers={"Idempotency-Key": "bk1"})
+    i3 = idem_byok.post(
+        "/harness/complete",
+        json={**k_body, "byok": {**ovr, "api_key": "sk-different"}},
+        headers={"Idempotency-Key": "bk1"},
+    )
+    out["byok_override_idem_contract"] = (
+        i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
+    )
+    # limiter counts denials; a public-path request also draws a token
+    limited2 = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=20.0,
+    )
+    lc2 = _TC2(limited2)
+    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
+    time.sleep(0.15)
+    m = lc2.get("/metrics")
+    out["rate_limit_metrics_counts"] = (
+        statuses.count(429) >= 2
+        and m.status_code == 200
+        and m.json()["rate_limited_total"] == statuses.count(429)
+    )
+    os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
+    try:
+        env_app = api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+        )
+        ec = _TC2(env_app)
+        out["rate_limit_env_config"] = [
+            ec.get("/harness/version").status_code for _ in range(5)
+        ].count(429) >= 1
+    finally:
+        os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
+
+    # --- job event stream: SSE status feed until terminal -------------------
+    ev_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+        sse_keepalive_s=0.05,
+    )
+    evc = _TC2(ev_app)
+    ev_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    ev_resp = evc.get(f"/harness/jobs/{ev_jid}/events")
+    ev_frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in ev_resp.text.splitlines()
+        if ln.startswith("data: ")
+    ]
+    out["job_events_stream_terminal"] = (
+        ev_resp.status_code == 200
+        and "text/event-stream" in ev_resp.headers.get("content-type", "")
+        and ev_resp.headers.get("cache-control", "") in ("no-cache", "no-store")
+        and len(ev_frames) >= 1
+        and ev_frames[-1]["status"] == "succeeded"
+        and ev_frames[-1]["job_id"] == ev_jid
+    )
+    out["job_events_unknown_404"] = evc.get("/harness/jobs/nope/events").status_code == 404
+    out["job_events_timeout_422"] = (
+        evc.get(f"/harness/jobs/{ev_jid}/events?timeout_s=0.5").status_code == 422
+    )
+    # a blocked worker keeps the next job queued: the stream emits the
+    # queued frame, keeps alive on the quiet job, then closes at timeout_s
+    ev_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    blk_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    blk_resp = evc.get(f"/harness/jobs/{blk_jid}/events?timeout_s=1")
+    blk_statuses = [
+        _json.loads(ln[len("data: ") :])["status"]
+        for ln in blk_resp.text.splitlines()
+        if ln.startswith("data: ")
+    ]
+    out["job_events_queued_frame_then_close"] = blk_resp.status_code == 200 and blk_statuses == [
+        "queued"
+    ]
+    out["job_events_keepalive_frames"] = ": keepalive" in blk_resp.text
+
+    # --- batch submit: per-item outcomes, per-item idempotency ---------------
+    b_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=4,
+    )
+    bc = _TC2(b_app)
+    b_resp = bc.post(
+        "/harness/jobs/batch",
+        json={
+            "jobs": [
+                {"command": "doctor", "idempotency_key": "bk1"},
+                {"command": "doctor"},
+                {"command": "no-such-command"},
+            ]
+        },
+    )
+    b_out = b_resp.json()
+    out["jobs_batch_per_item"] = (
+        b_resp.status_code == 202
+        and b_out["submitted"] == 2
+        and b_out["failed"] == 1
+        and bool(b_out["jobs"][0].get("job_id"))
+        and b_out["jobs"][2]["code"] == "not_found"
+    )
+    b_replay = bc.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "doctor", "idempotency_key": "bk1"}]},
+    ).json()
+    out["jobs_batch_idem_replay"] = (
+        b_replay["submitted"] == 1
+        and b_replay["jobs"][0]["replayed"] is True
+        and b_replay["jobs"][0]["job_id"] == b_out["jobs"][0]["job_id"]
+    )
+    b_conflict = bc.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "operations", "idempotency_key": "bk1"}]},
+    ).json()
+    out["jobs_batch_idem_conflict"] = (
+        b_conflict["failed"] == 1
+        and b_conflict["jobs"][0]["code"] == "conflict"
+        and b_conflict["jobs"][0]["job_id"] is None
+    )
+    out["jobs_batch_empty_422"] = (
+        bc.post("/harness/jobs/batch", json={"jobs": []}).status_code == 422
+    )
+    out["jobs_batch_over_cap_422"] = (
+        bc.post("/harness/jobs/batch", json={"jobs": [{"command": "doctor"}] * 65}).status_code
+        == 422
+    )
+    # single-submit idempotency via the body field (header still wins)
+    body_key = bc.post(
+        "/harness/jobs", json={"command": "doctor", "idempotency_key": "hdr-body"}
+    ).json()
+    body_key2 = bc.post(
+        "/harness/jobs",
+        json={"command": "doctor", "idempotency_key": "hdr-body"},
+        headers={"Idempotency-Key": "hdr-body"},
+    ).json()
+    out["jobs_body_idem_replays"] = (
+        body_key2["replayed"] is True and body_key2["job_id"] == body_key["job_id"]
+    )
+    cap_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+    )
+    cap_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    cc2 = _TC2(cap_app)
+    cap_out = cc2.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "doctor"}, {"command": "doctor"}]},
+    ).json()
+    out["jobs_batch_capacity_partial"] = (
+        cap_out["submitted"] == 1
+        and cap_out["failed"] == 1
+        and cap_out["jobs"][1]["code"] == "over_capacity"
+    )
+
+    # --- batch receipt verification ---------------------------------------------
+    vb = bc.post(
+        "/receipts/verify/batch",
+        json={"receipts": [{"not": "a receipt"}, {"x": 1}]},
+    ).json()
+    out["verify_batch_per_item"] = (
+        vb["verified"] + vb["failed"] == 2
+        and len(vb["results"]) == 2
+        and vb["results"][0]["index"] == 0
+        and vb["results"][0]["valid"] is False
+    )
+    out["verify_batch_empty_422"] = (
+        bc.post("/receipts/verify/batch", json={"receipts": []}).status_code == 422
+    )
+    out["verify_batch_over_cap_422"] = (
+        bc.post("/receipts/verify/batch", json={"receipts": [{}] * 65}).status_code == 422
+    )
+
+    # --- gzip response compression --------------------------------------------
+    g_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    gc = _TC2(g_app)
+    g_resp = gc.get("/openapi.json", headers={"Accept-Encoding": "gzip"})
+    out["gzip_compresses_large_response"] = (
+        g_resp.status_code == 200
+        and g_resp.headers.get("content-encoding") == "gzip"
+        and len(g_resp.content) > 4096
+    )
+    g_small = gc.get("/health", headers={"Accept-Encoding": "gzip"})
+    out["gzip_small_response_untouched"] = (
+        g_small.status_code == 200 and "content-encoding" not in g_small.headers
+    )
+    g_plain = gc.get("/openapi.json", headers={"Accept-Encoding": "identity"})
+    out["gzip_requires_accept_encoding"] = (
+        g_plain.status_code == 200
+        and "content-encoding" not in g_plain.headers
+        and len(g_plain.content) > 4096
+    )
+    g_off_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        gzip_min_bytes=0,
+    )
+    g_off = _TC2(g_off_app).get("/openapi.json", headers={"Accept-Encoding": "gzip"})
+    out["gzip_zero_disables"] = "content-encoding" not in g_off.headers
+    try:
+        api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+            gzip_min_bytes=-1,
+        )
+        out["gzip_negative_rejected"] = False
+    except ValueError:
+        out["gzip_negative_rejected"] = True
+
+    # --- job lifecycle hygiene --------------------------------------------------
+    big = "x" * (1 << 21)
+    chatty_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, big, "e" * (1 << 21))),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    cc3 = _TC2(chatty_app)
+    jid_big = cc3.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    deadline = time.time() + 10.0
+    while time.time() < deadline:
+        rec = cc3.get(f"/harness/jobs/{jid_big}").json()
+        if rec["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.05)
+    out["job_result_capped"] = (
+        rec["status"] == "succeeded"
+        and rec["result"]["stdout_truncated"] is True
+        and rec["result"]["stderr_truncated"] is True
+        and len(rec["result"]["stdout"].encode()) <= 1 << 20
+        and len(rec["result"]["stderr"].encode()) <= 1 << 20
+    )
+    small_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "tiny", "warn")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    sc = _TC2(small_app)
+    jid_small = sc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    deadline = time.time() + 10.0
+    while time.time() < deadline:
+        rec2 = sc.get(f"/harness/jobs/{jid_small}").json()
+        if rec2["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.05)
+    out["job_result_small_unflagged"] = (
+        rec2["status"] == "succeeded"
+        and rec2["result"]["stdout_truncated"] is False
+        and rec2["result"]["stdout"] == "tiny"
+    )
+
+    # shutdown: TestClient __exit__ runs the lifespan teardown — queued jobs
+    # must flip to cancelled (never silently die) and the drain latch set.
+    drain_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+    )
+    with _TC2(drain_app) as dc:
+        drain_app.state.jobs_executor.submit(lambda: time.sleep(3))
+        jid_q = dc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    dead = drain_app.state.job_store.get(jid_q)
+    out["shutdown_cancels_queued"] = (
+        dead is not None and dead.status == "cancelled" and dead.finished_at is not None
+    )
+    out["shutdown_sets_drain"] = drain_app.state.metrics.draining.is_set()
+
+    # --- receipt verification -------------------------------------------------
+    from fx1.serve.byok_audit import byok_audit_bench
+
+    good = byok_audit_bench()
+    resp = client.post("/receipts/verify", json={"receipt": good})
+    out["receipt_valid_payload"] = resp.status_code == 200 and resp.json()["valid"] is True
+    tampered = dict(good)
+    tampered["receipt_sha256"] = "0" * 64
+    resp = client.post("/receipts/verify", json={"receipt": tampered})
+    out["receipt_tamper_detected"] = resp.status_code == 200 and resp.json()["valid"] is False
+    resp = client.post("/receipts/verify", json={"receipt": {"not": "a receipt"}})
+    out["receipt_malformed_fails_closed"] = (
+        resp.status_code == 200 and resp.json()["valid"] is False
+    )
+    out["receipt_non_object_422"] = (
+        client.post("/receipts/verify", json={"receipt": [1, 2]}).status_code == 422
+    )
+    out["receipt_verify_never_5xx"] = client.post(
+        "/receipts/verify",
+        json={"receipt": {"nested": {"deep": [[{"x": None}]]}}},
+    ).status_code in (200, 422)
+
+    # --- content-addressed receipt fetch --------------------------------------
+    # A caller cites sha256 in a completion; these routes serve the sealed
+    # bytes back by that hash — ETag is the hash itself.
+    import tempfile as _tf  # noqa: PLC0415
+    from pathlib import Path as _Pt  # noqa: PLC0415
+
+    with _tf.TemporaryDirectory() as td:
+        rdir = _Pt(td)
+        sha = good["receipt_sha256"]
+        (rdir / "probe_receipt.json").write_text(_json.dumps(good))
+        rclient = _TC2(api_mod.create_app(receipts_dir=rdir))
+        lst = rclient.get("/receipts")
+        out["receipts_index_lists"] = (
+            lst.status_code == 200
+            and lst.json()["count"] == 1
+            and lst.json()["items"][0]["sha256"] == sha
+            and lst.json()["items"][0]["name"] == "probe_receipt.json"
+        )
+        got = rclient.get(f"/receipts/{sha}")
+        raw = (rdir / "probe_receipt.json").read_bytes()
+        out["receipt_fetch_verbatim"] = (
+            got.status_code == 200
+            and got.content == raw
+            and got.json()["receipt_sha256"] == sha
+            and got.headers.get("etag") == f'"{sha}"'
+            and "immutable" in (got.headers.get("cache-control") or "")
+            and got.headers.get("x-fx1-receipt-valid") == "true"
+        )
+        miss = rclient.get("/receipts/" + "f" * 64)
+        out["receipt_fetch_404"] = (
+            miss.status_code == 404 and miss.json().get("code") == "receipt_not_found"
+        )
+        out["receipt_fetch_422_malformed"] = rclient.get("/receipts/zzz").status_code == 422
+        nm = rclient.get(f"/receipts/{sha}", headers={"if-none-match": f'"{sha}"'})
+        out["receipt_fetch_conditional_304"] = (
+            nm.status_code == 304
+            and nm.content == b""
+            and nm.headers.get("etag") == f'"{sha}"'
+            and rclient.get(
+                f"/receipts/{sha}", headers={"if-none-match": '"' + "b" * 64 + '"'}
+            ).status_code
+            == 200
+        )
+        # staleness key: a receipt written after the first scan is indexed
+        (rdir / "second.json").write_text(_json.dumps({**good, "receipt_sha256": "b" * 64}))
+        out["receipts_index_refreshes"] = rclient.get("/receipts").json()["count"] == 2
+
+        # --- cited-receipt verification --------------------------------------
+        # With a store mounted, a completion may not footnote evidence the
+        # server cannot produce: unknown or malformed hashes are 422 across
+        # sync, batch, and stream — checked before the breaker/backend call.
+        cite = _TC2(
+            api_mod.create_app(receipts_dir=rdir, backend_resolver=lambda *a, **k: _CleanBackend())
+        )
+        out["cite_resolves_200"] = (
+            cite.post(
+                "/harness/complete",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": [sha],
+                },
+            ).status_code
+            == 200
+        )
+        bad = cite.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "hi"}],
+                "receipt_hashes": ["e" * 64],
+            },
+        )
+        out["cite_unknown_422"] = (
+            bad.status_code == 422 and bad.json().get("code") == "receipt_not_found"
+        )
+        out["cite_malformed_422"] = (
+            cite.post(
+                "/harness/complete",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": ["zzz"],
+                },
+            ).status_code
+            == 422
+        )
+        out["cite_batch_checked"] = (
+            cite.post(
+                "/harness/complete/batch",
+                json={
+                    "backend": "hosted_k3",
+                    "batch": [[{"role": "user", "content": "hi"}]],
+                    "receipt_hashes": ["e" * 64],
+                },
+            ).status_code
+            == 422
+        )
+        out["cite_stream_checked"] = (
+            cite.post(
+                "/harness/complete/stream",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": ["e" * 64],
+                },
+            ).status_code
+            == 422
+        )
+    # No store mounted -> citations stay advisory (nothing to check against).
+    nostore = _TC2(
+        api_mod.create_app(
+            receipts_dir="/nonexistent-receipts-dir-zzz",
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+        )
+    )
+    out["cite_advisory_no_store"] = (
+        nostore.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "hi"}],
+                "receipt_hashes": ["e" * 64],
+            },
+        ).status_code
+        == 200
+    )
+    gone = _TC2(api_mod.create_app(receipts_dir="/nonexistent-receipts-dir-zzz"))
+    out["receipt_fetch_store_unavailable"] = (
+        gone.get("/receipts/" + "a" * 64).status_code == 503
+        and gone.get("/receipts").status_code == 503
+        and gone.get("/receipts/" + "a" * 64).json().get("code") == "receipts_unavailable"
+    )
+
+    # --- auth + headers ---------------------------------------------------------
+    health_resp = client.get("/health")
+    out["health_public"] = health_resp.status_code == 200
+    health = health_resp.json()
+    out["health_no_secrets"] = all(isinstance(v, bool) for v in health["backends"].values()) and (
+        os.environ.get("MOONSHOT_API_KEY", "\x00") not in health_resp.text
+    )
+
+    secured, _ = _client(api_key="k3y-material")
+    out["auth_required_401"] = secured.get("/harness/commands").status_code == 401
+    out["auth_wrong_key_401"] = (
+        secured.get("/harness/commands", headers={"X-API-Key": "wrong"}).status_code == 401
+    )
+    out["auth_accepts_key"] = (
+        secured.get("/harness/commands", headers={"X-API-Key": "k3y-material"}).status_code == 200
+    )
+    out["auth_health_still_public"] = secured.get("/health").status_code == 200
+
+    out["loopback_served"] = client.get("/harness/commands").status_code == 200
+    from fastapi.testclient import TestClient as _TC
+
+    # A non-loopback client with no key configured is refused outright.
+    remote_client = _TC(client.app, client=("203.0.113.7", 9))
+    out["remote_refused_403"] = remote_client.get("/harness/commands").status_code == 403
+
+    out["security_headers"] = all(
+        h in client.get("/health").headers and h in client.get("/harness/commands").headers
+        for h in ("x-content-type-options", "cache-control", "referrer-policy")
+    )
+    big_resp = client.post(
+        "/receipts/verify",
+        content=b" " * ((1 << 20) + 1),
+        headers={"content-type": "application/json"},
+    )
+    out["body_cap_413"] = big_resp.status_code == 413
+
+    # request tracing: X-Request-ID echoes when well-formed, mints otherwise
+    echoed = client.get("/health", headers={"X-Request-ID": "trace-abc.123"})
+    minted = client.get("/health")
+    forged = client.get("/health", headers={"X-Request-ID": "bad\nid\x00inj"})
+    out["request_id_echoed"] = echoed.headers.get("x-request-id") == "trace-abc.123"
+    out["request_id_minted_when_absent"] = (
+        minted.headers.get("x-request-id") is not None and len(minted.headers["x-request-id"]) == 32
+    )
+    out["request_id_malformed_replaced"] = (
+        forged.headers.get("x-request-id") is not None
+        and "\n" not in forged.headers["x-request-id"]
+    )
+    out["request_id_on_error_too"] = (
+        secured.get("/harness/commands").headers.get("x-request-id") is not None
+    )
+    out["request_id_distinct"] = (
+        client.get("/health").headers["x-request-id"]
+        != client.get("/health").headers["x-request-id"]
+    )
+
+    # the response tail is single: body-cap / bad-length errors carry the
+    # same security headers + request id as every other path
+    bad_len = client.post(
+        "/receipts/verify",
+        content=b"{}",
+        headers={"content-length": "abc"},
+    )
+    out["bad_content_length_400"] = bad_len.status_code == 400
+    for label, err in (("cap_413", big_resp), ("bad_len", bad_len)):
+        hdrs = {k.lower(): v for k, v in err.headers.items()}
+        out[f"error_tail_{label}"] = all(
+            hdrs.get(k) is not None
+            for k in (
+                "x-request-id",
+                "x-content-type-options",
+                "cache-control",
+                "referrer-policy",
+            )
+        )
+
+    # --- error envelope: stable machine codes + API version negotiation ----
+    v = client.get("/harness/version")
+    out["version_route_200"] = (
+        v.status_code == 200
+        and v.json()["api_version"] == api_mod.API_VERSION
+        and bool(v.json()["fx1_version"])
+    )
+    from fx1.serve.client import EXPECTED_API_VERSION  # noqa: PLC0415
+    from fx1.serve.contract import API_VERSION as _WIRE_VERSION  # noqa: PLC0415
+
+    out["contract_single_source"] = (
+        api_mod.API_VERSION == _WIRE_VERSION == EXPECTED_API_VERSION == "1"
+    )
+    from fastapi.testclient import TestClient as _CapTC  # noqa: PLC0415
+
+    from fx1.harness import HarnessRole as _HarnessRole  # noqa: PLC0415
+
+    # /harness/capabilities — self-describing feature/limit discovery.
+    cap = client.get("/harness/capabilities")
+    out["capabilities_route_200"] = cap.status_code == 200
+    if cap.status_code == 200:
+        capj = cap.json()
+        out["capabilities_shape"] = all(
+            k in capj for k in ("features", "limits", "backends", "roles", "api_version")
+        )
+        out["capabilities_features"] = all(
+            capj["features"].get(f) is True
+            for f in ("idempotency", "sse", "webhooks", "batch", "jobs", "drain")
+        )
+        out["capabilities_roles_cover_registry"] = set(capj["roles"]) == {
+            str(r) for r in _HarnessRole
+        }
+    else:
+        out["capabilities_shape"] = False
+        out["capabilities_features"] = False
+        out["capabilities_roles_cover_registry"] = False
+    cap_app = api_mod.create_app(max_inflight=7, job_max=33, idem_max=17, rate_limit_rps=50.0)
+    cap2 = _CapTC(cap_app).get("/harness/capabilities").json()
+    out["capabilities_limits_reflect_config"] = (
+        cap2["limits"]["max_inflight"] == 7.0
+        and cap2["limits"]["job_max"] == 33.0
+        and cap2["limits"]["idem_max"] == 17.0
+        and cap2["limits"]["rate_limit_rps"] == 50.0
+    )
+    cap3 = _CapTC(api_mod.create_app(rate_limit_rps=0.0)).get("/harness/capabilities").json()
+    out["capabilities_limiter_disabled_reports_zero"] = cap3["limits"]["rate_limit_rps"] == 0.0
+    out["api_version_header_on_every_response"] = (
+        client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
+        and big_resp.headers.get("x-fx1-api-version") == api_mod.API_VERSION
+        and bad_len.headers.get("x-fx1-api-version") == api_mod.API_VERSION
+    )
+    out["error_code_not_found"] = (
+        client.post("/harness/runs", json={"command": "pwn"}).json()["code"] == "not_found"
+    )
+    out["error_code_validation"] = (
+        client.post("/harness/runs", json={"command": 1}).json()["code"] == "validation"
+    )
+    out["error_code_unauthorized"] = (
+        secured.get("/harness/commands").json()["code"] == "unauthorized"
+    )
+    out["error_code_forbidden"] = (
+        remote_client.get("/harness/commands").json()["code"] == "forbidden"
+    )
+    out["error_code_too_large"] = big_resp.json()["code"] == "too_large"
+    out["error_code_bad_request"] = bad_len.json()["code"] == "bad_request"
+    client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "ec-conflict"},
+    )
+    out["error_code_conflict"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--x"]},
+            headers={"Idempotency-Key": "ec-conflict"},
+        ).json()["code"]
+        == "conflict"
+    )
+    out["error_code_honesty_gate"] = rd.json()["code"] == "honesty_gate"
+    out["stream_error_code_inband"] = err_frames[0]["code"] == "backend_failure"
+    cap_app = api_mod.create_app(max_inflight=1)
+    cap_client = _TC2(cap_app)
+    cap_app.state.inflight_slots.acquire()
+    try:
+        capped = cap_client.post("/harness/runs", json={"command": "doctor"})
+        out["error_code_over_capacity"] = (
+            capped.status_code == 503 and capped.json()["code"] == "over_capacity"
+        )
+    finally:
+        cap_app.state.inflight_slots.release()
+
+    # one structured access line per request, keyed by the request id
+    import logging  # noqa: PLC0415
+
+    from fx1.serve.api import logger as api_logger  # noqa: PLC0415
+
+    class _Capture(logging.Handler):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lines: list[str] = []
+
+        def emit(self, record: logging.LogRecord) -> None:
+            self.lines.append(record.getMessage())
+
+    cap_log = _Capture()
+    api_logger.addHandler(cap_log)
+    try:
+        client.get("/health", headers={"X-Request-ID": "rid-probe-1"})
+    finally:
+        api_logger.removeHandler(cap_log)
+    line = next((ln for ln in cap_log.lines if "rid-probe-1" in ln), "")
+    out["access_log_emitted"] = (
+        "method=GET" in line
+        and "path=/health" in line
+        and "status=200" in line
+        and "rid=rid-probe-1" in line
+        and "elapsed_ms=" in line
+    )
+
+    # /metrics: ops snapshot — counters from the requests above (this very
+    # request is recorded too, so totals are strictly increasing)
+    m_before = client.get("/metrics")
+    out["metrics_200"] = m_before.status_code == 200
+    m = m_before.json()
+    out["metrics_shape"] = all(
+        k in m
+        for k in (
+            "uptime_s",
+            "requests_total",
+            "errors_total",
+            "by_status",
+            "inflight",
+            "inflight_watermark",
+            "max_inflight",
+        )
+    )
+    out["metrics_counts_requests"] = m["requests_total"] >= 10 and "200" in m["by_status"]
+    out["metrics_counts_errors"] = (
+        m["errors_total"] >= 2 and "413" in m["by_status"] and "400" in m["by_status"]
+    )
+    out["metrics_inflight_idle"] = m["inflight"] == 0 and m["inflight_watermark"] >= 1
+    out["metrics_config"] = m["max_inflight"] == 16 and m["uptime_s"] >= 0.0
+    m2 = client.get("/metrics").json()
+    out["metrics_monotone"] = m2["requests_total"] > m["requests_total"]
+    out["metrics_secured_401"] = secured.get("/metrics").status_code == 401
+
+    # Prometheus text exposition: content-negotiated /metrics for a
+    # scrape endpoint — Accept: text/plain (or ?format=prom) renders the
+    # 0.0.4 text format; unknown formats are a clean 422; the secured
+    # surface keeps requiring auth.
+    prom = client.get("/metrics", headers={"Accept": "text/plain"})
+    body_text = prom.text
+    out["prom_accept_negotiated"] = prom.status_code == 200 and prom.headers[
+        "content-type"
+    ].startswith("text/plain")
+    out["prom_requests_series"] = (
+        "# TYPE fx1_requests_total counter" in body_text
+        and 'fx1_requests_total{status="200"}' in body_text
+    )
+    out["prom_gauges"] = (
+        "# TYPE fx1_inflight gauge" in body_text
+        and "fx1_draining 0" in body_text
+        and "# TYPE fx1_rate_limited_total counter" in body_text
+        and 'fx1_jobs{status="succeeded"}' in body_text
+    )
+    prom_q = client.get("/metrics?format=prometheus")
+    out["prom_query_param"] = prom_q.status_code == 200 and "fx1_uptime_seconds" in prom_q.text
+    out["prom_format_422"] = client.get("/metrics?format=xml").status_code == 422
+    out["prom_secured_401"] = (
+        secured.get("/metrics", headers={"Accept": "text/plain"}).status_code == 401
+    )
+    prom_json = client.get("/metrics", headers={"Accept": "application/json"})
+    out["prom_json_default"] = prom_json.status_code == 200 and prom_json.headers[
+        "content-type"
+    ].startswith("application/json")
+
+    # --- usage accounting -------------------------------------------------
+    # Token counts the endpoint reports ride the response — per-call on
+    # sync complete, batch-level delta on batch, absent (not fabricated)
+    # when the backend is silent.
+    class _UsageBackend(_CleanBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.last_usage: dict[str, int] | None = None
+            self.total_usage: dict[str, int] = {}
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+            self.last_usage = usage
+            for k, v in usage.items():
+                self.total_usage[k] = self.total_usage.get(k, 0) + v
+            return super().complete(messages)
+
+    ube = _UsageBackend()
+    uapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: ube))
+    u_ok = uapp.post(
+        "/harness/complete", json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]}
+    )
+    out["usage_reported_on_sync"] = u_ok.status_code == 200 and u_ok.json()["usage"] == {
+        "prompt_tokens": 3,
+        "completion_tokens": 5,
+        "total_tokens": 8,
+    }
+    u_batch = uapp.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [
+                [{"role": "u", "content": "a"}],
+                [{"role": "u", "content": "b"}],
+            ],
+        },
+    )
+    out["usage_batch_total_is_delta"] = u_batch.status_code == 200 and u_batch.json()[
+        "usage_total"
+    ] == {"prompt_tokens": 6, "completion_tokens": 10, "total_tokens": 16}
+    silent = batch_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["usage_absent_when_backend_silent"] = (
+        silent.status_code == 200 and silent.json()["usage"] is None
+    )
+    # The pure extractor: non-int values drop, missing/malformed → None.
+    import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
+    out["usage_extract_filters"] = (
+        _be_mod._extract_usage({"usage": {"prompt_tokens": 3.0, "weird": "no", "neg": -1}})
+        == {"prompt_tokens": 3, "neg": -1}
+        and _be_mod._extract_usage({}) is None
+        and _be_mod._extract_usage({"usage": "broken"}) is None
+    )
+
+    # --- completion observability ------------------------------------------
+    # Per-backend outcome counters + a latency histogram over attempted
+    # model calls — the uapp backend served 1 sync + 2 batch items above.
+    um = uapp.get("/metrics").json()
+    out["metrics_complete_counters"] = um["complete"]["byok"]["ok"] == 3
+    up = uapp.get("/metrics", headers={"Accept": "text/plain"}).text
+    out["metrics_latency_histogram"] = (
+        'fx1_complete_total{backend="byok",outcome="ok"} 3' in up
+        and 'fx1_complete_latency_ms_count{backend="byok"} 3' in up
+        and 'fx1_complete_latency_ms_bucket{backend="byok",le="+Inf"} 3' in up
+    )
+    # gate refusals land in the error outcome, not silently dropped
+    dm = dirty.get("/metrics").json()
+    out["metrics_complete_error_outcome"] = dm["complete"]["byok"]["error"] >= 1
+
+    _probe_backend_probes(client, uapp, dirty, api_mod, out)
+    return out
+
+
+def _probe_backend_probes(
+    client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
+) -> None:
+    import json as _json  # noqa: PLC0415
+
+    from fastapi.testclient import TestClient as _TC2  # noqa: PLC0415
+
+    # Deep health through the real resolver: a live call, not config flags.
+    # Bypasses the breaker, never feeds it; verdicts land under
+    # ``probe:<name>`` so monitoring never pollutes completion SLOs.
+    p_ok = uapp.post("/harness/backends/byok/probe", json={})
+    pj = p_ok.json()
+    out["probe_ok"] = (
+        p_ok.status_code == 200
+        and pj["ok"] is True
+        and pj["model"] == "fake-0"
+        and pj["latency_ms"] >= 0
+    )
+    p_dirty = dirty.post("/harness/backends/byok/probe", json={})
+    out["probe_honesty_refusal"] = (
+        p_dirty.status_code == 200
+        and p_dirty.json()["ok"] is False
+        and p_dirty.json()["error_class"] == "honesty_refusal"
+    )
+
+    # unconfigured backend is a verdict, not a wire fault
+    def _unconfigured(*a: Any, **k: Any) -> Any:
+        raise RuntimeError("BYOK backend is not configured")
+
+    unconf = _TC2(api_mod.create_app(backend_resolver=_unconfigured))
+    p_none = unconf.post("/harness/backends/byok/probe", json={})
+    out["probe_unconfigured_verdict"] = (
+        p_none.status_code == 200
+        and p_none.json()["ok"] is False
+        and p_none.json()["error_class"] == "backend_unavailable"
+    )
+    out["probe_unknown_422"] = (
+        client.post("/harness/backends/bogus/probe", json={}).status_code == 422
+    )
+    pm = uapp.get("/metrics").json()
+    out["probe_own_series"] = pm["complete"]["probe:byok"]["ok"] >= 1 and (
+        "byok" in pm["complete"] and pm["complete"]["byok"]["ok"] == 3
+    )
+
+    # gate pre-flight: the honesty gate callable over the wire — a verdict,
+    # not a model call. Stays up during drain, never metered.
+    g_ok = client.post("/harness/gate/check", json={"text": "the result used bootstrap intervals"})
+    g_bad = client.post("/harness/gate/check", json={"text": "we report Sharpe 2.1 out of sample"})
+    out["gate_check_clean"] = g_ok.status_code == 200 and g_ok.json()["ok"] is True
+    out["gate_check_refusal"] = (
+        g_bad.status_code == 200
+        and g_bad.json()["ok"] is False
+        and "forbidden" in (g_bad.json()["error"] or "")
+    )
+    out["gate_check_oversize_422"] = (
+        client.post("/harness/gate/check", json={"text": "x" * 262145}).status_code == 422
+    )
+
+    # usage ledger: backend-reported tokens accumulate per series; the
+    # usage_calls counter separates "silent provider" from "zero bill".
+    m2 = uapp.get("/metrics").json()["complete"]
+    out["usage_metrics_tokens"] = (
+        m2["byok"]["total_tokens"] >= 24
+        and m2["byok"]["usage_calls"] >= 3
+        and m2["byok"]["prompt_tokens"] >= 9
+        and m2["probe:byok"]["total_tokens"] >= 8
+        and m2["probe:byok"]["usage_calls"] == 1
+    )
+    prom = uapp.get("/metrics", params={"format": "prom"}).text
+    out["usage_prom_lines"] = (
+        'fx1_complete_tokens_total{backend="byok",kind="total"}' in prom
+        and 'fx1_complete_usage_calls_total{backend="byok"}' in prom
+    )
+
+    # streaming usage: a backend that reports usage at stream end lands it
+    # on the final SSE frame AND the metrics ledger.
+    class _StreamUsage:
+        def __init__(self) -> None:
+            self.last_usage: dict[str, int] | None = None
+            self._model = "stream-usage-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "hello"
+
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            yield "he"
+            yield "llo"
+            self.last_usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+
+    sapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _StreamUsage()))
+    s_ok = sapp.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in s_ok.text.splitlines()
+        if ln.startswith("data: ") and ln[len("data: ") :] != "[DONE]"
+    ]
+    s_final = next(f for f in frames if f.get("type") == "final")
+    s_m = sapp.get("/metrics").json()["complete"]["byok"]
+    out["stream_usage_final_frame"] = s_final.get("usage") == {
+        "prompt_tokens": 3,
+        "completion_tokens": 5,
+        "total_tokens": 8,
+    }
+    out["stream_usage_metrics"] = s_m["total_tokens"] == 8 and s_m["usage_calls"] == 1
+
+    # wire parser: a provider chunk carrying ``usage`` (incl. one with no
+    # ``choices`` at all) lands in the out-box; malformed stays fatal.
+    class _FakeResp:
+        def __init__(self, lines: list[bytes]) -> None:
+            self._lines = lines
+
+        def __enter__(self) -> Any:
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            return None
+
+        def __iter__(self) -> Any:
+            return iter(self._lines)
+
+    import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
+    wire_frames = [
+        b'data: {"choices":[{"delta":{"content":"he"}}]}\n',
+        b'data: {"usage":{"prompt_tokens":7,"completion_tokens":1,"total_tokens":8}}\n',
+        b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
+        b"data: [DONE]\n",
+    ]
+    import urllib.request as _urlreq  # noqa: PLC0415
+
+    orig_urlopen = _urlreq.urlopen
+    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
+    try:
+        box: list[dict[str, int]] = []
+        toks = list(
+            _be_mod._openai_chat_stream(
+                "http://wire.test",
+                model="m",
+                messages=[],
+                timeout_s=1.0,
+                api_key=None,
+                label="t",
+                usage_out=box,
+            )
+        )
+    finally:
+        _urlreq.urlopen = orig_urlopen
+    out["stream_usage_parser"] = toks == ["he"] and box == [
+        {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
+    ]
+
+    # last-probe cache: GET /harness/backends surfaces the most recent
+    # verdict so a scrape reads deep health without spending a live call.
+    b_u = uapp.get("/harness/backends").json()["byok"]["last_probe"]
+    b_d = dirty.get("/harness/backends").json()["byok"]["last_probe"]
+    fresh = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: None))
+    out["backends_last_probe"] = (
+        b_u is not None
+        and b_u["ok"] is True
+        and b_u["checked_at"] > 0
+        and b_d is not None
+        and b_d["ok"] is False
+        and b_d["error_class"] == "honesty_refusal"
+        and fresh.get("/harness/backends").json()["byok"]["last_probe"] is None
+    )
+
+    # completion log: every gated call leaves a fetchable record (hashes,
+    # usage, verdict) — the harness's own calls are auditable evidence.
+    import hashlib as _hl  # noqa: PLC0415
+
+    c_res = uapp.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    c_id = c_res.json()["completion_id"]
+    c_rec = uapp.get(f"/harness/completions/{c_id}")
+    want_p = _hl.sha256(
+        _json.dumps([{"role": "u", "content": "x"}], sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    want_o = _hl.sha256(b"clean:x").hexdigest()
+    out["completions_logged_sync"] = (
+        c_res.status_code == 200
+        and c_res.headers.get("x-fx1-completion-id") == c_id
+        and c_rec.status_code == 200
+        and c_rec.json()["ok"] is True
+        and c_rec.json()["prompt_sha256"] == want_p
+        and c_rec.json()["output_sha256"] == want_o
+        and c_rec.json()["usage"] == {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+    )
+    out["completions_get_404"] = (
+        uapp.get("/harness/completions/00000000000000000000000000000000").status_code == 404
+    )
+    d_fail = [
+        r
+        for r in dirty.get("/harness/completions", params={"backend": "byok"}).json()["items"]
+        if r["ok"] is False
+    ]
+    out["completions_logged_failure"] = (
+        len(d_fail) >= 1
+        and d_fail[0]["error_class"] == "honesty_refusal"
+        and d_fail[0]["output_sha256"] is None
+    )
+    out["completions_list_filter"] = (
+        uapp.get("/harness/completions", params={"backend": "byok"}).json()["count"] >= 4
+        and uapp.get("/harness/completions", params={"backend": "local_fx1"}).json()["count"] == 0
+        and uapp.get("/harness/completions", params={"limit": 0}).status_code == 422
+    )
+
+    s_final_id = s_final.get("completion_id")
+    s_rec = sapp.get(f"/harness/completions/{s_final_id}")
+    out["completions_logged_stream"] = (
+        isinstance(s_final_id, str)
+        and s_rec.status_code == 200
+        and s_rec.json()["ok"] is True
+        and s_rec.json()["output_sha256"] == _hl.sha256(b"hello").hexdigest()
+    )
+
+    b_res = uapp.post(
+        "/harness/complete/batch",
+        json={"backend": "byok", "batch": [[{"role": "u", "content": "q"}]]},
+    ).json()
+    b_cid = b_res["results"][0]["completion_id"]
+    b_rec = uapp.get(f"/harness/completions/{b_cid}")
+    out["completions_logged_batch"] = (
+        isinstance(b_cid, str)
+        and b_rec.status_code == 200
+        and b_rec.json()["ok"] is True
+        and b_rec.json()["usage"] is None
+    )
+
+    # the ring is bounded and newest-first — oldest records evict at cap
+    cap3 = api_mod._CompletionLog(cap=3)
+    for i in range(5):
+        cap3.append(
+            api_mod.CompletionRecord(
+                completion_id=f"c{i}",
+                backend="byok",
+                ok=True,
+                latency_ms=0.0,
+                at=float(i),
+                prompt_sha256="p",
+            )
+        )
+    out["completions_ring_cap"] = (
+        cap3.get("c0") is None
+        and len(cap3.latest(10, None)) == 3
+        and [r.completion_id for r in cap3.latest(10, None)] == ["c4", "c3", "c2"]
+    )
+
+    # --- sealed per-call receipt export -------------------------------------
+    # one logged call exports as a sealed fx1_completion_record.v1 doc:
+    # seal re-derives, verify_receipt accepts it, tampering the record's
+    # output hash breaks the seal, and exports are byte-deterministic.
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        verify_receipt_payload as _vrp,
+    )
+    from quant_fund.utils.hashing import (  # noqa: PLC0415
+        canonical_json_bytes as _cjb,
+    )
+    from quant_fund.utils.hashing import (
+        hash_bytes as _hb,
+    )
+
+    rc = uapp.get(f"/harness/completions/{c_id}/receipt")
+    rc_doc = rc.json()
+    out["completion_receipt_export"] = (
+        rc.status_code == 200
+        and rc_doc["kind"] == "fx1_completion_record"
+        and rc_doc["schema"] == "fx1_completion_record.v1"
+        and rc_doc["record"]["completion_id"] == c_id
+        and rc_doc["receipt_sha256"]
+        == _hb(_cjb({k: v for k, v in rc_doc.items() if k != "receipt_sha256"}))
+    )
+    out["completion_receipt_verifies"] = _vrp(rc_doc)["valid"] is True
+    out["completion_receipt_verify_route"] = (
+        uapp.post("/receipts/verify", json={"receipt": rc_doc}).json().get("valid") is True
+    )
+    out["completion_receipt_deterministic"] = (
+        uapp.get(f"/harness/completions/{c_id}/receipt").json() == rc_doc
+    )
+    tampered_rec = _json.loads(_json.dumps(rc_doc))
+    tampered_rec["record"]["output_sha256"] = "0" * 64
+    out["completion_receipt_tamper"] = _vrp(tampered_rec)["valid"] is False
+    out["completion_receipt_404"] = (
+        uapp.get("/harness/completions/00000000000000000000000000000000/receipt").status_code == 404
+    )
+
+    # --- sealed job receipt -------------------------------------------------
+    # a terminal job exports as fx1_job_record.v1: streams digested (never
+    # content), seal re-derives, verify route accepts, tampering breaks.
+    from fx1.harness import Harness as _Harness  # noqa: PLC0415
+
+    jr = _TC2(
+        api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), ""))
+        )
+    )
+    j_id = jr.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    for _ in range(500):
+        if jr.get(f"/harness/jobs/{j_id}").json()["status"] in (
+            "succeeded",
+            "failed",
+            "cancelled",
+        ):
+            break
+        time.sleep(0.01)
+    jr_res = jr.get(f"/harness/jobs/{j_id}/receipt")
+    jr_doc = jr_res.json()
+    want_stdout = _hl.sha256(b"ran:doctor").hexdigest()
+    out["job_receipt_export"] = (
+        jr_res.status_code == 200
+        and jr_doc["kind"] == "fx1_job_record"
+        and jr_doc["schema"] == "fx1_job_record.v1"
+        and jr_doc["record"]["job_id"] == j_id
+        and jr_doc["record"]["status"] == "succeeded"
+        and jr_doc["record"]["result"]["stdout_sha256"] == want_stdout
+        and "stdout" not in jr_doc["record"]["result"]
+        and jr_doc["receipt_sha256"]
+        == _hb(_cjb({k: v for k, v in jr_doc.items() if k != "receipt_sha256"}))
+    )
+    out["job_receipt_verifies"] = (
+        _vrp(jr_doc)["valid"] is True
+        and jr.post("/receipts/verify", json={"receipt": jr_doc}).json().get("valid") is True
+    )
+    out["job_receipt_deterministic"] = jr.get(f"/harness/jobs/{j_id}/receipt").json() == jr_doc
+    tampered_job = _json.loads(_json.dumps(jr_doc))
+    tampered_job["record"]["status"] = "failed"
+    out["job_receipt_tamper"] = _vrp(tampered_job)["valid"] is False
+    out["job_receipt_404"] = jr.get("/harness/jobs/nope/receipt").status_code == 404
+
+    # --- sampling controls --------------------------------------------------
+    # declared decode fields resolve server-side into one wire dict: the
+    # backend receives a SamplingParams carrying exactly what was declared,
+    # the response/record echo the resolved set, and the unpinned default
+    # stays temperature-pinned at 0.0 (eval determinism).
+    from fx1.serve.backends import SamplingParams as _SP  # noqa: PLC0415
+
+    class _SamplingSpy:
+        def __init__(self) -> None:
+            self.seen: _SP | None = None
+            self._model = "sampling-spy-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.seen = sampling
+            return "clean:x"
+
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            self.seen = sampling
+            yield "clean:x"
+
+    spy = _SamplingSpy()
+    sp_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: spy))
+    sp_res = sp_app.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "u", "content": "x"}],
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 64,
+            "seed": 17,
+        },
+    )
+    want_fields = {"temperature": 0.7, "top_p": 0.9, "max_tokens": 64, "seed": 17}
+    sp_rec = sp_app.get(f"/harness/completions/{sp_res.json()['completion_id']}")
+    out["sampling_sync_resolved"] = (
+        sp_res.status_code == 200
+        and sp_res.json()["sampling"] == want_fields
+        and isinstance(spy.seen, _SP)
+        and spy.seen.body_fields() == want_fields
+        and sp_rec.json()["sampling"] == want_fields
+    )
+    spy.seen = None
+    d_res = sp_app.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["sampling_default_pin"] = (
+        d_res.status_code == 200
+        and d_res.json()["sampling"] == {"temperature": 0.0}
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.0}
+    )
+    out["sampling_field_422"] = all(
+        sp_app.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "u", "content": "x"}],
+                k: v,
+            },
+        ).status_code
+        == 422
+        for k, v in (
+            ("temperature", 2.5),
+            ("top_p", 0.0),
+            ("max_tokens", 0),
+            ("seed", -1),
+        )
+    )
+    spy.seen = None
+    sb_res = sp_app.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "u", "content": "q"}]],
+            "temperature": 0.3,
+            "seed": 7,
+        },
+    )
+    out["sampling_batch_resolved"] = (
+        sb_res.status_code == 200
+        and sb_res.json()["sampling"] == {"temperature": 0.3, "seed": 7}
+        and sb_res.json()["results"][0]["ok"] is True
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.3, "seed": 7}
+    )
+    spy.seen = None
+    ss_res = sp_app.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "u", "content": "x"}],
+            "temperature": 0.2,
+            "max_tokens": 8,
+        },
+    )
+    ss_final = next(
+        _json.loads(ln[len("data: ") :])
+        for ln in ss_res.text.splitlines()
+        if ln.startswith("data: ") and _json.loads(ln[len("data: ") :]).get("type") == "final"
+    )
+    out["sampling_stream_final_frame"] = (
+        ss_res.status_code == 200
+        and ss_final.get("sampling") == {"temperature": 0.2, "max_tokens": 8}
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.2, "max_tokens": 8}
+    )
+
+    # wire level: declared fields reach the provider body; undeclared knobs
+    # (seed/top_p/max_tokens) are never sent to a backend that got no request
+    # for them — and the temperature pin still ships at 0.0.
+    captured_wire: dict[str, Any] = {}
+
+    class _WireResp:
+        def read(self) -> bytes:
+            return _json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+
+        def __enter__(self) -> Any:
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            return None
+
+    def _wire_urlopen(req: Any, **kw: Any) -> Any:
+        captured_wire["body"] = _json.loads(req.data.decode())
+        return _WireResp()
+
+    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
+    try:
+        _be_mod._openai_chat_complete(
+            "http://wire.test",
+            model="m",
+            messages=[{"role": "user", "content": "q"}],
+            timeout_s=1.0,
+            api_key=None,
+            label="t",
+            sampling=_SP(temperature=0.5, top_p=0.95, max_tokens=32, seed=42),
+        )
+        full_body = dict(captured_wire["body"])
+        _be_mod._openai_chat_complete(
+            "http://wire.test",
+            model="m",
+            messages=[{"role": "user", "content": "q"}],
+            timeout_s=1.0,
+            api_key=None,
+            label="t",
+        )
+        default_body = dict(captured_wire["body"])
+    finally:
+        _urlreq.urlopen = orig_urlopen
+    out["sampling_wire_declared"] = (
+        full_body.get("temperature") == 0.5
+        and full_body.get("top_p") == 0.95
+        and full_body.get("max_tokens") == 32
+        and full_body.get("seed") == 42
+        and default_body
+        == {
+            "model": "m",
+            "messages": [{"role": "user", "content": "q"}],
+            "temperature": 0.0,
+        }
+    )
+
+    # --- eval submissions ---------------------------------------------------
+    # Evals are jobs: submit → poll → terminal record → sealed receipt.
+    # The model under test is the resolved backend chain, metered under
+    # ``eval:{suite}:{backend}``; the decode pin ({"temperature": 0.0}) is
+    # stamped on the record.
+    import threading as _threading  # noqa: PLC0415
+
+    class _EvalBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+            self.calls = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            return "clean:yes"
+
+    eval_backend = _EvalBackend()
+    eval_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend))
+    ev_sub = eval_app.post(
+        "/harness/evals", json={"suite": "tooluse", "backend": "byok", "seed": 0}
+    )
+    ev_j = ev_sub.json()
+    ev_id = ev_j.get("eval_id", "")
+    out["eval_submit_202"] = (
+        ev_sub.status_code == 202
+        and ev_j.get("status") in ("queued", "running")
+        and ev_j.get("replayed") is False
+        and bool(ev_id)
+        and ev_sub.headers.get("location") == f"/harness/evals/{ev_id}"
+    )
+
+    def _wait_eval(c: Any, eid: str, tries: int = 200) -> dict[str, Any]:
+        st: dict[str, Any] = {}
+        for _i in range(tries):
+            st = c.get(f"/harness/evals/{eid}").json()
+            if st.get("status") in ("succeeded", "failed", "cancelled"):
+                break
+            time.sleep(0.02)
+        return st
+
+    ev_rec = _wait_eval(eval_app, ev_id)
+    out["eval_terminal_succeeded"] = (
+        ev_rec.get("status") == "succeeded" and ev_rec.get("error") is None
+    )
+    out["eval_report_serialized"] = isinstance(ev_rec.get("report"), dict) and bool(
+        ev_rec["report"]
+    )
+    out["eval_sampling_pin"] = ev_rec.get("sampling") == {"temperature": 0.0}
+    out["eval_backend_recorded"] = ev_rec.get("backend") == "byok" and isinstance(
+        ev_rec.get("attempts"), list
+    )
+    out["eval_model_metered"] = eval_backend.calls > 0
+    pm_eval = eval_app.get("/metrics").json()
+    out["eval_metric_key"] = (
+        pm_eval["complete"].get("eval:tooluse:byok", {}).get("latency_count", 0) > 0
+    )
+    ev_receipt = eval_app.get(f"/harness/evals/{ev_id}/receipt")
+    ev_rcpt = ev_receipt.json() if ev_receipt.status_code == 200 else {}
+    out["eval_receipt_200"] = (
+        ev_receipt.status_code == 200
+        and ev_rcpt.get("kind") == "fx1_eval_record"
+        and ev_rcpt.get("schema") == "fx1_eval_record.v1"
+        and ev_rcpt.get("record", {}).get("eval_id") == ev_id
+        and ev_rcpt["record"].get("status") == "succeeded"
+        and ev_rcpt.get("receipt_sha256")
+        == _hb(_cjb({k: v for k, v in ev_rcpt.items() if k != "receipt_sha256"}))
+    )
+    out["eval_receipt_verifies"] = (
+        bool(ev_rcpt)
+        and _vrp(ev_rcpt)["valid"] is True
+        and eval_app.post("/receipts/verify", json={"receipt": ev_rcpt}).json().get("valid") is True
+    )
+    tampered_ev = _json.loads(_json.dumps(ev_rcpt))
+    tampered_ev["record"]["status"] = "cancelled"
+    out["eval_receipt_tamper_breaks"] = _vrp(tampered_ev)["valid"] is False
+    ev_list = eval_app.get("/harness/evals?suite=tooluse&status=succeeded")
+    ev_list_j = ev_list.json()
+    out["eval_list_filters"] = (
+        ev_list.status_code == 200
+        and ev_list_j["total"] >= 1
+        and all(
+            r["suite"] == "tooluse" and r["status"] == "succeeded" for r in ev_list_j["records"]
+        )
+    )
+    ev_list_all = eval_app.get("/harness/evals")
+    out["eval_list_all"] = ev_list_all.json()["total"] >= 1
+
+    # Idempotency: same key+body replays, same key+different body 409s.
+    key = "eval-idem-probe"
+    hdrs = {"Idempotency-Key": key}
+    body = {"suite": "retrieval", "backend": "byok", "seed": 1}
+    idem1 = eval_app.post("/harness/evals", json=body, headers=hdrs)
+    idem2 = eval_app.post("/harness/evals", json=body, headers=hdrs)
+    idem3 = eval_app.post(
+        "/harness/evals",
+        json={**body, "seed": 2},
+        headers=hdrs,
+    )
+    out["eval_idem_replay"] = (
+        idem1.status_code == 202
+        and idem2.status_code == 202
+        and idem2.json()["eval_id"] == idem1.json()["eval_id"]
+        and idem2.json()["replayed"] is True
+        and idem3.status_code == 409
+    )
+    _wait_eval(eval_app, idem1.json()["eval_id"])
+
+    # Contract guards: unknown suite 422, judge on a non-judge suite 422,
+    # judge_byok without judge_backend='byok' 422, unknown eval id 404,
+    # receipt on a non-terminal record 409, cancel on queued 200.
+    out["eval_unknown_suite_422"] = (
+        eval_app.post("/harness/evals", json={"suite": "bogus", "backend": "byok"}).status_code
+        == 422
+    )
+    out["eval_judge_on_nonjudge_422"] = (
+        eval_app.post(
+            "/harness/evals",
+            json={"suite": "tooluse", "backend": "byok", "judge_backend": "hosted_k3"},
+        ).status_code
+        == 422
+    )
+    out["eval_judge_byok_misbind_422"] = (
+        eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "capability",
+                "backend": "byok",
+                "judge_backend": "hosted_k3",
+                "judge_byok": {"base_url": "http://x", "api_key": "k", "model": "m"},
+            },
+        ).status_code
+        == 422
+    )
+    out["eval_unknown_404"] = eval_app.get("/harness/evals/nope").status_code == 404
+
+    # Cooperative cancel of a queued eval + non-terminal receipt 409:
+    # occupy the single executor worker without holding an inflight slot
+    # (slots == workers) — a slot-free sleeper leaves the submission's
+    # semaphore acquire free while its _exec sits queued behind the sleeper.
+    hold_ev = _threading.Event()
+    qapp_ev = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+    qc2 = _TC2(qapp_ev)
+    qapp_ev.state.jobs_executor.submit(lambda: hold_ev.wait(timeout=20))
+    be_id = qc2.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
+        "eval_id"
+    ]
+    out["eval_queues_when_workers_busy"] = (
+        qc2.get(f"/harness/evals/{be_id}").json()["status"] == "queued"
+    )
+    out["eval_receipt_nonterminal_409"] = (
+        qc2.get(f"/harness/evals/{be_id}/receipt").status_code == 409
+    )
+    canc = qc2.delete(f"/harness/evals/{be_id}")
+    out["eval_cancel_queued_200"] = canc.status_code == 200 and canc.json()["status"] == "cancelled"
+    hold_ev.set()
+    out["eval_cancelled_never_runs"] = qc2.get(f"/harness/evals/{be_id}").json()["report"] is None
+
+    # Cancel on a running eval is 409 — suite runners have no kill handle.
+    # The gate event is set before wait expires so the suite completes.
+    gate_ev = _threading.Event()
+
+    class _BlockEvalBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            gate_ev.wait(timeout=30)
+            return "clean:yes"
+
+    gate_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BlockEvalBackend()))
+    g1 = gate_app.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
+        "eval_id"
+    ]
+    for _i in range(200):
+        if gate_app.get(f"/harness/evals/{g1}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    out["eval_cancel_running_409"] = gate_app.delete(f"/harness/evals/{g1}").status_code == 409
+    gate_ev.set()
+    _wait_eval(gate_app, g1)
+
+    # Judge suites meter the grader under its own key.
+    class _JudgeEvalBackend:
+        def __init__(self) -> None:
+            self._model = "judge-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "A"
+
+    def _judge_resolver(name: str, *a: Any, **k: Any) -> Any:
+        return _JudgeEvalBackend() if name == "hosted_k3" else eval_backend
+
+    judge_app = _TC2(api_mod.create_app(backend_resolver=_judge_resolver))
+    jsub = judge_app.post(
+        "/harness/evals",
+        json={
+            "suite": "capability",
+            "backend": "byok",
+            "seed": 0,
+            "judge_backend": "hosted_k3",
+        },
+    )
+    jrec = _wait_eval(judge_app, jsub.json()["eval_id"])
+    pm_judge = judge_app.get("/metrics").json()
+    out["eval_judge_metered"] = (
+        jrec.get("status") == "succeeded"
+        and pm_judge["complete"].get("eval:capability:judge:hosted_k3", {}).get("latency_count", 0)
+        > 0
+    )
+    out["eval_capabilities_lists_suites"] = (
+        "tooluse" in eval_app.get("/harness/capabilities").json()["eval_suites"]
+    )
+
+    # --- eval callbacks: the job webhook contract on the eval surface -----
+    # A terminal eval POSTs its record to callback_url (HMAC-signed when a
+    # secret is given); delivery is best-effort and lands on the record.
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    _ev_hits: list[dict[str, Any]] = []
+    _ev_raw: list[bytes] = []
+    _ev_hdrs: list[dict[str, str]] = []
+
+    class _EvalHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            n = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(n)
+            _ev_raw.append(raw)
+            _ev_hdrs.append(dict(self.headers.items()))
+            _ev_hits.append(_json.loads(raw))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    ev_srv = ThreadingHTTPServer(("127.0.0.1", 0), _EvalHook)
+    ev_thread = _threading.Thread(target=ev_srv.serve_forever, daemon=True)
+    ev_thread.start()
+    ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
+    import socket as _socket2  # noqa: PLC0415
+
+    _dsock = _socket2.socket()
+    _dsock.bind(("127.0.0.1", 0))
+    _ev_dead_port = _dsock.getsockname()[1]
+    _dsock.close()
+    try:
+        sub_cb = eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "tooluse",
+                "backend": "byok",
+                "callback_url": ev_cb_url,
+                "callback_secret": "ev-whsec",
+            },
+        )
+        ev_cb_id = sub_cb.json()["eval_id"]
+        deadline = time.monotonic() + 10.0
+        st_ev: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_ev = eval_app.get(f"/harness/evals/{ev_cb_id}").json()
+            if st_ev["status"] == "succeeded" and st_ev.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["eval_callback_delivered"] = (
+            sub_cb.status_code == 202
+            and st_ev.get("callback_status") == "delivered"
+            and st_ev.get("callback_url") == ev_cb_url
+            and len(_ev_hits) >= 1
+            and _ev_hits[-1]["eval_id"] == ev_cb_id
+            and _ev_hits[-1]["status"] == "succeeded"
+            and _ev_hits[-1]["suite"] == "tooluse"
+        )
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        sig_h = _ev_hdrs[-1]
+        out["eval_callback_signed_verifies"] = verify_webhook(
+            "ev-whsec",
+            sig_h.get("X-Fx1-Webhook-Timestamp"),
+            sig_h.get("X-Fx1-Webhook-Signature"),
+            _ev_raw[-1],
+        )
+        out["eval_callback_secret_not_echoed"] = (
+            "callback_secret" not in st_ev and b"ev-whsec" not in _ev_raw[-1]
+        )
+        # dead endpoint -> recorded failure on the record, eval unaffected
+        sub_dead = eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "tooluse",
+                "backend": "byok",
+                "callback_url": f"http://127.0.0.1:{_ev_dead_port}/hook",
+            },
+        )
+        ev_dead_id = sub_dead.json()["eval_id"]
+        deadline = time.monotonic() + 20.0
+        st_dead: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_dead = eval_app.get(f"/harness/evals/{ev_dead_id}").json()
+            if (
+                st_dead["status"] == "succeeded"
+                and st_dead.get("callback_status")
+                and st_dead.get("callback_attempts") == 3
+            ):
+                break
+            time.sleep(0.05)
+        out["eval_callback_dead_recorded"] = (
+            st_dead["status"] == "succeeded"
+            and st_dead.get("callback_status") == "failed"
+            and st_dead.get("callback_attempts") == 3
+            and bool(st_dead.get("callback_error"))
+        )
+        # cancelling a queued eval is a terminal transition — it fires too
+        hold_ev2 = _threading.Event()
+        capp = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+        qc3 = _TC2(capp)
+        capp.state.jobs_executor.submit(lambda: hold_ev2.wait(timeout=20))
+        q_cb = qc3.post(
+            "/harness/evals",
+            json={"suite": "tooluse", "backend": "byok", "callback_url": ev_cb_url},
+        ).json()["eval_id"]
+        cx = qc3.delete(f"/harness/evals/{q_cb}")
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and (not _ev_hits or _ev_hits[-1].get("eval_id") != q_cb):
+            time.sleep(0.05)
+        out["eval_callback_fires_on_cancel"] = (
+            cx.status_code == 200
+            and cx.json()["status"] == "cancelled"
+            and cx.json().get("callback_status") == "delivered"
+            and _ev_hits[-1]["eval_id"] == q_cb
+            and _ev_hits[-1]["status"] == "cancelled"
+        )
+        hold_ev2.set()
+        out["eval_callback_bad_url_422"] = (
+            eval_app.post(
+                "/harness/evals",
+                json={
+                    "suite": "tooluse",
+                    "backend": "byok",
+                    "callback_url": "ftp://x/h",
+                },
+            ).status_code
+            == 422
+        )
+        out["eval_callback_secret_no_url_422"] = (
+            eval_app.post(
+                "/harness/evals",
+                json={
+                    "suite": "tooluse",
+                    "backend": "byok",
+                    "callback_secret": "s",
+                },
+            ).status_code
+            == 422
+        )
+    finally:
+        ev_srv.shutdown()
+        ev_srv.server_close()
+
+    # --- OpenAI-compatible ingress ------------------------------------------
+    # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
+    # complete chain — probes pin the envelope, plumbing-through (metering,
+    # completion log, gate), header-based backend/BYOK selection, and the
+    # OpenAI error envelope on every failure class.
+    import json as _json3  # noqa: PLC0415
+
+    class _OiBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+    class _OiDirty:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "The strategy achieved a sharpe of 2.1 on the tape."
+
+    class _OiUsage(_OiBackend):
+        """Same echo backend with a usage channel + param capture — the
+        wire probe for declared params reaching the provider verbatim."""
+
+        last_usage = {"prompt_tokens": 5, "completion_tokens": 4, "total_tokens": 9}
+        seen: SamplingParams | None = None
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.seen = sampling
+            return super().complete(messages, sampling=sampling)
+
+    oi_clean = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    r = oi_clean.get("/v1/models")
+    out["openai_models_200"] = (
+        r.status_code == 200
+        and r.json().get("object") == "list"
+        and {m["id"] for m in r.json()["data"]} == {"fx1", "hosted_k3", "local_fx1", "byok"}
+    )
+
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "ping"}]},
+    )
+    oi = r.json()
+    out["openai_chat_200_envelope"] = (
+        r.status_code == 200
+        and oi.get("object") == "chat.completion"
+        and oi.get("id", "").startswith("chatcmpl-")
+        and oi["choices"][0]["message"]["role"] == "assistant"
+        and oi["choices"][0]["message"]["content"] == "clean:ping"
+        and oi["choices"][0]["finish_reason"] == "stop"
+        and oi.get("system_fingerprint") == "hosted_k3"
+        and oi.get("model") == "fake-0"
+    )
+    oc_cid = r.headers.get("X-Fx1-Completion-Id", "")
+    out["openai_completion_id_header"] = bool(oc_cid)
+    if oc_cid:
+        rl = oi_clean.get(f"/harness/completions/{oc_cid}")
+        out["openai_completion_logged"] = (
+            rl.status_code == 200 and rl.json().get("backend") == "hosted_k3"
+        )
+        rr = oi_clean.get(f"/harness/completions/{oc_cid}/receipt")
+        out["openai_completion_receipt_verifies"] = (
+            rr.status_code == 200 and _vrp(rr.json())["valid"] is True
+        )
+
+    # metering: an OpenAI call is a complete call
+    pre = oi_clean.get("/metrics").json()["complete"].get("hosted_k3", {})
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "m2"}]},
+    )
+    post = oi_clean.get("/metrics").json()["complete"].get("hosted_k3", {})
+    out["openai_metered"] = r.status_code == 200 and post.get("ok", 0) - pre.get("ok", 0) == 1
+
+    # SSE: stream:true → chat.completion.chunk frames, gated text, [DONE]
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "stream me"}],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        },
+    )
+    sframes = [ln for ln in r.text.split("\n\n") if ln.strip()]
+    schunks = [
+        _json3.loads(dln[len("data: ") :])
+        for ln in sframes
+        for dln in ln.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    deltas = [
+        c["choices"][0]["delta"].get("content", "")
+        for c in schunks
+        if c.get("choices") and c["choices"][0]["delta"].get("content")
+    ]
+    out["openai_stream_frames"] = (
+        r.status_code == 200
+        and r.headers.get("content-type", "").startswith("text/event-stream")
+        and all(c.get("object") == "chat.completion.chunk" for c in schunks)
+        and schunks[0]["choices"][0]["delta"].get("role") == "assistant"
+        and "".join(deltas) == "clean:stream me"
+        and schunks[-1]["choices"] == []
+        and "usage" in schunks[-1]
+        and schunks[-2]["choices"][0]["finish_reason"] == "stop"
+        and sframes[-1].strip().endswith("data: [DONE]")
+    )
+
+    # backend selection: X-Fx1-Backend header names the link
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Backend": "byok"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_backend_header"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    # model naming a backend routes there (BYOK headers supply the creds)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Fx1-Byok-Base-Url": "https://provider.example/v1",
+            "X-Fx1-Byok-Api-Key": "sk-fake",
+            "X-Fx1-Byok-Model": "gpt-fake",
+        },
+        json={
+            "model": "byok",
+            "messages": [{"role": "user", "content": "h"}],
+        },
+    )
+    out["openai_model_selects_backend"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    # BYOK headers → byok link; body model is the upstream model
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Fx1-Byok-Base-Url": "https://provider.example/v1",
+            "X-Fx1-Byok-Api-Key": "sk-fake",
+            "X-Fx1-Byok-Model": "gpt-fake",
+        },
+        json={"model": "gpt-4o", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_byok_headers_route_byok"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Byok-Base-Url": "https://provider.example/v1"},
+        json={"model": "x", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_byok_missing_key_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+
+    # fail-closed surface — every rejection in the OpenAI envelope
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "tools": [{"type": "function"}],
+        },
+    )
+    out["openai_tool_shape_422"] = (
+        r.status_code == 422 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+
+    # ---- lane 81: the tools channel ----
+    # A tool-capable link receives the spec verbatim and the envelope
+    # carries the machine call — finish_reason 'tool_calls', content
+    # null (OpenAI's encoding for a call-only turn). A link without
+    # complete_with_tools answers 501, never a silently dropped spec.
+    from fx1.serve.backends import ToolCompletion as _ToolCompletion  # noqa: PLC0415
+
+    class _OiToolBackend:
+        """Tool-capable stub: records the forwarded spec, answers a call.
+        Answers a canned ``logprobs`` payload when the request asks for
+        one — the wire's verbatim echo is what gets probed."""
+
+        def __init__(self) -> None:
+            self._model = "tool-0"
+            self.calls = 0
+            self.seen_tools: list[dict[str, Any]] | None = None
+            self.seen_choice: Any = None
+            self.seen_parallel: bool | None = None
+            self.seen_messages: list[dict[str, Any]] | None = None
+            self.seen_logprobs: bool | None = None
+            self.seen_top_logprobs: int | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return "clean:text"
+
+        def complete_with_tools(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+            tools: list[dict[str, Any]] | None = None,
+            tool_choice: Any = None,
+            parallel_tool_calls: bool | None = None,
+            logprobs: bool | None = None,
+            top_logprobs: int | None = None,
+        ) -> _ToolCompletion:
+            self.calls += 1
+            self.seen_tools = tools
+            self.seen_choice = tool_choice
+            self.seen_parallel = parallel_tool_calls
+            self.seen_messages = [dict(m) for m in messages]
+            self.seen_logprobs = logprobs
+            self.seen_top_logprobs = top_logprobs
+            lp: dict[str, Any] | None = None
+            if logprobs:
+                lp = {
+                    "content": [
+                        {
+                            "token": "x",
+                            "logprob": -0.5,
+                            "bytes": [120],
+                            "top_logprobs": (
+                                [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                                if top_logprobs is not None
+                                else []
+                            ),
+                        }
+                    ]
+                }
+            return _ToolCompletion(
+                content=None,
+                tool_calls=(
+                    {
+                        "id": "call_0",
+                        "type": "function",
+                        "function": {"name": "calc", "arguments": '{"x": 1}'},
+                    },
+                ),
+                finish_reason="tool_calls",
+                logprobs=lp,
+            )
+
+    class _OiLpBackend:
+        """Structured-channel stub answering a text turn with scores —
+        no tool_calls, so the message part exists to carry logprobs."""
+
+        def __init__(self) -> None:
+            self._model = "lp-0"
+            self.seen_logprobs: bool | None = None
+            self.seen_top_logprobs: int | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+        def complete_with_tools(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+            tools: list[dict[str, Any]] | None = None,
+            tool_choice: Any = None,
+            parallel_tool_calls: bool | None = None,
+            logprobs: bool | None = None,
+            top_logprobs: int | None = None,
+        ) -> _ToolCompletion:
+            self.seen_logprobs = logprobs
+            self.seen_top_logprobs = top_logprobs
+            lp: dict[str, Any] | None = None
+            if logprobs:
+                lp = {
+                    "content": [
+                        {
+                            "token": "x",
+                            "logprob": -0.5,
+                            "bytes": [120],
+                            "top_logprobs": (
+                                [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                                if top_logprobs is not None
+                                else []
+                            ),
+                        }
+                    ]
+                }
+            return _ToolCompletion(
+                content=self.complete(messages),
+                tool_calls=None,
+                finish_reason="stop",
+                logprobs=lp,
+            )
+
+    from fx1.serve.backends import EmbeddingResult as _EmbeddingResult  # noqa: PLC0415
+
+    class _OiEmbedBackend:
+        """Embedding-capable stub: records the forwarded fields verbatim
+        and answers a canned ``data[]`` — one item per string in a list
+        input, one item for a bare string or token array. The ``model``
+        echo is the request model suffixed (the provider's own model id),
+        which is what the envelope reports."""
+
+        def __init__(self) -> None:
+            self._model = "emb-chat-pin"  # the link's chat pin — not the wire model
+            self.seen_model: str | None = None
+            self.seen_input: Any = None
+            self.seen_format: str | None = None
+            self.seen_dimensions: int | None = None
+            self.seen_user: str | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+        def embeddings(
+            self,
+            input: Any,  # noqa: A002 — the wire field's own name
+            *,
+            model: str,
+            encoding_format: str | None = None,
+            dimensions: int | None = None,
+            user: str | None = None,
+        ) -> _EmbeddingResult:
+            self.seen_model = model
+            self.seen_input = input
+            self.seen_format = encoding_format
+            self.seen_dimensions = dimensions
+            self.seen_user = user
+            # OpenAI arity: a list of strings or a list of token arrays is
+            # N inputs; a bare string or a flat token array is ONE.
+            n = (
+                len(input)
+                if isinstance(input, list) and input and isinstance(input[0], (str, list))
+                else 1
+            )
+            if encoding_format == "base64":
+                data = tuple(
+                    {"object": "embedding", "index": i, "embedding": "AAE="} for i in range(n)
+                )
+            else:
+                data = tuple(
+                    {
+                        "object": "embedding",
+                        "index": i,
+                        "embedding": [0.1 * (i + 1), 0.2],
+                    }
+                    for i in range(n)
+                )
+            return _EmbeddingResult(
+                data=data,
+                model=f"{model}-v1",
+                usage={"prompt_tokens": 4, "total_tokens": 4},
+            )
+
+    class _OiEmbedBadBackend:
+        """Embedding stub whose provider frame was malformed — the
+        helper's fail-closed raise arrives as RuntimeError → 502."""
+
+        def __init__(self) -> None:
+            self._model = "emb-bad"
+
+        def embeddings(
+            self,
+            input: Any,  # noqa: A002
+            *,
+            model: str,
+            encoding_format: str | None = None,
+            dimensions: int | None = None,
+            user: str | None = None,
+        ) -> _EmbeddingResult:
+            raise RuntimeError("malformed embeddings payload: data is dict, not list")
+
+    oi_tool = _OiToolBackend()
+    oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    oi_lp_b = _OiLpBackend()
+    oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
+    oi_emb_b = _OiEmbedBackend()
+    oi_emb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_emb_b))
+    oi_emb_bad = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiEmbedBadBackend()))
+    tool_spec = {
+        "type": "function",
+        "function": {
+            "name": "calc",
+            "description": "arithmetic",
+            "parameters": {"type": "object", "properties": {"x": {"type": "number"}}},
+        },
+    }
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "calc one"}],
+            "tools": [tool_spec],
+            "tool_choice": "auto",
+            "parallel_tool_calls": False,
+        },
+    )
+    tmsg = (r.json().get("choices") or [{}])[0].get("message", {})
+    out["openai_tools_call_envelope"] = (
+        r.status_code == 200
+        and tmsg.get("content") is None
+        and (tmsg.get("tool_calls") or [{}])[0].get("function", {}).get("name") == "calc"
+        and r.json()["choices"][0].get("finish_reason") == "tool_calls"
+    )
+    out["openai_tools_forwarded_verbatim"] = (
+        oi_tool.seen_tools == [tool_spec]
+        and oi_tool.seen_choice == "auto"
+        and oi_tool.seen_parallel is False
+    )
+    # agent history passes through verbatim — assistant tool_calls and a
+    # role:'tool' output reach the backend's message list unedited
+    tool_hist = [
+        {"role": "user", "content": "q"},
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_9",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": "{}"},
+                }
+            ],
+        },
+        {"role": "tool", "content": "2", "tool_call_id": "call_9"},
+        {"role": "user", "content": "and?"},
+    ]
+    r = oi_tools.post("/v1/chat/completions", json={"model": "fx1", "messages": tool_hist})
+    out["openai_tool_history_passed_verbatim"] = (
+        r.status_code == 200 and oi_tool.seen_messages == tool_hist
+    )
+    out["openai_tool_needs_channel_501"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["openai_tool_role_needs_call_id_400"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "tool", "content": "2"}]},
+        ).status_code
+        == 400
+    )
+    out["openai_tool_calls_wrong_role_400"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "x",
+                        "tool_calls": [
+                            {
+                                "id": "c",
+                                "type": "function",
+                                "function": {"name": "f", "arguments": "{}"},
+                            }
+                        ],
+                    }
+                ],
+            },
+        ).status_code
+        == 400
+    )
+    out["openai_tool_choice_needs_tools_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tool_choice": "auto",
+            },
+        ).status_code
+        == 422
+    )
+    out["openai_tools_over_128_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tools": [tool_spec] * 129,
+            },
+        ).status_code
+        == 422
+    )
+    # legacy function_calling fields stay refused — tools is the only
+    # function-calling grammar the surface honors
+    out["openai_functions_still_refused_422"] = all(
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("functions", [{"name": "f"}]),
+            ("function_call", {"name": "f"}),
+        )
+    )
+    # keyed replay re-emits the same tool_calls envelope byte-identically
+    tk = {"Idempotency-Key": "tool-idem-81"}
+    tbody = {
+        "model": "fx1",
+        "messages": [{"role": "user", "content": "calc"}],
+        "tools": [tool_spec],
+    }
+    tr1 = oi_tools.post("/v1/chat/completions", json=tbody, headers=tk)
+    tr2 = oi_tools.post("/v1/chat/completions", json=tbody, headers=tk)
+    out["openai_tool_idem_replay"] = (
+        tr1.status_code == 200
+        and tr2.status_code == 200
+        and tr1.json() == tr2.json()
+        and tr2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and (tr2.json()["choices"][0]["message"].get("tool_calls") or [{}])[0].get("id") == "call_0"
+    )
+    # the seal binds what shipped — the record's output digest covers
+    # text + the verbatim call list, so a stripped tool_calls can't
+    # pass under the same receipt
+    import hashlib as _hl_t  # noqa: PLC0415
+
+    tc_cid = tr1.headers.get("X-Fx1-Completion-Id", "")
+    if tc_cid:
+        trec = oi_tools.get(f"/harness/completions/{tc_cid}")
+        shipped_calls = [
+            {
+                "id": "call_0",
+                "type": "function",
+                "function": {"name": "calc", "arguments": '{"x": 1}'},
+            }
+        ]
+        expect = _hl_t.sha256(
+            ("" + "\n" + _json3.dumps(shipped_calls, sort_keys=True)).encode("utf-8")
+        ).hexdigest()
+        out["openai_tool_digest_binds_calls"] = (
+            trec.status_code == 200 and trec.json().get("output_sha256") == expect
+        )
+    else:
+        out["openai_tool_digest_binds_calls"] = False
+    # the retrieval index carries tool_calls too — a stored call
+    # round-trips the full envelope
+    tstore_id = tr1.json().get("id", "")
+    rget = oi_tools.get(f"/v1/chat/completions/{tstore_id}")
+    out["openai_tool_store_retrieve"] = (
+        rget.status_code == 200
+        and (rget.json()["choices"][0]["message"].get("tool_calls") or [{}])[0]
+        .get("function", {})
+        .get("name")
+        == "calc"
+    )
+    rdel = oi_tools.delete(f"/v1/chat/completions/{tstore_id}")
+    out["openai_tool_store_delete"] = (
+        rdel.status_code == 200
+        and oi_tools.get(f"/v1/chat/completions/{tstore_id}").status_code == 404
+    )
+    # SSE emits the delta.tool_calls frame + the real finish_reason
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={**tbody, "stream": True},
+    )
+    tchunks = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_tool_stream_delta"] = (
+        r.status_code == 200
+        and any(
+            (c["choices"][0]["delta"].get("tool_calls") or [{}])[0].get("id") == "call_0"
+            for c in tchunks
+            if c.get("choices")
+        )
+        and any(
+            c["choices"][0].get("finish_reason") == "tool_calls"
+            for c in tchunks
+            if c.get("choices")
+        )
+    )
+    # the native /harness surface carries the channel too
+    r = oi_tools.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "calc"}],
+            "tools": [tool_spec],
+            "tool_choice": "required",
+        },
+    )
+    out["complete_tools_200"] = (
+        r.status_code == 200
+        and (r.json().get("tool_calls") or [{}])[0].get("function", {}).get("name") == "calc"
+        and r.json().get("finish_reason") == "tool_calls"
+    )
+    out["complete_tools_no_channel_501"] = (
+        oi_clean.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["complete_stream_tools_501"] = (
+        oi_tools.post(
+            "/harness/complete/stream",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["batch_tool_context_422"] = (
+        oi_tools.post(
+            "/harness/complete/batch",
+            json={
+                "backend": "byok",
+                "batch": [
+                    [{"role": "user", "content": "ok"}],
+                    [{"role": "tool", "content": "2", "tool_call_id": "c"}],
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    out["capabilities_reports_openai_tools"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_tools") is True
+    )
+
+    # — logprobs channel: request fields reach the provider verbatim and
+    # the provider's payload lands verbatim on the envelope —
+    lp_req = {
+        "model": "fx1",
+        "messages": [{"role": "user", "content": "calc"}],
+        "logprobs": True,
+        "top_logprobs": 3,
+    }
+    r = oi_tools.post("/v1/chat/completions", json=lp_req)
+    out["openai_logprobs_forwarded_verbatim"] = (
+        oi_tool.seen_logprobs is True and oi_tool.seen_top_logprobs == 3
+    )
+    out["openai_logprobs_envelope"] = r.status_code == 200 and (
+        r.json()["choices"][0].get("logprobs") or {}
+    ).get("content") == [
+        {
+            "token": "x",
+            "logprob": -0.5,
+            "bytes": [120],
+            "top_logprobs": [{"token": "x", "logprob": -0.5, "bytes": [120]}],
+        }
+    ]
+    # no request → null slot (OpenAI's own null shape); a plain-link
+    # request fails closed — scores need the structured channel
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_logprobs_absent_null"] = (
+        r.status_code == 200 and r.json()["choices"][0].get("logprobs") is None
+    )
+    out["openai_logprobs_no_channel_501"] = (
+        oi_clean.post("/v1/chat/completions", json=lp_req).status_code == 501
+    )
+    out["openai_toplogprobs_needs_logprobs_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "top_logprobs": 2,
+            },
+        ).status_code
+        == 422
+    )
+    out["openai_toplogprobs_bounds_422"] = all(
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "logprobs": True,
+                "top_logprobs": bad,
+            },
+        ).status_code
+        == 422
+        for bad in (-1, 21)
+    )
+    # SSE emits one aggregated delta.logprobs frame — the provider's
+    # token boundaries don't align with the text re-chunking, so the
+    # array ships whole before the finish frame rather than fake-aligned
+    r = oi_tools.post("/v1/chat/completions", json={**lp_req, "stream": True})
+    lp_chunks = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    lp_frames = [
+        c for c in lp_chunks if c.get("choices") and c["choices"][0]["delta"].get("logprobs")
+    ]
+    out["openai_logprobs_stream_frame"] = (
+        r.status_code == 200
+        and len(lp_frames) == 1
+        and lp_frames[0]["choices"][0]["delta"]["logprobs"].get("content")
+        == [
+            {
+                "token": "x",
+                "logprob": -0.5,
+                "bytes": [120],
+                "top_logprobs": [{"token": "x", "logprob": -0.5, "bytes": [120]}],
+            }
+        ]
+    )
+    # the native surface carries the channel too — and the digest binds
+    # the score payload alongside text
+    r = oi_tools.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "calc"}],
+            "logprobs": True,
+        },
+    )
+    lp_body = r.json().get("logprobs") or {}
+    out["complete_logprobs_200"] = r.status_code == 200 and lp_body.get("content") == [
+        {
+            "token": "x",
+            "logprob": -0.5,
+            "bytes": [120],
+            "top_logprobs": [],
+        }
+    ]
+    out["complete_logprobs_no_channel_501"] = (
+        oi_clean.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "logprobs": True,
+            },
+        ).status_code
+        == 501
+    )
+    lp_cid = r.headers.get("X-Fx1-Completion-Id", "")
+    if lp_cid:
+        lp_rec = oi_tools.get(f"/harness/completions/{lp_cid}")
+        lp_calls = [
+            {
+                "id": "call_0",
+                "type": "function",
+                "function": {"name": "calc", "arguments": '{"x": 1}'},
+            }
+        ]
+        expect_lp = _hl_t.sha256(
+            (
+                ""
+                + "\n"
+                + _json3.dumps(lp_calls, sort_keys=True)
+                + "\n"
+                + _json3.dumps(lp_body, sort_keys=True)
+            ).encode("utf-8")
+        ).hexdigest()
+        out["complete_logprobs_digest_binds"] = (
+            lp_rec.status_code == 200 and lp_rec.json().get("output_sha256") == expect_lp
+        )
+    else:
+        out["complete_logprobs_digest_binds"] = False
+    # the Responses surface: include/['message.output_text.logprobs'] +
+    # top_logprobs gate the channel; output lands on the text part
+    # (message stub — a call-only turn has no output_text to carry it)
+    r = oi_lp.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "include": ["message.output_text.logprobs"],
+            "top_logprobs": 2,
+        },
+    )
+    resp_msg: dict[str, Any] = next(
+        (it for it in r.json().get("output", []) if it.get("type") == "message"),
+        {},
+    )
+    resp_lp = (
+        resp_msg.get("content", [{}])[0].get("logprobs")
+        if isinstance(resp_msg.get("content"), list)
+        else None
+    )
+    out["responses_logprobs_include"] = (
+        r.status_code == 200
+        and oi_lp_b.seen_logprobs is True
+        and oi_lp_b.seen_top_logprobs == 2
+        and isinstance(resp_lp, list)
+        and resp_lp[0].get("token") == "x"
+    )
+    out["responses_toplogprobs_needs_include_422"] = (
+        oi_tools.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "top_logprobs": 1},
+        ).status_code
+        == 422
+    )
+    out["responses_include_bad_member_422"] = (
+        oi_tools.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "include": ["bogus.member"]},
+        ).status_code
+        == 422
+    )
+    out["responses_logprobs_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "include": ["message.output_text.logprobs"],
+            },
+        ).status_code
+        == 501
+    )
+    out["capabilities_reports_openai_logprobs"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_logprobs") is True
+    )
+
+    # ---- lane 84: the embeddings channel ----
+    # ``POST /v1/embeddings`` forwards model/input/encoding_format/
+    # dimensions/user verbatim to an embedding-capable link and echoes the
+    # provider's ``data[]``/``model``/``usage`` untouched — a link without
+    # the channel answers 501, never fabricated vectors.
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-m", "input": "hello"},
+    )
+    out["openai_embeddings_200"] = (
+        r.status_code == 200
+        and r.json()["object"] == "list"
+        and r.json()["data"] == [{"object": "embedding", "index": 0, "embedding": [0.1, 0.2]}]
+        and r.json()["model"] == "emb-m-v1"
+        and r.json()["usage"] == {"prompt_tokens": 4, "total_tokens": 4}
+        and r.headers.get("X-Fx1-Completion-Id") is not None
+    )
+    out["openai_embeddings_forwarded"] = (
+        oi_emb_b.seen_model == "emb-m"
+        and oi_emb_b.seen_input == "hello"
+        and oi_emb_b.seen_format is None
+        and oi_emb_b.seen_dimensions is None
+        and oi_emb_b.seen_user is None
+    )
+    oi_emb.post(
+        "/v1/embeddings",
+        json={
+            "model": "emb-x",
+            "input": ["a", "b", "c"],
+            "dimensions": 2,
+            "encoding_format": "float",
+            "user": "u-1",
+        },
+    )
+    out["openai_embeddings_list_input"] = (
+        oi_emb_b.seen_input == ["a", "b", "c"]
+        and oi_emb_b.seen_dimensions == 2
+        and oi_emb_b.seen_format == "float"
+        and oi_emb_b.seen_user == "u-1"
+    )
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-tok", "input": [1, 2, 3]},
+    )
+    out["openai_embeddings_token_input"] = (
+        r.status_code == 200 and len(r.json()["data"]) == 1 and oi_emb_b.seen_input == [1, 2, 3]
+    )
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-b", "input": "x", "encoding_format": "base64"},
+    )
+    out["openai_embeddings_base64_passthrough"] = (
+        r.status_code == 200
+        and oi_emb_b.seen_format == "base64"
+        and r.json()["data"][0]["embedding"] == "AAE="
+    )
+    out["openai_embeddings_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/embeddings",
+            json={"model": "emb-m", "input": "x"},
+        ).status_code
+        == 501
+    )
+    out["openai_embeddings_empty_422"] = (
+        oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": ""}).status_code == 422
+        and oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": []}).status_code == 422
+        and oi_emb.post(
+            "/v1/embeddings", json={"model": "emb-m", "input": ["ok", "  "]}
+        ).status_code
+        == 422
+    )
+    out["openai_embeddings_mixed_422"] = (
+        oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": ["a", 1]}).status_code == 422
+    )
+    out["openai_embeddings_bad_encoding_422"] = (
+        oi_emb.post(
+            "/v1/embeddings",
+            json={"model": "emb-m", "input": "x", "encoding_format": "utf8"},
+        ).status_code
+        == 422
+    )
+    out["openai_embeddings_provider_failure_502"] = (
+        oi_emb_bad.post("/v1/embeddings", json={"model": "emb-m", "input": "x"}).status_code == 502
+    )
+    # the call lands in the completion log — digests bind the sent input
+    # and the verbatim data[] exactly like a completion
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-log", "input": "audit"},
+    )
+    _emb_cid = r.headers.get("X-Fx1-Completion-Id")
+    _emb_rec = oi_emb.get(f"/harness/completions/{_emb_cid}") if _emb_cid is not None else None
+    _emb_expect_in = _hl_t.sha256(
+        _json3.dumps(
+            {"model": "emb-log", "input": "audit"},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    _emb_expect_out = _hl_t.sha256(
+        _json3.dumps(
+            [{"object": "embedding", "index": 0, "embedding": [0.1, 0.2]}],
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    out["openai_embeddings_completion_log"] = (
+        _emb_rec is not None
+        and _emb_rec.status_code == 200
+        and _emb_rec.json().get("ok") is True
+        and _emb_rec.json().get("prompt_sha256") == _emb_expect_in
+        and _emb_rec.json().get("output_sha256") == _emb_expect_out
+        and _emb_rec.json().get("model") == "emb-log-v1"
+    )
+    out["capabilities_reports_openai_embeddings"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_embeddings") is True
+    )
+
+    # — decode contract: n / stop / penalties / bias / hints / attribution —
+    # n fans out into n independent gated calls (each its own gate pass).
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+        },
+    )
+    out["openai_n_choices"] = (
+        r.status_code == 200
+        and [c["index"] for c in r.json()["choices"]] == [0, 1]
+        and all(
+            c["message"]["content"] == "clean:h" and c["finish_reason"] == "stop"
+            for c in r.json()["choices"]
+        )
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 9},
+    )
+    out["openai_n_over_max_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 0},
+    )
+    out["openai_n_zero_422"] = r.status_code == 422
+
+    # stop: earliest match wins; harness-enforced (stub honors it too)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}], "stop": ":x"},
+    )
+    out["openai_stop_truncates"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ab cd"}],
+            "stop": ["zz", "b"],
+        },
+    )
+    out["openai_stop_list_earliest"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean:a"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "stop": ["a", "b", "c", "d", "e"],
+        },
+    )
+    out["openai_stop_over4_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "stop": ""},
+    )
+    out["openai_stop_empty_422"] = r.status_code == 422
+
+    # stop on the stream — deltas end at the cut, [DONE] still ships
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ab cd"}],
+            "stop": "ab",
+            "stream": True,
+        },
+    )
+    _stop_frames = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_stream_stop_cut"] = (
+        r.status_code == 200
+        and "".join(
+            f["choices"][0]["delta"].get("content", "") for f in _stop_frames if f.get("choices")
+        )
+        == "clean:"
+        and r.text.endswith("data: [DONE]\n\n")
+    )
+
+    # declared params reach the provider + stamp the audit record;
+    # usage on n>1 is the honest sum of n actual calls.
+    usage_be = _OiUsage()
+    oi_usage = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: usage_be))
+    r = oi_usage.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 3,
+            "presence_penalty": 0.5,
+            "frequency_penalty": -0.5,
+            "logit_bias": {"42": -10},
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "prompt_cache_key": "pck",
+            "user": "u-1",
+            "metadata": {"team": "risk"},
+        },
+    )
+    seen = usage_be.seen
+    out["openai_decode_params_forwarded"] = (
+        r.status_code == 200
+        and len(r.json()["choices"]) == 3
+        and r.json()["usage"]["total_tokens"] == 27
+        and seen is not None
+        and seen.presence_penalty == 0.5
+        and seen.frequency_penalty == -0.5
+        and seen.logit_bias == {"42": -10}
+        and seen.reasoning_effort == "low"
+        and seen.service_tier == "flex"
+        and seen.prompt_cache_key == "pck"
+        and seen.user == "u-1"
+    )
+    cid_dec = r.headers.get("X-Fx1-Completion-Id", "")
+    if cid_dec:
+        rl = oi_usage.get(f"/harness/completions/{cid_dec}")
+        out["openai_user_metadata_recorded"] = (
+            rl.status_code == 200
+            and rl.json().get("user") == "u-1"
+            and rl.json().get("metadata") == {"team": "risk"}
+        )
+        out["openai_sampling_record_seals_declared"] = (
+            rl.status_code == 200
+            and rl.json().get("sampling", {}).get("logit_bias") == {"42": -10}
+            and rl.json().get("sampling", {}).get("presence_penalty") == 0.5
+        )
+
+    # max_completion_tokens alias + disagreeing pair fails closed
+    r = oi_usage.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "max_completion_tokens": 33,
+        },
+    )
+    out["openai_mct_alias"] = (
+        r.status_code == 200 and usage_be.seen is not None and usage_be.seen.max_tokens == 33
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "max_tokens": 5,
+            "max_completion_tokens": 9,
+        },
+    )
+    out["openai_mct_conflict_422"] = r.status_code == 422
+
+    # bias/penalty/metadata bounds are range-checked at the model
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "logit_bias": {"not-a-token": 1},
+        },
+    )
+    out["openai_logit_bias_badkey_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "logit_bias": {"1": 200},
+        },
+    )
+    out["openai_logit_bias_range_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "presence_penalty": 2.5,
+        },
+    )
+    out["openai_penalty_range_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "metadata": {f"k{i}": "v" for i in range(17)},
+        },
+    )
+    out["openai_metadata_over16_422"] = r.status_code == 422
+
+    # newly fail-closed fields that extra="allow" used to drop silently
+    out["openai_newly_closed_422"] = all(
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("web_search_options", {}),
+            ("suffix", "x"),
+            ("echo", True),
+            ("best_of", 2),
+        )
+    )
+    # `store` is honored, not refused — it admits the call and governs the
+    # retrieval index (probed below under retrieve_*)
+    out["openai_store_accepted"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "store": False,
+            },
+        ).status_code
+        == 200
+    )
+
+    # n>1 streams emit per-index frame groups; keyed replay reproduces them
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+    )
+    _nframes = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_n_stream_indexes"] = (
+        r.status_code == 200
+        and {f["choices"][0]["index"] for f in _nframes if f.get("choices")} == {0, 1}
+        and all(
+            f["choices"][0].get("finish_reason") is not None or f["choices"][0]["delta"]
+            for f in _nframes
+            if f.get("choices")
+        )
+    )
+    _nkey = {"Idempotency-Key": "n-idem-77"}
+    r1 = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 2},
+        headers=_nkey,
+    )
+    r2 = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 2},
+        headers=_nkey,
+    )
+    out["openai_n_idem_replay"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.json() == r2.json()
+        and r2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and len(r2.json()["choices"]) == 2
+    )
+    # resume a dropped keyed n=2 stream — the suffix still carries both indexes
+    r3 = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "n-resume-77"},
+    )
+    r4 = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "n-resume-77", "Last-Event-ID": "2"},
+    )
+    _resumed = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r4.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_n_resume_suffix"] = (
+        r3.status_code == 200
+        and r4.status_code == 200
+        and len(_resumed) == len(_nframes) - 3
+        and {f["choices"][0]["index"] for f in _resumed if f.get("choices")} <= {0, 1}
+        and r4.text.endswith("data: [DONE]\n\n")
+    )
+
+    # native surface honors the same stop contract (CompleteRequest twin)
+    r = oi_clean.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "messages": [{"role": "user", "content": "x"}],
+            "stop": [":x"],
+        },
+    )
+    out["native_stop_truncates"] = (
+        r.status_code == 200
+        and r.json()["content"] == "clean"
+        and r.json()["sampling"]["stop"] == [":x"]
+    )
+    r = oi_clean.post("/v1/chat/completions", json={"model": "fx1"})
+    out["openai_missing_messages_422_openai_shape"] = (
+        r.status_code == 422
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "validation"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": [{"type": "image_url", "url": "x"}]}],
+        },
+    )
+    out["openai_nontext_part_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [
+                {"role": "user", "content": "part "},
+                {"role": "user", "content": [{"type": "text", "text": "two"}]},
+            ],
+        },
+    )
+    out["openai_content_parts_flattened"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean:two"
+    )
+
+    # the gate fires over the OpenAI surface
+    oi_dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiDirty()))
+    r = oi_dirty.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_gate_502_openai_shape"] = (
+        r.status_code == 502
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "honesty_gate"
+        and r.json()["error"]["type"] == "server_error"
+    )
+
+    # auth: Authorization Bearer works for stock clients; X-API-Key still works
+    _saved_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "probe-key"
+    try:
+        keyed = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    finally:
+        if _saved_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = _saved_key
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"Authorization": "Bearer probe-key"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_bearer_auth_ok"] = r.status_code == 200
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"X-API-Key": "probe-key"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_xapikey_still_ok"] = r.status_code == 200
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"Authorization": "Bearer wrong"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_bad_bearer_401_openai_shape"] = (
+        r.status_code == 401 and r.json()["error"]["type"] == "authentication_error"
+    )
+
+    # the fx1 extension object carries the chain knobs (incl. body byok)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "fx1": {
+                "backend": "byok",
+                "byok": {
+                    "base_url": "https://provider.example/v1",
+                    "api_key": "sk-fake",
+                    "model": "gpt-fake",
+                },
+                "fallbacks": ["hosted_k3"],
+            },
+        },
+    )
+    out["openai_fx1_extension_backend"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+
+    # capacity admission applies to the OpenAI surface too
+    oi_drained = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    oi_drained.state.inflight_slots.acquire()
+    try:
+        r = _TC2(oi_drained).post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+        )
+    finally:
+        oi_drained.state.inflight_slots.release()
+    out["openai_over_capacity_openai_shape"] = (
+        r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
+    )
+
+    # Idempotency-Key on the OpenAI surface: a keyed retry replays the
+    # stored response byte-identically (no re-spend), flagged via
+    # X-Fx1-Idempotent-Replay with the original completion id. A key
+    # reused under a different body fails closed 409; an over-long key
+    # 400s; a refusal is never pinned (the key stays unbound).
+    _oi_idem = {"model": "fx1", "messages": [{"role": "user", "content": "idem"}]}
+    _oi_key = {"Idempotency-Key": "oi-k1"}
+    r1 = oi_clean.post("/v1/chat/completions", json=_oi_idem, headers=_oi_key)
+    r2 = oi_clean.post("/v1/chat/completions", json=_oi_idem, headers=_oi_key)
+    out["openai_idem_replay_byte_identical"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.content == r2.content
+        and r2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and r1.headers.get("X-Fx1-Completion-Id") == r2.headers.get("X-Fx1-Completion-Id")
+    )
+    out["openai_idem_first_not_flagged"] = "X-Fx1-Idempotent-Replay" not in r1.headers
+    # a replay is a cache hit, not a fresh call — the backend counter
+    # and completion log each gain exactly one record for the two posts
+    _log_page = oi_clean.get("/harness/completions").json()
+    out["openai_idem_replay_no_respend"] = (
+        sum(
+            1
+            for c in _log_page.get("items", [])
+            if c.get("completion_id") == r1.headers.get("X-Fx1-Completion-Id")
+        )
+        == 1
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "different"}]},
+        headers=_oi_key,
+    )
+    out["openai_idem_conflict_409"] = (
+        r.status_code == 409 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem,
+        headers={"Idempotency-Key": "x" * 257},
+    )
+    out["openai_idem_key_bound_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    # keyed stores are per-route — the same key on /harness/complete is
+    # an independent dedup slot, not a cross-surface collision
+    r = oi_clean.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "idem"}]},
+        headers=_oi_key,
+    )
+    out["openai_idem_scope_isolated"] = r.status_code == 200
+    # stream replay regenerates the identical SSE byte sequence
+    _oi_idem_s = {**_oi_idem, "stream": True}
+    s1 = oi_clean.post(
+        "/v1/chat/completions", json=_oi_idem_s, headers={"Idempotency-Key": "oi-k2"}
+    )
+    s2 = oi_clean.post(
+        "/v1/chat/completions", json=_oi_idem_s, headers={"Idempotency-Key": "oi-k2"}
+    )
+    out["openai_idem_stream_replay"] = (
+        s1.status_code == 200
+        and s2.status_code == 200
+        and s1.content == s2.content
+        and s1.content.endswith(b"data: [DONE]\n\n")
+        and s2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    # stream=true vs stream=false under one key is a different request
+    s3 = oi_clean.post("/v1/chat/completions", json=_oi_idem_s, headers=_oi_key)
+    out["openai_idem_stream_mismatch_409"] = s3.status_code == 409
+    # a gate refusal never pins the key — a retry re-executes (another
+    # 502, not a replayed error, and the key stays free for other bodies)
+    d1 = oi_dirty.post(
+        "/v1/chat/completions",
+        json=_oi_idem,
+        headers={"Idempotency-Key": "oi-k3"},
+    )
+    d2 = oi_dirty.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "other"}]},
+        headers={"Idempotency-Key": "oi-k3"},
+    )
+    out["openai_idem_refusal_not_pinned"] = d1.status_code == 502 and d2.status_code == 502
+
+    # Last-Event-ID resume: every SSE frame carries `id:` equal to its
+    # sequence index ([DONE] takes the index past the last chunk); a
+    # keyed replay with Last-Event-ID=k replays the pinned response
+    # minus frames <= k — byte-identical suffix, no re-spend. Fail
+    # closed: resume needs stream:true (400), an integer >= 0 (400),
+    # the original Idempotency-Key (400 resume_needs_key), and a stored
+    # record under it (409 resume_miss — executing fresh and skipping
+    # would graft a different completion onto the client's earlier
+    # frames).
+    _oi_rkey = {"Idempotency-Key": "oi-rs1"}
+    v1s = oi_clean.post("/v1/chat/completions", json=_oi_idem_s, headers=_oi_rkey)
+    _events = v1s.text.split("\n\n")
+    _ids = [ln for ln in v1s.text.splitlines() if ln.startswith("id: ")]
+    out["openai_sse_frame_ids"] = (
+        v1s.status_code == 200
+        and _ids == [f"id: {i}" for i in range(len(_ids))]
+        and _events[-2].startswith(f"id: {len(_ids) - 1}\ndata: [DONE]")
+    )
+    resumed = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": "1"},
+    )
+    out["openai_resume_suffix"] = (
+        resumed.status_code == 200
+        and resumed.text == "\n\n".join(_events[2:])
+        and resumed.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    tail = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": str(len(_ids) - 1)},
+    )
+    out["openai_resume_done_only"] = (
+        tail.status_code == 200 and tail.text == f"id: {len(_ids) - 1}\ndata: [DONE]\n\n"
+    )
+    past = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": "9999"},
+    )
+    out["openai_resume_past_end_done"] = past.text.endswith("data: [DONE]\n\n")
+    out["openai_resume_needs_key_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions", json=_oi_idem_s, headers={"Last-Event-ID": "0"}
+        ).status_code
+        == 400
+    )
+    miss = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={"Idempotency-Key": "oi-rs-fresh", "Last-Event-ID": "0"},
+    )
+    out["openai_resume_unknown_key_409"] = (
+        miss.status_code == 409 and miss.json()["error"]["code"] == "resume_miss"
+    )
+    out["openai_resume_nonstream_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem,
+            headers={**_oi_rkey, "Last-Event-ID": "0"},
+        ).status_code
+        == 400
+    )
+    out["openai_resume_bad_id_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem_s,
+            headers={**_oi_rkey, "Last-Event-ID": "notanint"},
+        ).status_code
+        == 400
+        and oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem_s,
+            headers={**_oi_rkey, "Last-Event-ID": "-1"},
+        ).status_code
+        == 400
+    )
+
+    # GET /v1/models/{id} — OpenAI's models.retrieve: every listed id
+    # returns its card; unknown ids fail closed 404 in the OpenAI error
+    # shape (code model_not_found), never a fabricated card. Retrieve and
+    # list agree — the same `created` stamp on both.
+    rm = oi_clean.get("/v1/models/fx1")
+    out["openai_retrieve_model_200"] = (
+        rm.status_code == 200
+        and rm.json().get("object") == "model"
+        and rm.json().get("id") == "fx1"
+        and isinstance(rm.json().get("created"), int)
+    )
+    rm_all = [oi_clean.get(f"/v1/models/{m}") for m in ("hosted_k3", "local_fx1", "byok")]
+    out["openai_retrieve_all_listed_ids"] = all(
+        r.status_code == 200 and r.json().get("id") == m
+        for r, m in zip(rm_all, ("hosted_k3", "local_fx1", "byok"), strict=True)
+    )
+    rn = oi_clean.get("/v1/models/not-a-model")
+    out["openai_retrieve_unknown_404_shape"] = (
+        rn.status_code == 404
+        and rn.json()["error"]["code"] == "model_not_found"
+        and rn.json()["error"]["type"] == "invalid_request_error"
+    )
+    _list = oi_clean.get("/v1/models").json()
+    out["openai_retrieve_list_consistent"] = {m["id"] for m in _list["data"]} == {
+        "fx1",
+        "hosted_k3",
+        "local_fx1",
+        "byok",
+    } and _list["data"][0]["created"] == rm.json()["created"]
+
+    # response_format post-validation — the gate's second pass. The
+    # provider can't be constrain-decoded, so the harness validates the
+    # returned text: conforming output ships (200); a violation is a
+    # provider-side 502 (code format_violation); a malformed schema spec
+    # fails closed at request time, before any spend.
+    class _OiJson:
+        def __init__(self, content: str) -> None:
+            self._content = content
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return self._content
+
+    oi_json = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": 0.9}')))
+    _rf_obj = {"type": "json_object"}
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_pass"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == '{"score": 0.9}'
+    )
+    oi_broken = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("oops")))
+    r = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    # json_object means a JSON object — a bare array is still a violation
+    oi_arr = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("[1, 2]")))
+    r = oi_arr.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_array_502"] = r.status_code == 502
+    # json_schema: schema-conforming ships, violating output 502s, a
+    # malformed schema spec is rejected pre-spend
+    _schema = {
+        "type": "object",
+        "properties": {"score": {"type": "number"}},
+        "required": ["score"],
+    }
+    _rf_schema = {"type": "json_schema", "json_schema": {"name": "s", "schema": _schema}}
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_schema,
+        },
+    )
+    out["openai_json_schema_pass"] = r.status_code == 200
+    oi_bad_schema_out = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": "hi"}'))
+    )
+    r = oi_bad_schema_out.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_schema,
+        },
+    )
+    out["openai_json_schema_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": {"type": "json_schema", "json_schema": {"name": "s"}},
+        },
+    )
+    out["openai_json_schema_malformed_rejected"] = r.status_code == 422
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": {"type": "xml"},
+        },
+    )
+    out["openai_response_format_unknown_rejected"] = r.status_code == 422
+    # a format violation never occupies the idempotency key — retry
+    # re-executes (still 502), the key stays unbound for other bodies
+    v1 = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+        headers={"Idempotency-Key": "oi-fmt"},
+    )
+    v2 = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "other"}],
+            "response_format": _rf_obj,
+        },
+        headers={"Idempotency-Key": "oi-fmt"},
+    )
+    out["openai_format_violation_not_pinned"] = v1.status_code == 502 and v2.status_code == 502
+
+    # POST /v1/responses — the Responses API surface over the same gated
+    # pipeline. `input` is a string or a message-item list, `instructions`
+    # prepends a system turn, `developer` roles map to system,
+    # `reasoning.effort` lands on the decode hint, `text.format` lands on
+    # the post-validated structured-output channel, and the wire carries
+    # the same idempotency + resume + fail-closed contracts as
+    # /v1/chat/completions. The `store` flag is refused at false — the
+    # audit ledger records every call; there is no retrieval tier for it
+    # to govern.
+    r = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "hello"})
+    out["responses_string_input_200"] = (
+        r.status_code == 200
+        and r.json()["object"] == "response"
+        and r.json()["id"].startswith("resp_")
+        and r.json()["status"] == "completed"
+        # the model slot echoes the backend's reported model id (same as
+        # the chat surface); the requested id is the fallback
+        and r.json()["model"] == "fake-0"
+        and r.json()["created_at"] > 0
+        and isinstance(r.headers.get("X-Fx1-Completion-Id"), str)
+    )
+    _item = r.json()["output"][0]
+    out["responses_output_shape"] = (
+        _item["type"] == "message"
+        and _item["id"].startswith("msg_")
+        and _item["status"] == "completed"
+        and _item["role"] == "assistant"
+        and _item["content"] == [{"type": "output_text", "text": "clean:hello", "annotations": []}]
+    )
+    out["responses_defaults_echo"] = (
+        r.json()["tools"] == []
+        and r.json()["tool_choice"] == "none"
+        and r.json()["parallel_tool_calls"] is False
+        and r.json()["truncation"] == "disabled"
+        and r.json()["store"] is True
+        and r.json()["error"] is None
+        and r.json()["incomplete_details"] is None
+    )
+    # usage maps the provider's prompt/completion/total onto input/output/
+    # total — never fabricated (None when the backend reports nothing)
+    r = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x"})
+    out["responses_no_usage_channel_null"] = r.json()["usage"] is None
+    r = oi_usage.post("/v1/responses", json={"model": "fx1", "input": "x"})
+    out["responses_usage_shape"] = r.json()["usage"] == {
+        "input_tokens": 5,
+        "output_tokens": 4,
+        "total_tokens": 9,
+    }
+    # instructions prepends a system turn; a `developer` role maps to
+    # system; the last user turn reaches the backend verbatim
+    usage_be.seen = None
+    r = oi_usage.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "instructions": "be terse",
+            "input": [
+                {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": "dev rules"}],
+                },
+                {"role": "user", "content": "first"},
+                {"role": "assistant", "content": [{"type": "output_text", "text": "ack"}]},
+                {"role": "user", "content": "ping"},
+            ],
+            "reasoning": {"effort": "high"},
+            "max_output_tokens": 77,
+        },
+    )
+    out["responses_items_and_instructions"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:ping"
+    )
+    out["responses_reasoning_effort_forwarded"] = (
+        usage_be.seen is not None
+        and usage_be.seen.reasoning_effort == "high"
+        and usage_be.seen.max_tokens == 77
+    )
+    # the shorthand `{role, content: "..."}` item and multi-part input_text
+    # lists join before reaching the model
+    r = oi_clean.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {"role": "user", "content": "a"},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "b"},
+                        {"type": "input_text", "text": "c"},
+                    ],
+                },
+            ],
+        },
+    )
+    out["responses_shorthand_and_parts_join"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:bc"
+    )
+    # fail closed: the fields the pipeline can't honor never reach the
+    # model — truncation/include/background/previous_response_id, a
+    # refused item type, an unknown item type, an empty input.
+    # tools/tool_choice/parallel_tool_calls are honored (the lane-82 tool
+    # channel probes below); `store` is honored too (retrieval below).
+    out["responses_unsupported_refused"] = all(
+        oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
+        for k, v in (
+            ("truncation", "auto"),
+            ("include", ["output_text"]),
+            ("background", True),
+            ("previous_response_id", "resp_x"),
+        )
+    )
+    # refused item types fail at translation — a 400 invalid_request_error
+    # in the OpenAI shape, not a pydantic 422 (function_call /
+    # function_call_output are honored — they carry a tool history)
+    out["responses_item_types_refused"] = all(
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": [{"type": t, "role": "user", "content": "x"}]},
+        ).status_code
+        == 400
+        for t in ("item_reference", "reasoning", "bogus")
+    )
+    out["responses_empty_input_422"] = (
+        oi_clean.post("/v1/responses", json={"model": "fx1", "input": []}).status_code == 422
+        and oi_clean.post(
+            "/v1/responses", json={"model": "fx1", "input": [{"role": "user"}]}
+        ).status_code
+        == 400
+    )
+    # reasoning.effort outside the pinned set and a non-object reasoning
+    # block both fail validation
+    out["responses_reasoning_bounds"] = all(
+        oi_clean.post(
+            "/v1/responses", json={"model": "fx1", "input": "x", "reasoning": r_}
+        ).status_code
+        == 422
+        for r_ in ({"effort": "extreme"}, {"effort": "high", "extra": 1}, "high")
+    )
+    # text.format is the post-validated structured-output channel:
+    # json_object/schema ship when the output conforms, violation 502s in
+    # the OpenAI error shape, a malformed spec is refused pre-spend, and
+    # the validated bytes are what lands on the response object
+    r = oi_json.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {"format": {"type": "json_object"}},
+        },
+    )
+    out["responses_text_format_json_pass"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == '{"score": 0.9}'
+    )
+    r = oi_broken.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {"format": {"type": "json_object"}},
+        },
+    )
+    out["responses_text_format_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    r = oi_json.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "s",
+                    "schema": _schema,
+                }
+            },
+        },
+    )
+    out["responses_text_format_schema_pass"] = r.status_code == 200
+    out["responses_text_format_bad_spec_422"] = (
+        oi_json.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "text": {"format": {"type": "weird"}}},
+        ).status_code
+        == 422
+    )
+    # user/safety_identifier/metadata stamp the completion record
+    r = oi_clean.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "stamp",
+            "user": "u-9",
+            "metadata": {"team": "risk"},
+        },
+    )
+    _resp_rec = oi_clean.get(f"/harness/completions/{r.headers['X-Fx1-Completion-Id']}").json()
+    out["responses_stamps_record"] = (
+        r.status_code == 200
+        and _resp_rec.get("user") == "u-9"
+        and _resp_rec.get("metadata") == {"team": "risk"}
+    )
+    # the gate fires over the Responses surface too — honesty refusal in
+    # the OpenAI error shape
+    r = oi_dirty.post("/v1/responses", json={"model": "fx1", "input": "h"})
+    out["responses_gate_502_openai_shape"] = (
+        r.status_code == 502
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "honesty_gate"
+    )
+    # Idempotency-Key: keyed retry replays byte-identically (no re-spend),
+    # a different body under the same key 409s, a refusal never pins
+    _r_idem = {"model": "fx1", "input": "idem"}
+    _r_key = {"Idempotency-Key": "resp-k1"}
+    i1 = oi_clean.post("/v1/responses", json=_r_idem, headers=_r_key)
+    i2 = oi_clean.post("/v1/responses", json=_r_idem, headers=_r_key)
+    out["responses_idem_replay_byte_identical"] = (
+        i1.status_code == 200
+        and i2.status_code == 200
+        and i1.content == i2.content
+        and i2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and "_fx1_completion_id" not in i2.text
+        and "_fx1_usage" not in i2.text
+    )
+    i3 = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "different"}, headers=_r_key)
+    out["responses_idem_conflict_409"] = i3.status_code == 409
+    # stream: the Responses event grammar — event:/id:/data: per frame,
+    # sequential ids, terminal frame is response.completed (no [DONE]),
+    # and the completed event embeds usage + the same response object the
+    # JSON path returns
+    rs1 = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1"},
+    )
+    _rlines = rs1.text.splitlines()
+    _rev = [ln[7:] for ln in _rlines if ln.startswith("event: ")]
+    _rid_lines = [ln[4:] for ln in _rlines if ln.startswith("id: ")]
+    _rdata = [_json3.loads(ln[6:]) for ln in _rlines if ln.startswith("data: ")]
+    out["responses_stream_event_grammar"] = (
+        rs1.status_code == 200
+        and rs1.headers["content-type"].startswith("text/event-stream")
+        and len(_rev) == len(_rdata) == len(_rid_lines)
+        and _rid_lines == [str(i) for i in range(len(_rid_lines))]
+        and _rev[0] == "response.created"
+        and _rev[1] == "response.in_progress"
+        and _rev[-1] == "response.completed"
+        and "response.output_text.delta" in _rev
+        and "[DONE]" not in rs1.text
+        and all(d.get("type") == e for d, e in zip(_rdata, _rev, strict=True))
+        and _rdata[-1]["response"]["usage"]
+        == {
+            "input_tokens": 5,
+            "output_tokens": 4,
+            "total_tokens": 9,
+        }
+        and "".join(d["delta"] for d in _rdata if d["type"] == "response.output_text.delta")
+        == "clean:idem"
+    )
+    # keyed stream replay regenerates the byte-identical byte sequence;
+    # Last-Event-ID resume replays the pinned stream minus the seen prefix
+    rs2 = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1"},
+    )
+    out["responses_stream_replay_byte_identical"] = (
+        rs2.status_code == 200
+        and rs1.content == rs2.content
+        and rs2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    _rframes = rs1.text.split("\n\n")[:-1]
+    rs_res = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1", "Last-Event-ID": "3"},
+    )
+    out["responses_resume_suffix"] = rs_res.status_code == 200 and rs_res.text == "".join(
+        f + "\n\n" for f in _rframes[4:]
+    )
+    out["responses_resume_miss_409"] = (
+        oi_usage.post(
+            "/v1/responses",
+            json={**_r_idem, "stream": True},
+            headers={"Idempotency-Key": "resp-fresh", "Last-Event-ID": "0"},
+        ).status_code
+        == 409
+    )
+    out["responses_resume_needs_stream_400"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json=_r_idem,
+            headers={**_r_key, "Last-Event-ID": "0"},
+        ).status_code
+        == 400
+    )
+    # capacity admission applies to the Responses surface too
+    rd_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    rd_app.state.inflight_slots.acquire()
+    try:
+        r = _TC2(rd_app).post("/v1/responses", json={"model": "fx1", "input": "h"})
+    finally:
+        rd_app.state.inflight_slots.release()
+    out["responses_over_capacity_503_shape"] = (
+        r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
+    )
+
+    # ---- lane 82: the tool channel on /v1/responses ----
+    # The flattened Responses spec and the function_call output items run
+    # the same gated pipeline as chat — the request translates onto the
+    # shared tool channel (specs nest under `function`), calls land in
+    # `output` as function_call items, and a link without the channel
+    # answers 501.
+    rt_spec = {
+        "type": "function",
+        "name": "calc",
+        "description": "arithmetic",
+        "parameters": {"type": "object", "properties": {"x": {"type": "number"}}},
+    }
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc one",
+            "tools": [rt_spec],
+            "tool_choice": "required",
+            "parallel_tool_calls": True,
+        },
+    )
+    ritems = r.json().get("output") or []
+    rfc: dict[str, Any] = next((it for it in ritems if it.get("type") == "function_call"), {})
+    out["responses_tools_call_items"] = (
+        r.status_code == 200
+        and rfc.get("call_id") == "call_0"
+        and rfc.get("name") == "calc"
+        and rfc.get("arguments") == '{"x": 1}'
+        and rfc.get("status") == "completed"
+        and str(rfc.get("id", "")).startswith("fc_")
+        # a calls-only turn ships no message item
+        and not any(it.get("type") == "message" for it in ritems)
+    )
+    out["responses_tools_forwarded_verbatim"] = (
+        r.status_code == 200
+        and oi_tool.seen_tools
+        == [
+            {
+                "type": "function",
+                "function": {k: v for k, v in rt_spec.items() if k != "type"},
+            }
+        ]
+        and oi_tool.seen_choice == "required"
+        and oi_tool.seen_parallel is True
+        and r.json().get("tools") == [rt_spec]
+        and r.json().get("tool_choice") == "required"
+        and r.json().get("parallel_tool_calls") is True
+    )
+    # dict tool_choice folds onto the shared channel's {type, function:{name}}
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "tools": [rt_spec],
+            "tool_choice": {"type": "function", "name": "calc"},
+        },
+    )
+    out["responses_tool_choice_dict_folds"] = (
+        r.status_code == 200
+        and oi_tool.seen_choice == {"type": "function", "function": {"name": "calc"}}
+        and r.json().get("tool_choice") == {"type": "function", "name": "calc"}
+    )
+    r = oi_tools.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "x", "tools": [rt_spec]},
+    )
+    out["responses_tool_choice_default_auto"] = r.json().get("tool_choice") == "auto"
+    # function_call/function_call_output items fold into the shared chat
+    # history — one assistant turn per call-run, a role:tool message per
+    # output, verbatim
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "q"}],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_a",
+                    "name": "calc",
+                    "arguments": '{"a": 1}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_b",
+                    "name": "calc",
+                    "arguments": '{"b": 2}',
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_a",
+                    "output": "2",
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_b",
+                    "output": [{"type": "output_text", "text": "3"}],
+                },
+                {"role": "user", "content": "and?"},
+            ],
+        },
+    )
+    out["responses_tool_items_fold_history"] = r.status_code == 200 and oi_tool.seen_messages == [
+        {"role": "user", "content": "q"},
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_a",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": '{"a": 1}'},
+                },
+                {
+                    "id": "call_b",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": '{"b": 2}'},
+                },
+            ],
+        },
+        {"role": "tool", "content": "2", "tool_call_id": "call_a"},
+        {"role": "tool", "content": "3", "tool_call_id": "call_b"},
+        {"role": "user", "content": "and?"},
+    ]
+    # a link without the channel answers 501 — the spec never drops
+    out["responses_tools_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "tools": [rt_spec]},
+        ).status_code
+        == 501
+    )
+    # fail-closed bounds: >128 tools, tool_choice/parallel without tools,
+    # a bad dict choice, malformed items — all refuse before model spend
+    out["responses_tools_bounds_refused"] = all(
+        oi_tools.post("/v1/responses", json={"model": "fx1", "input": "x", **kw}).status_code == 422
+        for kw in (
+            {"tools": [rt_spec] * 129},
+            {"tool_choice": "auto"},
+            {"parallel_tool_calls": True},
+            {"tools": [rt_spec], "tool_choice": {"type": "function"}},
+            {"tools": [rt_spec], "tool_choice": {"type": "bogus", "name": "f"}},
+            {"tools": [{"type": "bogus", "name": "f"}]},
+        )
+    )
+    out["responses_tool_items_bad_shape_400"] = all(
+        oi_tools.post("/v1/responses", json={"model": "fx1", "input": [it]}).status_code == 400
+        for it in (
+            {"type": "function_call", "name": "calc", "arguments": "{}"},
+            {"type": "function_call", "call_id": "c", "arguments": "{}"},
+            {"type": "function_call", "call_id": "c", "name": "calc"},
+            {"type": "function_call_output", "output": "2"},
+            {"type": "function_call_output", "call_id": "c"},
+        )
+    )
+    # the stream emits the fc-item events — output_item.added, per-part
+    # arguments deltas, arguments.done, output_item.done — and the
+    # completed frame carries the same object the JSON path returns
+    rts1 = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "tools": [rt_spec],
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "resp-tools-82"},
+    )
+    _tlines = rts1.text.splitlines()
+    _tev = [ln[7:] for ln in _tlines if ln.startswith("event: ")]
+    _tdata = [_json3.loads(ln[6:]) for ln in _tlines if ln.startswith("data: ")]
+    _tfc_done: dict[str, Any] = next(
+        (
+            d["item"]
+            for d in _tdata
+            if d["type"] == "response.output_item.done" and d["item"].get("type") == "function_call"
+        ),
+        {},
+    )
+    out["responses_tool_stream_events"] = (
+        rts1.status_code == 200
+        and "response.output_item.added" in _tev
+        and "response.function_call_arguments.delta" in _tev
+        and "response.function_call_arguments.done" in _tev
+        and any(
+            d.get("type") == "response.output_item.added"
+            and d.get("item", {}).get("type") == "function_call"
+            and d["item"].get("status") == "in_progress"
+            for d in _tdata
+        )
+        and "".join(
+            d["delta"] for d in _tdata if d["type"] == "response.function_call_arguments.delta"
+        )
+        == '{"x": 1}'
+        and _tfc_done.get("call_id") == "call_0"
+        and _tfc_done.get("status") == "completed"
+        and _tdata[-1]["response"]["output"]
+        == [
+            {
+                "type": "function_call",
+                "id": _tfc_done["id"],
+                "call_id": "call_0",
+                "name": "calc",
+                "arguments": '{"x": 1}',
+                "status": "completed",
+            }
+        ]
+    )
+    # fc item ids mint once — a keyed stream replays byte-identically
+    rts2 = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "tools": [rt_spec],
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "resp-tools-82"},
+    )
+    out["responses_tool_stream_replay"] = (
+        rts2.status_code == 200
+        and rts1.content == rts2.content
+        and rts2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    # the retrieval index carries the fc items too — a stored calls-only
+    # response round-trips the full output
+    rt_store = oi_tools.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "calc", "tools": [rt_spec]},
+    )
+    rt_id = rt_store.json().get("id", "")
+    rget = oi_tools.get(f"/v1/responses/{rt_id}")
+    out["responses_tool_store_retrieve"] = (
+        rget.status_code == 200
+        and (rget.json().get("output") or [{}])[0].get("type") == "function_call"
+        and (rget.json().get("output") or [{}])[0].get("call_id") == "call_0"
+    )
+    out["responses_tool_store_delete"] = (
+        oi_tools.delete(f"/v1/responses/{rt_id}").status_code == 200
+        and oi_tools.get(f"/v1/responses/{rt_id}").status_code == 404
+    )
+    out["capabilities_reports_responses_tools"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_responses_tools")
+        is True
+    )
+
+    # ---- /v1/files + /v1/batches: the OpenAI async channel over the jobs
+    # executor — store caps, submit-time line validation, per-line gated
+    # execution through the live route cores, output files, cooperative
+    # cancel, expiry projection, and the shared /v1 idempotency space.
+    fb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    _bf_lines = [
+        {
+            "custom_id": "a",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        },
+        {
+            "custom_id": "b",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": [{"role": "user", "content": "y"}]},
+        },
+        {
+            "custom_id": "bad-temp",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {
+                "model": "fx1",
+                "temperature": 5.0,
+                "messages": [{"role": "user", "content": "z"}],
+            },
+        },
+    ]
+    _bf_bytes = ("\n".join(_json3.dumps(line) for line in _bf_lines) + "\n").encode()
+
+    def _upload(client: Any, content: bytes = _bf_bytes) -> dict[str, Any]:
+        r = client.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", content, "application/jsonl")},
+            data={"purpose": "batch"},
+        )
+        return dict(r.json())
+
+    def _wait_batch(client: Any, batch_id: str) -> dict[str, Any]:
+        for _ in range(500):
+            b = client.get(f"/v1/batches/{batch_id}").json()
+            if b["status"] in ("completed", "failed", "expired", "cancelled"):
+                return dict(b)
+            time.sleep(0.01)
+        return dict(b)
+
+    up = fb.post(
+        "/v1/files",
+        files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+        data={"purpose": "batch"},
+    )
+    fobj = up.json()
+    out["file_upload_200_shape"] = (
+        up.status_code == 200
+        and fobj["object"] == "file"
+        and fobj["purpose"] == "batch"
+        and fobj["filename"] == "in.jsonl"
+        and fobj["bytes"] == len(_bf_bytes)
+        and fobj["status"] == "processed"
+        and fobj["id"].startswith("file-")
+    )
+    # fail-closed upload surface: wrong purpose, missing file part,
+    # non-jsonl name, empty content, oversized — all OpenAI-shaped 4xx
+    up_purpose = fb.post(
+        "/v1/files",
+        files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+        data={"purpose": "fine-tune"},
+    )
+    out["file_upload_purpose_400"] = (
+        up_purpose.status_code == 400
+        and up_purpose.json()["error"]["code"] == "invalid_request"
+        and "purpose" in up_purpose.json()["error"]["message"]
+    )
+    out["file_upload_missing_400"] = (
+        fb.post("/v1/files", data={"purpose": "batch"}).status_code == 400
+    )
+    out["file_upload_ext_400"] = (
+        fb.post(
+            "/v1/files",
+            files={"file": ("in.txt", _bf_bytes, "text/plain")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 400
+    )
+    out["file_upload_empty_400"] = (
+        fb.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", b"", "application/jsonl")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 400
+    )
+    tiny = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_bytes_max=4))
+    out["file_upload_oversize_413"] = (
+        tiny.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 413
+    )
+    # listing newest-first + retrieve + content round-trip + delete
+    fid = fobj["id"]
+    flist = fb.get("/v1/files").json()
+    out["files_list_newest_first"] = (
+        flist["object"] == "list"
+        and flist["data"][0]["id"] == fid
+        and all(f["object"] == "file" for f in flist["data"])
+    )
+    out["file_retrieve_200"] = fb.get(f"/v1/files/{fid}").json()["id"] == fid
+    out["file_retrieve_404_shape"] = (
+        fb.get("/v1/files/file-nope").status_code == 404
+        and fb.get("/v1/files/file-nope").json()["error"]["code"] == "file_not_found"
+    )
+    fcont = fb.get(f"/v1/files/{fid}/content")
+    out["file_content_roundtrip"] = (
+        fcont.status_code == 200
+        and fcont.content == _bf_bytes
+        and fcont.headers["content-type"].startswith("application/jsonl")
+    )
+    out["file_delete_then_404"] = (
+        fb.delete(f"/v1/files/{fid}").json() == {"id": fid, "object": "file", "deleted": True}
+        and fb.get(f"/v1/files/{fid}").status_code == 404
+    )
+    # LRU bound: file_max=1 evicts the first upload
+    lru = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_max=1))
+    fid1 = _upload(lru)["id"]
+    fid2 = _upload(lru)["id"]
+    out["file_lru_evicts_oldest"] = (
+        lru.get(f"/v1/files/{fid1}").status_code == 404
+        and lru.get(f"/v1/files/{fid2}").status_code == 200
+    )
+
+    # batch lifecycle over the uploaded file
+    upb = _upload(fb)
+    bc = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": upb["id"],
+            "endpoint": "/v1/chat/completions",
+            "completion_window": "24h",
+            "metadata": {"k": "v"},
+        },
+    )
+    bobj = bc.json()
+    out["batch_create_200_shape"] = (
+        bc.status_code == 200
+        and bobj["object"] == "batch"
+        and bobj["id"].startswith("batch_")
+        and bobj["input_file_id"] == upb["id"]
+        and bobj["endpoint"] == "/v1/chat/completions"
+        and bobj["completion_window"] == "24h"
+        and bobj["metadata"] == {"k": "v"}
+        # counts race with the worker — pin only the total at create time
+        and bobj["request_counts"]["total"] == 3
+        and bobj["request_counts"]["completed"] + bobj["request_counts"]["failed"] <= 3
+        and bobj["status"] in ("validating", "in_progress", "completed")
+        and bobj["expires_at"] == bobj["created_at"] + 86400
+    )
+    bterm = _wait_batch(fb, bobj["id"])
+    out["batch_completes_counts"] = (
+        bterm["status"] == "completed"
+        and bterm["request_counts"] == {"total": 3, "completed": 2, "failed": 1}
+        and bterm["completed_at"] is not None
+        and bterm["finalizing_at"] is not None
+        and bterm["in_progress_at"] is not None
+        and bobj["id"] == bterm["id"]
+    )
+    # output file: one OpenAI batch-result line per input; the bad line
+    # carries the same 400 error body the live route would have returned
+    outf = fb.get(f"/v1/files/{bterm['output_file_id']}/content")
+    olines = [_json3.loads(line) for line in outf.text.splitlines() if line.strip()]
+    out["batch_output_file_shape"] = (
+        outf.status_code == 200
+        and outf.headers["content-type"].startswith("application/jsonl")
+        and len(olines) == 3
+        and all(
+            o["id"].startswith("batch_req_") and o["response"]["request_id"].startswith("req_")
+            for o in olines
+        )
+    )
+    out["batch_output_line_bodies"] = (
+        olines[0]["custom_id"] == "a"
+        and olines[0]["response"]["status_code"] == 200
+        and olines[0]["response"]["body"]["object"] == "chat.completion"
+        and olines[0]["response"]["body"]["choices"][0]["message"]["content"] == "clean:x"
+        and olines[1]["response"]["body"]["choices"][0]["message"]["content"] == "clean:y"
+        and olines[2]["custom_id"] == "bad-temp"
+        and olines[2]["response"]["status_code"] == 400
+        and olines[2]["response"]["body"]["error"]["type"] == "invalid_request_error"
+    )
+    # output files are listed with purpose=batch_output
+    out["batch_output_file_listed"] = any(
+        f["id"] == bterm["output_file_id"] and f["purpose"] == "batch_output"
+        for f in fb.get("/v1/files").json()["data"]
+    )
+    # submit-time validation: corrupt lines fail the whole create 400
+    out["batch_submit_bad_json_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": _upload(fb, b"not json\n")["id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    _bad_shape = (
+        _json3.dumps({"custom_id": "x", "method": "GET", "url": "/v1/chat/completions", "body": {}})
+        + "\n"
+    ).encode()
+    r_bad = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": _upload(fb, _bad_shape)["id"],
+            "endpoint": "/v1/chat/completions",
+        },
+    )
+    out["batch_submit_line_shape_400"] = (
+        r_bad.status_code == 400 and "line 1" in r_bad.json()["error"]["message"]
+    )
+    _url_mm = (
+        _json3.dumps(
+            {
+                "custom_id": "x",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {"model": "fx1", "input": "h"},
+            }
+        )
+        + "\n"
+    ).encode()
+    out["batch_submit_url_mismatch_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": _upload(fb, _url_mm)["id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    out["batch_bad_endpoint_422"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": upb["id"], "endpoint": "/v1/completions"},
+        ).status_code
+        == 422
+    )
+    out["batch_bad_file_404"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": "file-nope", "endpoint": "/v1/chat/completions"},
+        ).status_code
+        == 404
+    )
+    # embeddings lines ride the same channel — the endpoint's own request
+    # model validates the body and the embed core answers the envelope
+    _emb_lines = (
+        _json3.dumps(
+            {
+                "custom_id": "e1",
+                "method": "POST",
+                "url": "/v1/embeddings",
+                "body": {"model": "emb-m", "input": ["a", "b"]},
+            }
+        )
+        + "\n"
+        + _json3.dumps(
+            {
+                "custom_id": "e2",
+                "method": "POST",
+                "url": "/v1/embeddings",
+                "body": {"model": "emb-m", "input": ""},
+            }
+        )
+        + "\n"
+    ).encode()
+    _eb_fid = _upload(oi_emb, _emb_lines)["id"]
+    _eb = oi_emb.post(
+        "/v1/batches",
+        json={"input_file_id": _eb_fid, "endpoint": "/v1/embeddings"},
+    )
+    _eb_done = _wait_batch(oi_emb, _eb.json()["id"])
+    _eb_lines = [
+        _json3.loads(ol)
+        for ol in oi_emb.get(f"/v1/files/{_eb_done['output_file_id']}/content").text.splitlines()
+        if ol.strip()
+    ]
+    out["openai_embeddings_batch_lines"] = (
+        _eb.status_code == 200
+        and _eb_done["status"] == "completed"
+        and _eb_lines[0]["response"]["status_code"] == 200
+        and _eb_lines[0]["response"]["body"]["object"] == "list"
+        and len(_eb_lines[0]["response"]["body"]["data"]) == 2
+        and _eb_lines[1]["response"]["status_code"] == 400
+    )
+    # output files can't be resubmitted as batch input
+    out["batch_output_as_input_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": bterm["output_file_id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    # idempotency: keyed create replays the submit envelope; conflict 409
+    bidem = {"input_file_id": upb["id"], "endpoint": "/v1/chat/completions"}
+    bi1 = fb.post("/v1/batches", json=bidem, headers={"Idempotency-Key": "bk-1"})
+    bi2 = fb.post("/v1/batches", json=bidem, headers={"Idempotency-Key": "bk-1"})
+    out["batch_idem_replay"] = (
+        bi1.json()["id"] == bi2.json()["id"]
+        and bi2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    out["batch_idem_conflict_409"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": upb["id"], "endpoint": "/v1/responses"},
+            headers={"Idempotency-Key": "bk-1"},
+        ).status_code
+        == 409
+    )
+    # listing + cursor pagination
+    blist = fb.get("/v1/batches?limit=1").json()
+    out["batches_list_shape"] = (
+        blist["object"] == "list"
+        and len(blist["data"]) == 1
+        and blist["has_more"] is True
+        and blist["first_id"] == blist["data"][0]["id"]
+        and blist["last_id"] == blist["data"][0]["id"]
+    )
+    bpage2 = fb.get(f"/v1/batches?limit=50&after={blist['last_id']}").json()
+    out["batches_list_after_cursor"] = (
+        bpage2["has_more"] is False
+        and all(b["id"] != blist["last_id"] for b in bpage2["data"])
+        and len(bpage2["data"]) >= 1
+    )
+    out["batch_retrieve_404"] = fb.get("/v1/batches/batch_nope").status_code == 404
+    out["batch_cancel_terminal_409"] = (
+        fb.post(f"/v1/batches/{bterm['id']}/cancel").status_code == 409
+    )
+    # cooperative cancel: a gated backend holds the worker mid-batch;
+    # cancel lands 'cancelling', the batch finishes 'cancelled' with the
+    # lines completed so far written to the output file
+    gate_ev = _threading.Event()
+
+    class _GateBackend(_OiBackend):
+        def complete(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            gate_ev.wait(10)
+            return super().complete(messages, sampling=sampling)
+
+    gapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _GateBackend()))
+    gid = _upload(gapp)["id"]
+    gcb = gapp.post(
+        "/v1/batches",
+        json={"input_file_id": gid, "endpoint": "/v1/chat/completions"},
+    )
+    gcc = gapp.post(f"/v1/batches/{gcb.json()['id']}/cancel")
+    gate_ev.set()
+    gterm = _wait_batch(gapp, gcb.json()["id"])
+    out["batch_cancel_cooperative"] = (
+        gcc.status_code == 200
+        and gcc.json()["status"] == "cancelling"
+        and gterm["status"] == "cancelled"
+        and gterm["cancelled_at"] is not None
+        and gterm["request_counts"]["completed"] <= 1
+        and gterm["output_file_id"] is not None
+    )
+    # expiry projection: a record past expires_at reports 'expired'
+    exp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    past = api_mod._BatchRecord(  # noqa: SLF001
+        batch_id="batch_past",
+        input_file_id="file-x",
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        status="in_progress",
+        created_at=1,
+        expires_at=2,
+    )
+    exp_app.state.batch_store.put(past)
+    r_exp = _TC2(exp_app).get("/v1/batches/batch_past").json()
+    out["batch_expiry_projection"] = (
+        r_exp["status"] == "expired" and r_exp["expired_at"] is not None
+    )
+    # over-capacity admission: a batch submit under a held inflight slot
+    # is the same 503 over_capacity as the sync surface
+    cap_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    cap = _TC2(cap_app)
+    cap_fid = _upload(cap)["id"]
+    cap_app.state.inflight_slots.acquire()
+    try:
+        cap_r = cap.post(
+            "/v1/batches",
+            json={"input_file_id": cap_fid, "endpoint": "/v1/chat/completions"},
+        )
+    finally:
+        cap_app.state.inflight_slots.release()
+    out["batch_over_capacity_503"] = (
+        cap_r.status_code == 503
+        and cap_r.json()["error"]["code"] == "over_capacity"
+        and cap_r.headers.get("retry-after") == "1"
+    )
+
+    # header routing: the submitter's X-Fx1-Backend applies to every line
+    # (unknown names are rejected per-line 400, like the live route)
+    def _hdr_resolver(name: str, **kw: Any) -> _OiBackend:
+        be = _OiBackend()
+        be._model = f"routed-{name}"
+        return be
+
+    happ = _TC2(api_mod.create_app(backend_resolver=_hdr_resolver))
+    hid = _upload(happ)["id"]
+    hcb = happ.post(
+        "/v1/batches",
+        json={"input_file_id": hid, "endpoint": "/v1/chat/completions"},
+        headers={"X-Fx1-Backend": "byok"},
+    )
+    hterm = _wait_batch(happ, hcb.json()["id"])
+    hout = happ.get(f"/v1/files/{hterm['output_file_id']}/content")
+    hlines = [_json3.loads(line) for line in hout.text.splitlines() if line.strip()]
+    out["batch_header_backend_routes_lines"] = (
+        hterm["status"] == "completed"
+        and hlines[0]["response"]["status_code"] == 200
+        and hlines[0]["response"]["body"]["model"] == "routed-byok"
+        and hlines[1]["response"]["body"]["model"] == "routed-byok"
+        and hlines[2]["response"]["status_code"] == 400
+    )
+    out["batch_header_unknown_backend_line_400"] = (
+        lambda hb: _wait_batch(happ, hb["id"])["request_counts"]["failed"] == 3
+    )(
+        happ.post(
+            "/v1/batches",
+            json={"input_file_id": hid, "endpoint": "/v1/chat/completions"},
+            headers={"X-Fx1-Backend": "not-a-backend"},
+        ).json()
+    )
+    # the Responses endpoint runs through the same machinery
+    rid2 = _upload(
+        fb,
+        (
+            _json3.dumps(
+                {
+                    "custom_id": "r1",
+                    "method": "POST",
+                    "url": "/v1/responses",
+                    "body": {"model": "fx1", "input": "hi"},
+                }
+            )
+            + "\n"
+        ).encode(),
+    )["id"]
+    rcb = fb.post(
+        "/v1/batches",
+        json={"input_file_id": rid2, "endpoint": "/v1/responses"},
+    )
+    rterm = _wait_batch(fb, rcb.json()["id"])
+    rout = fb.get(f"/v1/files/{rterm['output_file_id']}/content")
+    rlines = [_json3.loads(line) for line in rout.text.splitlines() if line.strip()]
+    out["batch_responses_endpoint"] = (
+        rterm["status"] == "completed"
+        and rlines[0]["response"]["status_code"] == 200
+        and rlines[0]["response"]["body"]["object"] == "response"
+        and rlines[0]["response"]["body"]["output"][0]["content"][0]["text"] == "clean:hi"
+    )
+
+    # ---- /v1 retrieval: the `store` flag honored end-to-end — stored
+    # envelopes fetch verbatim by id (sync, stream, n-fan-out, batch
+    # lines, idem replays all index identically), store=false and
+    # deletes 404, wrong-surface ids 404, the LRU bound evicts.
+
+    # sync chat call → GET returns the identical envelope
+    s1 = fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "keep-me"}]},
+    )
+    sid = s1.json()["id"]
+    out["retrieve_chat_stored"] = (
+        s1.status_code == 200 and fb.get(f"/v1/chat/completions/{sid}").json() == s1.json()
+    )
+    # store=false keeps the call out of the index (still logged)
+    s2 = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "skip-me"}],
+            "store": False,
+        },
+    )
+    r_get_miss = fb.get(f"/v1/chat/completions/{s2.json()['id']}")
+    out["retrieve_store_false_404"] = (
+        s2.status_code == 200
+        and r_get_miss.status_code == 404
+        and r_get_miss.json()["error"]["code"] == "not_found"
+        # still evidence-logged — the flag gates retrieval, not the ledger
+        and fb.get(f"/harness/completions/{s2.headers['x-fx1-completion-id']}").status_code == 200
+    )
+    # delete drops the envelope; a second delete 404s
+    d1 = fb.delete(f"/v1/chat/completions/{sid}")
+    out["retrieve_chat_delete"] = (
+        d1.status_code == 200
+        and d1.json()["object"] == "chat.completion.deleted"
+        and d1.json()["deleted"] is True
+        and fb.get(f"/v1/chat/completions/{sid}").status_code == 404
+        and fb.delete(f"/v1/chat/completions/{sid}").status_code == 404
+    )
+    # responses surface stores + deletes symmetrically
+    r1 = fb.post("/v1/responses", json={"model": "fx1", "input": "keep-r"})
+    rid = r1.json()["id"]
+    out["retrieve_response_stored"] = (
+        r1.status_code == 200
+        and fb.get(f"/v1/responses/{rid}").json() == r1.json()
+        and fb.delete(f"/v1/responses/{rid}").json()["object"] == "response.deleted"
+        and fb.get(f"/v1/responses/{rid}").status_code == 404
+    )
+    r2 = fb.post("/v1/responses", json={"model": "fx1", "input": "skip-r", "store": False})
+    out["retrieve_response_store_false_404"] = (
+        r2.status_code == 200 and fb.get(f"/v1/responses/{r2.json()['id']}").status_code == 404
+    )
+    # wrong-surface id is a miss, not a cross-read
+    out["retrieve_wrong_surface_404"] = (
+        fb.get(f"/v1/responses/{sid}").status_code == 404
+        and fb.get("/v1/chat/completions/resp_deadbeef").status_code == 404
+    )
+    # a streamed call lands the assembled envelope under the same id
+    st = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "stream-me"}],
+            "stream": True,
+        },
+    )
+    st_id = next(
+        _json3.loads(ln[6:])["id"]
+        for ln in st.text.splitlines()
+        if ln.startswith("data: ") and ln != "data: [DONE]"
+    )
+    st_env = fb.get(f"/v1/chat/completions/{st_id}")
+    out["retrieve_stream_stored"] = (
+        st.status_code == 200
+        and st_env.status_code == 200
+        and st_env.json()["choices"][0]["message"]["content"] == "clean:stream-me"
+    )
+    # n>1: one envelope (n choices) under one id
+    n2 = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "fan"}],
+            "n": 2,
+        },
+    )
+    n2_env = fb.get(f"/v1/chat/completions/{n2.json()['id']}")
+    out["retrieve_n_fanout_single_envelope"] = (
+        n2_env.status_code == 200 and len(n2_env.json()["choices"]) == 2
+    )
+    # batch lines store too — the output body's id fetches the same envelope
+    bfid = _upload(fb)["id"]
+    bcb = fb.post(
+        "/v1/batches",
+        json={"input_file_id": bfid, "endpoint": "/v1/chat/completions"},
+    )
+    bterm = _wait_batch(fb, bcb.json()["id"])
+    bline0 = _json3.loads(
+        fb.get(f"/v1/files/{bterm['output_file_id']}/content").text.splitlines()[0]
+    )
+    b_id = bline0["response"]["body"]["id"]
+    out["retrieve_batch_line_stored"] = (
+        bterm["status"] == "completed"
+        and fb.get(f"/v1/chat/completions/{b_id}").json() == bline0["response"]["body"]
+    )
+    # an idempotent replay re-pins the envelope — still retrievable
+    idem = fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "idem"}]},
+        headers={"Idempotency-Key": "lane80-idem"},
+    )
+    fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "idem"}]},
+        headers={"Idempotency-Key": "lane80-idem"},
+    )
+    out["retrieve_idem_replay_stored"] = (
+        fb.get(f"/v1/chat/completions/{idem.json()['id']}").status_code == 200
+    )
+    # LRU bound: store_max=2 evicts the oldest entry
+    ev_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), store_max=2))
+    ev_ids = [
+        ev_app.post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "user", "content": f"ev{i}"}]},
+        ).json()["id"]
+        for i in range(3)
+    ]
+    out["retrieve_store_max_evicts"] = (
+        ev_app.get(f"/v1/chat/completions/{ev_ids[0]}").status_code == 404
+        and ev_app.get(f"/v1/chat/completions/{ev_ids[1]}").status_code == 200
+        and ev_app.get(f"/v1/chat/completions/{ev_ids[2]}").status_code == 200
+    )
+    # capabilities advertises the index bound + flag
+    caps = fb.get("/harness/capabilities").json()
+    out["capabilities_retrieval"] = (
+        caps["features"]["openai_retrieval"] is True and caps["limits"]["store_max"] == 256.0
+    )
+
+
+def api_audit_bench() -> dict[str, Any]:
+    """Sealed receipt: every probe True under api_audit.v1."""
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+    from quant_fund.utils.reproducibility import git_revision
+
+    r = api_audit()
+    ok = all(v is True for v in r.values())
+    out: dict[str, Any] = {
+        "kind": "api_audit",
+        "schema": "api_audit.v1",
+        "git_revision": git_revision(),
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "claim": {"results": r, "ok": ok},
+        "interpretation": (
+            "Harness API holds: registry parity with the in-process Harness, "
+            "configs/ containment over the wire, uniform 4xx fail-closed shape, "
+            "the honesty gate fires on model output (502), credential-less "
+            "backends 503, arbitrary receipts verify through the posted "
+            "payload, auth is X-API-Key or loopback-only, and every gated "
+            "call lands in the bounded completion log (X-Fx1-Completion-Id "
+            "handle; hashes, usage, verdict — never content) fetchable via "
+            "GET /harness/completions[/{id}], and each logged call exports "
+            "as a sealed fx1_completion_record.v1 document "
+            "(GET …/{id}/receipt) — deterministic, verifiable through "
+            "verify_receipt / POST /receipts/verify, and broken by any "
+            "byte of record tampering. Terminal jobs export the same way "
+            "as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): "
+            "stdout/stderr digested inside record.result, callback URL "
+            "hashed, seal re-derives and verifies, tampering breaks it."
+            if ok
+            else f"HARNESS API AUDIT DEFECT: {r}"
+        ),
+    }
+    out["receipt_sha256"] = hash_bytes(canonical_json_bytes(out))
+    return out

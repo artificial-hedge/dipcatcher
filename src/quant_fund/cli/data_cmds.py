@@ -225,6 +225,7 @@ def membership_coverage_cmd(
         merge_bar_panels,
     )
     from quant_fund.proofcore.contracts import sha256_hex_bytes
+    from quant_fund.utils.hashing import canonical_json_bytes
 
     if not membership.is_file():
         raise typer.BadParameter(f"membership file not found: {membership}")
@@ -262,6 +263,7 @@ def membership_coverage_cmd(
     typer.echo(f"mean_coverage={float(report['mean_coverage']):.6f}")
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)
+        report["report_sha256"] = sha256_hex_bytes(canonical_json_bytes(report))
         out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         typer.echo(f"wrote {out}")
 

@@ -48,11 +48,18 @@ dependencies = [
     # previously relied on transitive pulls; declared per P6.10 hygiene.
     "cryptography>=44",
     "threadpoolctl>=3.5",
+    # Post-validation for the OpenAI surface's response_format json_schema
+    # mode — the harness can't constrain-decode arbitrary backends, so the
+    # gate validates the returned text against the declared schema.
+    "jsonschema>=4.23",
+    # FastAPI multipart parsing for POST /v1/files (the OpenAI batch-input
+    # upload contract is multipart/form-data).
+    "python-multipart>=0.0.20",
     "exchange-calendars==4.13.2",
 ]
 
 [project.optional-dependencies]
-nn = ["torch>=2.4", "tirex-2>=0.3.0"]
+nn = ["torch>=2.6", "tirex-2>=0.3.0"]
 # shap 0.52 pins numba<0.63 on darwin x86_64, and that numba pins numpy<2.4.
 # Keeping shap there forks uv.lock into numpy 2.3.5 and 2.5.3. Phase-1
 # rejects a duplicated locked runtime package, so the extra is omitted on
@@ -103,6 +110,12 @@ docs = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.uv]
+# Security floors for transitive packages; these are not runtime imports.
+# urllib3: CVE-2026-97687/97688/97689; virtualenv: activation/config injection
+# and downloaded-wheel integrity fixes through 21.7.13.
+constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/fx1", "src/quant_fund"]
 
@@ -144,9 +157,11 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C901", "DTZ"]
 ignore = ["E501", "B008", "UP042", "SIM108", "SIM115"]
 
 [tool.ruff.lint.mccabe]
-# Ceiling is validate_ledger_schema (paper ledger, left intact).
+# Hard ceiling is validate_ledger_schema (paper ledger, left intact).
 # verify_research_artifact was 196 before it was split. Raising this
 # fails tests/unit/test_quality_ratchet.py. Lowering it is allowed.
+# Per-function ceilings (may only decrease) live in
+# quality/mccabe_baseline.txt — see scripts/check_mccabe_ratchet.py.
 max-complexity = 74
 
 [tool.ruff.lint.per-file-ignores]
@@ -387,3 +402,11 @@ proof = 91
 leakage = 86
 reality = 91
 proofcore = 91
+# Wave-2 per-MODULE floors (WAVE2.md §1.6, amendment I5): every new wave-2
+# module >= 90%, enforced alongside the package floors above. Dotted keys map
+# to single module files in `proofcore.ci coverage-gate`.
+"proofcore.scheduler" = 90
+"proof.runner" = 90
+"proof.estimators" = 90
+"proof.replay" = 90
+"leakage.guard" = 90

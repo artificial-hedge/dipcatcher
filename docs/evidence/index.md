@@ -512,6 +512,355 @@ Remaining files under `receipts/`. Result fields are copied. Fields whose
 names tokenize to a forbidden research-headline metric are omitted and
 counted. Prose that contains such a token is quoted verbatim.
 
+### `receipts/basis_carry_dd7705fc0f2f1c25.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/basis_carry_dd7705fc0f2f1c25.json | 852f56a1e2aeb3654d406fbb14a4a2baa7cd20949d45153a98c5a99a2248f741 | dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8 | not_checked | c0194c18e3d54182d305da821214c8b1479818df | inputs_sha256=a5a7bd6664572a7515af9e91359c5ad63a7b528d8fac675a4afbce2c8d593be4 | unspecified | absent | true | false |
+
+- `claim`: research_only
+- `cross_contract`:
+  - `frac_within_tolerance`: 0.4
+  - `n_contracts`: 5
+  - `n_delivered`: 5
+  - `residual_max_abs`: 0.00825956686641372
+  - `residual_mean`: -0.003865422359408857
+  - `residual_std`: 0.004219440789149606
+  - `residuals`:
+    - -0.0021258985685353796
+    - -0.005910546520925502
+    - -0.005617618882193931
+    - 0.0025865190410242485
+    - -0.00825956686641372
+  - `tolerance`: 0.005
+- `data_label`: kraken
+- `generated_at`: 2026-09-29T19:49:36.110321+00:00
+- `git_revision`: c0194c18e3d54182d305da821214c8b1479818df
+- `inputs`:
+  - `contracts`:
+    - `FF_XBTUSD_260925`:
+      - `data_label`: kraken
+      - `delivery`: 2026-09-25T08:00:00+00:00
+      - `first_date`: 2026-02-20
+      - `last_date`: 2026-09-25
+      - `n_rows`: 218
+      - `sha256`: 2fa871f3470f9732620f8bd3a280ff0d531b0fbd19df9fa6304bc6d9ac40db51
+    - `FI_XBTUSD_250926`:
+      - `data_label`: kraken
+      - `delivery`: 2025-09-26T16:00:00+00:00
+      - `first_date`: 2025-02-28
+      - `last_date`: 2025-09-26
+      - `n_rows`: 211
+      - `sha256`: 2a110aa376d72d00714721b11db5ebfdadd57e402af23480a1d0f9d7a9ad71db
+    - `FI_XBTUSD_251226`:
+      - `data_label`: kraken
+      - `delivery`: 2025-12-26T16:00:00+00:00
+      - `first_date`: 2025-05-30
+      - `last_date`: 2025-12-26
+      - `n_rows`: 211
+      - `sha256`: c683120e3bcdc190221d809b4d89035922f47df1561be538488562ee7a0b49b0
+    - `FI_XBTUSD_260327`:
+      - `data_label`: kraken
+      - `delivery`: 2026-03-27T16:00:00+00:00
+      - `first_date`: 2025-08-29
+      - `last_date`: 2026-03-27
+      - `n_rows`: 211
+      - `sha256`: ff1e15ea34d99f632fef0b4adfea74b3b33180de1b221fa5c6a1feb5e69ced84
+    - `FI_XBTUSD_260626`:
+      - `data_label`: kraken
+      - `delivery`: 2026-06-26T16:00:00+00:00
+      - `first_date`: 2025-11-28
+      - `last_date`: 2026-06-26
+      - `n_rows`: 211
+      - `sha256`: c93e84dfb2060fa9f4b5dec3459b9c7b1988d43046aacf8e6b64c1fcc7b72bd2
+  - `params`:
+    - `annualization_days`: 365.0
+    - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
+    - `dte_buckets`:
+      - 90.0
+      - 60.0
+      - 30.0
+      - 14.0
+      - 7.0
+      - 1.0
+    - `dte_floor_days`: 1.0
+    - `min_overlap`: 5
+    - `tolerance`: 0.005
+  - `spot`:
+    - `data_label`: kraken
+    - `first_date`: 2024-10-09
+    - `last_date`: 2026-09-28
+    - `n_rows`: 720
+    - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
+- `kind`: basis_carry
+- `n_contracts`: 5
+- `n_error_rows`: 0
+- `n_rows`: 5
+- `params`:
+  - `annualization_days`: 365.0
+  - `convergence_note`: convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement
+  - `dte_buckets`:
+    - 90.0
+    - 60.0
+    - 30.0
+    - 14.0
+    - 7.0
+    - 1.0
+  - `dte_floor_days`: 1.0
+  - `min_overlap`: 5
+  - `tolerance`: 0.005
+- `receipt_sha256`: dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8
+- `research_only`: true
+- `results`:
+  - [0]
+    - `ann_basis_mean`: -0.005951836711651675
+    - `ann_basis_n`: 217
+    - `ann_basis_std`: 0.10462648582634972
+    - `basis_diff_std`: 0.005572170633201624
+    - `basis_first`: 0.022329257861628714
+    - `basis_last`: -0.0021258985685353796
+    - `basis_max`: 0.022329257861628714
+    - `basis_min`: -0.020580120962240576
+    - `contract`: FF_XBTUSD_260925
+    - `convergence_residual`: -0.0021258985685353796
+    - `delivered`: true
+    - `delivery`: 2026-09-25T08:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.0021258985685353796
+        - `date`: 2026-09-25
+        - `dte_days`: 0.3333333333333333
+      - `14`:
+        - `ann_basis`: -0.15638619380362703
+        - `basis`: -0.005712737673191855
+        - `date`: 2026-09-12
+        - `dte_days`: 13.333333333333334
+      - `30`:
+        - `ann_basis`: -0.12628006137956038
+        - `basis`: -0.010148534613151884
+        - `date`: 2026-08-27
+        - `dte_days`: 29.333333333333332
+      - `60`:
+        - `ann_basis`: -0.0034781871112633963
+        - `basis`: -0.0005654039322419037
+        - `date`: 2026-07-28
+        - `dte_days`: 59.333333333333336
+      - `7`:
+        - `ann_basis`: -0.30920701890392543
+        - `basis`: -0.005365235944451674
+        - `date`: 2026-09-19
+        - `dte_days`: 6.333333333333333
+      - `90`:
+        - `ann_basis`: -0.019649045099214803
+        - `basis`: -0.0048090813576160425
+        - `date`: 2026-06-28
+        - `dte_days`: 89.33333333333333
+    - `first_date`: 2026-02-20
+    - `last_date`: 2026-09-25
+    - `n_dates`: 218
+    - `residual_dte_days`: 0.3333333333333333
+    - `status`: ok
+  - [1]
+    - `ann_basis_mean`: 0.047906092717365976
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.023798523409683775
+    - `basis_diff_std`: 0.005832924510682373
+    - `basis_first`: -0.00016214126097742896
+    - `basis_last`: -0.005910546520925502
+    - `basis_max`: 0.06214810042407721
+    - `basis_min`: -0.005910546520925502
+    - `contract`: FI_XBTUSD_250926
+    - `convergence_residual`: -0.005910546520925502
+    - `delivered`: true
+    - `delivery`: 2025-09-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.005910546520925502
+        - `date`: 2025-09-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.10982284241782463
+        - `basis`: 0.0041120881635897805
+        - `date`: 2025-09-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.04098208841836609
+        - `basis`: 0.003330964264141171
+        - `date`: 2025-08-28
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.08190535030233229
+        - `basis`: 0.013389093793714592
+        - `date`: 2025-07-29
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.01309604276182913
+        - `basis`: -0.00023919712806993844
+        - `date`: 2025-09-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.04197883939935576
+        - `basis`: 0.010312609861576895
+        - `date`: 2025-06-29
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-02-28
+    - `last_date`: 2025-09-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [2]
+    - `ann_basis_mean`: 0.026016246386637673
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.06825742556171652
+    - `basis_diff_std`: 0.005713341989918736
+    - `basis_first`: 8.373413882184243e-05
+    - `basis_last`: -0.005617618882193931
+    - `basis_max`: 0.03975683524169132
+    - `basis_min`: -0.017734980103374355
+    - `contract`: FI_XBTUSD_251226
+    - `convergence_residual`: -0.005617618882193931
+    - `delivered`: true
+    - `delivery`: 2025-12-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.005617618882193931
+        - `date`: 2025-12-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: -0.0661010425430854
+        - `basis`: -0.0024750162048095903
+        - `date`: 2025-12-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.024039485971212478
+        - `basis`: 0.0019538942935506034
+        - `date`: 2025-11-27
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.04262656153849514
+        - `basis`: 0.006968177639626145
+        - `date`: 2025-10-28
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.12521861210869875
+        - `basis`: -0.002287097938058425
+        - `date`: 2025-12-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.05428198113789836
+        - `basis`: 0.013335025503282794
+        - `date`: 2025-09-28
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-05-30
+    - `last_date`: 2025-12-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [3]
+    - `ann_basis_mean`: 0.06382504232428857
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.14428892885164102
+    - `basis_diff_std`: 0.006272707912933614
+    - `basis_first`: -0.0001741695810244147
+    - `basis_last`: 0.0025865190410242485
+    - `basis_max`: 0.04180801518642847
+    - `basis_min`: -0.016077497217856646
+    - `contract`: FI_XBTUSD_260327
+    - `convergence_residual`: 0.0025865190410242485
+    - `delivered`: true
+    - `delivery`: 2026-03-27T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: 0.0025865190410242485
+        - `date`: 2026-03-27
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.18986224065060717
+        - `basis`: 0.007108997138515885
+        - `date`: 2026-03-14
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.08948908107934185
+        - `basis`: 0.007273541749827785
+        - `date`: 2026-02-26
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: 0.01102338605728856
+        - `basis`: 0.0018019964422416913
+        - `date`: 2026-01-27
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: 0.3767408170872671
+        - `basis`: 0.006881110814379308
+        - `date`: 2026-03-21
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: -0.023824549098608108
+        - `basis`: -0.005852788773995965
+        - `date`: 2025-12-28
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-08-29
+    - `last_date`: 2026-03-27
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+  - [4]
+    - `ann_basis_mean`: 9.404742959199314e-05
+    - `ann_basis_n`: 210
+    - `ann_basis_std`: 0.0027733312420510497
+    - `basis_diff_std`: 0.0006161572493513994
+    - `basis_first`: 1.0999563327580444e-07
+    - `basis_last`: -0.00825956686641372
+    - `basis_max`: 0.00043417356566328346
+    - `basis_min`: -0.00825956686641372
+    - `contract`: FI_XBTUSD_260626
+    - `convergence_residual`: -0.00825956686641372
+    - `delivered`: true
+    - `delivery`: 2026-06-26T16:00:00+00:00
+    - `dte_buckets`:
+      - `1`:
+        - `ann_basis`: null
+        - `basis`: -0.00825956686641372
+        - `date`: 2026-06-26
+        - `dte_days`: 0.6666666666666666
+      - `14`:
+        - `ann_basis`: 0.00828124218916916
+        - `basis`: 0.0003100739084529092
+        - `date`: 2026-06-13
+        - `dte_days`: 13.666666666666666
+      - `30`:
+        - `ann_basis`: 0.001758922610631562
+        - `basis`: 0.00014296265967690322
+        - `date`: 2026-05-28
+        - `dte_days`: 29.666666666666668
+      - `60`:
+        - `ann_basis`: -0.00066677351651706
+        - `basis`: -0.00010899767986899885
+        - `date`: 2026-04-28
+        - `dte_days`: 59.666666666666664
+      - `7`:
+        - `ann_basis`: -0.027575209999673642
+        - `basis`: -0.0005036568036470072
+        - `date`: 2026-06-20
+        - `dte_days`: 6.666666666666667
+      - `90`:
+        - `ann_basis`: 0.0005480977629498348
+        - `basis`: 0.0001346468477018316
+        - `date`: 2026-03-29
+        - `dte_days`: 89.66666666666667
+    - `first_date`: 2025-11-28
+    - `last_date`: 2026-06-26
+    - `n_dates`: 211
+    - `residual_dte_days`: 0.6666666666666666
+    - `status`: ok
+- `schema`: basis_carry.v1
+- `simulated_only`: false
+- `verdict`: 5/5 contracts measured, 5 delivered; residual mean -0.38654% max |residual| 0.82596%; 40% within tolerance 0.50%
+
 ### `receipts/calib_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1944,6 +2293,9912 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `window`: 50
 
+### `receipts/corpus_absence_exemplar.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_absence_exemplar.json | 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02 | e1149a09eee459f2379f4086e9efca16b5b50ec1aaabaca29d8f659fd872f8f9 | not_checked | f5573f64c254bfab9179ce823db6b1297af434fb | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `epoch_merkle.py`: 04611e91dad4aea054da97ccd6f3904cec5cbfcabd59c138d282662464e542d9
+- `data_label`: CORPUS
+- `dataset_hash`: e231eb1946a67af6a22803221e927ea579175a34b0ef2d32cbbf7d7218984142
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-30T04:22:21.684390+00:00
+- `git_revision`: f5573f64c254bfab9179ce823db6b1297af434fb
+- `kind`: corpus_absence.v1
+- `params_hash`: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+- `payload`:
+  - `bounds`:
+    - [0]
+      - `leaf_index`: 89
+      - `member`: verdict_real_drill.json
+      - `member_sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+      - `n_members`: 90
+      - `path`:
+        - [0]
+          - `sha256`: d0f9efade519818d8f695b697fa845bef1e45f0de25c77da7abb37b622cfeac7
+          - `side`: left
+        - [1]
+          - `sha256`: 9e1ba968ab66149be819d277382c12ebd375b0465421966fff78d8125067c994
+          - `side`: left
+        - [2]
+          - `sha256`: 5a2d93682e226ef235240ead828fea7a4f00f9d3020e9a38e46b4d775238c62c
+          - `side`: left
+        - [3]
+          - `sha256`: e1858abc13919ac3e5d354d472008f983deb5687065ec2085f5bfd9fe8e813e7
+          - `side`: left
+  - `corpus_key`: receipts/*.json
+  - `data_label`: CORPUS
+  - `epoch_receipt`: corpus_epoch_84384f73f7d8e9d6.json
+  - `epoch_root_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
+  - `kind`: corpus_absence.v1
+  - `merkle_root`: 48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c
+  - `n_members`: 90
+  - `name`: zzz_never_existed_canary.json
+  - `research_only`: true
+  - `schema`: corpus_absence.v1
+  - `simulated_only`: false
+- `receipt_sha256`: e1149a09eee459f2379f4086e9efca16b5b50ec1aaabaca29d8f659fd872f8f9
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/corpus_epoch_0a2e8964712cfb0a.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_0a2e8964712cfb0a.json | 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c | 0a2e8964712cfb0abdb414e940235feff38dd8647699eff6adce44335bb5e7b4 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: f168d4709c80476984f514a546ec155d24c7b8685f2c1c3d1293c8cd11cd941e
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [7]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [8]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [9]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [10]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [11]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [12]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [13]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [14]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [15]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [16]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [17]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [18]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [19]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [20]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [21]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [22]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [23]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [24]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [25]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [26]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [27]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [28]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [29]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [30]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [31]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [32]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [33]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [34]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [35]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [36]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [37]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [38]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [39]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [40]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [41]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [42]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [43]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [44]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [45]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [46]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [47]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [48]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [49]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [50]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [51]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [52]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [53]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [54]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [55]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [56]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [57]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [58]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [59]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [60]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [61]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [62]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [63]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [64]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [65]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [66]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [67]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [68]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [69]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [70]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [71]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_a5d113f0994c74b5.json
+- `members_removed`:
+- `n_members`: 72
+- `params`:
+  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_a5d113f0994c74b5.json
+- `prev_epoch_sha256`: b7f7992d0ef77761d83589394a3740485fab8c37b6ae1d721dc7b3717633d180
+- `receipt_sha256`: 0a2e8964712cfb0abdb414e940235feff38dd8647699eff6adce44335bb5e7b4
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_0af2a2d5723b14ae.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_0af2a2d5723b14ae.json | 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72 | 0af2a2d5723b14aeff89a5ca67940d223ebd64ff9a075155ab04868d81e0a1a8 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 02b20095ad15896d9b07145a9c33dd023f1b2873271ceb351db7d42d0d752c56
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: a2c60f7ec8796695654f730db06e3bea0010bf7237102e84ed612ad695346e9e
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [9]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [10]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [11]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [12]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [13]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [14]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [15]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [16]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [17]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [18]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [19]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [20]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [21]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [22]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [23]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [24]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [25]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [26]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [27]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [28]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [29]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [30]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [31]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [32]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [33]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [34]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [35]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [36]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [37]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [38]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [39]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [40]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [41]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [42]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [43]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [44]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [45]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [46]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [47]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [48]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [49]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [50]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [51]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [52]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [53]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [54]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [55]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [56]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [57]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [58]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [59]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [60]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [61]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [62]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [63]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [64]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [65]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [66]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [67]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [68]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [69]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [70]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [71]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [72]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [73]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [74]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [75]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [76]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [77]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [78]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [79]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [80]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [81]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [82]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [83]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [84]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [85]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [86]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [87]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [88]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [89]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [90]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [91]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [92]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [93]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_cb39a076f3287171.json
+- `members_removed`:
+- `n_members`: 94
+- `params`:
+  - `head_sha`: fa97450165496fc215952dbc0f44206ad66713d9
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_cb39a076f3287171.json
+- `prev_epoch_sha256`: 505811de5ed80b7c5dbf3737cb2af9ea6eec3bc6222835ce216cf37c63608a63
+- `receipt_sha256`: 0af2a2d5723b14aeff89a5ca67940d223ebd64ff9a075155ab04868d81e0a1a8
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_1384f0d99dac82aa.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_1384f0d99dac82aa.json | d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258 | 1384f0d99dac82aad9e8b6f2fda8a832fc70e9c57d86ca0d46d25fb4cd503d74 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: cac87e33336c3c364db988cace66a65cb1aa029ee3d25749690a6174213cae4b
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 98feb017125094eb0d8d5e4713c567a17c9f8912bcd5715cc223d0a0ac94b85c
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [16]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [17]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [18]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [19]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [20]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [21]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [22]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [23]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [24]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [25]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [26]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [27]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [28]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [29]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [30]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [31]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [32]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [33]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [34]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [35]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [36]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [37]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [38]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [39]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [40]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [41]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [42]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [43]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [44]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [45]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [46]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [47]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [48]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [49]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [50]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [51]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [52]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [53]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [54]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [55]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [56]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [57]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [58]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [59]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [60]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [61]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [62]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [63]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [64]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [65]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [66]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [67]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [68]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [69]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [70]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [71]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [72]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [73]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [74]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [75]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [76]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [77]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [78]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [79]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [80]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [81]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [82]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [83]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [84]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [85]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [86]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_e0f905c031ef39b1.json
+- `members_removed`:
+- `n_members`: 87
+- `params`:
+  - `head_sha`: 146fb4c522c9624ceeb3ca67787dfe66fe69080c
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_e0f905c031ef39b1.json
+- `prev_epoch_sha256`: f550e4f632add2fe7564c90c7382ce73d48bb44167aca0a470ae641b82dccf67
+- `receipt_sha256`: 1384f0d99dac82aad9e8b6f2fda8a832fc70e9c57d86ca0d46d25fb4cd503d74
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_2b5db388ddee23aa.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_2b5db388ddee23aa.json | f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f | 2b5db388ddee23aa4ce29d879bc598b96883c3eae9bd32a071de7a44bd6a016b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 50702a337ecfbe9afa662d01328542f19ba225b76407fafb0a08d265fe173595
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [8]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [9]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [10]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [11]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [12]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [13]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [14]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [15]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [16]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [17]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [18]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [19]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [20]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [21]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [22]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [23]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [24]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [25]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [26]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [27]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [28]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [29]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [30]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [31]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [32]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [33]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [34]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [35]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [36]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [37]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [38]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [39]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [40]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [41]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [42]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [43]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [44]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [45]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [46]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [47]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [48]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [49]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [50]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [51]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [52]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [53]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [54]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [55]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [56]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [57]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [58]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [59]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [60]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [61]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [62]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [63]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [64]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [65]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [66]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [67]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [68]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [69]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [70]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [71]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [72]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [73]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [74]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [75]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [76]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [77]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [78]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [79]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [80]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_568c538fcf4b21cd.json
+- `members_removed`:
+- `n_members`: 81
+- `params`:
+  - `head_sha`: 71b190385524799948a33943812fa93dec484c9f
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_568c538fcf4b21cd.json
+- `prev_epoch_sha256`: fd52acc4b762cff458a5db4da29edafbbc345ca8ccf520eb110bbe882466b8f9
+- `receipt_sha256`: 2b5db388ddee23aa4ce29d879bc598b96883c3eae9bd32a071de7a44bd6a016b
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_2ca91405e468cc6b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_2ca91405e468cc6b.json | cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b | 2ca91405e468cc6b3d85fda7b3b3803f45bee8f36411ebc30d7e217365e0ed65 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: bc74e733bd32f5970ae94ef3e052907029b67e551e33b1c9bd3bbaa75da8dbf1
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [8]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [9]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [10]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [11]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [12]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [13]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [14]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [15]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [16]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [17]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [18]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [19]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [20]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [21]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [22]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [23]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [24]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [25]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [26]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [27]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [28]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [29]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [30]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [31]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [32]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [33]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [34]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [35]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [36]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [37]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [38]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [39]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [40]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [41]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [42]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [43]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [44]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [45]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [46]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [47]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [48]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [49]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [50]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [51]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [52]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [53]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [54]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [55]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [56]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [57]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [58]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [59]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [60]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [61]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [62]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [63]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [64]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [65]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [66]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [67]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [68]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [69]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [70]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [71]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [72]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [73]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [74]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [75]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_d1e7bb2567019bf7.json
+- `members_removed`:
+- `n_members`: 76
+- `params`:
+  - `head_sha`: 826097fcbd740e65b8834830d90acaeba13ea5f4
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_d1e7bb2567019bf7.json
+- `prev_epoch_sha256`: d135d5cc5a4294b6f21d133f77b5aa45eed7b49cdd66d460d1e56c4734df5e78
+- `receipt_sha256`: 2ca91405e468cc6b3d85fda7b3b3803f45bee8f36411ebc30d7e217365e0ed65
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_2ddb4fe7154677d3.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_2ddb4fe7154677d3.json | f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c | 2ddb4fe7154677d3f6bd8786351b1876d4dfedf6ef760f8e39b0df42d89e30c1 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: e52b070ca6e907567ea69a81e7436df905d81dcb5b0b93de05da4958f3435aa3
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: e8d624959aa8411c38112f27ae82ed7ea61a631c34ad609d59c71fcd9174cd98
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [13]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [14]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [15]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [16]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [17]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [18]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [19]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [20]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [21]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [22]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [23]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [24]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [25]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [26]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [27]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [28]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [29]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [30]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [31]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [32]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [33]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [34]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [35]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [36]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [37]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [38]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [39]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [40]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [41]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [42]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [43]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [44]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [45]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [46]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [47]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [48]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [49]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [50]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [51]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [52]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [53]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [54]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [55]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [56]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [57]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [58]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [59]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [60]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [61]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [62]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [63]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [64]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [65]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [66]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [67]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [68]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [69]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [70]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [71]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [72]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [73]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [74]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [75]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [76]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [77]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [78]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [79]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [80]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [81]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [82]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [83]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [84]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [85]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [86]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [87]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [88]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [89]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [90]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [91]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [92]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [93]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [94]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_0af2a2d5723b14ae.json
+- `members_removed`:
+- `n_members`: 95
+- `params`:
+  - `head_sha`: 078268df3758a2dba8a694f5f6e151284df228ea
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_0af2a2d5723b14ae.json
+- `prev_epoch_sha256`: 02b20095ad15896d9b07145a9c33dd023f1b2873271ceb351db7d42d0d752c56
+- `receipt_sha256`: 2ddb4fe7154677d3f6bd8786351b1876d4dfedf6ef760f8e39b0df42d89e30c1
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_2ecce33392960d8d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_2ecce33392960d8d.json | c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8 | 2ecce33392960d8da447d302f728899768fc18705a291912452056ded0510710 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 2b38406428db3eae79ddadf5aa0758fcf51cbd8eb70d5aec004880da46d2e59a
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 6b00223daedaaf725a9a0e6c9e48a5ebbc9dd1f708d09b6b52de351c38684cec
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_2ddb4fe7154677d3.json
+    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
+  - [13]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [14]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [15]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [16]
+    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
+    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
+  - [17]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [18]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [19]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [20]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [21]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [22]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [23]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [24]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [25]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [26]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [27]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [28]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [29]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [30]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [31]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [32]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [33]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [34]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [35]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [36]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [37]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [38]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [39]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [40]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [41]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [42]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [43]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [44]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [45]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [46]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [47]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [48]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [49]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [50]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [51]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [52]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [53]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [54]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [55]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [56]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [57]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [58]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [59]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [60]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [61]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [62]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [63]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [64]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [65]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [66]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [67]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [68]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [69]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [70]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [71]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [72]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [73]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [74]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [75]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [76]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [77]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [78]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [79]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [80]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [81]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [82]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [83]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [84]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [85]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [86]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [87]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [88]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [89]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [90]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [91]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [92]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [93]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [94]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [95]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [96]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_54c82d2a8bcb86ed.json
+- `members_removed`:
+- `n_members`: 97
+- `params`:
+  - `head_sha`: 51607b32f134648d13b941c6bec9cbf940536150
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_54c82d2a8bcb86ed.json
+- `prev_epoch_sha256`: cdb9177b938bb52717365018a8260f15b5baf723cfa98e9ce4af50bf222798a7
+- `receipt_sha256`: 2ecce33392960d8da447d302f728899768fc18705a291912452056ded0510710
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_404d16a7af1d3862.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_404d16a7af1d3862.json | 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2 | 404d16a7af1d3862756e4d9a591fd8152d1b8aeb3ee447366d2397d5d2c5e405 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 87431fc1d25e0af42673b0375428c9fbb1bfd0b52fc6178ef573480143744e00
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [8]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [9]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [10]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [11]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [12]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [13]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [14]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [15]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [16]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [17]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [18]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [19]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [20]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [21]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [22]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [23]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [24]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [25]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [26]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [27]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [28]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [29]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [30]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [31]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [32]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [33]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [34]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [35]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [36]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [37]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [38]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [39]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [40]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [41]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [42]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [43]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [44]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [45]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [46]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [47]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [48]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [49]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [50]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [51]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [52]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [53]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [54]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [55]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [56]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [57]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [58]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [59]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [60]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [61]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [62]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [63]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [64]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [65]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [66]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [67]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [68]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [69]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [70]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [71]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [72]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [73]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_a1a8323db3be4842.json
+- `members_removed`:
+- `n_members`: 74
+- `params`:
+  - `head_sha`: 2fcd108864fd52bf9bc7f5b632b49f6e10a0b3e9
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_a1a8323db3be4842.json
+- `prev_epoch_sha256`: 48ce7dd52286071dab45b649f586beac6e98fc66c486eaec93fc9b8bf3e67ae1
+- `receipt_sha256`: 404d16a7af1d3862756e4d9a591fd8152d1b8aeb3ee447366d2397d5d2c5e405
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_4a75066db56e52fd.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_4a75066db56e52fd.json | 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e | 4a75066db56e52fdd44a90a5f42804f07bb90650bb34d8c11c835cfc46da4832 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 5eb85fb1ae415c24ee945bab088d97a9cf1869013da680669c663adceb5b860a
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [7]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [8]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [9]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [10]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [11]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [12]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [13]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [14]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [15]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [16]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [17]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [18]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [19]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [20]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [21]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [22]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [23]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [24]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [25]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [26]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [27]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [28]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [29]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [30]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [31]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [32]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [33]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [34]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [35]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [36]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [37]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [38]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [39]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [40]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [41]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [42]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [43]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [44]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [45]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [46]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [47]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [48]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [49]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [50]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [51]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [52]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [53]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [54]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [55]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [56]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [57]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [58]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [59]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [60]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [61]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [62]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [63]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [64]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [65]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [66]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [67]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [68]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [69]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_574953afdf88a0f6.json
+- `members_removed`:
+- `n_members`: 70
+- `params`:
+  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_574953afdf88a0f6.json
+- `prev_epoch_sha256`: d01c5fde5e5b710685d3184958218c7b7fce1d8b3f54327842b61f5e744f15c7
+- `receipt_sha256`: 4a75066db56e52fdd44a90a5f42804f07bb90650bb34d8c11c835cfc46da4832
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_4a79ac4ed05777f5.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_4a79ac4ed05777f5.json | 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d | 4a79ac4ed05777f52ed4778deee758450f26536f826c9b0fc1bef0e04b6237a8 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: e1ece22470cd997104d81621f7a50c892f4b0a5cbb073f87a0817cadbf5f1756
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: d73b6c0f69e2fc1f5ea00a5a0d1861775d6e4493027f4c9b1a9627906424fed5
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [8]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [9]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [10]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [11]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [12]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [13]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [14]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [15]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [16]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [17]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [18]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [19]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [20]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [21]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [22]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [23]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [24]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [25]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [26]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [27]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [28]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [29]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [30]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [31]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [32]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [33]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [34]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [35]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [36]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [37]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [38]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [39]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [40]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [41]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [42]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [43]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [44]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [45]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [46]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [47]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [48]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [49]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [50]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [51]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [52]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [53]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [54]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [55]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [56]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [57]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [58]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [59]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [60]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [61]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [62]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [63]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [64]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [65]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [66]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [67]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [68]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [69]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [70]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [71]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [72]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [73]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [74]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [75]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [76]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [77]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [78]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [79]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [80]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [81]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [82]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [83]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [84]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [85]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [86]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [87]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [88]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_ab1470227e387e4d.json
+- `members_removed`:
+- `n_members`: 89
+- `params`:
+  - `head_sha`: e951b0e0fac0c4cbbcf934cc5e7fdb811d659457
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_ab1470227e387e4d.json
+- `prev_epoch_sha256`: cb966de72bec251b9138a00947bb380b5eaba346b11d68238d908805df8d5678
+- `receipt_sha256`: 4a79ac4ed05777f52ed4778deee758450f26536f826c9b0fc1bef0e04b6237a8
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_54c82d2a8bcb86ed.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_54c82d2a8bcb86ed.json | 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870 | 54c82d2a8bcb86eda794331141699a1e682a3aa2b91e5e3aa3b6582e8647f0e0 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: cdb9177b938bb52717365018a8260f15b5baf723cfa98e9ce4af50bf222798a7
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 27ecdc5b11c834dac7d32dbaecc6b0f9eec9e6462ba8a187e2103e59c8bae3d4
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_2ddb4fe7154677d3.json
+    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
+  - [13]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [14]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [15]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [16]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [17]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [18]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [19]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [20]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [21]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [22]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [23]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [24]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [25]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [26]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [27]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [28]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [29]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [30]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [31]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [32]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [33]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [34]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [35]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [36]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [37]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [38]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [39]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [40]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [41]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [42]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [43]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [44]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [45]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [46]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [47]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [48]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [49]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [50]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [51]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [52]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [53]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [54]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [55]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [56]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [57]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [58]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [59]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [60]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [61]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [62]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [63]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [64]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [65]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [66]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [67]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [68]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [69]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [70]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [71]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [72]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [73]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [74]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [75]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [76]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [77]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [78]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [79]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [80]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [81]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [82]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [83]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [84]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [85]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [86]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [87]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [88]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [89]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [90]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [91]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [92]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [93]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [94]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [95]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_2ddb4fe7154677d3.json
+- `members_removed`:
+- `n_members`: 96
+- `params`:
+  - `head_sha`: 924e6c46cb8b1c566736952ba07a751b1712df2a
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_2ddb4fe7154677d3.json
+- `prev_epoch_sha256`: e52b070ca6e907567ea69a81e7436df905d81dcb5b0b93de05da4958f3435aa3
+- `receipt_sha256`: 54c82d2a8bcb86eda794331141699a1e682a3aa2b91e5e3aa3b6582e8647f0e0
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_568c538fcf4b21cd.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_568c538fcf4b21cd.json | c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996 | 568c538fcf4b21cdae9e52533b0bd2b6cc45e8dd5b76092b80c5c4f081806019 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: fd52acc4b762cff458a5db4da29edafbbc345ca8ccf520eb110bbe882466b8f9
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [8]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [9]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [10]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [11]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [12]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [13]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [14]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [15]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [16]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [17]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [18]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [19]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [20]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [21]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [22]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [23]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [24]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [25]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [26]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [27]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [28]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [29]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [30]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [31]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [32]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [33]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [34]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [35]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [36]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [37]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [38]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [39]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [40]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [41]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [42]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [43]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [44]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [45]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [46]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [47]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [48]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [49]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [50]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [51]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [52]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [53]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [54]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [55]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [56]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [57]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [58]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [59]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [60]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [61]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [62]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [63]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [64]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [65]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [66]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [67]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [68]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [69]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [70]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [71]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [72]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [73]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [74]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [75]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [76]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [77]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [78]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [79]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_c5a45fd1b73737dc.json
+- `members_removed`:
+- `n_members`: 80
+- `params`:
+  - `head_sha`: dec909c777b806c8a9a2b9ebb6ce07691522afe6
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_c5a45fd1b73737dc.json
+- `prev_epoch_sha256`: 60a912bda7ca91a0230191fbd9083c36777d3e64262774f9d5de765fa135b209
+- `receipt_sha256`: 568c538fcf4b21cdae9e52533b0bd2b6cc45e8dd5b76092b80c5c4f081806019
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_574953afdf88a0f6.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_574953afdf88a0f6.json | 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1 | 574953afdf88a0f69edd878087a03f63c154375a4c1c45713bf72d4be3c447ce | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: d01c5fde5e5b710685d3184958218c7b7fce1d8b3f54327842b61f5e744f15c7
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [7]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [8]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [9]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [10]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [11]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [12]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [13]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [14]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [15]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [16]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [17]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [18]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [19]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [20]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [21]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [22]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [23]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [24]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [25]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [26]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [27]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [28]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [29]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [30]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [31]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [32]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [33]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [34]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [35]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [36]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [37]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [38]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [39]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [40]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [41]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [42]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [43]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [44]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [45]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [46]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [47]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [48]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [49]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [50]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [51]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [52]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [53]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [54]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [55]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [56]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [57]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [58]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [59]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [60]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [61]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [62]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [63]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [64]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [65]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [66]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [67]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [68]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_6cf185cfb5466dd7.json
+- `members_removed`:
+- `n_members`: 69
+- `params`:
+  - `head_sha`: 42dd0cc347dae1180460912b978a2667ad43a042
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_6cf185cfb5466dd7.json
+- `prev_epoch_sha256`: 35f0bc2483734347826bdeff73f6eaf37ad51cee7ab3f2c11cd2f8b073440a5e
+- `receipt_sha256`: 574953afdf88a0f69edd878087a03f63c154375a4c1c45713bf72d4be3c447ce
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_5c9754ab2a9408a1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_5c9754ab2a9408a1.json | a1f5903b80cc593f69fbc3a1fcf8db1f4a97d40bf1c0f0f505b2ff66b71d02a2 | 5c9754ab2a9408a1586f569322f0d99b5519e010dd214cbf4b4b778ad0d3d01a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 569244da945992358f17e9d2880d58e8cc1da47f9f3226d2a44fc52804cae03b
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: c312256cf07aaf41b16547ea38c6a95405e7e1b25dcb41b379d0122f6e825ddf
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_2ddb4fe7154677d3.json
+    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
+  - [13]
+    - `name`: corpus_epoch_2ecce33392960d8d.json
+    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
+  - [14]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [15]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [16]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [17]
+    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
+    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
+  - [18]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [19]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [20]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [21]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [22]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [23]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [24]
+    - `name`: corpus_epoch_721e9b4fb855e1a1.json
+    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
+  - [25]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [26]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [27]
+    - `name`: corpus_epoch_9d41d1d7410eb02d.json
+    - `sha256`: 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328
+  - [28]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [29]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [30]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [31]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [32]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [33]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [34]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [35]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [36]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [37]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [38]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [39]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [40]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [41]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [42]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [43]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [44]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [45]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [46]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [47]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [48]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [49]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [50]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [51]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [52]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [53]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [54]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [55]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [56]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [57]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [58]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [59]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [60]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [61]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [62]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [63]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [64]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [65]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [66]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [67]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [68]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [69]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [70]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [71]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [72]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [73]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [74]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [75]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [76]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [77]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [78]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [79]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [80]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [81]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [82]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [83]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [84]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [85]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [86]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [87]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [88]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [89]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [90]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [91]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [92]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [93]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [94]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [95]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [96]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [97]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [98]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [99]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_9d41d1d7410eb02d.json
+- `members_removed`:
+- `n_members`: 100
+- `params`:
+  - `head_sha`: 42b00e30b6839b538a177618e9035d8f73ccda4e
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_9d41d1d7410eb02d.json
+- `prev_epoch_sha256`: f8692d5b835e6aff6e9829286278db948495ebbbc01159272383538a1c13bcfe
+- `receipt_sha256`: 5c9754ab2a9408a1586f569322f0d99b5519e010dd214cbf4b4b778ad0d3d01a
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_63761c8b4e63992b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_63761c8b4e63992b.json | 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57 | 63761c8b4e63992b9727b0d77e1d6844b8555812e2b368867e4f127448a156c7 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: cd054b2e2a222ace7a61f972708b9615b19698442d2663eb7e151c3e37c8b5d3
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [7]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [8]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [9]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [10]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [11]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [12]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [13]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [14]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [15]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [16]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [17]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [18]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [19]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [20]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [21]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [22]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [23]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [24]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [25]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [26]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [27]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [28]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [29]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [30]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [31]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [32]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [33]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [34]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [35]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [36]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [37]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [38]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [39]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [40]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [41]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [42]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [43]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [44]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [45]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [46]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [47]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [48]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [49]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [50]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [51]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [52]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [53]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [54]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [55]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [56]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [57]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [58]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [59]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [60]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [61]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [62]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [63]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [64]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [65]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_96ba030697ddf0ff.json
+- `members_removed`:
+- `n_members`: 66
+- `params`:
+  - `head_sha`: 31359d2ed7a3a019d3ea592222039b9845e4dfda
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_96ba030697ddf0ff.json
+- `prev_epoch_sha256`: 7fee4c6bb52c76ee0a8fef717bd6fce9f6ca6ed642a708249b11d154d748a468
+- `receipt_sha256`: 63761c8b4e63992b9727b0d77e1d6844b8555812e2b368867e4f127448a156c7
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_6cf185cfb5466dd7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_6cf185cfb5466dd7.json | 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416 | 6cf185cfb5466dd724b113333d5df6e1f4d00c4aa4cb46ab7a9bad0c5eebd915 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 35f0bc2483734347826bdeff73f6eaf37ad51cee7ab3f2c11cd2f8b073440a5e
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [7]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [8]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [9]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [10]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [11]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [12]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [13]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [14]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [15]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [16]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [17]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [18]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [19]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [20]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [21]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [22]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [23]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [24]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [25]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [26]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [27]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [28]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [29]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [30]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [31]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [32]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [33]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [34]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [35]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [36]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [37]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [38]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [39]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [40]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [41]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [42]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [43]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [44]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [45]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [46]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [47]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [48]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [49]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [50]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [51]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [52]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [53]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [54]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [55]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [56]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [57]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [58]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [59]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [60]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [61]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [62]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [63]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [64]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [65]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [66]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [67]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_a83ba798e9abd892.json
+- `members_removed`:
+- `n_members`: 68
+- `params`:
+  - `head_sha`: f32862bebf59fa896e5e89f2b99170359e91d563
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_a83ba798e9abd892.json
+- `prev_epoch_sha256`: c3534efa7e8ddcceae37f32161d3b52f907e8e25f567fa0c98606836255b3308
+- `receipt_sha256`: 6cf185cfb5466dd724b113333d5df6e1f4d00c4aa4cb46ab7a9bad0c5eebd915
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_6f8420fc2959f4e7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_6f8420fc2959f4e7.json | 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5 | 6f8420fc2959f4e757506825624ded988a50e36c2b7fd66440485fa7ab9d9f8b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: d8260040b7bd5488f2317ccc7ec5f36810695e25307e3b140fe09d79798c712a
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [16]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [17]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [18]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [19]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [20]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [21]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [22]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [23]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [24]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [25]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [26]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [27]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [28]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [29]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [30]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [31]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [32]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [33]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [34]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [35]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [36]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [37]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [38]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [39]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [40]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [41]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [42]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [43]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [44]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [45]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [46]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [47]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [48]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [49]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [50]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [51]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [52]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [53]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [54]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [55]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [56]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [57]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [58]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [59]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [60]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [61]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [62]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [63]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [64]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [65]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [66]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [67]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [68]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [69]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [70]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [71]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [72]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [73]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [74]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [75]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [76]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [77]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [78]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [79]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [80]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [81]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_2b5db388ddee23aa.json
+- `members_removed`:
+- `n_members`: 82
+- `params`:
+  - `head_sha`: 71b190385524799948a33943812fa93dec484c9f
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_2b5db388ddee23aa.json
+- `prev_epoch_sha256`: 50702a337ecfbe9afa662d01328542f19ba225b76407fafb0a08d265fe173595
+- `receipt_sha256`: 6f8420fc2959f4e757506825624ded988a50e36c2b7fd66440485fa7ab9d9f8b
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_6fb596b0230e9f17.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_6fb596b0230e9f17.json | a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380 | 6fb596b0230e9f1775b218995e0618227f951de91246d24e2db724501c4d21dd | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: dad94ab498d8cdc88d44326cc996144ff0663fd9d3a9eb360a8027d92905c479
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [16]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [17]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [18]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [19]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [20]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [21]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [22]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [23]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [24]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [25]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [26]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [27]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [28]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [29]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [30]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [31]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [32]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [33]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [34]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [35]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [36]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [37]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [38]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [39]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [40]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [41]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [42]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [43]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [44]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [45]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [46]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [47]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [48]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [49]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [50]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [51]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [52]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [53]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [54]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [55]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [56]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [57]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [58]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [59]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [60]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [61]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [62]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [63]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [64]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [65]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [66]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [67]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [68]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [69]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [70]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [71]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [72]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [73]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [74]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [75]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [76]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [77]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [78]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [79]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [80]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [81]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [82]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [83]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [84]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_a0e901c74a5f29c4.json
+- `members_removed`:
+- `n_members`: 85
+- `params`:
+  - `head_sha`: d58830123d898e6c23a70c09f71d526cd62c37b7
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_a0e901c74a5f29c4.json
+- `prev_epoch_sha256`: 73f1e3fc3a9e420724e4f1137a10728f974cdbadd029181df762033d82e713b9
+- `receipt_sha256`: 6fb596b0230e9f1775b218995e0618227f951de91246d24e2db724501c4d21dd
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_721e9b4fb855e1a1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_721e9b4fb855e1a1.json | b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30 | 721e9b4fb855e1a1f49d6b54bf3559a1b6e57fd869690b3249dc8d0d1074046a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 18d302aae2a897a1ff595f977fc873046b0ee4450ec5b3ff507de52d721f1da4
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 0594ec45986b9586821ee69ffeb549cad23b1ca96dfbf32683eab49393398c16
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_2ddb4fe7154677d3.json
+    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
+  - [13]
+    - `name`: corpus_epoch_2ecce33392960d8d.json
+    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
+  - [14]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [15]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [16]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [17]
+    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
+    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
+  - [18]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [19]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [20]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [21]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [22]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [23]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [24]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [25]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [26]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [27]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [28]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [29]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [30]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [31]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [32]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [33]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [34]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [35]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [36]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [37]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [38]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [39]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [40]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [41]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [42]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [43]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [44]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [45]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [46]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [47]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [48]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [49]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [50]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [51]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [52]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [53]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [54]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [55]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [56]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [57]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [58]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [59]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [60]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [61]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [62]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [63]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [64]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [65]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [66]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [67]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [68]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [69]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [70]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [71]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [72]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [73]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [74]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [75]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [76]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [77]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [78]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [79]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [80]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [81]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [82]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [83]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [84]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [85]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [86]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [87]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [88]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [89]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [90]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [91]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [92]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [93]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [94]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [95]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [96]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [97]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_2ecce33392960d8d.json
+- `members_removed`:
+- `n_members`: 98
+- `params`:
+  - `head_sha`: 51607b32f134648d13b941c6bec9cbf940536150
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_2ecce33392960d8d.json
+- `prev_epoch_sha256`: 2b38406428db3eae79ddadf5aa0758fcf51cbd8eb70d5aec004880da46d2e59a
+- `receipt_sha256`: 721e9b4fb855e1a1f49d6b54bf3559a1b6e57fd869690b3249dc8d0d1074046a
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_84384f73f7d8e9d6.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_84384f73f7d8e9d6.json | 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db | 84384f73f7d8e9d6c25620648874ba0d02c1df38ef3f5e6c3d1ab02e3846ff0e | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [8]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [9]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [10]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [11]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [12]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [13]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [14]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [15]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [16]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [17]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [18]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [19]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [20]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [21]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [22]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [23]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [24]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [25]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [26]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [27]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [28]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [29]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [30]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [31]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [32]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [33]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [34]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [35]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [36]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [37]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [38]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [39]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [40]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [41]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [42]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [43]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [44]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [45]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [46]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [47]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [48]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [49]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [50]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [51]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [52]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [53]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [54]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [55]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [56]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [57]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [58]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [59]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [60]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [61]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [62]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [63]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [64]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [65]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [66]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [67]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [68]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [69]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [70]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [71]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [72]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [73]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [74]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [75]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [76]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [77]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [78]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [79]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [80]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [81]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [82]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [83]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [84]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [85]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [86]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [87]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [88]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [89]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_4a79ac4ed05777f5.json
+- `members_removed`:
+- `n_members`: 90
+- `params`:
+  - `head_sha`: e4fdb29b276e1fe2fa67dcf5bccc7e2399f16c90
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_4a79ac4ed05777f5.json
+- `prev_epoch_sha256`: e1ece22470cd997104d81621f7a50c892f4b0a5cbb073f87a0817cadbf5f1756
+- `receipt_sha256`: 84384f73f7d8e9d6c25620648874ba0d02c1df38ef3f5e6c3d1ab02e3846ff0e
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_96ba030697ddf0ff.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_96ba030697ddf0ff.json | d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f | 96ba030697ddf0ff13511c5ba2d654f9c794c2cc1013961dafe5baac4293db0c | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 7fee4c6bb52c76ee0a8fef717bd6fce9f6ca6ed642a708249b11d154d748a468
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [7]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [8]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [9]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [10]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [11]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [12]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [13]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [14]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [15]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [16]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [17]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [18]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [19]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [20]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [21]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [22]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [23]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [24]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [25]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [26]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [27]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [28]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [29]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [30]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [31]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [32]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [33]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [34]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [35]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [36]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [37]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [38]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [39]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [40]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [41]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [42]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [43]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [44]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [45]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [46]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [47]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [48]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [49]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [50]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [51]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [52]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [53]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [54]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [55]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [56]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [57]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [58]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [59]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [60]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [61]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [62]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [63]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [64]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_fbb352a23e62d321.json
+  - corpus_proof_a56dff22d5b4931c.json
+- `members_removed`:
+- `n_members`: 65
+- `params`:
+  - `head_sha`: 6e5b598b5962b33ce145a42e9ae725a2ba597ee8
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_fbb352a23e62d321.json
+- `prev_epoch_sha256`: d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569
+- `receipt_sha256`: 96ba030697ddf0ff13511c5ba2d654f9c794c2cc1013961dafe5baac4293db0c
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_9d41d1d7410eb02d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_9d41d1d7410eb02d.json | 074b9c2ab74e8e6deaf636d60f50cd81ccb9652311a4872726e2012dc4f2c328 | 9d41d1d7410eb02dae9416bbd7820a0b9232b9fcc1bfe2b38bdf09fcefdb4f39 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: f8692d5b835e6aff6e9829286278db948495ebbbc01159272383538a1c13bcfe
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 861b2ea59b0cd84a342ac33fdb239aa9e284511bf8c1d7f3b291f4b52e5f558a
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_0af2a2d5723b14ae.json
+    - `sha256`: 2ea2708eba01500e54f3cfa8fd669339d14b5d3de22ddc9417b113e595bbec72
+  - [9]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [10]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [11]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [12]
+    - `name`: corpus_epoch_2ddb4fe7154677d3.json
+    - `sha256`: f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c
+  - [13]
+    - `name`: corpus_epoch_2ecce33392960d8d.json
+    - `sha256`: c7d13f38ed66bc3864f6f711c46ca13852bd11d70886236d74eb7f137e322dd8
+  - [14]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [15]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [16]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [17]
+    - `name`: corpus_epoch_54c82d2a8bcb86ed.json
+    - `sha256`: 8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870
+  - [18]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [19]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [20]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [21]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [22]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [23]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [24]
+    - `name`: corpus_epoch_721e9b4fb855e1a1.json
+    - `sha256`: b29b736a0234ce82b4af23a973f7ec6cb4486fbb9b071be14e30319a4bfabd30
+  - [25]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [26]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [27]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [28]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [29]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [30]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [31]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [32]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [33]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [34]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [35]
+    - `name`: corpus_epoch_cb39a076f3287171.json
+    - `sha256`: 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695
+  - [36]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [37]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [38]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [39]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [40]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [41]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [42]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [43]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [44]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [45]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [46]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [47]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [48]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [49]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [50]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [51]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [52]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [53]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [54]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [55]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [56]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [57]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [58]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [59]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [60]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [61]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [62]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [63]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [64]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [65]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [66]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [67]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [68]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [69]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [70]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [71]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [72]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [73]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [74]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [75]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [76]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [77]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [78]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [79]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [80]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [81]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [82]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [83]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [84]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [85]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [86]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [87]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [88]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [89]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [90]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [91]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [92]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [93]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [94]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [95]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [96]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [97]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [98]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_721e9b4fb855e1a1.json
+- `members_removed`:
+- `n_members`: 99
+- `params`:
+  - `head_sha`: 047754f5f342780dffc2a6b5207198fdc767d3d5
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_721e9b4fb855e1a1.json
+- `prev_epoch_sha256`: 18d302aae2a897a1ff595f977fc873046b0ee4450ec5b3ff507de52d721f1da4
+- `receipt_sha256`: 9d41d1d7410eb02dae9416bbd7820a0b9232b9fcc1bfe2b38bdf09fcefdb4f39
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_9fd864d30fda3c69.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_9fd864d30fda3c69.json | 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9 | 9fd864d30fda3c69102815bbd91a029e8e69c47b2c246a797e2c057dd7d84c8b | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 5d4269942f124505fc6a0ff6454067065f175a2830140562075ee62a57ec7770
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [8]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [9]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [10]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [11]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [12]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [13]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [14]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [15]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [16]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [17]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [18]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [19]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [20]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [21]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [22]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [23]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [24]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [25]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [26]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [27]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [28]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [29]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [30]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [31]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [32]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [33]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [34]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [35]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [36]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [37]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [38]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [39]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [40]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [41]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [42]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [43]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [44]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [45]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [46]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [47]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [48]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [49]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [50]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [51]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [52]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [53]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [54]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [55]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [56]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [57]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [58]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [59]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [60]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [61]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [62]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [63]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [64]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [65]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [66]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [67]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [68]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [69]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [70]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [71]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [72]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [73]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [74]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [75]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [76]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_2ca91405e468cc6b.json
+- `members_removed`:
+- `n_members`: 77
+- `params`:
+  - `head_sha`: 5257b030418372bac2f0db62e0448476396048de
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_2ca91405e468cc6b.json
+- `prev_epoch_sha256`: bc74e733bd32f5970ae94ef3e052907029b67e551e33b1c9bd3bbaa75da8dbf1
+- `receipt_sha256`: 9fd864d30fda3c69102815bbd91a029e8e69c47b2c246a797e2c057dd7d84c8b
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_a0e901c74a5f29c4.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_a0e901c74a5f29c4.json | 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828 | a0e901c74a5f29c4d6dc35f339e206e2289c02e752e6a4385b7c0936c948df83 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 73f1e3fc3a9e420724e4f1137a10728f974cdbadd029181df762033d82e713b9
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [16]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [17]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [18]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [19]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [20]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [21]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [22]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [23]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [24]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [25]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [26]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [27]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [28]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [29]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [30]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [31]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [32]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [33]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [34]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [35]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [36]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [37]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [38]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [39]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [40]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [41]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [42]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [43]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [44]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [45]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [46]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [47]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [48]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [49]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [50]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [51]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [52]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [53]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [54]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [55]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [56]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [57]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [58]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [59]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [60]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [61]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [62]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [63]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [64]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [65]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [66]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [67]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [68]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [69]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [70]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [71]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [72]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [73]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [74]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [75]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [76]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [77]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [78]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [79]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [80]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [81]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [82]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [83]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_fbbcd3c1e840e14d.json
+- `members_removed`:
+- `n_members`: 84
+- `params`:
+  - `head_sha`: 4c322bd1dd71a5cdf2b1c53f29e3e3e92294b333
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_fbbcd3c1e840e14d.json
+- `prev_epoch_sha256`: ae71b4ec5ec8ead38d310f4def8f8282cb267a0b482bf2a29633c8bac0488042
+- `receipt_sha256`: a0e901c74a5f29c4d6dc35f339e206e2289c02e752e6a4385b7c0936c948df83
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_a1a8323db3be4842.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_a1a8323db3be4842.json | 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901 | a1a8323db3be4842b8dd133882c776a0ae6c89de94d7f33f4bae983d93fba000 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 48ce7dd52286071dab45b649f586beac6e98fc66c486eaec93fc9b8bf3e67ae1
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [8]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [9]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [10]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [11]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [12]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [13]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [14]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [15]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [16]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [17]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [18]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [19]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [20]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [21]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [22]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [23]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [24]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [25]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [26]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [27]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [28]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [29]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [30]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [31]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [32]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [33]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [34]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [35]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [36]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [37]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [38]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [39]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [40]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [41]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [42]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [43]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [44]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [45]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [46]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [47]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [48]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [49]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [50]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [51]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [52]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [53]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [54]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [55]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [56]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [57]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [58]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [59]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [60]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [61]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [62]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [63]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [64]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [65]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [66]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [67]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [68]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [69]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [70]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [71]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [72]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_0a2e8964712cfb0a.json
+- `members_removed`:
+- `n_members`: 73
+- `params`:
+  - `head_sha`: 589e8f1511b4611b9388a045539c38992093b251
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_0a2e8964712cfb0a.json
+- `prev_epoch_sha256`: f168d4709c80476984f514a546ec155d24c7b8685f2c1c3d1293c8cd11cd941e
+- `receipt_sha256`: a1a8323db3be4842b8dd133882c776a0ae6c89de94d7f33f4bae983d93fba000
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_a5d113f0994c74b5.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_a5d113f0994c74b5.json | 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493 | a5d113f0994c74b5fdf334d58b8bbf9d316a57e4ae5c7f4a4473e1b8f2b647a4 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: b7f7992d0ef77761d83589394a3740485fab8c37b6ae1d721dc7b3717633d180
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [7]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [8]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [9]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [10]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [11]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [12]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [13]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [14]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [15]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [16]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [17]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [18]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [19]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [20]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [21]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [22]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [23]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [24]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [25]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [26]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [27]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [28]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [29]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [30]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [31]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [32]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [33]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [34]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [35]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [36]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [37]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [38]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [39]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [40]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [41]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [42]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [43]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [44]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [45]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [46]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [47]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [48]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [49]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [50]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [51]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [52]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [53]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [54]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [55]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [56]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [57]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [58]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [59]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [60]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [61]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [62]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [63]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [64]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [65]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [66]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [67]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [68]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [69]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [70]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_4a75066db56e52fd.json
+- `members_removed`:
+- `n_members`: 71
+- `params`:
+  - `head_sha`: 263b42fcdeb1ef5fcfe713b1418c3ce15e9f143e
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_4a75066db56e52fd.json
+- `prev_epoch_sha256`: 5eb85fb1ae415c24ee945bab088d97a9cf1869013da680669c663adceb5b860a
+- `receipt_sha256`: a5d113f0994c74b5fdf334d58b8bbf9d316a57e4ae5c7f4a4473e1b8f2b647a4
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_a83ba798e9abd892.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_a83ba798e9abd892.json | 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d | a83ba798e9abd89212c0fe153e461b4fd6a45831ad5fdbf28b4c92c373e49636 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: c3534efa7e8ddcceae37f32161d3b52f907e8e25f567fa0c98606836255b3308
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [7]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [8]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [9]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [10]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [11]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [12]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [13]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [14]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [15]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [16]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [17]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [18]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [19]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [20]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [21]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [22]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [23]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [24]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [25]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [26]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [27]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [28]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [29]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [30]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [31]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [32]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [33]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [34]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [35]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [36]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [37]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [38]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [39]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [40]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [41]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [42]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [43]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [44]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [45]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [46]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [47]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [48]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [49]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [50]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [51]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [52]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [53]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [54]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [55]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [56]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [57]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [58]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [59]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [60]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [61]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [62]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [63]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [64]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [65]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [66]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_63761c8b4e63992b.json
+- `members_removed`:
+- `n_members`: 67
+- `params`:
+  - `head_sha`: e974c1273cfc044c6fa9c3ca46704cea49d4a69a
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_63761c8b4e63992b.json
+- `prev_epoch_sha256`: cd054b2e2a222ace7a61f972708b9615b19698442d2663eb7e151c3e37c8b5d3
+- `receipt_sha256`: a83ba798e9abd89212c0fe153e461b4fd6a45831ad5fdbf28b4c92c373e49636
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_ab1470227e387e4d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_ab1470227e387e4d.json | cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e | ab1470227e387e4dd813f030c0c1c60d1d75df2ff3c85cab237e5d0a0fe5d854 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: cb966de72bec251b9138a00947bb380b5eaba346b11d68238d908805df8d5678
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 034e4761481f261cacf66834b2279e526d90d4b2c75dcaa8316637543cc86293
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [8]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [9]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [10]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [11]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [12]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [13]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [14]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [15]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [16]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [17]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [18]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [19]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [20]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [21]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [22]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [23]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [24]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [25]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [26]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [27]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [28]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [29]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [30]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [31]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [32]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [33]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [34]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [35]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [36]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [37]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [38]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [39]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [40]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [41]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [42]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [43]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [44]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [45]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [46]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [47]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [48]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [49]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [50]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [51]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [52]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [53]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [54]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [55]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [56]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [57]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [58]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [59]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [60]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [61]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [62]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [63]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [64]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [65]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [66]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [67]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [68]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [69]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [70]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [71]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [72]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [73]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [74]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [75]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [76]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [77]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [78]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [79]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [80]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [81]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [82]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [83]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [84]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [85]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [86]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [87]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_1384f0d99dac82aa.json
+- `members_removed`:
+- `n_members`: 88
+- `params`:
+  - `head_sha`: 8b8f5541a16c19b2bdf9c9267fd0bcfb60ce8342
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_1384f0d99dac82aa.json
+- `prev_epoch_sha256`: cac87e33336c3c364db988cace66a65cb1aa029ee3d25749690a6174213cae4b
+- `receipt_sha256`: ab1470227e387e4dd813f030c0c1c60d1d75df2ff3c85cab237e5d0a0fe5d854
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_ac21f22e90c58c53.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_ac21f22e90c58c53.json | a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9 | ac21f22e90c58c53a4f013bf3c0d05f3094a7f089d08097964d4ef4a5414744a | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 911b765cbd2e69069b845ef386fbf881b32eb2b2618eadc482187221c840fa6f
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [8]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [9]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [10]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [11]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [12]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [13]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [14]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [15]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [16]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [17]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [18]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [19]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [20]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [21]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [22]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [23]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [24]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [25]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [26]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [27]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [28]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [29]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [30]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [31]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [32]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [33]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [34]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [35]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [36]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [37]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [38]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [39]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [40]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [41]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [42]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [43]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [44]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [45]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [46]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [47]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [48]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [49]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [50]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [51]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [52]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [53]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [54]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [55]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [56]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [57]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [58]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [59]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [60]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [61]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [62]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [63]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [64]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [65]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [66]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [67]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [68]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [69]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [70]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [71]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [72]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [73]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [74]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [75]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [76]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [77]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_9fd864d30fda3c69.json
+- `members_removed`:
+- `n_members`: 78
+- `params`:
+  - `head_sha`: a668dea840f69503dcc9d61bb40b2445dbd60da9
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_9fd864d30fda3c69.json
+- `prev_epoch_sha256`: 5d4269942f124505fc6a0ff6454067065f175a2830140562075ee62a57ec7770
+- `receipt_sha256`: ac21f22e90c58c53a4f013bf3c0d05f3094a7f089d08097964d4ef4a5414744a
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_c5a45fd1b73737dc.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_c5a45fd1b73737dc.json | c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850 | c5a45fd1b73737dc0df77997eea11e8a88d93aa9d5f6a757c408f11b7d48f005 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 60a912bda7ca91a0230191fbd9083c36777d3e64262774f9d5de765fa135b209
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [8]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [9]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [10]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [11]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [12]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [13]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [14]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [15]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [16]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [17]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [18]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [19]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [20]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [21]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [22]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [23]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [24]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [25]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [26]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [27]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [28]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [29]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [30]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [31]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [32]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [33]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [34]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [35]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [36]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [37]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [38]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [39]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [40]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [41]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [42]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [43]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [44]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [45]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [46]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [47]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [48]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [49]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [50]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [51]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [52]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [53]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [54]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [55]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [56]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [57]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [58]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [59]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [60]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [61]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [62]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [63]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [64]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [65]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [66]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [67]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [68]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [69]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [70]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [71]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [72]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [73]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [74]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [75]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [76]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [77]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [78]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_ac21f22e90c58c53.json
+- `members_removed`:
+- `n_members`: 79
+- `params`:
+  - `head_sha`: 55d2213ff6ace1d7a6e76bfc80288b1d80ad63e4
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_ac21f22e90c58c53.json
+- `prev_epoch_sha256`: 911b765cbd2e69069b845ef386fbf881b32eb2b2618eadc482187221c840fa6f
+- `receipt_sha256`: c5a45fd1b73737dc0df77997eea11e8a88d93aa9d5f6a757c408f11b7d48f005
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_cb39a076f3287171.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_cb39a076f3287171.json | 8680427690c0709412501f39953f9bc845932a2e3f1875c32d12a2067d39f695 | cb39a076f328717148a62e9f8e134f0e055dd12c990d30d38273905bda499600 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 505811de5ed80b7c5dbf3737cb2af9ea6eec3bc6222835ce216cf37c63608a63
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: 1c1be6f8c08bdbd3d23ee4057d420e8e5c0acb3c82d3b5df33a85415a348e4b3
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_absence_exemplar.json
+    - `sha256`: 611ad72af3e3734f34e39d3310e502444d2ede665018b7ffb7223ee0f7c19b02
+  - [7]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [8]
+    - `name`: corpus_epoch_1384f0d99dac82aa.json
+    - `sha256`: d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258
+  - [9]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [10]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [11]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [12]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [13]
+    - `name`: corpus_epoch_4a79ac4ed05777f5.json
+    - `sha256`: 2e4829b29e316fcbcf0ab9a307278595da57925e1aa0659c6b64db44c1e8759d
+  - [14]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [15]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [16]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [17]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [18]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [19]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [20]
+    - `name`: corpus_epoch_84384f73f7d8e9d6.json
+    - `sha256`: 8a23be1760a52130b342ecdc107cff3c3369b74d02497365316f65b498eb52db
+  - [21]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [22]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [23]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [24]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [25]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [26]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [27]
+    - `name`: corpus_epoch_ab1470227e387e4d.json
+    - `sha256`: cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e
+  - [28]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [29]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [30]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [31]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [32]
+    - `name`: corpus_epoch_e0f905c031ef39b1.json
+    - `sha256`: 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8
+  - [33]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [34]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [35]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [36]
+    - `name`: corpus_proof_exemplar.json
+    - `sha256`: 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c
+  - [37]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [38]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [39]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [40]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [41]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [42]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [43]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [44]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [45]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [46]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [47]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [48]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [49]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [50]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [51]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [52]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [53]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [54]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [55]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [56]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [57]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [58]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [59]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [60]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [61]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [62]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [63]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [64]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [65]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [66]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [67]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [68]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [69]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [70]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [71]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [72]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [73]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [74]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [75]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [76]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [77]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [78]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [79]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [80]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [81]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [82]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [83]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [84]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [85]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [86]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [87]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [88]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [89]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [90]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [91]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [92]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_absence_exemplar.json
+  - corpus_epoch_84384f73f7d8e9d6.json
+  - corpus_proof_exemplar.json
+- `members_removed`:
+- `n_members`: 93
+- `params`:
+  - `head_sha`: f5573f64c254bfab9179ce823db6b1297af434fb
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_84384f73f7d8e9d6.json
+- `prev_epoch_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
+- `receipt_sha256`: cb39a076f328717148a62e9f8e134f0e055dd12c990d30d38273905bda499600
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_d1e7bb2567019bf7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_d1e7bb2567019bf7.json | f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530 | d1e7bb2567019bf7cf295755ad3620e414c4d97c6ac79a751c071ff5f9b6f4c6 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: d135d5cc5a4294b6f21d133f77b5aa45eed7b49cdd66d460d1e56c4734df5e78
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [8]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [9]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [10]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [11]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [12]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [13]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [14]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [15]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [16]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [17]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [18]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [19]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [20]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [21]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [22]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [23]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [24]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [25]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [26]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [27]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [28]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [29]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [30]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [31]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [32]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [33]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [34]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [35]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [36]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [37]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [38]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [39]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [40]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [41]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [42]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [43]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [44]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [45]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [46]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [47]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [48]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [49]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [50]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [51]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [52]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [53]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [54]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [55]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [56]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [57]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [58]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [59]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [60]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [61]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [62]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [63]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [64]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [65]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [66]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [67]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [68]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [69]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [70]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [71]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [72]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [73]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [74]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_404d16a7af1d3862.json
+- `members_removed`:
+- `n_members`: 75
+- `params`:
+  - `head_sha`: bfb4d290f0a5acec615d41a4ca314b7111bcda76
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_404d16a7af1d3862.json
+- `prev_epoch_sha256`: 87431fc1d25e0af42673b0375428c9fbb1bfd0b52fc6178ef573480143744e00
+- `receipt_sha256`: d1e7bb2567019bf7cf295755ad3620e414c4d97c6ac79a751c071ff5f9b6f4c6
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_d479e96760271bba.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_d479e96760271bba.json | 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23 | d479e96760271bba4d287ffc0ce2c46f96ba4b82f25008b02a8ef81b982dc6df | not_checked | absent | inputs_sha256=f000340e6f165337572230b7d85c40f41c6d62dcf174ac7488153ddb5638dc92 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: 8ed0d5fc66b6fb53a65ee3332be29e729400e876fd5af180910c9a2c9b7d396d
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [7]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [8]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [9]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [10]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [11]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [12]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [13]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [14]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [15]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [16]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [17]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [18]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [19]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [20]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [21]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [22]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [23]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [24]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [25]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [26]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [27]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [28]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [29]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [30]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [31]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [32]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [33]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [34]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [35]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [36]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [37]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [38]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [39]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [40]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [41]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [42]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [43]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [44]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [45]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [46]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [47]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [48]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [49]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [50]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [51]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [52]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [53]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [54]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - calib_real_drill.json
+  - capacity_eval_cd0854242ed8a9ec.json
+  - coherence_2dd641ab766a536a.json
+  - concordance_df424fa2f6b1c4e9.json
+  - conformal_real_drill_gaussian_minus_conf_t_pinball.json
+  - conformal_real_drill_gaussian_pit.json
+  - corpus_real_drill.json
+  - cost_calibration_eval_df9b8d7068bf709b.json
+  - coverage_cs_real_drill.json
+  - coverage_real_drill.json
+  - cp_real_drill_gaussian_minus_conf_t_pinball.json
+  - cp_real_drill_gaussian_pit.json
+  - deps_security_hygiene_f3b4e6fd22e439b7.json
+  - drift_real_drill_gaussian_minus_conf_t_pinball.json
+  - drift_real_drill_gaussian_pit.json
+  - emerge_real_drill.json
+  - evidence_audit_3464d8f8197bf737.json
+  - evidence_audit_d449e1ca0cc119a6.json
+  - fast_replay_p42_conformance_20260928.json
+  - fleet_eval_5ddf15b0dc7d3ca1.json
+  - fleet_race_real_drill.json
+  - honest_verdict_real_drill.json
+  - lane_power_drill.json
+  - lattice_drill_verdict.json
+  - lattice_drill_vol_bench_a.json
+  - lattice_drill_vol_bench_b.json
+  - loss_cs_real_drill_conf_t_vs_empirical.json
+  - loss_cs_real_drill_gaussian_vs_conf_t.json
+  - mcs_real_drill.json
+  - mcs_vol_drill.json
+  - monitor_run_drill_clean.json
+  - monitor_run_drill_defect.json
+  - monitor_run_real_drill.json
+  - multih_fleet_eval_5db1cab214e291d7.json
+  - nautilus_conformance_7bf19a08c147547b.json
+  - panel_audit_real_drill.json
+  - rankic_eval_9ebdad7da83e7348.json
+  - real_benchmark_us_wide_manifest.json
+  - real_benchmark_us_wide_test.json
+  - real_benchmark_us_wide_validation.json
+  - serial_watch_140b073ea589b0c7.json
+  - serial_watch_1e8e1446e506fce1.json
+  - serial_watch_2c14615c26efd19b.json
+  - serial_watch_46445c3b227aa15e.json
+  - serial_watch_47297eff3cb55178.json
+  - serial_watch_4f4a495b59d022fb.json
+  - serial_watch_771602cd1580476c.json
+  - serial_watch_85db152db863d25d.json
+  - serial_watch_8977244ef78bfd2f.json
+  - serial_watch_a6fd40311ce0fa04.json
+  - serial_watch_d311f5ea367a66a9.json
+  - serial_watch_dbd21a6c99c81e00.json
+  - suite_health_drill.json
+  - tail_real_drill.json
+  - verdict_real_drill.json
+- `members_removed`:
+- `n_members`: 55
+- `params`:
+- `prev_epoch_receipt`: null
+- `prev_epoch_sha256`: 0000000000000000000000000000000000000000000000000000000000000000
+- `receipt_sha256`: d479e96760271bba4d287ffc0ce2c46f96ba4b82f25008b02a8ef81b982dc6df
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: genesis
+
+### `receipts/corpus_epoch_e0f905c031ef39b1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_e0f905c031ef39b1.json | 4af585b31592271ea26116b814f285f4c661240af21a78f915750591e87e8cc8 | e0f905c031ef39b1cd3567ec87b9b28b9b213bc312b0eac762f53c49b503d501 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: f550e4f632add2fe7564c90c7382ce73d48bb44167aca0a470ae641b82dccf67
+- `kind`: corpus_epoch.v1
+- `member_tree_root`: ec81b0aec866024b48d559359dd3fd3c12b90d6a92893b27da6953e092971c89
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [16]
+    - `name`: corpus_epoch_6fb596b0230e9f17.json
+    - `sha256`: a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380
+  - [17]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [18]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [19]
+    - `name`: corpus_epoch_a0e901c74a5f29c4.json
+    - `sha256`: 7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828
+  - [20]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [21]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [22]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [23]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [24]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [25]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [26]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [27]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [28]
+    - `name`: corpus_epoch_fbbcd3c1e840e14d.json
+    - `sha256`: 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d
+  - [29]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [30]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [31]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [32]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [33]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [34]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [35]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [36]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [37]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [38]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [39]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [40]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [41]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [42]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [43]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [44]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [45]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [46]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [47]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [48]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [49]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [50]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [51]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [52]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [53]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [54]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [55]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [56]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [57]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [58]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [59]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [60]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [61]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [62]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [63]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [64]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [65]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [66]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [67]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [68]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [69]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [70]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [71]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [72]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [73]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [74]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [75]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [76]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [77]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [78]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [79]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [80]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [81]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [82]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [83]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [84]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [85]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_6fb596b0230e9f17.json
+- `members_removed`:
+- `n_members`: 86
+- `params`:
+  - `head_sha`: ba43000f01261ec82c069f8f15d26f9ad575d7bd
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_6fb596b0230e9f17.json
+- `prev_epoch_sha256`: dad94ab498d8cdc88d44326cc996144ff0663fd9d3a9eb360a8027d92905c479
+- `receipt_sha256`: e0f905c031ef39b1cd3567ec87b9b28b9b213bc312b0eac762f53c49b503d501
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_fbb352a23e62d321.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_fbb352a23e62d321.json | d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5 | fbb352a23e62d3214b58b80e5b8f4b8a8414908f1c7c4555d0cc613aa3e25827 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [7]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [8]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [9]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [10]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [11]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [12]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [13]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [14]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [15]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [16]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [17]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [18]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [19]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [20]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [21]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [22]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [23]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [24]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [25]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [26]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [27]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [28]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [29]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [30]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [31]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [32]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [33]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [34]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [35]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [36]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [37]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [38]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [39]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [40]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [41]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [42]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [43]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [44]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [45]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [46]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [47]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [48]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [49]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [50]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [51]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [52]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [53]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [54]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [55]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [56]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [57]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [58]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [59]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [60]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [61]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [62]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_d479e96760271bba.json
+  - legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+  - legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+  - legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+  - legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+  - legacy-unsealed/dip_bench_crypto_1d_20260925.json
+  - legacy-unsealed/fast_replay_p42_conformance_20260927.json
+  - legacy-unsealed/incumbent_bench_qlib.json
+- `members_removed`:
+- `n_members`: 63
+- `params`:
+  - `head_sha`: 95d404ff0b9281a969a80bc188c2cf07c8963017
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_d479e96760271bba.json
+- `prev_epoch_sha256`: 8ed0d5fc66b6fb53a65ee3332be29e729400e876fd5af180910c9a2c9b7d396d
+- `receipt_sha256`: fbb352a23e62d3214b58b80e5b8f4b8a8414908f1c7c4555d0cc613aa3e25827
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_epoch_fbbcd3c1e840e14d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_epoch_fbbcd3c1e840e14d.json | 0275c647da2c2abe18c798cfd61d52813cae12702505e22da2aa18032214f21d | fbbcd3c1e840e14d6b485a31bb1519babc111b5d7fa41755c3f99c1261399584 | not_checked | absent | inputs_sha256=d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `epoch_root_sha256`: ae71b4ec5ec8ead38d310f4def8f8282cb267a0b482bf2a29633c8bac0488042
+- `kind`: corpus_epoch.v1
+- `members`:
+  - [0]
+    - `name`: calib_real_drill.json
+    - `sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - [1]
+    - `name`: capacity_eval_cd0854242ed8a9ec.json
+    - `sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+  - [2]
+    - `name`: coherence_2dd641ab766a536a.json
+    - `sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+  - [3]
+    - `name`: concordance_df424fa2f6b1c4e9.json
+    - `sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+  - [4]
+    - `name`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+  - [5]
+    - `name`: conformal_real_drill_gaussian_pit.json
+    - `sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+  - [6]
+    - `name`: corpus_epoch_0a2e8964712cfb0a.json
+    - `sha256`: 9bce499b8f5be69b1a1fd0ea8b173d12fd475e7a2cafaf9d925882b2744bb25c
+  - [7]
+    - `name`: corpus_epoch_2b5db388ddee23aa.json
+    - `sha256`: f3e2af4492471296a33ae47fc3222e7ac17a96251082aa960b373edcfb6d558f
+  - [8]
+    - `name`: corpus_epoch_2ca91405e468cc6b.json
+    - `sha256`: cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b
+  - [9]
+    - `name`: corpus_epoch_404d16a7af1d3862.json
+    - `sha256`: 24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2
+  - [10]
+    - `name`: corpus_epoch_4a75066db56e52fd.json
+    - `sha256`: 7c4a99be100698d78b8c7e5c1d920e3bd6370ba6e774662dd6ed3a4c8c1f3e5e
+  - [11]
+    - `name`: corpus_epoch_568c538fcf4b21cd.json
+    - `sha256`: c07b4cf5af660d253623550ddab94334b599c325f3615465ad16ae53b8f98996
+  - [12]
+    - `name`: corpus_epoch_574953afdf88a0f6.json
+    - `sha256`: 7cb5d3159f82ae71efa2347fb1d419912fb7033c48d808b514176230a93d09f1
+  - [13]
+    - `name`: corpus_epoch_63761c8b4e63992b.json
+    - `sha256`: 917d1b4033f1c20d56156b2a5c83c95c800ec74dfe3aa6fd26805d226cff6c57
+  - [14]
+    - `name`: corpus_epoch_6cf185cfb5466dd7.json
+    - `sha256`: 256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416
+  - [15]
+    - `name`: corpus_epoch_6f8420fc2959f4e7.json
+    - `sha256`: 7050675439b29e8874da291387c39c16d5ca38a9287ff7535364c1fc1392aac5
+  - [16]
+    - `name`: corpus_epoch_96ba030697ddf0ff.json
+    - `sha256`: d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f
+  - [17]
+    - `name`: corpus_epoch_9fd864d30fda3c69.json
+    - `sha256`: 20177c26b20ac749d4d02be185fc05ce22d645bfafbf8d4782f22b2a3e5b2aa9
+  - [18]
+    - `name`: corpus_epoch_a1a8323db3be4842.json
+    - `sha256`: 3ceb9374251d3e50f65edb6424915c17bb11fbad2b846fca7f42c3ebd3cfc901
+  - [19]
+    - `name`: corpus_epoch_a5d113f0994c74b5.json
+    - `sha256`: 8a0128b9d8b208e67022ffa25e040d8ae10d244758ace48207e16770f700a493
+  - [20]
+    - `name`: corpus_epoch_a83ba798e9abd892.json
+    - `sha256`: 9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d
+  - [21]
+    - `name`: corpus_epoch_ac21f22e90c58c53.json
+    - `sha256`: a19be18489e84cd007ab22b4e412c6014c90f6102f9f857da52476734e8b4fd9
+  - [22]
+    - `name`: corpus_epoch_c5a45fd1b73737dc.json
+    - `sha256`: c10f124084371e6c9902e8e77d807d6f71d622deffd19ecd4c7026ef3b35d850
+  - [23]
+    - `name`: corpus_epoch_d1e7bb2567019bf7.json
+    - `sha256`: f4bc01f2646d3fb0561ecd19b3b64fb58d7bc0828e486464401484a3d9ed3530
+  - [24]
+    - `name`: corpus_epoch_d479e96760271bba.json
+    - `sha256`: 5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23
+  - [25]
+    - `name`: corpus_epoch_fbb352a23e62d321.json
+    - `sha256`: d985ae89f15e953f062d3677e32a0f83566932ddc0dde0853491f8341ba660d5
+  - [26]
+    - `name`: corpus_proof_a56dff22d5b4931c.json
+    - `sha256`: 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c
+  - [27]
+    - `name`: corpus_real_drill.json
+    - `sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+  - [28]
+    - `name`: cost_calibration_eval_df9b8d7068bf709b.json
+    - `sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+  - [29]
+    - `name`: coverage_cs_real_drill.json
+    - `sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+  - [30]
+    - `name`: coverage_real_drill.json
+    - `sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+  - [31]
+    - `name`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+  - [32]
+    - `name`: cp_real_drill_gaussian_pit.json
+    - `sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+  - [33]
+    - `name`: deps_security_hygiene_f3b4e6fd22e439b7.json
+    - `sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+  - [34]
+    - `name`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+    - `sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+  - [35]
+    - `name`: drift_real_drill_gaussian_pit.json
+    - `sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+  - [36]
+    - `name`: emerge_real_drill.json
+    - `sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+  - [37]
+    - `name`: evidence_audit_3464d8f8197bf737.json
+    - `sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+  - [38]
+    - `name`: evidence_audit_d449e1ca0cc119a6.json
+    - `sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+  - [39]
+    - `name`: fast_replay_p42_conformance_20260928.json
+    - `sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+  - [40]
+    - `name`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+  - [41]
+    - `name`: fleet_race_real_drill.json
+    - `sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+  - [42]
+    - `name`: honest_verdict_real_drill.json
+    - `sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+  - [43]
+    - `name`: lane_power_drill.json
+    - `sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+  - [44]
+    - `name`: lattice_drill_verdict.json
+    - `sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+  - [45]
+    - `name`: lattice_drill_vol_bench_a.json
+    - `sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - [46]
+    - `name`: lattice_drill_vol_bench_b.json
+    - `sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+  - [47]
+    - `name`: legacy-unsealed/adaptive_mix_20asset_1d_20260922.json
+    - `sha256`: b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313
+  - [48]
+    - `name`: legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json
+    - `sha256`: 5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4
+  - [49]
+    - `name`: legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json
+    - `sha256`: d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec
+  - [50]
+    - `name`: legacy-unsealed/basis_reversion_screen_20asset_1d_20260922.json
+    - `sha256`: 61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f
+  - [51]
+    - `name`: legacy-unsealed/dip_bench_crypto_1d_20260925.json
+    - `sha256`: 584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03
+  - [52]
+    - `name`: legacy-unsealed/fast_replay_p42_conformance_20260927.json
+    - `sha256`: 8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8
+  - [53]
+    - `name`: legacy-unsealed/incumbent_bench_qlib.json
+    - `sha256`: f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f
+  - [54]
+    - `name`: loss_cs_real_drill_conf_t_vs_empirical.json
+    - `sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+  - [55]
+    - `name`: loss_cs_real_drill_gaussian_vs_conf_t.json
+    - `sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+  - [56]
+    - `name`: mcs_real_drill.json
+    - `sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+  - [57]
+    - `name`: mcs_vol_drill.json
+    - `sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+  - [58]
+    - `name`: monitor_run_drill_clean.json
+    - `sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+  - [59]
+    - `name`: monitor_run_drill_defect.json
+    - `sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+  - [60]
+    - `name`: monitor_run_real_drill.json
+    - `sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+  - [61]
+    - `name`: multih_fleet_eval_5db1cab214e291d7.json
+    - `sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+  - [62]
+    - `name`: nautilus_conformance_7bf19a08c147547b.json
+    - `sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+  - [63]
+    - `name`: panel_audit_real_drill.json
+    - `sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+  - [64]
+    - `name`: rankic_eval_9ebdad7da83e7348.json
+    - `sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+  - [65]
+    - `name`: real_benchmark_us_wide_manifest.json
+    - `sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+  - [66]
+    - `name`: real_benchmark_us_wide_test.json
+    - `sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+  - [67]
+    - `name`: real_benchmark_us_wide_validation.json
+    - `sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+  - [68]
+    - `name`: serial_watch_140b073ea589b0c7.json
+    - `sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+  - [69]
+    - `name`: serial_watch_1e8e1446e506fce1.json
+    - `sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+  - [70]
+    - `name`: serial_watch_2c14615c26efd19b.json
+    - `sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+  - [71]
+    - `name`: serial_watch_46445c3b227aa15e.json
+    - `sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+  - [72]
+    - `name`: serial_watch_47297eff3cb55178.json
+    - `sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+  - [73]
+    - `name`: serial_watch_4f4a495b59d022fb.json
+    - `sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+  - [74]
+    - `name`: serial_watch_771602cd1580476c.json
+    - `sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+  - [75]
+    - `name`: serial_watch_85db152db863d25d.json
+    - `sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+  - [76]
+    - `name`: serial_watch_8977244ef78bfd2f.json
+    - `sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+  - [77]
+    - `name`: serial_watch_a6fd40311ce0fa04.json
+    - `sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+  - [78]
+    - `name`: serial_watch_d311f5ea367a66a9.json
+    - `sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+  - [79]
+    - `name`: serial_watch_dbd21a6c99c81e00.json
+    - `sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+  - [80]
+    - `name`: suite_health_drill.json
+    - `sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+  - [81]
+    - `name`: tail_real_drill.json
+    - `sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+  - [82]
+    - `name`: verdict_real_drill.json
+    - `sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+- `members_added`:
+  - corpus_epoch_6f8420fc2959f4e7.json
+- `members_removed`:
+- `n_members`: 83
+- `params`:
+  - `head_sha`: 9d9622cbe433c7931c9715a62bd8db3ef8252f22
+  - `pattern`: *.json
+- `prev_epoch_receipt`: corpus_epoch_6f8420fc2959f4e7.json
+- `prev_epoch_sha256`: d8260040b7bd5488f2317ccc7ec5f36810695e25307e3b140fe09d79798c712a
+- `receipt_sha256`: fbbcd3c1e840e14d6b485a31bb1519babc111b5d7fa41755c3f99c1261399584
+- `research_only`: true
+- `schema`: corpus_epoch.v1
+- `simulated_only`: false
+- `verdict`: advancing
+
+### `receipts/corpus_proof_a56dff22d5b4931c.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_proof_a56dff22d5b4931c.json | 0a281b87338f47e861be233984f7f4cf171856f4201e403f4a84d2d69c0e809c | a56dff22d5b4931cbe85f6f9107399145c7f44655a132b92810fb05dda6c74f7 | not_checked | 6e5b598b5962b33ce145a42e9ae725a2ba597ee8 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `epoch_merkle.py`: 2778a059a1d1b4ffcd172c54375d3f827560c4a175c29dac0d81401ee9058b77
+- `data_label`: CORPUS
+- `dataset_hash`: db44c0f2dcf747a0f9c2826ca78f3f7e204aab64f7d0c1a6a2ec5bbf841f409b
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T21:20:17.267014+00:00
+- `git_revision`: 6e5b598b5962b33ce145a42e9ae725a2ba597ee8
+- `kind`: corpus_proof.v1
+- `params_hash`: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+- `payload`:
+  - `data_label`: CORPUS
+  - `epoch_receipt`: corpus_epoch_fbb352a23e62d321.json
+  - `epoch_root_sha256`: d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569
+  - `kind`: corpus_proof.v1
+  - `leaf_index`: 0
+  - `member`: calib_real_drill.json
+  - `member_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - `merkle_root`: 5bdd57f34d61d6da9a0bdb764e2c2d6e552eb2a44a93166fe816340fa424920e
+  - `n_members`: 63
+  - `path`:
+    - [0]
+      - `sha256`: 799cd97006e47318aeb72cf4f21f2032e03fa472402dd85e987b881ea29bb079
+      - `side`: right
+    - [1]
+      - `sha256`: efce5f75cc11edc5a53d9d3f5322842d8f93f7b27ff7031ec661eae48241793a
+      - `side`: right
+    - [2]
+      - `sha256`: f861300f7cb19e59e8984985f86cd8a029b80a9dd5faeb10eb22fd7272c9d398
+      - `side`: right
+    - [3]
+      - `sha256`: 1dd8d043656186ad2f928a1f1f88855dcb49318c1ed81ce58ec887dc3e0821fd
+      - `side`: right
+    - [4]
+      - `sha256`: c7f38277391d7a62f67235f623355e5b6ebd6ef6027b9dd3d1775244a7d7b639
+      - `side`: right
+    - [5]
+      - `sha256`: 8d097b6158e0bf7e8d5945b63bbcc4a1c62c6833f21df54abff7d2e1d5aa4ea4
+      - `side`: right
+  - `research_only`: true
+  - `schema`: corpus_proof.v1
+  - `simulated_only`: false
+- `receipt_sha256`: a56dff22d5b4931cbe85f6f9107399145c7f44655a132b92810fb05dda6c74f7
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/corpus_proof_exemplar.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_proof_exemplar.json | 49c13a28dcbc992e9830264d01670d4ffb2460e8c1abd3613d8d54d0f4c8bb1c | 87bfa91513bede1b0a89b89493dfe54206876500d147ee154bfafdd960b74597 | not_checked | f5573f64c254bfab9179ce823db6b1297af434fb | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `epoch_merkle.py`: 04611e91dad4aea054da97ccd6f3904cec5cbfcabd59c138d282662464e542d9
+- `data_label`: CORPUS
+- `dataset_hash`: 3e76d72216aa964bad55623381cced90b3ecfd60b7347a7eec98ea13e5514de5
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-30T04:22:21.382907+00:00
+- `git_revision`: f5573f64c254bfab9179ce823db6b1297af434fb
+- `kind`: corpus_proof.v1
+- `params_hash`: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
+- `payload`:
+  - `corpus_key`: receipts/*.json
+  - `data_label`: CORPUS
+  - `epoch_receipt`: corpus_epoch_84384f73f7d8e9d6.json
+  - `epoch_root_sha256`: cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058
+  - `kind`: corpus_proof.v1
+  - `leaf_index`: 0
+  - `member`: calib_real_drill.json
+  - `member_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+  - `merkle_root`: 48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c
+  - `n_members`: 90
+  - `path`:
+    - [0]
+      - `sha256`: 799cd97006e47318aeb72cf4f21f2032e03fa472402dd85e987b881ea29bb079
+      - `side`: right
+    - [1]
+      - `sha256`: efce5f75cc11edc5a53d9d3f5322842d8f93f7b27ff7031ec661eae48241793a
+      - `side`: right
+    - [2]
+      - `sha256`: 91003d45182dd816b4bcc89f162316be7a1abb97af0839992d9d8a54fde2065b
+      - `side`: right
+    - [3]
+      - `sha256`: a921d4fe3e28ef35c78cd230a5ca434fc0274485a8623d52a4ef8686cd2db83d
+      - `side`: right
+    - [4]
+      - `sha256`: 2b7ffc28d6f20299f8f3b306cd662522ac03e0a219a37c7d294b05a72a0d03f9
+      - `side`: right
+    - [5]
+      - `sha256`: c8b1b9fb383f1adedf146447564fd2afeac6fc651c2a8f99bf4c8b99f2d1cb47
+      - `side`: right
+    - [6]
+      - `sha256`: 0a3a49f62330a4b24d1f5486a6923e3f99c96e1fda2a7a777f3850f35508c106
+      - `side`: right
+  - `research_only`: true
+  - `schema`: corpus_proof.v1
+  - `simulated_only`: false
+- `receipt_sha256`: 87bfa91513bede1b0a89b89493dfe54206876500d147ee154bfafdd960b74597
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/corpus_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -2090,6 +12345,83 @@ counted. Prose that contains such a token is quoted verbatim.
     - `spread`: 2944.5377726169922
     - `spread_estimator`: roll
     - `total_cost`: 4799.388056687958
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
+### `receipts/cost_calibration_eval_f130c7e871e9aa64.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_f130c7e871e9aa64.json | da4f8269942b5c87bebed33e422d6326cb73d327f48648d97b02e6e6b36dd1e9 | f130c7e871e9aa649e029c016f980603a0ab9f144db4fed7635b90087fcde3c3 | not_checked | bd0acf9bb24a5ba460ee205a119942c200f94b90 | inputs_sha256=0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_relative`: 0.0008081198205963833
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-30T13:08:05.561461+00:00
+- `git_revision`: bd0acf9bb24a5ba460ee205a119942c200f94b90
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `n_dates`: 20
+- `n_names`: 3
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: f130c7e871e9aa649e029c016f980603a0ab9f144db4fed7635b90087fcde3c3
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: flat
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 625.1519380423003
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 2437.6575722223597
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 3062.8095102646603
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 625.5662666663776
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 37
+    - `research_only`: true
+    - `spread`: 739.1584537248116
+    - `spread_estimator`: roll
+    - `total_cost`: 1364.7247203911893
     - `turnover`: 0.0
 - `schema`: cost_calibration.v1
 - `seed`: 7
@@ -2868,6 +13200,2654 @@ counted. Prose that contains such a token is quoted verbatim.
 - `stream`: gaussian_pit
 - `tau_hat`: 34
 - `window`: 40
+
+### `receipts/crossvenue_basis_3f4ff76f517655a7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/crossvenue_basis_3f4ff76f517655a7.json | 14ce799a46e282849e8e7852ff74489ed4747274c164040fcc52974bbb72a087 | 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964 | not_checked | 8822eee7146f4e897b02a240c9a8648f99bc898d | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `crossvenue_basis.py`: eb4b339a504327e1b68b7201a329146c294199515b822ff3ec503c433fc3d610
+- `data_label`: kraken+okx
+- `dataset_hash`: 1e56d381e3b25f600fe929309731ee972f8df902627420ef9589496ea6273358
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T22:57:37.934872+00:00
+- `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
+- `kind`: crossvenue_basis
+- `params_hash`: 28d89f08175f79bb4e9988b88e1929d2cdf3b3bf72f5258e48bef7e263b9ad26
+- `payload`:
+  - `asset`: BTC
+  - `claim`: research_only
+  - `data_label`: kraken+okx
+  - `dataset_sha256`: 1c4780edba081c2c39672ca72c4cc27e570e3d6318a1523b5e3baad6f1bbb0fe
+  - `generated_at`: 2026-09-29T22:57:37.934872+00:00
+  - `git_revision`: 8822eee7146f4e897b02a240c9a8648f99bc898d
+  - `inputs`:
+    - `asset`: BTC
+    - `legs`:
+      - `kraken`:
+        - `data_label`: kraken
+        - `funding`:
+          - `n_rows`: 8887
+          - `sha256`: c7143f54ec014d36c447bbfe84af6d8af47b7078051e190aee0281b0ff1e6789
+        - `mark`:
+          - `first_date`: 2022-03-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 1652
+          - `sha256`: 2f72a08d78947d143e2427c4a21fc4ca1739bbd25cc14d40a10d91feaa52d975
+        - `spot`:
+          - `first_date`: 2024-10-09
+          - `last_date`: 2026-09-28
+          - `n_rows`: 720
+          - `sha256`: f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf
+      - `okx`:
+        - `data_label`: okx
+        - `funding`:
+          - `n_rows`: 278
+          - `sha256`: 175ee645bedda2b65946be8f2b0835f4232f7f0a726e4f24a2796df973f3265c
+        - `mark`:
+          - `first_date`: 2026-06-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 99
+          - `sha256`: 65f5c084cc138e2a4f1d9b9390eb1e7692233ad800b44e5afcd132d411c39f3e
+        - `spot`:
+          - `first_date`: 2026-06-22
+          - `last_date`: 2026-09-28
+          - `n_rows`: 99
+          - `sha256`: e5430fcea9afc2d723e47d504be91b6a35d84c2155af7e07f0c3e53a08ce62ba
+    - `params`:
+      - `annualization_days`: 365.0
+      - `asset`: BTC
+      - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
+      - `min_overlap`: 5
+  - `inputs_sha256`: dfd67529579f9df0e28454b51a69b17f292f028e2e0afdab836e76b363d39a70
+  - `kind`: crossvenue_basis
+  - `legs`:
+    - [0]
+      - `basis_first`: 0.0003820047835645623
+      - `basis_last`: 1.3338945653385329e-05
+      - `basis_max`: 0.0017099744573727627
+      - `basis_mean`: 0.0001848838935315051
+      - `basis_min`: -0.0007778864469915593
+      - `basis_series`:
+        - [0]
+          - 2024-10-09
+          - 0.0003820047835645623
+        - [1]
+          - 2024-10-10
+          - 5.843738884036227e-05
+        - [2]
+          - 2024-10-11
+          - 0.0005615610723010941
+        - [3]
+          - 2024-10-12
+          - 0.0005454246953136708
+        - [4]
+          - 2024-10-13
+          - 0.00036426288331798914
+        - [5]
+          - 2024-10-14
+          - 0.0007330961191463893
+        - [6]
+          - 2024-10-15
+          - 0.0002916091301079324
+        - [7]
+          - 2024-10-16
+          - 0.00019174758785265304
+        - [8]
+          - 2024-10-17
+          - 0.00018656683482770676
+        - [9]
+          - 2024-10-18
+          - -0.0002768549042363437
+        - [10]
+          - 2024-10-19
+          - 3.8531102736547325e-05
+        - [11]
+          - 2024-10-20
+          - 0.0007424793552851061
+        - [12]
+          - 2024-10-21
+          - -0.00047814848611941264
+        - [13]
+          - 2024-10-22
+          - 0.00010632517676534379
+        - [14]
+          - 2024-10-23
+          - 0.00014643490694318215
+        - [15]
+          - 2024-10-24
+          - 0.0003030972563044555
+        - [16]
+          - 2024-10-25
+          - -8.523085178084812e-05
+        - [17]
+          - 2024-10-26
+          - 5.6374415241777275e-05
+        - [18]
+          - 2024-10-27
+          - 0.00046525940342233654
+        - [19]
+          - 2024-10-28
+          - 0.0006090952127092607
+        - [20]
+          - 2024-10-29
+          - 0.001146081988293552
+        - [21]
+          - 2024-10-30
+          - 0.0004584929631554131
+        - [22]
+          - 2024-10-31
+          - -0.0002711389677993478
+        - [23]
+          - 2024-11-01
+          - -0.00021582902387676803
+        - [24]
+          - 2024-11-02
+          - 0.0007559914866160897
+        - [25]
+          - 2024-11-03
+          - 8.682829583647333e-06
+        - [26]
+          - 2024-11-04
+          - 0.0005596538244567921
+        - [27]
+          - 2024-11-05
+          - -5.8613945026679825e-05
+        - [28]
+          - 2024-11-06
+          - 0.0007116071132333304
+        - [29]
+          - 2024-11-07
+          - -0.0001930838540195368
+        - [30]
+          - 2024-11-08
+          - 4.902318512133581e-05
+        - [31]
+          - 2024-11-09
+          - 0.00043721385171312314
+        - [32]
+          - 2024-11-10
+          - 0.0005208144281308587
+        - [33]
+          - 2024-11-11
+          - 0.0011880438972780212
+        - [34]
+          - 2024-11-12
+          - 4.676460615439813e-05
+        - [35]
+          - 2024-11-13
+          - 0.0008908256708553762
+        - [36]
+          - 2024-11-14
+          - 0.0009694730890999172
+        - [37]
+          - 2024-11-15
+          - 0.0009155265102479941
+        - [38]
+          - 2024-11-16
+          - 0.0011394236461888222
+        - [39]
+          - 2024-11-17
+          - 0.0010607115164296532
+        - [40]
+          - 2024-11-18
+          - 0.000591963810116058
+        - [41]
+          - 2024-11-19
+          - 0.00029473445982238736
+        - [42]
+          - 2024-11-20
+          - 0.00038583776842566656
+        - [43]
+          - 2024-11-21
+          - -6.693675761524604e-06
+        - [44]
+          - 2024-11-22
+          - 0.0009229795329212188
+        - [45]
+          - 2024-11-23
+          - 0.000835303935616193
+        - [46]
+          - 2024-11-24
+          - 0.0011749267333634838
+        - [47]
+          - 2024-11-25
+          - 0.0006020837068451025
+        - [48]
+          - 2024-11-26
+          - 0.0008488683765260284
+        - [49]
+          - 2024-11-27
+          - 0.0002416458532072415
+        - [50]
+          - 2024-11-28
+          - 0.0010457163062419208
+        - [51]
+          - 2024-11-29
+          - 0.0013708801842465064
+        - [52]
+          - 2024-11-30
+          - 0.0008577668258494166
+        - [53]
+          - 2024-12-01
+          - 0.0012367684341186666
+        - [54]
+          - 2024-12-02
+          - 0.0006132593136051916
+        - [55]
+          - 2024-12-03
+          - 0.0010261255940532802
+        - [56]
+          - 2024-12-04
+          - 0.0008928075741803795
+        - [57]
+          - 2024-12-05
+          - 0.0007579789040162237
+        - [58]
+          - 2024-12-06
+          - 0.0007131212147499895
+        - [59]
+          - 2024-12-07
+          - 0.0012469508496995953
+        - [60]
+          - 2024-12-08
+          - 0.0017099744573727627
+        - [61]
+          - 2024-12-09
+          - 0.0006329952188925535
+        - [62]
+          - 2024-12-10
+          - 0.00042659603196619136
+        - [63]
+          - 2024-12-11
+          - 0.0003777182475741139
+        - [64]
+          - 2024-12-12
+          - -0.00012682730602872947
+        - [65]
+          - 2024-12-13
+          - -0.00020403629573201643
+        - [66]
+          - 2024-12-14
+          - 0.00024419418383020755
+        - [67]
+          - 2024-12-15
+          - 0.0013157835788241133
+        - [68]
+          - 2024-12-16
+          - 0.0006261016754491487
+        - [69]
+          - 2024-12-17
+          - 0.00031327491071195463
+        - [70]
+          - 2024-12-18
+          - -2.2077468098519658e-05
+        - [71]
+          - 2024-12-19
+          - -0.0003806659233048867
+        - [72]
+          - 2024-12-20
+          - 0.0004079432256483553
+        - [73]
+          - 2024-12-21
+          - 3.4702295216909177e-06
+        - [74]
+          - 2024-12-22
+          - -0.00020797979183899884
+        - [75]
+          - 2024-12-23
+          - 0.0010736456991977522
+        - [76]
+          - 2024-12-24
+          - -0.0003276818054977484
+        - [77]
+          - 2024-12-25
+          - 0.0008250571602825879
+        - [78]
+          - 2024-12-26
+          - 0.0006007946637167942
+        - [79]
+          - 2024-12-27
+          - 0.0003740375416877676
+        - [80]
+          - 2024-12-28
+          - -0.00047404483685898935
+        - [81]
+          - 2024-12-29
+          - 0.0002336038869002189
+        - [82]
+          - 2024-12-30
+          - 0.00046035243876929404
+        - [83]
+          - 2024-12-31
+          - 0.0006699481312121896
+        - [84]
+          - 2025-01-01
+          - 0.0005712855963374048
+        - [85]
+          - 2025-01-02
+          - 0.0011760201675829688
+        - [86]
+          - 2025-01-03
+          - 0.0004462314150355304
+        - [87]
+          - 2025-01-04
+          - 0.00027547011269661673
+        - [88]
+          - 2025-01-05
+          - 0.0005850235149389997
+        - [89]
+          - 2025-01-06
+          - 0.0006382440092631709
+        - [90]
+          - 2025-01-07
+          - 0.0002022234275504839
+        - [91]
+          - 2025-01-08
+          - 9.23574603632244e-05
+        - [92]
+          - 2025-01-09
+          - 0.00034473783033381144
+        - [93]
+          - 2025-01-10
+          - 0.0003794362630487016
+        - [94]
+          - 2025-01-11
+          - 0.00038427221351253524
+        - [95]
+          - 2025-01-12
+          - 0.0006848786768181281
+        - [96]
+          - 2025-01-13
+          - 0.0004896076435502268
+        - [97]
+          - 2025-01-14
+          - -0.00016063934162247027
+        - [98]
+          - 2025-01-15
+          - 0.0004073637411728814
+        - [99]
+          - 2025-01-16
+          - 0.00020973375840276415
+        - [100]
+          - 2025-01-17
+          - 0.0007313296959364998
+        - [101]
+          - 2025-01-18
+          - 0.0010737847179092734
+        - [102]
+          - 2025-01-19
+          - 0.0006510207655346828
+        - [103]
+          - 2025-01-20
+          - 0.0002246999041060376
+        - [104]
+          - 2025-01-21
+          - -0.00010402431526768282
+        - [105]
+          - 2025-01-22
+          - 0.0003494579084492322
+        - [106]
+          - 2025-01-23
+          - 0.0001733116577239759
+        - [107]
+          - 2025-01-24
+          - 5.232392017392177e-05
+        - [108]
+          - 2025-01-25
+          - 0.000156639161544094
+        - [109]
+          - 2025-01-26
+          - -0.0001724898134156629
+        - [110]
+          - 2025-01-27
+          - -0.0006699476693028488
+        - [111]
+          - 2025-01-28
+          - -9.994887896037452e-05
+        - [112]
+          - 2025-01-29
+          - 0.00044287664475261835
+        - [113]
+          - 2025-01-30
+          - -0.00019332189242404302
+        - [114]
+          - 2025-01-31
+          - 6.588404336271326e-05
+        - [115]
+          - 2025-02-01
+          - -7.797113134217355e-05
+        - [116]
+          - 2025-02-02
+          - -0.00020715985785413641
+        - [117]
+          - 2025-02-03
+          - -1.0098365400798654e-05
+        - [118]
+          - 2025-02-04
+          - -0.0007778864469915593
+        - [119]
+          - 2025-02-05
+          - 0.00019403994914705201
+        - [120]
+          - 2025-02-06
+          - 5.893303179188951e-05
+        - [121]
+          - 2025-02-07
+          - -9.146214136770012e-05
+        - [122]
+          - 2025-02-08
+          - -0.00027695890888896507
+        - [123]
+          - 2025-02-09
+          - 0.00011472787543770452
+        - [124]
+          - 2025-02-10
+          - 0.0001765526327077262
+        - [125]
+          - 2025-02-11
+          - 2.1871996064396113e-05
+        - [126]
+          - 2025-02-12
+          - 9.711690503810354e-05
+        - [127]
+          - 2025-02-13
+          - 6.570686789126225e-05
+        - [128]
+          - 2025-02-14
+          - 0.00034149536050947924
+        - [129]
+          - 2025-02-15
+          - 0.00021889720297126012
+        - [130]
+          - 2025-02-16
+          - -2.6466138180094463e-05
+        - [131]
+          - 2025-02-17
+          - 0.00023628333129651222
+        - [132]
+          - 2025-02-18
+          - 0.0002657438663409723
+        - [133]
+          - 2025-02-19
+          - 0.00027287902559048683
+        - [134]
+          - 2025-02-20
+          - 1.4549361701383513e-05
+        - [135]
+          - 2025-02-21
+          - 0.0008477378225068284
+        - [136]
+          - 2025-02-22
+          - -0.00021604872210069243
+        - [137]
+          - 2025-02-23
+          - -0.00011419025687772481
+        - [138]
+          - 2025-02-24
+          - 7.870213727745478e-05
+        - [139]
+          - 2025-02-25
+          - -0.0002430437097591516
+        - [140]
+          - 2025-02-26
+          - 0.0007010145945941539
+        - [141]
+          - 2025-02-27
+          - -0.00046489127687566627
+        - [142]
+          - 2025-02-28
+          - -4.0565011235982246e-05
+        - [143]
+          - 2025-03-01
+          - 0.00011478196320998932
+        - [144]
+          - 2025-03-02
+          - 0.0004977001259383019
+        - [145]
+          - 2025-03-03
+          - 0.00024683326980893486
+        - [146]
+          - 2025-03-04
+          - 1.3438064158182955e-05
+        - [147]
+          - 2025-03-05
+          - -4.944541943177886e-06
+        - [148]
+          - 2025-03-06
+          - 2.1383821273647906e-05
+        - [149]
+          - 2025-03-07
+          - 8.77895077711359e-05
+        - [150]
+          - 2025-03-08
+          - 0.0006390085518690311
+        - [151]
+          - 2025-03-09
+          - 0.0003532518252676733
+        - [152]
+          - 2025-03-10
+          - -5.366920224095503e-05
+        - [153]
+          - 2025-03-11
+          - 0.0002500934006513711
+        - [154]
+          - 2025-03-12
+          - 4.543041420937088e-05
+        - [155]
+          - 2025-03-13
+          - -0.00018687013843035402
+        - [156]
+          - 2025-03-14
+          - -0.00010817602699135516
+        - [157]
+          - 2025-03-15
+          - 0.00033799247955191555
+        - [158]
+          - 2025-03-16
+          - -0.000247801033599249
+        - [159]
+          - 2025-03-17
+          - -8.809699103850186e-05
+        - [160]
+          - 2025-03-18
+          - -9.560518659127458e-08
+        - [161]
+          - 2025-03-19
+          - 3.0132533313443682e-05
+        - [162]
+          - 2025-03-20
+          - 0.00019372781439224284
+        - [163]
+          - 2025-03-21
+          - 0.00042839834014201164
+        - [164]
+          - 2025-03-22
+          - 0.0005997993080810919
+        - [165]
+          - 2025-03-23
+          - 0.0002164610394754293
+        - [166]
+          - 2025-03-24
+          - 0.0003027692263234365
+        - [167]
+          - 2025-03-25
+          - -0.00017637586486680016
+        - [168]
+          - 2025-03-26
+          - 5.58376377277713e-05
+        - [169]
+          - 2025-03-27
+          - 8.551098926957445e-05
+        - [170]
+          - 2025-03-28
+          - 0.00044421900525281363
+        - [171]
+          - 2025-03-29
+          - 6.311752230246366e-05
+        - [172]
+          - 2025-03-30
+          - 0.0005247475688536103
+        - [173]
+          - 2025-03-31
+          - 0.0003384607692557699
+        - [174]
+          - 2025-04-01
+          - -0.0002782527390127975
+        - [175]
+          - 2025-04-02
+          - -0.00012046015211719145
+        - [176]
+          - 2025-04-03
+          - 0.0006973811169358036
+        - [177]
+          - 2025-04-04
+          - 0.0006180150320952322
+        - [178]
+          - 2025-04-05
+          - 8.326359198360319e-05
+        - [179]
+          - 2025-04-06
+          - 0.00013914534752451692
+        - [180]
+          - 2025-04-07
+          - 0.0002631855782476679
+        - [181]
+          - 2025-04-08
+          - -0.00011092510149137044
+        - [182]
+          - 2025-04-09
+          - 0.000581293063137411
+        - [183]
+          - 2025-04-10
+          - 0.00012765542964413842
+        - [184]
+          - 2025-04-11
+          - -0.0003258929030737813
+        - [185]
+          - 2025-04-12
+          - -9.181419802999065e-05
+        - [186]
+          - 2025-04-13
+          - 0.00024161940086245366
+        - [187]
+          - 2025-04-14
+          - 0.0005723075386658422
+        - [188]
+          - 2025-04-15
+          - 6.029773056723061e-05
+        - [189]
+          - 2025-04-16
+          - 0.00012703576046304397
+        - [190]
+          - 2025-04-17
+          - 0.00044842946969559765
+        - [191]
+          - 2025-04-18
+          - -0.0001938885491988984
+        - [192]
+          - 2025-04-19
+          - -0.00037328043244402604
+        - [193]
+          - 2025-04-20
+          - 0.0005375440193446047
+        - [194]
+          - 2025-04-21
+          - 0.0002591780111186367
+        - [195]
+          - 2025-04-22
+          - 0.0005306659194806464
+        - [196]
+          - 2025-04-23
+          - 0.0007045939375311121
+        - [197]
+          - 2025-04-24
+          - 0.0003764262598057085
+        - [198]
+          - 2025-04-25
+          - -0.0001227247700954711
+        - [199]
+          - 2025-04-26
+          - 0.00015516078780527406
+        - [200]
+          - 2025-04-27
+          - -0.00023565296975821325
+        - [201]
+          - 2025-04-28
+          - 0.00043947638659721415
+        - [202]
+          - 2025-04-29
+          - 4.3232755246627663e-05
+        - [203]
+          - 2025-04-30
+          - -1.1447402053391535e-05
+        - [204]
+          - 2025-05-01
+          - 0.0008047053289306623
+        - [205]
+          - 2025-05-02
+          - 0.00012725897525202093
+        - [206]
+          - 2025-05-03
+          - 2.862466523392293e-05
+        - [207]
+          - 2025-05-04
+          - -0.00040411147931729166
+        - [208]
+          - 2025-05-05
+          - 0.00016313662113553963
+        - [209]
+          - 2025-05-06
+          - 0.00047997221235292
+        - [210]
+          - 2025-05-07
+          - 0.000252748652719724
+        - [211]
+          - 2025-05-08
+          - 0.0008777899874684483
+        - [212]
+          - 2025-05-09
+          - 0.0003595030929033868
+        - [213]
+          - 2025-05-10
+          - 0.0007461184327136994
+        - [214]
+          - 2025-05-11
+          - 0.000653794261719745
+        - [215]
+          - 2025-05-12
+          - 8.738474032870267e-05
+        - [216]
+          - 2025-05-13
+          - 0.00037467701929590945
+        - [217]
+          - 2025-05-14
+          - -0.0005250130594547941
+        - [218]
+          - 2025-05-15
+          - 0.0005651812727740491
+        - [219]
+          - 2025-05-16
+          - 8.214671435389644e-05
+        - [220]
+          - 2025-05-17
+          - 0.00014674681650405115
+        - [221]
+          - 2025-05-18
+          - -9.731351922641026e-05
+        - [222]
+          - 2025-05-19
+          - -5.962855017758643e-05
+        - [223]
+          - 2025-05-20
+          - 0.0003819680221382422
+        - [224]
+          - 2025-05-21
+          - 0.00048260751848861665
+        - [225]
+          - 2025-05-22
+          - 0.0005456078961561688
+        - [226]
+          - 2025-05-23
+          - 4.259661260831293e-05
+        - [227]
+          - 2025-05-24
+          - -0.00012429230419788652
+        - [228]
+          - 2025-05-25
+          - 0.00014243068978103042
+        - [229]
+          - 2025-05-26
+          - 0.0002412595140241167
+        - [230]
+          - 2025-05-27
+          - -2.575613054818969e-05
+        - [231]
+          - 2025-05-28
+          - 0.0003994950315392186
+        - [232]
+          - 2025-05-29
+          - -0.00026336412261472207
+        - [233]
+          - 2025-05-30
+          - 0.00020128653994970212
+        - [234]
+          - 2025-05-31
+          - 8.598951803039894e-05
+        - [235]
+          - 2025-06-01
+          - -7.306471954276604e-05
+        - [236]
+          - 2025-06-02
+          - -3.8873652397120144e-05
+        - [237]
+          - 2025-06-03
+          - 0.00014977171982816855
+        - [238]
+          - 2025-06-04
+          - 0.00012020762778043591
+        - [239]
+          - 2025-06-05
+          - -0.0002223670980894891
+        - [240]
+          - 2025-06-06
+          - 5.214088806863754e-06
+        - [241]
+          - 2025-06-07
+          - -0.00039859412441116144
+        - [242]
+          - 2025-06-08
+          - 0.00024690604795271414
+        - [243]
+          - 2025-06-09
+          - 0.00033026146387282463
+        - [244]
+          - 2025-06-10
+          - 0.00023436492966485476
+        - [245]
+          - 2025-06-11
+          - -0.0002296987464802567
+        - [246]
+          - 2025-06-12
+          - -0.0003873438879086191
+        - [247]
+          - 2025-06-13
+          - 0.00018349511446314365
+        - [248]
+          - 2025-06-14
+          - -3.444353153313883e-05
+        - [249]
+          - 2025-06-15
+          - 0.0004533703462901669
+        - [250]
+          - 2025-06-16
+          - 0.00023107668456853248
+        - [251]
+          - 2025-06-17
+          - -0.0004643051720262174
+        - [252]
+          - 2025-06-18
+          - 0.0003354504958671108
+        - [253]
+          - 2025-06-19
+          - 0.00023301413623380115
+        - [254]
+          - 2025-06-20
+          - 0.0003128206749768231
+        - [255]
+          - 2025-06-21
+          - 0.00014221497876131247
+        - [256]
+          - 2025-06-22
+          - 2.372794945144406e-05
+        - [257]
+          - 2025-06-23
+          - 0.000336127267299018
+        - [258]
+          - 2025-06-24
+          - 0.000492907543938772
+        - [259]
+          - 2025-06-25
+          - 0.00040506516857394525
+        - [260]
+          - 2025-06-26
+          - 0.0007418889689149211
+        - [261]
+          - 2025-06-27
+          - -6.704547437241475e-05
+        - [262]
+          - 2025-06-28
+          - 0.00030060899641362783
+        - [263]
+          - 2025-06-29
+          - 0.0001793443178013298
+        - [264]
+          - 2025-06-30
+          - 0.000534282450199462
+        - [265]
+          - 2025-07-01
+          - 0.0001775693829296107
+        - [266]
+          - 2025-07-02
+          - 0.0005426736611038127
+        - [267]
+          - 2025-07-03
+          - 0.00015529016642556833
+        - [268]
+          - 2025-07-04
+          - 0.0002464332424529971
+        - [269]
+          - 2025-07-05
+          - -0.00024286247280213722
+        - [270]
+          - 2025-07-06
+          - 0.00014027225220738655
+        - [271]
+          - 2025-07-07
+          - -6.776267356932047e-05
+        - [272]
+          - 2025-07-08
+          - 0.0004374468627142186
+        - [273]
+          - 2025-07-09
+          - 6.210284458660287e-05
+        - [274]
+          - 2025-07-10
+          - 0.0006859134782542563
+        - [275]
+          - 2025-07-11
+          - 0.0006760242565015766
+        - [276]
+          - 2025-07-12
+          - 0.00027476639914189805
+        - [277]
+          - 2025-07-13
+          - 0.0005202547638974399
+        - [278]
+          - 2025-07-14
+          - 0.0007004969630245322
+        - [279]
+          - 2025-07-15
+          - 0.0008686278677512555
+        - [280]
+          - 2025-07-16
+          - 0.00031431916750024905
+        - [281]
+          - 2025-07-17
+          - -9.500605751962817e-05
+        - [282]
+          - 2025-07-18
+          - 0.00019076991939288417
+        - [283]
+          - 2025-07-19
+          - 0.00030436222603682356
+        - [284]
+          - 2025-07-20
+          - 0.0004551943172287717
+        - [285]
+          - 2025-07-21
+          - 0.0004262662206783592
+        - [286]
+          - 2025-07-22
+          - 0.0011434094863436769
+        - [287]
+          - 2025-07-23
+          - 0.001086666561015104
+        - [288]
+          - 2025-07-24
+          - 0.00039128880211662594
+        - [289]
+          - 2025-07-25
+          - 0.0005708098381329787
+        - [290]
+          - 2025-07-26
+          - 0.00046508532493137354
+        - [291]
+          - 2025-07-27
+          - 0.0006480733571336262
+        - [292]
+          - 2025-07-28
+          - 0.0013378533158815219
+        - [293]
+          - 2025-07-29
+          - 0.0004325848955573165
+        - [294]
+          - 2025-07-30
+          - 0.00039943475739414675
+        - [295]
+          - 2025-07-31
+          - 0.00020777679145189394
+        - [296]
+          - 2025-08-01
+          - -0.00013923474474132077
+        - [297]
+          - 2025-08-02
+          - 0.0003693309115575764
+        - [298]
+          - 2025-08-03
+          - 0.00011623667810209352
+        - [299]
+          - 2025-08-04
+          - -4.006014147035681e-06
+        - [300]
+          - 2025-08-05
+          - 0.0003255231434088676
+        - [301]
+          - 2025-08-06
+          - 0.0002746393629893684
+        - [302]
+          - 2025-08-07
+          - 0.0004157368050359152
+        - [303]
+          - 2025-08-08
+          - 0.00046883883621997
+        - [304]
+          - 2025-08-09
+          - 0.0008537750601602532
+        - [305]
+          - 2025-08-10
+          - 0.0008744283546816005
+        - [306]
+          - 2025-08-11
+          - 8.435516145278269e-05
+        - [307]
+          - 2025-08-12
+          - 5.3807279648323854e-05
+        - [308]
+          - 2025-08-13
+          - 0.0006041161140997923
+        - [309]
+          - 2025-08-14
+          - 0.0001323041536832101
+        - [310]
+          - 2025-08-15
+          - 0.0001579509206023549
+        - [311]
+          - 2025-08-16
+          - -0.00014635318725146726
+        - [312]
+          - 2025-08-17
+          - 0.0004328932550822395
+        - [313]
+          - 2025-08-18
+          - 0.0003359068132462051
+        - [314]
+          - 2025-08-19
+          - 0.0003415524667540509
+        - [315]
+          - 2025-08-20
+          - 0.0005975841911674042
+        - [316]
+          - 2025-08-21
+          - 0.00030972253083736074
+        - [317]
+          - 2025-08-22
+          - 0.0014103145560038237
+        - [318]
+          - 2025-08-23
+          - 0.000996929548157981
+        - [319]
+          - 2025-08-24
+          - 0.00081893659365958
+        - [320]
+          - 2025-08-25
+          - 0.00014547405781209082
+        - [321]
+          - 2025-08-26
+          - 9.342768334241157e-05
+        - [322]
+          - 2025-08-27
+          - 0.00025795412309039954
+        - [323]
+          - 2025-08-28
+          - 0.000505239279751885
+        - [324]
+          - 2025-08-29
+          - -2.5769637242989442e-05
+        - [325]
+          - 2025-08-30
+          - 0.0009158907119558064
+        - [326]
+          - 2025-08-31
+          - 0.0002955349738115185
+        - [327]
+          - 2025-09-01
+          - 4.9694387396570676e-05
+        - [328]
+          - 2025-09-02
+          - 0.0007496791831229315
+        - [329]
+          - 2025-09-03
+          - 2.5951862435813712e-05
+        - [330]
+          - 2025-09-04
+          - 0.00011884292698947399
+        - [331]
+          - 2025-09-05
+          - 0.0005361233024723618
+        - [332]
+          - 2025-09-06
+          - -0.00028904317154419145
+        - [333]
+          - 2025-09-07
+          - 5.211265884974661e-05
+        - [334]
+          - 2025-09-08
+          - 0.0004180440003275242
+        - [335]
+          - 2025-09-09
+          - 0.00016374164118667576
+        - [336]
+          - 2025-09-10
+          - 0.0004919678087935566
+        - [337]
+          - 2025-09-11
+          - 0.00044659305919827065
+        - [338]
+          - 2025-09-12
+          - 2.054098659316425e-05
+        - [339]
+          - 2025-09-13
+          - 0.00040430767741360884
+        - [340]
+          - 2025-09-14
+          - -0.0002878870042361399
+        - [341]
+          - 2025-09-15
+          - 0.0003263427078532714
+        - [342]
+          - 2025-09-16
+          - 0.0009121804232890393
+        - [343]
+          - 2025-09-17
+          - 0.0004661746967039012
+        - [344]
+          - 2025-09-18
+          - 2.4909660054132077e-05
+        - [345]
+          - 2025-09-19
+          - 0.00039798755792935916
+        - [346]
+          - 2025-09-20
+          - 0.00048064915176192474
+        - [347]
+          - 2025-09-21
+          - 0.0002685554041964067
+        - [348]
+          - 2025-09-22
+          - 0.00014873941130382883
+        - [349]
+          - 2025-09-23
+          - 0.0005764925259107668
+        - [350]
+          - 2025-09-24
+          - 0.0007052789083530702
+        - [351]
+          - 2025-09-25
+          - 7.779782954669455e-05
+        - [352]
+          - 2025-09-26
+          - 3.2818771507175e-05
+        - [353]
+          - 2025-09-27
+          - -0.0002851625435675587
+        - [354]
+          - 2025-09-28
+          - 0.0008764978407602943
+        - [355]
+          - 2025-09-29
+          - 5.683254201799549e-05
+        - [356]
+          - 2025-09-30
+          - 0.0008256420479459281
+        - [357]
+          - 2025-10-01
+          - 0.0006388548695117994
+        - [358]
+          - 2025-10-02
+          - -0.00022100396282710531
+        - [359]
+          - 2025-10-03
+          - 0.0006595491389617504
+        - [360]
+          - 2025-10-04
+          - 0.0005477028026912633
+        - [361]
+          - 2025-10-05
+          - 0.00025209648484520093
+        - [362]
+          - 2025-10-06
+          - -0.00021316985254289303
+        - [363]
+          - 2025-10-07
+          - 5.113018660547049e-05
+        - [364]
+          - 2025-10-08
+          - 0.00023904543326711737
+        - [365]
+          - 2025-10-09
+          - 0.0005456351820746487
+        - [366]
+          - 2025-10-10
+          - 0.0002017710383936886
+        - [367]
+          - 2025-10-11
+          - 6.584985865957255e-06
+        - [368]
+          - 2025-10-12
+          - -0.0003746109099712192
+        - [369]
+          - 2025-10-13
+          - 0.0012274210790418445
+        - [370]
+          - 2025-10-14
+          - -0.00015528835004084566
+        - [371]
+          - 2025-10-15
+          - 0.00036099058668249403
+        - [372]
+          - 2025-10-16
+          - 0.0004790696476271991
+        - [373]
+          - 2025-10-17
+          - 3.970258907190862e-05
+        - [374]
+          - 2025-10-18
+          - 0.00017072133387341045
+        - [375]
+          - 2025-10-19
+          - 0.0002146665310841006
+        - [376]
+          - 2025-10-20
+          - -1.8599516832181734e-06
+        - [377]
+          - 2025-10-21
+          - -0.0002557092971410839
+        - [378]
+          - 2025-10-22
+          - -0.0003675565471940499
+        - [379]
+          - 2025-10-23
+          - 0.00032995384103292794
+        - [380]
+          - 2025-10-24
+          - 0.0004883381471413855
+        - [381]
+          - 2025-10-25
+          - 0.00038855106815341797
+        - [382]
+          - 2025-10-26
+          - 0.0008268190204873534
+        - [383]
+          - 2025-10-27
+          - -0.00016027723505554942
+        - [384]
+          - 2025-10-28
+          - 0.00014831506019414727
+        - [385]
+          - 2025-10-29
+          - -0.0005732137905783053
+        - [386]
+          - 2025-10-30
+          - 0.00020925276609730402
+        - [387]
+          - 2025-10-31
+          - 0.00014523019281221703
+        - [388]
+          - 2025-11-01
+          - 0.0005655472958733822
+        - [389]
+          - 2025-11-02
+          - -0.00022034824395787298
+        - [390]
+          - 2025-11-03
+          - 0.00045094408123935026
+        - [391]
+          - 2025-11-04
+          - -0.0005709963348720845
+        - [392]
+          - 2025-11-05
+          - -5.64028450808162e-05
+        - [393]
+          - 2025-11-06
+          - 0.0003403690922251971
+        - [394]
+          - 2025-11-07
+          - 0.00025182523177986153
+        - [395]
+          - 2025-11-08
+          - 0.00021137945511286497
+        - [396]
+          - 2025-11-09
+          - -1.0719867828532511e-05
+        - [397]
+          - 2025-11-10
+          - 0.00023710544588580323
+        - [398]
+          - 2025-11-11
+          - 0.00031693811455413425
+        - [399]
+          - 2025-11-12
+          - -9.866582374053903e-05
+        - [400]
+          - 2025-11-13
+          - -0.00018772857268102865
+        - [401]
+          - 2025-11-14
+          - 0.0001066182747814444
+        - [402]
+          - 2025-11-15
+          - 0.00034947242117318636
+        - [403]
+          - 2025-11-16
+          - 0.0002555303374472834
+        - [404]
+          - 2025-11-17
+          - 0.000493754693631922
+        - [405]
+          - 2025-11-18
+          - -0.00019023524233143508
+        - [406]
+          - 2025-11-19
+          - 0.0007660417890563282
+        - [407]
+          - 2025-11-20
+          - 0.0005498710160827205
+        - [408]
+          - 2025-11-21
+          - 0.00019654278655791124
+        - [409]
+          - 2025-11-22
+          - 0.0001658095948933111
+        - [410]
+          - 2025-11-23
+          - 0.0004226943664929176
+        - [411]
+          - 2025-11-24
+          - -7.871780543645733e-05
+        - [412]
+          - 2025-11-25
+          - 0.0001436748793295535
+        - [413]
+          - 2025-11-26
+          - -0.0006368537507944062
+        - [414]
+          - 2025-11-27
+          - 0.0005264812385360363
+        - [415]
+          - 2025-11-28
+          - 5.859604782605467e-05
+        - [416]
+          - 2025-11-29
+          - 0.0001097072516380597
+        - [417]
+          - 2025-11-30
+          - 0.00024912997065642466
+        - [418]
+          - 2025-12-01
+          - -0.00011436430648209901
+        - [419]
+          - 2025-12-02
+          - 2.5378054757114303e-06
+        - [420]
+          - 2025-12-03
+          - 7.797395163172628e-05
+        - [421]
+          - 2025-12-04
+          - -0.0003819973936539945
+        - [422]
+          - 2025-12-05
+          - 0.00030526290714354414
+        - [423]
+          - 2025-12-06
+          - -5.17290793719838e-06
+        - [424]
+          - 2025-12-07
+          - -0.00017116557089674983
+        - [425]
+          - 2025-12-08
+          - -1.3982001432067432e-06
+        - [426]
+          - 2025-12-09
+          - -3.174197113886e-06
+        - [427]
+          - 2025-12-10
+          - 0.0004566914131099685
+        - [428]
+          - 2025-12-11
+          - 0.00021284785887441433
+        - [429]
+          - 2025-12-12
+          - 6.8418984052031495e-06
+        - [430]
+          - 2025-12-13
+          - 0.00010879385448517489
+        - [431]
+          - 2025-12-14
+          - 7.312187032095023e-05
+        - [432]
+          - 2025-12-15
+          - -7.541043063578351e-05
+        - [433]
+          - 2025-12-16
+          - 0.00015631883152113736
+        - [434]
+          - 2025-12-17
+          - 0.00021136320101776702
+        - [435]
+          - 2025-12-18
+          - 0.00012195374621387586
+        - [436]
+          - 2025-12-19
+          - -7.871754320852063e-05
+        - [437]
+          - 2025-12-20
+          - 7.6221232789606e-05
+        - [438]
+          - 2025-12-21
+          - 0.00021035522775669104
+        - [439]
+          - 2025-12-22
+          - 0.00031671112482353363
+        - [440]
+          - 2025-12-23
+          - 0.0003177667762799667
+        - [441]
+          - 2025-12-24
+          - 0.00018596802079244785
+        - [442]
+          - 2025-12-25
+          - -0.00017816915950710787
+        - [443]
+          - 2025-12-26
+          - 0.00015133237635785412
+        - [444]
+          - 2025-12-27
+          - 0.0005032397610513568
+        - [445]
+          - 2025-12-28
+          - 0.0006340479559458415
+        - [446]
+          - 2025-12-29
+          - 0.0003192880866389284
+        - [447]
+          - 2025-12-30
+          - 0.00014882526849427897
+        - [448]
+          - 2025-12-31
+          - 0.000661736987587405
+        - [449]
+          - 2026-01-01
+          - 0.00019622469921604235
+        - [450]
+          - 2026-01-02
+          - 0.000296384999817721
+        - [451]
+          - 2026-01-03
+          - 0.00021964798410523145
+        - [452]
+          - 2026-01-04
+          - 0.00017058543969199552
+        - [453]
+          - 2026-01-05
+          - 8.917122278578524e-05
+        - [454]
+          - 2026-01-06
+          - 0.000425798280210145
+        - [455]
+          - 2026-01-07
+          - 0.0005578511067694207
+        - [456]
+          - 2026-01-08
+          - 2.6172884984989577e-05
+        - [457]
+          - 2026-01-09
+          - 0.00044230741516274876
+        - [458]
+          - 2026-01-10
+          - 0.00044399336187800456
+        - [459]
+          - 2026-01-11
+          - 0.0008464189179987607
+        - [460]
+          - 2026-01-12
+          - 0.00028850270603876846
+        - [461]
+          - 2026-01-13
+          - 0.0003847103628941575
+        - [462]
+          - 2026-01-14
+          - 0.00032763207749444625
+        - [463]
+          - 2026-01-15
+          - 0.0005113380376091455
+        - [464]
+          - 2026-01-16
+          - 0.0001684335914759599
+        - [465]
+          - 2026-01-17
+          - 0.00044074125543937774
+        - [466]
+          - 2026-01-18
+          - 0.00012199721094363953
+        - [467]
+          - 2026-01-19
+          - 0.0003850880701852134
+        - [468]
+          - 2026-01-20
+          - 0.0004535541967537251
+        - [469]
+          - 2026-01-21
+          - 0.00022386654902556102
+        - [470]
+          - 2026-01-22
+          - 0.00030467588458797244
+        - [471]
+          - 2026-01-23
+          - 0.00028307315278399775
+        - [472]
+          - 2026-01-24
+          - 0.00027870201918502475
+        - [473]
+          - 2026-01-25
+          - 0.00022770770964965377
+        - [474]
+          - 2026-01-26
+          - 0.00031107447333747474
+        - [475]
+          - 2026-01-27
+          - 0.00022985053757956065
+        - [476]
+          - 2026-01-28
+          - 0.000502916975390131
+        - [477]
+          - 2026-01-29
+          - 0.00010649618449837477
+        - [478]
+          - 2026-01-30
+          - 0.00016966158601816988
+        - [479]
+          - 2026-01-31
+          - -0.00013478240275695895
+        - [480]
+          - 2026-02-01
+          - 0.00040041409322054216
+        - [481]
+          - 2026-02-02
+          - 3.5702824233636826e-05
+        - [482]
+          - 2026-02-03
+          - 0.0001604579621527062
+        - [483]
+          - 2026-02-04
+          - 0.00027733307821549647
+        - [484]
+          - 2026-02-05
+          - -0.0006682825435209813
+        - [485]
+          - 2026-02-06
+          - -0.00028092657922719943
+        - [486]
+          - 2026-02-07
+          - -0.00022802792240375383
+        - [487]
+          - 2026-02-08
+          - -0.00028567958643198495
+        - [488]
+          - 2026-02-09
+          - 0.0002682638755678905
+        - [489]
+          - 2026-02-10
+          - 0.00023644597665055243
+        - [490]
+          - 2026-02-11
+          - 0.00014441768999568587
+        - [491]
+          - 2026-02-12
+          - 0.00020809803277755098
+        - [492]
+          - 2026-02-13
+          - 0.00023410649595707398
+        - [493]
+          - 2026-02-14
+          - 0.00011196044061220498
+        - [494]
+          - 2026-02-15
+          - 7.598892183479375e-05
+        - [495]
+          - 2026-02-16
+          - 6.74696415914159e-06
+        - [496]
+          - 2026-02-17
+          - 8.536739975179834e-05
+        - [497]
+          - 2026-02-18
+          - 0.0002940995363226153
+        - [498]
+          - 2026-02-19
+          - 0.000276498084974564
+        - [499]
+          - 2026-02-20
+          - -8.710500395458057e-05
+        - [500]
+          - 2026-02-21
+          - 9.901129203302289e-05
+        - [501]
+          - 2026-02-22
+          - 0.00015821202673614674
+        - [502]
+          - 2026-02-23
+          - 0.00017928114681678008
+        - [503]
+          - 2026-02-24
+          - -0.00012842144213493802
+        - [504]
+          - 2026-02-25
+          - 0.00021988981431802964
+        - [505]
+          - 2026-02-26
+          - 0.00033956843931280244
+        - [506]
+          - 2026-02-27
+          - -0.00010861170327773083
+        - [507]
+          - 2026-02-28
+          - 3.994190094428498e-05
+        - [508]
+          - 2026-03-01
+          - 0.0002525486986666089
+        - [509]
+          - 2026-03-02
+          - 0.00011328788847875437
+        - [510]
+          - 2026-03-03
+          - -0.00010543655696711598
+        - [511]
+          - 2026-03-04
+          - -0.0001719051924941278
+        - [512]
+          - 2026-03-05
+          - 9.891467165134031e-05
+        - [513]
+          - 2026-03-06
+          - -0.0001784426929265859
+        - [514]
+          - 2026-03-07
+          - -8.109676872045543e-05
+        - [515]
+          - 2026-03-08
+          - -0.00020119896667853852
+        - [516]
+          - 2026-03-09
+          - -0.00040497459318087676
+        - [517]
+          - 2026-03-10
+          - -0.00021210722620407956
+        - [518]
+          - 2026-03-11
+          - -0.0002711257366666893
+        - [519]
+          - 2026-03-12
+          - -3.6485336908399707e-06
+        - [520]
+          - 2026-03-13
+          - -0.000211471498755456
+        - [521]
+          - 2026-03-14
+          - 9.964480819133381e-05
+        - [522]
+          - 2026-03-15
+          - -0.00017354347886534456
+        - [523]
+          - 2026-03-16
+          - 5.444093619111973e-05
+        - [524]
+          - 2026-03-17
+          - 4.42248932435414e-06
+        - [525]
+          - 2026-03-18
+          - -0.0002872194915358009
+        - [526]
+          - 2026-03-19
+          - 0.00013484846609231158
+        - [527]
+          - 2026-03-20
+          - -0.0002797286740863491
+        - [528]
+          - 2026-03-21
+          - -0.00014489246267398434
+        - [529]
+          - 2026-03-22
+          - -0.00015760216914958525
+        - [530]
+          - 2026-03-23
+          - 4.813932524785705e-05
+        - [531]
+          - 2026-03-24
+          - 0.00035002775707629184
+        - [532]
+          - 2026-03-25
+          - 0.00013509578782930435
+        - [533]
+          - 2026-03-26
+          - 0.0001395420517691751
+        - [534]
+          - 2026-03-27
+          - -1.9760405735362473e-05
+        - [535]
+          - 2026-03-28
+          - 4.8730828795157086e-05
+        - [536]
+          - 2026-03-29
+          - 4.9725598267046915e-05
+        - [537]
+          - 2026-03-30
+          - 0.0001960221212529572
+        - [538]
+          - 2026-03-31
+          - -1.349317698550072e-05
+        - [539]
+          - 2026-04-01
+          - 0.00013016117091569447
+        - [540]
+          - 2026-04-02
+          - 0.0001289388167350904
+        - [541]
+          - 2026-04-03
+          - 0.00030441831071077464
+        - [542]
+          - 2026-04-04
+          - 4.576353841642605e-05
+        - [543]
+          - 2026-04-05
+          - 0.00021959278406487163
+        - [544]
+          - 2026-04-06
+          - -0.000174246307006417
+        - [545]
+          - 2026-04-07
+          - -2.9878147452191452e-05
+        - [546]
+          - 2026-04-08
+          - -0.000702433969573503
+        - [547]
+          - 2026-04-09
+          - -0.0002419178411804545
+        - [548]
+          - 2026-04-10
+          - -3.496748166051812e-05
+        - [549]
+          - 2026-04-11
+          - 3.119919643693998e-05
+        - [550]
+          - 2026-04-12
+          - -0.0001411550373392566
+        - [551]
+          - 2026-04-13
+          - -4.771110538574954e-05
+        - [552]
+          - 2026-04-14
+          - -0.0003487850456967601
+        - [553]
+          - 2026-04-15
+          - 0.00024248601514483976
+        - [554]
+          - 2026-04-16
+          - -3.325770550285578e-06
+        - [555]
+          - 2026-04-17
+          - -0.00041650690262768204
+        - [556]
+          - 2026-04-18
+          - -0.00034601946730583057
+        - [557]
+          - 2026-04-19
+          - -0.0005840303661544386
+        - [558]
+          - 2026-04-20
+          - -3.958439348150184e-05
+        - [559]
+          - 2026-04-21
+          - -2.523526597100103e-05
+        - [560]
+          - 2026-04-22
+          - -0.00033379509864844815
+        - [561]
+          - 2026-04-23
+          - -0.0002224765615327142
+        - [562]
+          - 2026-04-24
+          - 4.518752824220515e-05
+        - [563]
+          - 2026-04-25
+          - -0.00010668500523378014
+        - [564]
+          - 2026-04-26
+          - 0.0002629904427833812
+        - [565]
+          - 2026-04-27
+          - -0.00026924142240686175
+        - [566]
+          - 2026-04-28
+          - -0.00015396199220889256
+        - [567]
+          - 2026-04-29
+          - -7.185668318273825e-06
+        - [568]
+          - 2026-04-30
+          - -0.00013037263484599562
+        - [569]
+          - 2026-05-01
+          - -0.0002582789056973463
+        - [570]
+          - 2026-05-02
+          - 0.0001969066158072631
+        - [571]
+          - 2026-05-03
+          - 0.0001494673581736681
+        - [572]
+          - 2026-05-04
+          - -0.00010081749968873925
+        - [573]
+          - 2026-05-05
+          - -0.0002781964451340543
+        - [574]
+          - 2026-05-06
+          - -0.0002082716310960098
+        - [575]
+          - 2026-05-07
+          - -0.00010217394285578399
+        - [576]
+          - 2026-05-08
+          - -0.00010673908080238358
+        - [577]
+          - 2026-05-09
+          - -0.0002441453569155407
+        - [578]
+          - 2026-05-10
+          - 0.00015415319436959453
+        - [579]
+          - 2026-05-11
+          - -0.00012276540462012955
+        - [580]
+          - 2026-05-12
+          - -0.00024030782793767742
+        - [581]
+          - 2026-05-13
+          - 0.00012196118237620139
+        - [582]
+          - 2026-05-14
+          - 5.521231166731361e-05
+        - [583]
+          - 2026-05-15
+          - 0.0001366289109008188
+        - [584]
+          - 2026-05-16
+          - -0.00020080292625081572
+        - [585]
+          - 2026-05-17
+          - -8.118664548770419e-05
+        - [586]
+          - 2026-05-18
+          - 1.0838467350628214e-05
+        - [587]
+          - 2026-05-19
+          - 0.00035350305228628735
+        - [588]
+          - 2026-05-20
+          - 0.0001345183136357272
+        - [589]
+          - 2026-05-21
+          - -1.3525379013635701e-05
+        - [590]
+          - 2026-05-22
+          - 1.8734086345102584e-05
+        - [591]
+          - 2026-05-23
+          - -0.00020389732102736626
+        - [592]
+          - 2026-05-24
+          - -0.0002889524166386802
+        - [593]
+          - 2026-05-25
+          - -0.00013210677141526028
+        - [594]
+          - 2026-05-26
+          - 0.0001231889900295451
+        - [595]
+          - 2026-05-27
+          - 0.00015639079358881002
+        - [596]
+          - 2026-05-28
+          - 0.00015554896036096914
+        - [597]
+          - 2026-05-29
+          - 4.087566634503069e-05
+        - [598]
+          - 2026-05-30
+          - 0.00015791444735106154
+        - [599]
+          - 2026-05-31
+          - 0.00029650725712515336
+        - [600]
+          - 2026-06-01
+          - 0.00016565514273220866
+        - [601]
+          - 2026-06-02
+          - -1.4868956586001338e-05
+        - [602]
+          - 2026-06-03
+          - 0.00042807342609442467
+        - [603]
+          - 2026-06-04
+          - -2.1908874985120397e-05
+        - [604]
+          - 2026-06-05
+          - 6.181630268406171e-05
+        - [605]
+          - 2026-06-06
+          - 2.2077032225439953e-05
+        - [606]
+          - 2026-06-07
+          - 0.00012356641976948683
+        - [607]
+          - 2026-06-08
+          - -0.00015307060525327932
+        - [608]
+          - 2026-06-09
+          - -7.103476401192043e-05
+        - [609]
+          - 2026-06-10
+          - -0.00018441026278624703
+        - [610]
+          - 2026-06-11
+          - 0.0002316542217968438
+        - [611]
+          - 2026-06-12
+          - 6.079609708829938e-05
+        - [612]
+          - 2026-06-13
+          - 0.00039971247702624125
+        - [613]
+          - 2026-06-14
+          - -0.00018995380773540095
+        - [614]
+          - 2026-06-15
+          - -4.3607482639142774e-05
+        - [615]
+          - 2026-06-16
+          - 0.00020570747578017515
+        - [616]
+          - 2026-06-17
+          - 8.852313328563888e-05
+        - [617]
+          - 2026-06-18
+          - -1.2881003140633426e-05
+        - [618]
+          - 2026-06-19
+          - -0.00020861143586189246
+        - [619]
+          - 2026-06-20
+          - -0.0004535056511336314
+        - [620]
+          - 2026-06-21
+          - -8.447673939334554e-05
+        - [621]
+          - 2026-06-22
+          - 9.36894774461215e-05
+        - [622]
+          - 2026-06-23
+          - 0.0001354756651747188
+        - [623]
+          - 2026-06-24
+          - 0.00023068798591189524
+        - [624]
+          - 2026-06-25
+          - 7.279652153604633e-06
+        - [625]
+          - 2026-06-26
+          - 0.0001907725012098622
+        - [626]
+          - 2026-06-27
+          - -0.00013052705590451332
+        - [627]
+          - 2026-06-28
+          - -8.135341590866301e-05
+        - [628]
+          - 2026-06-29
+          - 0.0003673067408044469
+        - [629]
+          - 2026-06-30
+          - 0.00011759234055274775
+        - [630]
+          - 2026-07-01
+          - -4.0284349066174324e-05
+        - [631]
+          - 2026-07-02
+          - 0.0002972418469790798
+        - [632]
+          - 2026-07-03
+          - 5.14395773548676e-05
+        - [633]
+          - 2026-07-04
+          - -2.187506980178172e-05
+        - [634]
+          - 2026-07-05
+          - 3.187382558613821e-05
+        - [635]
+          - 2026-07-06
+          - -7.23165374555429e-05
+        - [636]
+          - 2026-07-07
+          - 0.00025527795639933504
+        - [637]
+          - 2026-07-08
+          - 2.729551736552212e-05
+        - [638]
+          - 2026-07-09
+          - 7.780384482536512e-05
+        - [639]
+          - 2026-07-10
+          - -2.6052544020862054e-05
+        - [640]
+          - 2026-07-11
+          - -0.00010699794786412102
+        - [641]
+          - 2026-07-12
+          - 5.775067319345758e-05
+        - [642]
+          - 2026-07-13
+          - 0.00024379661341933107
+        - [643]
+          - 2026-07-14
+          - 0.00034497322247958634
+        - [644]
+          - 2026-07-15
+          - 5.680316976974175e-05
+        - [645]
+          - 2026-07-16
+          - -0.00018714512042577991
+        - [646]
+          - 2026-07-17
+          - -0.00019462358258722287
+        - [647]
+          - 2026-07-18
+          - -2.192176987713645e-05
+        - [648]
+          - 2026-07-19
+          - 1.735099334709023e-05
+        - [649]
+          - 2026-07-20
+          - -7.745876868295156e-05
+        - [650]
+          - 2026-07-21
+          - 0.0001921178533280914
+        - [651]
+          - 2026-07-22
+          - 0.0001816917562404471
+        - [652]
+          - 2026-07-23
+          - 8.597663262934854e-05
+        - [653]
+          - 2026-07-24
+          - 3.8833325739026565e-05
+        - [654]
+          - 2026-07-25
+          - -1.8723142117737124e-05
+        - [655]
+          - 2026-07-26
+          - 0.00017236632214409105
+        - [656]
+          - 2026-07-27
+          - 4.733821384025794e-05
+        - [657]
+          - 2026-07-28
+          - -7.282468906007673e-05
+        - [658]
+          - 2026-07-29
+          - 9.700752817012815e-05
+        - [659]
+          - 2026-07-30
+          - -1.4305518321113009e-05
+        - [660]
+          - 2026-07-31
+          - 1.1469549520836864e-05
+        - [661]
+          - 2026-08-01
+          - 0.00010643699114407378
+        - [662]
+          - 2026-08-02
+          - 0.00019007843637639129
+        - [663]
+          - 2026-08-03
+          - 0.00010174452647030048
+        - [664]
+          - 2026-08-04
+          - -0.00014590822201362576
+        - [665]
+          - 2026-08-05
+          - 1.9671768393464388e-05
+        - [666]
+          - 2026-08-06
+          - 0.00019822811514306045
+        - [667]
+          - 2026-08-07
+          - -9.749296524834562e-05
+        - [668]
+          - 2026-08-08
+          - 0.00010713449958168648
+        - [669]
+          - 2026-08-09
+          - -0.00020768647788622357
+        - [670]
+          - 2026-08-10
+          - -7.978921551228772e-05
+        - [671]
+          - 2026-08-11
+          - -8.203655454032216e-05
+        - [672]
+          - 2026-08-12
+          - 0.00012142986156093142
+        - [673]
+          - 2026-08-13
+          - 0.000169992942248276
+        - [674]
+          - 2026-08-14
+          - 7.925190728709379e-05
+        - [675]
+          - 2026-08-15
+          - -4.79028356443493e-05
+        - [676]
+          - 2026-08-16
+          - 0.00025740488832852335
+        - [677]
+          - 2026-08-17
+          - -5.381729030716522e-05
+        - [678]
+          - 2026-08-18
+          - 0.00011612158874232136
+        - [679]
+          - 2026-08-19
+          - 0.00022002163543327754
+        - [680]
+          - 2026-08-20
+          - 2.1736084510955532e-05
+        - [681]
+          - 2026-08-21
+          - 0.0003204006991377885
+        - [682]
+          - 2026-08-22
+          - -0.00015547866844144382
+        - [683]
+          - 2026-08-23
+          - -4.654998704236978e-05
+        - [684]
+          - 2026-08-24
+          - 6.30517704127408e-05
+        - [685]
+          - 2026-08-25
+          - 0.0001599487108665742
+        - [686]
+          - 2026-08-26
+          - 0.0002779559979963958
+        - [687]
+          - 2026-08-27
+          - -5.898287310798045e-05
+        - [688]
+          - 2026-08-28
+          - 2.4808164764477904e-06
+        - [689]
+          - 2026-08-29
+          - 0.0001395675029911734
+        - [690]
+          - 2026-08-30
+          - -7.077070155774358e-06
+        - [691]
+          - 2026-08-31
+          - 6.224783164607827e-05
+        - [692]
+          - 2026-09-01
+          - 2.5822558017525953e-05
+        - [693]
+          - 2026-09-02
+          - 3.7772436066879895e-05
+        - [694]
+          - 2026-09-03
+          - -0.00015414005649149227
+        - [695]
+          - 2026-09-04
+          - -8.138137823620588e-05
+        - [696]
+          - 2026-09-05
+          - 0.0002777962344804765
+        - [697]
+          - 2026-09-06
+          - 0.00013763031194764984
+        - [698]
+          - 2026-09-07
+          - 8.362647962638487e-05
+        - [699]
+          - 2026-09-08
+          - 0.00016711830176813206
+        - [700]
+          - 2026-09-09
+          - 0.00013160398378053123
+        - [701]
+          - 2026-09-10
+          - 1.8570769709046152e-06
+        - [702]
+          - 2026-09-11
+          - -4.675371445090551e-05
+        - [703]
+          - 2026-09-12
+          - 0.00021571753460755192
+        - [704]
+          - 2026-09-13
+          - 2.3345356927555855e-05
+        - [705]
+          - 2026-09-14
+          - 0.00010530249083602505
+        - [706]
+          - 2026-09-15
+          - 0.0002122774404888978
+        - [707]
+          - 2026-09-16
+          - 0.00010914352758694032
+        - [708]
+          - 2026-09-17
+          - 5.298950422103492e-05
+        - [709]
+          - 2026-09-18
+          - 6.478064720720517e-05
+        - [710]
+          - 2026-09-19
+          - 0.00020189078118343292
+        - [711]
+          - 2026-09-20
+          - 5.428842330219382e-05
+        - [712]
+          - 2026-09-21
+          - 0.0002327344445305903
+        - [713]
+          - 2026-09-22
+          - 0.00010558146798087342
+        - [714]
+          - 2026-09-23
+          - -0.0001445142516667899
+        - [715]
+          - 2026-09-24
+          - -5.366943120436512e-06
+        - [716]
+          - 2026-09-25
+          - -4.823358752296002e-05
+        - [717]
+          - 2026-09-26
+          - -2.8444657776519583e-05
+        - [718]
+          - 2026-09-27
+          - 0.00021274166293246306
+        - [719]
+          - 2026-09-28
+          - 1.3338945653385329e-05
+      - `basis_std`: 0.00034373376694045
+      - `first_date`: 2024-10-09
+      - `funding`:
+        - `cadence_seconds`: 3600.0
+        - `daily_max`: 0.000700643183333333
+        - `daily_mean`: 8.6999960180436e-05
+        - `daily_mean_annualized`: 0.03175498546585914
+        - `daily_min`: -0.00033336311111111205
+        - `daily_std`: 0.0001457939375214909
+        - `expected_settlements_per_day`: 24.0
+        - `first_ts`: 2025-09-24T08:00:00+00:00
+        - `last_ts`: 2026-09-29T22:00:00+00:00
+        - `n_days`: 371
+        - `n_partial_days`: 9
+        - `n_settlements`: 8887
+        - `status`: ok
+      - `last_date`: 2026-09-28
+      - `n_dates`: 720
+      - `status`: ok
+      - `venue`: kraken
+    - [1]
+      - `basis_first`: -0.0005247736913455845
+      - `basis_last`: -0.00048622696260250967
+      - `basis_max`: 0.0001894364525040751
+      - `basis_mean`: -0.00044617089584298635
+      - `basis_min`: -0.0007494928431761175
+      - `basis_series`:
+        - [0]
+          - 2026-06-22
+          - -0.0005247736913455845
+        - [1]
+          - 2026-06-23
+          - -0.0004909814048763844
+        - [2]
+          - 2026-06-24
+          - -0.00046824604201114203
+        - [3]
+          - 2026-06-25
+          - -0.0005234253759298394
+        - [4]
+          - 2026-06-26
+          - -0.0005390638258223915
+        - [5]
+          - 2026-06-27
+          - -0.0007494928431761175
+        - [6]
+          - 2026-06-28
+          - -0.0004582389858987092
+        - [7]
+          - 2026-06-29
+          - -0.0004630013773876343
+        - [8]
+          - 2026-06-30
+          - -0.00043324009005938214
+        - [9]
+          - 2026-07-01
+          - -0.0005530015324138366
+        - [10]
+          - 2026-07-02
+          - -0.00035575568843601444
+        - [11]
+          - 2026-07-03
+          - -0.0006055232024029439
+        - [12]
+          - 2026-07-04
+          - -0.00031992093835023883
+        - [13]
+          - 2026-07-05
+          - -0.00047136904425212585
+        - [14]
+          - 2026-07-06
+          - -0.00037315180564882283
+        - [15]
+          - 2026-07-07
+          - -0.0004955174606781876
+        - [16]
+          - 2026-07-08
+          - -0.0004864617533494884
+        - [17]
+          - 2026-07-09
+          - -0.000506100888048902
+        - [18]
+          - 2026-07-10
+          - -0.0004955617613324009
+        - [19]
+          - 2026-07-11
+          - -0.0005672451940855614
+        - [20]
+          - 2026-07-12
+          - -0.0005518486931219129
+        - [21]
+          - 2026-07-13
+          - -0.00030321455558213916
+        - [22]
+          - 2026-07-14
+          - -0.0004259094396600776
+        - [23]
+          - 2026-07-15
+          - -0.000541998724527308
+        - [24]
+          - 2026-07-16
+          - -0.0005357914987749545
+        - [25]
+          - 2026-07-17
+          - -0.00046138951754296783
+        - [26]
+          - 2026-07-18
+          - -0.000478144921098376
+        - [27]
+          - 2026-07-19
+          - -0.00047118291629783085
+        - [28]
+          - 2026-07-20
+          - -0.0005164007024276099
+        - [29]
+          - 2026-07-21
+          - -0.0006324711594654465
+        - [30]
+          - 2026-07-22
+          - -0.0004840139275007638
+        - [31]
+          - 2026-07-23
+          - -0.00046393019540366676
+        - [32]
+          - 2026-07-24
+          - -0.00048791589764059007
+        - [33]
+          - 2026-07-25
+          - -0.0004893165878323275
+        - [34]
+          - 2026-07-26
+          - -0.0004403191702429191
+        - [35]
+          - 2026-07-27
+          - -0.000517566683762051
+        - [36]
+          - 2026-07-28
+          - -0.0004739633030393548
+        - [37]
+          - 2026-07-29
+          - -0.00045636266453276105
+        - [38]
+          - 2026-07-30
+          - -0.0003920805895410412
+        - [39]
+          - 2026-07-31
+          - -0.0005151762332031314
+        - [40]
+          - 2026-08-01
+          - -0.0004982473790276955
+        - [41]
+          - 2026-08-02
+          - -0.00047817839199934336
+        - [42]
+          - 2026-08-03
+          - -0.0003888073845068457
+        - [43]
+          - 2026-08-04
+          - -0.00019347611038126426
+        - [44]
+          - 2026-08-05
+          - -0.0004840757632699845
+        - [45]
+          - 2026-08-06
+          - -0.000453939165933488
+        - [46]
+          - 2026-08-07
+          - -0.0004729152064574814
+        - [47]
+          - 2026-08-08
+          - -0.00044029194742973486
+        - [48]
+          - 2026-08-09
+          - -0.0004283559298791036
+        - [49]
+          - 2026-08-10
+          - -0.00043142324339626723
+        - [50]
+          - 2026-08-11
+          - -0.0003679858592784561
+        - [51]
+          - 2026-08-12
+          - -0.0003575664687711699
+        - [52]
+          - 2026-08-13
+          - -0.00034814717961399055
+        - [53]
+          - 2026-08-14
+          - -0.0003695901831771893
+        - [54]
+          - 2026-08-15
+          - -0.00042641422099343705
+        - [55]
+          - 2026-08-16
+          - -0.00040696999709077727
+        - [56]
+          - 2026-08-17
+          - -0.0005036229862828594
+        - [57]
+          - 2026-08-18
+          - -0.0004680924691183009
+        - [58]
+          - 2026-08-19
+          - -0.00040093975663826306
+        - [59]
+          - 2026-08-20
+          - -0.0005394917549501679
+        - [60]
+          - 2026-08-21
+          - -0.00023104623094673835
+        - [61]
+          - 2026-08-22
+          - 0.0001894364525040751
+        - [62]
+          - 2026-08-23
+          - -0.0002739800033184813
+        - [63]
+          - 2026-08-24
+          - -0.00048612456182338143
+        - [64]
+          - 2026-08-25
+          - -0.00043161565580763345
+        - [65]
+          - 2026-08-26
+          - -0.00046310882677839255
+        - [66]
+          - 2026-08-27
+          - -0.0004286802008317982
+        - [67]
+          - 2026-08-28
+          - -0.00040979026189315624
+        - [68]
+          - 2026-08-29
+          - -0.0004908414607645645
+        - [69]
+          - 2026-08-30
+          - -0.00039136071227642143
+        - [70]
+          - 2026-08-31
+          - -0.00040721741974317303
+        - [71]
+          - 2026-09-01
+          - -0.00047265631557933676
+        - [72]
+          - 2026-09-02
+          - -0.00045125653610839377
+        - [73]
+          - 2026-09-03
+          - -0.0004061033643817814
+        - [74]
+          - 2026-09-04
+          - -0.0005071509539835099
+        - [75]
+          - 2026-09-05
+          - -0.0004735050143930857
+        - [76]
+          - 2026-09-06
+          - -0.0005265031478165474
+        - [77]
+          - 2026-09-07
+          - -0.0004348276742535087
+        - [78]
+          - 2026-09-08
+          - -0.0004881549146239093
+        - [79]
+          - 2026-09-09
+          - -0.00048403143266911
+        - [80]
+          - 2026-09-10
+          - -0.0004009403160506346
+        - [81]
+          - 2026-09-11
+          - -0.0004998484915192969
+        - [82]
+          - 2026-09-12
+          - -0.0003623141522495827
+        - [83]
+          - 2026-09-13
+          - -0.0005479202457182287
+        - [84]
+          - 2026-09-14
+          - -0.00018798987668116137
+        - [85]
+          - 2026-09-15
+          - -0.00039264420089630083
+        - [86]
+          - 2026-09-16
+          - -0.0004396256226936059
+        - [87]
+          - 2026-09-17
+          - -0.0004030395462926631
+        - [88]
+          - 2026-09-18
+          - -0.00033249694078086326
+        - [89]
+          - 2026-09-19
+          - -0.0004245328293082699
+        - [90]
+          - 2026-09-20
+          - -0.00043730198227140806
+        - [91]
+          - 2026-09-21
+          - -0.000308250729064893
+        - [92]
+          - 2026-09-22
+          - -0.0004837076364329478
+        - [93]
+          - 2026-09-23
+          - -0.00040166114728160926
+        - [94]
+          - 2026-09-24
+          - -0.0004798021082860047
+        - [95]
+          - 2026-09-25
+          - -0.0004684954636796416
+        - [96]
+          - 2026-09-26
+          - -0.0006039798720746946
+        - [97]
+          - 2026-09-27
+          - -0.0004640206441837272
+        - [98]
+          - 2026-09-28
+          - -0.00048622696260250967
+      - `basis_std`: 0.000106026747189363
+      - `first_date`: 2026-06-22
+      - `funding`:
+        - `cadence_seconds`: 28800.0
+        - `daily_max`: 0.00030000000000000003
+        - `daily_mean`: 0.00015769705495988708
+        - `daily_mean_annualized`: 0.057559425060358785
+        - `daily_min`: -3.99940733157e-05
+        - `daily_std`: 8.003662197884562e-05
+        - `expected_settlements_per_day`: 3.0
+        - `first_ts`: 2026-06-29T08:00:00+00:00
+        - `last_ts`: 2026-09-29T16:00:00+00:00
+        - `n_days`: 93
+        - `n_partial_days`: 1
+        - `n_settlements`: 278
+        - `status`: ok
+      - `last_date`: 2026-09-28
+      - `n_dates`: 99
+      - `status`: ok
+      - `venue`: okx
+  - `n_error_rows`: 0
+  - `n_leg_rows`: 2
+  - `n_rows`: 1
+  - `params`:
+    - `annualization_days`: 365.0
+    - `asset`: BTC
+    - `conventions`: basis_t = (mark_t - spot_t)/spot_t per venue on shared dates; basis_diff = a - b per venue pair; funding aggregated to per-calendar-day sums of realized rates before diffing, so venue cadences (hourly vs 8h) are comparable; daily_mean_annualized = daily_mean * annualization_days is a descriptive scaling, not a yield claim
+    - `min_overlap`: 5
+  - `research_only`: true
+  - `results`:
+    - [0]
+      - `basis_diff`:
+        - `first_date`: 2026-06-22
+        - `frac_positive`: 0.98989898989899
+        - `last_date`: 2026-09-28
+        - `max`: 0.0008303081181920812
+        - `max_abs`: 0.0008303081181920812
+        - `mean`: 0.0005075397110974355
+        - `mean_abs`: 0.0005145076933387591
+        - `min`: -0.0003449151209455189
+        - `n`: 99
+        - `n_dates`: 99
+        - `sign_flips`: 2
+        - `std`: 0.00016467142022453306
+      - `funding_diff`:
+        - `first_date`: 2026-06-29
+        - `frac_positive`: 0.4838709677419355
+        - `last_date`: 2026-09-29
+        - `max`: 0.000433083712971733
+        - `max_abs`: 0.000433083712971733
+        - `mean`: -2.4801619021614496e-06
+        - `mean_abs`: 0.00011772104535538478
+        - `min`: -0.000236823410278302
+        - `n`: 93
+        - `n_dates`: 93
+        - `n_partial_days_a`: 1
+        - `n_partial_days_b`: 1
+        - `sign_flips`: 40
+        - `status`: ok
+        - `std`: 0.00014243547222281567
+      - `pair`: kraken~okx
+      - `status`: ok
+      - `venue_a`: kraken
+      - `venue_b`: okx
+  - `schema`: crossvenue_basis.v1
+  - `simulated_only`: false
+  - `venues`:
+    - kraken
+    - okx
+  - `verdict`: 2/2 legs measured; 1/1 pairs ok; kraken~okx basis-diff mean +0.050754%, funding-diff mean -0.000248%/day
+- `receipt_sha256`: 3f4ff76f517655a728f29688cfbb96f4fe7a6e3dea9cb387db25a444fb6ae964
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
 
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
@@ -4265,6 +17245,732 @@ counted. Prose that contains such a token is quoted verbatim.
   - `receipts_dir`: receipts
   - `schema`: evidence_audit.v1
 - `receipt_sha256`: d449e1ca0cc119a62dbef15f3916494ff65cc018494b36253a6f6f5807173b2b
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/evidence_audit_f45ae8d6bc7cd677.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/evidence_audit_f45ae8d6bc7cd677.json | 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989 | f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62 | not_checked | 9fa14508146de03f33c930ad4d3c2de95395a137 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `evidence_audit.py`: ecc96ca2d055d319af60bf3a09ffe233db996376a1b4bb3da01cd459dd22d27b
+- `data_label`: META
+- `dataset_hash`: b5fb7ae4c47405236edb0bc400843d2039a3255c09e4eb4d0d1b973208eccf49
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-30T22:37:06.052479+00:00
+- `git_revision`: 9fa14508146de03f33c930ad4d3c2de95395a137
+- `kind`: evidence_audit
+- `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
+- `payload`:
+  - `check_index`: true
+  - `duplicate_seals`:
+  - `files`:
+    - [0]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: calib_real_drill.json
+      - `file_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+      - `filename_digest_ok`: null
+      - `kind`: calibration_audit.v1
+      - `schema`: calibration_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [1]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: capacity_eval_cd0854242ed8a9ec.json
+      - `file_sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+      - `filename_digest_ok`: true
+      - `kind`: capacity_overlay_eval
+      - `schema`: capacity_overlay.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [2]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coherence_2dd641ab766a536a.json
+      - `file_sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+      - `filename_digest_ok`: true
+      - `kind`: coherence_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [3]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: concordance_df424fa2f6b1c4e9.json
+      - `file_sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+      - `filename_digest_ok`: true
+      - `kind`: selection_concordance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [4]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [5]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_pit.json
+      - `file_sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [6]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: corpus_real_drill.json
+      - `file_sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+      - `filename_digest_ok`: null
+      - `kind`: corpus_inference.v1
+      - `schema`: corpus_inference.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [7]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: cost_calibration_eval_df9b8d7068bf709b.json
+      - `file_sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+      - `filename_digest_ok`: true
+      - `kind`: cost_calibration_eval
+      - `schema`: cost_calibration.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [8]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_cs_real_drill.json
+      - `file_sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+      - `filename_digest_ok`: null
+      - `kind`: coverage_cs
+      - `schema`: coverage_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [9]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_real_drill.json
+      - `file_sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+      - `filename_digest_ok`: null
+      - `kind`: coverage_audit
+      - `schema`: coverage_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [10]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [11]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_pit.json
+      - `file_sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [12]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: deps_security_hygiene_f3b4e6fd22e439b7.json
+      - `file_sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+      - `filename_digest_ok`: true
+      - `kind`: null
+      - `schema`: deps_hygiene.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+    - [13]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [14]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_pit.json
+      - `file_sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [15]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: emerge_real_drill.json
+      - `file_sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+      - `filename_digest_ok`: null
+      - `kind`: emerge_drill.v1
+      - `schema`: emerge_drill.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [16]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_3464d8f8197bf737.json
+      - `file_sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [17]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_d449e1ca0cc119a6.json
+      - `file_sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [18]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fast_replay_p42_conformance_20260928.json
+      - `file_sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
+    - [19]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_eval_5ddf15b0dc7d3ca1.json
+      - `file_sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+      - `filename_digest_ok`: true
+      - `kind`: distribution_fleet_eval
+      - `schema`: fleet_eval.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [20]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_race_real_drill.json
+      - `file_sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+      - `filename_digest_ok`: null
+      - `kind`: fleet_race.v1
+      - `schema`: fleet_race.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [21]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: honest_verdict_real_drill.json
+      - `file_sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [22]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lane_power_drill.json
+      - `file_sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+      - `filename_digest_ok`: null
+      - `kind`: lane_power
+      - `schema`: lane_power.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [23]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_verdict.json
+      - `file_sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+      - `filename_digest_ok`: null
+      - `kind`: receipt_lattice.v1
+      - `schema`: receipt_lattice.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: inconsistent
+    - [24]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_a.json
+      - `file_sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [25]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_b.json
+      - `file_sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [26]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_conf_t_vs_empirical.json
+      - `file_sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [27]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_gaussian_vs_conf_t.json
+      - `file_sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [28]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: markout_amzn.json
+      - `file_sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
+      - `filename_digest_ok`: null
+      - `kind`: markout
+      - `schema`: markout.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [29]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_real_drill.json
+      - `file_sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [30]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_vol_drill.json
+      - `file_sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [31]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_clean.json
+      - `file_sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [32]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_defect.json
+      - `file_sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [33]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_real_drill.json
+      - `file_sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [34]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: multih_fleet_eval_5db1cab214e291d7.json
+      - `file_sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+      - `filename_digest_ok`: true
+      - `kind`: multih_fleet_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [35]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: nautilus_conformance_7bf19a08c147547b.json
+      - `file_sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+      - `filename_digest_ok`: true
+      - `kind`: nautilus_conformance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: blocked
+    - [36]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: panel_audit_real_drill.json
+      - `file_sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+      - `filename_digest_ok`: null
+      - `kind`: panel_audit.v1
+      - `schema`: panel_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [37]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: rankic_eval_9ebdad7da83e7348.json
+      - `file_sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+      - `filename_digest_ok`: true
+      - `kind`: cross_sectional_rankic_eval
+      - `schema`: cross_sectional_rankic.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [38]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_manifest.json
+      - `file_sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: 1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [39]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_test.json
+      - `file_sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [40]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_validation.json
+      - `file_sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [41]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_140b073ea589b0c7.json
+      - `file_sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [42]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_1e8e1446e506fce1.json
+      - `file_sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [43]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_2c14615c26efd19b.json
+      - `file_sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [44]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_46445c3b227aa15e.json
+      - `file_sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [45]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_47297eff3cb55178.json
+      - `file_sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [46]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_4f4a495b59d022fb.json
+      - `file_sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [47]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_771602cd1580476c.json
+      - `file_sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [48]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_85db152db863d25d.json
+      - `file_sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [49]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_8977244ef78bfd2f.json
+      - `file_sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [50]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_a6fd40311ce0fa04.json
+      - `file_sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [51]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_d311f5ea367a66a9.json
+      - `file_sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [52]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_dbd21a6c99c81e00.json
+      - `file_sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [53]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: suite_health_drill.json
+      - `file_sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+      - `filename_digest_ok`: null
+      - `kind`: suite_health
+      - `schema`: suite_health.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [54]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: tail_real_drill.json
+      - `file_sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+      - `filename_digest_ok`: null
+      - `kind`: tail_audit
+      - `schema`: tail_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [55]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: verdict_real_drill.json
+      - `file_sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+  - `findings`:
+  - `index_fresh`: true
+  - `n_files`: 56
+  - `n_invalid_sealed`: 2
+  - `n_sealed`: 56
+  - `n_unsealed`: 0
+  - `n_valid`: 54
+  - `receipts_dir`: receipts
+  - `schema`: evidence_audit.v1
+- `receipt_sha256`: f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -9189,6 +22895,538 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n`: 300
 - `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
 - `schema`: loss_cs.v1
+
+### `receipts/markout_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/markout_amzn.json | 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864 | a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9 | not_checked | 17c1e4d59806b28f67f7051bd80bf47edf3bed9d | absent | unspecified | absent | true | absent |
+
+- `kind`: markout
+- `schema`: markout.v1
+- `ticker`: AMZN
+- `real`:
+  - `horizons_s`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 1.0
+    - 2.0
+    - 5.0
+    - 10.0
+    - 30.0
+  - `n_executions`: 8974
+  - `sides`:
+    - `buy`:
+      - `mean`:
+        - 1.8120840266222962
+        - 2.0348377703826954
+        - 2.633839434276206
+        - 3.141742928452579
+        - 3.8300395256916997
+        - 4.345681581685744
+        - 4.80685618729097
+        - 5.306231640788922
+        - 5.366828855510895
+      - `median`:
+        - 1.0
+        - 1.0
+        - 1.5
+        - 2.0
+        - 2.5
+        - 3.0
+        - 3.5
+        - 4.5
+        - 3.5
+      - `n`:
+        - 4808
+        - 4808
+        - 4808
+        - 4808
+        - 4807
+        - 4805
+        - 4784
+        - 4766
+        - 4727
+    - `sell`:
+      - `mean`:
+        - 1.4675948151704272
+        - 1.578852616418627
+        - 1.9087854056649063
+        - 2.2695725264169067
+        - 2.7596731554914684
+        - 3.4125
+        - 4.09822072613609
+        - 4.857523624909135
+        - 6.315479115479116
+      - `median`:
+        - 0.5
+        - 0.5
+        - 0.5
+        - 1.0
+        - 1.5
+        - 2.0
+        - 3.0
+        - 3.5
+        - 5.0
+      - `n`:
+        - 4166
+        - 4166
+        - 4166
+        - 4164
+        - 4161
+        - 4160
+        - 4159
+        - 4127
+        - 4070
+  - `signed`:
+    - `mean`:
+      - 1.6521618007577445
+      - 1.823155783374192
+      - 2.2972476041898817
+      - 2.736959429335711
+      - 3.333407671721677
+      - 3.91266034578918
+      - 4.47730068209773
+      - 5.0979984257281
+      - 5.805729225872456
+    - `median`:
+      - 0.5
+      - 1.0
+      - 1.0
+      - 1.5
+      - 2.0
+      - 2.5
+      - 3.5
+      - 4.0
+      - 4.5
+    - `n`:
+      - 8974
+      - 8974
+      - 8974
+      - 8972
+      - 8968
+      - 8965
+      - 8943
+      - 8893
+      - 8797
+    - `noise_floor_sem`:
+      - 0.03418024606033118
+      - 0.03582530557733215
+      - 0.04229604920920552
+      - 0.04816844187842592
+      - 0.057086964058393176
+      - 0.06717101456204723
+      - 0.0782473596427618
+      - 0.09699452615786051
+      - 0.15611922579743887
+  - `toxicity_half_life_s`: 0.05
+  - `n_book_events`: 269748
+  - `tape_files`:
+    - AMZN_2012-06-21_34200000_57600000_message_10.csv
+    - AMZN_2012-06-21_34200000_57600000_orderbook_10.csv
+  - `tape_sha256`: c85a75b51f3616a683f825c2e03f984535e9329a8be5ab12325130d32223a2c5
+  - `data_label`: REAL_LOBSTER_SAMPLE
+- `sim_arms`:
+  - `iid`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 9105
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.0014508928571428572
+          - 0.0035706315554563713
+          - 0.00022326412145568208
+          - -0.0006700915791824883
+          - -0.00949508489722967
+          - -0.015876565295169946
+          - -0.03954167602785891
+          - -0.040843806104129264
+          - -0.04262957146062374
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4480
+          - 4481
+          - 4479
+          - 4477
+          - 4476
+          - 4472
+          - 4451
+          - 4456
+          - 4457
+      - `sell`:
+        - `mean`:
+          - -0.005749668288367979
+          - -0.007408226448474126
+          - -0.007520460075204601
+          - -0.004758742806551572
+          - -0.00420726306465899
+          - -0.0021050299135829823
+          - -0.0034390947415132017
+          - 0.0058823529411764705
+          - -0.013780840186708157
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4522
+          - 4522
+          - 4521
+          - 4518
+          - 4516
+          - 4513
+          - 4507
+          - 4505
+          - 4499
+    - `signed`:
+      - `mean`:
+        - -0.0021661852921572985
+        - -0.0019437965122736866
+        - -0.0036666666666666666
+        - -0.002723735408560311
+        - -0.0068394128113879
+        - -0.008959376739009461
+        - -0.021377539629381558
+        - -0.017352973998437674
+        - -0.02813756141134435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9002
+        - 9003
+        - 9000
+        - 8995
+        - 8992
+        - 8985
+        - 8958
+        - 8961
+        - 8956
+      - `noise_floor_sem`:
+        - 0.005060761913509212
+        - 0.0051622043427196635
+        - 0.005400778996993859
+        - 0.005754719843043273
+        - 0.006427321026182346
+        - 0.0075119320331005785
+        - 0.00981252717966765
+        - 0.012119135727581595
+        - 0.017429448674705694
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54146
+    - `sim_seconds`: 45000.0
+    - `flow`: iid_zi
+    - `seed`: 7
+    - `data_label`: SYNTHETIC
+  - `markov_regime`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 10344
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.00361794500723589
+          - 0.004654530409598676
+          - 0.005703027789299046
+          - 0.007481296758104738
+          - -0.0042860129625757895
+          - -0.0013652593992858643
+          - 0.02435408725116476
+          - 0.017887746358183375
+          - 0.0998911860718172
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4837
+          - 4834
+          - 4822
+          - 4812
+          - 4783
+          - 4761
+          - 4722
+          - 4668
+          - 4595
+      - `sell`:
+        - `mean`:
+          - -0.01810344827586207
+          - -0.01886182366889416
+          - -0.01307542684244651
+          - -0.01634906886097878
+          - -0.025893824485373782
+          - -0.03628068650879861
+          - -0.07070817803113352
+          - -0.09598411297440423
+          - -0.19876819708846585
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4640
+          - 4639
+          - 4627
+          - 4618
+          - 4615
+          - 4603
+          - 4561
+          - 4532
+          - 4465
+    - `signed`:
+      - `mean`:
+        - -0.00701698849846998
+        - -0.006861606671592948
+        - -0.0034924330616996507
+        - -0.0041887592788971365
+        - -0.014896786550329857
+        - -0.018528406663818883
+        - -0.022352687708714854
+        - -0.03820652173913044
+        - -0.04729580573951435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9477
+        - 9473
+        - 9449
+        - 9430
+        - 9398
+        - 9364
+        - 9283
+        - 9200
+        - 9060
+      - `noise_floor_sem`:
+        - 0.006020692316762725
+        - 0.006142118442148533
+        - 0.006555385122683627
+        - 0.007109779186827386
+        - 0.00800840464230981
+        - 0.00920911521190748
+        - 0.011704716467079355
+        - 0.01435264889056644
+        - 0.020150868836827932
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54192
+    - `sim_seconds`: 45000.0
+    - `flow`: markov_regime_calm_bursty
+    - `seed`: 8
+    - `data_label`: SYNTHETIC
+  - `split`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 13014
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.08253094910591471
+          - 0.0840683572216097
+          - 0.11624649859943978
+          - 0.14793741109530584
+          - 0.2212068465332173
+          - 0.3152798789712557
+          - 0.6062809917355372
+          - 1.0435691878703381
+          - 2.3922287390029324
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3635
+          - 3628
+          - 3570
+          - 3515
+          - 3447
+          - 3305
+          - 3025
+          - 2869
+          - 2728
+      - `sell`:
+        - `mean`:
+          - 0.11901782921488896
+          - 0.11874217772215269
+          - 0.13925855513307986
+          - 0.17192070198245044
+          - 0.20587253920587253
+          - 0.35470836261419536
+          - 0.62
+          - 1.082559547840129
+          - 2.619916142557652
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3197
+          - 3196
+          - 3156
+          - 3077
+          - 2997
+          - 2846
+          - 2650
+          - 2477
+          - 2385
+    - `signed`:
+      - `mean`:
+        - 0.09960480093676816
+        - 0.10030773739742087
+        - 0.12704430567945288
+        - 0.15913228155339806
+        - 0.21407510862818124
+        - 0.33352300438953014
+        - 0.6126872246696036
+        - 1.0616348671904228
+        - 2.4984353608449053
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.5
+        - 0.5
+        - 2.0
+      - `n`:
+        - 6832
+        - 6824
+        - 6726
+        - 6592
+        - 6444
+        - 6151
+        - 5675
+        - 5346
+        - 5113
+      - `noise_floor_sem`:
+        - 0.011362642800730068
+        - 0.011674244567031235
+        - 0.012093806581306625
+        - 0.013125434371388495
+        - 0.015198775698658499
+        - 0.019218147594887335
+        - 0.027223895455151945
+        - 0.040215717629467275
+        - 0.06643099397144156
+    - `toxicity_half_life_s`: 0.05
+    - `n_events`: 64237
+    - `sim_seconds`: 45000.0
+    - `flow`: split_metaorder_powerlaw
+    - `seed`: 9
+    - `n_episodes`: 205
+    - `data_label`: SYNTHETIC
+- `divergences`:
+  - [0]
+    - `arm`: iid
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.021377539629381558
+    - `abs_gap_ticks`: 4.498678221727111
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [1]
+    - `arm`: markov_regime
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.022352687708714854
+    - `abs_gap_ticks`: 4.4996533698064445
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [2]
+    - `arm`: split
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: 0.6126872246696036
+    - `abs_gap_ticks`: 3.8646134574281263
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+- `claim`: markout_curve_measured
+- `interpretation`: Post-execution adverse-selection curve: signed mid move in ticks at h in {0.05..30}s after each visible EXECUTION, sign-adjusted so positive = drift in the aggressor's direction (toxic flow). Real arm is the official LOBSTER AMZN 2012-06-21 level-10 sample; sim arms are labeled SYNTHETIC ZI-LOB variants (iid baseline, Markov calm/bursty regime flow, power-law metaorder splitting flow) under the identical measurement. 'divergences' flags arms whose 5s markout differs from the tape's by more than half the tape value. toxicity_half_life_s is the first horizon whose pooled signed mean exceeds its own standard-error floor (std/sqrt(n)); None when no horizon clears it. Research-only; no live-trading claim.
+- `git_revision`: 17c1e4d59806b28f67f7051bd80bf47edf3bed9d
+- `data_label`: MIXED
+- `research_only`: true
+- `receipt_sha256`: a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9
 
 ### `receipts/mcs_real_drill.json`
 

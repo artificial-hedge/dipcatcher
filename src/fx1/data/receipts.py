@@ -57,7 +57,10 @@ def _eligibility(payload: dict[str, Any]) -> tuple[bool, bool]:
     Anything else fails closed: not research-scoped, live claim assumed.
     """
     claim = payload.get("claim")
-    research_only = bool(payload.get("research_only", False)) or (claim == "research_only")
+    # The boolean contract is literal: "research_only": true. A truthy
+    # non-boolean ("yes", 1, "research") is not a research-scope declaration —
+    # malformed receipts are ineligible, fail-closed.
+    research_only = (payload.get("research_only") is True) or (claim == "research_only")
     if "live_pnl_claim" in payload:
         live_pnl_claim = bool(payload["live_pnl_claim"])
     else:

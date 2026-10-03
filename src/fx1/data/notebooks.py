@@ -34,7 +34,7 @@ def notebook_examples(
         content = section[:chunk_chars]
         user = (
             f"Explain this dipcatcher harness artifact section and what "
-            f"evidence class it belongs to:\n\n{content[:1500]}"
+            f"evidence class it belongs to:\n\n{content}"
         )
         assistant = (
             f"Source hash {digest[:16]}… (section {i + 1}/{len(sections)}). "

@@ -1,0 +1,67 @@
+{
+  "arms": [
+    {
+      "autocorr": {
+        "lag1": -0.004218137993371497,
+        "lag16": 0.005122024706236818,
+        "lag2": -0.014763482976800241,
+        "lag32": 0.0033142512805061767,
+        "lag4": 0.00391684242241639,
+        "lag64": 0.024404941247363664,
+        "lag8": 0.012955709551069599
+      },
+      "mo_fraction": 0.16595,
+      "n_trades": 3319,
+      "name": "iid"
+    },
+    {
+      "autocorr": {
+        "lag1": 0.0509487912659215,
+        "lag16": 0.014296854691967767,
+        "lag2": 0.0501689628281778,
+        "lag32": -0.004938913439043411,
+        "lag4": 0.0792825578372758,
+        "lag64": 0.0356121653236288,
+        "lag8": 0.0501689628281778
+      },
+      "mo_fraction": 0.19235,
+      "n_trades": 3847,
+      "name": "regime"
+    },
+    {
+      "autocorr": {
+        "lag1": 0.6625,
+        "lag16": 0.20657894736842106,
+        "lag2": 0.6399122807017544,
+        "lag32": 0.09429824561403509,
+        "lag4": 0.5548245614035088,
+        "lag64": 0.05570175438596491,
+        "lag8": 0.3907894736842105
+      },
+      "mo_fraction": 0.228,
+      "n_trades": 4560,
+      "name": "split"
+    }
+  ],
+  "claims": {
+    "split_produces_persistence": true
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "1f9753f254f02cedfa9a0e556573b7da72a05676",
+  "horizon": 20000,
+  "interpretation": "Metaorder splitting (same-sign child runs with heavy-tailed parent size) is the mechanism that lifts sign autocorrelation toward the real-tape 0.72; Markov intensity modulation alone cannot (it only tilts p_buy slowly). The split arm's parameters were chosen to match the real-tape lag-1 \u2014 this is a calibration, not an independent prediction",
+  "kind": "split_flow_bench",
+  "lags": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64
+  ],
+  "receipt_sha256": "a7ca0a91a74d2bf2ff40ce9d5e89261287499fe1b5c3e78204bfe21541df6f52",
+  "reference_real_tape_sign_lag1": 0.721,
+  "research_only": true,
+  "schema": "split_flow.v1"
+}

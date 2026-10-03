@@ -35,29 +35,68 @@
    - [Receipt lifecycle](#receipt-lifecycle)
    - [Module dependency graph](#module-dependency-graph)
    - [Repository composition](#repository-composition)
-5. [What you get in this checkout](#what-you-get-in-this-checkout)
-6. [What makes it different](#what-makes-it-different)
-7. [Repository layout](#repository-layout)
-8. [Quick start](#quick-start)
-9. [Configuration](#configuration)
-10. [Command line reference](#command-line-reference)
-11. [Data sources and point in time integrity](#data-sources-and-point-in-time-integrity)
-12. [Research methodology](#research-methodology)
-13. [Evidence and sealed receipts](#evidence-and-sealed-receipts)
-14. [Institutional readiness](#institutional-readiness)
-15. [fx-1](#fx-1)
-16. [Web explorer and tooling](#web-explorer-and-tooling)
-17. [API and security](#api-and-security)
-18. [Testing, CI, and supply chain](#testing-ci-and-supply-chain)
-19. [Documentation index](#documentation-index)
-20. [Repository health](#repository-health)
-21. [Governance and ownership](#governance-and-ownership)
-22. [Contributing](#contributing)
-23. [Security policy](#security-policy)
-24. [License](#license)
-25. [Citation](#citation)
-26. [Acknowledgements and third-party notices](#acknowledgements-and-third-party-notices)
-27. [Final disclaimer](#final-disclaimer)
+5. [Extended visual atlas](#extended-visual-atlas)
+   - [System context](#system-context)
+   - [Research run lifecycle](#research-run-lifecycle)
+   - [Receipt and data-manifest relationships](#receipt-and-data-manifest-relationships)
+   - [One gated run, stage order](#one-gated-run-stage-order)
+   - [Acceptance history timeline](#acceptance-history-timeline)
+   - [The harness at a glance](#the-harness-at-a-glance)
+   - [Capability vs evidence](#capability-vs-evidence)
+   - [Tracked-file census](#tracked-file-census)
+   - [Python module census](#python-module-census)
+   - [Receipt census](#receipt-census)
+   - [Corpus flywheel](#corpus-flywheel)
+   - [Turnover history, illustrative](#turnover-history-illustrative)
+   - [A researcher's day](#a-researchers-day)
+   - [Honesty gate decision tree](#honesty-gate-decision-tree)
+   - [verify-research call sequence](#verify-research-call-sequence)
+   - [Config inheritance](#config-inheritance)
+   - [Config class anatomy](#config-class-anatomy)
+   - [Receipt field map](#receipt-field-map)
+   - [Documentation reading order](#documentation-reading-order)
+   - [ASCII: the layered stack](#ascii-the-layered-stack)
+   - [ASCII: sealing a receipt](#ascii-sealing-a-receipt)
+6. [What you get in this checkout](#what-you-get-in-this-checkout)
+7. [What makes it different](#what-makes-it-different)
+8. [Repository layout](#repository-layout)
+9. [Quick start](#quick-start)
+10. [Configuration](#configuration)
+11. [Command line reference](#command-line-reference)
+12. [Data sources and point in time integrity](#data-sources-and-point-in-time-integrity)
+13. [Research methodology](#research-methodology)
+14. [Evidence and sealed receipts](#evidence-and-sealed-receipts)
+15. [Deep dives](#deep-dives)
+    - [Anatomy of a sealed receipt](#anatomy-of-a-sealed-receipt)
+    - [Lifecycle of a single forecast](#lifecycle-of-a-single-forecast)
+    - [Choosing a config](#choosing-a-config)
+    - [Choosing a make target](#choosing-a-make-target)
+    - [Proper-score field guide](#proper-score-field-guide)
+    - [Honesty enforcement map](#honesty-enforcement-map)
+    - [Failure-mode catalog](#failure-mode-catalog)
+    - [The five live-evidence conditions as a gate diagram](#the-five-live-evidence-conditions-as-a-gate-diagram)
+16. [Institutional readiness](#institutional-readiness)
+17. [fx-1](#fx-1)
+18. [Web explorer and tooling](#web-explorer-and-tooling)
+19. [API and security](#api-and-security)
+20. [Testing, CI, and supply chain](#testing-ci-and-supply-chain)
+21. [Documentation index](#documentation-index)
+22. [Repository health](#repository-health)
+23. [Governance and ownership](#governance-and-ownership)
+24. [Contributing](#contributing)
+25. [Security policy](#security-policy)
+26. [License](#license)
+27. [Citation](#citation)
+28. [Acknowledgements and third-party notices](#acknowledgements-and-third-party-notices)
+29. [Appendix](#appendix)
+    - [FAQ](#faq)
+    - [Glossary](#glossary)
+    - [Environment variables](#environment-variables)
+    - [Receipts census](#receipts-census)
+    - [Configs census](#configs-census)
+    - [Make target atlas](#make-target-atlas)
+    - [Terminal cheat-sheet](#terminal-cheat-sheet)
+30. [Final disclaimer](#final-disclaimer)
 
 ---
 
@@ -68,6 +107,11 @@ small Alpaca account. It is research and simulated paper trading only — there
 is no live broker connectivity anywhere in this tree, and nothing in this
 document authorizes, promises, or implies otherwise.
 
+The dip question, in `fx1.bench.dip` and
+`receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
+drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
+an in-sample climatology baseline on 11 historical crypto series. Disclaimer
+from the file:
 The distribution name on PyPI-style metadata is `fx-1`; the two console
 entry points installed by this project are `dipcatcher` (the research
 harness, formerly and internally called "dipcatcher") and `fx1` (the
@@ -166,6 +210,35 @@ failure modes at once, using three linked ideas:
    quietly rerun until something looks better. See
    [Evidence and sealed receipts](#evidence-and-sealed-receipts).
 
+- **Sealed receipts.** Phase-1 benchmark and tournament files carry
+  `receipt_sha256`, the SHA-256 of the other fields.
+  `dipcatcher verify-research` recomputes it and exits nonzero on a mismatch
+  (`docs/RECEIPT_VERIFICATION.md`). Paper promotion receipts use the same
+  seal. Files under `receipts/` record the input and script hashes the result
+  claims (`inputs_sha256`, `script_sha256`, `bar_files_sha256`, and related
+  fields).
+- **Fail-closed verification.** An invalid notebook, a missing metric, or a
+  non-finite metric does not promote. SYNTHETIC evidence marked as live fails
+  the gate in `quant_fund.validation.gates`. `dipcatcher doctor` exits nonzero
+  until a data manifest and a valid research receipt are both present.
+- **Published negative results.**
+  `receipts/legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json` records
+  `selected_band: null` and `eligible: false` on every candidate.
+  `receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json` records
+  `development_eligible: false`. A sealed blocked tournament stays a
+  reviewable failure (`valid: true`, `state: "blocked"`) with no test receipt
+  and no selected candidate (`docs/RECEIPT_VERIFICATION.md`).
+- **qlib parity receipt.** `receipts/legacy-unsealed/incumbent_bench_qlib.json` is one matched
+  workload against qlib 0.9.7 on Binance daily bars (`BTCUSDT`, `ETHUSDT`,
+  `SOLUSDT`), with `research_only: true` and `live_pnl_claim: false`. Copied
+  from that file, `nav_max_rel_diff` is `1.0290734772388363e-07`. Disclaimer,
+  copied verbatim: "Single matched workload vs qlib 0.9.x on real Binance
+  daily bars. Correctness is NAV parity; latency is single-process wall time.
+  Not a claim of superiority across all product dimensions."
+- **Synthetic stays labeled.** Default research and paper configs set
+  `data.source: synthetic`. The CLI prints `DATA_LABEL=SYNTHETIC` and the
+  word `SYNTHETIC`. The CI smoke fails if that notebook's `data_source` is
+  anything else.
 `fx-1` (the model line, [described below](#fx-1)) exists because the same
 discipline that makes the research harness auditable also makes it a
 uniquely well-labeled training corpus: every receipt that passes the ship
@@ -765,6 +838,483 @@ stack config), `clients/` (5, a generated TypeScript API client), and
 `spec/` (3, a TLA+ formal specification) — see
 [Repository layout](#repository-layout) for what each of these is.
 
+## Extended visual atlas
+
+The [Visual tour](#visual-tour) above covers the six load-bearing diagrams.
+This atlas goes wider: every diagram type below is a **map of structure,
+ordering, or enforcement — never a performance claim**. Where a number
+appears, it is a count taken from `git ls-files` or from a committed
+receipt, labeled with the commit it was counted at (`e00ab310c`,
+2026-09-30). Diagrams marked *illustrative* show ordering or shape, not
+measured timing or measured satisfaction.
+
+### System context
+
+The whole lab in one picture. The load-bearing edge is the one that does
+**not** exist: nothing in this tree talks to a broker.
+
+```mermaid
+C4Context
+  title System context -- dipcatcher research lab (no live-trading surface)
+  Person(researcher, "Researcher", "Runs gated research; reviews sealed receipts")
+  System(harness, "dipcatcher harness", "quant_fund: PIT data, forecasts, fusion, optimizer, risk gate, simulated paper")
+  System(fx1, "fx-1 tooling", "corpus / eval / training manifests; no trained checkpoint in tree")
+  System_Ext(moonshot, "Moonshot hosted Kimi K3", "optional hosted eval; needs MOONSHOT_API_KEY")
+  System_Ext(tapes, "Public exchange tapes", "opt-in collection only, e.g. Binance bars")
+  System_Ext(broker, "Alpaca account", "referenced target venue -- NOT connected")
+  Rel(researcher, harness, "Makefile targets, dipcatcher CLI")
+  Rel(researcher, fx1, "fx1 CLI")
+  Rel(harness, fx1, "gate-passed receipts become corpus lines")
+  Rel(fx1, moonshot, "hosted base-model eval (opt-in)")
+  Rel(harness, tapes, "dipcatcher collect (opt-in, network)")
+  Rel(harness, broker, "REFUSED: allow_live=true raises")
+```
+
+### Research run lifecycle
+
+Every research run is a state machine whose terminal states are all
+reviewable. A failed run is sealed as a failure, never deleted and never
+silently rerun until it looks better.
+
+```mermaid
+stateDiagram-v2
+  [*] --> configured: YAML/JSON config loaded (inherit chain)
+  configured --> validated: schema + config-safety checks
+  validated --> refused: unsupported source / non-finite parameter
+  refused --> [*]: hard error, no artifacts
+  validated --> running: panel built, PIT checks pass
+  running --> sealed: notebook + receipt_sha256 written
+  running --> blocked: gate fails (synthetic-as-live, missing family rows)
+  sealed --> verified: verify-research recomputes hash, exit 0
+  sealed --> invalid: hash mismatch / missing / non-finite metric
+  invalid --> [*]: promotion refused, fail-closed
+  blocked --> [*]: reviewable failure (valid: true, state: blocked)
+  verified --> corpus: eligible receipt -> fx1 positive example
+  blocked --> corpus: ineligible receipt -> fx1 negative example
+  corpus --> [*]
+```
+
+### Receipt and data-manifest relationships
+
+How the evidence objects relate. Every arrow is a hash: nothing references
+anything it cannot recompute.
+
+```mermaid
+erDiagram
+  CONFIG ||--|| RUN_MANIFEST : seeds
+  DATA_MANIFEST ||--o{ BRONZE_PARQUET : "hashes rows+sha256"
+  DATA_MANIFEST ||--o{ SILVER_PARQUET : "hashes rows+sha256"
+  RUN_MANIFEST ||--|| DATA_MANIFEST : "inputs_sha256 pins"
+  RUN_MANIFEST ||--|| RESEARCH_NOTEBOOK : produces
+  RESEARCH_NOTEBOOK ||--|| RECEIPT : "sealed by receipt_sha256"
+  RECEIPT ||--o{ FAMILY_BLOB : "23-family SOTA catalog scores"
+  RECEIPT ||--o{ FX1_CORPUS_LINE : "eligible -> positive / ineligible -> negative"
+  RECEIPT {
+    string receipt_sha256
+    string inputs_sha256
+    string script_sha256
+    bool research_only
+    bool live_pnl_claim
+  }
+  DATA_MANIFEST {
+    string source_identity
+    int row_count
+    string sha256
+  }
+```
+
+### One gated run, stage order
+
+The stages of a single gated research run, in order. Durations are unit
+intervals — this shows *ordering and dependencies*, not measured wall time.
+
+```mermaid
+gantt
+  title One gated research run (stage order, not to scale)
+  dateFormat X
+  axisFormat %s
+  section Data
+  Ingest + manifest :0, 1
+  PIT checks + leakage scan :1, 2
+  section Forecast
+  Base forecasters :2, 4
+  Fusion :4, 5
+  section Decision
+  Constrained optimizer :5, 6
+  Risk gate :6, 7
+  section Evidence
+  Scorecard (proper scores only) :7, 9
+  Seal + verify receipt :9, 10
+```
+
+### Acceptance history timeline
+
+The harness's own acceptance ledger ([`verifier/`](verifier/), v1 through
+v8, 24 files), condensed. Each version is a committed, reviewable
+checkpoint of what the lab accepted about itself — see
+[Repository health](#repository-health).
+
+```mermaid
+timeline
+  title Harness acceptance history (verifier ledger)
+  v1-v2 : Harness intake : evidence gates online : receipt sealing
+  v3-v4 : Fail-closed promotion : doctor readiness checks : import boundaries
+  v5-v6 : SOTA catalog versioning : dual honesty catalogs : blocked receipts reviewable
+  v7 : qlib parity benchmark sealed
+  v8 : 88 host-local run manifests folded into corpus : 77 positive, 11 negative
+```
+
+### The harness at a glance
+
+The 47 top-level subpackages under `src/quant_fund`, grouped by job. This
+is a reading aid, not an import graph — the enforced import boundaries
+live in [`configs/arch_boundaries.toml`](configs/arch_boundaries.toml) and
+are checked by the `arch-guards` workflow.
+
+```mermaid
+mindmap
+  root((quant_fund))
+    Data
+      data
+      pit
+      leakage
+      calendars
+      features
+    Research
+      research
+      validation
+      registry
+      audit
+    Models
+      models
+      quant_models
+      hmm
+      mc_engine
+    Portfolio
+      portfolio
+      fusion
+      risk
+      stress
+      pretrade
+    Execution
+      execution
+      backtest
+      diffbacktest
+      market_sim
+      microstructure
+    Simulated operation
+      paper
+      hedge_lab
+      reality
+      simtest
+    Evidence
+      proofcore
+      proof
+      reporting
+      parity
+    Surface
+      cli
+      api
+      observe
+      monitoring
+```
+
+### Capability vs evidence
+
+An *illustrative* placement of major surfaces on two axes: how strong the
+committed evidence is, and how deployment-shaped the surface is. The upper
+right is where a live claim would have to live — nothing sits there.
+
+```mermaid
+quadrantChart
+  title Capability x evidence (illustrative posture, not a performance claim)
+  x-axis weak evidence --> strong evidence
+  y-axis simulation-only --> deployment-shaped
+  quadrant-1 closest to readiness, still blocked
+  quadrant-2 aspirational, unproven
+  quadrant-3 correctness tests
+  quadrant-4 implemented, simulated
+  "Sealed receipts": [0.9, 0.35]
+  "PIT data contract": [0.8, 0.45]
+  "Paper/shadow loop": [0.7, 0.55]
+  "Formal spec (TLA+)": [0.85, 0.25]
+  "Vendor data entitlement": [0.15, 0.8]
+  "Broker adapter": [0.05, 0.9]
+  "Five live-evidence conditions": [0.02, 0.95]
+```
+
+### Tracked-file census
+
+Counted from `git ls-files` at `e00ab310c` (3,016 tracked, non-hidden
+files). The bar chart makes the same point the pie chart in
+[Repository composition](#repository-composition) makes: this is a
+verification-heavy repository.
+
+```mermaid
+xychart-beta
+  title "Tracked files by area (git ls-files @ e00ab310c)"
+  x-axis [tests, src, scripts, docs, web, third_party, receipts, data, configs, artifacts]
+  bar [1277, 900, 192, 182, 102, 93, 63, 30, 30, 30]
+```
+
+### Python module census
+
+Python files only, same commit: the harness's 821 modules, the fx-1 lane's
+61, and 1,174 `test_*.py` files standing over both.
+
+```mermaid
+xychart-beta
+  title "Python files (git ls-files @ e00ab310c)"
+  x-axis ["quant_fund modules", "fx1 modules", "test files"]
+  y-axis "files" 0 --> 1300
+  bar [821, 61, 1174]
+```
+
+### Receipt census
+
+63 committed JSON artifacts under [`receipts/`](receipts/): 55 sealed
+receipts at the top level, 7 legacy-unsealed receipts kept for history,
+plus one README (full listing in the [Appendix](#receipts-census)).
+
+```mermaid
+pie showData
+  title Committed receipt files (62 JSON + 1 README @ e00ab310c)
+  "sealed receipts/" : 55
+  "legacy-unsealed" : 7
+```
+
+### Corpus flywheel
+
+Receipts are fx-1's training data. Eligible receipts become positive
+examples; fail-closed refusals become negative examples. Counts from the
+[fx-1](#fx-1) section: 5 eligible seed receipts, plus 88 host-local
+research-run manifests yielding 77 positive (SYNTHETIC-labeled, simulated
+data, never market evidence) and 11 negative lines.
+
+```mermaid
+sankey-beta
+  seed receipts,positive corpus lines,5
+  run manifests,positive corpus lines,77
+  run manifests,negative corpus lines,11
+```
+
+### Turnover history, illustrative
+
+Commits land directly on `main` for fx-1 lanes (see `AGENTS.md`); the
+branch below is an *illustrative* sketch of the harness's turnover into
+the fx-1 lab, not a branch-by-branch history.
+
+```mermaid
+gitGraph
+  commit id: "harness intake"
+  commit id: "receipt sealing"
+  branch fx1-lane
+  commit id: "corpus build"
+  commit id: "honesty mirror"
+  checkout main
+  commit id: "SOTA catalog"
+  merge fx1-lane id: "v8 acceptance"
+  commit id: "wave 17 DiffPTS"
+  commit id: "HEAD e00ab310"
+```
+
+### A researcher's day
+
+Illustrative satisfaction scores (1-5) for a typical gated day — the shape
+of the workflow, not a measurement.
+
+```mermaid
+journey
+  title A researcher's day with the harness (illustrative)
+  section Morning
+    make sync: 4: Researcher
+    make doctor: 3: Researcher
+  section Midday
+    run research on SYNTHETIC panel: 5: Researcher
+    verify-research recomputes seal: 5: Researcher, Verifier
+  section Evening
+    read sealed receipt: 4: Researcher
+    fx1 corpus build: 4: Researcher
+```
+
+### Honesty gate decision tree
+
+What happens to any candidate result before it can be headlined. Every
+"no" edge is fail-closed and leaves a reviewable artifact behind.
+
+```mermaid
+flowchart TD
+  A["candidate result"] --> B{"data.source == synthetic?"}
+  B -->|"yes"| C["label DATA_LABEL=SYNTHETIC everywhere"]
+  B -->|"no"| D{"headline key in FORBIDDEN_RESEARCH_METRIC_KEYS?"}
+  C --> D
+  D -->|"yes"| E["REJECT — fail-closed"]
+  D -->|"no"| F{"all metrics present and finite?"}
+  F -->|"no"| E
+  F -->|"yes"| G{"receipt_sha256 recomputes byte-for-byte?"}
+  G -->|"no"| E
+  G -->|"yes"| H["seal and verify; eligible for corpus"]
+  E --> I["blocked receipt kept as reviewable failure"]
+```
+
+### verify-research call sequence
+
+The authoritative check. The web explorer's panels are informational;
+this is the one that exits nonzero.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant CLI as dipcatcher verify-research
+  participant FS as receipts/
+  participant V as verifier
+  U->>CLI: verify-research [path]
+  CLI->>FS: load notebook + receipt fields
+  CLI->>V: recompute receipt_sha256 over other fields
+  V-->>CLI: match / mismatch
+  alt hash matches and metrics finite
+    CLI-->>U: exit 0 — valid
+  else mismatch, missing, or non-finite
+    CLI-->>U: exit nonzero — fail-closed
+  end
+```
+
+### Config inheritance
+
+Every scenario file inherits from `base.yaml` and overrides only what it
+changes. Frozen protocol files are a separate kind of object entirely —
+loaded via `SotaProtocol`, never as `AppConfig`, and never edited after a
+receipt cites their `protocol_sha256`.
+
+```mermaid
+flowchart TD
+  base["base.yaml — runtime.mode: research, allow_live: false"]
+  base --> research["research.yaml"]
+  base --> paper["paper.yaml"]
+  base --> backtest["backtest.yaml"]
+  base --> demo["demo.yaml / demo_minute.yaml"]
+  base --> production["production.yaml — historical name, research-strict"]
+  paper --> simlive["sim_live.yaml"]
+  frozen["sota_protocol*.yaml — frozen scoring contracts"] -.->|"SotaProtocol, not AppConfig"| research
+```
+
+### Config class anatomy
+
+A sketch of the config object model; the authoritative definitions live in
+`src/quant_fund/config` and `src/fx1/train`.
+
+```mermaid
+classDiagram
+  class AppConfig {
+    +RuntimeConfig runtime
+    +DataConfig data
+    +validate() bool
+  }
+  class RuntimeConfig {
+    +str mode
+    +bool allow_live
+  }
+  class DataConfig {
+    +str source
+  }
+  class SotaProtocol {
+    +str protocol_sha256
+  }
+  class TrainConfig {
+    +str stage
+    +int min_nodes_final_k3
+  }
+  AppConfig *-- RuntimeConfig
+  AppConfig *-- DataConfig
+  note for SotaProtocol "Frozen contract; not an AppConfig."
+  note for TrainConfig "FINAL_K3 requires at least 2 nodes, enforced in code."
+```
+
+### Receipt field map
+
+A conceptual bit-map of what a sealed receipt carries. This is a teaching
+diagram — the authoritative format is the JSON itself plus
+[`docs/RECEIPT_VERIFICATION.md`](docs/RECEIPT_VERIFICATION.md).
+
+```mermaid
+packet-beta
+  title Receipt field map (conceptual)
+  0-15: "receipt_sha256"
+  16-31: "inputs_sha256"
+  32-47: "script_sha256"
+  48-55: "research_only = true"
+  56-63: "live_pnl_claim = false"
+```
+
+### Documentation reading order
+
+111 top-level documents under [`docs/`](docs/) is a lot. This is the order
+the lab itself would hand a new reader; the full map is in
+[Documentation index](#documentation-index).
+
+```mermaid
+flowchart LR
+  readme["README.md"] --> first["Read this first"]
+  first --> arch["docs/ARCHITECTURE.md"]
+  arch --> contracts["docs/DATA_CONTRACTS.md"]
+  contracts --> rcpt["docs/RECEIPT_VERIFICATION.md"]
+  rcpt --> ready["docs/INSTITUTIONAL_READINESS.md"]
+  ready --> fx1doc["docs/FX1.md + FX1_TRAINING.md"]
+  rcpt --> runbook["docs/OPERATIONS_RUNBOOK.md"]
+```
+
+### ASCII: the layered stack
+
+For viewers without mermaid — the same architecture, in plain text:
+
+```text
++---------------------------------------------------------------+
+|                         ENTRY POINTS                          |
+|    dipcatcher CLI (66 actions)      fx1 CLI (22 actions)      |
++------------------------------+--------------------------------+
+|                      RESEARCH HARNESS                         |
+|   ingest -> PIT panel -> forecast -> fusion -> optimizer      |
+|        -> risk gate -> scorecard (proper scores only)         |
++------------------------------+--------------------------------+
+|                     SIMULATED EXECUTION                       |
+|  backtest (next-open fills)    paper/shadow loop (no broker)  |
++------------------------------+--------------------------------+
+|                        EVIDENCE LAYER                         |
+|  receipts/ (hash-sealed)   verifier/ (v1..v8)   web/ (RO UI)  |
++------------------------------+--------------------------------+
+|                       MODEL LANE (fx-1)                       |
+|  corpus <- receipts    eval (task bank)    train manifests    |
++---------------------------------------------------------------+
+|              REFUSED BY CONSTRUCTION: live orders             |
++---------------------------------------------------------------+
+```
+
+### ASCII: sealing a receipt
+
+```text
+  notebook fields (everything except receipt_sha256)
+            |
+            v
+   canonical serialization
+            |
+            v
+        SHA-256  ---------------->  receipt_sha256 field
+            |                            |
+            v                            v
+     written to receipts/*.json          |
+            |                            |
+            +------ verify-research -----+
+                    recomputes
+                       |
+          +------------+------------+
+          |                         |
+        match                   mismatch
+          |                         |
+       exit 0                exit nonzero, promotion
+        valid                refused (fail-closed)
+```
+
 ## What you get in this checkout
 
 | Surface | What it is |
@@ -844,7 +1394,7 @@ dipcatcher/
 ├── data/            # 30 tracked files; generated data/* subtrees are gitignored
 ├── artifacts/       # 30 committed artifacts (equity parquets, champion JSON)
 ├── verifier/        # 24 files -- acceptance-history ledger (v1..v8)
-├── replay/          # 20 files -- deterministic replay/visualization tooling
+├── replay/          # 20 files -- deterministic replay + visualization tooling
 ├── research/        # 18 files -- reality-filter trial ledgers
 ├── rust/            # 10 files -- optional quant_core native extension (maturin)
 ├── quality/         # 7 files -- mypy/audit ratchet baselines
@@ -856,7 +1406,7 @@ dipcatcher/
 ├── reports/         # generated markdown reports (e.g. cost calibration)
 ├── LICENSE          # proprietary, all-rights-reserved
 ├── README.md        # this file
-├── Makefile         # every gate and workflow below is a make target
+├── Makefile         # every gate and workflow below is a Makefile entry
 ├── pyproject.toml   # package + tool config; version from fx1.__version__
 └── CITATION.cff     # citation metadata
 ```
@@ -1402,6 +1952,204 @@ management, and serial-adjusted evaluation. Existing components and new
 work are explicitly distinguished; **no claim of 100 reproduced studies or
 demonstrated market-performance uplift is made.**
 
+## Deep dives
+
+Long-form, reference-grade walk-throughs of the objects this repository is
+built around. Everything here restates enforcement that lives in code —
+where prose and code could ever disagree, the code and the sealed receipts
+win.
+
+### Anatomy of a sealed receipt
+
+A receipt is a JSON document whose seal field, `receipt_sha256`, is the
+SHA-256 of the canonical serialization of every other field. Schematic
+sketch — field names vary by receipt family, and the committed files under
+[`receipts/`](receipts/) are authoritative:
+
+```json
+{
+  "schema": "dipcatcher.research.notebook/v1",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "git_revision": "<commit the run was produced at>",
+  "dirty_worktree": false,
+  "inputs_sha256": "<sha256 over config + dataset inputs>",
+  "script_sha256": "<sha256 over the producing code path>",
+  "metrics": {
+    "pinball": "<quantile loss>",
+    "crps": "<distributional score>",
+    "pit": "<calibration histogram data>"
+  },
+  "receipt_sha256": "<sha256 over all fields above>"
+}
+```
+
+Headline keys `sharpe`, `sortino`, `calmar`, `pnl`, and `nav` are rejected
+by the research catalog *before* a notebook can be sealed, so a `metrics`
+blob like the above is not a convention — it is the only shape the code
+will emit.
+
+| Field family | What it binds | Verified by |
+|---|---|---|
+| identity | schema version, run name, producing stage | schema validation at load |
+| provenance | git revision, dirty-worktree flag, runtime, package versions | fields recomputed on re-verify |
+| inputs | config hash, dataset content hash, bar-file hashes | `inputs_sha256`, `bar_files_sha256` |
+| scores | proper scores only | `FORBIDDEN_RESEARCH_METRIC_KEYS` at the catalog |
+| posture | `research_only: true`, `live_pnl_claim: false` | validation gates, fail-closed |
+| seal | `receipt_sha256` over all other fields | `dipcatcher verify-research` |
+
+### Lifecycle of a single forecast
+
+From raw bars to sealed evidence, one forecast passes through eight stages.
+No stage is skippable: a stage that cannot produce its evidence stops the
+run.
+
+```mermaid
+flowchart LR
+  bars["PIT bars"] --> feats["features"]
+  feats --> fc["base forecasters"]
+  fc --> fuse["fusion"]
+  fuse --> opt["constrained optimizer"]
+  opt --> gate["risk gate"]
+  gate --> score["proper-score evaluation"]
+  score --> seal["sealed receipt"]
+```
+
+| # | Stage | Home package | Refuses when |
+|---|---|---|---|
+| 1 | point-in-time panel | `data`, `pit` | late aggregates, duplicate keys, OHLCV violations |
+| 2 | feature build | `features` | lookahead (leakage scan), non-stationary synthetic persistence |
+| 3 | base forecasts | `models`, `quant_models`, `hmm` | non-finite outputs |
+| 4 | fusion | `fusion` | missing forecaster evidence |
+| 5 | optimization | `portfolio` | infeasible constraints; PSD repair is deterministic eigenvalue clipping |
+| 6 | risk gate | `risk`, `pretrade` | breached limits; HMAC key supplied at load time, never stored |
+| 7 | scoring | `research`, `validation` | missing/non-finite metrics; empty panel blob fails scorecard honesty |
+| 8 | sealing | `receipts/` tooling | any of the above; seal recomputed by `verify-research` |
+
+### Choosing a config
+
+All configs live under [`configs/`](configs/) and inherit from
+`base.yaml`; the full per-file table is in [Configuration](#configuration)
+and the census is in the [Appendix](#configs-census).
+
+```mermaid
+flowchart TD
+  S["I want to..."] --> A["run the default gated research pipeline"] --> AR["configs/research.yaml — SYNTHETIC"]
+  S --> B["run the simulated paper loop"] --> BR["configs/paper.yaml — simulated fills"]
+  S --> C["run an event-driven backtest"] --> CR["configs/backtest.yaml — next-open fills"]
+  S --> D["run fully offline"] --> DR["make demo-data, then configs/demo.yaml"]
+  S --> E["check environment readiness"] --> ER["dipcatcher doctor --config <cfg>"]
+  S --> F["freeze a scoring protocol"] --> FR["configs/sota_protocol.yaml — never edit after cited"]
+  S --> G["go live"] --> GR["refused: allow_live raises; see the five conditions"]
+```
+
+### Choosing a make target
+
+Every workflow is a make target; the full reference table is in
+[Testing, CI, and supply chain](#testing-ci-and-supply-chain) and the
+lane-grouped graph is in the [Appendix](#make-target-atlas).
+
+```mermaid
+flowchart TD
+  S["I need to..."] --> L["check style"] --> L2["make lint"]
+  S --> T["check types"] --> T2["make typecheck"]
+  S --> P["run the PR test gate"] --> P2["make test"]
+  S --> F["run everything, including slow"] --> F2["make test-full"]
+  S --> X["run the fx-1 lane"] --> X2["make fx1-gate"]
+  S --> R["re-verify committed receipts"] --> R2["make receipts-reverify"]
+  S --> M["model-check the order lifecycle"] --> M2["make formal"]
+  S --> D["get a labeled offline dataset"] --> D2["make demo-data"]
+  S --> C["check CI parity"] --> C2["make ci"]
+```
+
+### Proper-score field guide
+
+The lab headlines proper scores and calibration tests, never risk-adjusted
+return ratios. Definitions below use `y` for the realized outcome, `F` for
+the predictive CDF, `q` for a predictive quantile at level `tau`, `p` for
+an event probability, and `o` for a 0/1 outcome.
+
+```text
+pinball (quantile) loss, level tau:
+    L_tau(y, q) = (y - q) * (tau - 1{y < q})
+
+CRPS, predictive CDF F, outcome y:
+    CRPS(F, y) = integral_z ( F(z) - 1{z >= y} )^2 dz
+
+PIT value:
+    u = F(y)      over many cases, u ~ Uniform(0, 1) if calibrated
+
+QLIKE, volatility proxy x^2, forecast h:
+    QLIKE = log(h) + x^2 / h
+
+Brier score, probability p, outcome o in {0, 1}:
+    BS = (p - o)^2
+
+ECE, bins B_m:
+    ECE = sum_m ( |B_m| / n ) * | acc(B_m) - conf(B_m) |
+
+Kupiec unconditional coverage, x exceptions in N trials at rate p:
+    LR = -2 * ln( (1-p)^(N-x) p^x / ( (1 - x/N)^(N-x) (x/N)^x ) )
+
+HMM log-likelihood, forward normalizers c_t:
+    ll = sum_t log(c_t)
+```
+
+Why these and not Sharpe: a proper scoring rule is minimized in
+expectation by reporting the true predictive distribution, so a forecaster
+cannot game the headline by being lucky, overfit, or selectively honest.
+Sharpe-style ratios measure a *trading outcome* — which this repository
+has none of, because there is no live trading.
+
+### Honesty enforcement map
+
+The honesty contract is a set of code points, not a policy page. Each row
+names the enforcement point, its mirror on the other side of the
+harness/model boundary, and the check that keeps them honest.
+
+| Rule | Enforced in | Mirrored in | Checked by |
+|---|---|---|---|
+| forbidden headline keys | `quant_fund.research.catalog.registry.FORBIDDEN_RESEARCH_METRIC_KEYS` | `fx1.honesty.FORBIDDEN_HEADLINE_TOKENS` | `tests/fx1/test_honesty_inheritance.py` |
+| SYNTHETIC labeling | CLI prints `DATA_LABEL=SYNTHETIC` | notebook `data_source` field | CI smoke test |
+| no live trading | `runtime.allow_live: true` raises | `docs/INSTITUTIONAL_READINESS.md` five conditions | validation gates, fail-closed |
+| receipt integrity | `dipcatcher verify-research` | committed `receipts/` tree | `make receipts-reverify` |
+| analytics honesty | `validate_analytics_export` fails closed on `live_pnl_claim=true` | `hedge_lab*.yaml` scope comments | test suite + CI |
+| sealed failures kept | blocked receipts stay `valid: true`, `state: "blocked"` | `docs/RECEIPT_VERIFICATION.md` | receipt verifier rules |
+
+### Failure-mode catalog
+
+Common ways a run can go wrong, and the gate that refuses it. None of
+these fail silently.
+
+| Symptom | Likely cause | Gate that catches it |
+|---|---|---|
+| run dies before sealing | unsupported data source or non-finite parameter | config-safety validation |
+| notebook fails verification | edited or corrupted receipt | `verify-research` hash recompute |
+| missing SOTA family rows | catalog drift | versioned 23-family catalog requirement |
+| empty panel blob | DGP mixing | panel-or-skip honesty rule |
+| NAV divergence vs incumbent | qlib `limit_threshold` fallback | documented semantic differences in parity receipt |
+| hindsight leaks in evaluation | vintage cheating | `validation/vintage_eval.py` (VINTAGE-TS) |
+| promotion of synthetic evidence | mislabeled source | fail-closed promotion gate |
+| readiness endpoint red | missing manifest or invalid receipt | `/ready` fail-closed |
+| agent-proposed factor judged by its proposer | referee capture | `validation/agent_referee.py` frozen betting referee |
+| import layering drift | boundary violation | `scripts/check_import_boundaries.py` + arch-guards workflow |
+
+### The five live-evidence conditions as a gate diagram
+
+The five conditions from [Institutional readiness](#institutional-readiness)
+as what they actually are: a single AND gate whose output today is
+BLOCKED.
+
+```mermaid
+flowchart TD
+  c1["1. licensed PIT data source with release + ingestion timestamps"] --> AND{"ALL FIVE present?"}
+  c2["2. broker adapter with authenticated order/fill reconciliation"] --> AND
+  c3["3. non-synthetic holdout + deployment-shaped forward/shadow record"] --> AND
+  c4["4. venue cost/liquidity/borrow/financing/failure-mode measurements"] --> AND
+  c5["5. signed promotion receipt, immutable verifier, explicit live authorization"] --> AND
+  AND -->|"0 of 5 present today"| BLOCKED["BLOCKED — research, backtest, and simulated-paper evidence only"]
+```
+
 ## Institutional readiness
 
 Reproduced verbatim from
@@ -1736,7 +2484,7 @@ schedule and on `workflow_dispatch`.
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
 | `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
@@ -1856,7 +2604,7 @@ third-party audit — read it as such. Its most recent scored snapshot
 (subject commit `0e05f653`, 2026-09-29, one commit before this README's
 own base) reads:
 
-```
+```text
 ╔══════════════════════════════════════════════════╗
 ║  MAJOR   638 / 800                               ║
 ║  MINOR   121 / 200                               ║
@@ -2028,6 +2776,361 @@ repository. It neither relicenses nor claims ownership over:
 
 Where this license and an applicable third-party license conflict as to
 third-party code, the third-party license controls solely for that code.
+
+## Appendix
+
+Reference material that would interrupt the narrative above: an FAQ, a
+glossary, environment variables, complete file censuses, a make-target
+atlas, and a terminal cheat-sheet.
+
+### FAQ
+
+<details>
+<summary><strong>Is this a trading bot?</strong></summary>
+
+No. It is receipt-bound quant research and simulated paper trading. There
+is no broker connectivity anywhere in the tree; setting
+`runtime.allow_live: true` raises by construction. See
+[Read this first](#read-this-first).
+
+</details>
+
+<details>
+<summary><strong>Can I fork or copy it?</strong></summary>
+
+No. The repository is proprietary and all rights reserved; visibility is
+not a license. See [License](#license).
+
+</details>
+
+<details>
+<summary><strong>Why are there no Sharpe ratios in the research headlines?</strong></summary>
+
+Because a Sharpe ratio measures a trading outcome, and this repository has
+no trading outcomes — only proper scores on labeled data. The forbidden
+keys are enforced in code and mirrored across the harness/model boundary;
+see [Honesty enforcement map](#honesty-enforcement-map).
+
+</details>
+
+<details>
+<summary><strong>Where are the fx-1 model weights?</strong></summary>
+
+Nowhere in this tree. No training run has been launched from this
+repository; `LocalFx1Backend.complete()` raises `NotImplementedError`
+until a distilled student exists. See [fx-1](#fx-1).
+
+</details>
+
+<details>
+<summary><strong>Why do the tests outnumber the source files?</strong></summary>
+
+1,277 tracked test files against 900 source files at `e00ab310c`. The
+repository's premise is that claims are only as good as their weakest
+verification, so verification is the largest single area of the tree.
+
+</details>
+
+<details>
+<summary><strong>What happens if I run a config marked SYNTHETIC and present it as real?</strong></summary>
+
+The code fights you: the CLI prints `DATA_LABEL=SYNTHETIC`, the notebook
+records `data_source: synthetic`, SYNTHETIC-as-live fails the promotion
+gate in `quant_fund.validation.gates`, and the CI smoke test fails if the
+notebook says anything else.
+
+</details>
+
+<details>
+<summary><strong>What exactly is a receipt?</strong></summary>
+
+A JSON artifact whose seal field is the SHA-256 of its other fields,
+binding git revision, inputs, code path, and scores. See
+[Anatomy of a sealed receipt](#anatomy-of-a-sealed-receipt).
+
+</details>
+
+<details>
+<summary><strong>What counts as evidence here?</strong></summary>
+
+Committed, hash-sealed, re-verifiable artifacts — never screenshots, prose
+claims, or deleted failures. Failed candidates stay sealed as reviewable
+failures.
+
+</details>
+
+<details>
+<summary><strong>Why are negative results committed?</strong></summary>
+
+So that a failed candidate cannot be silently rerun until it looks better.
+Two published examples are linked in
+[Published negative results](#published-negative-results).
+
+</details>
+
+<details>
+<summary><strong>Can I use my own data?</strong></summary>
+
+Public collection is opt-in via `dipcatcher collect` and needs a network.
+A licensed point-in-time vendor feed is one of the five missing
+live-evidence conditions; the adapter skeleton fails closed without an
+entitlement.
+
+</details>
+
+<details>
+<summary><strong>Does the web explorer verify receipts?</strong></summary>
+
+No. It renders committed fields as stored, labels everything
+`research_only`/simulated, and never re-runs verification — the
+authoritative check is always `dipcatcher verify-research`.
+
+</details>
+
+<details>
+<summary><strong>What is the difference between the harness and fx-1?</strong></summary>
+
+`src/quant_fund` is the lab: data engine, evaluation, verification.
+`src/fx1` is the model lane: corpus, eval, and training manifests for a
+planned fine-tune of `moonshotai/Kimi-K3`. Receipts flow from the first
+into the second as training data.
+
+</details>
+
+### Glossary
+
+| Term | Meaning here |
+|---|---|
+| receipt | hash-sealed JSON artifact binding inputs, code, and scores |
+| seal | the `receipt_sha256` field; recomputed by `verify-research` |
+| notebook | the research-run artifact that gets sealed into a receipt |
+| blocked receipt | a sealed, reviewable failure: `valid: true`, `state: "blocked"` |
+| panel | the point-in-time dataset a research run is built on |
+| PIT | point-in-time: no information visible before its release time |
+| bronze / silver | raw and cleaned parquet layers written by `ingest` |
+| data manifest | hash-binding index over bronze/silver artifacts |
+| proper score | a scoring rule minimized by honest probabilistic forecasts |
+| pinball | quantile loss; scores one predictive quantile |
+| CRPS | continuous ranked probability score; scores the whole CDF |
+| PIT histogram | uniformity check of `F(y)` values; calibration evidence |
+| QLIKE | quasi-likelihood loss for volatility forecasts |
+| Brier | squared error of an event probability |
+| ECE | expected calibration error over confidence bins |
+| Kupiec | unconditional-coverage likelihood-ratio test for exceptions |
+| HMM likelihood | hidden-Markov-model forward log-likelihood |
+| forbidden headline keys | `sharpe`, `sortino`, `calmar`, `pnl`, `nav` in research headlines |
+| dual catalogs | research scorecard vs paper/backtest `analytics_export` — never conflated |
+| family blob | per-family scores in the versioned 23-family SOTA catalog |
+| panel-or-skip | an empty panel blob fails honesty rather than mixing DGPs |
+| DGP | data-generating process; fixture toys are `dgp=fixture` |
+| vintage | the as-of revision state of a datum; VINTAGE-TS audits cheating |
+| walk-forward | evaluation over rolling train/test windows |
+| purge/embargo | removing overlapping samples around split boundaries |
+| CPCV | combinatorial purged cross-validation |
+| HAC | heteroskedasticity- and autocorrelation-consistent inference |
+| DM test | Diebold–Mariano predictive-accuracy test |
+| conformal | distribution-free prediction intervals / sets |
+| e-value / e-BH / e-LORD / e-SAFFRON | anytime-valid multiple-testing layer (waves 12-16) |
+| champion / shadow | incumbent strategy vs candidate, run side-by-side in simulation |
+| kill switch | simulated halt control in the paper loop |
+| next-open fill | backtest fills at the next bar's open, never the signal bar |
+| Almgren–Chriss / TWAP | execution benchmarks compared in simulation |
+| synthetic | generated data for correctness testing; always labeled |
+| `allow_live` | config flag that raises when set — there is no live path |
+| `doctor` | readiness CLI: exit code is the answer |
+| `verify-research` | the authoritative, fail-closed receipt check |
+| corpus line | one JSONL training example for fx-1, receipt-backed |
+| ship gate | statistical promotion bar for fx-1 candidates (paired bootstrap + McNemar) |
+| DPO | direct preference optimization; honesty as native behavior |
+| LoRA / QLoRA | parameter-efficient fine-tuning; v0.x never full-fine-tunes |
+| ZeRO-3 | sharded multi-node training configs, generated never hand-edited |
+| distillation | FINAL_K3 teacher into a smaller servable fx-1 student |
+| verifier ledger | `verifier/vN` acceptance history of the harness itself |
+
+### Environment variables
+
+From [`.env.example`](.env.example); secrets are never committed and
+`doctor`-style commands report presence flags only, never values.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `QUANT_DATA_ROOT` | `data` | data root; doctor requires containment under it |
+| `HF_OHLCV_1M_CACHE` | unset | optional cache dir for `mito0o852/OHLCV-1m` monthly parquet |
+| `MLFLOW_TRACKING_URI` | `./mlruns` | local tracking store |
+| `QUANT_VENDOR_API_KEY` | unset | licensed vendor adapter; unset means fail-closed |
+| `QUANT_API_KEY` | unset | required for non-loopback API access (`X-API-Key`) |
+| `MOONSHOT_API_KEY` | unset | hosted Kimi K3 eval (`make fx1-eval`) |
+| `FX1_SIGNING_KEY` | unset | checkpoint signature enforcement for local fx-1 serving |
+| `DIPCATCHER_OBSERVE` | unset | opt-in audit ledger / observability |
+| `DIPCATCHER_OTEL_ENDPOINT` | `http://127.0.0.1:4318/v1/traces` | OTLP traces endpoint |
+| `DIPCATCHER_METRICS_PORT` | `9464` | metrics port |
+| `DIPCATCHER_METRICS_HOST` | `127.0.0.1` | metrics host (loopback default) |
+| `DIPCATCHER_SIGSTORE_ID_TOKEN` | unset | keyless signing of ledger tree heads; no token, no bundle |
+| `DIPCATCHER_SIGSTORE_INSTANCE` | `production` | sigstore instance selector |
+
+### Receipts census
+
+All 63 tracked files under [`receipts/`](receipts/) at `e00ab310c`,
+generated from `git ls-files receipts`:
+
+<details>
+<summary><strong>Expand the full receipts listing — 55 sealed + 7 legacy-unsealed + 1 README</strong></summary>
+
+```text
+receipts/  (sealed)
+  calib_real_drill.json
+  capacity_eval_cd0854242ed8a9ec.json
+  coherence_2dd641ab766a536a.json
+  concordance_df424fa2f6b1c4e9.json
+  conformal_real_drill_gaussian_minus_conf_t_pinball.json
+  conformal_real_drill_gaussian_pit.json
+  corpus_real_drill.json
+  cost_calibration_eval_df9b8d7068bf709b.json
+  coverage_cs_real_drill.json
+  coverage_real_drill.json
+  cp_real_drill_gaussian_minus_conf_t_pinball.json
+  cp_real_drill_gaussian_pit.json
+  deps_security_hygiene_f3b4e6fd22e439b7.json
+  drift_real_drill_gaussian_minus_conf_t_pinball.json
+  drift_real_drill_gaussian_pit.json
+  emerge_real_drill.json
+  evidence_audit_3464d8f8197bf737.json
+  evidence_audit_d449e1ca0cc119a6.json
+  fast_replay_p42_conformance_20260928.json
+  fleet_eval_5ddf15b0dc7d3ca1.json
+  fleet_race_real_drill.json
+  honest_verdict_real_drill.json
+  lane_power_drill.json
+  lattice_drill_verdict.json
+  lattice_drill_vol_bench_a.json
+  lattice_drill_vol_bench_b.json
+  loss_cs_real_drill_conf_t_vs_empirical.json
+  loss_cs_real_drill_gaussian_vs_conf_t.json
+  mcs_real_drill.json
+  mcs_vol_drill.json
+  monitor_run_drill_clean.json
+  monitor_run_drill_defect.json
+  monitor_run_real_drill.json
+  multih_fleet_eval_5db1cab214e291d7.json
+  nautilus_conformance_7bf19a08c147547b.json
+  panel_audit_real_drill.json
+  rankic_eval_9ebdad7da83e7348.json
+  real_benchmark_us_wide_manifest.json
+  real_benchmark_us_wide_test.json
+  real_benchmark_us_wide_validation.json
+  serial_watch_140b073ea589b0c7.json
+  serial_watch_1e8e1446e506fce1.json
+  serial_watch_2c14615c26efd19b.json
+  serial_watch_46445c3b227aa15e.json
+  serial_watch_47297eff3cb55178.json
+  serial_watch_4f4a495b59d022fb.json
+  serial_watch_771602cd1580476c.json
+  serial_watch_85db152db863d25d.json
+  serial_watch_8977244ef78bfd2f.json
+  serial_watch_a6fd40311ce0fa04.json
+  serial_watch_d311f5ea367a66a9.json
+  serial_watch_dbd21a6c99c81e00.json
+  suite_health_drill.json
+  tail_real_drill.json
+  verdict_real_drill.json
+
+receipts/legacy-unsealed/  (kept for history)
+  adaptive_mix_20asset_1d_20260922.json
+  adaptive_mix_band_search_20asset_1d_20260922.json
+  basis_pair_candidate_20asset_1d_20260922.json
+  basis_reversion_screen_20asset_1d_20260922.json
+  dip_bench_crypto_1d_20260925.json
+  fast_replay_p42_conformance_20260927.json
+  incumbent_bench_qlib.json
+  README.md
+```
+
+</details>
+
+### Configs census
+
+All 25 tracked files under [`configs/`](configs/):
+
+```text
+arch_boundaries.toml        import-layer boundaries, enforced by arch-guards
+backtest.yaml               event-driven backtest; next-open fills
+base.yaml                   root of the inherit chain; allow_live: false
+configs/                    (subdirectory of additional presets)
+cost_aware_tournament.json  frozen tournament slate
+forward_shadow.example.json example forward-shadow strategy definition
+fx1_harness.example.yaml    fx-1 harness smoke config (dummy-zero forecaster)
+fx1_run.example.json        example immutable fx-1 run manifest
+hedge_lab.yaml              paper/backtest analytics catalog (scoped)
+hedge_lab_wide.yaml         wide variant of the above
+net_tournament.json         frozen tournament slate
+paper.yaml                  simulated champion/shadow paper loop
+pretrade_risk.yaml          pre-trade risk snapshot; HMAC key at load time
+production.yaml             historical name; research-strict, NOT live
+demo.yaml                   offline demo dataset config
+demo_minute.yaml            minute-bar offline demo config
+real_benchmark_us_wide.json hash-pinned real-data benchmark manifest
+research.yaml               default SYNTHETIC research run
+sim_live.yaml               real collected bars through the paper loop (simulated fills)
+sota_file.yaml              SOTA lane card; engine-correctness only
+sota_file_uk.yaml           UK variant of the above
+sota_g1.yaml                SOTA lane card; engine-correctness only
+sota_protocol.yaml          frozen scoring contract — never edit after cited
+sota_protocol_v2.yaml       frozen scoring contract v2
+sota_protocol_v2_lanes.yaml frozen scoring contract v2, lanes
+stress_research.yaml        research-only factor book for the stress smoke
+```
+
+### Make target atlas
+
+Lane-grouped view of the workflows; descriptions for each target are in
+[Testing, CI, and supply chain](#testing-ci-and-supply-chain).
+
+```mermaid
+flowchart TD
+  subgraph pr["PR gates"]
+    lint["make lint"] --> ci["make ci"]
+    typecheck["make typecheck"] --> ci
+    test["make test"] --> ci
+  end
+  subgraph fx1lane["fx-1 lane"]
+    fx1lint["make fx1-lint"] --> fx1gate["make fx1-gate"]
+    fx1test["make fx1-test"] --> fx1gate
+    fx1corpus["make fx1-corpus"] --> fx1gate
+    fx1eval["make fx1-eval"] --> fx1gate
+  end
+  subgraph evidence["evidence lane"]
+    receipts["make receipts-reverify"]
+    eaudit["make evidence-audit"]
+    proof["make proof-verify"]
+    formal["make formal"]
+  end
+  subgraph heavy["heavier lanes"]
+    testfull["make test-full"]
+    simtest["make simtest / simtest-large"]
+    perf["make perf-record / perf-check"]
+  end
+```
+
+### Terminal cheat-sheet
+
+```text
++---------------------------------------------------------------------+
+|  dipcatcher — the ten commands that matter                          |
++---------------------------------------------------------------------+
+|  make sync                     frozen env from uv.lock              |
+|  uv run dipcatcher research --config configs/research.yaml          |
+|  uv run dipcatcher verify-research                                  |
+|  uv run dipcatcher doctor --config configs/research.yaml            |
+|  uv run dipcatcher paper --config configs/paper.yaml --max-steps 2  |
+|  make demo-data                labeled offline dataset              |
+|  make lint && make typecheck && make test                           |
+|  make fx1-gate                 fx-1 lane: lint+types+tests+honesty  |
+|  make receipts-reverify        re-verify every committed receipt    |
+|  uv run fx1 corpus build --receipts-dir receipts --out <path>       |
++---------------------------------------------------------------------+
+|  remember: SYNTHETIC is a label, not an insult; live is refused     |
++---------------------------------------------------------------------+
+```
 
 ## Final disclaimer
 

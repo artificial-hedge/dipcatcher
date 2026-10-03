@@ -19,6 +19,8 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from quant_fund.utils.atomicio import atomic_write_text
+
 
 def _sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -96,7 +98,7 @@ def issue_receipt(
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(receipt.model_dump_json(indent=2), encoding="utf-8")
+    atomic_write_text(out, receipt.model_dump_json(indent=2))
     return receipt
 
 

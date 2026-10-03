@@ -138,7 +138,34 @@ def test_ngram_scan_flags_overlapping_example():
     corpus = ["what is the dipcatcher honesty contract for receipts exactly"]
     hits = ngram_containment_scan(corpus, prompts, threshold=0.5)
     assert hits and hits[0].example_index == 0
+    assert hits[0].eval_index == 0
     assert not ngram_containment_scan(["completely unrelated text"], prompts)
+
+
+def test_ngram_scan_catches_eval_item_embedded_in_long_doc():
+    """The dominant contamination shape: a long training doc containing one
+    verbatim eval item. Doc-side denominators miss it (the item is a small
+    fraction of the doc); per-item containment must flag it."""
+    prompt = " ".join(f"evaltok{i}" for i in range(12))
+    padding = " ".join(f"benign{i}" for i in range(300))
+    doc = f"{padding} {prompt} {padding}"
+    hits = ngram_containment_scan([doc], [prompt], threshold=0.9)
+    assert hits and hits[0].containment == pytest.approx(1.0)
+
+
+def test_ngram_scan_unrelated_tokens_do_not_flag():
+    """No shared 8-gram windows → no hit, however much vocab overlaps."""
+    doc = "alpha beta gamma delta epsilon zeta eta theta iota kappa"
+    prompts = [" ".join(f"q{i}" for i in range(12))]
+    assert not ngram_containment_scan([doc], prompts, threshold=0.3)
+
+
+def test_audit_digest_binds_multiset_not_join():
+    """[\"a\\nb\"] and [\"a\", \"b\"] must produce different corpus digests —
+    the join-with-newline scheme collides on embedded newlines."""
+    a = run_contamination_audit(["ab\ncd"], ["prompt x"])
+    b = run_contamination_audit(["ab", "cd"], ["prompt x"])
+    assert a.corpus_sha256 != b.corpus_sha256
 
 
 def test_min_k_probe_inert_without_logprobs():

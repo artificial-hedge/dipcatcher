@@ -1,0 +1,96 @@
+{
+  "kind": "tape_surgery",
+  "schema": "tape_surgery.v1",
+  "ticker": "AMZN",
+  "arms": {
+    "baseline": {
+      "n_kept": 269748,
+      "n_exec": 8974,
+      "n_cancel_delete": 126375,
+      "exec_share": 0.0333,
+      "cancel_exec_ratio": 14.08,
+      "spread_mean_ticks": 21.046,
+      "touch_depth_med_shares": 214.0,
+      "exec_sign_autocorr_lag1": 0.7199,
+      "n_dropped": 0
+    },
+    "drop_liquidity_exits": {
+      "n_kept": 25160,
+      "n_exec": 8355,
+      "n_cancel_delete": 0,
+      "exec_share": 0.3321,
+      "cancel_exec_ratio": 0.0,
+      "spread_mean_ticks": 35.23,
+      "touch_depth_med_shares": 214.0,
+      "exec_sign_autocorr_lag1": 0.73,
+      "n_dropped": 244588
+    },
+    "drop_hidden_execs": {
+      "n_kept": 267303,
+      "n_exec": 8974,
+      "n_cancel_delete": 126375,
+      "exec_share": 0.0336,
+      "cancel_exec_ratio": 14.08,
+      "spread_mean_ticks": 20.929,
+      "touch_depth_med_shares": 214.0,
+      "exec_sign_autocorr_lag1": 0.7199,
+      "n_dropped": 2445
+    },
+    "drop_improve_submissions": {
+      "n_kept": 254357,
+      "n_exec": 8400,
+      "n_cancel_delete": 119265,
+      "exec_share": 0.033,
+      "cancel_exec_ratio": 14.2,
+      "spread_mean_ticks": 82.075,
+      "touch_depth_med_shares": 400.0,
+      "exec_sign_autocorr_lag1": 0.7235,
+      "n_dropped": 15391
+    }
+  },
+  "attribution_deltas": {
+    "drop_liquidity_exits": {
+      "n_kept": -244588,
+      "n_exec": -619,
+      "n_cancel_delete": -126375,
+      "exec_share": 0.2988,
+      "cancel_exec_ratio": -14.08,
+      "spread_mean_ticks": 14.184,
+      "touch_depth_med_shares": 0.0,
+      "exec_sign_autocorr_lag1": 0.0101,
+      "n_dropped": 244588
+    },
+    "drop_hidden_execs": {
+      "n_kept": -2445,
+      "n_exec": 0,
+      "n_cancel_delete": 0,
+      "exec_share": 0.0003,
+      "cancel_exec_ratio": 0.0,
+      "spread_mean_ticks": -0.117,
+      "touch_depth_med_shares": 0.0,
+      "exec_sign_autocorr_lag1": 0.0,
+      "n_dropped": 2445
+    },
+    "drop_improve_submissions": {
+      "n_kept": -15391,
+      "n_exec": -574,
+      "n_cancel_delete": -7110,
+      "exec_share": -0.0003,
+      "cancel_exec_ratio": 0.12,
+      "spread_mean_ticks": 61.029,
+      "touch_depth_med_shares": 186.0,
+      "exec_sign_autocorr_lag1": 0.0036,
+      "n_dropped": 15391
+    }
+  },
+  "notable_attributions": [
+    "drop_liquidity_exits: spread +14.18 ticks",
+    "drop_improve_submissions: spread +61.03 ticks"
+  ],
+  "claim": "event_class_attribution_measured",
+  "interpretation": "Counterfactual microstructure: each arm deletes one event class (with order-id cascading) and re-measures the fact set. The deltas attribute stylized facts to the classes that generate them \u2014 e.g. how much sign memory survives with the cancel channel removed.",
+  "git_revision": "89eb864d67f80f6b6cedc2bedc4a59adf7fec11a",
+  "data_label": "REAL",
+  "research_only": true,
+  "receipt_sha256": "ac3347f09bfe63af637344992cedfee5483bd8ea8fa12759bf649d39a5e150ad"
+}

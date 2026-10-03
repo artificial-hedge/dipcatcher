@@ -1,0 +1,82 @@
+{
+  "claim": "execution_diagnostic_only",
+  "closed_form": {
+    "corwin_schultz_effective_half_spread_bps": 4.040599102981917,
+    "corwin_schultz_half_spread_bps": 4.040599102981917,
+    "corwin_schultz_relative": 0.0008081198205963833,
+    "floor_binds": false
+  },
+  "data_label": "SYNTHETIC",
+  "dataset_sha256": "fc9411e2c91424020dc2b71ab6f394dddb899d5fd9bb8346ac37f925dbf292ce",
+  "dev_only": true,
+  "estimators": [
+    "flat",
+    "corwin_schultz",
+    "abdi_ranaldo",
+    "roll"
+  ],
+  "generated_at": "2026-09-30T13:08:05.561461+00:00",
+  "git_revision": "bd0acf9bb24a5ba460ee205a119942c200f94b90",
+  "half_spread_bps_floor": 1.0,
+  "inputs_sha256": "0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441",
+  "kind": "cost_calibration_eval",
+  "live_pnl_claim": false,
+  "lookback": 20,
+  "n_dates": 20,
+  "n_names": 3,
+  "planted_rel_spread": 0.002,
+  "receipt_sha256": "f130c7e871e9aa649e029c016f980603a0ab9f144db4fed7635b90087fcde3c3",
+  "research_only": true,
+  "results": [
+    {
+      "commission": 625.57417041541,
+      "data_source": "file",
+      "half_spread_bps_floor": 1.0,
+      "impact": 0.0,
+      "n_fills": 38,
+      "research_only": true,
+      "spread": 625.57417041541,
+      "spread_estimator": "flat",
+      "total_cost": 1251.14834083082,
+      "turnover": 0.0
+    },
+    {
+      "commission": 625.1519380423003,
+      "data_source": "file",
+      "half_spread_bps_floor": 1.0,
+      "impact": 0.0,
+      "n_fills": 38,
+      "research_only": true,
+      "spread": 2437.6575722223597,
+      "spread_estimator": "corwin_schultz",
+      "total_cost": 3062.8095102646603,
+      "turnover": 0.0
+    },
+    {
+      "commission": 625.57417041541,
+      "data_source": "file",
+      "half_spread_bps_floor": 1.0,
+      "impact": 0.0,
+      "n_fills": 38,
+      "research_only": true,
+      "spread": 625.57417041541,
+      "spread_estimator": "abdi_ranaldo",
+      "total_cost": 1251.14834083082,
+      "turnover": 0.0
+    },
+    {
+      "commission": 625.5662666663776,
+      "data_source": "file",
+      "half_spread_bps_floor": 1.0,
+      "impact": 0.0,
+      "n_fills": 37,
+      "research_only": true,
+      "spread": 739.1584537248116,
+      "spread_estimator": "roll",
+      "total_cost": 1364.7247203911893,
+      "turnover": 0.0
+    }
+  ],
+  "schema": "cost_calibration.v1",
+  "seed": 7
+}

@@ -1,0 +1,22 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "load_balance": true,
+   "negative_is_refusal": true,
+   "one_positive_one_negative": true,
+   "provenance_carried": true,
+   "stats_account": true,
+   "synthetic_note": true,
+   "violation_skipped_not_emitted": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "6718e9c5d4ce0db71e2117948f22efa58d0aca97",
+ "interpretation": "Corpus contract holds: eligible \u2192 positive with provenance, ineligible \u2192 refusal negatives, honesty-violating renders are skipped not emitted, stats fully account.",
+ "kind": "corpus_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "4dbff8946bb15f821db2d7165539dcd0bfafe376ab4f71242478f9eaaa936655",
+ "research_only": true,
+ "schema": "corpus_audit.v1"
+}

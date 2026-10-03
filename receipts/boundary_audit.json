@@ -1,0 +1,22 @@
+{
+ "claim": {
+  "flagged": [],
+  "invariant": "kernels return documented output or fail closed \u2014 never silent garbage",
+  "n_cells": 80,
+  "n_flagged": 0,
+  "ok": true,
+  "verdict_counts": {
+   "note:overflow": 4,
+   "raise": 28,
+   "value": 48
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "298e05664256befcce445c76b8a0e4167d2a1d4c",
+ "interpretation": "80 kernel\u00d7input cells: all cells returned documented output or failed closed.",
+ "kind": "boundary_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "d811100c9091e4413590464b3eeca76d2db5e28d6b11eaa46bfca98ecb176b05",
+ "research_only": true,
+ "schema": "boundary_audit.v1"
+}

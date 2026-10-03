@@ -457,6 +457,9 @@ def bollinger(close: Array, window: int = 20, num_sd: float = 2.0) -> dict[str, 
     with np.errstate(invalid="ignore", divide="ignore"):
         pctb = (c - lower) / (upper - lower)
         bandwidth = (upper - lower) / mid
+    # %b is undefined on a zero-width band — NaN, not an escaped inf.
+    pctb[~np.isfinite(pctb)] = np.nan
+    bandwidth[~np.isfinite(bandwidth)] = np.nan
     return {
         "mid": mid,
         "upper": upper,

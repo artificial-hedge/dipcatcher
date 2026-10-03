@@ -618,6 +618,10 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
     "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
     "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+    "basis_carry": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "basis_carry_eval": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "crossvenue_basis": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
+    "crossvenue_basis_eval": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
 }
 
 
@@ -901,6 +905,14 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(cost_calibration_contract_errors(payload))
     errors.extend(_tape_binding_errors(payload))
+    if payload.get("schema") == "custody_proof.v1":
+        from quant_fund.research.custody import custody_contract_errors
+
+        errors.extend(custody_contract_errors(payload))
+    if payload.get("schema") == "release_attestation.v1":
+        from quant_fund.research.release_attestation import release_contract_errors
+
+        errors.extend(release_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 

@@ -1,0 +1,81 @@
+{
+  "schema": "initiative_fade.v1",
+  "kind": "initiative_fade",
+  "horizon": 1500.0,
+  "seed": 13,
+  "arms": {
+    "flat": {
+      "p_buy0": 0.5,
+      "p_buy_drift": 0.0,
+      "n_fills": 1970,
+      "exec_buy_share": 0.5050761421319797,
+      "thirds": [
+        {
+          "t_lo": 0.0,
+          "t_hi": 500.0,
+          "n": 633,
+          "buy_share": 0.49447077409162715
+        },
+        {
+          "t_lo": 500.0,
+          "t_hi": 1000.0,
+          "n": 648,
+          "buy_share": 0.558641975308642
+        },
+        {
+          "t_lo": 1000.0,
+          "t_hi": 1500.0,
+          "n": 689,
+          "buy_share": 0.4644412191582003
+        }
+      ]
+    },
+    "drift": {
+      "p_buy0": 0.61,
+      "p_buy_drift": -7.333333333333332e-05,
+      "n_fills": 1923,
+      "exec_buy_share": 0.5247009880395216,
+      "thirds": [
+        {
+          "t_lo": 0.0,
+          "t_hi": 500.0,
+          "n": 648,
+          "buy_share": 0.5817901234567902
+        },
+        {
+          "t_lo": 500.0,
+          "t_hi": 1000.0,
+          "n": 595,
+          "buy_share": 0.5361344537815126
+        },
+        {
+          "t_lo": 1000.0,
+          "t_hi": 1500.0,
+          "n": 680,
+          "buy_share": 0.4602941176470588
+        }
+      ]
+    }
+  },
+  "real_tape_targets": {
+    "exec_buy_share": 0.5357700022286606,
+    "buy_share_early": 0.6109637488947833,
+    "buy_share_late": 0.5024630541871922
+  },
+  "divergences": [
+    "flat_overall=-0.057",
+    "drift_late=-0.084"
+  ],
+  "claims": {
+    "flat_is_flat": true,
+    "drift_fades": true,
+    "drift_early_on_tape": true,
+    "drift_late_on_tape": true,
+    "flat_overall_below_tape": true
+  },
+  "interpretation": "A flat p_buy arm holds buy-initiated share near 0.50 with no systematic early->late fade \u2014 below the tape's 0.536 overall. The drift arm (p_buy_drift=-7.333e-5/s, p_eff walking 0.61->0.50 over 1500s) reproduces the fade ordering: the early third lands near the tape's ~0.61 and the share decays monotonically into the late third. The late third undershoots the tape's ~0.50 (realized share lags p_eff as multi-unit sweeps and queue asymmetry damp buy fills) and the tape's per-bin path is nonlinear \u2014 both residuals are logged as divergences rather than claimed closed.",
+  "git_revision": "5ce60f22c1bb48c3020fb7a9f4992bb72a7316dd",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "ad9f847c20104cc7e202b54ebe3c2efba9ca514c8c1480d72a255b844aecf9a6"
+}

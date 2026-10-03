@@ -44,7 +44,7 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `portfolio/` | Optimizer (infeasible diagnostics), allocators (PSD cov), factor betas (trailing ridge), conformal (chrono split), attribution (prev-bar weights) | #332 non-PSD refusal, fingerprint framing |
 | `pretrade/` | Hot risk-gate surface | #287 (child audit doc) |
 | `proof/` | HMAC env-only, merkle canonical dumps | — |
-| `research/` | All 62 modules (child lane, `AUDIT_RESEARCH.md` on #341): receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below) |
+| `research/` | 62 modules audited via `AUDIT_RESEARCH.md` on #341 (receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling); +51 modules built this campaign, each shipped with sealed receipts + contract tests: 19-lane sequential-inference suite (e-processes, MCS, monitors — #380-#410), `receipt_lattice` cross-claim determinism (#414), `corpus_epoch` hash-chained membership root + committed head pins (quality/epoch_heads.json — rollback fails closed), `crown_jewels` byte-pin over gate-defining files (coverage set is code-defined — the pin cannot silently shrink), `admission` gate | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below); #394 `changepoint_localize` max-over-candidates level inflation (Bonferroni-fixed); #380 e-process clipped-bet supermartingale violation (sign-bet fix) |
 | `proofcore/` | Hash-chain export ordering | #279 wall-clock → genesis walk |
 | `quant_models/` | BS/Greeks/GEX/HRP/TSMOM/risk-parity/MC; causal TSMOM, honest receipts | — |
 | `reality/` | Bailey–LdP PSR/DSR/MinTRL, CSCV/PBO ω-logit, SPA, BH-FDR — all verified against papers | — |
@@ -66,17 +66,18 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 
 ## fx1 (the gated product — `quality/audit_coverage_fx1.json`)
 
-Parallel manifest, same schema + ratchet tests: 65/66 modules `audited`
-(`__init__.py` waived as package surface). Directory pins: eval 14, forecast
-11, bench 3, serve 5, data 14, train 9; root modules audited individually.
+Parallel manifest, same schema + ratchet tests: 115/116 modules `audited`
+(`__init__.py` waived as package surface). Directory pins: eval 28, forecast
+14, bench 5, serve 14, data 20, train 13; root modules audited individually.
 
 | Area | Verified | Findings → fix |
 |---|---|---|
 | `honesty.py` + `data/` | Child audit — regex evasions, corpus screening, contamination floor, vacuous honesty gate | #321 |
 | `eval/` | Deterministic seeded banks, contract-validated prompts, unparseable answers counted (never propagated), degenerate forecasts fail closed NaN, `passed` requires finite ECE AND finite \|Z\| | — |
-| `serve/` | HMAC-env signing (never hardcoded), fail-closed compare_digest verify, structural TEE + zkML manifests with honest crypto delegation | #321 (TEE existence-only status) |
+| `serve/` | HMAC-env signing (never hardcoded), fail-closed compare_digest verify, structural TEE + zkML manifests with honest crypto delegation; consumption lanes: BYOK OpenAI-compat backend (fail-closed creds, temp-0 wire), harness HTTP API (auth/loopback-only, body cap, batch + SSE stream routes gated before bytes leave), `sdk.py` in-process twin, `parity_audit` — SDK↔API↔HarnessClient byte-identical content/envelope/errors/verifier over one injected backend + in-flight cap; `e2e_audit` — full lifecycle over real loopback sockets (stub OpenAI engine + uvicorn + production middleware), auth/gate/size-cap faults survive the wire; `contract_audit` — OpenAPI surface pinned to a committed golden (routes/methods/params/responses/body-required), additive+breaking drift fails the seal | #839 |
 | `bench/` + `forecast/` | `bench/dip.py` verified: causal dip detection (fires below running peak only), recovery windows bounded at data end → `None` never imputed, out-of-range probabilities raise, `assert_bench_output_honest` mirrors the forbidden-token contract inside the bench itself; `forecast/evaluate.py`: `assert_no_label_overlap` per fold, walk-forward fails closed on empty folds, finite-masked metrics; `runner.py` decision-time machinery (`_at_decision`, late-release flag) | — |
 | `train/` + root modules | `train/pipeline.py`: hard stage gates, mandatory pre-training honesty gate (`eval_base` blocks TRAIN when `honesty_gate_passed` is false), corpus dedup/decontamination vs eval prompts, frozen split manifest; `train/receipts.py`: receipt pins SHA-256 of config/corpus/split/eval_base + git rev + dirty flag + env fingerprint with forced `live_pnl_claim=False`/`research_only=True`; `default_trainer` fails closed (no local GPU trainer — injectable); `reward.py`: executable honesty-contract reward (forbidden-headline/live-claim/synthetic-unlabeled → low score); `hypotheses.py`: only gate-resolved traces admissible; `mrm.py`: dossier sections cite artifact hashes, missing artifact fails closed | — |
+| wave-3 depth pass — all 66 files | Full re-verification of every module against fail-closed/no-silent-pass/no-forbidden-metric contracts; evidence in `docs/AUDIT_FX1_WAVE3.md` | 26 defects fixed, incl. `eval_prompt_surface` bare-global `NameError` + user-only role filter, windowed near-dup dedup (`[-500:]` evasion), boundary-ambiguous split hashing, vacuous frozen-split/contamination-audit passes, truthy non-bool `research_only`/`live_pnl_claim` evasion, unverified `verify_ok` traces, free-form ledger hashes, 1500-char notebook truncation, non-date `as_of` PIT keys, honesty-gate reporting-verb phrasing, trace-score substring evasion, dip recovery off-by-one, silent out-of-universe forecast drops, normalized-key bench evasion, `eval_base` hash taken on faith (now re-verified vs receipt), eval gate checking only the top flag, non-atomic evidence writes across mrm/bench/train, `--config` containment bypass, null→`"None"` completion coercion |
 
 ## Rules
 

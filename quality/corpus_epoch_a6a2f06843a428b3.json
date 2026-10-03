@@ -1,0 +1,45 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "5cf547d54916fb6955d6bdd8af3c1e7f6b6015a2dc775ca8e3f0de0fc2ef80ba",
+  "inputs_sha256": "5f5ba69a36a374769a3cced3c5c0b6823b34b46c1011dee883d80dad8aa993bd",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [
+    {
+      "name": "audit_coverage.json",
+      "sha256": "55b86a5eb518a34f27dbab49d986383f50cb1f8cb340b6416b15006e827fa84a"
+    },
+    {
+      "name": "audit_coverage_fx1.json",
+      "sha256": "fc8fd25fc58d928284effa716493741a0a873f83451d2f962b7904a4c475d061"
+    },
+    {
+      "name": "corpus_epoch_5da8d034442419cd.json",
+      "sha256": "7da46746f1e3ec217f0a4926787a950fbfbb501f106b19af4ef5d69c06154b6b"
+    },
+    {
+      "name": "lattice_known_inconsistent.json",
+      "sha256": "0b8a1221b7133842211d9d9d085fd166119b896706b79921587341bd3f247c58"
+    },
+    {
+      "name": "legacy_quarantine.json",
+      "sha256": "1614aced1a4eb83f36ee0e006debe1f3617c987b4a87ce6ba858e699952ecd7b"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_5da8d034442419cd.json"
+  ],
+  "members_removed": [],
+  "n_members": 5,
+  "params": {
+    "head_sha": "f1de46b1f316e8250ec3be08b2f3e7d69f8685a9",
+    "pattern": "*.json"
+  },
+  "prev_epoch_receipt": "corpus_epoch_5da8d034442419cd.json",
+  "prev_epoch_sha256": "e0d284057e8f77aa2940b5a6a6947a499c628009a61fd8ecd1ef7192391aa144",
+  "receipt_sha256": "a6a2f06843a428b35784397c428e1d705fa7b00ce9cf5e2a010acf4644a2bffc",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

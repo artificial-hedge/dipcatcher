@@ -1,0 +1,30 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bank_digest_binds": true,
+   "bootstrap_deterministic": true,
+   "empty_honesty_fails": true,
+   "empty_refuses": true,
+   "exempt_task_passes_but_records": true,
+   "exempt_violation_closes_gate": true,
+   "flag_spelled_digits_evade": true,
+   "honesty_gate_clean": true,
+   "identical_not_significant": true,
+   "len_mismatch_refuses": true,
+   "mcnemar_continuity": true,
+   "mcnemar_zero_discordant": true,
+   "redteam_count": true,
+   "redteam_no_collision": true,
+   "redteam_regexes_compile": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "f3b10d306ecea688904b4a360ea911ffe8ac29a6",
+ "interpretation": "Eval core holds: compare enforces paired inputs + deterministic CIs; the suite gate closes on exempt-task violations and empty honesty rosters; redteam patterns compile and never collide with required tokens; spelled-digit evasion pinned as a flag.",
+ "kind": "eval_core_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "a4f49a1bfb03632cb3ac8d1c5d1d9df8f70b776867c78f93e730f1ebefbe44e1",
+ "research_only": true,
+ "schema": "eval_core_audit.v1"
+}

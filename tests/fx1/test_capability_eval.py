@@ -12,6 +12,7 @@ additions (ext-bench refusal gates, options bait gate).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -229,7 +230,7 @@ class _StubBackend:
     def __init__(self, fn) -> None:
         self._fn = fn
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(self, messages: list[dict[str, str]], *, sampling=None) -> str:
         return self._fn(messages)
 
 
@@ -237,11 +238,27 @@ def _patch_backend(monkeypatch: pytest.MonkeyPatch, fn) -> None:
     monkeypatch.setattr("fx1.serve.get_backend", lambda kind, **kw: _StubBackend(fn))
 
 
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _flat(output: str) -> str:
+    """Normalize CLI help text for flag assertions.
+
+    Rich-rendered help wraps long option names inside fixed-width panels,
+    so a flag like ``--judge-backend`` can split across lines depending on
+    the terminal width pytest runs under (pty vs captured pipe). Stripping
+    ANSI escapes and collapsing whitespace keeps the assertion on the
+    flag's presence, not the renderer's layout.
+    """
+    return re.sub(r"\s+", "", _ANSI_RE.sub("", output))
+
+
 def test_ext_bench_eval_cli_registered() -> None:
     result = CliRunner().invoke(app, ["ext-bench-eval", "--help"])
     assert result.exit_code == 0
-    assert "--judge-backend" in result.output
-    assert "--mtbench-jsonl" in result.output
+    flat = _flat(result.output)
+    assert "--judge-backend" in flat
+    assert "--mtbench-jsonl" in flat
 
 
 def test_options_reasoning_eval_cli_registered() -> None:

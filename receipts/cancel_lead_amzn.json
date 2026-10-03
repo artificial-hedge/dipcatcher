@@ -1,0 +1,138 @@
+{
+  "claim": "touch_cancels_lead_mid_real_vs_sim",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_drift1s_0.010_vs_0.177",
+    "regime_drift1s_0.005_vs_0.177",
+    "split_drift1s_0.014_vs_0.177"
+  ],
+  "git_revision": "415fd3845c271add9674c035515d71734ae68f40",
+  "interpretation": "Cancels within 2 ticks of the own-side touch (pre-event official row); signed drift = resting_side * (mid(t+h) - mid(t)) in ticks. Negative mean = price moved against the cancelled order \u2014 informed withdrawal. Positive mean (the real-tape finding: +0.10 to +0.25 ticks over 0.1-5s, share_adverse 0.24-0.42) = cancels FOLLOW the move \u2014 the book re-centers and stale quotes get pulled to re-quote closer (order_revision's cycle). Sim cancels are on an independent Poisson clock, so drift ~0 is the null.",
+  "kind": "cancel_lead",
+  "real": {
+    "n_cancels_at_touch": 30739,
+    "ok": true,
+    "per_horizon": {
+      "0.1s": {
+        "mean_signed_drift_ticks": 0.1003676350977649,
+        "median_signed_drift_ticks": 0.0,
+        "n": 30737,
+        "share_adverse": 0.23948335881836225
+      },
+      "0.5s": {
+        "mean_signed_drift_ticks": 0.1460712542703758,
+        "median_signed_drift_ticks": 0.0,
+        "n": 30735,
+        "share_adverse": 0.2883032373515536
+      },
+      "1.0s": {
+        "mean_signed_drift_ticks": 0.1772267239415536,
+        "median_signed_drift_ticks": 0.0,
+        "n": 30729,
+        "share_adverse": 0.32519769598750364
+      },
+      "5.0s": {
+        "mean_signed_drift_ticks": 0.24862391297267367,
+        "median_signed_drift_ticks": 0.0,
+        "n": 30703,
+        "share_adverse": 0.4207080741295639
+      }
+    }
+  },
+  "receipt_sha256": "d8ce544754dfddca3494b1b50c18a6f407b41ac06ebfb62c5ca52e8913b555af",
+  "research_only": true,
+  "schema": "cancel_lead.v1",
+  "sim_arms": {
+    "iid": {
+      "n_cancels_at_touch": 5358,
+      "ok": true,
+      "per_horizon": {
+        "0.1s": {
+          "mean_signed_drift_ticks": 0.010467289719632055,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5350,
+          "share_adverse": 0.09981308411214954
+        },
+        "0.5s": {
+          "mean_signed_drift_ticks": 0.014299065420565539,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5350,
+          "share_adverse": 0.12411214953271028
+        },
+        "1.0s": {
+          "mean_signed_drift_ticks": 0.010186915887856344,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5350,
+          "share_adverse": 0.1560747663551402
+        },
+        "5.0s": {
+          "mean_signed_drift_ticks": 0.029400749063664428,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5340,
+          "share_adverse": 0.2687265917602996
+        }
+      }
+    },
+    "regime": {
+      "n_cancels_at_touch": 5076,
+      "ok": true,
+      "per_horizon": {
+        "0.1s": {
+          "mean_signed_drift_ticks": 0.005292590373473738,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5007,
+          "share_adverse": 0.10585180746954265
+        },
+        "0.5s": {
+          "mean_signed_drift_ticks": 0.002896524170989333,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5006,
+          "share_adverse": 0.1330403515781063
+        },
+        "1.0s": {
+          "mean_signed_drift_ticks": 0.00529682190685533,
+          "median_signed_drift_ticks": 0.0,
+          "n": 5003,
+          "share_adverse": 0.1591045372776334
+        },
+        "5.0s": {
+          "mean_signed_drift_ticks": 0.007622868605817361,
+          "median_signed_drift_ticks": 0.0,
+          "n": 4985,
+          "share_adverse": 0.2818455366098295
+        }
+      }
+    },
+    "split": {
+      "n_cancels_at_touch": 2954,
+      "ok": true,
+      "per_horizon": {
+        "0.1s": {
+          "mean_signed_drift_ticks": 0.015587044534409135,
+          "median_signed_drift_ticks": 0.0,
+          "n": 2470,
+          "share_adverse": 0.1311740890688259
+        },
+        "0.5s": {
+          "mean_signed_drift_ticks": 0.02281059063136118,
+          "median_signed_drift_ticks": 0.0,
+          "n": 2455,
+          "share_adverse": 0.1564154786150713
+        },
+        "1.0s": {
+          "mean_signed_drift_ticks": 0.014338385907405446,
+          "median_signed_drift_ticks": 0.0,
+          "n": 2441,
+          "share_adverse": 0.1921343711593609
+        },
+        "5.0s": {
+          "mean_signed_drift_ticks": 0.039344959591641845,
+          "median_signed_drift_ticks": 0.0,
+          "n": 2351,
+          "share_adverse": 0.3185878349638452
+        }
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

@@ -1,7 +1,7 @@
 {
   "directories": {
     "api": {
-      "n_modules": 3,
+      "n_modules": 7,
       "status": "audited"
     },
     "audit": {
@@ -24,12 +24,12 @@
       "status": "audited"
     },
     "compute": {
-      "n_modules": 3,
+      "n_modules": 7,
       "status": "audited"
     },
     "config": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 3,
+      "n_modules": 7,
       "status": "audited"
     },
     "data": {
@@ -38,12 +38,12 @@
       "status": "audited"
     },
     "diffbacktest": {
-      "n_modules": 5,
+      "n_modules": 8,
       "status": "audited"
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 8,
+      "n_modules": 14,
       "status": "audited"
     },
     "features": {
@@ -51,11 +51,11 @@
       "status": "audited"
     },
     "formal": {
-      "n_modules": 4,
+      "n_modules": 8,
       "status": "audited"
     },
     "fusion": {
-      "n_modules": 2,
+      "n_modules": 7,
       "status": "audited"
     },
     "hedge_lab": {
@@ -64,12 +64,12 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 4,
+      "n_modules": 8,
       "status": "audited"
     },
     "labels": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 4,
+      "n_modules": 7,
       "status": "audited"
     },
     "leakage": {
@@ -91,30 +91,30 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 75,
+      "n_modules": 107,
       "status": "audited"
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 9,
+      "n_modules": 180,
       "status": "audited"
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 209,
+      "n_modules": 778,
       "status": "audited"
     },
     "monitoring": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 4,
+      "n_modules": 7,
       "status": "audited"
     },
     "native": {
-      "n_modules": 2,
+      "n_modules": 7,
       "status": "audited"
     },
     "northset": {
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "observe": {
@@ -130,12 +130,12 @@
       "status": "audited"
     },
     "pipeline": {
-      "n_modules": 21,
+      "n_modules": 23,
       "status": "audited"
     },
     "pit": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "portfolio": {
@@ -166,21 +166,21 @@
       "status": "audited"
     },
     "registry": {
-      "n_modules": 2,
+      "n_modules": 7,
       "status": "audited"
     },
     "reporting": {
-      "n_modules": 4,
+      "n_modules": 6,
       "status": "audited"
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 122,
+      "n_modules": 264,
       "status": "audited"
     },
     "risk": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "robustness": {
@@ -235,6 +235,9 @@
       "status": "audited"
     },
     "backtest/event_sim/simulator.py": {
+      "status": "audited"
+    },
+    "parity_leak_audit.py": {
       "status": "audited"
     },
     "public.py": {

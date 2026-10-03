@@ -1,0 +1,82 @@
+{
+  "kind": "cache_audit",
+  "schema": "cache_audit.v1",
+  "git_revision": "94836f167cf654fb122134e3d6102083f1fec98d",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "mutated inputs never collide; bound is respected; get returns what put stored",
+    "verdict": "ok",
+    "n_checks": 12,
+    "n_violations": 0
+  },
+  "interpretation": {
+    "n_checks": 12,
+    "n_violations": 0,
+    "verdict": "ok",
+    "checks": [
+      {
+        "check": "layout:c_copy_equal",
+        "ok": true,
+        "detail": "identical C-order copy"
+      },
+      {
+        "check": "layout:forder_hit",
+        "ok": true,
+        "detail": "ascontiguousarray normalizes F-order to the same key"
+      },
+      {
+        "check": "layout:transpose_distinct",
+        "ok": true,
+        "detail": "transposed logical content must differ"
+      },
+      {
+        "check": "layout:strided_slice_distinct",
+        "ok": true,
+        "detail": "sliced view is different content"
+      },
+      {
+        "check": "mutation:value_flip",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "mutation:bit_flip_same_dtype",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "mutation:tag_change",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "roundtrip",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "miss_absent",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "bound:len",
+        "ok": true,
+        "detail": "len=4"
+      },
+      {
+        "check": "bound:lru_order",
+        "ok": true,
+        "detail": "oldest evicted, newest kept"
+      },
+      {
+        "check": "edge:empty_and_scalar",
+        "ok": true,
+        "detail": ""
+      }
+    ]
+  },
+  "receipt_sha256": "15aec0437aa0db146beec603f8b0324c2bbb70e98e14dbf9a8fbc15e705914ac"
+}

@@ -1,0 +1,28 @@
+{
+ "claim": {
+  "invariant": "schema drift is detectable from the fingerprint + compat report",
+  "verdict": "ok"
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "b76f162030cdf6955eaed103212cc17b84cb17a6",
+ "interpretation": {
+  "legacy_report": {
+   "extra_keys": [
+    "retired_section.old_key"
+   ],
+   "missing_required": 0,
+   "type_mismatches": [
+    "costs.half_spread_bps",
+    "runtime.allow_live"
+   ],
+   "verdict": "type_drift"
+  },
+  "n_schema_keys": 244,
+  "schema_fingerprint": "b2a2774625521efa9a2b0d810269167484ed3bf2d88abf6e9ce390f8d7eb78c4"
+ },
+ "kind": "schema_fingerprint",
+ "live_pnl_claim": false,
+ "receipt_sha256": "81e9d8806a72fa49bcc5ce489f1bfdc2ac61747664ce51bb550488befb01dc08",
+ "research_only": true,
+ "schema": "schema_fingerprint.v1"
+}

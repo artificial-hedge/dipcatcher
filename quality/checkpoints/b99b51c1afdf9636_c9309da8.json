@@ -1,0 +1,39 @@
+{
+  "algorithm": "ed25519",
+  "key_id": "bc3bcff676056adf",
+  "payload": {
+    "at": "2026-09-29T22:39:03+00:00",
+    "heads": {
+      ".github/workflows/*.yml": {
+        "receipt": "corpus_epoch_db9f2a0717a5b548.json",
+        "sha256": "e98969506361bbcc74db32eb4b5cbd2c6ad74482962ca5752e5db4fb41f4bed0"
+      },
+      "configs/*": {
+        "receipt": "corpus_epoch_04c0883bc2991757.json",
+        "sha256": "08fbe933abe93516eea0acd20e4b49483646934af2648f8a2c9382240d33aee9"
+      },
+      "quality/*.json": {
+        "receipt": "corpus_epoch_0bf6fbdca5c5971a.json",
+        "sha256": "8390795eb76441029c3703ca46cf964ebcb80e259860ca10912e04ce2ec4c4b5"
+      },
+      "receipts/*.json": {
+        "receipt": "corpus_epoch_96ba030697ddf0ff.json",
+        "sha256": "d58f0f036520565d076e26b9830c8a8ac49d47595cd4c1af1e7b6160c547394f"
+      },
+      "verifier/*.md": {
+        "receipt": "corpus_epoch_116efbbc345c6c1a.json",
+        "sha256": "d6e2f55518aa18571e4b1d00af93a37c87b09ecf221ffb7fc093e9d69bae3dc5"
+      }
+    },
+    "missing_pins": [],
+    "pins": {
+      "gate_pins.sig": "f14f61477b1d3d78df6e0fc7a8a5c2227d90bc41e8113a9dd70fb5a6f6bbe3a7",
+      "quality/crown_jewels.json": "6718b3653a87b35023f1bcae946506d02b48dc8ec1f1ada5c314411fc539a32a",
+      "quality/epoch_heads.json": "d49a788b141b94c1d120161aa980d1192c94d457f6f98e9932950945708d5670"
+    },
+    "prev_sha256": "2cc6639ebc2e93342d3f46701b845c626987876ac249541bdb5ddbfe50b6bdb5",
+    "schema": "integrity_checkpoint.v1"
+  },
+  "schema": "integrity_checkpoint_sig.v1",
+  "signature": "2c8fdb275ac73bc9d108cb67afc301da3ed65c5b484b40f12f93d4cfd51ff5fbb6a9c6cf4017700622810fd4e319e30ac526993302f2da3fce92975bd0807407"
+}

@@ -1,0 +1,60 @@
+{
+  "claim": {
+    "atm_skew_h10": [
+      6.1971581078247215,
+      4.061120307712935,
+      3.2050002627335115,
+      2.145389256877615
+    ],
+    "atm_skew_h45": [
+      2.881724424217056,
+      1.8301252338910403,
+      1.913310838861957,
+      1.5043246702998938
+    ],
+    "maturities": [
+      0.019230769230769232,
+      0.041666666666666664,
+      0.08333333333333333,
+      0.25
+    ],
+    "mean_terminal": 0.9992897205445291,
+    "n_passed": 7,
+    "n_probes": 7,
+    "ok": true,
+    "results": {
+      "all_fits_finite": true,
+      "flat_h_power_law": true,
+      "gbm_limit_flat": true,
+      "martingale": true,
+      "skew_power_law": true,
+      "smile_smirking": true,
+      "volterra_variance_shape": true
+    },
+    "skew_exponent": {
+      "measured": -0.4051344082506594,
+      "theoretical": -0.4
+    },
+    "skew_exponent_h45": {
+      "measured": -0.22521051066217565,
+      "theoretical": -0.04999999999999999
+    },
+    "volterra_variance_ratio": {
+      "mid_max": 0.8673212284613591,
+      "mid_min": 0.7864566293678917
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "interpretation": "Rough Bergomi under the BLP hybrid scheme (kappa=1): the Volterra driver's variance shape is self-checked against Volterra theory, the H->0.5 limit flattens the smile, and the short-maturity ATM skew exponent is measured against the Fukasawa T^(H-1/2) law. SYNTHETIC model-correctness evidence; no market claims.",
+  "kind": "rough_vol",
+  "live_pnl_claim": false,
+  "params": {
+    "n_paths": 12000,
+    "n_steps": 100,
+    "seed": 91
+  },
+  "receipt_sha256": "5d4a09a1e284db4546ab5d98f7fa5b4969b9e70399d8cc00c3886685d557837d",
+  "research_only": true,
+  "schema": "rough_vol.v1"
+}

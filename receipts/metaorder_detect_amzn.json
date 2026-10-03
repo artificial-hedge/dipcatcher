@@ -1,0 +1,41 @@
+{
+  "claim": "metaorder_structure_detected",
+  "data_label": "MIXED",
+  "detector": {
+    "gap_s": 1.0,
+    "min_len": 3
+  },
+  "divergences": [
+    "clustered_fill_share_gap_+0.60"
+  ],
+  "git_revision": "bca3ee98f009745bacd10cb8055f24befae7f65e",
+  "interpretation": "Gap-clustered same-sign runs proxy metaorders. On sim the detector's precision/recall are ground-truth-scored against SplitFlow's burst flags; on the tape the recovered count and size distribution are discovered structure.",
+  "kind": "metaorder_detect",
+  "real": {
+    "buy_share": 0.5134,
+    "clustered_fill_share": 0.7609,
+    "max_fills_per_meta": 99,
+    "mean_duration_s": 0.317,
+    "mean_fills_per_meta": 6.77,
+    "n_execs": 8974,
+    "n_metaorders": 1009,
+    "p95_fills_per_meta": 17.0
+  },
+  "receipt_sha256": "8f4d36abc31dc0e5448e730f37f5ca5d0969281e3e0ff1d34e84bdc8e3e197f3",
+  "research_only": true,
+  "schema": "metaorder_detect.v1",
+  "sim": {
+    "buy_share": 0.5126,
+    "clustered_fill_share": 0.165,
+    "max_fills_per_meta": 7,
+    "mean_duration_s": 1.208,
+    "mean_fills_per_meta": 3.53,
+    "n_execs": 4254,
+    "n_metaorders": 199,
+    "n_true_children": 2826,
+    "p95_fills_per_meta": 6.0,
+    "precision": 0.9473,
+    "recall": 0.2353
+  },
+  "ticker": "AMZN"
+}

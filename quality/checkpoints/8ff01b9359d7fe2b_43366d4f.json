@@ -1,0 +1,50 @@
+{
+  "algorithm": "ed25519",
+  "key_id": "bc3bcff676056adf",
+  "payload": {
+    "at": "2026-09-29T23:45:59+00:00",
+    "code": {
+      "revision": "950df4b3a24aadacab11453ff41e2f077288cbb9",
+      "worktree_sha256": "32d7c1518893094c142076f4e14d6f0940a41e4d834f81d16ba395bb6466308e"
+    },
+    "heads": {
+      ".github/workflows/*.yml": {
+        "receipt": "corpus_epoch_909054c1b0499ef9.json",
+        "sha256": "c5f024b2d3f3c20d2c1fe0d6b8df40769a65dec04dafc5a6805e106f0ee16817"
+      },
+      "configs/*": {
+        "receipt": "corpus_epoch_0f9752e7c31f8596.json",
+        "sha256": "c59780d853d0f62d924a3bb673430c93ef060ecb8be9fc006a0c7fa5b815a479"
+      },
+      "quality/*.json": {
+        "receipt": "corpus_epoch_d7ca8a37b299e9e8.json",
+        "sha256": "f04fa8a3e0869b8ee9ba11cd65b7729b43cb455468939ba6cd74252306bb5600"
+      },
+      "receipts/*.json": {
+        "receipt": "corpus_epoch_404d16a7af1d3862.json",
+        "sha256": "24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2"
+      },
+      "verifier/*.md": {
+        "receipt": "corpus_epoch_30b5409791dfb780.json",
+        "sha256": "34b16b214c1cb7d47f5ca7fe6ecd5f49d90a1755e53bbf0bc01f36f49de0f453"
+      }
+    },
+    "missing_pins": [],
+    "pins": {
+      "gate_pins.sig": "e04bc0327d4c455916c8dc1e6a1d106bb0761f8d99ee2106007aaa73a883bf2b",
+      "quality/crown_jewels.json": "3aec24b225e3bf10ba538191b6f820b77106235d1ab404dc5b47814ccc357eb8",
+      "quality/epoch_heads.json": "8e8db8164c0c2102d2bfd2db108dc2b27fdcec64a39e89a932680f57a4b84a34"
+    },
+    "prev_sha256": "7f17760b39036b35fb976260ac362f91f8ae3797551682ac5b4365bc89d22100",
+    "schema": "integrity_checkpoint.v1",
+    "spine": {
+      "n_archives": 17,
+      "tip": "fad143c7b9ee1315_0ce3b232.json"
+    },
+    "witness": {
+      "n_proofs": 26
+    }
+  },
+  "schema": "integrity_checkpoint_sig.v1",
+  "signature": "1e9a7e04345ffa1e95e19d83007cc4684ddada5319724877d58a4b2eca8ed3354f3e05853123b1e71a115efdccb2bda56a6ee5bf470f13e8f4d86648534e7b0c"
+}

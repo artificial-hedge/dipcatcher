@@ -422,7 +422,9 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
             response = await call_next(request)
         elif cfg.api_key:
             provided = request.headers.get("X-API-Key")
-            if not provided or not hmac.compare_digest(provided, cfg.api_key):
+            if not provided or not hmac.compare_digest(
+                provided.encode("utf-8"), cfg.api_key.encode("utf-8")
+            ):
                 response = JSONResponse(
                     status_code=401, content={"detail": "invalid or missing X-API-Key"}
                 )
@@ -515,7 +517,9 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         root = cfg.receipts_dir
         if not root.is_dir():
             return []
-        return sorted(_contained(root, p) for p in root.glob("*.json") if p.is_file())
+        from quant_fund.utils.receipt import verified_corpus_files
+
+        return sorted(_contained(root, p) for p in verified_corpus_files(root))
 
     def _iter_result_dirs() -> list[tuple[str, str, Path]]:
         metadata = _contained(cfg.data_root, cfg.metadata_dir)

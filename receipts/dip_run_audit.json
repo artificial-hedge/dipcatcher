@@ -1,0 +1,33 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "empty_raises": "raise:FileNotFoundError",
+   "events_found": true,
+   "honesty_fields": true,
+   "in_sample_labeled": true,
+   "input_digests_64": true,
+   "inputs_bound": true,
+   "metrics_under_honesty_gate": true,
+   "per_asset_counts": {
+    "AAA": {
+     "bars": 320,
+     "events": 1
+    },
+    "BBB": {
+     "bars": 320,
+     "events": 1
+    }
+   },
+   "tamper_changes_pin": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "8b9c792735544a4128d49178ca0caf197b15a01c",
+ "interpretation": "Bench-runner contract holds: inputs content-pinned, tampering changes pins, honesty fields hardcoded, in-sample climatology labeled, empty dirs fail closed.",
+ "kind": "dip_run_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "c2bf93fe77d265a14b82a381150353384b9db53eb1e0c73a277aebed4f80fbaf",
+ "research_only": true,
+ "schema": "dip_run_audit.v1"
+}

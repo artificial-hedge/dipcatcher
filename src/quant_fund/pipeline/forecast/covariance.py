@@ -38,6 +38,7 @@ from quant_fund.models.covariance import (
     OPTIMIZER_COVARIANCE_HOMOSKEDASTIC_PROXY,
     OPTIMIZER_COVARIANCE_LEDOIT_WOLF,
     OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR,
+    OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
     OPTIMIZER_COVARIANCE_OAS,
     OPTIMIZER_COVARIANCE_OBJECT_DIAGONAL_PROXY,
     OPTIMIZER_COVARIANCE_OBJECT_TRAILING,
@@ -45,6 +46,7 @@ from quant_fund.models.covariance import (
     OPTIMIZER_COVARIANCE_SPEC_DIAGONAL_PROXY,
     OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF,
     OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_NONLINEAR,
+    OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST,
     SAMPLE_SPEC_UNBIASED,
     adcc,
     agdcc,
@@ -56,6 +58,7 @@ from quant_fund.models.covariance import (
     ewma,
     ledoit_wolf,
     ledoit_wolf_nonlinear,
+    ledoit_wolf_quest,
     oas,
     repair_psd,
     require_implemented_optimizer_covariance,
@@ -374,6 +377,62 @@ def _named_ledoit_wolf_nonlinear_optimizer_estimate(
     )
 
 
+def _named_ledoit_wolf_quest_optimizer_estimate(
+    config: AppConfig,
+    frame: pl.DataFrame,
+    asof: datetime,
+    mat: Array,
+    cols: list[str],
+    finite_rows: int,
+    psd_tol: float,
+) -> OptimizerCovarianceEstimate:
+    """Fit named numerical QuEST Ledoit-Wolf. Look up at call time.
+
+    A family or covariance-object mismatch fails closed so numerical
+    QuEST (2015/2017) cannot silently size as analytical 2020 nonlinear
+    shrinkage, 2004 linear Ledoit-Wolf, OAS, sample, EWMA, or DCC. The
+    matrix is GARCH/RGARCH overlay-scaled like trailing Ledoit-Wolf.
+    When T<=N the estimator stays numerical QuEST rather than switching
+    to sample or 2004 linear shrinkage.
+    """
+    prefix = f"optimizer_covariance_failed:{OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST}"
+    if len(cols) < 2:
+        raise ValueError(f"{prefix}:fewer_than_two_securities")
+    if finite_rows < NLSHRINK_MIN_OBS:
+        raise ValueError(f"{prefix}:insufficient_finite_rows:{finite_rows}")
+    try:
+        sigma, params = ledoit_wolf_quest(mat)
+    except ValueError as exc:
+        raise ValueError(f"{prefix}:{exc}") from exc
+    sigma, _ = repair_psd(sigma, psd_tol)
+    family = str(params.get("family", ""))
+    if family != OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST:
+        raise ValueError(f"{prefix}:unexpected_family:{family}")
+    object_name = str(params.get("covariance_object", OPTIMIZER_COVARIANCE_OBJECT_TRAILING))
+    spec_name = str(params.get("spec", OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST))
+    if object_name != OPTIMIZER_COVARIANCE_OBJECT_TRAILING:
+        raise ValueError(f"{prefix}:unexpected_covariance_object:{object_name}")
+    if spec_name in {
+        OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF,
+        OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_NONLINEAR,
+    }:
+        raise ValueError(f"{prefix}:unexpected_spec:{spec_name}")
+    sigma, overlay, overlay_kind = apply_market_variance_overlay_to_covariance(
+        config, frame, asof, sigma
+    )
+    return OptimizerCovarianceEstimate(
+        sigma=np.asarray(sigma, dtype=float),
+        security_ids=cols,
+        estimator=OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
+        covariance_object=object_name,
+        spec=spec_name,
+        n_obs=int(float(params.get("n_obs", finite_rows))),
+        market_overlay=overlay_kind,
+        overlay=overlay,
+        params=dict(params),
+    )
+
+
 def _unmeasured_optimizer_covariance(reason: str, ids: list[str]) -> OptimizerCovarianceEstimate:
     n = len(ids)
     sigma = np.empty((0, 0), dtype=float) if n == 0 else np.diag(np.ones(n) * 0.02**2)
@@ -412,7 +471,11 @@ def estimate_optimizer_covariance_asof(
     returns trailing analytical 2020 nonlinear shrinkage plus the overlay
     and must not silently size as 2004 linear Ledoit-Wolf, OAS, sample,
     EWMA, or DCC; when T<=N it stays nonlinear rather than switching to
-    sample or 2004. Named ``sample`` returns trailing unbiased sample
+    sample or 2004. Named ``ledoit_wolf_quest`` returns trailing numerical
+    QuEST inversion shrinkage (2015/2017) plus the overlay and must not
+    silently size as analytical 2020 nonlinear, 2004 linear Ledoit-Wolf,
+    OAS, sample, EWMA, or DCC; when T<=N it stays numerical QuEST rather
+    than switching to sample or 2004. Named ``sample`` returns trailing unbiased sample
     covariance plus the overlay and must not silently size as Ledoit-Wolf,
     OAS, EWMA, or DCC; when T>N it stays sample rather than switching to
     Ledoit-Wolf. Sequential one-step samples use the trailing contiguous
@@ -453,6 +516,16 @@ def estimate_optimizer_covariance_asof(
         )
     if estimator == OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR:
         return _named_ledoit_wolf_nonlinear_optimizer_estimate(
+            config,
+            frame,
+            asof,
+            mat,
+            cols,
+            finite_rows,
+            config.train.psd_eigen_tol,
+        )
+    if estimator == OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST:
+        return _named_ledoit_wolf_quest_optimizer_estimate(
             config,
             frame,
             asof,

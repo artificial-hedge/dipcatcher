@@ -1,0 +1,37 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "all_roles_populated": true,
+   "api_absent": true,
+   "benign_extra_args_reach_runner": [
+    "doctor",
+    "--seed",
+    "7"
+   ],
+   "exit_code_propagates": true,
+   "extra_args_config_eq_raises": "raise:ValueError",
+   "extra_args_config_raises": "raise:ValueError",
+   "inside_config_argv": [
+    "doctor",
+    "--config",
+    "/private/var/folders/2j/fwfzfr5x639f8rbmqc9t9ym40000gn/T/tmp69gs1ogb/configs/ok.yaml"
+   ],
+   "lab_absent": true,
+   "n_commands": 23,
+   "outside_config_raises": "raise:ValueError",
+   "relative_escape_raises": "raise:ValueError",
+   "symlink_escape_raises": "raise:ValueError",
+   "timeout_bound_raises": "raise:ValidationError",
+   "unknown_raises": "raise:KeyError"
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "dc839628d792ec16768ceff6009b0d13dc78f056",
+ "interpretation": "Harness boundary holds: unknown commands and api/lab are unreachable, configs/ containment survives absolute/relative/symlink escapes, and the extra_args --config bypass is closed.",
+ "kind": "harness_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "1df091f471a44b30b9be243e6494a8a9e5e1863de880f0c98208388e182ce423",
+ "research_only": true,
+ "schema": "harness_audit.v1"
+}

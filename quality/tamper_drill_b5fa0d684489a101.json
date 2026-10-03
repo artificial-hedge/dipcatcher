@@ -1,0 +1,221 @@
+{
+  "baseline_errors": [],
+  "data_label": "CORPUS",
+  "live_pnl_claim": false,
+  "n_caught": 21,
+  "n_probes": 21,
+  "ok": true,
+  "probes": [
+    {
+      "caught": true,
+      "errors": [
+        "epoch:.github/workflows:heads_pin_malformed:quality/epoch_heads.json",
+        "epoch:configs:heads_pin_malformed:quality/epoch_heads.json",
+        "epoch:quality:heads_pin_malformed:quality/epoch_heads.json",
+        "epoch:receipts:heads_pin_malformed:quality/epoch_heads.json",
+        "epoch:verifier:heads_pin_malformed:quality/epoch_heads.json",
+        "pin_signatures:pin_drift:quality/epoch_heads.json"
+      ],
+      "probe": "flip_epoch_heads_pin"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "crown_jewels:pin_malformed:Expecting value: line 1 column 1 (char 0)",
+        "epoch:quality:head_member_digest_drift:crown_jewels.json",
+        "pin_signatures:pin_drift:quality/crown_jewels.json"
+      ],
+      "probe": "flip_crown_jewels"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "pin_signatures:signature_file_malformed"
+      ],
+      "probe": "flip_gate_signature"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "checkpoint:key_id_mismatch",
+        "checkpoint:signature_invalid",
+        "crown_jewels:jewel_mutated:quality/gate_signing.pub",
+        "pin_signatures:key_id_mismatch",
+        "spine:signature_invalid:0c2995542d14:signature_key_unknown",
+        "spine:signature_invalid:0fbdb8cad79a:signature_key_unknown",
+        "spine:signature_invalid:1e2e64e6714a:signature_key_unknown",
+        "spine:signature_invalid:4078944b28e7:signature_key_unknown",
+        "spine:signature_invalid:52bb7cc1a8a8:signature_key_unknown",
+        "spine:signature_invalid:9ad3db3199da:signature_key_unknown",
+        "spine:signature_invalid:af8dba7d7107:signature_key_unknown",
+        "spine:signature_invalid:b99b51c1afdf:signature_key_unknown"
+      ],
+      "probe": "flip_gate_pubkey"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "checkpoint:checkpoint_malformed",
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:0fbdb8cad79a",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107",
+        "spine:orphan_checkpoint:b99b51c1afdf",
+        "spine:orphan_checkpoint:f892718af909",
+        "spine:signature_invalid:dbcb03b130e5:malformed_json",
+        "spine:witnessed_absent:06a272345183",
+        "spine:witnessed_absent:22ee53f71bf7"
+      ],
+      "probe": "flip_checkpoint"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "checkpoint:prev_not_archived",
+        "checkpoint:prev_not_witnessed",
+        "checkpoint:signature_invalid",
+        "spine:dangling_prev:ffffffffffff",
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:0fbdb8cad79a",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107",
+        "spine:orphan_checkpoint:b99b51c1afdf",
+        "spine:orphan_checkpoint:f892718af909"
+      ],
+      "probe": "rewrite_checkpoint_prev"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "witness:checkpoint.json_2884936358.json:proof_malformed"
+      ],
+      "probe": "flip_witness_proof"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:receipts:head_member_digest_drift:calib_real_drill.json"
+      ],
+      "probe": "flip_member:receipts"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:receipts:head_member_missing_live:calib_real_drill.json"
+      ],
+      "probe": "delete_member:receipts"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:verifier:head_member_digest_drift:README.md"
+      ],
+      "probe": "flip_member:verifier"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:verifier:head_member_missing_live:README.md"
+      ],
+      "probe": "delete_member:verifier"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:quality:head_member_digest_drift:audit_coverage.json"
+      ],
+      "probe": "flip_member:quality"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:quality:head_member_missing_live:audit_coverage.json"
+      ],
+      "probe": "delete_member:quality"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:.github/workflows:head_member_digest_drift:adversarial-properties.yml"
+      ],
+      "probe": "flip_member:.github/workflows"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:.github/workflows:head_member_missing_live:adversarial-properties.yml"
+      ],
+      "probe": "delete_member:.github/workflows"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:configs:head_member_digest_drift:arch_boundaries.toml"
+      ],
+      "probe": "flip_member:configs"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "epoch:configs:head_member_missing_live:arch_boundaries.toml"
+      ],
+      "probe": "delete_member:configs"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "checkpoint:prev_not_archived",
+        "spine:orphan_checkpoint:06a6585d2423",
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107",
+        "spine:orphan_checkpoint:b99b51c1afdf",
+        "spine:orphan_checkpoint:f892718af909",
+        "spine:signature_invalid:06a6585d2423:malformed_json"
+      ],
+      "probe": "flip_archived_prev_checkpoint"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "checkpoint:prev_not_archived",
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107",
+        "spine:orphan_checkpoint:b99b51c1afdf",
+        "spine:orphan_checkpoint:f892718af909"
+      ],
+      "probe": "drop_archived_prev_checkpoint"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "spine:fork:0fbdb8cad79a",
+        "spine:orphan_checkpoint:0f935e18c39c",
+        "spine:signature_invalid:0f935e18c39c:signature_invalid"
+      ],
+      "probe": "inject_side_chain_checkpoint"
+    },
+    {
+      "caught": true,
+      "errors": [
+        "key_rotation:live_key_not_terminus",
+        "key_rotation:unanchored_genesis"
+      ],
+      "probe": "inject_unauthorized_rotation"
+    }
+  ],
+  "receipt_sha256": "b5fa0d684489a1010abcbaa1e9741060fd3e4152496451e31ace6b0a87a06f1b",
+  "research_only": true,
+  "schema": "tamper_drill.v1",
+  "simulated_only": false,
+  "verdict": "fail_closed"
+}

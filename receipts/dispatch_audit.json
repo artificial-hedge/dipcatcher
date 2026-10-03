@@ -1,0 +1,37 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "backend_routing": {
+    "auto_backend": "python",
+    "python_forces_python": true
+   },
+   "flag_parsing": {
+    "auto": "auto",
+    "empty": "auto",
+    "garbage": "raise:ValueError",
+    "numpy_alias": "python",
+    "python_alias": "python",
+    "rust_alias": "rust",
+    "whitespace": "auto"
+   },
+   "parity_across_dispatch": {
+    "note": "python-forced and auto dispatch compute identical numbers",
+    "ok": true
+   },
+   "rust_forced": {
+    "backend": "raise:ImportError",
+    "note": "extension absent \u2014 rust-forced must fail closed, not fall back",
+    "ok": true
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "e265a3bef09d3d67b210c2298d8138afab3bd657",
+ "interpretation": "Dispatch contract pinned: flag aliases/whitespace/garbage, python-forced override, rust-forced fail-closed when the extension is absent, and cross-backend numerical parity.",
+ "kind": "dispatch_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "8e9f93d1156cbad3b0e74a722ff504946da95ae50e9f2dbabea1efdd0ea899ab",
+ "research_only": true,
+ "schema": "dispatch_audit.v1"
+}

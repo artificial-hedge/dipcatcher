@@ -1,0 +1,34 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "711fed9a91d72f077194db0b358bb703e7db7f6d797fb540b5f604179f626427",
+  "inputs_sha256": "548edc443b69522bbd22cbe60f718858a1e2fa28b8d5ef3494394e0badf90c8a",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "e02fd54a6cb8d297d31b569443793808ac13f2628691c563ba83787e5f1d6761",
+  "members": [
+    {
+      "name": "corpus_epoch_7a73f2e29e6fa074.json",
+      "sha256": "6b81b06c0481ef619141270b087fb51ea8e20841ef39f8edbefefc94c83c0195"
+    },
+    {
+      "name": "research-api.Dockerfile",
+      "sha256": "fccf5b13f042f0ffca7b5b1d456fe4f068b12a00704a4d78018c387f38fb0fde"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_7a73f2e29e6fa074.json"
+  ],
+  "members_removed": [],
+  "n_members": 2,
+  "params": {
+    "head_sha": "4f427a8a3b092a88014d9784b634ca7a229078a0",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_7a73f2e29e6fa074.json",
+  "prev_epoch_sha256": "7e71f3273f503005d34f8359d79c64ead875a269fe00d526af082d2a2d78b94b",
+  "receipt_sha256": "7fe42e9850974d16b3343cbd17e553e2287b0dd97635bd4fe50c5c9bbb447b48",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

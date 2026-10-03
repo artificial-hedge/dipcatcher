@@ -1,0 +1,285 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "ed10bdd1290192beef3ad8bad42ea114a39fd40ed4434177499d33196e4d50b4",
+  "inputs_sha256": "ab1cbafb6d216f983da22855bd605c11337742511785e907abc51220373ac76e",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "c6800805888c6128358a94435ad94a34da71c69e82b941e09ee575aa3e38bf27",
+  "members": [
+    {
+      "name": ".gitignore",
+      "sha256": "94bd3ca387f3a15b5eb3c6ed1248ff321d182125d458fe7e87125bd88e4156a8"
+    },
+    {
+      "name": "e2e/app.spec.ts",
+      "sha256": "68bb5057ead711781f838052980674d8c09bb43c04c1d30ca3499a24206033fb"
+    },
+    {
+      "name": "index.html",
+      "sha256": "d425e7dcfaf7a5a5fbde80991d4bbb93c20704f2d8ed8488456579fcb8c52452"
+    },
+    {
+      "name": "node-globals.d.ts",
+      "sha256": "97ca9457839664043f676a0c04607a25fb2fda7475ba8ae10fe4b0b8bc90b724"
+    },
+    {
+      "name": "package-lock.json",
+      "sha256": "1b6c85db664394ebf67d373b618aa4f82812bc654ceeef29009eb959e90efb42"
+    },
+    {
+      "name": "package.json",
+      "sha256": "06fe779ec61920679caf8e19695625ca9a42a4d06883f02e68ceae3f4306faf7"
+    },
+    {
+      "name": "playwright.config.ts",
+      "sha256": "67aba2b6021e3b5e030dc01b61975055c0fc2ae7afa42e0ec7e95779dd8b3df2"
+    },
+    {
+      "name": "public/fixtures/equity/carry.json",
+      "sha256": "936905ba68f1e37d8ff10f44710a51468f872c256147efc189bf241388a915a2"
+    },
+    {
+      "name": "public/fixtures/equity/carry_expanded.json",
+      "sha256": "bbec0e20e26474b7f5bfb5e321592063ed080d9eee25bffe28bc9405c59d7935"
+    },
+    {
+      "name": "public/fixtures/index.json",
+      "sha256": "47560c007fb36520440f1b4970aabc4d41b868339c026dbf947ba3d07b6edb30"
+    },
+    {
+      "name": "public/fixtures/receipts/capacity_eval_cd0854242ed8a9ec.json",
+      "sha256": "e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed"
+    },
+    {
+      "name": "public/fixtures/receipts/evidence_audit_3464d8f8197bf737.json",
+      "sha256": "77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d"
+    },
+    {
+      "name": "public/fixtures/receipts/fast_replay_p42_conformance_20260927.json",
+      "sha256": "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8"
+    },
+    {
+      "name": "public/fixtures/receipts/fleet_eval_5ddf15b0dc7d3ca1.json",
+      "sha256": "67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98"
+    },
+    {
+      "name": "public/fixtures/receipts/rankic_eval_9ebdad7da83e7348.json",
+      "sha256": "ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_adaptive.json",
+      "sha256": "46d2d6fac8df075fca442e919e8cf7ae1f26c915061271260bc9ede680cf92f1"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_equal.json",
+      "sha256": "b31a30ba31968a19f568b5998d8a4eb6af339e05c90f4365cc1c264d61741195"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_sleeve_carry.json",
+      "sha256": "329b3a3d4b0c0f048cfe116a13e902f4ee56d56bd6c0622abd5eed716b08b613"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_sleeve_fade.json",
+      "sha256": "d3223b83443a251dee56f83c313465cbc8ec479419c27c71db23ae69ed78f64b"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_sleeve_momentum.json",
+      "sha256": "80aa6379b011a22c44e2fd2858eb78f02ae69c0acc97130aae611bb51d61fcfa"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_sleeve_sweep.json",
+      "sha256": "9606faa2b91b0cf05613690e786f1ceadaabd42ea124c9863627bc2c46883097"
+    },
+    {
+      "name": "public/fixtures/strategies/amix_sleeve_trend.json",
+      "sha256": "3026d7f6fc2c804214f35cc0bcba679b81005176756e286ab5dd54a69eff268e"
+    },
+    {
+      "name": "public/fixtures/strategies/carry.json",
+      "sha256": "fcf74c5553ca7d018b82d633470fe58d3c5262b8544b38ff0dcbe0b919d7a3bb"
+    },
+    {
+      "name": "public/fixtures/strategies/carry_expanded.json",
+      "sha256": "e19c8f5d3cdb593b0103d973d7ba3d732210febcb78e074a321d8c07890a8f30"
+    },
+    {
+      "name": "scripts/export_fixtures.py",
+      "sha256": "5cae146b75cb646a700f9f8b231cbba2ec55c853696d0eec338c1f2252c55f7b"
+    },
+    {
+      "name": "src/App.tsx",
+      "sha256": "d46e354144d918835ffcdfdb59ceb13b9600f80d20608b46a5b1157f04e6aa31"
+    },
+    {
+      "name": "src/components/Header.tsx",
+      "sha256": "62a1eff23a0c5763b33f17bdaa4f99bce545c2b58877457662fc78ff77684750"
+    },
+    {
+      "name": "src/components/LineChart.tsx",
+      "sha256": "3a06c42267cdd4ae2dad026016a4079010d67a3512994b820d1fd9b2701a00d4"
+    },
+    {
+      "name": "src/components/OverviewPage.tsx",
+      "sha256": "b52ac0b74c8a925d5dcdbf10a4c3ff5a75a9794c4c9ad08f73e699b80e286af7"
+    },
+    {
+      "name": "src/components/ReceiptPage.tsx",
+      "sha256": "99d3cb9bc09e55854d515f2d16018a337dcf441fc0654710914bbdf341fbf4b8"
+    },
+    {
+      "name": "src/components/ReceiptsPage.tsx",
+      "sha256": "347ba28d60b8990ab5ccbf07573a72d3c1ab79aefccab71e9305d440be1131b9"
+    },
+    {
+      "name": "src/components/StatsTable.tsx",
+      "sha256": "2b23e8bf7dad04a3c1e9a73daf41c6d7c6547c129dd08ee2ca9fec07db124ec6"
+    },
+    {
+      "name": "src/components/StrategyPage.tsx",
+      "sha256": "1b0804732fd5394ca1dde74c9539a98df84a0330e3071a6e831346ca6cf724c4"
+    },
+    {
+      "name": "src/lib/chart.test.ts",
+      "sha256": "bd56cc465362a6079b379cf6aefde72cbb1a72916b6fd4c5ea0f8af93032947d"
+    },
+    {
+      "name": "src/lib/chart.ts",
+      "sha256": "8ac731ec44cda44852c480295c9be28a999fa382cbc610782dd9804a62706ec8"
+    },
+    {
+      "name": "src/lib/drawdown.test.ts",
+      "sha256": "aa0c2890d37157db0bf1a2344ed7c4e08b9aa2d388afb2cab8a5c7d1612db22c"
+    },
+    {
+      "name": "src/lib/drawdown.ts",
+      "sha256": "74a958f18a4f5b8c0b49bbc0c5291be44f3928d1120ad9ea53640cc5d149def9"
+    },
+    {
+      "name": "src/lib/fixtures.test.ts",
+      "sha256": "421b89d6e8b990e8a3276ae66224354feb5a8024a695cfdb9c5ad43d58b76135"
+    },
+    {
+      "name": "src/lib/fixtures.ts",
+      "sha256": "2b74645da9de2be5d9ec5b49df20f1deff3fe3b464566305bcc6a907697f8b9a"
+    },
+    {
+      "name": "src/lib/format.ts",
+      "sha256": "89f2db80a04ddd6a29c7d8800244fe0dc1f9ab237dbae342d27dd3a4ca2fcc6c"
+    },
+    {
+      "name": "src/lib/receiptVerify.test.ts",
+      "sha256": "99030ea46e118fadb0abd541481934a4912289a1019f84c59b7a0a8a5a55f74d"
+    },
+    {
+      "name": "src/lib/receiptVerify.ts",
+      "sha256": "1b0993f4b0dff327bf04975ccb39892eebf074e6f30f98246195efcfb84ae88b"
+    },
+    {
+      "name": "src/lib/router.test.ts",
+      "sha256": "7745810b0067f8cd051c14ca42628cc029fd6f3bd879814a55c5957406cb17ab"
+    },
+    {
+      "name": "src/lib/router.ts",
+      "sha256": "6b791e56368d30b586548419428e7ff24ded6f4934c97eb5c57cd7863c11fb50"
+    },
+    {
+      "name": "src/lib/table.test.ts",
+      "sha256": "d3687cb31ae435e61d280a63071109d76d9c2cf6f01f32c92e4d55b5f184f8fb"
+    },
+    {
+      "name": "src/lib/table.ts",
+      "sha256": "b24de4071d6dae3d8632e493763370e19966fc97d97bf73cd14f5be34fee8754"
+    },
+    {
+      "name": "src/lib/types.ts",
+      "sha256": "f728e33251a36712f883cf354fb00c2ac080cc3dd2b529c02876f9b3e8af005e"
+    },
+    {
+      "name": "src/lib/useJson.ts",
+      "sha256": "b778815e64dc270b8dc06173c24abc332b176d411654ff45af05fc14d1c82468"
+    },
+    {
+      "name": "src/main.tsx",
+      "sha256": "a6bcae9c4f04d6ff36406b2966379834342b41b08b83ba7bd0334712d6cf87f0"
+    },
+    {
+      "name": "src/styles.css",
+      "sha256": "4060dcaa85e33c75af47e51fba8fccf220672fcb82fe5d2de18bd0b64cfd82a8"
+    },
+    {
+      "name": "tsconfig.json",
+      "sha256": "5c2f2c5746fda4ae056f497b2196b1c68ce3e78af283961d95c3397602cefb1b"
+    },
+    {
+      "name": "vite.config.ts",
+      "sha256": "76ba0cbc645688628f44255061418f82e688d4497bc95ff643fd1ec656c24aa4"
+    }
+  ],
+  "members_added": [
+    ".gitignore",
+    "e2e/app.spec.ts",
+    "index.html",
+    "node-globals.d.ts",
+    "package-lock.json",
+    "package.json",
+    "playwright.config.ts",
+    "public/fixtures/equity/carry.json",
+    "public/fixtures/equity/carry_expanded.json",
+    "public/fixtures/index.json",
+    "public/fixtures/receipts/capacity_eval_cd0854242ed8a9ec.json",
+    "public/fixtures/receipts/evidence_audit_3464d8f8197bf737.json",
+    "public/fixtures/receipts/fast_replay_p42_conformance_20260927.json",
+    "public/fixtures/receipts/fleet_eval_5ddf15b0dc7d3ca1.json",
+    "public/fixtures/receipts/rankic_eval_9ebdad7da83e7348.json",
+    "public/fixtures/strategies/amix_adaptive.json",
+    "public/fixtures/strategies/amix_equal.json",
+    "public/fixtures/strategies/amix_sleeve_carry.json",
+    "public/fixtures/strategies/amix_sleeve_fade.json",
+    "public/fixtures/strategies/amix_sleeve_momentum.json",
+    "public/fixtures/strategies/amix_sleeve_sweep.json",
+    "public/fixtures/strategies/amix_sleeve_trend.json",
+    "public/fixtures/strategies/carry.json",
+    "public/fixtures/strategies/carry_expanded.json",
+    "scripts/export_fixtures.py",
+    "src/App.tsx",
+    "src/components/Header.tsx",
+    "src/components/LineChart.tsx",
+    "src/components/OverviewPage.tsx",
+    "src/components/ReceiptPage.tsx",
+    "src/components/ReceiptsPage.tsx",
+    "src/components/StatsTable.tsx",
+    "src/components/StrategyPage.tsx",
+    "src/lib/chart.test.ts",
+    "src/lib/chart.ts",
+    "src/lib/drawdown.test.ts",
+    "src/lib/drawdown.ts",
+    "src/lib/fixtures.test.ts",
+    "src/lib/fixtures.ts",
+    "src/lib/format.ts",
+    "src/lib/receiptVerify.test.ts",
+    "src/lib/receiptVerify.ts",
+    "src/lib/router.test.ts",
+    "src/lib/router.ts",
+    "src/lib/table.test.ts",
+    "src/lib/table.ts",
+    "src/lib/types.ts",
+    "src/lib/useJson.ts",
+    "src/main.tsx",
+    "src/styles.css",
+    "tsconfig.json",
+    "vite.config.ts"
+  ],
+  "members_removed": [],
+  "n_members": 52,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "cec4ed6910bcf5f1dee49b54de7b6737a6d4bdc8990e606d7afdf7878f73a4ab",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

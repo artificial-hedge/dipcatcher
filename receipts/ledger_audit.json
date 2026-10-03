@@ -1,0 +1,29 @@
+{
+ "claim": {
+  "flags": {
+   "tail_truncation_invisible": true
+  },
+  "ok": true,
+  "results": {
+   "content_tamper_breaks": true,
+   "empty_valid_genesis": true,
+   "export_counts": true,
+   "export_head": true,
+   "export_shape": true,
+   "fresh_valid": true,
+   "genesis_link": true,
+   "indexes_dense": true,
+   "persist_before_admit": true,
+   "reorder_breaks": true,
+   "tail_truncation_invisible": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "ca3df3d9a18f570eca40e8af72bb9e50365dbe3d",
+ "interpretation": "Corpus-ledger contract holds: hash chain verified per link, content/index/order tampering breaks verification, persist-before-admit confirmed by reread. Caveat pinned: tail truncation is internally valid \u2014 needs an external head pin (corpus-epoch pins provide it).",
+ "kind": "ledger_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "435cb49d88ce4efce630fb51f73999c1e6169856f888ef4e1c85e5fdb25379d4",
+ "research_only": true,
+ "schema": "ledger_audit.v1"
+}

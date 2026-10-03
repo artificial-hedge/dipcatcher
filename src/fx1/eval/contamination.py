@@ -32,6 +32,7 @@ from fx1.data.quality import _shingles  # shared shingle implementation
 class NGramFinding(BaseModel):
     example_index: int
     containment: float
+    eval_index: int | None = None
 
 
 class ProbeResult(BaseModel):
@@ -51,7 +52,14 @@ class ContaminationReport(BaseModel):
 
 
 def _hash_texts(texts: list[str]) -> str:
-    return hashlib.sha256("\n".join(sorted(texts)).encode()).hexdigest()
+    """Order-independent multiset digest — per-item digests, then sorted.
+
+    Joining raw texts on ``\n`` is ambiguous (``["a\nb"]`` and
+    ``["a", "b"]`` collide); binding per-item sha256s does not leak
+    corpus content and cannot be confused by embedded newlines.
+    """
+    inner = sorted(hashlib.sha256(t.encode()).digest() for t in texts)
+    return hashlib.sha256(b"".join(inner)).hexdigest()
 
 
 def ngram_containment_scan(
@@ -60,18 +68,31 @@ def ngram_containment_scan(
     *,
     threshold: float = 0.3,
 ) -> list[NGramFinding]:
-    """Flag corpus examples whose shingle containment vs eval prompts is high."""
-    eval_shingles: set[str] = set()
-    for prompt in eval_prompts:
-        eval_shingles |= _shingles(prompt)
+    """Flag corpus examples that embed an eval prompt.
+
+    Containment is measured per eval item — ``|doc ∩ eval_i| / |eval_i|``
+    — not against the pooled union of all prompts. Pooling under-detects
+    the dominant contamination case (a long training doc embedding one
+    verbatim eval item scores near zero on a doc-side denominator) and
+    over-flags benign docs sharing generic shingles across unrelated
+    prompts. The max per-item containment is reported with the matched
+    item index.
+    """
+    eval_sets: list[set[str]] = [_shingles(p) for p in eval_prompts]
     findings: list[NGramFinding] = []
     for i, text in enumerate(corpus_texts):
         shingles = _shingles(text)
-        if not shingles or not eval_shingles:
+        if not shingles:
             continue
-        containment = len(shingles & eval_shingles) / len(shingles)
-        if containment >= threshold:
-            findings.append(NGramFinding(example_index=i, containment=containment))
+        best, best_j = 0.0, None
+        for j, item in enumerate(eval_sets):
+            if not item:
+                continue
+            c = len(shingles & item) / len(item)
+            if c > best:
+                best, best_j = c, j
+        if best >= threshold:
+            findings.append(NGramFinding(example_index=i, containment=best, eval_index=best_j))
     return findings
 
 
@@ -137,7 +158,17 @@ def run_contamination_audit(
     canonical_pass: list[bool] | None = None,
     rephrased_pass: list[bool] | None = None,
 ) -> ContaminationReport:
-    """Run all probes and emit the hash-bound, publishable report."""
+    """Run all probes and emit the hash-bound, publishable report.
+
+    Refuses empty inputs: an audit over no corpus or no eval prompts would
+    certify vacuity as cleanliness — the report must never issue from
+    nothing inspected.
+    """
+    if not corpus_texts or not eval_prompts:
+        raise ValueError(
+            "contamination audit requires non-empty corpus and eval prompts; "
+            "an empty input would produce a clean bill of health over nothing"
+        )
     hits = ngram_containment_scan(corpus_texts, eval_prompts)
     probes = [min_k_percent_probe(item_logprobs or [])]
     if canonical_pass is not None and rephrased_pass is not None:

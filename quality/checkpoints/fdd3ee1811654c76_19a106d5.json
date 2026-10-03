@@ -1,0 +1,50 @@
+{
+  "algorithm": "ed25519",
+  "key_id": "bc3bcff676056adf",
+  "payload": {
+    "at": "2026-09-29T23:46:41+00:00",
+    "code": {
+      "revision": "950df4b3a24aadacab11453ff41e2f077288cbb9",
+      "worktree_sha256": "7a139ec0c321f85049eef99fa55a384e44a4c84801ebf00fdbeee998b5bc3dfd"
+    },
+    "heads": {
+      ".github/workflows/*.yml": {
+        "receipt": "corpus_epoch_909054c1b0499ef9.json",
+        "sha256": "c5f024b2d3f3c20d2c1fe0d6b8df40769a65dec04dafc5a6805e106f0ee16817"
+      },
+      "configs/*": {
+        "receipt": "corpus_epoch_0f9752e7c31f8596.json",
+        "sha256": "c59780d853d0f62d924a3bb673430c93ef060ecb8be9fc006a0c7fa5b815a479"
+      },
+      "quality/*.json": {
+        "receipt": "corpus_epoch_cde09273e0c678eb.json",
+        "sha256": "6776130721d8921a61aeec9eefaa39166e726c29361b97ec677af78d5ff9193d"
+      },
+      "receipts/*.json": {
+        "receipt": "corpus_epoch_404d16a7af1d3862.json",
+        "sha256": "24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2"
+      },
+      "verifier/*.md": {
+        "receipt": "corpus_epoch_30b5409791dfb780.json",
+        "sha256": "34b16b214c1cb7d47f5ca7fe6ecd5f49d90a1755e53bbf0bc01f36f49de0f453"
+      }
+    },
+    "missing_pins": [],
+    "pins": {
+      "gate_pins.sig": "7da321614a5180e63f0d0cc199dbd4ca3e4b2b2e4f6d5261a45080a1cda7cc38",
+      "quality/crown_jewels.json": "3aec24b225e3bf10ba538191b6f820b77106235d1ab404dc5b47814ccc357eb8",
+      "quality/epoch_heads.json": "ae5ed99cefeeac08eb1b15bd618dc5d1c14b4bcb8d418a10bcad853376577f6b"
+    },
+    "prev_sha256": "8ff01b9359d7fe2b43366d4f281f17441ec3812566c0de197d137d8e6646c472",
+    "schema": "integrity_checkpoint.v1",
+    "spine": {
+      "n_archives": 18,
+      "tip": "fad143c7b9ee1315_0ce3b232.json"
+    },
+    "witness": {
+      "n_proofs": 27
+    }
+  },
+  "schema": "integrity_checkpoint_sig.v1",
+  "signature": "a836537f24a820e9b58db2e06c4d52205f9192af4e1555026fb018ee7f2341375c1a479f712cf602ee75edbe126f7f1e85d06752315cf08467d5bf11a8796f0d"
+}

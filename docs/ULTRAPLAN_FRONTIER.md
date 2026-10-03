@@ -352,6 +352,7 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       fail-closed refusal of unsupported workload classes, byte-identical
       property suite `tests/property/test_fast_replay_byte_identity.py`,
       scope/gap analysis `docs/FAST_REPLAY_P42.md`, receipt
+      `receipts/fast_replay_p42_conformance_20260928.json`.
       `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`.
 - [x] P4.3 If fast path can't reach ≤1× honestly, write the argument:
       per-order risk gates + fail-closed semantics are the product; vectorbt
@@ -384,8 +385,11 @@ Dev-window tuning only; the holdout stays locked. Negative results recorded.
 - [~] P5.4 Cost-side improvements: maker-fill assumption variant (limit-at-
       touch model already in SimulatedBroker — measure fee drag delta),
       hysteresis parameter robustness surface (not retuned on holdout).
-- [ ] P5.5 Cross-venue funding/basis: gated on second-venue data
-      availability; otherwise documented out-of-scope.
+- [x] P5.5 Cross-venue funding/basis: OKX resolved as second venue
+      (Binance geo-blocked HTTP 451, Bybit 403); `research/crossvenue_basis.py`
+      + `dipcatcher xvenue-basis` (kraken-okx preset) -> spot-vs-futures
+      basis + daily funding differential across venues; sealed
+      `crossvenue_basis.v1` receipt (descriptive stats only).
 - [x] P5.6 Capacity analysis (`research/capacity_overlay.py::
       run_capacity_bench` + `dipcatcher capacity --dev`): 4 seeded
       SYNTHETIC books × AUM grid -> feasible-date share, days-to-trade,
@@ -414,6 +418,7 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       `calendars.py`.
 - [x] P6.4 Model layer: every file in `models/` audited line-by-line
       vs cited behavior; `pipeline/` causal gates verified.
+      Completion evidence: `quality/audit_coverage.json` marks
       Completion evidence: `quality/audit_coverage.json` +
       `quality/audit_coverage_fx1.json` mark
       `models/` and the named dirs `audited` under CI enforcement

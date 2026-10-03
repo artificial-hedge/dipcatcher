@@ -35,8 +35,12 @@ class LedgerEntry(BaseModel):
     utc: str
     kind: str = Field(description="example | exclusion | gate_decision")
     source_sha256: str = Field(min_length=64, max_length=64)
-    transform_sha256: str = Field(description="SHA-256 of the code/config that produced this entry")
-    example_sha256: str | None = None
+    transform_sha256: str = Field(
+        min_length=64,
+        max_length=64,
+        description="SHA-256 of the code/config that produced this entry",
+    )
+    example_sha256: str | None = Field(default=None, min_length=64, max_length=64)
     rule: str | None = Field(default=None, description="quality-gate rule name for exclusions")
     prev_hash: str = Field(min_length=64, max_length=64)
     entry_hash: str = Field(min_length=64, max_length=64)
@@ -112,10 +116,13 @@ class CorpusLedger:
             prev_hash=prev,
             entry_hash=entry_hash,
         )
-        self._entries.append(entry)
+        # Persist before admitting to memory: a failed write must not leave an
+        # in-memory head the file lacks, or later entries would chain over a
+        # link the ledger on disk never saw.
         self._path.parent.mkdir(parents=True, exist_ok=True)
         with self._path.open("a", encoding="utf-8") as fh:
             fh.write(entry.model_dump_json() + "\n")
+        self._entries.append(entry)
         return entry
 
     def record_example(

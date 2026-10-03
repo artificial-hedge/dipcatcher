@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import calendar
 import json
+import math
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -173,7 +175,13 @@ class BinancePublicDataSource(SourceAdapter):
         ]
         if not rows:
             raise SourceError("Binance returned only an in-progress kline")
-        return normalize_ohlcv(rows, source=self.name, revision_id=interval)
+        # Preserve explicit vendor clocks independently of publication timing.
+        # Direct adapters/bronze retain the vendor open label; the market ingest
+        # boundary uses these fields to build a close-labeled silver panel.
+        return normalize_ohlcv(rows, source=self.name, revision_id=interval).with_columns(
+            pl.col("event_time").alias("bar_open_time"),
+            pl.col("available_time").alias("bar_close_time"),
+        )
 
 
 class BinanceMarketSource(BinancePublicDataSource):
@@ -633,6 +641,687 @@ class BinanceDeliveryUniverseSource(SourceAdapter):
         rows.sort(key=lambda r: (r["delivery_ms"], r["security_id"]))
         if not rows:
             raise SourceError("Binance delivery universe resolved to zero contracts")
+        return pit_frame(rows, source=self.name, revision_id="v1")
+
+
+# Kraken futures contracts look like ``FI_XBTUSD_261225`` / ``PF_XBTUSD``:
+# 2-letter family code (FI inverse dated, FF flexible dated, PI/PF perpetuals),
+# an uppercase pair, and an optional dated tail.
+_KRAKEN_CONTRACT_RE = re.compile(r"^[A-Z]{2}_[A-Z0-9]+(_[A-Z0-9]+)?$")
+
+# Kraken public OHLC accepts these ``interval`` values (minutes).
+_KRAKEN_SPOT_INTERVALS_MIN = frozenset({1, 5, 15, 30, 60, 240, 1440, 10080, 21600})
+
+# Kraken charts resolutions -> candle span in ms, for in-progress filtering.
+_KRAKEN_CHART_RESOLUTION_MS = {
+    "1m": 60_000,
+    "5m": 300_000,
+    "15m": 900_000,
+    "30m": 1_800_000,
+    "1h": 3_600_000,
+    "4h": 14_400_000,
+    "1d": 86_400_000,
+    "1w": 604_800_000,
+}
+
+
+def _require_kraken_contract(symbol: str) -> str:
+    """Kraken contract symbols look like ``FI_XBTUSD_261225`` / ``PF_XBTUSD``."""
+    token = symbol.upper()
+    if not _KRAKEN_CONTRACT_RE.match(token):
+        raise ValueError(f"Kraken contract symbols look like 'FI_XBTUSD_261225', got {symbol!r}")
+    return token
+
+
+class KrakenSpotOhlcSource(SourceAdapter):
+    """Kraken spot OHLC candles for one public pair (no API key needed).
+
+    ``pair`` is the public pair code (``XBTUSD``, ``ETHUSD``); the response
+    keys rows under an internal pair name (``XXBTZUSD``) we never assume —
+    exactly one series per request is required or the fetch fails closed.
+    Kraken appends the still-forming candle as the last row — its close
+    (``time + interval``) lies in the future, so it is dropped the same way
+    Binance's in-progress kline is.
+    """
+
+    name = "kraken_spot"
+    endpoint = "https://api.kraken.com/0/public/OHLC"
+
+    def fetch(
+        self,
+        *,
+        pair: str = "XBTUSD",
+        interval: int = 1440,
+        since: int | None = None,
+    ) -> pl.DataFrame:
+        if not pair or not pair.upper().isalnum():
+            raise ValueError(f"malformed Kraken pair {pair!r}")
+        if interval not in _KRAKEN_SPOT_INTERVALS_MIN:
+            raise ValueError(f"interval must be one of {sorted(_KRAKEN_SPOT_INTERVALS_MIN)}")
+        pair = pair.upper()
+        payload = self.client.get_json(
+            query_url(self.endpoint, {"pair": pair, "interval": interval, "since": since})
+        )
+        if not isinstance(payload, dict):
+            raise SourceError("Kraken OHLC response is not an object")
+        errors = payload.get("error")
+        if not isinstance(errors, list) or errors:
+            raise SourceError(f"Kraken OHLC API error: {errors!r}")
+        result = payload.get("result")
+        if not isinstance(result, dict):
+            raise SourceError("Kraken OHLC response has no result object")
+        data_keys = [key for key in result if key != "last"]
+        if len(data_keys) != 1:
+            raise SourceError(f"Kraken OHLC returned {len(data_keys)} pair series, expected 1")
+        candles = result[data_keys[0]]
+        if not isinstance(candles, list) or not candles:
+            raise SourceError(f"Kraken OHLC returned no candles for {pair}")
+        now_s = int(utc_now().timestamp())
+        span_s = interval * 60
+        rows: list[dict[str, Any]] = []
+        for item in candles:
+            if not (isinstance(item, list) and len(item) >= 8):
+                raise SourceError("malformed Kraken OHLC row")
+            try:
+                open_s = int(item[0])
+            except (TypeError, ValueError) as exc:
+                raise SourceError("malformed Kraken OHLC row") from exc
+            if open_s + span_s > now_s:
+                continue  # still-forming candle — its close time is in the future
+            rows.append(
+                {
+                    "security_id": pair,
+                    "event_time": open_s,
+                    "open": item[1],
+                    "high": item[2],
+                    "low": item[3],
+                    "close": item[4],
+                    "volume": item[6],
+                    "available_time": open_s + span_s,
+                }
+            )
+        if not rows:
+            raise SourceError(f"Kraken OHLC returned only an in-progress candle for {pair}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}m")
+
+
+class KrakenFuturesMarkSource(SourceAdapter):
+    """Kraken futures mark-price candles for one contract.
+
+    The ``charts/v1`` ``mark`` series is a mark (index-derived fair price),
+    not the last trade: for illiquid dated contracts the ``trade`` series is
+    empty while mark always serves history, but mark != executed tape — the
+    series is a settlement proxy, never fills. Kraken marks carry ``volume``
+    ``'0'`` by construction.
+
+    The still-forming candle (close time in the future) is dropped; an empty
+    candle list fails closed — callers pick symbols from the
+    ``kraken_futures_universe`` snapshot by ``lastTradingTime`` so expired or
+    unlisted contracts never reach this fetch.
+    """
+
+    name = "kraken_futures_mark"
+    endpoint = "https://futures.kraken.com/api/charts/v1/{tick_type}/{symbol}/{resolution}"
+
+    def fetch(
+        self,
+        *,
+        symbol: str,
+        tick_type: str = "mark",
+        resolution: str = "1d",
+    ) -> pl.DataFrame:
+        contract = _require_kraken_contract(symbol)
+        if tick_type not in {"mark", "trade", "spot"}:
+            raise ValueError("tick_type must be mark, trade, or spot")
+        if resolution not in _KRAKEN_CHART_RESOLUTION_MS:
+            raise ValueError(f"resolution must be one of {sorted(_KRAKEN_CHART_RESOLUTION_MS)}")
+        url = self.endpoint.format(tick_type=tick_type, symbol=contract, resolution=resolution)
+        payload = self.client.get_json(url)
+        candles = payload.get("candles") if isinstance(payload, dict) else None
+        if not isinstance(candles, list) or not candles:
+            raise SourceError(f"Kraken charts returned no candles for {contract}")
+        span_ms = _KRAKEN_CHART_RESOLUTION_MS[resolution]
+        now_ms = int(utc_now().timestamp() * 1000)
+        rows: list[dict[str, Any]] = []
+        for item in candles:
+            if not isinstance(item, dict):
+                raise SourceError("malformed Kraken chart candle")
+            try:
+                open_ms = int(item["time"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise SourceError("malformed Kraken chart candle") from exc
+            if open_ms + span_ms > now_ms:
+                continue
+            rows.append(
+                {
+                    "security_id": contract,
+                    "event_time": open_ms,
+                    "open": item.get("open"),
+                    "high": item.get("high"),
+                    "low": item.get("low"),
+                    "close": item.get("close"),
+                    "volume": item.get("volume", "0"),
+                    "available_time": open_ms + span_ms,
+                }
+            )
+        if not rows:
+            raise SourceError(f"Kraken charts returned only an in-progress candle for {contract}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{tick_type}.{resolution}")
+
+
+class KrakenFuturesUniverseSource(SourceAdapter):
+    """Kraken futures instrument universe: listings + delivery instants.
+
+    ``instruments`` only exposes contracts currently listed — a survivorship-
+    truncated snapshot, so expired dated contracts never appear and delivery
+    instants for them must be derived elsewhere (e.g. the symbol tail). Row
+    ``event_time`` is the snapshot instant (the listed state observed at
+    ``serverTime``); the settlement instant rides as ``last_trading_time`` /
+    ``last_trading_ms`` — null for perpetuals and other undated instruments.
+    With ``include_undated`` off (default) undated instruments are filtered
+    out — they have no delivery to anchor. ``available_time`` is the snapshot
+    instant, so PIT logic can never pretend a listing was known earlier.
+    """
+
+    name = "kraken_futures_universe"
+    endpoint = "https://futures.kraken.com/derivatives/api/v3/instruments"
+
+    def fetch(self, *, include_undated: bool = False) -> pl.DataFrame:
+        payload = self.client.get_json(self.endpoint)
+        instruments = payload.get("instruments") if isinstance(payload, dict) else None
+        if not isinstance(instruments, list):
+            raise SourceError("Kraken instruments response has no instruments list")
+        server_raw = payload.get("serverTime")
+        now = utc_now()
+        try:
+            server_time = parse_time(server_raw) if server_raw is not None else now
+        except (TypeError, ValueError, OverflowError, OSError) as exc:
+            raise SourceError("Kraken instruments serverTime is unparseable") from exc
+        snapshot = min(server_time, now)  # clamp skew — future instants fail PIT
+        rows: list[dict[str, Any]] = []
+        for item in instruments:
+            if not isinstance(item, dict):
+                raise SourceError("malformed Kraken instrument entry")
+            try:
+                symbol = str(item["symbol"]).upper()
+                instrument_type = str(item["type"])
+                tradeable = bool(item["tradeable"])
+            except KeyError as exc:
+                raise SourceError("Kraken instrument entry is missing required fields") from exc
+            # lastTradingTime is absent on perpetuals/undated instruments.
+            last_trading = item.get("lastTradingTime")
+            if not symbol or (last_trading is not None and not isinstance(last_trading, str)):
+                raise SourceError(f"malformed Kraken instrument {symbol!r}")
+            dated = last_trading is not None
+            if dated:
+                try:
+                    delivery = parse_time(last_trading)
+                except (TypeError, ValueError, OverflowError, OSError) as exc:
+                    raise SourceError(
+                        f"Kraken instrument {symbol!r} has unparseable lastTradingTime"
+                    ) from exc
+                delivery_ms = int(delivery.timestamp() * 1000)
+                value = (delivery - snapshot).total_seconds() / 86_400.0
+            else:
+                if not include_undated:
+                    continue
+                delivery_ms = None
+                value = None
+            underlying = item.get("underlying")
+            rows.append(
+                {
+                    "security_id": symbol,
+                    "event_time": snapshot,
+                    "available_time": snapshot,
+                    "value": value,
+                    "contract_type": instrument_type,
+                    "underlying": str(underlying).upper() if underlying else None,
+                    "last_trading_ms": delivery_ms,
+                    "tradeable": tradeable,
+                }
+            )
+        rows.sort(
+            key=lambda r: (
+                r["last_trading_ms"] if r["last_trading_ms"] is not None else 2**63,
+                r["security_id"],
+            )
+        )
+        if not rows:
+            raise SourceError("Kraken futures universe resolved to zero instruments")
+        return pit_frame(rows, source=self.name, revision_id="v1")
+
+
+class KrakenFuturesFundingSource(SourceAdapter):
+    """Kraken futures hourly funding-rate history for one contract.
+
+    ``historical-funding-rates`` serves ``rates`` ascending by timestamp;
+    each row carries ``fundingRate`` (absolute USD per contract) and
+    ``relativeFundingRate`` (the per-period relative rate — the quantity
+    comparable to other venues' realized rates), so ``value`` is the
+    relative rate and the absolute one rides inside ``raw_value``. Rows
+    become known only at their timestamp, so event_time == available_time.
+    """
+
+    name = "kraken_funding"
+    endpoint = "https://futures.kraken.com/derivatives/api/v3/historical-funding-rates"
+
+    def fetch(self, *, symbol: str) -> pl.DataFrame:
+        contract = _require_kraken_contract(symbol)
+        payload = self.client.get_json(query_url(self.endpoint, {"symbol": contract}))
+        if not isinstance(payload, dict):
+            raise SourceError("Kraken funding response is not an object")
+        if payload.get("result") != "success":
+            raise SourceError(
+                f"Kraken funding API error: {payload.get('errors') or payload.get('status')!r}"
+            )
+        rates = payload.get("rates")
+        if not isinstance(rates, list) or not rates:
+            raise SourceError(f"Kraken funding returned no rates for {contract}")
+        rows: list[dict[str, Any]] = []
+        last_ms = -1
+        for item in rates:
+            if not isinstance(item, dict):
+                raise SourceError("malformed Kraken funding row")
+            try:
+                stamp = parse_time(item["timestamp"])
+                rate = float(item["relativeFundingRate"])
+            except (KeyError, TypeError, ValueError, OverflowError, OSError) as exc:
+                raise SourceError("malformed Kraken funding row") from exc
+            stamp_ms = int(stamp.timestamp() * 1000)
+            if stamp_ms <= last_ms:
+                raise SourceError("Kraken funding timestamps are not strictly increasing")
+            last_ms = stamp_ms
+            if not math.isfinite(rate) or abs(rate) >= 10.0:
+                raise SourceError("Kraken funding rate is not finite")
+            rows.append(
+                {
+                    "security_id": contract,
+                    "event_time": stamp_ms,
+                    "available_time": stamp_ms,
+                    "value": rate,
+                    "raw_value": json.dumps(item, sort_keys=True),
+                }
+            )
+        return normalize_observations(rows, source=self.name, revision_id="v1")
+
+
+# OKX public REST wraps every payload as ``{"code": "0", "msg": "", "data":
+# [...]}`` — the adapters below unwrap ``data`` and fail closed on a nonzero
+# ``code`` or any schema drift. Instrument ids look like ``BTC-USDT`` (spot),
+# ``BTC-USDT-SWAP`` (linear perp), ``BTC-USD-260925`` (dated future).
+_OKX_INST_RE = re.compile(r"^[A-Z0-9]+(-[A-Z0-9]+){1,3}$")
+
+# OKX ``bar`` values -> candle span in ms. ``*utc`` variants anchor to UTC
+# boundaries; spans feed ``available_time`` only — in-progress candles are
+# identified by OKX's own trailing ``confirm`` flag, not the clock.
+_OKX_BAR_SPAN_MS = {
+    "1m": 60_000,
+    "3m": 180_000,
+    "5m": 300_000,
+    "15m": 900_000,
+    "30m": 1_800_000,
+    "1H": 3_600_000,
+    "2H": 7_200_000,
+    "4H": 14_400_000,
+    "6H": 21_600_000,
+    "12H": 43_200_000,
+    "1D": 86_400_000,
+    "1Dutc": 86_400_000,
+    "2Dutc": 172_800_000,
+    "1W": 604_800_000,
+    "1Wutc": 604_800_000,
+}
+
+#: Per-endpoint ``limit`` ceilings from the OKX public docs.
+_OKX_CANDLE_LIMIT = 300
+_OKX_FUNDING_LIMIT = 100
+
+
+def _require_okx_inst(inst_id: str) -> str:
+    """OKX instrument ids look like ``BTC-USDT`` / ``BTC-USDT-SWAP``."""
+    token = inst_id.upper()
+    if not _OKX_INST_RE.match(token):
+        raise ValueError(
+            f"OKX instrument ids look like 'BTC-USDT' or 'BTC-USDT-SWAP', got {inst_id!r}"
+        )
+    return token
+
+
+def _require_okx_bar(bar: str) -> str:
+    if bar not in _OKX_BAR_SPAN_MS:
+        raise ValueError(f"bar must be one of {sorted(_OKX_BAR_SPAN_MS)}")
+    return bar
+
+
+def _okx_optional_ms(value: Any) -> int | None:
+    """OKX ms-epoch string field that may be empty; fails closed on garbage."""
+    text = str(value or "")
+    if not text:
+        return None
+    try:
+        return int(text)
+    except (TypeError, ValueError) as exc:
+        raise SourceError("OKX instrument has an unparseable ms-epoch field") from exc
+
+
+def _okx_data(payload: Any, *, what: str) -> Any:
+    """Unwrap OKX's ``{code, msg, data}`` envelope, failing closed."""
+    if not isinstance(payload, dict):
+        raise SourceError(f"OKX {what} response is not an object")
+    code = payload.get("code")
+    if code != "0":
+        raise SourceError(f"OKX {what} API error: code={code!r} msg={payload.get('msg')!r}")
+    if "data" not in payload:
+        raise SourceError(f"OKX {what} response has no data field")
+    return payload["data"]
+
+
+def _okx_candle_frame(
+    payload: Any,
+    *,
+    inst_id: str,
+    fields: int,
+    what: str,
+) -> list[list[Any]]:
+    """Validate one page of OKX candle rows (``[ts, o, h, l, c, ..., confirm]``)."""
+    data = _okx_data(payload, what=what)
+    if not isinstance(data, list):
+        raise SourceError(f"OKX {what} data is not a list for {inst_id}")
+    for item in data:
+        if not (isinstance(item, list) and len(item) >= fields):
+            raise SourceError(f"malformed OKX {what} candle row")
+        try:
+            int(item[0])
+        except (TypeError, ValueError) as exc:
+            raise SourceError(f"malformed OKX {what} candle row") from exc
+    return data
+
+
+class OkxSpotOhlcSource(SourceAdapter):
+    """OKX spot OHLC candles for one instrument (no API key needed).
+
+    Rows arrive newest-first as ``[ts, o, h, l, c, vol, volCcy,
+    volCcyQuote, confirm]``; the still-forming candle carries
+    ``confirm != "1"`` and is dropped — never rewritten — the same way
+    Kraken's/Binance's in-progress rows are. Pagination walks backward via
+    ``after=<oldest open ts>`` (OKX returns the newest page first).
+    """
+
+    name = "okx_spot"
+    endpoint = "https://www.okx.com/api/v5/market/candles"
+
+    def fetch(
+        self,
+        *,
+        inst_id: str = "BTC-USDT",
+        bar: str = "1Dutc",
+        limit: int = 100,
+        max_pages: int = 1,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        inst = _require_okx_inst(inst_id)
+        _require_okx_bar(bar)
+        if not 1 <= limit <= _OKX_CANDLE_LIMIT:
+            raise ValueError(f"limit must be between 1 and {_OKX_CANDLE_LIMIT}")
+        if max_pages < 1:
+            raise ValueError("max_pages must be >= 1")
+        span_ms = _OKX_BAR_SPAN_MS[bar]
+        rows: list[dict[str, Any]] = []
+        seen_ts: set[int] = set()
+        cursor: int | None = None
+        for page in range(max_pages):
+            payload = self.client.get_json(
+                query_url(
+                    self.endpoint,
+                    {"instId": inst, "bar": bar, "limit": limit, "after": cursor},
+                )
+            )
+            data = _okx_candle_frame(payload, inst_id=inst, fields=9, what="candles")
+            if not data:
+                if page == 0:
+                    raise SourceError(f"OKX candles returned no rows for {inst}")
+                break
+            oldest = min(int(item[0]) for item in data)
+            for item in data:
+                open_ms = int(item[0])
+                if open_ms in seen_ts:
+                    continue  # overlap row on a page boundary
+                seen_ts.add(open_ms)
+                if str(item[8]) != "1":
+                    continue  # still-forming candle per OKX's own confirm flag
+                rows.append(
+                    {
+                        "security_id": inst,
+                        "event_time": open_ms,
+                        "open": item[1],
+                        "high": item[2],
+                        "low": item[3],
+                        "close": item[4],
+                        "volume": item[5],
+                        "available_time": open_ms + span_ms,
+                    }
+                )
+            if len(data) < limit:
+                break
+            cursor = oldest
+            if pause_seconds > 0:
+                time.sleep(pause_seconds)
+        if not rows:
+            raise SourceError(f"OKX candles returned only in-progress rows for {inst}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=bar)
+
+
+class OkxMarkCandlesSource(SourceAdapter):
+    """OKX mark-price candles for one derivative instrument.
+
+    The ``mark-price-candles`` series is an index-derived fair price, not
+    last trade — same settlement-proxy caveat as ``kraken_futures_mark``.
+    Rows are ``[ts, o, h, l, c, confirm]``: no volume exists for a mark
+    series, so ``volume`` is reported as ``"0"`` by construction.
+    """
+
+    name = "okx_mark"
+    endpoint = "https://www.okx.com/api/v5/market/mark-price-candles"
+
+    def fetch(
+        self,
+        *,
+        inst_id: str,
+        bar: str = "1Dutc",
+        limit: int = 100,
+        max_pages: int = 1,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        inst = _require_okx_inst(inst_id)
+        _require_okx_bar(bar)
+        if not 1 <= limit <= _OKX_CANDLE_LIMIT:
+            raise ValueError(f"limit must be between 1 and {_OKX_CANDLE_LIMIT}")
+        if max_pages < 1:
+            raise ValueError("max_pages must be >= 1")
+        span_ms = _OKX_BAR_SPAN_MS[bar]
+        rows: list[dict[str, Any]] = []
+        seen_ts: set[int] = set()
+        cursor: int | None = None
+        for page in range(max_pages):
+            payload = self.client.get_json(
+                query_url(
+                    self.endpoint,
+                    {"instId": inst, "bar": bar, "limit": limit, "after": cursor},
+                )
+            )
+            data = _okx_candle_frame(payload, inst_id=inst, fields=6, what="mark-price-candles")
+            if not data:
+                if page == 0:
+                    raise SourceError(f"OKX mark candles returned no rows for {inst}")
+                break
+            oldest = min(int(item[0]) for item in data)
+            for item in data:
+                open_ms = int(item[0])
+                if open_ms in seen_ts:
+                    continue
+                seen_ts.add(open_ms)
+                if str(item[5]) != "1":
+                    continue
+                rows.append(
+                    {
+                        "security_id": inst,
+                        "event_time": open_ms,
+                        "open": item[1],
+                        "high": item[2],
+                        "low": item[3],
+                        "close": item[4],
+                        "volume": "0",
+                        "available_time": open_ms + span_ms,
+                    }
+                )
+            if len(data) < limit:
+                break
+            cursor = oldest
+            if pause_seconds > 0:
+                time.sleep(pause_seconds)
+        if not rows:
+            raise SourceError(f"OKX mark candles returned only in-progress rows for {inst}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"mark.{bar}")
+
+
+class OkxFundingHistorySource(SourceAdapter):
+    """OKX realized funding-rate history for one perpetual swap.
+
+    ``funding-rate-history`` serves the *realized* per-settlement rate
+    (``realizedRate``; ``fundingRate`` is the same charge on settled rows),
+    newest-first, settling at ``fundingTime`` — typically every 8h. A rate
+    is only fixed at ``fundingTime``, so event_time == available_time and
+    rows stamped in the future are dropped. Pagination walks backward via
+    ``after=<oldest fundingTime>``.
+    """
+
+    name = "okx_funding"
+    endpoint = "https://www.okx.com/api/v5/public/funding-rate-history"
+
+    def fetch(
+        self,
+        *,
+        inst_id: str = "BTC-USDT-SWAP",
+        limit: int = 100,
+        max_pages: int = 10,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        inst = _require_okx_inst(inst_id)
+        if not 1 <= limit <= _OKX_FUNDING_LIMIT:
+            raise ValueError(f"limit must be between 1 and {_OKX_FUNDING_LIMIT}")
+        if max_pages < 1:
+            raise ValueError("max_pages must be >= 1")
+        now_ms = int(utc_now().timestamp() * 1000)
+        rows: list[dict[str, Any]] = []
+        seen_ts: set[int] = set()
+        cursor: int | None = None
+        for page in range(max_pages):
+            payload = self.client.get_json(
+                query_url(
+                    self.endpoint,
+                    {"instId": inst, "limit": limit, "after": cursor},
+                )
+            )
+            data = _okx_data(payload, what="funding-rate-history")
+            if not isinstance(data, list):
+                raise SourceError(f"OKX funding data is not a list for {inst}")
+            if not data:
+                if page == 0:
+                    raise SourceError(f"OKX funding returned no rows for {inst}")
+                break
+            page_times: list[int] = []
+            for item in data:
+                if not isinstance(item, dict):
+                    raise SourceError("malformed OKX funding row")
+                try:
+                    funding_time = int(item["fundingTime"])
+                    rate_raw = item.get("realizedRate", item.get("fundingRate"))
+                    if rate_raw is None:
+                        raise KeyError("realizedRate/fundingRate")
+                    rate = float(rate_raw)
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise SourceError("malformed OKX funding row") from exc
+                page_times.append(funding_time)
+                if funding_time in seen_ts:
+                    continue
+                seen_ts.add(funding_time)
+                if funding_time > now_ms:
+                    continue  # not yet charged — the rate fixes at fundingTime
+                if not math.isfinite(rate) or abs(rate) >= 10.0:
+                    raise SourceError("OKX funding rate is not finite")
+                rows.append(
+                    {
+                        "security_id": str(item.get("instId", inst)).upper(),
+                        "event_time": funding_time,
+                        "available_time": funding_time,
+                        "value": rate,
+                        "raw_value": json.dumps(item, sort_keys=True),
+                    }
+                )
+            if len(data) < limit:
+                break
+            cursor = min(page_times)
+            if pause_seconds > 0:
+                time.sleep(pause_seconds)
+        if not rows:
+            raise SourceError(f"OKX funding returned no realized rows for {inst}")
+        return normalize_observations(rows, source=self.name, revision_id="v1")
+
+
+class OkxSwapUniverseSource(SourceAdapter):
+    """OKX perpetual-swap universe: listing instants + contract metadata.
+
+    ``public/instruments?instType=SWAP`` is a survivorship-truncated snapshot
+    — it lists only currently served instruments, so a delisted perp never
+    appears. ``event_time``/``available_time`` are the collection instant
+    (the endpoint returns no server clock); ``value`` is null — contract
+    metadata rides in the metadata columns. ``live_only`` (default) keeps
+    ``state == "live"`` rows.
+    """
+
+    name = "okx_swap_universe"
+    endpoint = "https://www.okx.com/api/v5/public/instruments"
+
+    def fetch(self, *, live_only: bool = True) -> pl.DataFrame:
+        payload = self.client.get_json(query_url(self.endpoint, {"instType": "SWAP"}))
+        data = _okx_data(payload, what="instruments")
+        if not isinstance(data, list) or not data:
+            raise SourceError("OKX instruments returned no instruments")
+        snapshot = utc_now()
+        rows: list[dict[str, Any]] = []
+        for item in data:
+            if not isinstance(item, dict):
+                raise SourceError("malformed OKX instrument entry")
+            try:
+                inst_id = str(item["instId"]).upper()
+                state = str(item["state"])
+                family = str(item["instFamily"])
+            except KeyError as exc:
+                raise SourceError("OKX instrument entry is missing required fields") from exc
+            if not inst_id or not _OKX_INST_RE.match(inst_id):
+                raise SourceError(f"malformed OKX instrument id {inst_id!r}")
+            if live_only and state != "live":
+                continue
+            rows.append(
+                {
+                    "security_id": inst_id,
+                    "event_time": snapshot,
+                    "available_time": snapshot,
+                    "value": None,
+                    "inst_family": family,
+                    "ct_type": item.get("ctType"),
+                    "ct_val": item.get("ctVal"),
+                    "ct_val_ccy": item.get("ctValCcy"),
+                    "settle_ccy": item.get("settleCcy"),
+                    "tick_sz": item.get("tickSz"),
+                    "lot_sz": item.get("lotSz"),
+                    "list_time_ms": _okx_optional_ms(item.get("listTime")),
+                    "state": state,
+                }
+            )
+        rows.sort(key=lambda r: r["security_id"])
+        if not rows:
+            raise SourceError("OKX swap universe resolved to zero instruments")
         return pit_frame(rows, source=self.name, revision_id="v1")
 
 

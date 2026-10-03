@@ -1,0 +1,60 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "2a015e16daa2b514d2c6a41f62db7812f7fdb13932d8817c28e17eaf4c0fd77b",
+  "inputs_sha256": "4942b888116388b372a1bcd3b40dc3734138e3347bb664fd7b2ea4a16be5a406",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "9ccdea78f4fc4e55393d36eab00ddaa1057de19113f3a2ef06c3a8b7071d51d9",
+  "members": [
+    {
+      "name": "observability/docker-compose.yml",
+      "sha256": "ac0cad1d8ccfab5dd474d5752f6c68d6f3841f3b323ade54fe3b61ebe99f12e0"
+    },
+    {
+      "name": "observability/grafana/dashboards/dipcatcher.json",
+      "sha256": "a82b8fbef6b9ad7fe4cc9affb51b67c7f2df381f9924d3c72157d60a398c8474"
+    },
+    {
+      "name": "observability/grafana/provisioning/dashboards/dashboards.yml",
+      "sha256": "62c815be126d1b6d188c1e778954f66dbd6d9a60a6419e871abf51aa349199b7"
+    },
+    {
+      "name": "observability/grafana/provisioning/datasources/datasource.yml",
+      "sha256": "72305a9fded6b40fe740ec82dac495f006990e6e37de754d1fcd01d93da4834a"
+    },
+    {
+      "name": "observability/otel-collector.yaml",
+      "sha256": "b0c83dc0e453e259ccedcad804f46256e45012c3c3359fc394435c06f8608e02"
+    },
+    {
+      "name": "observability/prometheus.yml",
+      "sha256": "2348696d94a69d95002f93e17e9420a774542d07b21d5ba91ce750454dfeb8aa"
+    },
+    {
+      "name": "observability/slo.yml",
+      "sha256": "89ada49fcb79c281ff0ddd0cae5801343eedc8f84e13630889836713a775c92e"
+    }
+  ],
+  "members_added": [
+    "observability/docker-compose.yml",
+    "observability/grafana/dashboards/dipcatcher.json",
+    "observability/grafana/provisioning/dashboards/dashboards.yml",
+    "observability/grafana/provisioning/datasources/datasource.yml",
+    "observability/otel-collector.yaml",
+    "observability/prometheus.yml",
+    "observability/slo.yml"
+  ],
+  "members_removed": [],
+  "n_members": 7,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "98b7d4dbd5652bab6bcdd0384b59b152fc961d092ec99d712047f4ec8690d29a",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

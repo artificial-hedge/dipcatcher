@@ -1,0 +1,210 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "2bb775e885d0d76002fd37cd43501a2411b98b13018d6c30080eea8dca1159f3",
+  "inputs_sha256": "e15b4dbb78f1dffc2d683ed2a68b040cf3d4f825151fed914aafdf4aabef9204",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "546bac9e0ed2d4b4e9b9d80a76b555cc2d8be7220bf71b064d86ec8930a5a4ef",
+  "members": [
+    {
+      "name": ".gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "corpus_epoch_04d8ad4f6ac237ab.json",
+      "sha256": "a0185590023830fe2a5778df0ea318a4b27d87393e701239b5c94ce00f9d0d3a"
+    },
+    {
+      "name": "corpus_epoch_168aaa4fcdf4dbc1.json",
+      "sha256": "f4e74936d617dd1598642698e2dd9f01168d9b4567ed618c4473a865aea1aecf"
+    },
+    {
+      "name": "corpus_epoch_37b8b8445efafdfc.json",
+      "sha256": "0948a3398b90ed895996c2e5300e3e774711271669d99a210a6ef5fad2ab0ad4"
+    },
+    {
+      "name": "corpus_epoch_40d136b338802d53.json",
+      "sha256": "17025fb726991f67951dcb2f19b799b01583670e6d4d4247c4192ee489811fed"
+    },
+    {
+      "name": "corpus_epoch_40d1752161f289c3.json",
+      "sha256": "4a98ed454383794cd0e07a30d8cecfcc29b67677ef08e00aa0acd8f4e7729c7b"
+    },
+    {
+      "name": "corpus_epoch_41440524979109a2.json",
+      "sha256": "6b68b252db728a293ffe107a5498180f8f0ef56354a8c1d31aa8ec1364958550"
+    },
+    {
+      "name": "corpus_epoch_45a810e9447f88b8.json",
+      "sha256": "725ccbe2933f43c2ae497700debb16ef4e9487586f422cfec8d829f3ba0c011b"
+    },
+    {
+      "name": "corpus_epoch_84cb6b0e1e09357d.json",
+      "sha256": "d62e93bd1b4a9755d36df3eda6ba6d2e115d653bb1199d71af91c421bf1c2e35"
+    },
+    {
+      "name": "corpus_epoch_8e10040f63da710b.json",
+      "sha256": "b8fa165e7ffaad10ab34a4b67ab2412802a6df8f9de871e48b5073394d9c1484"
+    },
+    {
+      "name": "corpus_epoch_9c3282bc1b94cc45.json",
+      "sha256": "9f05dcd0c1a4fa3440e1f000a77db82ad0e89c25cb817ec3cd11b3ab1f2734cf"
+    },
+    {
+      "name": "corpus_epoch_a1199701236877bc.json",
+      "sha256": "f857b077bd0b478918adf6d4033c96b18a1a7b76575050c7b88afa6826fc2b2b"
+    },
+    {
+      "name": "corpus_epoch_a590ddeebcb1f4e6.json",
+      "sha256": "eec218655b0e823deaecf9254fadd5b5e2b7aa2c44d71359192bdae06859061b"
+    },
+    {
+      "name": "corpus_epoch_aba3ba4667cec97f.json",
+      "sha256": "8baa64cac338be2d3a311466e812f2024bbf9f452fc8d7ff98659e48edb5ab63"
+    },
+    {
+      "name": "corpus_epoch_c202a4bc3961ab8c.json",
+      "sha256": "309c7366349f8010324803dc2afd3a9958b1b038e31678f1d90d45957245090b"
+    },
+    {
+      "name": "corpus_epoch_c3933c09965aa008.json",
+      "sha256": "24f7dce5f6d45f9318dcc1d70bdb83152ceefb15345aa36adb2f3480015fc04d"
+    },
+    {
+      "name": "corpus_epoch_ca86051d283766c5.json",
+      "sha256": "bbe331d689adc6a465bc70586bca026515fce296151c31cbc84c04a6a3d6e9c2"
+    },
+    {
+      "name": "corpus_epoch_e0580bbed4486027.json",
+      "sha256": "4f369114da4a2b80b93665f5316f7ab973beb18b4ed048ca56e3e3e5502aed00"
+    },
+    {
+      "name": "corpus_epoch_fe89a34240da06f5.json",
+      "sha256": "68c815e43e588a67cbdf00dbd25f5b456ddb325e923e09070c35f629f87efbe9"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/manifest.json",
+      "sha256": "ea26eaf805da7963eea40d81ffb69078199d3695bed6669b281a38947160a763"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/validation.attempt.json",
+      "sha256": "1fe173b736824f8372d5e94c7c09cb7f8d30c71b4020796db3802babfca3efa5"
+    },
+    {
+      "name": "cost_aware_tournament/us_wide_20260925/validation.json.gz",
+      "sha256": "67c1a4738e479fb3c54a95d422e1e32e9a276c7dc63d1c876f554e0fc50f4273"
+    },
+    {
+      "name": "data_manifest.json",
+      "sha256": "5ba7efb725ef1198c983d62a0f091f4af4d4ab5a3ad51f54e8d5ec774c9d5f46"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/manifest.json",
+      "sha256": "a4a8f384c14b4a7805fbab5f52158a11a38aa78d87368a65c933acd061054eaf"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/test.attempt.json",
+      "sha256": "1f87f6ca24f8787a812ab6f757ec1d6f5e2f96c805433b9c9def538bdbda9c9c"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/test.json.gz",
+      "sha256": "61f2a1cd147f5d418e190c685e2b7845e09e8a44746e64a3726797bea48b3efe"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/validation.attempt.json",
+      "sha256": "d4ffa0198f2bab8da516a96bb4829726d1e3ef900b015cd5a010117b28f98ff2"
+    },
+    {
+      "name": "net_tournament/us_wide_20260925/validation.json.gz",
+      "sha256": "abf8037e85987750fcc6cff42b53137464612e0409e97642e64a43ec961ece36"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/manifest.json",
+      "sha256": "b4b4ec2f1f41eec36862747f64697a175f30858d05f7753fcc6f766e98b979f8"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/test.json",
+      "sha256": "2a9a4d5bf16a78ae396eaaa5f8cf89b03db45c8286795f4a1adc902b5d0e75f5"
+    },
+    {
+      "name": "real_benchmark/us_wide_20260925/validation.json",
+      "sha256": "73f2c74d1f7f62caa76f0ca2760badfa80bb5844d4d0069afb71ddbd8185f86e"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/MANIFEST.json",
+      "sha256": "0955bcf4d32c1550c09f0a1c174c0e8e2fe6016257c7f13b860c019cdcba9e6e"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/bandit_report.json",
+      "sha256": "809cd6121547aa0fe7ba43a02bee5b7d032cf7677b4e186f697e3afad325118c"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/bandit_strict.txt",
+      "sha256": "87a0d55d41533af09c000df7e63d6fa0aa38f2a585fda3748f2d824c1713a822"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/deptry_src.txt",
+      "sha256": "ff6a683d5c49cc51f281f71b0d33bdd6b3b3f6a98cc32e827d42489cdb26b6a9"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/environment.txt",
+      "sha256": "51db324590116cdb29cde79a5e84e163b558ad5205ca99de5982ca5bd9413649"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/export_all.txt",
+      "sha256": "9fbf64df6666d2cfa7f4c6e7ffb8da02d4f0a55c16c8fc6519c46d851518730b"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/gitleaks_report.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/licenses_all.json",
+      "sha256": "a6fd604a5b417cae275fab6b11a080394bc8d3081e7c647ea1022caa4efd5121"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/pip_audit.json",
+      "sha256": "049e4778f823e4f6e95ea20dc9426dde053a1920d865b5912e5509c74ec29ba6"
+    },
+    {
+      "name": "reports/deps_hygiene_20260928/uv_audit.json",
+      "sha256": "737891e2dfea09ce5a31b82b8a023663d03d6f2de336f16f2d8e492275e04e21"
+    },
+    {
+      "name": "research/PHASE1_CODE_RESEAL.md",
+      "sha256": "80c9fb43c5c3090c517d13ec791ae325a133c6d932253c3f3392d6225817b54c"
+    },
+    {
+      "name": "research/PHASE1_PROVENANCE_CORRECTION.md",
+      "sha256": "38011bedb4d6bca772da35a03378aaf3b8897a8bfc2859316c6266bdcf779560"
+    },
+    {
+      "name": "research/phase1_20260925.md",
+      "sha256": "50ca01e0f2801e1ad84293a6b65c7e7dbe1c41fbcbbae78d9d427b80b85c041d"
+    },
+    {
+      "name": "research/phase1_evidence_index.json",
+      "sha256": "3e8d28e2ad08137d5e0ea7b8703600d710cdda37ebe83e384afc50fbc94d1f7a"
+    },
+    {
+      "name": "resolved_config.json",
+      "sha256": "375ba1ea5473e0c275bb77f995fdb22a64290de93a918e1313c7250e372f9ab2"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_c3933c09965aa008.json"
+  ],
+  "members_removed": [],
+  "n_members": 46,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_c3933c09965aa008.json",
+  "prev_epoch_sha256": "13567042db8a4f921a2297968bf418eeffa14efe18c6a20d7aac58ac3212735b",
+  "receipt_sha256": "1833207f020fdbd64a9e8cf809ac5fddc63385bea09f7b7e2c04974fc15ef0cb",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}

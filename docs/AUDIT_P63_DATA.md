@@ -227,3 +227,21 @@ intentional — reason noted), `suspicious-but-unproven`.
 - `tests/unit/pipeline/test_phase1_receipt_verification.py::
   test_completed_runs_and_index_survive_relocation` fails on clean `main`
   (7d2e01e) on macOS arm64 — pre-existing, unrelated to this lane.
+
+## Merge-wave audit (PR #428, 2026-09-29)
+
+Modules merged since the P6.3 pass — `index_membership.py`, the
+`adapters/dolthub_stocks.py` provenance writer, and the `quality/` report
+package. Read end-to-end against the same contract (PIT discipline,
+fail-closed input handling, sealed/atomic evidence writes). All clean.
+
+| module | verdict | evidence |
+|---|---|---|
+| `index_membership.py` | CLEAN | PIT membership replay: `members_asof` undoes newer-than-asof events; non-newest-first change order refused; `merge_bar_panels` dedups (security_id, event_time) keep=last; coverage report stamped `dipcatcher.membership_price_coverage.v1` with `membership_sha256` |
+| `adapters/dolthub_stocks.py` | CLEAN | DoltHub adapter: provenance receipt now self-sealed (`receipt_sha256` over canonical bytes) + tmp/replace atomic publish — sealed on PR #428 after `test_evidence_seal_coverage` flagged it |
+| `src/quant_fund/data/quality/__init__.py` | CLEAN | Re-export surface |
+| `src/quant_fund/data/quality/checks.py` | CLEAN | Composes `lakehouse.quality` structural checks + non-finite/timezone/volume/MAD-z/missing-bars rules; honest "interval heuristic only — does not know sessions or holidays" caveat |
+| `src/quant_fund/data/quality/cli.py` | CLEAN | CLI exits 1 on any violation; no success output on failure paths |
+| `src/quant_fund/data/quality/models.py` | CLEAN | Pydantic report models; deterministic serialization |
+| `src/quant_fund/data/quality/report.py` | CLEAN | Report sealed via `canonical_json_bytes`+`hash_bytes` `report_sha256`; deterministic field order |
+| `src/quant_fund/data/quality/scorecard.py` | CLEAN | Scorecard aggregation over check results; no fabricated pass on missing checks |

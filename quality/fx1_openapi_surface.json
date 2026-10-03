@@ -1,0 +1,753 @@
+{
+  "openapi": "3.1.0",
+  "title": "fx-1 harness API",
+  "version": "0.4.0",
+  "paths": {
+    "/harness/backends": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/harness/backends/{name}/probe": {
+      "post": {
+        "params": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/capabilities": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/harness/commands": {
+      "get": {
+        "params": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/complete": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/complete/batch": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/complete/stream": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/completions": {
+      "get": {
+        "params": [
+          {
+            "name": "backend",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/completions/{completion_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/completions/{completion_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/drain": {
+      "post": {
+        "params": [
+          {
+            "name": "wait_s",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/evals": {
+      "get": {
+        "params": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "suite",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/gate/check": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs": {
+      "get": {
+        "params": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs/batch": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}/events": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "timeout_s",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/runs": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/version": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "params": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/receipts": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/receipts/verify": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/receipts/verify/batch": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/receipts/{sha256}": {
+      "get": {
+        "params": [
+          {
+            "name": "sha256",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/batches": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/chat/completions/{completion_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/embeddings": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files/{file_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files/{file_id}/content": {
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
+    "/v1/models/{model}": {
+      "get": {
+        "params": [
+          {
+            "name": "model",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/responses": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/responses/{response_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    }
+  },
+  "schema_sha256": "9a32b2de0af55685a1074fb750bdecf6138fdb6f8a46c03fa727472241b775b0"
+}

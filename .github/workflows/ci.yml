@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -52,6 +52,8 @@ jobs:
         run: uv run mypy src/quant_fund
       - name: Mypy strict allowlist
         run: uv run python scripts/check_mypy_strict_allowlist.py
+      - name: McCabe complexity ratchet
+        run: uv run python scripts/check_mccabe_ratchet.py
       - name: Mypy public API (strict)
         run: uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
       - name: Static security analysis
@@ -64,7 +66,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -76,9 +78,13 @@ jobs:
       - name: Dependency vulnerability audit
         run: |
           set -o pipefail
-          uv export --format requirements.txt --no-hashes --no-emit-project \
-            --all-extras --all-groups \
-            | uvx --from pip-audit==2.10.1 pip-audit --strict --format json -r /dev/stdin \
+          uv export --frozen --quiet --format requirements.txt --no-hashes --no-emit-project \
+            --all-extras --all-groups -o /tmp/locked-requirements.txt
+          # Audit every platform's locked packages, including the Windows/Linux
+          # optional packages that the Ubuntu runner would otherwise skip.
+          sed 's/ ;.*//' /tmp/locked-requirements.txt > /tmp/all-platform-requirements.txt
+          uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps \
+            --format json -r /tmp/all-platform-requirements.txt \
             | tee dependency-audit.json
       - name: Upload dependency audit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -98,7 +104,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -168,7 +174,7 @@ jobs:
           persist-credentials: false
           # Historical receipt tests resolve archived source commits.
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: ${{ matrix.python }}
           enable-cache: true
@@ -211,6 +217,10 @@ jobs:
             --splits 4
             --group "${{ matrix.shard }}"
             --durations-path .test_durations
+            # least_duration keeps per-shard predicted runtime flat; the default
+            # duration_based_chunks algorithm packs contiguous collection ranges
+            # and left wall-clock skewed under xdist --dist loadfile.
+            --splitting-algorithm least_duration
           )
           if [ "${{ matrix.python }}" = "3.12" ]; then
             # Partial shards stay under the project threshold; the coverage job combines them.
@@ -246,7 +256,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -302,7 +312,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -336,7 +346,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -445,7 +455,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -489,7 +499,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: ${{ matrix.python }}
           enable-cache: true
@@ -517,7 +527,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -536,7 +546,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -561,7 +571,7 @@ jobs:
           persist-credentials: false
           # Phase-1 verification compares sealed code hashes to the indexed commit.
           fetch-depth: 0
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -578,7 +588,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -602,7 +612,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -619,7 +629,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -640,13 +650,15 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: TLC downloader regression tests (offline)
+        run: python scripts/test_run_tlc.py
       - name: TLC order-lifecycle model check
         run: bash scripts/run_tlc.sh
       - name: SMT proofs, conformance, and stateful tests
@@ -666,8 +678,24 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      - name: Evidence bundle round-trip — export, then audit with the standalone script
+        run: |
+          make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+          make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+      - name: Fetch PR base for chain-extension proofs
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Chain-consistency proofs — a PR may extend, never rewrite
+        if: github.event_name == 'pull_request'
+        run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
       - name: Cross-receipt consistency lattice
         run: make lattice-check
+      - name: Fetch PR base for the admission diff
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Admission gate on diff-changed receipts
+        if: github.event_name == 'pull_request'
+        run: make admission-gate ADMISSION_BASE=FETCH_HEAD
       - name: Replay carriers (byte-exact artifact reproduction)
         run: make replay-sweep
 
@@ -676,7 +704,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -699,7 +727,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true

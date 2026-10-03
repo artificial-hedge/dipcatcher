@@ -158,3 +158,47 @@ def favar_forecast(
         out[i] = nxt[:m]
         buf = np.vstack([buf, nxt])
     return {"y_forecast": out}
+
+
+def synth_favar(
+    t: int = 300,
+    n_x: int = 12,
+    r: int = 2,
+    seed: int = 0,
+) -> dict[str, Array]:
+    """Panel driven by r latent AR(1) factors plus target y that
+    loads on factor 1; observables share the factors."""
+    rng = np.random.default_rng(seed)
+    f = np.zeros((t, r))
+    phis = np.array([0.7, 0.4])
+    for i in range(1, t):
+        f[i] = phis * f[i - 1] + rng.normal(0, 1, r)
+    lam = rng.normal(0, 1, (n_x, r))
+    x = f @ lam.T + rng.normal(0, 0.4, (t, n_x))
+    y = 0.8 * f[:, [0]] + rng.normal(0, 0.5, (t, 1))
+    return {"y": y, "x": x}
+
+
+def bench_favar(seed: int = 20261231 + 246) -> dict[str, float]:
+    """FAVAR self-check: r=2 factors explain most panel variance,
+    factor 1 correlates with the simulated driver, and one-step
+    forecasts beat the unconditional mean. All ``synthetic_*``."""
+    d = synth_favar(r=2, seed=seed)
+    out = favar_fit(d["y"], d["x"], r=2, p=1)
+    expl = float(out["explained"][0])
+    corr_f1 = abs(float(np.corrcoef(out["factors"][:, 0], d["y"].ravel())[0, 1]))
+    fc = favar_forecast(
+        out,
+        np.asarray(d["y"], dtype=float)[-1:],
+        np.asarray(out["factors"], dtype=float)[-1:],
+        steps=1,
+    )
+    f1 = float(np.asarray(fc["y_forecast"], dtype=float).ravel()[0])
+    out_b = favar_fit(d["y"], d["x"], r=2, p=1)
+    return {
+        "synthetic_explained": expl,
+        "synthetic_corr_f1_y": corr_f1,
+        "synthetic_forecast_y": f1,
+        "synthetic_detects": float(expl > 0.5 and corr_f1 > 0.3 and np.isfinite(f1)),
+        "synthetic_determinism": float(expl == float(out_b["explained"][0])),
+    }

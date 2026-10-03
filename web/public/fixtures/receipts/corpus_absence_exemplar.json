@@ -1,0 +1,81 @@
+{
+  "code_files": {
+    "epoch_merkle.py": "04611e91dad4aea054da97ccd6f3904cec5cbfcabd59c138d282662464e542d9"
+  },
+  "code_sha256": "9bf155bf6aca1dbc07e87c5f923038236cedc18149dfb837e7052e6b839eaed2",
+  "data_label": "CORPUS",
+  "dataset_hash": "e231eb1946a67af6a22803221e927ea579175a34b0ef2d32cbbf7d7218984142",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T04:22:21.684390+00:00",
+  "git_revision": "f5573f64c254bfab9179ce823db6b1297af434fb",
+  "kind": "corpus_absence.v1",
+  "live_pnl_claim": false,
+  "params_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "payload": {
+    "bounds": [
+      {
+        "leaf_index": 89,
+        "member": "verdict_real_drill.json",
+        "member_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
+        "n_members": 90,
+        "path": [
+          {
+            "sha256": "d0f9efade519818d8f695b697fa845bef1e45f0de25c77da7abb37b622cfeac7",
+            "side": "left"
+          },
+          {
+            "sha256": "9e1ba968ab66149be819d277382c12ebd375b0465421966fff78d8125067c994",
+            "side": "left"
+          },
+          {
+            "sha256": "5a2d93682e226ef235240ead828fea7a4f00f9d3020e9a38e46b4d775238c62c",
+            "side": "left"
+          },
+          {
+            "sha256": "e1858abc13919ac3e5d354d472008f983deb5687065ec2085f5bfd9fe8e813e7",
+            "side": "left"
+          }
+        ]
+      }
+    ],
+    "corpus_key": "receipts/*.json",
+    "data_label": "CORPUS",
+    "epoch_receipt": "corpus_epoch_84384f73f7d8e9d6.json",
+    "epoch_root_sha256": "cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058",
+    "kind": "corpus_absence.v1",
+    "live_pnl_claim": false,
+    "merkle_root": "48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c",
+    "n_members": 90,
+    "name": "zzz_never_existed_canary.json",
+    "research_only": true,
+    "schema": "corpus_absence.v1",
+    "simulated_only": false
+  },
+  "receipt_sha256": "e1149a09eee459f2379f4086e9efca16b5b50ec1aaabaca29d8f659fd872f8f9",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

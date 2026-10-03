@@ -156,14 +156,12 @@ class TestStampAndWrite:
     def test_write_creates_parent_dirs(self, tmp_path: Path) -> None:
         target = tmp_path / "deep" / "nested" / "nb.json"
         stamped = write_stamped_notebook(target, _notebook(), [_valid_scorecard()])
-        # Evidence-seal contract (fix 32cf0338): the durable artifact is the
-        # SEALED notebook — the stamped content plus its canonical-JSON
-        # receipt digest — while the function returns the stamped content the
-        # digest was computed over.
-        assert json.loads(target.read_text()) == {
-            **stamped,
-            "receipt_sha256": hash_bytes(canonical_json_bytes(stamped)),
-        }
+        on_disk = json.loads(target.read_text())
+        # The durable file is sealed (receipt_sha256 over the stamped body);
+        # the returned object is the unsealed stamped notebook.
+        seal = on_disk.pop("receipt_sha256")
+        assert on_disk == stamped
+        assert seal == hash_bytes(canonical_json_bytes(stamped))
 
 
 class TestExtensionErrors:

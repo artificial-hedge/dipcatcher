@@ -1,0 +1,98 @@
+name: Dependency audit (npm, Rust, Kronos)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "rust/quant_core/**"
+      - "third_party/kronos/**/requirements.txt"
+      - "third_party/kronos/requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Makefile"
+      - ".github/workflows/dependency-audit.yml"
+  pull_request:
+    paths:
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "rust/quant_core/**"
+      - "third_party/kronos/**/requirements.txt"
+      - "third_party/kronos/requirements.txt"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "Makefile"
+      - ".github/workflows/dependency-audit.yml"
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+      - run: uv lock --check
+      - run: make audit
+
+  npm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: [web, replay, clients/typescript, clients/typescript/fx1]
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.directory }}/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm audit
+      - name: Typecheck API client
+        if: startsWith(matrix.directory, 'clients/typescript')
+        run: npm run typecheck
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - run: cargo install cargo-audit --version 0.22.2 --locked
+      - run: make audit-rust
+
+  kronos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+      - run: make audit-kronos

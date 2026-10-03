@@ -1,0 +1,17 @@
+{
+  "anchors": {
+    "quality__checkpoint.json.tsr": {
+      "sha256": "06a2723451838cd7069cb2253d3912d0c8661ad36b6f22daac9c5d8761301199",
+      "target": "quality/checkpoint.json"
+    },
+    "quality__crown_jewels.json.tsr": {
+      "sha256": "2eeace175585608230907349a12ede497a5430a903c78b039b0af153586c9960",
+      "target": "quality/crown_jewels.json"
+    },
+    "quality__epoch_heads.json.tsr": {
+      "sha256": "312a773ce80835954bc2027be08313f8b6b649bba506ba037cb865c7deabf211",
+      "target": "quality/epoch_heads.json"
+    }
+  },
+  "schema": "timestamp_anchors.v1"
+}

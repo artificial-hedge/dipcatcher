@@ -1,0 +1,82 @@
+{
+  "code_files": {
+    "epoch_merkle.py": "2778a059a1d1b4ffcd172c54375d3f827560c4a175c29dac0d81401ee9058b77"
+  },
+  "code_sha256": "46cf5cf3d628aa2b4de26b7329e6fc27b89c16394a570528ad5840d74a93034f",
+  "data_label": "CORPUS",
+  "dataset_hash": "db44c0f2dcf747a0f9c2826ca78f3f7e204aab64f7d0c1a6a2ec5bbf841f409b",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-29T21:20:17.267014+00:00",
+  "git_revision": "6e5b598b5962b33ce145a42e9ae725a2ba597ee8",
+  "kind": "corpus_proof.v1",
+  "live_pnl_claim": false,
+  "params_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "payload": {
+    "data_label": "CORPUS",
+    "epoch_receipt": "corpus_epoch_fbb352a23e62d321.json",
+    "epoch_root_sha256": "d463d1e095d524f54cbf9d625bf3425994a19aa5c71d28f90c8bd767d9a84569",
+    "kind": "corpus_proof.v1",
+    "leaf_index": 0,
+    "live_pnl_claim": false,
+    "member": "calib_real_drill.json",
+    "member_sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
+    "merkle_root": "5bdd57f34d61d6da9a0bdb764e2c2d6e552eb2a44a93166fe816340fa424920e",
+    "n_members": 63,
+    "path": [
+      {
+        "sha256": "799cd97006e47318aeb72cf4f21f2032e03fa472402dd85e987b881ea29bb079",
+        "side": "right"
+      },
+      {
+        "sha256": "efce5f75cc11edc5a53d9d3f5322842d8f93f7b27ff7031ec661eae48241793a",
+        "side": "right"
+      },
+      {
+        "sha256": "f861300f7cb19e59e8984985f86cd8a029b80a9dd5faeb10eb22fd7272c9d398",
+        "side": "right"
+      },
+      {
+        "sha256": "1dd8d043656186ad2f928a1f1f88855dcb49318c1ed81ce58ec887dc3e0821fd",
+        "side": "right"
+      },
+      {
+        "sha256": "c7f38277391d7a62f67235f623355e5b6ebd6ef6027b9dd3d1775244a7d7b639",
+        "side": "right"
+      },
+      {
+        "sha256": "8d097b6158e0bf7e8d5945b63bbcc4a1c62c6833f21df54abff7d2e1d5aa4ea4",
+        "side": "right"
+      }
+    ],
+    "research_only": true,
+    "schema": "corpus_proof.v1",
+    "simulated_only": false
+  },
+  "receipt_sha256": "a56dff22d5b4931cbe85f6f9107399145c7f44655a132b92810fb05dda6c74f7",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

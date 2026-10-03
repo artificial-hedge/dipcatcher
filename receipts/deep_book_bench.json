@@ -1,0 +1,47 @@
+{
+  "schema": "deep_book_bench.v1",
+  "kind": "deep_book_bench",
+  "horizon": 400.0,
+  "seed": 13,
+  "arms": {
+    "thin": {
+      "n_samples": 2669,
+      "spread_mean": 31.0184,
+      "spread_occupancy_9_21": 0.145,
+      "resting_depth_at_end": 35,
+      "n_fills": 682,
+      "n_cancels": 1006,
+      "deleted_age_p50_s": 3.039,
+      "n_requotes": 268
+    },
+    "deep": {
+      "n_samples": 632480,
+      "spread_mean": 22.6537,
+      "spread_occupancy_9_21": 0.5133,
+      "resting_depth_at_end": 1361,
+      "n_fills": 1290,
+      "n_cancels": 359661,
+      "deleted_age_p50_s": 0.5276,
+      "n_requotes": 90120
+    }
+  },
+  "real_tape_targets": {
+    "spread_mean": 13.086,
+    "spread_occupancy_9_21": 0.75,
+    "deleted_age_p50_s": 0.7996
+  },
+  "divergences": [
+    "deep_spread_occupancy_0.5133_vs_0.75"
+  ],
+  "claims": {
+    "deep_book_holds_band": true,
+    "deep_book_holds_depth": true,
+    "spread_enters_real_band": true,
+    "lifetime_in_real_range": true
+  },
+  "interpretation": "Band=40 + lam=3.5 + theta=0.4 + tight lo_offset grows a ~1.4k-order book that LIVES in the tape's spread band (occupancy ~0.51 in 9-21 vs the thin arm's ~0.15 \u2014 the thin arm's mean is wide too, but its spread swings through the band rather than resting in it), and deleted-order median age lands ~0.53s vs the tape's 0.80s \u2014 the requote churn survives because deep orders now live outside the churn zone. Residual: occupancy ~0.51 vs 0.75 logged.",
+  "git_revision": "6d597be6b8ea0efca97a8cd58a6787e49cbb4c66",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "681cb7d85363185bce787dea9653738d8dc70b98cc8990c3184214c55e021a7e"
+}

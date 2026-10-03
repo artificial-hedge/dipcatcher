@@ -81,6 +81,6 @@ What changed relative to the five conditions — and what did not:
   includes measured fault-detection evidence for the reviewer code.
 - **Scorecard governance**: `docs/BENCHMARK_FAMILY_LIFECYCLE.md` adopts
   OPTIONAL→REQUIRED/RETIRED lifecycle rules, runtime budgets, and review
-  cadence for the 80-family scorecard.
+  cadence for the benchmark-family scorecard.
 - None of the above is market evidence. Every new module ships seeded
   SYNTHETIC correctness tests; the honesty contract is unchanged.

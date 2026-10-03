@@ -331,12 +331,14 @@ class OptimizerConfig(StrictConfigModel):
     # Named covariance path for optimize_asof / /risk/portfolio. Default stays
     # trailing Ledoit–Wolf 2004 plus the GARCH/RGARCH overlay. dcc_gaussian,
     # dcc_student_t, adcc, ccc, agdcc, agdcc_full, and ewma are explicit
-    # one-step paths. oas, ledoit_wolf_nonlinear, and sample are explicit
-    # trailing paths plus the overlay. Generic dcc and catalog estimators
-    # that are not optimizer-wired (factor) fail closed rather than
-    # silently substituting. Named ledoit_wolf_nonlinear is analytical
-    # 2020 spectral shrinkage and must not silently size as 2004 linear
-    # Ledoit–Wolf. Named agdcc is diagonal CES AG-DCC; named agdcc_full
+    # one-step paths. oas, ledoit_wolf_nonlinear, ledoit_wolf_quest, and
+    # sample are explicit trailing paths plus the overlay. Generic dcc and
+    # catalog estimators that are not optimizer-wired (factor) fail closed
+    # rather than silently substituting. Named ledoit_wolf_nonlinear is
+    # analytical 2020 spectral shrinkage and must not silently size as
+    # 2004 linear Ledoit–Wolf. Named ledoit_wolf_quest is numerical QuEST
+    # inversion (2015/2017) and must not silently size as analytical 2020
+    # or 2004 linear. Named agdcc is diagonal CES AG-DCC; named agdcc_full
     # is unrestricted CES AG-DCC and must not silently size as diagonal
     # AG-DCC. Scalar CES ADCC is not diagonal AG-DCC. CCC is Bollerslev
     # constant correlation, not Engle DCC.
@@ -795,6 +797,8 @@ class PromotionConfig(StrictConfigModel):
                 raise ValueError(f"{name} must be finite")
         if self.max_turnover < 0:
             raise ValueError("max_turnover must be non-negative")
+        if self.min_cost_adjusted_spread < 0:
+            raise ValueError("min_cost_adjusted_spread must be non-negative")
         if self.min_folds < 1:
             raise ValueError("min_folds must be positive")
         if not np.isfinite(self.min_fold_ic_stability) or not 0 <= self.min_fold_ic_stability <= 1:
@@ -1023,8 +1027,10 @@ class NorthsetConfig(StrictConfigModel):
             raise ValueError("sweep_min_events must be >= 10")
         if self.sweep_min_dates < 5:
             raise ValueError("sweep_min_dates must be >= 5")
-        if not 0.0 <= self.sweep_min_fold_positive_fraction <= 1.0:
-            raise ValueError("sweep_min_fold_positive_fraction must be in [0, 1]")
+        if not np.isfinite(self.sweep_min_fold_positive_fraction) or not (
+            0.0 <= self.sweep_min_fold_positive_fraction <= 1.0
+        ):
+            raise ValueError("sweep_min_fold_positive_fraction must be finite in [0, 1]")
         if self.sweep_cooldown_bars < 0:
             raise ValueError("sweep_cooldown_bars must be non-negative")
         if any(int(v) < 2 for v in self.sweep_sensitivity_lookbacks):
@@ -1045,6 +1051,18 @@ class NorthsetConfig(StrictConfigModel):
             floor = float(self.concentration_top_finite_floor)
             if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
                 raise ValueError("concentration_top_finite_floor must be in [0, 1] or None")
+        if self.queue_priority_finite_floor is not None:
+            floor = float(self.queue_priority_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("queue_priority_finite_floor must be in [0, 1] or None")
+        if self.side_notional_finite_floor is not None:
+            floor = float(self.side_notional_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("side_notional_finite_floor must be in [0, 1] or None")
+        if self.tob_size_share_finite_floor is not None:
+            floor = float(self.tob_size_share_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("tob_size_share_finite_floor must be in [0, 1] or None")
         return self
 
 

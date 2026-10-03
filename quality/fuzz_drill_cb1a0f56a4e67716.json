@@ -1,0 +1,122 @@
+{
+  "baseline_errors": [],
+  "data_label": "CORPUS",
+  "live_pnl_claim": false,
+  "mutations": [
+    {
+      "detail": "byte[14209]^=1f",
+      "errors": [
+        "crown_jewels:jewel_mutated:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "truncated_to:576",
+      "errors": [
+        "epoch:quality:epoch_head_rollback:corpus_epoch_006e861b9df12cad.json",
+        "epoch:quality:epoch_multiple_heads:corpus_epoch_006e861b9df12cad.json,corpus_epoch_272bcf3c75ab1d38.json",
+        "epoch:quality:epoch_orphan:corpus_epoch_a4afdae43c62d644.json"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_truncate",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "expect": "fail",
+      "mutation": "spine_record_delete",
+      "outcome": "escaped",
+      "verifier_ok": true
+    },
+    {
+      "detail": "injected:fuzz_3d9c1724.json",
+      "expect": "fail",
+      "mutation": "unstamped_receipt_inject",
+      "outcome": "escaped",
+      "verifier_ok": true
+    },
+    {
+      "detail": "byte[1128]^=71",
+      "errors": [
+        "spine:orphan_checkpoint:64afdc087fdf",
+        "spine:signature_invalid:64afdc087fdf:signature_invalid"
+      ],
+      "expect": "fail",
+      "mutation": "spine_record_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[242]^=4f",
+      "errors": [
+        "witness:checkpoint.json_2885676144.json:body_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "errors": [
+        "crown_jewels:jewel_missing:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[485]^=75",
+      "errors": [
+        "pin_signatures:signature_file_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "pin_sig_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "created:docs/FUZZ_NOTE.md",
+      "expect": "ok",
+      "mutation": "uncovered_write",
+      "outcome": "correct",
+      "verifier_ok": true
+    },
+    {
+      "detail": "byte[2583]^=38",
+      "errors": [
+        "witness:checkpoint.json_2885061641.json:inclusion_root_mismatch"
+      ],
+      "expect": "fail",
+      "mutation": "witness_proof_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "renamed:target",
+      "errors": [
+        "witness:checkpoint.json_2885676144.json:digest_mismatch"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_key_rename",
+      "outcome": "correct",
+      "verifier_ok": false
+    }
+  ],
+  "n_escaped": 2,
+  "n_false_positive": 0,
+  "n_mutations": 11,
+  "ok": false,
+  "receipt_sha256": "b2c6f16a596c3f81566f9bff42309cb5e7d2da8486428a731e12ff142f32420c",
+  "research_only": true,
+  "schema": "fuzz_drill.v1",
+  "seed": 7,
+  "simulated_only": false,
+  "tree_sha256": "ae99fb4a5fbebdf52a5b15f170528a97a22ef99d7ea12d9edd1230b3cbf520fc",
+  "verdict": "miscalibrated"
+}

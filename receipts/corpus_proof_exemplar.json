@@ -1,0 +1,87 @@
+{
+  "code_files": {
+    "epoch_merkle.py": "04611e91dad4aea054da97ccd6f3904cec5cbfcabd59c138d282662464e542d9"
+  },
+  "code_sha256": "9bf155bf6aca1dbc07e87c5f923038236cedc18149dfb837e7052e6b839eaed2",
+  "data_label": "CORPUS",
+  "dataset_hash": "3e76d72216aa964bad55623381cced90b3ecfd60b7347a7eec98ea13e5514de5",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T04:22:21.382907+00:00",
+  "git_revision": "f5573f64c254bfab9179ce823db6b1297af434fb",
+  "kind": "corpus_proof.v1",
+  "live_pnl_claim": false,
+  "params_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "payload": {
+    "corpus_key": "receipts/*.json",
+    "data_label": "CORPUS",
+    "epoch_receipt": "corpus_epoch_84384f73f7d8e9d6.json",
+    "epoch_root_sha256": "cae6872ec59c2fb4f10a7e3286386d0c7e25332632256f67a7478e8c1b9b2058",
+    "kind": "corpus_proof.v1",
+    "leaf_index": 0,
+    "live_pnl_claim": false,
+    "member": "calib_real_drill.json",
+    "member_sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
+    "merkle_root": "48865c5b80a7fd762429f068acb884c6e8e572b72db18ce878194e0cda0c6a8c",
+    "n_members": 90,
+    "path": [
+      {
+        "sha256": "799cd97006e47318aeb72cf4f21f2032e03fa472402dd85e987b881ea29bb079",
+        "side": "right"
+      },
+      {
+        "sha256": "efce5f75cc11edc5a53d9d3f5322842d8f93f7b27ff7031ec661eae48241793a",
+        "side": "right"
+      },
+      {
+        "sha256": "91003d45182dd816b4bcc89f162316be7a1abb97af0839992d9d8a54fde2065b",
+        "side": "right"
+      },
+      {
+        "sha256": "a921d4fe3e28ef35c78cd230a5ca434fc0274485a8623d52a4ef8686cd2db83d",
+        "side": "right"
+      },
+      {
+        "sha256": "2b7ffc28d6f20299f8f3b306cd662522ac03e0a219a37c7d294b05a72a0d03f9",
+        "side": "right"
+      },
+      {
+        "sha256": "c8b1b9fb383f1adedf146447564fd2afeac6fc651c2a8f99bf4c8b99f2d1cb47",
+        "side": "right"
+      },
+      {
+        "sha256": "0a3a49f62330a4b24d1f5486a6923e3f99c96e1fda2a7a777f3850f35508c106",
+        "side": "right"
+      }
+    ],
+    "research_only": true,
+    "schema": "corpus_proof.v1",
+    "simulated_only": false
+  },
+  "receipt_sha256": "87bfa91513bede1b0a89b89493dfe54206876500d147ee154bfafdd960b74597",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

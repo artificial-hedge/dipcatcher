@@ -1,0 +1,180 @@
+{
+  "arms": [
+    {
+      "all": {
+        "burstiness_B": 0.007152297302510234,
+        "cv": 1.014407642346511,
+        "mean_gap": 0.8272241736602725,
+        "n_gaps": 4835
+      },
+      "fano_1s": 1.0146272364911255,
+      "horizon_t": 4000.1342576872685,
+      "n_events": 4836,
+      "n_hawkes_proposals": 0,
+      "n_hawkes_rejected": 0,
+      "n_regime_transitions": 0,
+      "name": "poisson",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.038065738604133086,
+          "cv": 1.0791441580402714,
+          "mean_gap": 2.4700764968546203,
+          "n_gaps": 1619
+        },
+        "limit": {
+          "burstiness_B": 0.013989957461967508,
+          "cv": 1.028376906640741,
+          "mean_gap": 1.657066227070153,
+          "n_gaps": 2412
+        },
+        "market": {
+          "burstiness_B": 0.008189428904571812,
+          "cv": 1.016514098847579,
+          "mean_gap": 4.98252987445074,
+          "n_gaps": 802
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 0.40498640686540976,
+        "lift": 0.9655475277230465,
+        "n_mo": 803,
+        "post_cxl_per_s": 0.39103362391033625,
+        "window_s": 0.5
+      }
+    },
+    {
+      "all": {
+        "burstiness_B": 0.1352078564402408,
+        "cv": 1.3126944606219069,
+        "mean_gap": 1.1013045119461549,
+        "n_gaps": 3631
+      },
+      "fano_1s": 1.8868304674932588,
+      "horizon_t": 4000.2036206742146,
+      "n_events": 3632,
+      "n_hawkes_proposals": 0,
+      "n_hawkes_rejected": 0,
+      "n_regime_transitions": 28,
+      "name": "regime",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.12110108292744512,
+          "cv": 1.2755745412243988,
+          "mean_gap": 3.8599757161079076,
+          "n_gaps": 1032
+        },
+        "limit": {
+          "burstiness_B": 0.09288945469984457,
+          "cv": 1.204802943105701,
+          "mean_gap": 2.24522653882903,
+          "n_gaps": 1779
+        },
+        "market": {
+          "burstiness_B": 0.28268048892540076,
+          "cv": 1.788157814087404,
+          "mean_gap": 4.860514168155427,
+          "n_gaps": 818
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 0.25823685440939953,
+        "lift": 1.9385710910838874,
+        "n_mo": 819,
+        "post_cxl_per_s": 0.5006105006105006,
+        "window_s": 0.5
+      }
+    },
+    {
+      "all": {
+        "burstiness_B": 0.5600372796625964,
+        "cv": 3.545839698568591,
+        "mean_gap": 0.09098454012913205,
+        "n_gaps": 43961
+      },
+      "fano_1s": 21.015492935939562,
+      "horizon_t": 4001.1383064145007,
+      "n_events": 43962,
+      "n_hawkes_proposals": 52030,
+      "n_hawkes_rejected": 8068,
+      "n_regime_transitions": 428,
+      "name": "regime_hawkes",
+      "per_type": {
+        "cancel": {
+          "burstiness_B": 0.6109615025502703,
+          "cv": 4.1408794068212575,
+          "mean_gap": 0.18362501018005103,
+          "n_gaps": 21744
+        },
+        "limit": {
+          "burstiness_B": 0.4532129372241899,
+          "cv": 2.6577310184458884,
+          "mean_gap": 0.22139527600706949,
+          "n_gaps": 18061
+        },
+        "market": {
+          "burstiness_B": 0.5157908348037888,
+          "cv": 3.1304463933258275,
+          "mean_gap": 0.9516217628223583,
+          "n_gaps": 4154
+        }
+      },
+      "post_mo_cxl_lift": {
+        "baseline_cxl_per_s": 5.4347034105617125,
+        "lift": 4.948011454862909,
+        "n_mo": 4155,
+        "post_cxl_per_s": 26.890974729241876,
+        "window_s": 0.5
+      }
+    }
+  ],
+  "claims": {
+    "hybrid_keeps_retreat": true,
+    "hybrid_outbursts_regime_alone": true,
+    "poisson_stream_is_memoryless": true,
+    "regime_chain_moves": true,
+    "regime_modulation_produces_burstiness": true
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "poisson_B_0.0072_vs_0.8617",
+    "poisson_lift_0.966_vs_6.52",
+    "regime_B_0.1352_vs_0.8617",
+    "regime_lift_1.939_vs_6.52",
+    "regime_hawkes_B_0.5600_vs_0.8617"
+  ],
+  "git_revision": "ae30d0db3b64302f22d1c24b51f091055d3832d3",
+  "horizon": 4000.0,
+  "interpretation": "Markov-modulated base rates (MMPP) put a latent activity regime under the event clock. Regime switching alone is weak (B ~ 0.1-0.15 at these dwells) \u2014 the mechanism earns its keep under excitation: the Cox-Hawkes hybrid roughly doubles the cross arm's burstiness (B ~ 0.5 vs 0.37) while keeping the post-exec cancel retreat (lift ~ 5 vs real ~6.5). This confirms the power-law arm's negative-result prediction: burst height comes from baseline modulation, not fatter kernels. Residual gaps vs the tape (B 0.86) are logged as divergences; per-state dwell geometry and asymmetric transition kernels are the next degrees of freedom.",
+  "kind": "regime_clock_bench",
+  "rate_regimes": {
+    "scales": [
+      [
+        0.55,
+        0.45,
+        0.55
+      ],
+      [
+        2.5,
+        6.0,
+        4.0
+      ]
+    ],
+    "stay_probs": [
+      0.99,
+      0.99
+    ]
+  },
+  "real_tape_targets": {
+    "burstiness_B_all": 0.8617,
+    "cv_all": 3.6689,
+    "post_mo_cxl_lift_0p5s": 6.5203500000000005,
+    "source_receipts": [
+      "event_burst.v1",
+      "cancel_cluster.v1"
+    ]
+  },
+  "receipt_sha256": "b90f2df210b2646548f7b38b8dd5400c814c11042882bbbc7ebc138e41d5281f",
+  "research_only": true,
+  "schema": "regime_clock.v1",
+  "seed": 7
+}

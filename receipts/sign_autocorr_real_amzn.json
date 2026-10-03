@@ -1,0 +1,107 @@
+{
+  "claim": "power_law_sign_decay_measured_real_vs_sim",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_exponent_gap_0.90",
+    "regime_exponent_gap_0.31",
+    "split_exponent_gap_0.31"
+  ],
+  "git_revision": "b36b2555378ba561adeeb2bd28c5a5dca2e11bca",
+  "interpretation": "Lillo-Farmer: real sign autocorr decays as k^-gamma, gamma ~ 0.5. Splitting produces the mechanism; iid gives exponent ~ inf/nan (curve dead past lag 2).",
+  "kind": "sign_autocorr_real",
+  "lags": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "real": {
+    "curve": {
+      "lag1": 0.72131,
+      "lag1024": -0.01627,
+      "lag128": 0.03343,
+      "lag16": 0.1433,
+      "lag2": 0.57678,
+      "lag256": -0.00334,
+      "lag32": 0.08915,
+      "lag4": 0.39715,
+      "lag512": -0.00178,
+      "lag64": 0.07689,
+      "lag8": 0.25206
+    },
+    "exponent": 0.6765,
+    "fit_intercept": 0.0057,
+    "n_execs": 8974,
+    "n_positive_lags": 8
+  },
+  "receipt_sha256": "2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9",
+  "research_only": true,
+  "schema": "sign_autocorr_real.v1",
+  "sim_arms": {
+    "iid": {
+      "curve": {
+        "lag1": -0.00422,
+        "lag1024": -0.01838,
+        "lag128": 0.01416,
+        "lag16": 0.00512,
+        "lag2": -0.01476,
+        "lag256": 0.01296,
+        "lag32": 0.00331,
+        "lag4": 0.00392,
+        "lag512": 0.01235,
+        "lag64": 0.0244,
+        "lag8": 0.01296
+      },
+      "exponent": -0.2248,
+      "fit_intercept": -5.5548,
+      "n_execs": 3319,
+      "n_positive_lags": 8
+    },
+    "regime": {
+      "curve": {
+        "lag1": -0.00967,
+        "lag1024": 0.01477,
+        "lag128": -0.00833,
+        "lag16": -0.0051,
+        "lag2": 0.01424,
+        "lag256": 0.00457,
+        "lag32": 0.00188,
+        "lag4": 0.01101,
+        "lag512": -0.0094,
+        "lag64": 0.00027,
+        "lag8": -0.00403
+      },
+      "exponent": 0.3666,
+      "fit_intercept": -4.7651,
+      "n_execs": 3723,
+      "n_positive_lags": 6
+    },
+    "split": {
+      "curve": {
+        "lag1": 0.61616,
+        "lag1024": -0.01084,
+        "lag128": 0.05844,
+        "lag16": 0.28558,
+        "lag2": 0.57823,
+        "lag256": 0.00518,
+        "lag32": 0.19086,
+        "lag4": 0.55278,
+        "lag512": -0.05231,
+        "lag64": 0.09189,
+        "lag8": 0.43638
+      },
+      "exponent": 0.9874,
+      "fit_intercept": 1.3048,
+      "n_execs": 4244,
+      "n_positive_lags": 9
+    }
+  },
+  "ticker": "AMZN"
+}

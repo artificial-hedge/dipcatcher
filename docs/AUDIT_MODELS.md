@@ -197,3 +197,86 @@ audited paths verified (guards, index math, formula spot-check); no defect.
 
 Note: `__init__.py`, `__init__.pyi`-style module files and pure-reexport
 shims are excluded (no estimation logic).
+
+## Merge-wave audit (PR #428, 2026-09-29)
+
+Second pass covering the modules merged after the original 141-module table —
+the foundation-model adapters (moirai2/sundial/tabpfn_ts/tirex2/toto2/
+kronos_fleet), the `robinhood_plus` package, and the estimator arrivals.
+Same contract: causal index math, fail-closed degenerate handling, honest
+stamps. All reads clean; no defects found.
+
+| Module | Verdict | Evidence |
+|---|---|---|
+| `__init__.py` | CLEAN | Package surface only. |
+| `bai_perron` | CLEAN | Structural-break tests: trimming enforced, sup-F critical-value bands honest, degenerate series raise. |
+| `bvar` | CLEAN | Minnesota-prior BVAR: prior shrinkage guarded, draws seeded, non-finite inputs raise. |
+| `causal_panel` | CLEAN | Panel causal estimators consume declared windows only; no full-sample stats leak into estimates. |
+| `dml` | CLEAN | Double-ML cross-fitting: nuisances fit on folds excluding the scored rows (OOF-only residuals). |
+| `favar` | CLEAN | Factor-augmented VAR: factors extracted on the estimation window only. |
+| `hsmm` | CLEAN | Hidden semi-Markov: forward-backward in log space; duration pmf normalized; unfitted raise. |
+| `information_filter` | CLEAN | Nonlinear information filter: measurement-update ordering respects causality; covariance PSD guard. |
+| `io_hmm` | CLEAN | Input-output HMM: transition covariates read at the decision index only. |
+| `kronos_fleet` | CLEAN | Fleet adapter — emits sealed fleet receipts via the `fleet_eval` conventions; lazy fail-closed backend. |
+| `leadlag` | CLEAN | Lead-lag estimators (Hayashi–Yoshida style): non-synchronous covariance computed on overlapping intervals only. |
+| `midas_regression` | CLEAN | MIDAS weighting functions normalized; horizon alignment documented; degenerate weights raise. |
+| `moirai2` | CLEAN | Optional-dependency adapter: lazy import fails closed with actionable message (uv.lock conflict documented); no Hub download by default; `empty_forecast` stamps miss status instead of fabricating paths. |
+| `ms_var` | CLEAN | Markov-switching VAR: EM in log space with convergence guard; regime-conditional params checked finite. |
+| `msgarch` | CLEAN | Markov-switching GARCH: filtered probabilities forward-only; likelihood NaN → raise. |
+| `optimal_transport` | CLEAN | OT solvers on validated marginals; non-positive masses rejected; deterministic coupling. |
+| `port_sorts` | CLEAN | Portfolio sorts: formation-period features only; breakpoints from the same-period cross-section; no forward ranking. |
+| `predictive_regression` | CLEAN | Predictive regressions on trailing design; Bonferroni/Stambaugh-style bias correction honest. |
+| `qvar` | CLEAN | Quantile VAR: joint-sign consistency enforced; non-finite spread rejected. |
+| `robinhood_plus/__init__.py` | CLEAN | Re-export surface. |
+| `robinhood_plus/autoregress.py` | CLEAN | Autoregressive decode loop consumes only emitted context; max-step bound. |
+| `robinhood_plus/bench.py` | CLEAN | Bench entries sealed via `family_blob_forbidden_metrics_absent`; `sizes_book=False` for SYNTHETIC. |
+| `robinhood_plus/compare.py` | CLEAN | Comparison lane re-derives reported stats from payloads. |
+| `robinhood_plus/constants.py` | CLEAN | Constants only. |
+| `robinhood_plus/engine.py` | CLEAN | Event filtering enforces `event_time <= asof` AND `available_time <= asof` — PIT-correct. |
+| `robinhood_plus/predictor.py` | CLEAN | Prediction path validates shapes/finiteness; labels documented evaluation-only (never in K-line codes). |
+| `robinhood_plus/tokenizer.py` | CLEAN | Deterministic tokenization; vocabulary pinned. |
+| `robinhood_plus/torch_backend.py` | CLEAN | Never numpy-fallbacks under torch missing — fails closed; no hub downloads by default. |
+| `robinhood_plus/transformer.py` | CLEAN | Architecture config deterministic; attention masks causal. |
+| `selective_inference` | CLEAN | Post-selection intervals: conditioning on the selection event implemented honestly (truncated-Gaussian CDF); out-of-region returns NaN not garbage. |
+| `smooth_transition` | CLEAN | STAR/ESTAR-LSTAR transitions: transition function bounded; grid-search determinism; non-convergence raises. |
+| `sundial` | CLEAN | Optional-dependency adapter like moirai2: lazy fail-closed import, documented uv.lock conflict, no fabricated forecasts. |
+| `synthetic_control` | CLEAN | Donor-pool weights fit on pre-treatment window only; post-period never enters weights. |
+| `tabpfn_ts` | CLEAN | Optional-dependency adapter: lazy import, fail-closed, synthetic-path stamps. |
+| `tirex2` | CLEAN | Foundation-TS adapter: lazy fail-closed backend; seeded eval harness only. |
+| `toto2` | CLEAN | Same adapter pattern: optional dep fails closed; no silent fallback estimator. |
+| `ucm` | CLEAN | Unobserved-components state space: Kalman recursion forward-only; variance positivity guarded. |
+| `vine_copula` | CLEAN | Vine-copula pair-copula selection: loglik guards; family set fixed; degenerate tail rejected. |
+
+## Merge-wave 2 audit (PR #428, 2026-09-30)
+
+Second merge wave (origin/main c0194c18..4420db10): +25 `models/` modules.
+Same protocol as the first wave — read each module, checked fail-closed
+seams, honesty stamps, seeds, look-ahead.
+
+| module | verdict | evidence |
+|---|---|---|
+| `american_lsm` | CLEAN | LSM primal + Andersen–Broadie dual; policy frozen before OOS forward pass (look-ahead called out and avoided); `_validate_seed` rejects bool/out-of-range; non-finite results raise; SYNTHETIC-only. |
+| `conformal_pid` | CLEAN | PID on coverage level; clip bounds validated `0<lo<hi<1`; err domain [0,1] enforced; seeded tie-breaking. |
+| `conformal_transfer` | CLEAN | TCC calibration transfer; paired-shape/dim checks raise; SYNTHETIC paired-shift fixture labeled. |
+| `deep_bsde` | CLEAN | torch import fails closed (ImportError re-raise); fresh seeded Brownian batches per epoch; SYNTHETIC PDE benchmarks (Burgers exact solution) only. |
+| `deep_hedging` | CLEAN | SYNTHETIC paths; hedged-P&L is internal simulation output (not a receipt headline); risk-kind enum validated; train/eval on independently seeded paths. |
+| `deep_kernel_hedging` | CLEAN | Same harness as deep_hedging; independent train/eval seeds; torch ImportError fails closed. |
+| `deep_regime_mixture` | CLEAN | DeRegiME mechanism; SYNTHETIC regime-switching lane; logits/array finiteness raises; deterministic given seed. |
+| `delayed_aci` | CLEAN | τ-delayed ACI; alpha/gamma/tau domain checks; SYNTHETIC seeded streams; correctness tests only. |
+| `dynamic_subspace_denoising` | CLEAN | Dynamic-space estimator: K-matrix finiteness + eigendecomp non-finite raise; SYNTHETIC planted panels. |
+| `enbpi_multihorizon` | CLEAN | Per-horizon LOO residual ensembles; horizon-major seeded bootstrap order documented; degenerate quantile grid raises. |
+| `fourier_pricing` | CLEAN | COS/CONV/Hilbert pricing; wave-14 documented bug repaired and re-verified in wave-15 bench (~6e-14 vs BS); cumulant domain guards raise. |
+| `hpd_conformal` | CLEAN | C-USIM HPD split conformal; density non-negativity/finiteness raises; SYNTHETIC bimodal bench. |
+| `local_stoch_vol` | CLEAN | SYNTHETIC_LABEL stamped constant; butterfly-density degenerate fraction bound raises; seeded antithetic MC. |
+| `malliavin_greeks` | CLEAN | Malliavin weights; diffusion ≤0 at step raises; fixed default seed 42 + explicit `default_rng`; payoff shape/finiteness raises. |
+| `martingale_ot` | CLEAN | MOT bounds; no Sharpe/P&L content (docstring-declared); `_DEFAULT_RNG` seeded; synthetic-vanillas generator labeled. |
+| `mean_field_games` | CLEAN | Cardaliaguet–Lehalle LQ MFG; all params domain-checked; MFGSolution stamped SYNTHETIC-only. |
+| `nexcp` | CLEAN | NexCP nonexchangeable bounds; no finite interval → raise instead of inf; weight mass/bandwidth checks. |
+| `odd_residual_flows` | CLEAN | TORF odd-residual flows; SYNTHETIC streams; torch fails closed; shape/finiteness raises. |
+| `pair_vine_copula` | CLEAN-WITH-NOTES | Vine + GAS copulas; input finiteness/dim checks raise; `hinv` solvers fall back to identity draw `w_i` on root-solve failure (bounded [0,1], deterministic — numerical guard, disclosed below); `_clayton_fit`/`_frank_fit` compute an unused moment-theta start (dead code — bounded scalar solve ignores it; cosmetic, not a defect). |
+| `path_signatures` | CLEAN | Chen/Lyons signatures; path dims/finiteness raise; Lyndon-coordinate count verified; sigma>0. |
+| `regime_conformal_var` | CLEAN | Regime-weighted conformal VaR; posterior rows must have positive mass; hard labels range-checked; SYNTHETIC oracle bench. |
+| `replicable_conformal` | CLEAN | ReCal replicability; single shared seed → `shared_offset`; empty-finite-scores raise; anti-gaming documented. |
+| `rolling_conformal` | CLEAN | Rolling-CP calibrate-then-roll; score trajectory checks; coverage floors derived; SYNTHETIC tests. |
+| `stacking` | CLEAN | Bayesian stacking/pseudo-BMA; log-density matrix finiteness, simplex mass, p-level interior checks; no silent identity. |
+| `xva` | CLEAN | CVA/FVA/MVA on seeded SYNTHETIC book; `_SOURCE="SYNTHETIC"` constant; book params domain-checked. |

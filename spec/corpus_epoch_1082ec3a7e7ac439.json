@@ -1,0 +1,40 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "e005e004b907e1f7538089a8755e2ff66f7dade0f308339ae922708eff184077",
+  "inputs_sha256": "61966577a1ca5c9a3986c46b88ead7bc4b4130128eecd7e77485750811a21417",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "ca84dbb4182756189cabec1048fea735674b6b0e7e199af0d3d512f7f3bce440",
+  "members": [
+    {
+      "name": "tla/OrderLifecycle.cfg",
+      "sha256": "66a6f98faf7313a4b311f228266dd75077f48592a6ad1118b2ac26ddf8c6323d"
+    },
+    {
+      "name": "tla/OrderLifecycle.tla",
+      "sha256": "a578c79bd8e56242abb332b325f1b550f9da823228b5021e02c0094038ba7187"
+    },
+    {
+      "name": "tla/OrderLifecycleLiveness.cfg",
+      "sha256": "c7bb5af13ee4be33fa98441dca4ff172610f5ae01d284dd40faaf80cc074f8a4"
+    }
+  ],
+  "members_added": [
+    "tla/OrderLifecycle.cfg",
+    "tla/OrderLifecycle.tla",
+    "tla/OrderLifecycleLiveness.cfg"
+  ],
+  "members_removed": [],
+  "n_members": 3,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "1082ec3a7e7ac4391516d9035f8d7e68218b274846d49251523a0f6fdf4834c3",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

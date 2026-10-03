@@ -2,7 +2,8 @@
 
 Every committed ``receipts/*.json`` must seal-verify. ``KNOWN_UNSEALED``
 previously exempted the seven pre-seal-era artifacts; those migrated to
-``receipts/legacy-unsealed/`` (outside the verified root), so the map is
+``receipts/legacy-unsealed/`` (a quarantined subdir — see
+``utils.receipt.QUARANTINED_SUBDIRS``), so the map is
 empty — it must stay empty: a new unsealed receipt in ``receipts/`` fails.
 
 ``KNOWN_CONTRACT_LEGACY`` pins sealed receipts written by drill scripts
@@ -21,7 +22,7 @@ import hashlib
 from pathlib import Path
 
 # filename → sha256 of the committed file bytes. Empty: the seven pre-seal
-# artifacts live under `receipts/legacy-unsealed/`, outside the verified root.
+# artifacts live under `receipts/legacy-unsealed/`, a quarantined subdir.
 KNOWN_UNSEALED: dict[str, str] = {}
 
 # Sealed receipts that predate their kind's deep contract (drill artifacts

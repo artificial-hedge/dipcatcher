@@ -1,0 +1,380 @@
+{
+  "kind": "label_horizon_map",
+  "schema": "label_horizon_map.v1",
+  "git_revision": "7cc0d72fd10b6e99445d612279d3863728eb1f35",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "viable_band": [
+      0.2,
+      0.8
+    ],
+    "viable_cells": 32,
+    "total_cells": 32,
+    "viable_share": 1.0,
+    "verdict": "ok"
+  },
+  "interpretation": {
+    "grid": "barrier_widths x horizons, symmetric pt=sl, cusum_h=0 (all bars)",
+    "per_tape": {
+      "gbm": [
+        {
+          "barrier_width": 0.005,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4916229057264316,
+          "mean_bars_to_touch": 4.461115278819705,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4843710927731933,
+          "mean_bars_to_touch": 6.959489872468117,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47186796699174793,
+          "mean_bars_to_touch": 8.964491122780695,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.46911727931982994,
+          "mean_bars_to_touch": 9.52388097024256,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.49012253063265815,
+          "mean_bars_to_touch": 4.985746436609152,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47736934233558387,
+          "mean_bars_to_touch": 9.566391597899475,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4593648412103026,
+          "mean_bars_to_touch": 16.56714178544636,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.42360590147536886,
+          "mean_bars_to_touch": 24.205051262815704,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.49012253063265815,
+          "mean_bars_to_touch": 4.997499374843711,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47736934233558387,
+          "mean_bars_to_touch": 9.986746686671667,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.45986496624156037,
+          "mean_bars_to_touch": 19.826956739184798,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4296074018504626,
+          "mean_bars_to_touch": 37.605151287821954,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.49012253063265815,
+          "mean_bars_to_touch": 4.997499374843711,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47736934233558387,
+          "mean_bars_to_touch": 9.988747186796699,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.45986496624156037,
+          "mean_bars_to_touch": 19.95248812203051,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.43035758939734936,
+          "mean_bars_to_touch": 39.76694173543386,
+          "viable": true
+        }
+      ],
+      "regime": [
+        {
+          "barrier_width": 0.005,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47586896724181044,
+          "mean_bars_to_touch": 4.0867716929232305,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4711177794448612,
+          "mean_bars_to_touch": 6.0002500625156285,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4561140285071268,
+          "mean_bars_to_touch": 7.1820455113778445,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.005,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4553638409602401,
+          "mean_bars_to_touch": 7.396099024756189,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47886971742935736,
+          "mean_bars_to_touch": 4.7621905476369095,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47611902975743936,
+          "mean_bars_to_touch": 8.613153288322081,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.44836209052263065,
+          "mean_bars_to_touch": 13.482370592648161,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.01,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.42760690172543137,
+          "mean_bars_to_touch": 17.302825706426606,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47886971742935736,
+          "mean_bars_to_touch": 4.987246811702926,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4708677169292323,
+          "mean_bars_to_touch": 9.875718929732432,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.43685921480370093,
+          "mean_bars_to_touch": 18.891222805701425,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.02,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.41810452613153287,
+          "mean_bars_to_touch": 32.58889722430607,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 5,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.47886971742935736,
+          "mean_bars_to_touch": 4.997499374843711,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 10,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.4708677169292323,
+          "mean_bars_to_touch": 9.988747186796699,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 20,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.43685921480370093,
+          "mean_bars_to_touch": 19.935983995999,
+          "viable": true
+        },
+        {
+          "barrier_width": 0.04,
+          "horizon": 40,
+          "n_events": 3999,
+          "n_labeled": 3999,
+          "n_unobservable": 0,
+          "event_rate": 0.99975,
+          "positive_rate": 0.41310327581895473,
+          "mean_bars_to_touch": 39.5233808452113,
+          "viable": true
+        }
+      ]
+    }
+  },
+  "receipt_sha256": "1277dca45ab099e0ac9010ffb52666dcf98b77f2b384430ed60bbf1da285f05c"
+}

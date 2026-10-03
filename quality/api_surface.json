@@ -1,0 +1,159 @@
+{
+  "/backtest": {
+    "POST": {
+      "params": [
+        {
+          "name": "req",
+          "required": true
+        }
+      ]
+    }
+  },
+  "/backtest/{backtest_id}": {
+    "GET": {
+      "params": [
+        {
+          "name": "backtest_id",
+          "required": true
+        },
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/doctor": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/forecast/{symbol}": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        },
+        {
+          "name": "symbol",
+          "required": true
+        }
+      ]
+    }
+  },
+  "/forecast/{symbol}/distribution": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        },
+        {
+          "name": "symbol",
+          "required": true
+        }
+      ]
+    }
+  },
+  "/health": {
+    "GET": {
+      "params": []
+    }
+  },
+  "/models": {
+    "GET": {
+      "params": []
+    }
+  },
+  "/monitoring/drift": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/portfolio/exposures": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/portfolio/optimize": {
+    "POST": {
+      "params": [
+        {
+          "name": "req",
+          "required": true
+        }
+      ]
+    }
+  },
+  "/portfolio/target": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/ranking": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/ready": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/regime": {
+    "GET": {
+      "params": []
+    }
+  },
+  "/research/latest": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  },
+  "/risk/portfolio": {
+    "GET": {
+      "params": [
+        {
+          "name": "config_path",
+          "required": false
+        }
+      ]
+    }
+  }
+}

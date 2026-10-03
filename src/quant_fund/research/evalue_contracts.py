@@ -685,6 +685,23 @@ def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
             errors.append("n_receipts_neq_n_files")
     if not isinstance(p.get("corpus_lane_available"), bool):
         errors.append("corpus_lane_available_not_bool")
+    epoch_state = p.get("corpus_epoch")
+    if epoch_state is not None:
+        if not isinstance(epoch_state, Mapping):
+            errors.append("corpus_epoch_not_mapping")
+        elif epoch_state.get("available") is True:
+            for name in ("errors",):
+                if not isinstance(epoch_state.get(name), list):
+                    errors.append(f"corpus_epoch_{name}_not_list")
+            if not isinstance(epoch_state.get("chain_ok"), bool):
+                errors.append("corpus_epoch_chain_ok_not_bool")
+            root_val = epoch_state.get("head_epoch_root")
+            if root_val is not None and not _is_sha256(root_val):
+                errors.append("corpus_epoch_head_epoch_root_invalid")
+            if epoch_state.get("chain_ok") is True and any(
+                e != "no_epoch_receipts" for e in epoch_state.get("errors") or []
+            ):
+                errors.append("corpus_epoch_chain_ok_lies")
     n_findings = p.get("n_findings_harvested")
     n_pooled = p.get("n_evalues_pooled")
     for name, v in (("n_findings_harvested", n_findings), ("n_evalues_pooled", n_pooled)):

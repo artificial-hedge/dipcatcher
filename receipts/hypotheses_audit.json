@@ -1,0 +1,44 @@
+{
+  "kind": "hypotheses_audit",
+  "schema": "hypotheses_audit.v1",
+  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "results": {
+      "forbidden_cases": [
+        {
+          "name": "sharpe",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "sortino",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "unrealized_pnl",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "nav_curve",
+          "outcome": "raise:ValueError"
+        }
+      ],
+      "evasion_rejected": "raise:ValueError",
+      "unknown_rejected": "raise:ValueError",
+      "allowed_accept": true,
+      "nonfinite_rejected": "raise:ValueError/raise:ValueError",
+      "pending_inadmissible": true,
+      "decided_admissible": true,
+      "verdict_changes_id": true,
+      "sft_shape": true,
+      "sft_has_verdict": true,
+      "sft_receipt_bound": true,
+      "pending_renders_pending": true
+    },
+    "ok": true
+  },
+  "interpretation": "Trace contract holds: allowlist-only scores, forbidden and unrecognized keys fail closed, non-finite values rejected, admissibility requires a verdict, SFT render binds the receipt.",
+  "receipt_sha256": "1ad94aac30e1226fe24d415af96ad8be241a0b08893787df77c82e330569c587"
+}

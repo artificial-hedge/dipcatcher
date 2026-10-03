@@ -161,7 +161,7 @@ def _quantile_panel_cached(
     tmp_path = Path(tmp_name)
     try:
         np.savez_compressed(tmp_path, panel=panel, stats_json=np.array(json.dumps(stats)))
-        with tmp_path.open("rb") as handle:
+        with tmp_path.open("r+b") as handle:
             os.fsync(handle.fileno())
         os.replace(tmp_path, cache_path)
     finally:

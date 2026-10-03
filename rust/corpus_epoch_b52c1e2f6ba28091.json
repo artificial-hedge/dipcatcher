@@ -1,0 +1,75 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "9d3393c7585ec846aeafb23a672908d8405a22d32194ec5596b5ad713fe781b4",
+  "inputs_sha256": "47adb9dc626346e49ee4d3404a129d3947f0b0397ad27c9e383389bb2821bab6",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "51f9d05f1a217ed03ced7661b6924e1ad3eb208d6738780594ebe48f1db53559",
+  "members": [
+    {
+      "name": "quant_core/Cargo.lock",
+      "sha256": "56e4bf1f666632b43ea532f11cfc3cf30cde003ace1f1b3f6aad085ec1696bb7"
+    },
+    {
+      "name": "quant_core/Cargo.toml",
+      "sha256": "4f1ea271da7a6154aadb99a0417fdd4d28f2797c9512b3f265dd04541ae1b6b1"
+    },
+    {
+      "name": "quant_core/README.md",
+      "sha256": "44e5032d18cc34fb46374185c9dda2063ae0dc9c79accd34120b8a47c1a22977"
+    },
+    {
+      "name": "quant_core/pyproject.toml",
+      "sha256": "f53e1659c6fa76a3d6fbc07a03aab398f1966b106cd156d48c811857d66f27ea"
+    },
+    {
+      "name": "quant_core/rust-toolchain.toml",
+      "sha256": "3f063eeef2b96ed4c19173cb06f9f47031f2539e5f15040bcb24177d0da7b225"
+    },
+    {
+      "name": "quant_core/src/book.rs",
+      "sha256": "c5950a0a7f55adb8acc4948da6e3d961ed67b495fee8a759976ff3d6aef1d094"
+    },
+    {
+      "name": "quant_core/src/hashing.rs",
+      "sha256": "82c393f8e8d28c961a8d2f57058cd1720e4e7c9c2c15c77b5bb422c09f5d4558"
+    },
+    {
+      "name": "quant_core/src/lib.rs",
+      "sha256": "5c07efba39b63497219f0d63ed4f4a63285ae65dbcd4a4ab18fc9ebdc06e0eb3"
+    },
+    {
+      "name": "quant_core/src/returns.rs",
+      "sha256": "91fb7e7bd502b2aee77111baa09d908c9bc383e3ca9b5c82b234190435e7bbcb"
+    },
+    {
+      "name": "quant_core/src/rolling.rs",
+      "sha256": "41b9ca7aa01dc0b26f63615d90b873f1272e2dc72d4d1bd80f32561cdc646eef"
+    }
+  ],
+  "members_added": [
+    "quant_core/Cargo.lock",
+    "quant_core/Cargo.toml",
+    "quant_core/README.md",
+    "quant_core/pyproject.toml",
+    "quant_core/rust-toolchain.toml",
+    "quant_core/src/book.rs",
+    "quant_core/src/hashing.rs",
+    "quant_core/src/lib.rs",
+    "quant_core/src/returns.rs",
+    "quant_core/src/rolling.rs"
+  ],
+  "members_removed": [],
+  "n_members": 10,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "b52c1e2f6ba28091add315eda031f7fd8fbf9fa28009e3d9a04af6a3c1907f85",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

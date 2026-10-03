@@ -21,6 +21,7 @@ from fx1.bench.dip import (
     evaluate_forecasts,
     unconditional_baseline,
 )
+from quant_fund.utils.atomicio import atomic_write_text
 
 BENCH_DISCLAIMER = (
     "Research/backtest evidence on historical data, not live performance. "
@@ -114,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     receipt = run_dip_bench(args.data_dir, threshold=args.threshold)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(receipt, indent=2, sort_keys=True), encoding="utf-8")
+    atomic_write_text(out, json.dumps(receipt, indent=2, sort_keys=True))
     print(json.dumps({"events": receipt["n_events"], "out": str(out)}))
     return 0
 

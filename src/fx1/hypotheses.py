@@ -14,7 +14,7 @@ import math
 from datetime import UTC, datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from fx1.honesty import FORBIDDEN_HEADLINE_TOKENS
 
@@ -36,6 +36,12 @@ class ResearchTrace(BaseModel):
     verdict: GateVerdict | None = None
     receipt_sha256: str = Field(min_length=64, max_length=64)
     recorded_utc: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+
+    @field_validator("scores")
+    @classmethod
+    def _scores_are_proper(cls, scores: dict[str, float]) -> dict[str, float]:
+        validate_trace_scores(scores)
+        return scores
 
     @property
     def admissible(self) -> bool:
@@ -96,15 +102,26 @@ _ALLOWED_SCORE_TOKENS = frozenset(
 
 
 def validate_trace_scores(scores: dict[str, float]) -> None:
-    """Fail-closed: every score key must contain an allowed proper-score token."""
+    """Fail-closed: every score key must contain an allowed proper-score token.
+
+    A forbidden headline token anywhere *inside* a key token is rejected
+    too — ``crps_realizedpnl`` and ``pinball_navtotal`` are not proper
+    scores, even though an exact token match misses them. Allowed score
+    tokens win the substring check (``sharpness`` legitimately contains
+    ``sharpe``).
+    """
     for key, value in scores.items():
-        tokens = set(key.lower().replace("-", "_").split("_"))
-        if tokens & FORBIDDEN_HEADLINE_TOKENS:
-            raise ValueError(
-                f"score key {key!r} is a forbidden headline metric, not a "
-                "recognized proper score; fx-1 traces carry scientific scores only"
-            )
-        if not tokens & _ALLOWED_SCORE_TOKENS:
+        norm = key.lower().replace("-", "_")
+        tokens = set(norm.split("_"))
+        for token in tokens:
+            if token in _ALLOWED_SCORE_TOKENS:
+                continue
+            if any(forbidden in token for forbidden in FORBIDDEN_HEADLINE_TOKENS):
+                raise ValueError(
+                    f"score key {key!r} is a forbidden headline metric, not a "
+                    "recognized proper score; fx-1 traces carry scientific scores only"
+                )
+        if not tokens & _ALLOWED_SCORE_TOKENS and norm not in _ALLOWED_SCORE_TOKENS:
             raise ValueError(
                 f"score key {key!r} is not a recognized proper score; "
                 "fx-1 traces carry scientific scores only"

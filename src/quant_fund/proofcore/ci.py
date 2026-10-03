@@ -14,7 +14,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
+import platform
 import shutil
 import subprocess
 import sys
@@ -35,8 +37,10 @@ RunFn = Callable[..., subprocess.CompletedProcess[str]]
 def coverage_floors(pyproject_path: Path = Path("pyproject.toml")) -> dict[str, int]:
     """Read ``[tool.proofcore.coverage-floors]`` from pyproject.toml.
 
-    Fail-closed: missing table, missing package entry, or a floor below the
-    global 80% ratchet raises ``ProofcoreError``.
+    Fail-closed: missing table, missing REQUIRED package entry, a non-int
+    entry, or a floor below the global 80% ratchet raises ``ProofcoreError``.
+    Dotted keys (``proof.runner``) are per-MODULE floors (wave 2), enforced
+    alongside the per-package floors; both are raise-never-lower.
     """
     path = Path(pyproject_path)
     if not path.is_file():
@@ -47,17 +51,27 @@ def coverage_floors(pyproject_path: Path = Path("pyproject.toml")) -> dict[str, 
     if not isinstance(table, dict):
         raise ProofcoreError("pyproject.toml is missing [tool.proofcore.coverage-floors]")
     floors: dict[str, int] = {}
-    for pkg in REQUIRED_FLOOR_PACKAGES:
-        floor = table.get(pkg)
-        if not isinstance(floor, int) or isinstance(floor, bool):
-            raise ProofcoreError(f"[tool.proofcore.coverage-floors] is missing an int entry: {pkg}")
+    for name, floor in table.items():
+        if not isinstance(name, str) or not isinstance(floor, int) or isinstance(floor, bool):
+            raise ProofcoreError(f"[tool.proofcore.coverage-floors] bad entry: {name!r}={floor!r}")
         if floor < 80:
             raise ProofcoreError(
-                f"coverage floor for {pkg} is {floor}, below the global 80% ratchet — "
+                f"coverage floor for {name} is {floor}, below the global 80% ratchet — "
                 "floors are raise-never-lower (A3 #7)"
             )
-        floors[pkg] = floor
+        floors[name] = floor
+    for pkg in REQUIRED_FLOOR_PACKAGES:
+        if pkg not in floors:
+            raise ProofcoreError(f"[tool.proofcore.coverage-floors] is missing an int entry: {pkg}")
     return floors
+
+
+def _include_pattern(src_root: str, name: str) -> str:
+    """Coverage ``--include`` glob: package keys match the tree, dotted keys
+    (wave-2 module floors) match exactly one module file."""
+    if "." in name:
+        return f"{src_root}/{name.replace('.', '/')}.py"
+    return f"{src_root}/{name}/*"
 
 
 def coverage_gate(
@@ -79,7 +93,7 @@ def coverage_gate(
                 "-m",
                 "coverage",
                 "report",
-                f"--include={src_root}/{pkg}/*",
+                f"--include={_include_pattern(src_root, pkg)}",
                 f"--fail-under={floor}",
             ],
             capture_output=True,
@@ -94,30 +108,14 @@ def coverage_gate(
 
 
 def receipt_paths(receipts_dir: Path) -> list[Path]:
-    """Committed receipt files, sorted for deterministic CI logs."""
-    return sorted(Path(receipts_dir).glob("*.json"))
+    """Committed receipt files, sorted for deterministic CI logs.
 
+    Recursive (epoch-chain member semantics): a receipt under a
+    subdirectory is still evidence; quarantined subdirs are governed by
+    ``quality/legacy_quarantine.json`` instead."""
+    from quant_fund.utils.receipt import verified_corpus_files
 
-def _receipt_verifier_command(path: Path) -> str:
-    """Pick the schema-appropriate verifier CLI without importing research.
-
-    ``verify-receipt`` handles ``receipt.v2`` envelopes and any receipt
-    carrying a top-level ``receipt_sha256`` seal (canonical or strict JSON
-    convention, plus the ``fleet_eval.v1`` writer contract). Everything else
-    goes to ``verify-research``, the schema-specific honesty-error verifier
-    for the older research-catalog receipts.
-    """
-    try:
-        body = json.loads(path.read_text())
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return "verify-research"
-    if not isinstance(body, dict):
-        return "verify-research"
-    if body.get("schema") == "receipt.v2" or body.get("schema_version") == 2:
-        return "verify-receipt"
-    if isinstance(body.get("receipt_sha256"), str):
-        return "verify-receipt"
-    return "verify-research"
+    return verified_corpus_files(Path(receipts_dir))
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +206,60 @@ def code_fingerprint(
 def _reset_code_fingerprint_cache() -> None:
     """Drop the process cache (test helper; production code never calls this)."""
     _FINGERPRINT_CACHE.clear()
+
+
+# ---------------------------------------------------------------------------
+# WAVE2 §2.2: environment fingerprint helper (integration reconciliation).
+# ---------------------------------------------------------------------------
+
+
+def quant_fund_version() -> str:
+    """The installed distribution version (== ``quant_fund.__version__``, which
+    hatch sources from the same ``fx1.__version__``), or ``"dev"``.
+
+    Probed via importlib.metadata because the §1.3 layering gate forbids
+    proofcore from importing the quant_fund root package. A missing
+    distribution (e.g. PYTHONPATH=src without install) degrades to ``"dev"``;
+    both runner and replay probe through THIS helper, so the env gate always
+    compares like with like on a given machine.
+    """
+    try:
+        return importlib.metadata.version("fx-1")
+    except importlib.metadata.PackageNotFoundError:
+        return "dev"
+
+
+def env_fingerprint() -> str:
+    """Contracts §2.2 env gate string: ``platform|python version tag|quant_fund version``.
+
+    Single canonical implementation (integration amendment): the proven
+    runner (``proof.runner``) mints it into trace/env sidecars and the replay
+    engine (``proof.replay``) re-derives it for the env gate. Both sides MUST
+    use this helper so the gate compares like with like.
+    """
+    return f"{platform.platform()}|{platform.python_version()}|{quant_fund_version()}"
+
+
+def _receipt_verifier_command(path: Path) -> str:
+    """Pick the schema-appropriate verifier CLI without importing research.
+
+    ``verify-receipt`` handles ``receipt.v2`` envelopes and any receipt
+    carrying a top-level ``receipt_sha256`` seal (canonical or strict JSON
+    convention, plus the ``fleet_eval.v1`` writer contract). Everything else
+    goes to ``verify-research``, the schema-specific honesty-error verifier
+    for the older research-catalog receipts.
+    """
+    try:
+        body = json.loads(path.read_text())
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return "verify-research"
+    if not isinstance(body, dict):
+        return "verify-research"
+    if body.get("schema") == "receipt.v2" or body.get("schema_version") == 2:
+        return "verify-receipt"
+    if isinstance(body.get("receipt_sha256"), str):
+        return "verify-receipt"
+    return "verify-research"
 
 
 def _cli_verifier(path: Path) -> bool:

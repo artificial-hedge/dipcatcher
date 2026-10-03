@@ -1,0 +1,178 @@
+{
+  "baseline_errors": [],
+  "data_label": "CORPUS",
+  "live_pnl_claim": false,
+  "mutations": [
+    {
+      "detail": null,
+      "errors": [
+        "checkpoint:checkpoint_absent",
+        "spine:checkpoint_absent",
+        "timestamp_anchors:anchor_target_missing:quality/checkpoint.json"
+      ],
+      "expect": "fail",
+      "mutation": "checkpoint_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "truncated_to:747",
+      "errors": [
+        "spine:orphan_checkpoint:027e2ce44586",
+        "spine:orphan_checkpoint:04eda5ef0818",
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:0fbdb8cad79a",
+        "spine:orphan_checkpoint:1d70402910bb",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:288e97ee0720",
+        "spine:orphan_checkpoint:4078944b28e7"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_truncate",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "errors": [
+        "spine:witness_proof_deleted:checkpoint.json_2885150690.json"
+      ],
+      "expect": "fail",
+      "mutation": "witness_proof_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "errors": [
+        "crown_jewels:jewel_missing:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "errors": [
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:0fbdb8cad79a",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:4078944b28e7",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107",
+        "spine:orphan_checkpoint:b99b51c1afdf"
+      ],
+      "expect": "fail",
+      "mutation": "spine_record_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[1128]^=70",
+      "errors": [
+        "spine:orphan_checkpoint:0c2995542d14",
+        "spine:orphan_checkpoint:0fbdb8cad79a",
+        "spine:orphan_checkpoint:1e2e64e6714a",
+        "spine:orphan_checkpoint:4078944b28e7",
+        "spine:orphan_checkpoint:52bb7cc1a8a8",
+        "spine:orphan_checkpoint:8ef84f0cb40b",
+        "spine:orphan_checkpoint:9ad3db3199da",
+        "spine:orphan_checkpoint:af8dba7d7107"
+      ],
+      "expect": "fail",
+      "mutation": "spine_record_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "injected:fuzz_90c192cf.json",
+      "errors": [
+        "epoch:receipts:unstamped_member:fuzz_90c192cf.json"
+      ],
+      "expect": "fail",
+      "mutation": "unstamped_receipt_inject",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[7315]^=21",
+      "errors": [
+        "crown_jewels:jewel_mutated:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[9455]^=25",
+      "errors": [
+        "epoch:quality:epoch_head_rollback:corpus_epoch_eb97fbbcb5e65c2f.json",
+        "epoch:quality:epoch_multiple_heads:corpus_epoch_eb97fbbcb5e65c2f.json,corpus_epoch_f3c1fea2a1be4586.json",
+        "epoch:quality:epoch_orphan:corpus_epoch_98c5eda5aaf01256.json",
+        "epoch:quality:epoch_receipt_invalid:corpus_epoch_f2c91cc77631b121.json"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[25]^=2a",
+      "errors": [
+        "pin_signatures:signature_file_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "pin_sig_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "created:docs/FUZZ_NOTE.md",
+      "expect": "ok",
+      "mutation": "uncovered_write",
+      "outcome": "correct",
+      "verifier_ok": true
+    },
+    {
+      "detail": "byte[190]^=4d",
+      "errors": [
+        "spine:witness_proof_drift:checkpoint.json_2885150690.json",
+        "witness:checkpoint.json_2885150690.json:digest_mismatch",
+        "witness:checkpoint.json_2885150690.json:inclusion_root_mismatch",
+        "witness:checkpoint.json_2885150690.json:leaf_uuid_mismatch",
+        "witness:checkpoint.json_2885150690.json:set_signature_invalid"
+      ],
+      "expect": "fail",
+      "mutation": "witness_proof_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "renamed:params",
+      "errors": [
+        "epoch:quality:epoch_head_rollback:corpus_epoch_eb97fbbcb5e65c2f.json",
+        "epoch:quality:epoch_multiple_heads:corpus_epoch_eb97fbbcb5e65c2f.json,corpus_epoch_f3c1fea2a1be4586.json",
+        "epoch:quality:epoch_orphan:corpus_epoch_98c5eda5aaf01256.json",
+        "epoch:quality:epoch_receipt_invalid:corpus_epoch_f2c91cc77631b121.json"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_key_rename",
+      "outcome": "correct",
+      "verifier_ok": false
+    }
+  ],
+  "n_escaped": 0,
+  "n_false_positive": 0,
+  "n_mutations": 13,
+  "ok": true,
+  "receipt_sha256": "9f9091d36afa7b24883644e1ed92d5629f72b2ebb9df586dfb442b9547afb3ad",
+  "research_only": true,
+  "schema": "fuzz_drill.v1",
+  "seed": 7,
+  "simulated_only": false,
+  "tree_sha256": "14b0b2e339704a26ef7bef033804a1570938b0616fe4e79629d3bbed83c6cb1a",
+  "verdict": "calibrated"
+}

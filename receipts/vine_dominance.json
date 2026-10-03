@@ -1,0 +1,131 @@
+{
+  "claim": {
+    "best_alt": "cvine",
+    "dominance": {
+      "rvine_vs_best_alt": {
+        "cs_bound": 4.048312255603511,
+        "cs_hi": 0.07598622071646186,
+        "cs_lo": 0.03379632931856681,
+        "mean_diff": 0.05451900643072314,
+        "n": 2500.0,
+        "verdict": "incumbent_wins"
+      },
+      "rvine_vs_cvine": {
+        "cs_bound": 4.048312255603511,
+        "cs_hi": 0.07598622071646186,
+        "cs_lo": 0.03379632931856681,
+        "mean_diff": 0.05451900643072314,
+        "n": 2500.0,
+        "verdict": "incumbent_wins"
+      },
+      "rvine_vs_dvine": {
+        "cs_bound": 4.4649004401401635,
+        "cs_hi": 0.020953813075069126,
+        "cs_lo": -0.013168972295103637,
+        "mean_diff": 0.004000938021953303,
+        "n": 2500.0,
+        "verdict": "inconclusive"
+      },
+      "rvine_vs_gaussian": {
+        "cs_bound": 108.30661042041653,
+        "cs_hi": -0.047138082279936294,
+        "cs_lo": -0.718780286767805,
+        "mean_diff": -0.3792127832256344,
+        "n": 2500.0,
+        "verdict": "challenger_wins"
+      },
+      "rvine_vs_independent": {
+        "cs_bound": 34.201047515375976,
+        "cs_hi": -2.663327836244946,
+        "cs_lo": -3.0185406368971783,
+        "mean_diff": -2.835406792815653,
+        "n": 2500.0,
+        "verdict": "challenger_wins"
+      }
+    },
+    "mean_loglik_oos": {
+      "cvine": 2.8899257992463765,
+      "dvine": 2.8394077308376064,
+      "gaussian": 2.4561940095900185,
+      "independent": 0.0,
+      "rvine": 2.835406792815653
+    },
+    "n_passed": 9,
+    "n_probes": 9,
+    "ok": true,
+    "results": {
+      "all_fits_finite": true,
+      "dominance_cs_produced": true,
+      "gaussian_crash_underestimate": true,
+      "planted_tail_dependence": true,
+      "rvine_beats_gaussian": true,
+      "rvine_beats_independent": true,
+      "rvine_tail_within_2x_empirical": true,
+      "rvine_within_gap_of_best": true,
+      "tail_err_rvine_beats_independent": true
+    },
+    "tail_empirical": {
+      "crash_observed": 1.0,
+      "joint_crash_prob": 0.0004,
+      "n": 2500.0,
+      "tail_mass": 0.1896,
+      "worst_coord_es": 0.023834581562428164
+    },
+    "tail_model": {
+      "cvine": {
+        "crash_observed": 13.0,
+        "joint_crash_prob": 0.00065,
+        "n": 20000.0,
+        "tail_mass": 0.18575,
+        "worst_coord_es": 0.023759421629742098
+      },
+      "dvine": {
+        "crash_observed": 26.0,
+        "joint_crash_prob": 0.0013,
+        "n": 20000.0,
+        "tail_mass": 0.18715,
+        "worst_coord_es": 0.0239816118141316
+      },
+      "gaussian": {
+        "crash_observed": 5.0,
+        "joint_crash_prob": 0.00025,
+        "n": 20000.0,
+        "tail_mass": 0.21795,
+        "worst_coord_es": 0.02277363089433923
+      },
+      "independent": {
+        "crash_observed": 0.0,
+        "joint_crash_prob": 0.0,
+        "n": 20000.0,
+        "tail_mass": 0.3346,
+        "worst_coord_es": 0.023556967786381448
+      },
+      "rvine": {
+        "crash_observed": 15.0,
+        "joint_crash_prob": 0.00075,
+        "n": 20000.0,
+        "tail_mass": 0.1933,
+        "worst_coord_es": 0.0236191409368736
+      }
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "3e1e028b42f4eb5aa70e7554459e706a8584f96f",
+  "interpretation": "OOS copula dominance on a correlated t-copula panel (planted joint tail dependence). mean_loglik_oos is the per-observation copula log-likelihood on held-out data (higher is better); dominance.* is a time-uniform betting confidence sequence on the log-loss differential \u2014 'challenger_wins' means the R-vine's CS excludes ties with the comparator. tail_* compares the empirical joint-crash frequency P(all marginals < q) with Monte-Carlo draws from each fitted model; the Gaussian copula structurally has zero tail dependence and is expected to underestimate joint crashes.",
+  "kind": "vine_dominance",
+  "live_pnl_claim": false,
+  "params": {
+    "alpha": 0.05,
+    "d": 8,
+    "es_alpha": 0.05,
+    "n_sim": 20000,
+    "n_test": 2500,
+    "n_train": 4000,
+    "nu": 5.0,
+    "seed": 37,
+    "tail_q": 0.05
+  },
+  "receipt_sha256": "20b2395139ab5dc5fd2edecbf555975e60fc6a7debc382a1a7eab86fb1f4673e",
+  "research_only": true,
+  "schema": "vine_dominance.v1"
+}

@@ -322,6 +322,8 @@ def _order_costs_nb(
 @njit(cache=True)
 def _exceeds_nb(value: float, limit: float) -> bool:
     """Numba twin of ``exceeds_limit``. Keep the slack constants identical."""
+    if not np.isfinite(value) or not np.isfinite(limit):
+        return True
     if not (value > limit):
         return False
     slack = LIMIT_ABS_SLACK
@@ -334,6 +336,8 @@ def _exceeds_nb(value: float, limit: float) -> bool:
 @njit(cache=True)
 def _funded_nb(cash: float, needed: float) -> bool:
     """Numba twin of ``funded``."""
+    if not np.isfinite(cash) or not np.isfinite(needed):
+        return False
     if cash >= needed:
         return True
     return not _exceeds_nb(needed, cash)

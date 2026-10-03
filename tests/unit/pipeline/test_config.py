@@ -282,6 +282,15 @@ def test_optimizer_config_named_covariance_paths() -> None:
         OptimizerConfig.model_validate({"covariance": "ledoit_wolf_2020_analytical"}).covariance
         == "ledoit_wolf_nonlinear"
     )
+    assert (
+        OptimizerConfig.model_validate({"covariance": "ledoit_wolf_2017_quest"}).covariance
+        == "ledoit_wolf_quest"
+    )
+    assert (
+        OptimizerConfig.model_validate({"covariance": "ledoit_wolf_2017"}).covariance
+        == "ledoit_wolf_quest"
+    )
+    assert OptimizerConfig.model_validate({"covariance": "quest"}).covariance == "ledoit_wolf_quest"
     assert OptimizerConfig.model_validate({"covariance": "sample"}).covariance == "sample"
     assert OptimizerConfig.model_validate({"covariance": "unbiased_sample"}).covariance == "sample"
     with pytest.raises(ValueError, match="unknown_optimizer_covariance"):
@@ -292,8 +301,6 @@ def test_optimizer_config_named_covariance_paths() -> None:
         OptimizerConfig.model_validate({"covariance": "dcc"})
     with pytest.raises(ValueError, match="unknown_dcc_spec:shrinkage"):
         OptimizerConfig.model_validate({"covariance": "shrinkage"})
-    with pytest.raises(ValueError, match="analytical 2020, not QuEST 2017"):
-        OptimizerConfig.model_validate({"covariance": "ledoit_wolf_2017"})
 
 
 def test_validation_config_rejects_invalid_protocol() -> None:

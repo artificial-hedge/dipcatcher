@@ -149,10 +149,11 @@ def validate_forecast_schema(frame: pl.DataFrame) -> None:
             raise SchemaError("confidence must be null or inside [0, 1]")
     quantiles = _quantile_taus(list(frame.columns))
     if len(quantiles) >= 2:
-        exprs = [pl.col(name) for name, _tau in quantiles]
-        # A row with any null quantile is skipped; present values must be ordered.
-        ordered = frame.filter(pl.all_horizontal([expr.is_not_null() for expr in exprs]))
-        decreasing = ordered.filter(
+        # Present values must be ordered on every row: a null comparison
+        # evaluates to null (never a violation), so a crossing cannot hide
+        # behind one missing quantile the way the old all-non-null row filter
+        # allowed.
+        decreasing = frame.filter(
             pl.any_horizontal(
                 [
                     pl.col(left) > pl.col(right)

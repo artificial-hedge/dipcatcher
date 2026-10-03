@@ -199,10 +199,17 @@ class TestSpecValidators:
             cov.require_implemented_optimizer_covariance("ledoit_wolf_nonlinear")
             == "ledoit_wolf_nonlinear"
         )
+        assert cov.require_implemented_optimizer_covariance("quest") == "ledoit_wolf_quest"
+        assert (
+            cov.require_implemented_optimizer_covariance("ledoit_wolf_2017") == "ledoit_wolf_quest"
+        )
+        assert (
+            cov.require_implemented_optimizer_covariance("ledoit_wolf_quest") == "ledoit_wolf_quest"
+        )
 
     @pytest.mark.parametrize(
         "bad",
-        ["", "dcc", "gaussian", "t", "student_t", "shrinkage", "factor", "quest", 3, False],
+        ["", "dcc", "gaussian", "t", "student_t", "shrinkage", "factor", 3, False],
     )
     def test_optimizer_rejects_ambiguous(self, bad) -> None:
         with pytest.raises(ValueError):
