@@ -2840,6 +2840,14 @@ from quant_fund.research.benches_w355 import (
     bench_moment_generating_family,
     bench_stochastic_order_family,
 )
+from quant_fund.research.benches_w356 import (
+    bench_gambler_ruin_family,
+    bench_markov_chain_family,
+    bench_markov_hitting_family,
+    bench_martingale_check_family,
+    bench_poisson_process_family,
+    bench_stopping_time_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3219,6 +3227,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "markov_chain": bench_markov_chain_family,
+        "martingale_check": bench_martingale_check_family,
+        "poisson_process": bench_poisson_process_family,
+        "gambler_ruin": bench_gambler_ruin_family,
+        "stopping_time": bench_stopping_time_family,
+        "markov_hitting": bench_markov_hitting_family,
         "kolmogorov_axioms": bench_kolmogorov_axioms_family,
         "conditional_expect": bench_conditional_expect_family,
         "markov_ineq": bench_markov_ineq_family,
