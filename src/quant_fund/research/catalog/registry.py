@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-499 Hodge-theory canon.
+        "hodge_decomp",
+        "l2_hodge",
+        "mixed_hodge",
+        "period_map",
+        "vhs_polarized",
+        "limit_mhs",
         # Wave-498 moduli/Gromov-Witten canon.
         "kuranishi",
         "hilbert_scheme2",
