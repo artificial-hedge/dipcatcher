@@ -1,3 +1,4 @@
+feat(research): wave 823 — law-of-process canon (support_law, polish_law, tight_law, law_convergence, finite_dim, cylindrical_law) (4887->4893 families)
 feat(research): wave 822 — filtration canon (natural_filtration, right_continuous_f, usual_aug, enlargement_f, initial_enlarg, progressive_enlarg) (4881->4887 families)
 feat(research): wave 821 — random-measure canon (random_measure, integer_measure, poisson_rm, compensator_rm, jump_measure, sato_measure) (4875->4881 families)
 feat(research): wave 820 — semimartingale-decomp canon (doom_decomp, pcdt, special_sem, canonical_decomp, sem_loc_char, triplet_char) (4869->4875 families)

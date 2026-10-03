@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-823 law-of-process canon.
+        "support_law",
+        "polish_law",
+        "tight_law",
+        "law_convergence",
+        "finite_dim",
+        "cylindrical_law",
         # Wave-822 filtration canon.
         "natural_filtration",
         "right_continuous_f",
