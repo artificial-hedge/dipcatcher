@@ -3831,6 +3831,14 @@ from quant_fund.research.benches_w479 import (
     bench_scholze_diamond_family,
     bench_tilting_equiv_family,
 )
+from quant_fund.research.benches_w480 import (
+    bench_classify_obj_family,
+    bench_etale_geom_family,
+    bench_exponentiable_family,
+    bench_gros_topos_family,
+    bench_local_homeo_family,
+    bench_pi_infty_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4210,6 +4218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_geom": bench_etale_geom_family,
+        "gros_topos": bench_gros_topos_family,
+        "local_homeo": bench_local_homeo_family,
+        "classify_obj": bench_classify_obj_family,
+        "pi_infty": bench_pi_infty_family,
+        "exponentiable": bench_exponentiable_family,
         "fargues_diam": bench_fargues_diam_family,
         "tilting_equiv": bench_tilting_equiv_family,
         "scholze_diamond": bench_scholze_diamond_family,
