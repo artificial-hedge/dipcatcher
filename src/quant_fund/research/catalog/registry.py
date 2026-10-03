@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-514 differential-cohomology canon.
+        "diff_cohom",
+        "cheeger_simons",
+        "deligne_cohom",
+        "flat_bundle",
+        "beilinson_reg",
+        "secondary_inv",
         # Wave-513 categorification canon.
         "categorify",
         "khovanov_hom",
