@@ -1,3 +1,4 @@
+feat(research): wave 560 — geometric-flows canon (hamilton_ricci, perelman_entropy, ricci_soliton, kahler_ricci_flow, mean_curvature_flow, ancient_solution) (3315->3321 families)
 feat(research): wave 559 — complex-geometry canon (calabi_yau_mfd, calabi_conjecture, kahler_einstein, k_stability, csck_metric, futaki_invariant) (3309->3315 families)
 feat(research): wave 558 — gauge-theory canon (yang_mills, instanton_moduli, anti_self_dual, higgs_bundle, kapustin_witten, nahm_transform) (3303->3309 families)
 feat(research): wave 557 — 3-manifold-theory canon (heegaard_splitting, dehn_surgery, sutured_mfd, taut_foliation, thin_position, normal_surface) (3297->3303 families)
