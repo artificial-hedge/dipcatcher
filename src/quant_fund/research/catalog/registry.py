@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-970 subfactor-theory canon.
+        "subfactor",
+        "standard_invariant",
+        "planar_algebra",
+        "paragroup",
+        "principal_graph",
+        "fusion_algebra",
         # Wave-969 operator K-theory canon.
         "k0_algebra",
         "k1_algebra",
