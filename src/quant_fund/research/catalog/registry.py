@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-642 prismatic-2 canon.
+        "prismatic_f",
+        "bhatt_scholze",
+        "q_crystal",
+        "prismatic_dieudonne",
+        "q_prism",
+        "derived_prism",
         # Wave-641 homotopy-17 canon.
         "smash_prod",
         "stable_stem2",
