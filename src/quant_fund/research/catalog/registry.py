@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-465 analytic-geometry-3 canon.
+        "kedlaya_renorm",
+        "dagger_groth",
+        "raynaud_gen",
+        "weierstrass_prep",
+        "gauss_point",
+        "affinoid_alg",
         # Wave-464 chromatic-2 canon.
         "morava_e",
         "tmf_spectrum",

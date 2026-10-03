@@ -1,3 +1,4 @@
+feat(research): wave 465 — analytic-geometry-3 canon (kedlaya_renorm, dagger_groth, raynaud_gen, weierstrass_prep, gauss_point, affinoid_alg) (2745->2751 families)
 feat(research): wave 464 — chromatic-2 canon (morava_e, tmf_spectrum, k_n_local, chromatic_conv, nilpotence_dev, telescopic) (2739->2745 families)
 feat(research): wave 463 — arithmetic-D-modules canon (overconv_dm, arithmetic_dm, frobenius_dm, holonomic_dm, rigid_dm, isocrystal) (2733->2739 families)
 feat(research): wave 462 — infinity-topos-2 canon (n_localic, shape_theory, descent_cond, lex_reflect, cartesian_fib2, cohesive_struct) (2727->2733 families)

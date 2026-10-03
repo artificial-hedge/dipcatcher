@@ -3711,6 +3711,14 @@ from quant_fund.research.benches_w464 import (
     bench_telescopic_family,
     bench_tmf_spectrum_family,
 )
+from quant_fund.research.benches_w465 import (
+    bench_affinoid_alg_family,
+    bench_dagger_groth_family,
+    bench_gauss_point_family,
+    bench_kedlaya_renorm_family,
+    bench_raynaud_gen_family,
+    bench_weierstrass_prep_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4090,6 +4098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kedlaya_renorm": bench_kedlaya_renorm_family,
+        "dagger_groth": bench_dagger_groth_family,
+        "raynaud_gen": bench_raynaud_gen_family,
+        "weierstrass_prep": bench_weierstrass_prep_family,
+        "gauss_point": bench_gauss_point_family,
+        "affinoid_alg": bench_affinoid_alg_family,
         "morava_e": bench_morava_e_family,
         "tmf_spectrum": bench_tmf_spectrum_family,
         "k_n_local": bench_k_n_local_family,
