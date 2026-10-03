@@ -3783,6 +3783,14 @@ from quant_fund.research.benches_w473 import (
     bench_trt_functor_family,
     bench_witt_vec2_family,
 )
+from quant_fund.research.benches_w474 import (
+    bench_cobordism_hyp_family,
+    bench_heegaard_floer_family,
+    bench_khovanov_family,
+    bench_modular_cat_family,
+    bench_reshet_turaev_family,
+    bench_topological_order_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4162,6 +4170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "reshet_turaev": bench_reshet_turaev_family,
+        "khovanov": bench_khovanov_family,
+        "heegaard_floer": bench_heegaard_floer_family,
+        "cobordism_hyp": bench_cobordism_hyp_family,
+        "modular_cat": bench_modular_cat_family,
+        "topological_order": bench_topological_order_family,
         "thh_2": bench_thh_2_family,
         "cyclotomic2": bench_cyclotomic2_family,
         "cartier_mod": bench_cartier_mod_family,

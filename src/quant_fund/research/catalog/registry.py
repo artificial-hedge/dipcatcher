@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-474 TQFT-2 canon.
+        "reshet_turaev",
+        "khovanov",
+        "heegaard_floer",
+        "cobordism_hyp",
+        "modular_cat",
+        "topological_order",
         # Wave-473 higher-algebra-3 canon.
         "thh_2",
         "cyclotomic2",
