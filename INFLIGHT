@@ -1,3 +1,4 @@
+feat(research): wave 606 — algebraic-K-5 canon (connective_k, higher_k, k_spectrum, nil_k, karoubi_k, pedersen_weibel) (3591->3597 families)
 feat(research): wave 605 — motivic-8 canon (motivic_steenrod, motivic_adem, power_operations, simplicial_motive, dk_motive, motivic_transfer) (3585->3591 families)
 feat(research): wave 604 — homotopy-12 canon (unstable_cohomology, may_ss, bokstedt_periodicity, topo_k_theory, elliptic_k, equivariant_cohomology2) (3579->3585 families)
 feat(research): wave 603 — topos-4 canon (slice_topos, logical_morph, classifying_topos, atomic_topos, essential_morph, giraud_axiom) (3573->3579 families)
