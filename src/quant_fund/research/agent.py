@@ -2752,6 +2752,14 @@ from quant_fund.research.benches_w344 import (
     bench_group_presentation_family,
     bench_sylow_theorems_family,
 )
+from quant_fund.research.benches_w345 import (
+    bench_minimal_poly_family,
+    bench_norm_trace_family,
+    bench_pid_check_family,
+    bench_quotient_ring_family,
+    bench_ring_ideals_family,
+    bench_spec_ring_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3131,6 +3139,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ring_ideals": bench_ring_ideals_family,
+        "quotient_ring": bench_quotient_ring_family,
+        "pid_check": bench_pid_check_family,
+        "minimal_poly": bench_minimal_poly_family,
+        "norm_trace": bench_norm_trace_family,
+        "spec_ring": bench_spec_ring_family,
         "sylow_theorems": bench_sylow_theorems_family,
         "group_presentation": bench_group_presentation_family,
         "burnside_lemma": bench_burnside_lemma_family,
