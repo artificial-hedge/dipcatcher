@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-822 filtration canon.
+        "natural_filtration",
+        "right_continuous_f",
+        "usual_aug",
+        "enlargement_f",
+        "initial_enlarg",
+        "progressive_enlarg",
         # Wave-821 random-measure canon.
         "random_measure",
         "integer_measure",
