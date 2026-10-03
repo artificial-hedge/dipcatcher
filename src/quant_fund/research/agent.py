@@ -4967,6 +4967,14 @@ from quant_fund.research.benches_w621 import (
     bench_motivic_homology_family,
     bench_motivic_k_family,
 )
+from quant_fund.research.benches_w622 import (
+    bench_delta_ring_family,
+    bench_hodge_tate_family,
+    bench_nygaard2_family,
+    bench_prism2_family,
+    bench_prismatic_crystal_family,
+    bench_prismatic_site_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5346,6 +5354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "prism2": bench_prism2_family,
+        "prismatic_site": bench_prismatic_site_family,
+        "delta_ring": bench_delta_ring_family,
+        "prismatic_crystal": bench_prismatic_crystal_family,
+        "hodge_tate": bench_hodge_tate_family,
+        "nygaard2": bench_nygaard2_family,
         "motivic_k": bench_motivic_k_family,
         "motivic_borel": bench_motivic_borel_family,
         "motivic_height": bench_motivic_height_family,
