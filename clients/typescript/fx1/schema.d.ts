@@ -1168,6 +1168,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/fine_tuning/jobs/{job_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Finetune Job
+         * @description Cooperative pause — a queued job parks before starting; a
+         *     running one parks at the next pipeline-stage boundary (the gate
+         *     blocks inside the runner, so an in-flight trainer call is never
+         *     interrupted mid-write). ``paused`` is non-terminal: resume
+         *     restores, cancel still wins, drain still drains. Pausing a paused
+         *     job replays its record — idempotent.
+         */
+        post: operations["pause_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fine_tuning/jobs/{job_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Finetune Job
+         * @description Resume a paused job — restores the status pause captured
+         *     (queued jobs re-queue, running jobs proceed from the boundary the
+         *     worker parked at). Resuming a non-paused job is a 409.
+         */
+        post: operations["resume_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/models": {
         parameters: {
             query?: never;
@@ -2160,7 +2207,7 @@ export interface components {
              * @default queued
              * @enum {string}
              */
-            status: "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            status: "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled" | "paused";
             /** Trained Tokens */
             trained_tokens?: number | null;
             /** Training File */
@@ -6413,6 +6460,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FTEventList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
                 };
             };
             /** @description Validation Error */

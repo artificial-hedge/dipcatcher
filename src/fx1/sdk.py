@@ -31,6 +31,7 @@ double and no subprocess or network is touched.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import os
 import tempfile
@@ -252,7 +253,7 @@ def _messages_sha256(messages: list[dict[str, Any]]) -> str:
     ).hexdigest()
 
 
-def _sampling_params(
+def _sampling_params(  # NOSONAR(S107)
     *,
     temperature: float | None = None,
     top_p: float | None = None,
@@ -910,12 +911,23 @@ class Fx1Harness:
         )
         self._ft_store.add_event(job.id, "info", "job started")
         try:
+            # pause_gate is opt-in on the runner contract — the in-process
+            # twin is synchronous so there is no pause window, but the
+            # gate still reports a pre-dispatch cancel to gate-aware
+            # runners; older runners without the kwarg keep working
+            _extra: dict[str, Any] = {}
+            try:
+                if "pause_gate" in inspect.signature(self._ft_runner).parameters:
+                    _extra["pause_gate"] = entry.cancel.is_set
+            except (TypeError, ValueError):  # pragma: no cover - C callables
+                _extra["pause_gate"] = entry.cancel.is_set
             outcome = self._ft_runner(
                 spec,
                 emit=lambda level, message, data=None: self._ft_store.add_event(
                     job.id, level, message, data
                 ),
                 should_cancel=entry.cancel.is_set,
+                **_extra,
             )
             if entry.cancel.is_set():
                 job.status = "cancelled"

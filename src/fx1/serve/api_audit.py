@@ -35,6 +35,7 @@ Sealed ``api_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import os
+import threading
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -3042,6 +3043,185 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         time.sleep(0.02)
     out["ft_cancel_running_cooperative"] = cc.status_code == 200 and cjj["status"] == "cancelled"
 
+    # Cooperative pause/resume: a gate-aware runner parks inside
+    # pause_gate once paused — status reads 'paused' while parked and
+    # resume releases it to completion. 'paused' is non-terminal: a
+    # parked job still honors cancel, exactly once; pause on a paused
+    # job replays 200; pause or resume on a terminal job is 409; resume
+    # on a non-paused job is 409.
+    #
+    # The queued branch is probed through a store-fabricated entry:
+    # inflight == worker count, so 'queued' only exists in the scheduler
+    # gap between admission and worker dispatch — unreachable
+    # deterministically over the wire. The endpoint + store contract for
+    # it is identical (the parked worker waits on resume.wait).
+    p_hold = threading.Event()
+    p_gate = threading.Event()
+    p_hold2 = threading.Event()
+    p_gate2 = threading.Event()
+
+    def _pause_runner(spec: Any, *, emit: Any, should_cancel: Any, pause_gate: Any) -> FTJobOutcome:
+        emit("info", "stage A")
+        p_hold.wait(timeout=20)
+        p_gate.set()
+        if pause_gate():
+            return FTJobOutcome()
+        emit("info", "stage B")
+        # hold the worker in-flight across the resume read — the
+        # response body is the record at read time, so the probe can
+        # only observe the restored 'running' while the runner is live
+        p_hold2.wait(timeout=20)
+        p_gate2.set()
+        return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+    ftp_app = api_mod.create_app(ft_runner=_pause_runner, max_inflight=1)
+    ftp = _TC3(ftp_app)
+    pfid = ftp.post(
+        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    pa = ftp.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": pfid, "suffix": "pa"},
+    ).json()
+    for _i in range(400):  # pa holds the single slot, running
+        if ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    pqa = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause")
+    pqa2 = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause")
+
+    from fx1.serve.finetune import FTJob as _FTJob
+
+    qentry = ftp_app.state.ft_store.put(
+        _FTJob(
+            id="ftjob-qprobe",
+            model="fx1",
+            created_at=int(time.time()),
+            status="queued",
+            training_file=pfid,
+        ),
+        None,
+        "qprobe",
+    )
+    pqj = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/pause")
+    rqj = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/resume")
+    out["ft_pause_queued_running_200"] = (
+        pqa.status_code == 200
+        and pqa.json()["status"] == "paused"
+        and pqa2.status_code == 200
+        and pqa2.json()["status"] == "paused"  # idempotent replay
+        and pqj.status_code == 200
+        and pqj.json()["status"] == "paused"
+        and rqj.status_code == 200
+        and rqj.json()["status"] == "queued"  # resume restores paused_from
+        and qentry.paused_from is None
+    )
+    # queued resume still leaves the fabricated job queued (no worker
+    # ever ran) — pause it again and cancel from paused.
+    ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/pause")
+    cq = ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/cancel")
+    out["ft_queued_cancel_terminal"] = (
+        cq.status_code == 200
+        and cq.json()["status"] == "cancelled"
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-qprobe/resume").status_code == 409
+    )
+
+    p_hold.set()  # pa's runner reaches the gate and parks
+    p_gate.wait(timeout=15)
+    time.sleep(0.05)
+    out["ft_paused_holds_at_gate"] = ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()[
+        "status"
+    ] == "paused" and not any(
+        "job succeeded" in e["message"]
+        for e in ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}/events").json()["data"]
+    )
+    rpa = ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/resume")
+    p_hold2.set()  # release the resumed runner to terminal
+    for _i in range(400):
+        paf = ftp.get(f"/v1/fine_tuning/jobs/{pa['id']}").json()
+        if paf["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    out["ft_resume_releases"] = (
+        rpa.status_code == 200
+        and rpa.json()["status"] == "running"  # restores paused_from
+        and paf["status"] == "succeeded"
+    )
+
+    # cancel against a parked worker: one 'job cancelled' event total —
+    # the store owns the terminal write, the parked worker dedupes.
+    p_hold.clear()
+    p_gate.clear()
+    p_hold2.clear()
+    p_gate2.clear()
+    pc = ftp.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": pfid, "suffix": "pc"},
+    ).json()
+    for _i in range(400):
+        if ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/pause")
+    p_hold.set()
+    p_gate.wait(timeout=15)
+    ccancel = ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/cancel")
+    for _i in range(400):
+        pcj = ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}").json()
+        if pcj["status"] == "cancelled":
+            break
+        time.sleep(0.02)
+    pc_events = ftp.get(f"/v1/fine_tuning/jobs/{pc['id']}/events").json()["data"]
+    out["ft_cancel_paused_terminal"] = (
+        ccancel.status_code == 200
+        and ccancel.json()["status"] == "cancelled"
+        and pcj["status"] == "cancelled"
+        and sum("job cancelled" in e["message"] for e in pc_events) == 1
+        and ftp.post(f"/v1/fine_tuning/jobs/{pc['id']}/resume").status_code == 409
+    )
+    out["ft_pause_guards"] = (
+        ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/pause").json().get("error", {}).get("code")
+        == "job_terminal"
+        and ftp.post(f"/v1/fine_tuning/jobs/{pa['id']}/resume").json().get("error", {}).get("code")
+        == "job_terminal"
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-nope/pause").status_code == 404
+        and ftp.post("/v1/fine_tuning/jobs/ftjob-nope/resume").status_code == 404
+    )
+
+    # Gate-free runners (no pause_gate kwarg) accept the pause verb but
+    # run to completion — the hook is opt-in, never a crash.
+    def _nogate_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+        deadline = time.time() + 1.5
+        while time.time() < deadline:
+            if should_cancel():
+                return FTJobOutcome()
+            time.sleep(0.02)
+        return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+    ftn = _TC3(api_mod.create_app(ft_runner=_nogate_runner))
+    nfid = ftn.post(
+        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    nj = ftn.post("/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": nfid}).json()
+    for _i in range(400):
+        if ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    npa = ftn.post(f"/v1/fine_tuning/jobs/{nj['id']}/pause")
+    for _i in range(400):
+        njf = ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()
+        if njf["status"] in ("succeeded", "failed", "cancelled", "paused"):
+            break
+        time.sleep(0.02)
+    if njf["status"] == "paused":  # worker parked pre-start — release it
+        ftn.post(f"/v1/fine_tuning/jobs/{nj['id']}/resume")
+        for _i in range(400):
+            njf = ftn.get(f"/v1/fine_tuning/jobs/{nj['id']}").json()
+            if njf["status"] in ("succeeded", "failed", "cancelled"):
+                break
+            time.sleep(0.02)
+    out["ft_pause_gatefree_completes"] = npa.status_code == 200 and njf["status"] == "succeeded"
+
     # Model registry: a succeeded job with a checkpoint registers its
     # ft: name into the model inventory, and a request naming it resolves
     # to the local_fx1 lane pinned at the job's checkpoint — never the
@@ -3254,7 +3434,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.server_close()
 
 
-def _probe_backend_probes(  # noqa: C901 — NOSONAR: probe accumulator
+def _probe_backend_probes(  # noqa: C901 NOSONAR
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415

@@ -50,6 +50,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import os
+import threading
+import time
 import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
@@ -365,7 +367,7 @@ def _tc_transport(client: TestClient) -> Any:
     return send
 
 
-def parity_audit() -> dict[str, bool]:
+def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
     out: dict[str, bool] = {}
     saved = {
         k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
@@ -1815,6 +1817,56 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: remote_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
             and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
             == "HarnessTransportError"
+        )
+        # Pause/resume — wire-only verbs (the in-process twin is
+        # synchronous: no pause window, so the SDK carries no pause
+        # method — pinned as the honest contract). The remote client
+        # drives the lifecycle; fault classes map like every other ft
+        # route, and a parked job still resumes to a clean terminal.
+        _ph = threading.Event()
+        _pe = threading.Event()
+        _ph2 = threading.Event()
+
+        def _ft_pause_runner(spec: Any, *, emit: Any, should_cancel: Any, pause_gate: Any) -> Any:
+            emit("info", "stage A")
+            _ph.wait(timeout=15)
+            _pe.set()
+            if pause_gate():
+                return FTJobOutcome()
+            emit("info", "stage B")
+            # hold the worker in-flight across the resume read — the
+            # response is the record at read time, so 'running' is only
+            # observable while the runner is still live
+            _ph2.wait(timeout=15)
+            return FTJobOutcome(fine_tuned_model=spec.ft_model_name, artifacts={})
+
+        _sdk_p, _wire_p = _surfaces(_UsageBackend, ft_runner=_ft_pause_runner)
+        remote_p = HarnessClient("http://harness.test", transport=_tc_transport(_wire_p))
+        pfid = remote_p.upload_file(_corpus, filename="pc.jsonl", purpose="fine-tune")["id"]
+        pjob = remote_p.create_finetune_job(model="fx1", training_file=pfid, suffix="p")
+        ppaused = remote_p.pause_finetune_job(pjob["id"])
+        _ph.set()
+        _pe.wait(timeout=15)
+        time.sleep(0.05)
+        pheld = remote_p.finetune_job(pjob["id"])
+        presumed = remote_p.resume_finetune_job(pjob["id"])
+        _ph2.set()
+        pfin = remote_p.wait_finetune_job(pjob["id"], timeout_s=30)
+        out["ft_pause_resume_parity"] = (
+            not hasattr(sdk_ft, "pause_finetune_job")  # sync twin: no pause window
+            and ppaused["status"] == "paused"
+            and pheld["status"] == "paused"
+            and presumed["status"] in ("queued", "running")
+            and pfin["status"] == "succeeded"
+        )
+        out["ft_pause_guards_parity"] = (
+            _raises(lambda: remote_p.pause_finetune_job("ftjob-nope"))[0]
+            == "KeyError"  # 404 maps like finetune_job
+            and _raises(lambda: remote_p.resume_finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_p.resume_finetune_job(pjob["id"]))[0]
+            == "HarnessTransportError"  # terminal → 409 → transport fault
+            and _raises(lambda: remote_p.pause_finetune_job(pjob["id"]))[0]
+            == "HarnessTransportError"  # terminal → 409
         )
         # Registry parity: a succeeded job's ft: name lists + resolves on
         # both surfaces, and completions naming it land on the local_fx1

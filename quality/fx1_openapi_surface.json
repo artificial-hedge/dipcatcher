@@ -1017,6 +1017,38 @@
         ]
       }
     },
+    "/v1/fine_tuning/jobs/{job_id}/pause": {
+      "post": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/resume": {
+      "post": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "params": [],
@@ -1170,5 +1202,5 @@
       }
     }
   },
-  "schema_sha256": "c753f50168ba62539e73b47ddd4f826a2475196b770a65b6ec83fa47c95cc364"
+  "schema_sha256": "1957cd416d19311118087e3ef213ed6ed4183b2070ed9e381893cf852e1a4aa3"
 }

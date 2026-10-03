@@ -1706,6 +1706,38 @@ def harness_ft_cancel(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("ft-pause")
+def harness_ft_pause(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Pause a remote fine-tuning job — queued parks before starting;
+    running parks at the next stage boundary. Idempotent on paused."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).pause_finetune_job(job_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("ft-resume")
+def harness_ft_resume(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Resume a paused remote fine-tuning job — restores the status
+    pause captured (queued re-queues, running proceeds at its boundary)."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).resume_finetune_job(job_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
 @harness_app.command("files")
 def harness_files(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -2086,7 +2118,7 @@ def harness_model_delete(
 
 
 @harness_app.command("respond")
-def harness_respond(  # NOSONAR: Typer options are the CLI surface
+def harness_respond(  # NOSONAR
     input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
     model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
     instructions: str | None = typer.Option(

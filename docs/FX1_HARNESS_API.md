@@ -222,6 +222,7 @@ same digested shape the job record embeds.
 | `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
 | `GET /v1/fine_tuning/jobs/{id}/checkpoints` | the model artifacts the job registered, oldest first (`?limit`, `?after=`); empty for a job that produced none, a deleted `ft:` name drops off |
 | `POST /v1/fine_tuning/jobs/{id}/cancel` | cooperative cancel — queued at once, running at the next stage boundary; terminal `409 job_terminal` |
+| `POST /v1/fine_tuning/jobs/{id}/pause` / `.../resume` | cooperative pause — queued parks pre-start, running parks at the next stage boundary; `paused` is non-terminal; `HarnessClient.pause_finetune_job`/`resume_finetune_job` / `fx1 harness ft-pause`/`ft-resume` |
 | `GET /v1/chat/completions` | list stored `chat.completion` envelopes, oldest first (`?limit≤100`, `?after`/`?before`/`?order`, `?model=`, `?metadata[k]=v` subset filter) — OpenAI's `chat.completions.list`; `Fx1Harness.openai_chat_list` / `HarnessClient.list_chat_completions` / `client.listChatCompletions` / `fx1 harness chat-list` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
@@ -586,7 +587,11 @@ artifact files.
 - **Artifacts:** each `FTJobOutcome.artifacts` entry is
   re-registered as a `purpose=fine-tune-result` file and listed in
   `result_files` — fetch bytes via `GET /v1/files/{id}/content`.
-- **Runner contract:** `FTJobRunner(spec, *, emit, should_cancel)`
+- **Runner contract:** `FTJobRunner(spec, *, emit, should_cancel, pause_gate)`
+  — `pause_gate` is optional on injected runners (the worker
+  introspects); `pause_gate()` blocks while the job is paused and
+  returns True when a cancel landed while parked — call it between
+  stages and return early on True to unwind to `cancelled`.
   — the default runner (`default_ft_runner`) executes the gated
   pipeline in-process (quality gate → baseline eval → train →
   candidate eval) and fails honestly (`status=failed`,
@@ -609,6 +614,20 @@ artifact files.
 - **Cancel:** `POST .../cancel` — queued jobs cancel at once;
   running jobs stop cooperatively when the runner's
   `should_cancel()` reports the flag (between stages).
+- **Pause/resume:** `POST .../pause` marks the job `paused`
+  (non-terminal): a queued job's worker parks at a pre-start gate —
+  no `job started` event until resumed; a running job's worker parks
+  inside `pause_gate()` at the next stage boundary — the hook is
+  opt-in on the runner contract (`FTJobRunner(..., pause_gate)`),
+  so a gate-free runner completes normally through a running-pause
+  and only queued pauses still hold. `POST .../resume` restores the
+  captured status (`queued` or `running`) and releases the gate.
+  Pausing a paused job replays its record — idempotent; pause/resume
+  on a terminal job is `409 job_terminal`, resume on a non-paused
+  job is `409 job_not_paused`. A paused job still honors cancel
+  (terminal write lands at once, the parked worker exits without a
+  duplicate event) and drain (a restart replays `paused` → `failed`
+  like every non-terminal state).
 - **Retry-safe:** `Idempotency-Key` dedups submission against the
   body fingerprint — a replay returns the same job record, a key
   reused under a different body is `409 idempotency_conflict`.
@@ -616,6 +635,9 @@ artifact files.
   runs the same runner contract in-process and synchronously — it
   returns the terminal record directly (no queue), and stores the
   record in the same `FTJobStore` for `finetune_job`/events reads.
+  Because the create is synchronous there is no pause window — the
+  SDK carries no `pause_finetune_job`; the verbs are wire-only
+  (`HarnessClient`/`client.pauseFineTuneJob`/`ft-pause`).
 
 ### Batches + files (`/v1/batches`, `/v1/files`)
 

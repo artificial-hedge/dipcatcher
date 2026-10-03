@@ -1199,6 +1199,35 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/fine_tuning/jobs/{id}/pause — a queued job parks before
+   * start; a running job parks at the next pipeline-stage boundary.
+   * Pausing a paused job replays its record; terminal is a 409
+   * HarnessApiError.
+   */
+  async pauseFineTuneJob(jobId: string): Promise<FTJob> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/pause`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as FTJob;
+  }
+
+  /**
+   * POST /v1/fine_tuning/jobs/{id}/resume — restores the status the job
+   * held when paused (queued | running) and releases the gate. Resuming
+   * a job that is not paused is a 409 HarnessApiError.
+   */
+  async resumeFineTuneJob(jobId: string): Promise<FTJob> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/fine_tuning/jobs/${encodeURIComponent(jobId)}/resume`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as FTJob;
+  }
+
+  /**
    * Poll a fine-tuning job until terminal (succeeded | failed |
    * cancelled). Terminal records are returned, not thrown — `status` +
    * `error` carry the verdict. `timeoutS` bounds the wait (0 = forever).

@@ -16,6 +16,11 @@ posture:
 * Cancellation is cooperative: a queued job is cancelled immediately; a
   running job is checked at stage boundaries — an in-flight trainer call
   is never killed mid-write.
+* Pause/resume shares that contract: ``POST .../pause`` parks a queued
+  job before it starts and a running job at the next stage boundary
+  (status ``paused`` — non-terminal); ``POST .../resume`` restores it.
+  A paused job still honours cancel and drain. On restart a job replayed
+  as ``paused`` recovers to ``failed`` like any other non-terminal state.
 * Result artifacts (comparison, candidate eval, training receipt) are
   registered back into the files store so ``GET /v1/files/{id}/content``
   downloads them — real artifacts, real ids.
@@ -41,7 +46,9 @@ from fx1.serve.webhooks import check_callback_url
 
 TRAINABLE_MODELS = ("fx1", "local_fx1")
 
-FT_JOB_STATUS = Literal["validating_files", "queued", "running", "succeeded", "failed", "cancelled"]
+FT_JOB_STATUS = Literal[
+    "validating_files", "queued", "running", "succeeded", "failed", "cancelled", "paused"
+]
 _FT_TERMINAL = frozenset({"succeeded", "failed", "cancelled"})
 _FT_EVENT_CAP = 256
 _FT_EVENTS_KIND = "fine_tuning.job.event"
@@ -187,11 +194,13 @@ class FTJobOutcome(BaseModel, extra="forbid"):
     checkpoint: str | None = None
 
 
-# Runner signature: ``(spec, *, emit, should_cancel) -> FTJobOutcome``.
-# The worker calls it inside the inflight slot. ``emit`` appends a job
-# event; ``should_cancel`` is the cooperative-cancel check — a runner
-# that returns early because it saw True gets its job marked cancelled,
-# not failed.
+# Runner signature: ``(spec, *, emit, should_cancel, pause_gate) ->
+# FTJobOutcome``. The worker calls it inside the inflight slot. ``emit``
+# appends a job event; ``should_cancel`` is the cooperative-cancel check
+# — a runner that returns early because it saw True gets its job marked
+# cancelled, not failed. ``pause_gate`` blocks while the job is paused
+# and returns True when a cancel landed while parked — call it between
+# stages; a runner that returns early on True unwinds to ``cancelled``.
 FTJobRunner = Callable[..., FTJobOutcome]
 
 
@@ -239,14 +248,22 @@ def validate_chat_jsonl(content: bytes, *, file_id: str) -> int:
 
 
 class FTJobEntry:
-    """A stored job plus its event feed and cooperative-cancel flag."""
+    """A stored job plus its event feed, cooperative-cancel flag, and
+    pause gate. ``resume`` is set while unpaused — a worker parks on
+    ``resume.wait()`` at stage boundaries; ``paused_from`` remembers the
+    status resume restores (``queued`` parked pre-start vs ``running``
+    parked mid-pipeline)."""
 
-    __slots__ = ("job", "events", "cancel", "idem_key", "body_fp")
+    __slots__ = ("job", "events", "cancel", "pause", "resume", "paused_from", "idem_key", "body_fp")
 
     def __init__(self, job: FTJob, idem_key: str | None, body_fp: str) -> None:
         self.job = job
         self.events: list[FTJobEvent] = []
         self.cancel = threading.Event()
+        self.pause = threading.Event()
+        self.resume = threading.Event()
+        self.resume.set()
+        self.paused_from: Literal["queued", "running"] | None = None
         self.idem_key = idem_key
         self.body_fp = body_fp
 
@@ -523,13 +540,27 @@ class FTJobStore:
         has_more = len(events) > limit
         return events[:limit], has_more
 
-    def request_cancel(self, job_id: str) -> Literal["queued", "running", "terminal", "missing"]:
+    def request_cancel(
+        self, job_id: str
+    ) -> Literal["queued", "running", "paused", "terminal", "missing"]:
         with self._lock:
             entry = self._entries.get(job_id)
             if entry is None:
                 return "missing"
             if entry.job.status in _FT_TERMINAL:
                 return "terminal"
+            if entry.job.status == "paused":
+                # like a queued cancel: the terminal write lands now; any
+                # parked worker wakes on resume and exits through its
+                # cancel check without re-emitting the event
+                entry.job.status = "cancelled"
+                entry.job.finished_at = int(time.time())
+                entry.paused_from = None
+                entry.cancel.set()
+                entry.resume.set()
+                if self._journal is not None:
+                    self._journal.append(self._record(entry))
+                return "paused"
             if entry.job.status == "queued":
                 entry.job.status = "cancelled"
                 entry.job.finished_at = int(time.time())
@@ -540,22 +571,81 @@ class FTJobStore:
             entry.cancel.set()
             return "running"
 
+    def request_pause(
+        self, job_id: str
+    ) -> Literal["queued", "running", "paused", "terminal", "missing"]:
+        """``POST .../pause``: queued parks before start, running parks at
+        the next stage boundary — both report ``paused`` immediately. A
+        second pause is idempotent (returns ``paused``)."""
+        with self._lock:
+            entry = self._entries.get(job_id)
+            if entry is None:
+                return "missing"
+            if entry.job.status in _FT_TERMINAL:
+                return "terminal"
+            if entry.job.status == "paused":
+                return "paused"
+            paused_from: Literal["queued", "running"] = (
+                "running" if entry.job.status == "running" else "queued"
+            )
+            entry.paused_from = paused_from
+            entry.job.status = "paused"
+            entry.pause.set()
+            entry.resume.clear()
+            if self._journal is not None:
+                self._journal.append(self._record(entry))
+            return paused_from
+
+    def request_resume(
+        self, job_id: str
+    ) -> Literal["queued", "running", "terminal", "missing", "not_paused"]:
+        """``POST .../resume``: restores the status pause captured and
+        opens the gate — a parked worker proceeds on its next check."""
+        with self._lock:
+            entry = self._entries.get(job_id)
+            if entry is None:
+                return "missing"
+            if entry.job.status in _FT_TERMINAL:
+                return "terminal"
+            if entry.job.status != "paused":
+                return "not_paused"
+            restored = entry.paused_from or "queued"
+            entry.job.status = restored
+            entry.paused_from = None
+            entry.pause.clear()
+            entry.resume.set()
+            if self._journal is not None:
+                self._journal.append(self._record(entry))
+            return restored
+
     def cancel_pending(self) -> list[FTJob]:
         """Mass-cancel on drain: queued jobs flip to ``cancelled`` outright
         (their workers never started — the returned records owe any
         terminal webhook); running jobs only get the flag — their workers
         own the terminal transition."""
         with self._lock:
-            pending = [e for e in self._entries.values() if e.job.status == "queued"]
+            pending = [
+                e
+                for e in self._entries.values()
+                if e.job.status == "queued"
+                or (e.job.status == "paused" and e.paused_from == "queued")
+            ]
             for e in pending:
                 e.job.status = "cancelled"
                 e.job.finished_at = int(time.time())
                 e.cancel.set()
+                e.resume.set()
                 if self._journal is not None:
                     self._journal.append(self._record(e))
-            running = [e for e in self._entries.values() if e.job.status == "running"]
+            running = [
+                e
+                for e in self._entries.values()
+                if e.job.status == "running"
+                or (e.job.status == "paused" and e.paused_from == "running")
+            ]
             for e in running:
                 e.cancel.set()
+                e.resume.set()
         return [e.job for e in pending]
 
 
@@ -576,6 +666,7 @@ def default_ft_runner(
         *,
         emit: Callable[[str, str, dict[str, Any] | None], None],
         should_cancel: Callable[[], bool],
+        pause_gate: Callable[[], bool],
     ) -> FTJobOutcome:
         from fx1.train.config import LadderStage, TrainConfig  # noqa: PLC0415
         from fx1.train.pipeline import Pipeline  # noqa: PLC0415
@@ -598,7 +689,7 @@ def default_ft_runner(
         pipe = Pipeline(config, spec.work_dir)
         emit("info", "quality gate: dedup + decontamination + frozen split", None)
         pipe.run_quality_gate()
-        if should_cancel():
+        if should_cancel() or pause_gate():
             return FTJobOutcome()
         base_backend = resolver("local_fx1", None, None, None)
 
@@ -607,11 +698,11 @@ def default_ft_runner(
 
         emit("info", "base eval on the canonical bank", None)
         pipe.run_eval_base(base_fn)
-        if should_cancel():
+        if should_cancel() or pause_gate():
             return FTJobOutcome()
         emit("info", "training run (receipted)", None)
         checkpoint = pipe.run_training(seed=spec.seed)
-        if should_cancel():
+        if should_cancel() or pause_gate():
             return FTJobOutcome()
         from fx1.serve.backends import LocalFx1Backend  # noqa: PLC0415
 
@@ -621,6 +712,8 @@ def default_ft_runner(
             return cand_backend.complete(messages)
 
         emit("info", "candidate eval + ship-gate comparison", None)
+        if pause_gate():
+            return FTJobOutcome()
         pipe.run_eval_candidate(cand_fn)
         artifacts = {
             name: Path(path) for name, path in pipe.state.artifacts.items() if Path(path).is_file()

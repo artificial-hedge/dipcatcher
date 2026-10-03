@@ -36,6 +36,7 @@ from __future__ import annotations
 import builtins
 import hashlib
 import hmac
+import inspect
 import json
 import logging
 import math
@@ -5625,6 +5626,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         mid-pipeline ends ``cancelled``, not ``failed``."""
         job: FTJob = entry.job
         try:
+            # a job paused while queued parks here — resume (or cancel,
+            # which also opens the gate) releases it
+            entry.resume.wait()
             if entry.cancel.is_set():
                 job.status = "cancelled"
                 job.finished_at = int(time.time())
@@ -5633,6 +5637,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             job.status = "running"
             ft_store.add_event(job.id, "info", "job started", None)
             ft_store.mark(entry)
+
+            def _pause_gate() -> bool:
+                """Block while paused; True iff a cancel landed parked."""
+                entry.resume.wait()
+                return entry.cancel.is_set()
+
+            # pause_gate is opt-in on the runner contract: runners that
+            # accept it park at stage boundaries; older runners simply
+            # can't pause mid-pipeline (queued pause still holds — the
+            # pre-start gate above is worker-side)
+            _runner_extra: dict[str, Any] = {}
+            try:
+                _sig = inspect.signature(ft_runner)
+                if "pause_gate" in _sig.parameters or any(
+                    p.kind is inspect.Parameter.VAR_KEYWORD for p in _sig.parameters.values()
+                ):
+                    _runner_extra["pause_gate"] = _pause_gate
+            except (TypeError, ValueError):  # pragma: no cover - C callables
+                _runner_extra["pause_gate"] = _pause_gate
             outcome = ft_runner(
                 spec,
                 emit=lambda level, msg, data=None: ft_store.add_event(
@@ -5642,10 +5665,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     data,
                 ),
                 should_cancel=entry.cancel.is_set,
+                **_runner_extra,
             )
             if entry.cancel.is_set():
+                already = job.status == "cancelled"
                 job.status = "cancelled"
-                ft_store.add_event(job.id, "info", "job cancelled", None)
+                if not already:
+                    ft_store.add_event(job.id, "info", "job cancelled", None)
             else:
                 for name, path in outcome.artifacts.items():
                     try:
@@ -5688,8 +5714,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
         except Exception as exc:  # noqa: BLE001 — a runner fault is job data
             if entry.cancel.is_set():
+                already = job.status == "cancelled"
                 job.status = "cancelled"
-                ft_store.add_event(job.id, "info", "job cancelled", None)
+                if not already:
+                    ft_store.add_event(job.id, "info", "job cancelled", None)
             else:
                 job.status = "failed"
                 job.error = FTJobError(
@@ -5898,7 +5926,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "queued or running jobs can be cancelled",
                 code="job_terminal",
             )
-        if outcome == "queued":
+        if outcome in ("queued", "paused"):
             ft_store.add_event(job_id, "info", "job cancelled", None)
         else:
             ft_store.add_event(
@@ -5907,6 +5935,73 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "cancellation requested — takes effect at the next stage boundary",
                 None,
             )
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/pause",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="pause_finetune_job",
+    )
+    def pause_finetune_job(job_id: str) -> FTJob:
+        """Cooperative pause — a queued job parks before starting; a
+        running one parks at the next pipeline-stage boundary (the gate
+        blocks inside the runner, so an in-flight trainer call is never
+        interrupted mid-write). ``paused`` is non-terminal: resume
+        restores, cancel still wins, drain still drains. Pausing a paused
+        job replays its record — idempotent."""
+        outcome = ft_store.request_pause(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_pause found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — only "
+                "queued or running jobs can be paused",
+                code="job_terminal",
+            )
+        if outcome == "running":
+            ft_store.add_event(
+                job_id,
+                "info",
+                "pause requested — takes effect at the next stage boundary",
+                None,
+            )
+        elif outcome == "queued":
+            ft_store.add_event(job_id, "info", "job paused — will not start until resumed", None)
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/resume",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="resume_finetune_job",
+    )
+    def resume_finetune_job(job_id: str) -> FTJob:
+        """Resume a paused job — restores the status pause captured
+        (queued jobs re-queue, running jobs proceed from the boundary the
+        worker parked at). Resuming a non-paused job is a 409."""
+        outcome = ft_store.request_resume(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_resume found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — a terminal job cannot be resumed",
+                code="job_terminal",
+            )
+        if outcome == "not_paused":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is {entry.job.status}, not paused — "
+                "only paused jobs can be resumed",
+                code="job_not_paused",
+            )
+        ft_store.add_event(job_id, "info", "job resumed", None)
         return entry.job
 
     @app.get(

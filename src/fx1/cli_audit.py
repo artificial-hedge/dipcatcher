@@ -28,8 +28,10 @@ from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["cli_audit", "cli_audit_bench"]
 
+_JSON_OBJECT_ARG = '{"type":"json_object"}'
 
-def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
+
+def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
     import json
 
     import typer
@@ -159,6 +161,8 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
         "ft-events",
         "ft-wait",
         "ft-cancel",
+        "ft-pause",
+        "ft-resume",
         "ft-checkpoints",
         "files",
         "file-upload",
@@ -474,7 +478,9 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
             self.stream_calls.append(dict(kw))
             return ["chunk-a", "chunk-b"]
 
-        def openai_response(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
+        def openai_response(  # NOSONAR(S1172)
+            self, request: Any, **kw: Any
+        ) -> tuple[dict[str, Any], None]:
             self.complete_calls.append({"responses_body": dict(request)})
             return {"id": "resp_fake", "status": "completed"}, None
 
@@ -589,7 +595,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
                 "--verbosity",
                 "low",
                 "--format",
-                '{"type":"json_object"}',
+                _JSON_OBJECT_ARG,
                 "--prompt-cache-key",
                 "pk2",
                 "--prompt-cache-retention",
@@ -1043,6 +1049,14 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
             self.last_ft_job = job_id
             return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
 
+        def pause_finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {"id": job_id, "object": "fine_tuning.job", "status": "paused"}
+
+        def resume_finetune_job(self, job_id: str) -> dict[str, Any]:
+            self.last_ft_job = job_id
+            return {"id": job_id, "object": "fine_tuning.job", "status": "running"}
+
         def finetune_job_checkpoints(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
             self.last_ft_query = dict(kw)
@@ -1492,6 +1506,10 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
     out["ftevents_local_refused"] = rfe_local.exit_code == 2 and "--remote" in rfe_local.output
     rfc_local = runner.invoke(app, ["harness", "ft-cancel", "ftjob-x"])
     out["ftcancel_local_refused"] = rfc_local.exit_code == 2 and "--remote" in rfc_local.output
+    rfp_local = runner.invoke(app, ["harness", "ft-pause", "ftjob-x"])
+    out["ftpause_local_refused"] = rfp_local.exit_code == 2 and "--remote" in rfp_local.output
+    rfr_local = runner.invoke(app, ["harness", "ft-resume", "ftjob-x"])
+    out["ftresume_local_refused"] = rfr_local.exit_code == 2 and "--remote" in rfr_local.output
     rew_local = runner.invoke(app, ["harness", "eval-wait", "ev-x"])
     out["evalwait_local_refused"] = rew_local.exit_code == 2 and "--remote" in rew_local.output
     rfw_local = runner.invoke(app, ["harness", "ft-wait", "ftjob-x"])
@@ -1796,6 +1814,18 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
             and json.loads(rfc.stdout)["status"] == "cancelled"
             and remotes[-1].last_ft_job == "ftjob-x"
         )
+        rfp = runner.invoke(app, ["harness", "ft-pause", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_pause_json"] = (
+            rfp.exit_code == 0
+            and json.loads(rfp.stdout)["status"] == "paused"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
+        rfr = runner.invoke(app, ["harness", "ft-resume", "ftjob-x", "--remote", "http://h.test"])
+        out["remote_ft_resume_json"] = (
+            rfr.exit_code == 0
+            and json.loads(rfr.stdout)["status"] == "running"
+            and remotes[-1].last_ft_job == "ftjob-x"
+        )
 
         # the *-wait twins re-attach to a --no-wait submit: poll kwargs
         # forward, the terminal record prints, eval-wait --receipt follows.
@@ -2052,7 +2082,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
                 "--metadata",
                 '{"k":"v"}',
                 "--format",
-                '{"type":"json_object"}',
+                _JSON_OBJECT_ARG,
                 "--previous-response-id",
                 "resp_prev9",
                 "--verbosity",
@@ -2148,7 +2178,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
                 _say,
                 "--stream",
                 "--format",
-                '{"type":"json_object"}',
+                _JSON_OBJECT_ARG,
                 "--remote",
                 "http://h.test",
             ],

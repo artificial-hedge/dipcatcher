@@ -141,6 +141,27 @@ def _retry_after_s(headers: Mapping[str, str]) -> float | None:
     return None
 
 
+def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
+    """Collect Responses SSE frames until the terminal event.
+
+    ``response.incomplete`` is the terminal event on a truncated turn
+    (e.g. ``max_tool_calls``) — it ends the stream like ``completed``.
+    """
+    events: list[dict[str, Any]] = []
+    saw_terminal = False
+    for line in body.decode().splitlines():
+        if not line.startswith("data: "):
+            continue
+        frame = json.loads(line[len("data: ") :])
+        events.append(frame)
+        if frame.get("type") in ("response.completed", "response.incomplete"):
+            saw_terminal = True
+            break
+    if not saw_terminal:
+        raise HarnessTransportError("stream ended without response.completed/response.incomplete")
+    return events
+
+
 class HarnessClient:
     """Remote harness client — the SDK contract over HTTP."""
 
@@ -677,6 +698,25 @@ class HarnessClient:
         )
         return dict(out)
 
+    def pause_finetune_job(self, job_id: str) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs/{id}/pause — cooperative: queued
+        parks before starting, running parks at the next stage boundary.
+        Pausing a paused job is idempotent."""
+        out = self._json(
+            "POST",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/pause",
+        )
+        return dict(out)
+
+    def resume_finetune_job(self, job_id: str) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs/{id}/resume — restores the status
+        pause captured; resuming a non-paused job is a 409."""
+        out = self._json(
+            "POST",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/resume",
+        )
+        return dict(out)
+
     def wait_finetune_job(
         self,
         job_id: str,
@@ -821,7 +861,7 @@ class HarnessClient:
 
     # ---- gated completion ------------------------------------------------
 
-    def complete(
+    def complete(  # NOSONAR(S107)
         self,
         messages: list[dict[str, str]],
         *,
@@ -1000,7 +1040,7 @@ class HarnessClient:
             error_class=out.get("error_class"),
         )
 
-    def complete_many(
+    def complete_many(  # NOSONAR(S107)
         self,
         batch: list[list[dict[str, str]]],
         *,
@@ -1077,7 +1117,7 @@ class HarnessClient:
             )
         return results
 
-    def stream_complete(
+    def stream_complete(  # NOSONAR(S107)
         self,
         messages: list[dict[str, str]],
         *,
@@ -1541,23 +1581,10 @@ class HarnessClient:
             idempotent=idempotency_key is not None,
             extra_headers=extra_headers,
         )
-        events: list[dict[str, Any]] = []
-        saw_completed = False
-        for line in body.decode().splitlines():
-            if not line.startswith("data: "):
-                continue
-            frame = json.loads(line[len("data: ") :])
-            events.append(frame)
-            # response.incomplete is the terminal event on a truncated turn
-            # (e.g. max_tool_calls) — it ends the stream like completed
-            if frame.get("type") in ("response.completed", "response.incomplete"):
-                saw_completed = True
-                break
-        if not saw_completed:
-            raise HarnessTransportError(
-                "stream ended without response.completed/response.incomplete"
-            )
-        return events, headers.get("X-Fx1-Completion-Id")
+        return (
+            _responses_sse_events(body),
+            headers.get("X-Fx1-Completion-Id"),
+        )
 
     def _responses_payload(
         self,
