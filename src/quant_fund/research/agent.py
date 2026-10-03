@@ -2287,6 +2287,14 @@ from quant_fund.research.benches_w286 import (
     bench_impossible_travel_family,
     bench_sig_score_family,
 )
+from quant_fund.research.benches_w287 import (
+    bench_christoffel_family,
+    bench_first_ff_family,
+    bench_frenet_frame_family,
+    bench_gauss_curve_family,
+    bench_geodesic_sphere_family,
+    bench_surf_area_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2666,6 +2674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "first_ff": bench_first_ff_family,
+        "gauss_curve": bench_gauss_curve_family,
+        "frenet_frame": bench_frenet_frame_family,
+        "christoffel": bench_christoffel_family,
+        "geodesic_sphere": bench_geodesic_sphere_family,
+        "surf_area": bench_surf_area_family,
         "beacon_detect": bench_beacon_detect_family,
         "entropy_dns": bench_entropy_dns_family,
         "cred_stuffing": bench_cred_stuffing_family,
