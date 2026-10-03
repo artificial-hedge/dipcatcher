@@ -4615,6 +4615,14 @@ from quant_fund.research.benches_w577 import (
     bench_nearby_cycles_family,
     bench_perverse_sheaf_family,
 )
+from quant_fund.research.benches_w578 import (
+    bench_bogomolov_conj_family,
+    bench_canonical_height_family,
+    bench_equidistribution_thm_family,
+    bench_global_height_family,
+    bench_nevanlinna_th_family,
+    bench_vojta_conj_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4994,6 +5002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "global_height": bench_global_height_family,
+        "bogomolov_conj": bench_bogomolov_conj_family,
+        "equidistribution_thm": bench_equidistribution_thm_family,
+        "canonical_height": bench_canonical_height_family,
+        "nevanlinna_th": bench_nevanlinna_th_family,
+        "vojta_conj": bench_vojta_conj_family,
         "perverse_sheaf": bench_perverse_sheaf_family,
         "intersection_homology": bench_intersection_homology_family,
         "nearby_cycles": bench_nearby_cycles_family,
