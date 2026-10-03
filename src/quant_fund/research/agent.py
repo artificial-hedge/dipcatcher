@@ -2792,6 +2792,14 @@ from quant_fund.research.benches_w349 import (
     bench_variety_dim_family,
     bench_zariski_topo_family,
 )
+from quant_fund.research.benches_w350 import (
+    bench_character_table_s3_family,
+    bench_fourier_sn_family,
+    bench_induced_rep_family,
+    bench_perm_rep_family,
+    bench_regular_rep_family,
+    bench_schur_ortho_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3171,6 +3179,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "character_table_s3": bench_character_table_s3_family,
+        "perm_rep": bench_perm_rep_family,
+        "schur_ortho": bench_schur_ortho_family,
+        "induced_rep": bench_induced_rep_family,
+        "fourier_sn": bench_fourier_sn_family,
+        "regular_rep": bench_regular_rep_family,
         "zariski_topo": bench_zariski_topo_family,
         "projective_plane": bench_projective_plane_family,
         "bezout_bezout": bench_bezout_bezout_family,
