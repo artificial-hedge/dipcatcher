@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-637 p-adic-6 canon.
+        "fargues_scholze2",
+        "curve_padic",
+        "diamond_mod",
+        "etale_phiphi",
+        "cocartesian_diamond",
+        "scholze_bc",
         # Wave-636 tensor-category-3 canon.
         "sylleptic",
         "haagerup_sub",
