@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-468 model-theory-7 canon.
+        "o_minimal",
+        "nip_theory",
+        "nonforking",
+        "simple_theory",
+        "abstract_erc",
+        "tame_metric",
         # Wave-467 set-theory-5 canon.
         "constructible_l",
         "large_card",

@@ -3735,6 +3735,14 @@ from quant_fund.research.benches_w467 import (
     bench_proper_forcing_family,
     bench_square_princ_family,
 )
+from quant_fund.research.benches_w468 import (
+    bench_abstract_erc_family,
+    bench_nip_theory_family,
+    bench_nonforking_family,
+    bench_o_minimal_family,
+    bench_simple_theory_family,
+    bench_tame_metric_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4114,6 +4122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "o_minimal": bench_o_minimal_family,
+        "nip_theory": bench_nip_theory_family,
+        "nonforking": bench_nonforking_family,
+        "simple_theory": bench_simple_theory_family,
+        "abstract_erc": bench_abstract_erc_family,
+        "tame_metric": bench_tame_metric_family,
         "constructible_l": bench_constructible_l_family,
         "large_card": bench_large_card_family,
         "pcf_theory": bench_pcf_theory_family,
