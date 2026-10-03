@@ -6951,6 +6951,14 @@ from quant_fund.research.benches_w869 import (
     bench_importance_sampling_family,
     bench_stratified_var_family,
 )
+from quant_fund.research.benches_w870 import (
+    bench_augmented_lagrangian_family,
+    bench_conjugate_opt_family,
+    bench_grad_descent_nest_family,
+    bench_interior_point2_family,
+    bench_newton_method_family,
+    bench_quasi_newton_lbfgs_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7322,6 +7330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "newton_method": bench_newton_method_family,
+        "quasi_newton_lbfgs": bench_quasi_newton_lbfgs_family,
+        "augmented_lagrangian": bench_augmented_lagrangian_family,
+        "interior_point2": bench_interior_point2_family,
+        "grad_descent_nest": bench_grad_descent_nest_family,
+        "conjugate_opt": bench_conjugate_opt_family,
         "antithetic_var": bench_antithetic_var_family,
         "control_variate": bench_control_variate_family,
         "importance_sampling": bench_importance_sampling_family,

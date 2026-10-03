@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-870 optimization canon.
+        "newton_method",
+        "quasi_newton_lbfgs",
+        "augmented_lagrangian",
+        "interior_point2",
+        "grad_descent_nest",
+        "conjugate_opt",
         # Wave-869 MC-variance-reduction canon.
         "antithetic_var",
         "control_variate",
