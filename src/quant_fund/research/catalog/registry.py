@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-928 computational-geometry-6 canon.
+        "convex_hull_3d",
+        "polygon_boolean",
+        "medial_axis",
+        "polygon_centroid",
+        "shape_context",
+        "beta_skeleton",
         # Wave-927 information-geometry-3 canon.
         "fisher_metric2",
         "expectation_param",
