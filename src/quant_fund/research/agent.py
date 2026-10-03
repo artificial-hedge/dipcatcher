@@ -2616,6 +2616,22 @@ from quant_fund.research.benches_w327 import (
     bench_r1cs_check_family,
     bench_snark_circuit_family,
 )
+from quant_fund.research.benches_w328 import (
+    bench_funext_toy_family,
+    bench_hit_quotient_family,
+    bench_hlevel_check_family,
+    bench_kan_hcomp_family,
+    bench_path_types_family,
+    bench_univalence_toy_family,
+)
+from quant_fund.research.benches_w329 import (
+    bench_cut_elim_family,
+    bench_intuit_class_family,
+    bench_linear_logic_family,
+    bench_nd_check_family,
+    bench_resolution_fol_family,
+    bench_sequent_prove_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2995,6 +3011,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nd_check": bench_nd_check_family,
+        "sequent_prove": bench_sequent_prove_family,
+        "cut_elim": bench_cut_elim_family,
+        "resolution_fol": bench_resolution_fol_family,
+        "linear_logic": bench_linear_logic_family,
+        "intuit_class": bench_intuit_class_family,
+        "path_types": bench_path_types_family,
+        "hlevel_check": bench_hlevel_check_family,
+        "univalence_toy": bench_univalence_toy_family,
+        "kan_hcomp": bench_kan_hcomp_family,
+        "funext_toy": bench_funext_toy_family,
+        "hit_quotient": bench_hit_quotient_family,
         "r1cs_check": bench_r1cs_check_family,
         "qap_encode": bench_qap_encode_family,
         "kzg_commit": bench_kzg_commit_family,

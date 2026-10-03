@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-329 proof-theory canon.
+        "nd_check",
+        "sequent_prove",
+        "cut_elim",
+        "resolution_fol",
+        "linear_logic",
+        "intuit_class",
+        # Wave-328 homotopy-type-theory canon.
+        "path_types",
+        "hlevel_check",
+        "univalence_toy",
+        "kan_hcomp",
+        "funext_toy",
+        "hit_quotient",
         # Wave-327 zero-knowledge canon.
         "r1cs_check",
         "qap_encode",
