@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-909 deque/linked-structure canon.
+        "doubly_linked_list",
+        "unrolled_list",
+        "gap_buffer",
+        "piece_table",
+        "deque_array",
+        "xor_linked_list",
         # Wave-908 range-query canon.
         "segment_tree",
         "fenwick_tree",
