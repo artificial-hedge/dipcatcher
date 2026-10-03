@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-364 functional-analysis-3 canon.
+        "hahn_banach",
+        "riesz_repr",
+        "adjoint_op",
+        "selfadjoint_spectrum",
+        "compact_resolvent",
+        "projection_thm",
         # Wave-363 real-analysis canon.
         "cantor_set",
         "baire_category",
