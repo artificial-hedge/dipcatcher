@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-761 renewal-theory canon.
+        "blackwell_renewal",
+        "key_renewal",
+        "excess_renewal",
+        "alternating_renewal",
+        "renewal_reward2",
+        "delayed_renewal",
         # Wave-760 Brownian-motion canon.
         "levy_bm",
         "wiener_bm",

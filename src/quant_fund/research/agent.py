@@ -6079,6 +6079,14 @@ from quant_fund.research.benches_w760 import (
     bench_levy_bm_family,
     bench_wiener_bm_family,
 )
+from quant_fund.research.benches_w761 import (
+    bench_alternating_renewal_family,
+    bench_blackwell_renewal_family,
+    bench_delayed_renewal_family,
+    bench_excess_renewal_family,
+    bench_key_renewal_family,
+    bench_renewal_reward2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6458,6 +6466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "blackwell_renewal": bench_blackwell_renewal_family,
+        "key_renewal": bench_key_renewal_family,
+        "excess_renewal": bench_excess_renewal_family,
+        "alternating_renewal": bench_alternating_renewal_family,
+        "renewal_reward2": bench_renewal_reward2_family,
+        "delayed_renewal": bench_delayed_renewal_family,
         "levy_bm": bench_levy_bm_family,
         "wiener_bm": bench_wiener_bm_family,
         "doob_bm": bench_doob_bm_family,
