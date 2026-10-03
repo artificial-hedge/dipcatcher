@@ -5399,6 +5399,14 @@ from quant_fund.research.benches_w675 import (
     bench_surfaces_operad_family,
     bench_tadv_hochschild_family,
 )
+from quant_fund.research.benches_w676 import (
+    bench_center_hochschild_family,
+    bench_en_algebra2_family,
+    bench_higher_brace2_family,
+    bench_koszul_operad2_family,
+    bench_operad_lie_family,
+    bench_thom_transpose_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5778,6 +5786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "en_algebra2": bench_en_algebra2_family,
+        "thom_transpose": bench_thom_transpose_family,
+        "higher_brace2": bench_higher_brace2_family,
+        "koszul_operad2": bench_koszul_operad2_family,
+        "operad_lie": bench_operad_lie_family,
+        "center_hochschild": bench_center_hochschild_family,
         "e3_algebra": bench_e3_algebra_family,
         "getzler_jones": bench_getzler_jones_family,
         "tadv_hochschild": bench_tadv_hochschild_family,
