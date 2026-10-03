@@ -5383,6 +5383,14 @@ from quant_fund.research.benches_w673 import (
     bench_spectral_deformation2_family,
     bench_virtual_class2_family,
 )
+from quant_fund.research.benches_w674 import (
+    bench_analytic_spec_family,
+    bench_derived_k3_family,
+    bench_equivariant_spec_family,
+    bench_graded_spec_family,
+    bench_spectral_curve_family,
+    bench_spectral_gm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5762,6 +5770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_k3": bench_derived_k3_family,
+        "spectral_gm": bench_spectral_gm_family,
+        "analytic_spec": bench_analytic_spec_family,
+        "graded_spec": bench_graded_spec_family,
+        "equivariant_spec": bench_equivariant_spec_family,
+        "spectral_curve": bench_spectral_curve_family,
         "derived_cohom": bench_derived_cohom_family,
         "spectral_deformation2": bench_spectral_deformation2_family,
         "virtual_class2": bench_virtual_class2_family,
