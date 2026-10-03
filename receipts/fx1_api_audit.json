@@ -602,15 +602,20 @@
       "webhook_verify_malformed": true,
       "webhook_verify_stale_ts": true,
       "webhook_verify_tampered_body": true,
-      "webhook_verify_wrong_secret": true
+      "webhook_verify_wrong_secret": true,
+      "xfx_timeout_bad_400": true,
+      "xfx_timeout_ext_wins": true,
+      "xfx_timeout_header_reaches_backend": true,
+      "xfx_timeout_range_400": true,
+      "xfx_timeout_responses_reaches_backend": true
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "6bc95e3f3aa00b1f06bc24c27a8382dc6625a8f5",
-  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it. The /v1/fine_tuning surface holds the OpenAI job grammar: synchronous corpus validation (bad corpus/model/file fail closed 4xx before any queue), cooperative cancel, idempotent submit, events feed, artifacts re-registered as fine-tune-result files. A succeeded job's ft: name registers into the model inventory (listed + retrievable), completions naming it resolve to the local_fx1 lane pinned at the job's checkpoint, explicit backend headers still override, and unregistered ft: names fail closed 404 model_not_found.",
+  "git_revision": "680cf4f7a41565b9f4f20e1d8bba14a7d8f08993",
+  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it. The /v1/fine_tuning surface holds the OpenAI job grammar: synchronous corpus validation (bad corpus/model/file fail closed 4xx before any queue), cooperative cancel, idempotent submit, events feed, artifacts re-registered as fine-tune-result files. A succeeded job's ft: name registers into the model inventory (listed + retrievable), completions naming it resolve to the local_fx1 lane pinned at the job's checkpoint, explicit backend headers still override, and unregistered ft: names fail closed 404 model_not_found. X-Fx1-Timeout sets the per-request backend deadline on the OpenAI surface (fx1.timeout_s extension wins; malformed or out-of-range values fail closed 400).",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "35e622060e60233bcbbd1a2f1134904a22bfa2170ecee2265ad79cf214307ff4",
+  "receipt_sha256": "7082aa9f28b4d94743f51ec4133deedf2b5c91989798f59acf9bba623258c8aa",
   "research_only": true,
   "schema": "api_audit.v1"
 }

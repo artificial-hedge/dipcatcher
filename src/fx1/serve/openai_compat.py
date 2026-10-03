@@ -26,6 +26,7 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
 from __future__ import annotations
 
 import json
+import math
 import threading
 import time
 import urllib.parse
@@ -583,6 +584,24 @@ def _resolve_openai_link(
     return backend, fallbacks, checkpoint_dir, byok
 
 
+def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
+    """Per-request backend timeout: ``fx1.timeout_s`` > ``X-Fx1-Timeout``
+    header (seconds). A malformed header is a fail-closed 400 — never a
+    silent default."""
+    if ext_timeout is not None:
+        return ext_timeout
+    raw = hdrs.get("x-fx1-timeout")
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except ValueError as exc:
+        raise OpenAICompatError("X-Fx1-Timeout must be seconds as a number") from exc
+    if not math.isfinite(val) or val <= 0.0 or val > 3600.0:
+        raise OpenAICompatError("X-Fx1-Timeout must be in (0, 3600] seconds")
+    return val
+
+
 def openai_to_kwargs(
     body: OpenAIChatRequest,
     headers: Mapping[str, str] | None = None,
@@ -613,7 +632,7 @@ def openai_to_kwargs(
         "messages": openai_messages(body.messages),
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": ext.receipt_hashes if ext is not None else None,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "temperature": body.temperature,
@@ -1178,7 +1197,7 @@ def response_to_kwargs(
         "messages": response_input_to_messages(body.input, body.instructions),
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": ext.receipt_hashes if ext is not None else None,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "temperature": body.temperature,
@@ -1623,7 +1642,7 @@ def embeddings_to_kwargs(
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "checkpoint_dir": checkpoint_dir,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "model": body.model,
         "input": body.input,
         "encoding_format": body.encoding_format,
