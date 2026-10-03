@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-503 elliptic-surface canon.
+        "elliptic_surface",
+        "weierstrass_eq",
+        "kodaira_fiber",
+        "tate_algorithm",
+        "mordell_weil2",
+        "neron_model",
         # Wave-502 dg-category canon.
         "dg_cat2",
         "dg_morita",
