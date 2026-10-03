@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-418 probability-5 canon.
+        "weak_law",
+        "strong_lln",
+        "clt_classic",
+        "borel_cantelli",
+        "dominated_conv",
+        "uniform_lln",
         # Wave-417 commutative-algebra-3 canon.
         "groebner_syz",
         "free_resolution",

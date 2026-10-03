@@ -3335,6 +3335,14 @@ from quant_fund.research.benches_w417 import (
     bench_hilbert_syzygy_family,
     bench_regular_seq_family,
 )
+from quant_fund.research.benches_w418 import (
+    bench_borel_cantelli_family,
+    bench_clt_classic_family,
+    bench_dominated_conv_family,
+    bench_strong_lln_family,
+    bench_uniform_lln_family,
+    bench_weak_law_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3714,6 +3722,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "weak_law": bench_weak_law_family,
+        "strong_lln": bench_strong_lln_family,
+        "clt_classic": bench_clt_classic_family,
+        "borel_cantelli": bench_borel_cantelli_family,
+        "dominated_conv": bench_dominated_conv_family,
+        "uniform_lln": bench_uniform_lln_family,
         "groebner_syz": bench_groebner_syz_family,
         "free_resolution": bench_free_resolution_family,
         "hilbert_syzygy": bench_hilbert_syzygy_family,
