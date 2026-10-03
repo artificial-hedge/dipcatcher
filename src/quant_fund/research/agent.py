@@ -5479,6 +5479,14 @@ from quant_fund.research.benches_w685 import (
     bench_stable_bousfield_family,
     bench_stable_mapping_family,
 )
+from quant_fund.research.benches_w686 import (
+    bench_braces_e4_family,
+    bench_centralizer_alg_family,
+    bench_delooping2_family,
+    bench_e4_algebra_family,
+    bench_factorization_hom2_family,
+    bench_koszul_duality2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5858,6 +5866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e4_algebra": bench_e4_algebra_family,
+        "centralizer_alg": bench_centralizer_alg_family,
+        "delooping2": bench_delooping2_family,
+        "factorization_hom2": bench_factorization_hom2_family,
+        "koszul_duality2": bench_koszul_duality2_family,
+        "braces_e4": bench_braces_e4_family,
         "homotopy_limit": bench_homotopy_limit_family,
         "homotopy_tower": bench_homotopy_tower_family,
         "spectral_sequence5": bench_spectral_sequence5_family,
