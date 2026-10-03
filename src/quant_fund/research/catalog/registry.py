@@ -2963,6 +2963,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ot_12",
         "chacha_stream",
         "poly1305_mac",
+        # Wave-269 computer-vision canon.
+        "lk_flow",
+        "orb_feature",
+        "homography_4pt",
+        "ransac_plane",
+        "epipolar_8pt",
+        "stereo_disparity",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
