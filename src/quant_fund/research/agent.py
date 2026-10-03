@@ -3175,6 +3175,14 @@ from quant_fund.research.benches_w397 import (
     bench_reflect_bm_family,
     bench_tanaka_family,
 )
+from quant_fund.research.benches_w398 import (
+    bench_artins_theorem_family,
+    bench_clifford_toy_family,
+    bench_frobenius_group_family,
+    bench_induced_char_family,
+    bench_schur_index_family,
+    bench_tensor_char_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3554,6 +3562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "induced_char": bench_induced_char_family,
+        "artins_theorem": bench_artins_theorem_family,
+        "tensor_char": bench_tensor_char_family,
+        "clifford_toy": bench_clifford_toy_family,
+        "schur_index": bench_schur_index_family,
+        "frobenius_group": bench_frobenius_group_family,
         "ost_calcul": bench_ost_calcul_family,
         "tanaka": bench_tanaka_family,
         "bessel3": bench_bessel3_family,
