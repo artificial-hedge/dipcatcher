@@ -3367,6 +3367,14 @@ from quant_fund.research.benches_w421 import (
     bench_star_autonomous_family,
     bench_traced_monoidal_family,
 )
+from quant_fund.research.benches_w422 import (
+    bench_borel_subalgebra_family,
+    bench_levi_factor_family,
+    bench_nilpotent_orbit_family,
+    bench_root_height_family,
+    bench_verma_module_family,
+    bench_weyl_chamber_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3746,6 +3754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "weyl_chamber": bench_weyl_chamber_family,
+        "root_height": bench_root_height_family,
+        "borel_subalgebra": bench_borel_subalgebra_family,
+        "levi_factor": bench_levi_factor_family,
+        "nilpotent_orbit": bench_nilpotent_orbit_family,
+        "verma_module": bench_verma_module_family,
         "traced_monoidal": bench_traced_monoidal_family,
         "star_autonomous": bench_star_autonomous_family,
         "frobenius_alg": bench_frobenius_alg_family,

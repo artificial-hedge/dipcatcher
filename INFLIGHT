@@ -1,3 +1,4 @@
+feat(research): wave 422 — Lie-theory-2 canon (weyl_chamber, root_height, borel_subalgebra, levi_factor, nilpotent_orbit, verma_module) (2487->2493 families)
 feat(research): wave 421 — category-theory-4 canon (traced_monoidal, star_autonomous, frobenius_alg, span_compose, profunctor_toy, endo_coend) (2481->2487 families)
 feat(research): wave 420 — algebraic-NT-3 canon (dirichlet_unit, regulator, ideal_class, minkowski_bound, dedekind_zeta, splitting_prime) (2475->2481 families)
 feat(research): wave 419 — algebraic-topology-5 canon (serre_fibration, path_fibration, bundle_section, classify_space, vector_bundle, thom_space) (2469->2475 families)
