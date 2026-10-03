@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-321 shape-analysis canon.
+        "three_valued_logic",
+        "shape_graph",
+        "separation_logic",
+        "context_pta",
+        "recency_abstraction",
+        "interproc_summary",
         # Wave-320 abstract-interpretation canon.
         "interval_analysis",
         "sign_domain",

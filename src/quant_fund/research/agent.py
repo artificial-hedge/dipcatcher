@@ -2560,6 +2560,14 @@ from quant_fund.research.benches_w320 import (
     bench_sign_domain_family,
     bench_zone_dbm_family,
 )
+from quant_fund.research.benches_w321 import (
+    bench_context_pta_family,
+    bench_interproc_summary_family,
+    bench_recency_abstraction_family,
+    bench_separation_logic_family,
+    bench_shape_graph_family,
+    bench_three_valued_logic_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2939,6 +2947,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "three_valued_logic": bench_three_valued_logic_family,
+        "shape_graph": bench_shape_graph_family,
+        "separation_logic": bench_separation_logic_family,
+        "context_pta": bench_context_pta_family,
+        "recency_abstraction": bench_recency_abstraction_family,
+        "interproc_summary": bench_interproc_summary_family,
         "interval_analysis": bench_interval_analysis_family,
         "sign_domain": bench_sign_domain_family,
         "zone_dbm": bench_zone_dbm_family,
