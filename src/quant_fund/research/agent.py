@@ -1645,6 +1645,14 @@ from quant_fund.research.benches_w206 import (
     bench_td_rate_family,
     bench_ucb_bound_family,
 )
+from quant_fund.research.benches_w207 import (
+    bench_aes_sbox_family,
+    bench_diffie_hellman_family,
+    bench_ecc_secp256k1_family,
+    bench_pedersen_commit_family,
+    bench_sha256_impl_family,
+    bench_shamir_secret_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4432,6 +4440,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pi_contraction": bench_pi_contraction_family(),
         "td_rate": bench_td_rate_family(),
         "qlearn_rate": bench_qlearn_rate_family(),
+        "sha256_impl": bench_sha256_impl_family(),
+        "aes_sbox": bench_aes_sbox_family(),
+        "shamir_secret": bench_shamir_secret_family(),
+        "pedersen_commit": bench_pedersen_commit_family(),
+        "diffie_hellman": bench_diffie_hellman_family(),
+        "ecc_secp256k1": bench_ecc_secp256k1_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

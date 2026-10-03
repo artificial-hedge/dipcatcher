@@ -2604,3 +2604,4 @@ wave 203 (2026-10-02): information-geometry canon — fisher_rao, natural_gradie
 wave 204 (2026-10-02): queueing + reliability canon — jackson_network, bcmp_mva, gordon_newell, ctmc_availability, renewal_reward, vacation_queue; 1196→1202 families.
 wave 205 (2026-10-02): auction-theory canon — vickrey_auction, first_price_auction, all_pay_auction, ascending_clock, double_auction, gsp_auction; 1202→1208 families.
 wave 206 (2026-10-02): RL-theory canon — ucb_bound, mw_hedge, egreedy_decay, pi_contraction, td_rate, qlearn_rate; 1208→1214 families.
+wave 207 (2026-10-02): crypto-primitives canon — sha256_impl, aes_sbox, shamir_secret, pedersen_commit, diffie_hellman, ecc_secp256k1; 1214→1220 families.

@@ -2547,6 +2547,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pi_contraction",
         "td_rate",
         "qlearn_rate",
+        # Wave-207 crypto canon: SHA-256, AES S-box, Shamir, Pedersen,
+        # Diffie-Hellman, secp256k1.
+        "sha256_impl",
+        "aes_sbox",
+        "shamir_secret",
+        "pedersen_commit",
+        "diffie_hellman",
+        "ecc_secp256k1",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
