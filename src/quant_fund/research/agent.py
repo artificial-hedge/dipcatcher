@@ -4927,6 +4927,14 @@ from quant_fund.research.benches_w616 import (
     bench_multifusion_family,
     bench_premodular2_family,
 )
+from quant_fund.research.benches_w617 import (
+    bench_berrick_k_family,
+    bench_gersen_suslin_family,
+    bench_gillet_thomason_family,
+    bench_hermitian_quillen_family,
+    bench_k_theory4_family,
+    bench_khomo_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5306,6 +5314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gillet_thomason": bench_gillet_thomason_family,
+        "khomo_k": bench_khomo_k_family,
+        "k_theory4": bench_k_theory4_family,
+        "gersen_suslin": bench_gersen_suslin_family,
+        "berrick_k": bench_berrick_k_family,
+        "hermitian_quillen": bench_hermitian_quillen_family,
         "multifusion": bench_multifusion_family,
         "premodular2": bench_premodular2_family,
         "braided_functor": bench_braided_functor_family,
