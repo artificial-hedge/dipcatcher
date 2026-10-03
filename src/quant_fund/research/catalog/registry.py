@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-762 weak-convergence canon.
+        "martin_boundary",
+        "doob_meyer",
+        "cadlag_space",
+        "skohorod_metric",
+        "prohorov_thm2",
+        "tightness_check",
         # Wave-761 renewal-theory canon.
         "blackwell_renewal",
         "key_renewal",

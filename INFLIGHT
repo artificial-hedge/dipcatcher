@@ -1,3 +1,4 @@
+feat(research): wave 762 — weak-convergence canon (martin_boundary, doob_meyer, cadlag_space, skohorod_metric, prohorov_thm2, tightness_check) (4527->4533 families)
 feat(research): wave 761 — renewal-theory canon (blackwell_renewal, key_renewal, excess_renewal, alternating_renewal, renewal_reward2, delayed_renewal) (4521->4527 families)
 feat(research): wave 760 — Brownian-motion canon (levy_bm, wiener_bm, doob_bm, ito_bm, cameron_martin, gikhman_skorokhod) (4515->4521 families)
 feat(research): wave 759 — CLE-2 canon (gwynne_cle, hospitsky_cle, apu_cle, nolin_cle, sun_cle, zhan_cle) (4509->4515 families)
