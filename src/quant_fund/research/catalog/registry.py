@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-448 higher-topos canon.
+        "infty_topos",
+        "univ_colimit",
+        "object_classif",
+        "trunc_modal",
+        "cohesive_top",
+        "hypercomplete",
         # Wave-447 TQFT canon.
         "tqft_axiom",
         "bord_cat",
