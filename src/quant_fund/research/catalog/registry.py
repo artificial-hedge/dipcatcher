@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-556 Teichmueller-theory canon.
+        "weil_petersson",
+        "mapping_class",
+        "quadratic_diff",
+        "earthquake_map",
+        "extremal_length",
+        "pseudo_anosov",
         # Wave-555 homological-mirror-symmetry canon.
         "hms_conjecture",
         "landau_ginzburg",
