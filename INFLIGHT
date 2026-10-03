@@ -2603,3 +2603,4 @@ wave 202 (2026-10-02): game-theory canon — mfg_lq, mfg_flocking, nash_cournot,
 wave 203 (2026-10-02): information-geometry canon — fisher_rao, natural_gradient, mirror_descent, bregman_nmf, alpha_geodesic, jko_scheme; 1190→1196 families.
 wave 204 (2026-10-02): queueing + reliability canon — jackson_network, bcmp_mva, gordon_newell, ctmc_availability, renewal_reward, vacation_queue; 1196→1202 families.
 wave 205 (2026-10-02): auction-theory canon — vickrey_auction, first_price_auction, all_pay_auction, ascending_clock, double_auction, gsp_auction; 1202→1208 families.
+wave 206 (2026-10-02): RL-theory canon — ucb_bound, mw_hedge, egreedy_decay, pi_contraction, td_rate, qlearn_rate; 1208→1214 families.
