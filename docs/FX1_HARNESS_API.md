@@ -603,7 +603,11 @@ file store, `batch-submit` (upload + submit + poll to terminal;
 `--out` or stdout) for the batch lifecycle, and `ft-create`
 /`ft-jobs`/`ft-status`/`ft-events`/`ft-cancel` for fine-tuning —
 `ft-create` also accepts the webhook flags on both the remote and
-in-process SDK paths.
+in-process SDK paths. `fx1 harness batch-run` is the weights-direct
+twin: no server — a local JSONL runs synchronously through the same
+per-endpoint request models and gate, `--backend`/`--checkpoint-dir`/
+`--byok-*`/`--fallback` map onto the wire's `X-Fx1-*` headers, and
+`--out` writes the OpenAI batch-result lines.
 
 ### Retrieval (`store` + `GET`/`DELETE`)
 

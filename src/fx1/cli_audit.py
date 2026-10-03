@@ -166,6 +166,7 @@ def cli_audit() -> dict[str, Any]:
         "batch-status",
         "batch-cancel",
         "batch-output",
+        "batch-run",
     } <= hnames
 
     # the files/batches family is wire-only — no --remote is exit 2 on
@@ -207,6 +208,37 @@ def cli_audit() -> dict[str, Any]:
         out["harness_ft_create_inprocess"] = _ok.exit_code == 0 and json.loads(_ok.stdout).get(
             "status"
         ) in {"succeeded", "failed"}
+
+        # batch-run is the in-process twin — no --remote needed.
+        _in = _P(_td) / "b.jsonl"
+        _in.write_text(
+            '{"custom_id":"r1","method":"POST","url":"/v1/chat/completions",'
+            '"body":{"model":"local_fx1","messages":[{"role":"user","content":"q"}]}}\n'
+        )
+        out["batch_run_missing_file_2"] = (
+            runner.invoke(app, ["harness", "batch-run", str(_P(_td) / "nope.jsonl")]).exit_code == 2
+        )
+        _bad = _P(_td) / "bad.jsonl"
+        _bad.write_text("not json\n")
+        out["batch_run_bad_jsonl_2"] = (
+            runner.invoke(app, ["harness", "batch-run", str(_bad)]).exit_code == 2
+        )
+        _outp = _P(_td) / "out.jsonl"
+        _rb = runner.invoke(app, ["harness", "batch-run", str(_in), "--out", str(_outp)])
+        _blob = json.loads(_rb.stdout) if _rb.exit_code == 0 else {}
+        out["batch_run_inprocess"] = (
+            _rb.exit_code == 0
+            and _blob.get("status") == "completed"
+            and _outp.exists()
+            and _outp.read_text().startswith("{")
+        )
+        # callback_secret alone → 2 (the wire's 422 twin)
+        out["batch_run_guard"] = (
+            runner.invoke(
+                app, ["harness", "batch-run", str(_in), "--callback-secret", "x"]
+            ).exit_code
+            == 2
+        )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
     # a dead BYOK endpoint is a verdict, not a crash.

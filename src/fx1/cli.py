@@ -1698,6 +1698,88 @@ def harness_batch_output(
     typer.echo(blob.decode("utf-8", "replace"), nl=False)
 
 
+@harness_app.command("batch-run")
+def harness_batch_run(
+    input_file: Path = typer.Argument(
+        ..., help="Local batch-input .jsonl ({custom_id,method,url,body} per line)."
+    ),
+    endpoint: str = typer.Option(
+        "/v1/chat/completions",
+        "--endpoint",
+        help="/v1/chat/completions | /v1/responses | /v1/embeddings.",
+    ),
+    backend: str | None = typer.Option(
+        None,
+        help=_BACKEND_HELP
+        + " — unset lets each line's model field resolve the link (wire parity).",
+    ),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [], "--fallback", help="Alternate backend on availability faults (repeatable, max 2)."
+    ),
+    callback_url: str | None = typer.Option(
+        None, "--callback-url", help="Terminal webhook URL (POSTs the batch once)."
+    ),
+    callback_secret: str | None = typer.Option(
+        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+    ),
+    out: Path | None = typer.Option(
+        None, "--out", help="Write output JSONL lines to this path (default: batch object only)."
+    ),
+) -> None:
+    """The ``batch-submit`` twin, weights-direct: run the batch input
+    synchronously in-process through the same per-endpoint request
+    models and gated completion core the wire worker uses — no server,
+    no upload, no poll. Prints the terminal batch envelope; ``--out``
+    writes the OpenAI batch-result JSONL (one line per input, ``id,
+    custom_id, response:{status_code, request_id, body}, error``).
+    ``--backend``/``--checkpoint-dir``/``--byok-*``/``--fallback`` map
+    to the wire's X-Fx1-* headers — every line resolves the same link."""
+    body = input_file.read_bytes() if input_file.exists() else None
+    if body is None:
+        typer.echo(f"error: {input_file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    try:
+        lines = [json.loads(ln) for ln in body.decode().splitlines() if ln.strip()]
+    except ValueError as exc:
+        typer.echo(f"error: {input_file} is not JSONL: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    if not all(isinstance(ln, dict) for ln in lines):
+        typer.echo("error: every line must be a JSON object", err=True)
+        raise typer.Exit(code=2)
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    headers = {}
+    if backend is not None:
+        headers["x-fx1-backend"] = backend
+    if checkpoint_dir is not None:
+        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
+    if byok is not None:
+        headers["x-fx1-byok-base-url"] = byok["base_url"]
+        headers["x-fx1-byok-api-key"] = byok["api_key"]
+        headers["x-fx1-byok-model"] = byok["model"]
+    if fallbacks:
+        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+
+    from fx1.sdk import Fx1Harness
+
+    harness = Fx1Harness()
+    batch, out_lines = _or_exit(
+        lambda: harness.openai_batch(
+            lines,
+            endpoint=endpoint,
+            headers=headers,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
+        )
+    )
+    if out is not None:
+        out.write_text("".join(json.dumps(ln) + "\n" for ln in out_lines))
+    typer.echo(json.dumps(batch, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
