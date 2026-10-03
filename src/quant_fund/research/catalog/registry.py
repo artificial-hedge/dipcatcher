@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-544 Kleinian-groups canon.
+        "kleinian_group",
+        "limit_set",
+        "hyperbolic_3mfd",
+        "mostow_rigidity",
+        "jorgensen_thurston",
+        "tameness_thm",
         # Wave-543 Riemann-surfaces canon.
         "riemann_surface",
         "branched_cover",
