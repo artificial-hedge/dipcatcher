@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-613 arithmetic-geometry-2 canon.
+        "witt_vector",
+        "witt_teich",
+        "verschiebung_witt",
+        "perfect_witt",
+        "neron_smooth",
+        "semistable_reduction",
         # Wave-612 commutative-algebra-4 canon.
         "regular_ring",
         "gorenstein_ring",
