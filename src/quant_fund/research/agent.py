@@ -7159,6 +7159,14 @@ from quant_fund.research.benches_w895 import (
     bench_richardson_limit_family,
     bench_secant_root_family,
 )
+from quant_fund.research.benches_w896 import (
+    bench_backward_euler_family,
+    bench_bogacki_shampine_family,
+    bench_cash_karp_family,
+    bench_dormand_prince_family,
+    bench_fehlberg_rk_family,
+    bench_predictor_corrector_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7530,6 +7538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fehlberg_rk": bench_fehlberg_rk_family,
+        "dormand_prince": bench_dormand_prince_family,
+        "cash_karp": bench_cash_karp_family,
+        "bogacki_shampine": bench_bogacki_shampine_family,
+        "backward_euler": bench_backward_euler_family,
+        "predictor_corrector": bench_predictor_corrector_family,
         "secant_root": bench_secant_root_family,
         "regula_falsi": bench_regula_falsi_family,
         "muller_root": bench_muller_root_family,

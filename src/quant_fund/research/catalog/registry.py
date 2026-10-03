@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-896 RK/IVP canon.
+        "fehlberg_rk",
+        "dormand_prince",
+        "cash_karp",
+        "bogacki_shampine",
+        "backward_euler",
+        "predictor_corrector",
         # Wave-895 root-finding canon.
         "secant_root",
         "regula_falsi",

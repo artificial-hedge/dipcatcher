@@ -1,3 +1,4 @@
+feat(research): wave 896 — RK/IVP canon (fehlberg_rk, dormand_prince, cash_karp, bogacki_shampine, backward_euler, predictor_corrector) (5325->5331 families)
 feat(research): wave 895 — root-finding/extrapolation canon (secant_root, regula_falsi, muller_root, aitken_steffensen, richardson_limit, bulirsch_stoer) (5319->5325 families)
 feat(research): wave 894 — interpolation canon (lagrange_interp, neville_interp, hermite_interp, divid_diff_table, barycentric_wts, floater_hormann) (5313->5319 families)
 feat(research): wave 893 — collocation/least-squares canon (covello_est, dual_goal_est, pseudospectral_coll, tau_method, galerkin_least_sq, coarsening_mark) (5307->5313 families)
