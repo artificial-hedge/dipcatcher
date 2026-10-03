@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-775 martingale-theory canon.
+        "doleans_meas",
+        "predictable_proc",
+        "local_mart",
+        "square_bracket",
+        "burkholder_davis",
+        "gundy_mart",
         # Wave-774 random-walk canon.
         "sparc_rw",
         "spitzer_rw",
