@@ -5447,6 +5447,14 @@ from quant_fund.research.benches_w681 import (
     bench_stable_operad_family,
     bench_stable_sheaf_family,
 )
+from quant_fund.research.benches_w682 import (
+    bench_motivic_crystal_family,
+    bench_motivic_cycle_family,
+    bench_motivic_etale_family,
+    bench_motivic_prism_family,
+    bench_motivic_sphere3_family,
+    bench_motivic_tower_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5826,6 +5834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_tower": bench_motivic_tower_family,
+        "motivic_sphere3": bench_motivic_sphere3_family,
+        "motivic_etale": bench_motivic_etale_family,
+        "motivic_crystal": bench_motivic_crystal_family,
+        "motivic_prism": bench_motivic_prism_family,
+        "motivic_cycle": bench_motivic_cycle_family,
         "homotopy_lift": bench_homotopy_lift_family,
         "homotopy_orbit": bench_homotopy_orbit_family,
         "homotopy_fixed": bench_homotopy_fixed_family,
