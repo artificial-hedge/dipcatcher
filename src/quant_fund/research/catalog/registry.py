@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-793 stochastic-expansion canon.
+        "wong_zakai",
+        "stochastic_taylor",
+        "milstein_scheme",
+        "wagner_platen",
+        "cubature_wiener",
+        "rough_vol2",
         # Wave-792 BSDE canon.
         "bsde_solver",
         "fbsde_markov",
