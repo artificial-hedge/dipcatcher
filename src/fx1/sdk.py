@@ -74,6 +74,7 @@ from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
     OPENAI_MODEL_IDS,
+    OPENAI_RESPONSE_TERMINAL,
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
@@ -440,6 +441,10 @@ class Fx1Harness:
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
+        # Cancel flags for background responses — a set event means the
+        # stored envelope was flipped to ``cancelled`` and the worker must
+        # not overwrite it with a terminal result.
+        self._bg_cancel: dict[str, threading.Event] = {}
         # The /v1/fine_tuning twin — synchronous in process (no queue),
         # same store/runner contract as the wire.
         self._ft_store = FTJobStore(
@@ -1870,7 +1875,91 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
+        # chaining resolves (and fails closed) at call time, on both the
+        # sync and the background path — a bad parent never queues
         eff_body = self._chain_response_input(body)
+        if body.background and not body.stream:
+            if body.store is False:
+                raise OpenAICompatError(
+                    "background=true needs store=true — a background response is "
+                    "only reachable through the retrieval index",
+                    status=400,
+                    code="background_requires_store",
+                )
+            rid = f"resp_{uuid.uuid4().hex}"
+            queued = openai_response_object(
+                rid=rid,
+                item_id="",
+                content="",
+                body=body,
+                model=body.model,
+                usage=None,
+                status="queued",
+            )
+            self._openai_store.put(
+                queued,
+                items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
+            )
+            cancel_ev = threading.Event()
+            self._bg_cancel[rid] = cancel_ev
+
+            def _bg() -> None:
+                try:
+                    if cancel_ev.is_set():
+                        return
+                    try:
+                        self._openai_response_finish(
+                            body,
+                            eff_body,
+                            headers,
+                            rid=rid,
+                            created=int(queued["created_at"]),
+                        )
+                    except Exception as exc:  # noqa: BLE001 — worker faults land on the record
+                        if cancel_ev.is_set():
+                            return
+                        cur = self._openai_store.get(rid)
+                        if cur is not None:
+                            cur["status"] = "failed"
+                            cur["error"] = {
+                                "message": (
+                                    str(exc)
+                                    if isinstance(exc, OpenAICompatError)
+                                    else f"{type(exc).__name__}: {exc}"
+                                ),
+                                "code": (
+                                    exc.code
+                                    if isinstance(exc, OpenAICompatError)
+                                    else "internal_error"
+                                ),
+                            }
+                            self._openai_store.put(cur)
+                    else:
+                        if cancel_ev.is_set():
+                            done = self._openai_store.get(rid)
+                            if done is not None:
+                                done["status"] = "cancelled"
+                                self._openai_store.put(done)
+                finally:
+                    self._bg_cancel.pop(rid, None)
+
+            threading.Thread(target=_bg, daemon=True).start()
+            return queued, None
+        return self._openai_response_finish(body, eff_body, headers)
+
+    def _openai_response_finish(
+        self,
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+        headers: Mapping[str, str] | None,
+        *,
+        rid: str | None = None,
+        created: int | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """The synchronous tail of ``openai_response`` — shared by the
+        direct call and the background worker (which pins ``rid``/
+        ``created`` so the completed record lands on the queued
+        envelope's id)."""
         kwargs = response_to_kwargs(
             eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
@@ -1881,12 +1970,13 @@ class Fx1Harness:
         call_items = openai_response_call_items(result.tool_calls or [])
         lp_arr = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         envelope = openai_response_object(
-            rid=f"resp_{uuid.uuid4().hex}",
+            rid=rid or f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
             content=result.content,
             body=body,
             model=result.model,
             usage=result.usage,
+            created=created,
             call_items=call_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
@@ -2215,6 +2305,28 @@ class Fx1Harness:
         if not self._openai_store.delete(response_id):
             raise KeyError(f"response {response_id!r} not in the retrieval index")
         return {"id": response_id, "object": "response.deleted", "deleted": True}
+
+    def openai_response_cancel(self, response_id: str) -> dict[str, Any]:
+        """``POST /v1/responses/{id}/cancel`` in-process — flips a queued
+        or in-progress background response to ``cancelled`` and tells the
+        worker to discard its result. Terminal responses raise
+        ``OpenAICompatError(cancel_terminal)``; unknown ids ``KeyError``."""
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        if env["status"] in OPENAI_RESPONSE_TERMINAL:
+            raise OpenAICompatError(
+                f"{response_id!r} is already {env['status']} — only queued or "
+                "in_progress responses cancel",
+                status=409,
+                code="cancel_terminal",
+            )
+        ev = self._bg_cancel.get(response_id)
+        if ev is not None:
+            ev.set()
+        env["status"] = "cancelled"
+        self._openai_store.put(env)
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
 
     def openai_chat_messages(
         self,

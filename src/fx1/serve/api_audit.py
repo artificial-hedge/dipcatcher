@@ -6102,18 +6102,18 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:bc"
     )
     # fail closed: the fields the pipeline can't honor never reach the
-    # model — truncation/include/background, a
+    # model — truncation/include, a
     # refused item type, an unknown item type, an empty input.
     # tools/tool_choice/parallel_tool_calls are honored (the lane-82 tool
     # channel probes below); `store` is honored too (retrieval below),
-    # and ``previous_response_id`` is honored — the stateful chain
-    # surface probed below.
+    # ``previous_response_id`` is honored — the stateful chain surface
+    # probed below — and ``background`` is honored (the async lifecycle
+    # probes below).
     out["responses_unsupported_refused"] = all(
         oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
         for k, v in (
             ("truncation", "auto"),
             ("include", ["output_text"]),
-            ("background", True),
         )
     )
     # refused item types fail at translation — a 400 invalid_request_error
@@ -7517,6 +7517,149 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         ch_s.status_code == 200
         and "event: response.completed" in ch_s.text
         and _ChainBackend.seen[-1][-1]["content"] == "chain-stream"
+    )
+    # background:true — OpenAI's long-running-call primitive: the POST
+    # returns a queued response object at once; the job executor runs the
+    # model under the same id and a stored GET flips to terminal.
+    bg = ch.post("/v1/responses", json={"model": "fx1", "input": "bg-run", "background": True})
+    bg_env = bg.json()
+    bg_fin: dict[str, Any] = {}
+    for _ in range(500):
+        bg_fin = ch.get(f"/v1/responses/{bg_env['id']}").json()
+        if bg_fin["status"] in ("completed", "failed", "cancelled", "incomplete"):
+            break
+        time.sleep(0.01)
+    bg_items = ch.get(f"/v1/responses/{bg_env['id']}/input_items").json()
+    out["resp_background_lifecycle"] = (
+        bg.status_code == 200
+        and bg_env["status"] == "queued"
+        and bg_env["output"] == []
+        and bg_fin["status"] == "completed"
+        and bg_fin["output"][0]["content"][0]["text"] == "clean:bg-run"
+        and bg_fin["id"] == bg_env["id"]
+        and bg_fin["created_at"] == bg_env["created_at"]
+        and bg_items["data"][0]["content"][0]["text"] == "bg-run"
+        and _ChainBackend.seen[-1][-1]["content"] == "bg-run"
+    )
+
+    # cancel: a still-running background job flips to cancelled — the
+    # cancel verdict wins over the late model result; terminal responses
+    # refuse 409; unknown ids 404.
+    class _SlowBackend(_OiBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            time.sleep(0.3)
+            return super().complete(messages, sampling=sampling)
+
+    ch_slow = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _SlowBackend()))
+    sbg = ch_slow.post(
+        "/v1/responses", json={"model": "fx1", "input": "bg-slow", "background": True}
+    ).json()
+    cx = ch_slow.post(f"/v1/responses/{sbg['id']}/cancel")
+    cx_again = ch_slow.post(f"/v1/responses/{sbg['id']}/cancel")
+    sx_fin: dict[str, Any] = {}
+    for _ in range(500):
+        sx_fin = ch_slow.get(f"/v1/responses/{sbg['id']}").json()
+        if sx_fin["status"] == "cancelled" and sx_fin.get("output") is not None:
+            # let the worker settle — the cancel verdict must survive it
+            time.sleep(0.4)
+            sx_fin = ch_slow.get(f"/v1/responses/{sbg['id']}").json()
+            break
+        time.sleep(0.01)
+    out["resp_background_cancel"] = (
+        sbg["status"] == "queued"
+        and cx.status_code == 200
+        and cx.json()["status"] == "cancelled"
+        and cx_again.status_code == 409
+        and cx_again.json()["error"]["code"] == "cancel_terminal"
+        and sx_fin["status"] == "cancelled"
+        and ch_slow.post("/v1/responses/resp_ghost/cancel").status_code == 404
+    )
+    # fail closed: background needs store (it IS the retrieval surface);
+    # a ghost chain parent fails at submit, not in the worker; a batch
+    # line carrying background is a per-line error, not a nested async.
+    bg_ns = ch.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "x", "background": True, "store": False},
+    )
+    bg_chain = ch.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "background": True,
+            "previous_response_id": "resp_ghost",
+        },
+    )
+    bgb_lines = (
+        _json3.dumps(
+            {
+                "custom_id": "bg-line",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {"model": "fx1", "input": "x", "background": True},
+            }
+        )
+        + "\n"
+    ).encode()
+    bgb_up = fb.post(
+        "/v1/files",
+        files={"file": ("bg.jsonl", bgb_lines, "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    bgb = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": bgb_up["id"],
+            "endpoint": "/v1/responses",
+            "completion_window": "24h",
+        },
+    ).json()
+    bgb_term = _wait_batch(fb, bgb["id"])
+    bgb_out = fb.get(f"/v1/files/{bgb_term['output_file_id']}/content").text
+    out["resp_background_fail_closed"] = (
+        bg_ns.status_code == 400
+        and bg_ns.json()["error"]["code"] == "background_requires_store"
+        and bg_chain.status_code == 400
+        and bg_chain.json()["error"]["code"] == "previous_response_not_found"
+        and bgb_term["status"] == "completed"
+        and _json3.loads(bgb_out.strip())["response"]["status_code"] == 400
+        and _json3.loads(bgb_out.strip())["response"]["body"]["error"]["code"] == "invalid_request"
+    )
+    # an idempotent replay of a background submit returns the LIVE
+    # envelope — the queued snapshot in the idem record is refreshed by
+    # the worker's completion re-put, so a replay after completion lands
+    # the terminal object. The replay may beat the worker's idem re-put
+    # by a tick — the record first reports the live envelope's status
+    # (freshness merge), then carries the completion id once the worker
+    # re-pins it; poll the replay itself until the terminal record lands.
+    bg_idem = ch.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "bg-idem", "background": True},
+        headers={"Idempotency-Key": "bg-idem-1"},
+    )
+    for _ in range(500):
+        if ch.get(f"/v1/responses/{bg_idem.json()['id']}").json()["status"] == "completed":
+            break
+        time.sleep(0.01)
+    bg_rep = None
+    for _ in range(500):
+        cand = ch.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "bg-idem", "background": True},
+            headers={"Idempotency-Key": "bg-idem-1"},
+        )
+        if cand.json().get("status") == "completed" and cand.headers.get("X-Fx1-Completion-Id"):
+            bg_rep = cand
+            break
+        time.sleep(0.01)
+    out["resp_background_idem_replay"] = (
+        bg_rep is not None
+        and bg_rep.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and bg_rep.json()["id"] == bg_idem.json()["id"]
+        and bg_rep.json()["status"] == "completed"
+        and bg_rep.headers.get("X-Fx1-Completion-Id") is not None
     )
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()

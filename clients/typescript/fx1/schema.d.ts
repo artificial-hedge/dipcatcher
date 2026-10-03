@@ -1174,8 +1174,13 @@ export interface paths {
          *     input items, and ``function_call`` output items are first-class —
          *     the same tool channel as ``/v1/chat/completions`` under its own
          *     grammar (a link without the channel answers 501). Same fail-closed
-         *     rule as chat completions for the rest: ``truncation``/``include``/
-         *     ``background`` refuse at validation (422).
+         *     rule as chat completions for the rest: ``truncation``/``include``
+         *     refuse at validation (422). ``background=true`` (with the default
+         *     ``store=true`` and no ``stream``) queues the work on the jobs
+         *     executor and returns the ``queued`` response object — poll
+         *     ``GET /v1/responses/{id}`` or ``POST .../cancel`` — while
+         *     ``background``+``store=false`` is a 400 and ``background``+
+         *     ``stream`` runs the normal stream (a stream is already async).
          *     ``previous_response_id`` chains the turn onto a stored ``response``
          *     — the model runs on the parent's stored items + its output + this
          *     request's input, and the child's ``input_items`` carry the whole
@@ -1214,6 +1219,30 @@ export interface paths {
          * @description Drop a stored response object from the retrieval index.
          */
         delete: operations["openai_responses_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/responses/{response_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Response Cancel
+         * @description Cancel a queued or in-progress background response (OpenAI's
+         *     ``responses.cancel``). The stored envelope flips to ``cancelled``
+         *     and a running worker is told to discard its result — the model
+         *     call still lands in the completion log when it had already
+         *     started. Terminal responses refuse 409; unknown ids 404.
+         */
+        post: operations["openai_responses_cancel"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2767,6 +2796,11 @@ export interface components {
          *     audit record.
          */
         OpenAIResponseRequest: {
+            /**
+             * Background
+             * @default false
+             */
+            background: boolean;
             fx1?: components["schemas"]["OpenAIFx1"] | null;
             /** Include */
             include?: string[] | null;
@@ -6145,6 +6179,57 @@ export interface operations {
         };
     };
     openai_responses_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                response_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_responses_cancel: {
         parameters: {
             query?: never;
             header?: never;

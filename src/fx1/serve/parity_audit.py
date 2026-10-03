@@ -3065,6 +3065,123 @@ def parity_audit() -> dict[str, bool]:
         and _ch_wl_miss.status_code == 400
         and _ch_wl_miss.json()["error"]["code"] == "previous_response_not_found"
     )
+    # background:true — the async surface is identical on both legs: the
+    # submit returns a queued envelope with empty output, and the store
+    # lands the terminal record under the same id.
+    import time as _bg_time  # noqa: PLC0415
+
+    _bg_sdk1, _ = sdk.openai_response(
+        {
+            "model": "hosted_k3",
+            "input": "bg-p",
+            "background": True,
+            "fx1": {"backend": "byok"},
+        }
+    )
+    _bg_wl1 = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "bg-p",
+            "background": True,
+            "fx1": {"backend": "byok"},
+        },
+    ).json()
+    _bg_sdk_fin: dict[str, Any] = {}
+    _bg_wl_fin: dict[str, Any] = {}
+    for _ in range(500):
+        _bg_sdk_fin = sdk.openai_response_get(_bg_sdk1["id"])
+        _bg_wl_fin = remote.retrieve_response(_bg_wl1["id"])
+        if _bg_sdk_fin["status"] == "completed" and _bg_wl_fin["status"] == "completed":
+            break
+        _bg_time.sleep(0.01)
+    out["response_background_parity"] = (
+        _bg_sdk1["status"] == _bg_wl1["status"] == "queued"
+        and _bg_sdk1["output"] == _bg_wl1["output"] == []
+        and _bg_sdk_fin["status"] == _bg_wl_fin["status"] == "completed"
+        and _bg_sdk_fin["output"][0]["content"][0]["text"]
+        == _bg_wl_fin["output"][0]["content"][0]["text"]
+        == "echo:bg-p"
+    )
+
+    # cancel parity — a still-running background response flips to
+    # cancelled on both legs and a second cancel refuses with the same
+    # verdict (OpenAICompatError/cancel_terminal in-process, the 409
+    # envelope on the wire)
+    class _SlowParityBackend(_ParityBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            _bg_time.sleep(0.3)
+            return super().complete(messages, sampling=sampling)
+
+    _csdk, _cwire = _surfaces(_SlowParityBackend)
+    _cremote = HarnessClient("http://harness.test", transport=_tc_transport(_cwire))
+    _c_sdk1, _ = _csdk.openai_response(
+        {
+            "model": "hosted_k3",
+            "input": "bg-c",
+            "background": True,
+            "fx1": {"backend": "byok"},
+        }
+    )
+    _c_wl1 = _cwire.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "bg-c",
+            "background": True,
+            "fx1": {"backend": "byok"},
+        },
+    ).json()
+    _c_sdk_cx = _csdk.openai_response_cancel(_c_sdk1["id"])
+    _c_wl_cx = _cremote.cancel_response(_c_wl1["id"])
+    try:
+        _csdk.openai_response_cancel(_c_sdk1["id"])
+        _c_sdk_again = ""
+    except Exception as _exc2:  # noqa: BLE001 — probe captures the class+code
+        _c_sdk_again = str(getattr(_exc2, "code", ""))
+    _c_wl_again = _cwire.post(f"/v1/responses/{_c_wl1['id']}/cancel")
+    _bg_time.sleep(0.5)  # let the workers settle past the cancel verdict
+    out["response_background_cancel_parity"] = (
+        _c_sdk_cx["status"] == _c_wl_cx["status"] == "cancelled"
+        and _c_sdk_again == "cancel_terminal"
+        and _c_wl_again.status_code == 409
+        and _c_wl_again.json()["error"]["code"] == "cancel_terminal"
+        and _csdk.openai_response_get(_c_sdk1["id"])["status"] == "cancelled"
+        and _cremote.retrieve_response(_c_wl1["id"])["status"] == "cancelled"
+    )
+    # fail-closed parity — background+store=false refuses identically on
+    # both legs before any work queues
+    _s_sdk: tuple[str, str] = ("", "")
+    try:
+        sdk.openai_response(
+            {
+                "model": "hosted_k3",
+                "input": "x",
+                "background": True,
+                "store": False,
+                "fx1": {"backend": "byok"},
+            }
+        )
+    except Exception as _exc3:  # noqa: BLE001 — probe captures the class+code
+        _s_sdk = (type(_exc3).__name__, str(getattr(_exc3, "code", "")))
+    _s_wl = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "background": True,
+            "store": False,
+            "fx1": {"backend": "byok"},
+        },
+    )
+    out["response_background_store_parity"] = (
+        _s_sdk[0] == "OpenAICompatError"
+        and _s_sdk[1] == "background_requires_store"
+        and _s_wl.status_code == 400
+        and _s_wl.json()["error"]["code"] == "background_requires_store"
+    )
     return out
 
 
