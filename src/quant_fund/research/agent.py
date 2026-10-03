@@ -7479,6 +7479,14 @@ from quant_fund.research.benches_w935 import (
     bench_logbarrier_fn_family,
     bench_self_concordant_family,
 )
+from quant_fund.research.benches_w936 import (
+    bench_bundle_level_family,
+    bench_clarke_subdiff_family,
+    bench_epigraph_proj_family,
+    bench_gauge_duality_family,
+    bench_gauge_fn_family,
+    bench_subdiff_compute_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7850,6 +7858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "subdiff_compute": bench_subdiff_compute_family,
+        "epigraph_proj": bench_epigraph_proj_family,
+        "gauge_fn": bench_gauge_fn_family,
+        "gauge_duality": bench_gauge_duality_family,
+        "bundle_level": bench_bundle_level_family,
+        "clarke_subdiff": bench_clarke_subdiff_family,
         "kkt_solve": bench_kkt_solve_family,
         "cvx_reform": bench_cvx_reform_family,
         "self_concordant": bench_self_concordant_family,
