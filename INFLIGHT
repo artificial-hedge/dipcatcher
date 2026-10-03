@@ -1,3 +1,4 @@
+feat(research): wave 502 — dg-category canon (dg_cat2, dg_morita, dg_quotient, drinfeld_quotient, dg_nerve, keller_dg) (2967->2973 families)
 feat(research): wave 501 — F-singularity canon (f_regular, f_rational, f_pure, f_threshold, test_ideal, tight_closure) (2961->2967 families)
 feat(research): wave 500 — arithmetic-Langlands canon (local_langlands, harris_taylor, weil_group, langlands_functoriality, epsilon_factor, l_packet) (2955->2961 families)
 feat(research): wave 499 — Hodge-theory canon (hodge_decomp, l2_hodge, mixed_hodge, period_map, vhs_polarized, limit_mhs) (2949->2955 families)
