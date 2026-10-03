@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-433 p-adic-geometry canon.
+        "rigid_analytic",
+        "berkovich_space",
+        "perfectoid_space",
+        "adic_space",
+        "etale_ph2",
+        "diamond_toy",
         # Wave-432 spectral-sequences-3 canon.
         "atiyah_hirzebruch",
         "serre_ss3",
