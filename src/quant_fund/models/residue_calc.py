@@ -21,8 +21,11 @@ def residue_via_circle(f, z0: complex, r: float = 1e-3, n: int = 2048) -> comple
 
 def _bench_residue_calc(seed: int = 0) -> float:
     checks = []
+
     # f = 1/(z(z-1)): Res_0 = -1, Res_1 = +1
-    f1 = lambda z: 1.0 / (z * (z - 1.0))
+    def f1(z: np.ndarray) -> np.ndarray:
+        return np.asarray(1.0 / (z * (z - 1.0)))
+
     checks.append(abs(residue_via_circle(f1, 0.0) + 1.0) < 1e-6)
     checks.append(abs(residue_via_circle(f1, 1.0) - 1.0) < 1e-6)
     # e^z / z^2 has Res_0 = 1 (double pole, coeff of z^1 in e^z)

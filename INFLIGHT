@@ -1,3 +1,4 @@
+feat(research): wave 363 — real-analysis canon (cantor_set, baire_category, vitali_set, egorov_thm, fatou_lemma, monotone_conv) (2134->2140 families)
 feat(research): wave 362 — complex-analysis canon (cauchy_integral, residue_calc, laurent_series, argument_principle, conformal_map, liouville) (2128->2134 families)
 feat(research): wave 361 — algebraic-topology-2 canon (homotopy_pi1, simplicial_homology, chain_homotopy, euler_homology, degree_map, covering_lift) (2122->2128 families)
 feat(research): wave 360 — PDE-theory canon (energy_method, maximum_principle, heat_kernel, wave_dalembert, weak_solution, fundamental_laplace) (2116->2122 families)
