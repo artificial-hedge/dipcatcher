@@ -1,3 +1,4 @@
+feat(research): wave 984 — modulation-spaces canon (modulation_space, short_time_ft, gabor_frame, wigner_dist, ambiguity_fn, feichtinger_alg) (5853->5859 families)
 feat(research): wave 983 — Besov/Triebel-Lizorkin canon (besov_space, triebel_lizorkin, atoms_decomp, wavelet_char, besov_embed, hardy_littlewood_max) (5847->5853 families)
 feat(research): wave 982 — potential-theory-2 canon (dirichlet_problem, energy_principle, equilibrium_measure, thin_set, boundary_regular, capacitary_pot) (5841->5847 families)
 feat(research): wave 981 — convex-geometry-2 canon (john_ellipsoid, loewner_ellipsoid, milman_rev_thm, grothendieck_const, kadison_singer, milman_isotropic) (5835->5841 families)
