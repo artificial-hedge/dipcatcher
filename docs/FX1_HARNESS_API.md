@@ -607,7 +607,10 @@ in-process SDK paths. `fx1 harness batch-run` is the weights-direct
 twin: no server — a local JSONL runs synchronously through the same
 per-endpoint request models and gate, `--backend`/`--checkpoint-dir`/
 `--byok-*`/`--fallback` map onto the wire's `X-Fx1-*` headers, and
-`--out` writes the OpenAI batch-result lines.
+`--out` writes the OpenAI batch-result lines. `fx1 harness models` /
+`model <id>` expose the `/v1/models` inventory both ways — remote over
+the wire, or in-process where the `ft:` registry lists your own
+fine-tunes.
 
 ### Retrieval (`store` + `GET`/`DELETE`)
 

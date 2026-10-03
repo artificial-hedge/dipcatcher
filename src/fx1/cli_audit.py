@@ -167,6 +167,8 @@ def cli_audit() -> dict[str, Any]:
         "batch-cancel",
         "batch-output",
         "batch-run",
+        "models",
+        "model",
     } <= hnames
 
     # the files/batches family is wire-only — no --remote is exit 2 on
@@ -238,6 +240,15 @@ def cli_audit() -> dict[str, Any]:
                 app, ["harness", "batch-run", str(_in), "--callback-secret", "x"]
             ).exit_code
             == 2
+        )
+
+        # model inventory: the list envelope names fx1 in-process too.
+        _ml = runner.invoke(app, ["harness", "models"])
+        out["harness_models_inprocess"] = _ml.exit_code == 0 and any(
+            m.get("id") == "fx1" for m in json.loads(_ml.stdout).get("data", [])
+        )
+        out["harness_model_unknown_2"] = (
+            runner.invoke(app, ["harness", "model", "nope-model"]).exit_code == 2
         )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -899,6 +910,16 @@ def cli_audit() -> dict[str, Any]:
             self.last_batch_id = batch_id
             return {"id": batch_id, "object": "batch", "status": "cancelling"}
 
+        def list_models(self) -> dict[str, Any]:
+            return {
+                "object": "list",
+                "data": [{"id": "fx1", "object": "model", "created": 1, "owned_by": "fx1"}],
+            }
+
+        def retrieve_model(self, model_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"model": model_id}
+            return {"id": model_id, "object": "model", "created": 1, "owned_by": "fx1"}
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -1506,6 +1527,23 @@ def cli_audit() -> dict[str, Any]:
                 ).exit_code
                 == 2
             )
+
+        out["remote_models_list"] = (
+            json.loads(
+                runner.invoke(app, ["harness", "models", "--remote", "http://h.test"]).stdout
+            )
+            .get("data", [{}])[0]
+            .get("id")
+            == "fx1"
+        )
+        out["remote_model_retrieve"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "model", "ft:fx1-x", "--remote", "http://h.test"]
+                ).stdout
+            ).get("id")
+            == "ft:fx1-x"
+        )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

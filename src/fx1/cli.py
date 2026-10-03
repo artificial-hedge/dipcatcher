@@ -1780,6 +1780,43 @@ def harness_batch_run(
     typer.echo(json.dumps(batch, indent=2))
 
 
+@harness_app.command("models")
+def harness_models(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/models`` — the OpenAI list envelope: backend names a
+    ``model`` field may carry, the ``fx1`` alias, and every registered
+    ``ft:`` fine-tune. In-process by default (SDK twin)."""
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).list_models())
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    typer.echo(Fx1Harness().openai_models().model_dump_json(indent=2))
+
+
+@harness_app.command("model")
+def harness_model(
+    model_id: str = typer.Argument(..., help="Model id — backend name, 'fx1', or ft:name."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/models/{id}`` — one card for a listed id; unknown ids
+    fail closed (exit 2, the wire's 404). In-process by default."""
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).retrieve_model(model_id))
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    card = _or_exit(lambda: Fx1Harness().openai_model(model_id))
+    typer.echo(card.model_dump_json(indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
