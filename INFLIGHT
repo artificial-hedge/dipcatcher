@@ -1,3 +1,4 @@
+feat(research): wave 782 — filtration/Jacod-Shiryaev canon (pinsky_proc, ffusion_lims, kunita_watanabe, filt_proc, slivnyak, jacod_shiryaev) (4647->4653 families)
 feat(research): wave 781 — regeneration/Khinchin canon (karlin_mcg, keilson_stieltjes, palm_khinchin, regen_proc, wold_proc, korolyuk) (4641->4647 families)
 feat(research): wave 780 — queueing-network canon (bcmp_net, mean_value, convoy_net, insensitive_thm, kaufman_roberts, orku_loss) (4635->4641 families)
 feat(research): wave 779 — matrix-analytic canon (neuts_map, phase_type, matrix_geom, quasi_birth, ramaswami, logarithmic_red) (4629->4635 families)
