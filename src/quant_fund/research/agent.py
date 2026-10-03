@@ -2215,6 +2215,14 @@ from quant_fund.research.benches_w277 import (
     bench_stft_istft_family,
     bench_wola_synth_family,
 )
+from quant_fund.research.benches_w278 import (
+    bench_cobweb_model_family,
+    bench_nk_phillips_family,
+    bench_olg_model_family,
+    bench_rbc_sim_family,
+    bench_solow_model_family,
+    bench_taylor_rule_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2564,6 +2572,12 @@ def _provenance(
         "prony_model": bench_prony_model_family,
         "wola_synth": bench_wola_synth_family,
         "decimate_int": bench_decimate_int_family,
+        "rbc_sim": bench_rbc_sim_family,
+        "nk_phillips": bench_nk_phillips_family,
+        "taylor_rule": bench_taylor_rule_family,
+        "solow_model": bench_solow_model_family,
+        "olg_model": bench_olg_model_family,
+        "cobweb_model": bench_cobweb_model_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
