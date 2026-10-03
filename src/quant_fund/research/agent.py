@@ -3511,6 +3511,14 @@ from quant_fund.research.benches_w439 import (
     bench_lubin_tate_family,
     bench_morava_k_family,
 )
+from quant_fund.research.benches_w440 import (
+    bench_bott_period_family,
+    bench_hopf_map_family,
+    bench_postnikov_twr_family,
+    bench_stable_stem_family,
+    bench_thom_iso_family,
+    bench_whitehead_twr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3890,6 +3898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "thom_iso": bench_thom_iso_family,
+        "postnikov_twr": bench_postnikov_twr_family,
+        "whitehead_twr": bench_whitehead_twr_family,
+        "bott_period": bench_bott_period_family,
+        "stable_stem": bench_stable_stem_family,
+        "hopf_map": bench_hopf_map_family,
         "formal_group": bench_formal_group_family,
         "lazard_ring": bench_lazard_ring_family,
         "formal_module": bench_formal_module_family,
