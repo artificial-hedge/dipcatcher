@@ -2648,6 +2648,22 @@ from quant_fund.research.benches_w331 import (
     bench_pcp_verify_family,
     bench_sumcheck_family,
 )
+from quant_fund.research.benches_w332 import (
+    bench_bell_ineq_family,
+    bench_density_matrix_family,
+    bench_entanglement_family,
+    bench_povm_measure_family,
+    bench_qchannel_family,
+    bench_state_tomo_family,
+)
+from quant_fund.research.benches_w333 import (
+    bench_hensel_lift_family,
+    bench_poly_crt_family,
+    bench_poly_eval_interp_family,
+    bench_poly_factor_fp_family,
+    bench_sparse_interp_family,
+    bench_subresultant_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3027,6 +3043,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "poly_factor_fp": bench_poly_factor_fp_family,
+        "hensel_lift": bench_hensel_lift_family,
+        "poly_crt": bench_poly_crt_family,
+        "subresultant": bench_subresultant_family,
+        "sparse_interp": bench_sparse_interp_family,
+        "poly_eval_interp": bench_poly_eval_interp_family,
+        "density_matrix": bench_density_matrix_family,
+        "povm_measure": bench_povm_measure_family,
+        "qchannel": bench_qchannel_family,
+        "entanglement": bench_entanglement_family,
+        "bell_ineq": bench_bell_ineq_family,
+        "state_tomo": bench_state_tomo_family,
         "np_reduce": bench_np_reduce_family,
         "fpras_dnf": bench_fpras_dnf_family,
         "sumcheck": bench_sumcheck_family,
