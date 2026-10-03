@@ -3671,6 +3671,14 @@ from quant_fund.research.benches_w459 import (
     bench_scott_cpo_family,
     bench_way_below_family,
 )
+from quant_fund.research.benches_w460 import (
+    bench_analytic_ring2_family,
+    bench_clausen_scholze_family,
+    bench_pyknotic_family,
+    bench_solid_derived_family,
+    bench_solid_tensor_family,
+    bench_trace_class_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4050,6 +4058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "analytic_ring2": bench_analytic_ring2_family,
+        "solid_tensor": bench_solid_tensor_family,
+        "trace_class": bench_trace_class_family,
+        "clausen_scholze": bench_clausen_scholze_family,
+        "solid_derived": bench_solid_derived_family,
+        "pyknotic": bench_pyknotic_family,
         "fixed_points_ord": bench_fixed_points_ord_family,
         "chain_cond": bench_chain_cond_family,
         "scott_cpo": bench_scott_cpo_family,
