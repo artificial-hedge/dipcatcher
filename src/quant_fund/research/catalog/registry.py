@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-939 set-feasibility canon.
+        "split_feasibility",
+        "cq_algorithm",
+        "dykstra_proj",
+        "haugazeau_proj",
+        "parallel_prox",
+        "halpern_iter",
         # Wave-938 fixed-point canon.
         "fejer_monotone",
         "firmly_nonexpansive",
