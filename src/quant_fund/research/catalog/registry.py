@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-462 infinity-topos-2 canon.
+        "n_localic",
+        "shape_theory",
+        "descent_cond",
+        "lex_reflect",
+        "cartesian_fib2",
+        "cohesive_struct",
         # Wave-461 DAG-2/shifted-symplectic canon.
         "shifted_sympl",
         "lagrangian_int",
