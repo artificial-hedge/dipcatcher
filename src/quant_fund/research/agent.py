@@ -3703,6 +3703,14 @@ from quant_fund.research.benches_w463 import (
     bench_overconv_dm_family,
     bench_rigid_dm_family,
 )
+from quant_fund.research.benches_w464 import (
+    bench_chromatic_conv_family,
+    bench_k_n_local_family,
+    bench_morava_e_family,
+    bench_nilpotence_dev_family,
+    bench_telescopic_family,
+    bench_tmf_spectrum_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4082,6 +4090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "morava_e": bench_morava_e_family,
+        "tmf_spectrum": bench_tmf_spectrum_family,
+        "k_n_local": bench_k_n_local_family,
+        "chromatic_conv": bench_chromatic_conv_family,
+        "nilpotence_dev": bench_nilpotence_dev_family,
+        "telescopic": bench_telescopic_family,
         "overconv_dm": bench_overconv_dm_family,
         "arithmetic_dm": bench_arithmetic_dm_family,
         "frobenius_dm": bench_frobenius_dm_family,
