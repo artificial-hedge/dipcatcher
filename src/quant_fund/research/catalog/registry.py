@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-735 SLE-2 canon.
+        "beffara_sle",
+        "kemppainen_sle",
+        "zykin_sle",
+        "viklund_sle",
+        "benoist_sle",
+        "holden_sle",
         # Wave-734 SLE canon.
         "osgood_schramm",
         "lawler_werner",
