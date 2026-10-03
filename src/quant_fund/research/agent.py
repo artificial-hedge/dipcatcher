@@ -4623,6 +4623,14 @@ from quant_fund.research.benches_w578 import (
     bench_nevanlinna_th_family,
     bench_vojta_conj_family,
 )
+from quant_fund.research.benches_w579 import (
+    bench_git_quotient_family,
+    bench_hilbert_mumford_family,
+    bench_kirwan_strat_family,
+    bench_luna_slice_family,
+    bench_moment_polytope_family,
+    bench_symplectic_quot_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5002,6 +5010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "git_quotient": bench_git_quotient_family,
+        "hilbert_mumford": bench_hilbert_mumford_family,
+        "moment_polytope": bench_moment_polytope_family,
+        "kirwan_strat": bench_kirwan_strat_family,
+        "symplectic_quot": bench_symplectic_quot_family,
+        "luna_slice": bench_luna_slice_family,
         "global_height": bench_global_height_family,
         "bogomolov_conj": bench_bogomolov_conj_family,
         "equidistribution_thm": bench_equidistribution_thm_family,
