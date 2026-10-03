@@ -3455,6 +3455,14 @@ from quant_fund.research.benches_w432 import (
     bench_serre_ss3_family,
     bench_vanishing_ss_family,
 )
+from quant_fund.research.benches_w433 import (
+    bench_adic_space_family,
+    bench_berkovich_space_family,
+    bench_diamond_toy_family,
+    bench_etale_ph2_family,
+    bench_perfectoid_space_family,
+    bench_rigid_analytic_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3834,6 +3842,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rigid_analytic": bench_rigid_analytic_family,
+        "berkovich_space": bench_berkovich_space_family,
+        "perfectoid_space": bench_perfectoid_space_family,
+        "adic_space": bench_adic_space_family,
+        "etale_ph2": bench_etale_ph2_family,
+        "diamond_toy": bench_diamond_toy_family,
         "atiyah_hirzebruch": bench_atiyah_hirzebruch_family,
         "serre_ss3": bench_serre_ss3_family,
         "leary_ss": bench_leary_ss_family,
