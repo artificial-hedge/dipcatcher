@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-580 enumerative-combinatorics canon.
+        "species_theory",
+        "cycle_index",
+        "lagrange_inversion",
+        "transfer_matrix",
+        "matrix_tree",
+        "exponential_gf",
         # Wave-579 geometric-invariant-theory canon.
         "git_quotient",
         "hilbert_mumford",

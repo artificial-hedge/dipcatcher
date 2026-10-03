@@ -4631,6 +4631,14 @@ from quant_fund.research.benches_w579 import (
     bench_moment_polytope_family,
     bench_symplectic_quot_family,
 )
+from quant_fund.research.benches_w580 import (
+    bench_cycle_index_family,
+    bench_exponential_gf_family,
+    bench_lagrange_inversion_family,
+    bench_matrix_tree_family,
+    bench_species_theory_family,
+    bench_transfer_matrix_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5010,6 +5018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "species_theory": bench_species_theory_family,
+        "cycle_index": bench_cycle_index_family,
+        "lagrange_inversion": bench_lagrange_inversion_family,
+        "transfer_matrix": bench_transfer_matrix_family,
+        "matrix_tree": bench_matrix_tree_family,
+        "exponential_gf": bench_exponential_gf_family,
         "git_quotient": bench_git_quotient_family,
         "hilbert_mumford": bench_hilbert_mumford_family,
         "moment_polytope": bench_moment_polytope_family,
