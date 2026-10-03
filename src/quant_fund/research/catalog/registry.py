@@ -2611,6 +2611,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ranking_matching",
         "secretary_prophet",
         "online_gradient",
+        # Wave-215 stochastic-programming canon: L-shaped, scenario
+        # tree, SAA, chance-scenario, DRO Wasserstein, robust budget.
+        "two_stage_lshaped",
+        "scenario_tree",
+        "saa_consistency",
+        "chance_scenario",
+        "dro_wasserstein",
+        "robust_budget",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
