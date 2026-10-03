@@ -6759,6 +6759,14 @@ from quant_fund.research.benches_w845 import (
     bench_mellin_transform_family,
     bench_z_transform_family,
 )
+from quant_fund.research.benches_w846 import (
+    bench_airy_fn_family,
+    bench_bessel_fn_family,
+    bench_beta_fn_family,
+    bench_error_fn_family,
+    bench_gamma_fn_family,
+    bench_hypergeometric_fn_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7130,6 +7138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gamma_fn": bench_gamma_fn_family,
+        "beta_fn": bench_beta_fn_family,
+        "bessel_fn": bench_bessel_fn_family,
+        "airy_fn": bench_airy_fn_family,
+        "error_fn": bench_error_fn_family,
+        "hypergeometric_fn": bench_hypergeometric_fn_family,
         "laplace_transform": bench_laplace_transform_family,
         "mellin_transform": bench_mellin_transform_family,
         "hankel_transform": bench_hankel_transform_family,
