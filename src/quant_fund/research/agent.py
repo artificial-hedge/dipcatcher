@@ -2359,6 +2359,14 @@ from quant_fund.research.benches_w295 import (
     bench_orbital_elements_family,
     bench_tle_propagate_family,
 )
+from quant_fund.research.benches_w296 import (
+    bench_chomp_family,
+    bench_gjk_epa_family,
+    bench_ilqr_family,
+    bench_lqr_funnel_family,
+    bench_rts_smoother_family,
+    bench_se3_spline_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2738,6 +2746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lqr_funnel": bench_lqr_funnel_family,
+        "chomp": bench_chomp_family,
+        "gjk_epa": bench_gjk_epa_family,
+        "ilqr": bench_ilqr_family,
+        "rts_smoother": bench_rts_smoother_family,
+        "se3_spline": bench_se3_spline_family,
         "orbital_elements": bench_orbital_elements_family,
         "kepler_solve": bench_kepler_solve_family,
         "lambert_problem": bench_lambert_problem_family,
