@@ -1,3 +1,4 @@
+feat(research): wave 515 — syzygy-theory canon (betti_series, minimal_free, auslander_buchs, serre_conj, quillen_suslin, green_koszul) (3045->3051 families)
 feat(research): wave 514 — differential-cohomology canon (diff_cohom, cheeger_simons, deligne_cohom, flat_bundle, beilinson_reg, secondary_inv) (3039->3045 families)
 feat(research): wave 513 — categorification canon (categorify, khovanov_hom, hecke_cat, soergel_bim, rasmussen_inv, uq_sl2) (3033->3039 families)
 feat(research): wave 512 — super-geometry canon (super_space, super_manifold, super_lie, odd_variables, berezin_int, super_scheme) (3027->3033 families)
