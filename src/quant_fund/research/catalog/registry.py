@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-650 homotopy-20 canon.
+        "bousfield_htpy",
+        "dror_htpy",
+        "kane_htpy",
+        "moore_htpy",
+        "neisendorfer_htpy",
+        "anick_htpy",
         # Wave-649 prismatic-3 canon.
         "prism_site2",
         "cartier_prism",
