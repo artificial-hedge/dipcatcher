@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-527 hyperbolic-dynamics canon.
+        "anosov",
+        "srb_measure",
+        "horseshoe",
+        "stable_mfld",
+        "bowen_spec",
+        "markov_partition",
         # Wave-526 complex-dynamics canon.
         "julia_set",
         "mandelbrot_set",

@@ -1,3 +1,4 @@
+feat(research): wave 527 — hyperbolic-dynamics canon (anosov, srb_measure, horseshoe, stable_mfld, bowen_spec, markov_partition) (3117->3123 families)
 feat(research): wave 526 — complex-dynamics canon (julia_set, mandelbrot_set, fatou_set, sullivan_no_wander, douady_hubbard, parabolic_impl) (3111->3117 families)
 feat(research): wave 525 — ergodic-theory canon (birkhoff, mean_ergodic, mixing_weak, entropy_ks, bernoulli_shift, osceledets) (3105->3111 families)
 feat(research): wave 524 — Ramsey-theory canon (hales_jewett, rado_thm, gallai_thm, schur_thm, hindman, furstenberg) (3099->3105 families)
