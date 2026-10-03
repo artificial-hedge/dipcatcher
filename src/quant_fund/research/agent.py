@@ -4743,6 +4743,14 @@ from quant_fund.research.benches_w593 import (
     bench_nonabelian_hodge_family,
     bench_simpson_corr_family,
 )
+from quant_fund.research.benches_w594 import (
+    bench_artin_neighborhood_family,
+    bench_etale_fund_family,
+    bench_etale_homotopy_family,
+    bench_galois_cat_family,
+    bench_pro_etale_family,
+    bench_shapiro_lemma_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5122,6 +5130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_homotopy": bench_etale_homotopy_family,
+        "pro_etale": bench_pro_etale_family,
+        "etale_fund": bench_etale_fund_family,
+        "galois_cat": bench_galois_cat_family,
+        "artin_neighborhood": bench_artin_neighborhood_family,
+        "shapiro_lemma": bench_shapiro_lemma_family,
         "higgs_bundle2": bench_higgs_bundle2_family,
         "hitchin_section": bench_hitchin_section_family,
         "simpson_corr": bench_simpson_corr_family,

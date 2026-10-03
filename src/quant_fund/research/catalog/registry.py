@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-594 etale-cohomology canon.
+        "etale_homotopy",
+        "pro_etale",
+        "etale_fund",
+        "galois_cat",
+        "artin_neighborhood",
+        "shapiro_lemma",
         # Wave-593 nonabelian-Hodge canon.
         "higgs_bundle2",
         "hitchin_section",
