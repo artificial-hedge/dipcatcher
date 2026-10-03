@@ -1,3 +1,4 @@
+feat(research): wave 441 — Galois-representations canon (gal_rep, fontaine_ring, filtered_module, weil_deligne, hecke_eigensys, ribet_toy) (2601->2607 families)
 feat(research): wave 440 — homotopy-8 canon (thom_iso, postnikov_twr, whitehead_twr, bott_period, stable_stem, hopf_map) (2595->2601 families)
 feat(research): wave 439 — formal-groups/chromatic canon (formal_group, lazard_ring, formal_module, height_strata, lubin_tate, morava_k) (2589->2595 families)
 feat(research): wave 438 — condensed-mathematics canon (condensed_set, solid_group, liquid_group, proetale_site, light_condensed, analytic_ring) (2583->2589 families)

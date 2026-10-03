@@ -3519,6 +3519,14 @@ from quant_fund.research.benches_w440 import (
     bench_thom_iso_family,
     bench_whitehead_twr_family,
 )
+from quant_fund.research.benches_w441 import (
+    bench_filtered_module_family,
+    bench_fontaine_ring_family,
+    bench_gal_rep_family,
+    bench_hecke_eigensys_family,
+    bench_ribet_toy_family,
+    bench_weil_deligne_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3898,6 +3906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gal_rep": bench_gal_rep_family,
+        "fontaine_ring": bench_fontaine_ring_family,
+        "filtered_module": bench_filtered_module_family,
+        "weil_deligne": bench_weil_deligne_family,
+        "hecke_eigensys": bench_hecke_eigensys_family,
+        "ribet_toy": bench_ribet_toy_family,
         "thom_iso": bench_thom_iso_family,
         "postnikov_twr": bench_postnikov_twr_family,
         "whitehead_twr": bench_whitehead_twr_family,
