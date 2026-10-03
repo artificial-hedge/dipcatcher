@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-524 Ramsey-theory canon.
+        "hales_jewett",
+        "rado_thm",
+        "gallai_thm",
+        "schur_thm",
+        "hindman",
+        "furstenberg",
         # Wave-523 incidence-geometry canon.
         "erdos_distinct",
         "sz_trotter",
