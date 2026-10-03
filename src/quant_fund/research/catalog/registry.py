@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-473 higher-algebra-3 canon.
+        "thh_2",
+        "cyclotomic2",
+        "cartier_mod",
+        "witt_vec2",
+        "crystalline_stack",
+        "trt_functor",
         # Wave-472 motivic-3 canon.
         "alg_cobordism",
         "hermitian_k",
