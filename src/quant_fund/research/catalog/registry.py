@@ -2998,6 +2998,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "const_fold",
         "loop_unroll",
         "inline_expand",
+        # Wave-274 bioinformatics-2 canon.
+        "hmm_profile",
+        "star_msa",
+        "gc_skew",
+        "orf_find",
+        "kmer_count",
+        "seq_logo",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",

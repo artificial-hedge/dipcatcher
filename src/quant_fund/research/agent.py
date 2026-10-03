@@ -2183,6 +2183,14 @@ from quant_fund.research.benches_w273 import (
     bench_peephole_opt_family,
     bench_strength_red_family,
 )
+from quant_fund.research.benches_w274 import (
+    bench_gc_skew_family,
+    bench_hmm_profile_family,
+    bench_kmer_count_family,
+    bench_orf_find_family,
+    bench_seq_logo_family,
+    bench_star_msa_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2508,6 +2516,12 @@ def _provenance(
         "const_fold": bench_const_fold_family,
         "loop_unroll": bench_loop_unroll_family,
         "inline_expand": bench_inline_expand_family,
+        "hmm_profile": bench_hmm_profile_family,
+        "star_msa": bench_star_msa_family,
+        "gc_skew": bench_gc_skew_family,
+        "orf_find": bench_orf_find_family,
+        "kmer_count": bench_kmer_count_family,
+        "seq_logo": bench_seq_logo_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
