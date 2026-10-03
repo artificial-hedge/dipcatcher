@@ -1653,6 +1653,14 @@ from quant_fund.research.benches_w207 import (
     bench_sha256_impl_family,
     bench_shamir_secret_family,
 )
+from quant_fund.research.benches_w208 import (
+    bench_cepstrum_pitch_family,
+    bench_cwt_ridge_family,
+    bench_goertzel_detect_family,
+    bench_hilbert_instant_family,
+    bench_lpc_formant_family,
+    bench_mvdr_beamformer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4446,6 +4454,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pedersen_commit": bench_pedersen_commit_family(),
         "diffie_hellman": bench_diffie_hellman_family(),
         "ecc_secp256k1": bench_ecc_secp256k1_family(),
+        "cwt_ridge": bench_cwt_ridge_family(),
+        "cepstrum_pitch": bench_cepstrum_pitch_family(),
+        "mvdr_beamformer": bench_mvdr_beamformer_family(),
+        "hilbert_instant": bench_hilbert_instant_family(),
+        "lpc_formant": bench_lpc_formant_family(),
+        "goertzel_detect": bench_goertzel_detect_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
