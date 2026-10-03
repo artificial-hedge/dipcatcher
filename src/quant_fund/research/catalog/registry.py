@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-927 information-geometry-3 canon.
+        "fisher_metric2",
+        "expectation_param",
+        "potential_fn",
+        "ebanch_diverge",
+        "shannon_gibbs",
+        "renyi_div",
         # Wave-926 information-geometry-2 canon.
         "f_divergence",
         "alpha_divergence",
