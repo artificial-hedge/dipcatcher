@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-403 homotopy-4 canon.
+        "j_hom_toy",
+        "toda_bracket",
+        "spectral_atiyah",
+        "pi_stems",
+        "hopf_invariant",
+        "thom_spectrum",
         # Wave-402 topos-2 canon.
         "topos_subobj",
         "groth_topo",

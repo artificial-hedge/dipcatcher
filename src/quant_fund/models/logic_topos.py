@@ -17,6 +17,7 @@ def _bench_logic_topos(seed: int = 0) -> float:
     checks.append(internal_and(True, False) is False)
     checks.append(internal_implies(True, False) is False)
     checks.append(internal_implies(False, False) is True)
+
     # excluded middle holds in Set: b v ~b is true for both values
     def excl_mid(b: bool) -> bool:
         return b if b else not b
