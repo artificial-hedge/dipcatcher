@@ -4167,6 +4167,14 @@ from quant_fund.research.benches_w521 import (
     bench_riemann_zeta_family,
     bench_zero_density_family,
 )
+from quant_fund.research.benches_w522 import (
+    bench_freiman_thm_family,
+    bench_gowers_norm_family,
+    bench_green_tao_family,
+    bench_plunnecke_family,
+    bench_roth_thm_family,
+    bench_szemeredi_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4546,6 +4554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "freiman_thm": bench_freiman_thm_family,
+        "szemeredi": bench_szemeredi_family,
+        "green_tao": bench_green_tao_family,
+        "roth_thm": bench_roth_thm_family,
+        "gowers_norm": bench_gowers_norm_family,
+        "plunnecke": bench_plunnecke_family,
         "explicit_formula": bench_explicit_formula_family,
         "zero_density": bench_zero_density_family,
         "riemann_zeta": bench_riemann_zeta_family,
