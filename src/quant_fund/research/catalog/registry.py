@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-491 automorphic-2 canon.
+        "shimura_var",
+        "l_function",
+        "hecke_alg2",
+        "theta_lift",
+        "arthur_param",
+        "satake_param",
         # Wave-490 arithmetic-geometry canon.
         "arakelov_deg",
         "adelic_curve",

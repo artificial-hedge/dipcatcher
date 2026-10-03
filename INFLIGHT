@@ -1,3 +1,4 @@
+feat(research): wave 491 — automorphic-2 canon (shimura_var, l_function, hecke_alg2, theta_lift, arthur_param, satake_param) (2901->2907 families)
 feat(research): wave 490 — arithmetic-geometry canon (arakelov_deg, adelic_curve, height_arakelov, faltings_metric, arithmetic_chow, arith_rr) (2895->2901 families)
 feat(research): wave 489 — group-theory-4 canon (building_toy, coxeter_grp, bn_pair, braid_grp, hecke_bm, parabolic_grp) (2889->2895 families)
 feat(research): wave 488 — derived-geometry-3 canon (shifted_tangent, derived_quot, virtual_pull, intrinsic_be, d_critical, perfect_obstruction) (2883->2889 families)
