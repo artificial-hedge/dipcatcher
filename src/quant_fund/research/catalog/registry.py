@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-536 symplectic-geometry canon.
+        "symplectic_form",
+        "lagrangian_mfd",
+        "hamiltonian_flow",
+        "poisson_bracket",
+        "contact_geom",
+        "gromov_nonsq",
         # Wave-535 microlocal-analysis canon.
         "wavefront_set",
         "pseudodiff_op",
