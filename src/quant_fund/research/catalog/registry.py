@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-439 formal-groups/chromatic canon.
+        "formal_group",
+        "lazard_ring",
+        "formal_module",
+        "height_strata",
+        "lubin_tate",
+        "morava_k",
         # Wave-438 condensed-mathematics canon.
         "condensed_set",
         "solid_group",
