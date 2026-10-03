@@ -6983,6 +6983,14 @@ from quant_fund.research.benches_w873 import (
     bench_neumann_dd_family,
     bench_subspace_dd_family,
 )
+from quant_fund.research.benches_w874 import (
+    bench_first_order_rel_family,
+    bench_line_sampling_family,
+    bench_metamodel_rel_family,
+    bench_sorm_method_family,
+    bench_subset_sim_family,
+    bench_uq_reliability_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7354,6 +7362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "uq_reliability": bench_uq_reliability_family,
+        "first_order_rel": bench_first_order_rel_family,
+        "sorm_method": bench_sorm_method_family,
+        "subset_sim": bench_subset_sim_family,
+        "line_sampling": bench_line_sampling_family,
+        "metamodel_rel": bench_metamodel_rel_family,
         "dd_partition": bench_dd_partition_family,
         "baldding_dd": bench_baldding_dd_family,
         "neumann_dd": bench_neumann_dd_family,
