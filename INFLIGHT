@@ -1,3 +1,4 @@
+feat(research): wave 784 — Levy canon (levy_khinchine, subordinator, stable_levy, self_decomp, levy_measure, girsanov_thm2) (4659->4665 families)
 feat(research): wave 783 — stochastic-order canon (semi_mart, predictable_bracket, cramer_wold, stricker_thm, likelihood_order, hazard_order) (4653->4659 families)
 feat(research): wave 782 — filtration/Jacod-Shiryaev canon (pinsky_proc, ffusion_lims, kunita_watanabe, filt_proc, slivnyak, jacod_shiryaev) (4647->4653 families)
 feat(research): wave 781 — regeneration/Khinchin canon (karlin_mcg, keilson_stieltjes, palm_khinchin, regen_proc, wold_proc, korolyuk) (4641->4647 families)
