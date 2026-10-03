@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-519 modular-forms canon.
+        "modular_form",
+        "hecke_op2",
+        "eisenstein_srs2",
+        "cusp_form",
+        "theta_func",
+        "dedekind_eta",
         # Wave-518 Yang-Baxter/braid canon.
         "yang_baxter",
         "braid_rep",
