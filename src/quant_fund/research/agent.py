@@ -6519,6 +6519,14 @@ from quant_fund.research.benches_w815 import (
     bench_pitman_thm_family,
     bench_ray_knight_family,
 )
+from quant_fund.research.benches_w816 import (
+    bench_cadlag_markov_family,
+    bench_characteristic_markov_family,
+    bench_generator_markov_family,
+    bench_hunt_process_family,
+    bench_resolvent_markov_family,
+    bench_transition_semigroup_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6890,6 +6898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hunt_process": bench_hunt_process_family,
+        "cadlag_markov": bench_cadlag_markov_family,
+        "transition_semigroup": bench_transition_semigroup_family,
+        "resolvent_markov": bench_resolvent_markov_family,
+        "generator_markov": bench_generator_markov_family,
+        "characteristic_markov": bench_characteristic_markov_family,
         "excursion_proc": bench_excursion_proc_family,
         "inverse_local": bench_inverse_local_family,
         "ray_knight": bench_ray_knight_family,

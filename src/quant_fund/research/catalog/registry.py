@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-816 Markov-process canon.
+        "hunt_process",
+        "cadlag_markov",
+        "transition_semigroup",
+        "resolvent_markov",
+        "generator_markov",
+        "characteristic_markov",
         # Wave-815 excursion-theory canon.
         "excursion_proc",
         "inverse_local",
