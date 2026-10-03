@@ -4399,6 +4399,14 @@ from quant_fund.research.benches_w550 import (
     bench_pontryagin_class_family,
     bench_todd_genus_family,
 )
+from quant_fund.research.benches_w551 import (
+    bench_foliation_family,
+    bench_godbillon_vey_family,
+    bench_haefliger_struct_family,
+    bench_holonomy_grp_family,
+    bench_novikov_thm_family,
+    bench_thurston_fol_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4778,6 +4786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "foliation": bench_foliation_family,
+        "holonomy_grp": bench_holonomy_grp_family,
+        "godbillon_vey": bench_godbillon_vey_family,
+        "haefliger_struct": bench_haefliger_struct_family,
+        "novikov_thm": bench_novikov_thm_family,
+        "thurston_fol": bench_thurston_fol_family,
         "chern_class": bench_chern_class_family,
         "pontryagin_class": bench_pontryagin_class_family,
         "euler_class": bench_euler_class_family,
