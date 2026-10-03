@@ -1875,6 +1875,56 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["timeout_s_hosted_backend"] = (
         be_mod.HostedK3Backend(api_key="k", timeout_s=9.0)._timeout_s == 9.0
     )
+    # X-Fx1-Timeout header feeds the same per-request deadline on the
+    # OpenAI surface (chat + responses + embeddings share the resolver);
+    # the body's fx1.timeout_s extension wins; a malformed or out-of-range
+    # header is a fail-closed 400. Batches inherit it — the submitter's
+    # X-Fx1-* set replays per line.
+    _cap.clear()
+    hh = bapp.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Timeout": "7"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+    )
+    out["xfx_timeout_header_reaches_backend"] = (
+        hh.status_code == 200 and _cap[-1].get("timeout_s") == 7.0
+    )
+    _cap.clear()
+    hh2 = bapp.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Timeout": "7"},
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "fx1": {"timeout_s": 3},
+        },
+    )
+    out["xfx_timeout_ext_wins"] = hh2.status_code == 200 and _cap[-1].get("timeout_s") == 3.0
+    out["xfx_timeout_bad_400"] = (
+        bapp.post(
+            "/v1/chat/completions",
+            headers={"X-Fx1-Timeout": "bogus"},
+            json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        ).status_code
+        == 400
+    )
+    out["xfx_timeout_range_400"] = (
+        bapp.post(
+            "/v1/chat/completions",
+            headers={"X-Fx1-Timeout": "99999"},
+            json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        ).status_code
+        == 400
+    )
+    _cap.clear()
+    hr = bapp.post(
+        "/v1/responses",
+        headers={"X-Fx1-Timeout": "4"},
+        json={"model": "fx1", "input": "x"},
+    )
+    out["xfx_timeout_responses_reaches_backend"] = (
+        hr.status_code == 200 and _cap[-1].get("timeout_s") == 4.0
+    )
     # Isolated circuits per endpoint: the dead override opens its own
     # breaker key while the healthy override (and the env default) pass.
     bapp_brk = _TC2(
@@ -7116,7 +7166,10 @@ def api_audit_bench() -> dict[str, Any]:
             "into the model inventory (listed + retrievable), completions "
             "naming it resolve to the local_fx1 lane pinned at the job's "
             "checkpoint, explicit backend headers still override, and "
-            "unregistered ft: names fail closed 404 model_not_found."
+            "unregistered ft: names fail closed 404 model_not_found. "
+            "X-Fx1-Timeout sets the per-request backend deadline on the "
+            "OpenAI surface (fx1.timeout_s extension wins; malformed or "
+            "out-of-range values fail closed 400)."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),
