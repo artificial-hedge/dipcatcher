@@ -4359,6 +4359,14 @@ from quant_fund.research.benches_w545 import (
     bench_seifert_fibered_family,
     bench_thurston_geometrization_family,
 )
+from quant_fund.research.benches_w546 import (
+    bench_alexander_poly_family,
+    bench_jones_poly_family,
+    bench_knot_group_family,
+    bench_knot_invariant_family,
+    bench_knot_signature_family,
+    bench_vassiliev_inv_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4738,6 +4746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "knot_invariant": bench_knot_invariant_family,
+        "jones_poly": bench_jones_poly_family,
+        "alexander_poly": bench_alexander_poly_family,
+        "knot_group": bench_knot_group_family,
+        "knot_signature": bench_knot_signature_family,
+        "vassiliev_inv": bench_vassiliev_inv_family,
         "thurston_geometrization": bench_thurston_geometrization_family,
         "eight_geometries": bench_eight_geometries_family,
         "seifert_fibered": bench_seifert_fibered_family,
