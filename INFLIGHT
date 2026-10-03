@@ -1,3 +1,4 @@
+feat(research): wave 726 — Galois-deformation canon (jetchev_skinner, wan_sss, wiles_taylor, diamond_taylor_wiles, kisin_crystalline, mazur_deform) (4311->4317 families)
 feat(research): wave 725 — automorphic-points canon (p_group_iwasawa, shimura_period, arithmetic_arnold, darmon_point, bertolini_darmon, howard_main) (4305->4311 families)
 feat(research): wave 724 — arithmetic-cycles canon (coates_wiles, iwasawa_lfunc, greenberg_selmer, kurihara_iwasawa, heegner_cycle, gan_gross_prasad) (4299->4305 families)
 feat(research): wave 723 — Iwasawa/Euler-system canon (gross_zagier, kolyvagin_sys, euler_system, iwasawa_motive, rubin_main_conj, perrin_riou) (4293->4299 families)
