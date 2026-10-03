@@ -2047,6 +2047,14 @@ from quant_fund.research.benches_w256 import (
     bench_rcu_lock_family,
     bench_seqlock_family,
 )
+from quant_fund.research.benches_w257 import (
+    bench_bfv_fhe_family,
+    bench_chaum_pedersen_family,
+    bench_lwe_kex_family,
+    bench_ntru_toy_family,
+    bench_sigma_or_proof_family,
+    bench_sis_hash_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2270,6 +2278,12 @@ def _provenance(
         "epoch_reclaim": bench_epoch_reclaim_family,
         "flat_combining": bench_flat_combining_family,
         "rcu_lock": bench_rcu_lock_family,
+        "lwe_kex": bench_lwe_kex_family,
+        "ntru_toy": bench_ntru_toy_family,
+        "bfv_fhe": bench_bfv_fhe_family,
+        "sis_hash": bench_sis_hash_family,
+        "sigma_or_proof": bench_sigma_or_proof_family,
+        "chaum_pedersen": bench_chaum_pedersen_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
