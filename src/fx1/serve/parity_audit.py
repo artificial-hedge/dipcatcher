@@ -1627,7 +1627,9 @@ def parity_audit() -> dict[str, bool]:
             art = spec.work_dir / "receipt.json"
             art.write_text("{}")
             return FTJobOutcome(
-                fine_tuned_model=spec.ft_model_name, artifacts={"receipt.json": art}
+                fine_tuned_model=spec.ft_model_name,
+                artifacts={"receipt.json": art},
+                checkpoint=str(spec.work_dir / "ckpt"),
             )
 
         sdk_ft, ft_wire = _surfaces(_UsageBackend, ft_runner=_ft_runner)
@@ -1664,6 +1666,54 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: remote_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
             and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
             == "HarnessTransportError"
+        )
+        # Registry parity: a succeeded job's ft: name lists + resolves on
+        # both surfaces, and completions naming it land on the local_fx1
+        # lane pinned at the job's checkpoint. Unknown ft: names 404.
+        sname = sjob.fine_tuned_model
+        wname = wfin["fine_tuned_model"]
+        out["ft_model_parity"] = (
+            sname in {m.id for m in sdk_ft.openai_models().data}
+            and sdk_ft.openai_model(sname).id == sname
+            and wname in {m["id"] for m in remote_ft.list_models()["data"]}
+            and remote_ft.retrieve_model(wname)["id"] == wname
+            and _raises(lambda: sdk_ft.openai_model("ft:fx1:ghost:000000000000"))[0]
+            == "OpenAICompatError"
+            and ft_wire.get("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+        )
+        sresp, _scid = sdk_ft.openai_chat(
+            {"model": sname, "messages": [{"role": "user", "content": "hi"}]}
+        )
+        wresp = ft_wire.post(
+            "/v1/chat/completions",
+            json={"model": wname, "messages": [{"role": "user", "content": "hi"}]},
+        )
+        out["ft_model_route_parity"] = (
+            wresp.status_code == 200
+            and sresp.choices[0].message["content"]
+            == wresp.json()["choices"][0]["message"]["content"]
+            and sresp.system_fingerprint == "local_fx1"
+            and wresp.json()["system_fingerprint"] == "local_fx1"
+        )
+        wghost = ft_wire.post(
+            "/v1/chat/completions",
+            json={
+                "model": "ft:fx1:ghost:000000000000",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+        out["ft_model_route_404_parity"] = (
+            _raises(
+                lambda: sdk_ft.openai_chat(
+                    {
+                        "model": "ft:fx1:ghost:000000000000",
+                        "messages": [{"role": "user", "content": "hi"}],
+                    }
+                )
+            )[0]
+            == "OpenAICompatError"
+            and wghost.status_code == 404
+            and wghost.json()["error"]["code"] == "model_not_found"
         )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
@@ -2738,7 +2788,12 @@ def parity_audit_bench() -> dict[str, Any]:
             "create_finetune_job produces the same terminal job fields "
             "(status, ft:-name grammar, result_files, event feed) as the "
             "wire route under the same runner, and guards map "
-            "ValueError↔HarnessTransportError / KeyError↔KeyError. Flags: "
+            "ValueError↔HarnessTransportError / KeyError↔KeyError. The "
+            "model registry holds on both surfaces: a succeeded job's ft: "
+            "name lists and retrieves, completions naming it resolve to "
+            "local_fx1 at the job's checkpoint, and unregistered ft: names "
+            "fail closed (OpenAICompatError in-process, 404 on the wire). "
+            "Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

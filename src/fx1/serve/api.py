@@ -3277,7 +3277,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         one gated path, one envelope. Raises ``OpenAICompatError`` on
         translation or post-validation failures (callers map it to the
         wire shape)."""
-        creq = CompleteRequest(**openai_to_kwargs(body, headers))
+        creq = CompleteRequest(
+            **openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
         # sums what was actually spent (n calls × provider-reported counts).
@@ -3329,7 +3331,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         the route and the ``/v1/batches`` worker. Returns the envelope
         plus the completion-log id and raw usage (the caller decides what
         rides the idempotency record)."""
-        creq = CompleteRequest(**response_to_kwargs(body, headers))
+        creq = CompleteRequest(
+            **response_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
         # post-validate against text.format on an empty content
@@ -3365,7 +3369,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         digest binds the sent input and the verbatim ``data[]``).
 
         Returns ``(envelope, completion_id)``."""
-        ereq = EmbedRequest(**embeddings_to_kwargs(body, headers))
+        ereq = EmbedRequest(
+            **embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(
@@ -3517,7 +3523,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Model inventory — the backend names a `model` field may carry,
         plus the `fx1` alias for the default link (hosted_k3)."""
         return OpenAIModelList(
-            data=[OpenAIModel(id=m, created=_openai_created) for m in OPENAI_MODEL_IDS]
+            data=[
+                OpenAIModel(id=m, created=_openai_created)
+                for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in ft_store.models()))
+            ]
         )
 
     @app.get(
@@ -3529,9 +3538,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_retrieve_model(model: str) -> OpenAIModel:
         """OpenAI's models.retrieve — one card for a listed id; unknown
         ids fail closed 404 in the OpenAI error shape, never a
-        fabricated card."""
+        fabricated card. Registered ``ft:`` fine-tunes resolve too."""
         try:
-            return openai_model(model, created=_openai_created)
+            return openai_model(
+                model,
+                created=_openai_created,
+                extra_ids=(r["id"] for r in ft_store.models()),
+            )
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
@@ -4677,6 +4690,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 job.fine_tuned_model = outcome.fine_tuned_model
                 job.trained_tokens = outcome.trained_tokens
                 job.status = "succeeded"
+                if outcome.fine_tuned_model is not None and outcome.checkpoint:
+                    ft_store.register_model(
+                        outcome.fine_tuned_model,
+                        job_id=job.id,
+                        checkpoint=outcome.checkpoint,
+                        created=job.finished_at or int(time.time()),
+                    )
+                    ft_store.add_event(
+                        job.id,
+                        "info",
+                        f"model registered: {outcome.fine_tuned_model}",
+                        {"checkpoint": outcome.checkpoint},
+                    )
                 ft_store.add_event(
                     job.id,
                     "info",

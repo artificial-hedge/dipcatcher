@@ -209,6 +209,11 @@ class FTJobStore:
         self._max = max(1, max_entries)
         self._entries: OrderedDict[str, FTJobEntry] = OrderedDict()
         self._keys: dict[str, str] = {}
+        # fine-tuned model registry: ft:<model>:<suffix>:<job12> -> ref
+        # (``{id, job_id, checkpoint, created}``). A registration survives
+        # only while its producing job does — evicting the job drops the
+        # card so a listed model can never point at forgotten provenance.
+        self._models: dict[str, dict[str, Any]] = {}
 
     def put(self, job: FTJob, idem_key: str | None, body_fp: str) -> FTJobEntry:
         entry = FTJobEntry(job, idem_key, body_fp)
@@ -218,10 +223,41 @@ class FTJobStore:
             if idem_key is not None:
                 self._keys[f"ft:{idem_key}"] = job.id
             while len(self._entries) > self._max:
-                _old_id, old_entry = self._entries.popitem(last=False)
+                old_id, old_entry = self._entries.popitem(last=False)
                 if old_entry.idem_key is not None:
                     self._keys.pop(f"ft:{old_entry.idem_key}", None)
+                for mname, mref in list(self._models.items()):
+                    if mref["job_id"] == old_id:
+                        del self._models[mname]
         return entry
+
+    def register_model(self, name: str, *, job_id: str, checkpoint: str, created: int) -> None:
+        """Bind an ``ft:`` model name to its producing job + checkpoint.
+        Only called on succeeded jobs with a real checkpoint — a card is
+        never minted for a model the harness cannot serve."""
+        with self._lock:
+            self._models[name] = {
+                "id": name,
+                "job_id": job_id,
+                "checkpoint": checkpoint,
+                "created": created,
+            }
+
+    def get_model(self, name: str) -> dict[str, Any] | None:
+        with self._lock:
+            return self._models.get(name)
+
+    def models(self) -> list[dict[str, Any]]:
+        """All registered ft models, sorted by id (stable list order)."""
+        with self._lock:
+            return [dict(self._models[k]) for k in sorted(self._models)]
+
+    def checkpoint_for(self, name: str) -> str | None:
+        """The checkpoint dir an ``ft:`` name resolves to — the piece
+        ``_resolve_openai_link`` needs to route the request at the
+        fine-tuned weights instead of the default link."""
+        ref = self.get_model(name)
+        return str(ref["checkpoint"]) if ref is not None else None
 
     def lookup_idem(self, key: str) -> FTJobEntry | None:
         with self._lock:

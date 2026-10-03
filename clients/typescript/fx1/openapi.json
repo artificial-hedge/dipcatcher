@@ -10661,7 +10661,7 @@
     },
     "/v1/models/{model}": {
       "get": {
-        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card.",
+        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.",
         "operationId": "openai_retrieve_model",
         "parameters": [
           {

@@ -511,6 +511,19 @@ artifact files.
   `error.code=job_failed`) when the trainer can't run on this
   host. `trained_tokens` stays `null` — no tokenizer exists, and
   the harness never fabricates counts.
+- **Model registry:** a `succeeded` job whose outcome carries a
+  `checkpoint` registers its `ft:{model}:{suffix}:{job}` name into
+  the model inventory — `GET /v1/models` lists it and
+  `GET /v1/models/{id}` retrieves its card. Completions, responses,
+  and embeddings naming the `ft:` model resolve to the `local_fx1`
+  lane pinned at the producing job's checkpoint; an explicit backend
+  pin (the `fx1` extension's backend field, `X-Fx1-Backend`, or BYOK
+  headers) still overrides, and an
+  `ft:` name with no registered job is a `404 model_not_found` —
+  never a silent default link. Evicting the job record drops the
+  card (registration is provenance-bound, not permanent). The SDK
+  twin shares the same store, so `openai_models()`/`openai_chat`
+  behave identically in-process.
 - **Cancel:** `POST .../cancel` — queued jobs cancel at once;
   running jobs stop cooperatively when the runner's
   `should_cancel()` reports the flag (between stages).

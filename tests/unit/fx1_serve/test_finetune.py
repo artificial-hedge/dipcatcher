@@ -40,7 +40,7 @@ def _client(tmp_path: Path, runner: Any = _runner) -> TestClient:
 
 class _B:
     def complete(self, *a: Any, **k: Any) -> Any:
-        return None
+        return "ok"
 
 
 def _upload(client: TestClient, content: bytes = _CORPUS, purpose: str = "fine-tune") -> str:
@@ -105,6 +105,7 @@ def test_api_happy_path(tmp_path: Path):
         json={"model": "fx1", "training_file": fid, "suffix": "pp"},
     ).json()
     assert job["object"] == "fine_tuning.job"
+    job = _wait_terminal(c, job["id"])
     assert job["status"] == "succeeded"
     assert len(job["result_files"]) == 1
     events = c.get(f"/v1/fine_tuning/jobs/{job['id']}/events").json()
@@ -147,6 +148,7 @@ def test_api_idempotency_and_terminal_cancel(tmp_path: Path):
         headers={"Idempotency-Key": "k1"},
     )
     assert r3.status_code == 409 and r3.json()["error"]["code"] == "idempotency_conflict"
+    _wait_terminal(c, r1.json()["id"])
     r4 = c.post(f"/v1/fine_tuning/jobs/{r1.json()['id']}/cancel")
     assert r4.status_code == 409 and r4.json()["error"]["code"] == "job_terminal"
 
@@ -232,3 +234,125 @@ def test_store_bound(tmp_path: Path):
     sdk.create_finetune_job(model="fx1", training_jsonl=_CORPUS)
     with pytest.raises(KeyError):
         sdk.finetune_job(j1.id)
+
+
+def _ckpt_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
+    art = spec.work_dir / "receipt.json"
+    art.write_text("{}")
+    return FTJobOutcome(
+        fine_tuned_model=spec.ft_model_name,
+        artifacts={"receipt.json": art},
+        checkpoint=str(spec.work_dir / "ckpt"),
+    )
+
+
+def _wait_terminal(client: TestClient, job_id: str) -> dict[str, Any]:
+    for _i in range(400):
+        j = client.get(f"/v1/fine_tuning/jobs/{job_id}").json()
+        if j["status"] in ("succeeded", "failed", "cancelled"):
+            return dict(j)
+        time.sleep(0.02)
+    return dict(client.get(f"/v1/fine_tuning/jobs/{job_id}").json())
+
+
+def test_model_registry_api(tmp_path: Path):
+    client = _client(tmp_path, runner=_ckpt_runner)
+    fid = _upload(client)
+    job = client.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid, "suffix": "reg"},
+    ).json()
+    name = _wait_terminal(client, job["id"])["fine_tuned_model"]
+    assert name in {m["id"] for m in client.get("/v1/models").json()["data"]}
+    assert client.get(f"/v1/models/{name}").json()["id"] == name
+    assert client.get("/v1/models/ft:fx1:ghost:000").status_code == 404
+
+
+def test_model_registry_routes_local_fx1(tmp_path: Path):
+    calls: list[tuple[str, Any]] = []
+
+    def spy(name: str, *a: Any, **k: Any) -> Any:
+        calls.append((name, k.get("checkpoint_dir") or (a[0] if a else None)))
+        return _B()
+
+    client = TestClient(
+        create_app(
+            backend_resolver=spy,
+            ft_runner=_ckpt_runner,
+            ft_dir=tmp_path / "ft",
+        ),
+        raise_server_exceptions=False,
+    )
+    fid = _upload(client)
+    job = client.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": fid},
+    ).json()
+    name = _wait_terminal(client, job["id"])["fine_tuned_model"]
+    ckpt = calls  # resolver spy
+    resp = client.post(
+        "/v1/chat/completions",
+        json={"model": name, "messages": [{"role": "user", "content": "hi"}]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["system_fingerprint"] == "local_fx1"
+    assert ckpt[-1][0] == "local_fx1" and str(ckpt[-1][1]).endswith("ckpt")
+    # unknown ft: name fails closed
+    ghost = client.post(
+        "/v1/chat/completions",
+        json={
+            "model": "ft:fx1:ghost:000000000000",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    assert ghost.status_code == 404
+    assert ghost.json()["error"]["code"] == "model_not_found"
+    # explicit backend header overrides the registry
+    calls.clear()
+    resp2 = client.post(
+        "/v1/chat/completions",
+        json={"model": name, "messages": [{"role": "user", "content": "hi"}]},
+        headers={"X-Fx1-Backend": "local_fx1", "X-Fx1-Checkpoint-Dir": "/tmp/other"},
+    )
+    assert resp2.status_code == 200
+    assert calls[-1] == ("local_fx1", "/tmp/other")
+
+
+def test_model_registry_sdk(tmp_path: Path):
+    sdk = Fx1Harness(
+        ft_runner=_ckpt_runner,
+        ft_dir=tmp_path,
+        backend_resolver=lambda name, **kw: _B(),
+    )
+    job = sdk.create_finetune_job(model="fx1", training_jsonl=_CORPUS)
+    assert job.fine_tuned_model is not None
+    name = job.fine_tuned_model
+    assert name in {m.id for m in sdk.openai_models().data}
+    assert sdk.openai_model(name).id == name
+    with pytest.raises(ValueError):
+        sdk.openai_model("ft:fx1:ghost:000")
+    resp, _cid = sdk.openai_chat({"model": name, "messages": [{"role": "user", "content": "hi"}]})
+    assert resp.system_fingerprint == "local_fx1"
+    with pytest.raises(ValueError):
+        sdk.openai_chat(
+            {
+                "model": "ft:fx1:ghost:000000000000",
+                "messages": [{"role": "user", "content": "hi"}],
+            }
+        )
+
+
+def test_model_registry_evicts_with_job(tmp_path: Path):
+    sdk = Fx1Harness(
+        ft_runner=_ckpt_runner,
+        ft_dir=tmp_path,
+        backend_resolver=lambda name, **kw: _B(),
+    )
+    sdk._ft_store = FTJobStore(1)
+    j1 = sdk.create_finetune_job(model="fx1", training_jsonl=_CORPUS)
+    assert j1.fine_tuned_model is not None
+    sdk.create_finetune_job(model="fx1", training_jsonl=_CORPUS)
+    with pytest.raises(KeyError):
+        sdk.finetune_job(j1.id)
+    with pytest.raises(ValueError):
+        sdk.openai_model(j1.fine_tuned_model)

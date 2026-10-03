@@ -862,6 +862,13 @@ class Fx1Harness:
                 job.fine_tuned_model = outcome.fine_tuned_model
                 job.trained_tokens = outcome.trained_tokens
                 job.status = "succeeded"
+                if outcome.fine_tuned_model is not None and outcome.checkpoint:
+                    self._ft_store.register_model(
+                        outcome.fine_tuned_model,
+                        job_id=job.id,
+                        checkpoint=outcome.checkpoint,
+                        created=int(time.time()),
+                    )
         except Exception as exc:
             if entry.cancel.is_set():
                 job.status = "cancelled"
@@ -1578,13 +1585,13 @@ class Fx1Harness:
     def openai_models(self) -> OpenAIModelList:
         """The ``GET /v1/models`` inventory in-process — `fx1` plus the
         backend names an OpenAI ``model`` field may carry."""
-        return openai_models()
+        return openai_models(extra_ids=[m["id"] for m in self._ft_store.models()])
 
     def openai_model(self, model_id: str) -> OpenAIModel:
         """``GET /v1/models/{id}`` in-process — one card for a listed id;
         unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
         the SDK's request-error class."""
-        return openai_model(model_id)
+        return openai_model(model_id, extra_ids=[m["id"] for m in self._ft_store.models()])
 
     def openai_chat(
         self,
@@ -1614,7 +1621,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         # n>1 fans out into n gated calls — each choice gets its own
         # honesty-gate pass, format check, and completion-log record.
         results = [self.complete(**kwargs) for _ in range(body.n)]
@@ -1684,7 +1693,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         results = [self.complete(**kwargs) for _ in range(body.n)]
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
@@ -1755,7 +1766,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        kwargs = response_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         # a tool-call turn carries no text — nothing to post-validate
         if result.content or not result.tool_calls:
@@ -1794,7 +1807,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        kwargs = response_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
@@ -1854,7 +1869,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIEmbeddingRequest)
             else OpenAIEmbeddingRequest.model_validate(request)
         )
-        kwargs = embeddings_to_kwargs(body, dict(headers or {}))
+        kwargs = embeddings_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         prompt_sha256 = hashlib.sha256(
             json.dumps(
                 {"model": kwargs["model"], "input": kwargs["input"]},

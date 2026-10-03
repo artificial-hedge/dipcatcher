@@ -1041,7 +1041,7 @@ export interface paths {
          * Openai Retrieve Model
          * @description OpenAI's models.retrieve — one card for a listed id; unknown
          *     ids fail closed 404 in the OpenAI error shape, never a
-         *     fabricated card.
+         *     fabricated card. Registered ``ft:`` fine-tunes resolve too.
          */
         get: operations["openai_retrieve_model"];
         put?: never;

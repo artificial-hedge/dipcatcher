@@ -2892,6 +2892,69 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         time.sleep(0.02)
     out["ft_cancel_running_cooperative"] = cc.status_code == 200 and cjj["status"] == "cancelled"
 
+    # Model registry: a succeeded job with a checkpoint registers its
+    # ft: name into the model inventory, and a request naming it resolves
+    # to the local_fx1 lane pinned at the job's checkpoint — never the
+    # default link. Unregistered ft: names fail closed 404.
+    mname = fin["fine_tuned_model"]
+    models = ft.get("/v1/models").json()
+    out["ft_model_listed"] = mname in {m["id"] for m in models["data"]}
+    card = ft.get(f"/v1/models/{mname}")
+    out["ft_model_card_200"] = card.status_code == 200 and card.json()["id"] == mname
+    out["ft_model_ghost_404"] = ft.get("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+
+    resolved: list[tuple[str, Any]] = []
+
+    def _spy(name: str, *a: Any, **k: Any) -> Any:
+        resolved.append((name, k.get("checkpoint_dir") or (a[0] if a else None)))
+        raise RuntimeError("no engine — resolution reached")
+
+    ft2 = _TC3(api_mod.create_app(backend_resolver=_spy, ft_runner=_runner))
+    fid2 = ft2.post(
+        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    j2 = ft2.post(
+        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid2, "suffix": "r"}
+    ).json()
+    fin2 = j2
+    for _i in range(400):
+        fin2 = ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}").json()
+        if fin2["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    ftname = fin2["fine_tuned_model"]
+    chat = ft2.post(
+        "/v1/chat/completions",
+        json={"model": ftname, "messages": [{"role": "user", "content": "hi"}]},
+    )
+    out["ft_model_routes_local_fx1"] = (
+        chat.status_code == 503
+        and resolved
+        and resolved[-1][0] == "local_fx1"
+        and str(resolved[-1][1]).endswith("ckpt")
+    )
+    ghost = ft2.post(
+        "/v1/chat/completions",
+        json={
+            "model": "ft:fx1:ghost:000000000000",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    out["ft_model_unknown_404"] = (
+        ghost.status_code == 404 and ghost.json().get("error", {}).get("code") == "model_not_found"
+    )
+    # An explicit backend + checkpoint header still wins over an ft:
+    # model name — the registry never overrides a caller's stated link.
+    resolved.clear()
+    ft2.post(
+        "/v1/chat/completions",
+        json={"model": ftname, "messages": [{"role": "user", "content": "hi"}]},
+        headers={"X-Fx1-Backend": "local_fx1", "X-Fx1-Checkpoint-Dir": "/srv/fx1/explicit-ckpt"},
+    )
+    out["ft_model_explicit_backend_wins"] = bool(
+        resolved and resolved[-1] == ("local_fx1", "/srv/fx1/explicit-ckpt")
+    )
+
 
 def _probe_backend_probes(
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
@@ -6847,7 +6910,11 @@ def api_audit_bench() -> dict[str, Any]:
             "synchronous corpus validation (bad corpus/model/file "
             "fail closed 4xx before any queue), cooperative cancel, "
             "idempotent submit, events feed, artifacts re-registered as "
-            "fine-tune-result files."
+            "fine-tune-result files. A succeeded job's ft: name registers "
+            "into the model inventory (listed + retrievable), completions "
+            "naming it resolve to the local_fx1 lane pinned at the job's "
+            "checkpoint, explicit backend headers still override, and "
+            "unregistered ft: names fail closed 404 model_not_found."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),
