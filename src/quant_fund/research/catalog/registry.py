@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-638 algebraic-K-7 canon.
+        "grayson_s",
+        "karoubi_v2",
+        "vorst_descent",
+        "quillen_ldev",
+        "fundamental_cat",
+        "seg_street",
         # Wave-637 p-adic-6 canon.
         "fargues_scholze2",
         "curve_padic",
