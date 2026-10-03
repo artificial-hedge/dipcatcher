@@ -2256,7 +2256,7 @@ detail: |
   - src/quant_fund/models: delong_auc.py (DeLong 1988
     placement-value variance + paired AUC comparison),
     passing_bablok.py (Passing-Bablok 1983 shifted-median
-    slope + Deming orthogonal + jackknife se), 
+    slope + Deming orthogonal + jackknife se),
     marginal_homogeneity.py (McNemar 1947, Bowker 1948,
     Stuart-Maxwell 1955, Bhapkar 1979), circular_tests.py
     (Mardia-Watson-Wheeler 1972 permutation p, Rao 1976

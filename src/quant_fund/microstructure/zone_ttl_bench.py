@@ -67,12 +67,16 @@ def _extra(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
 ) -> dict[str, Any]:
     return dict(
         _FULL,
         zone_embargo=zone,
         maker_ttl=ttl,
         maker_requote=requote,
+        repost_requote=repost_requote,
+        repost_ttl_immune=repost_ttl_immune,
         fill_repost_frac=fr_frac,
         fill_repost_delay=fr_delay,
         repost_frac=0.6,
@@ -91,11 +95,16 @@ def _card(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
 ) -> dict[str, Any]:
     """Mix shares + executed-maker lifetime on one draw (zone_card.v1's
     measure: ages on the sim clock converted to event units by the
     draw's realized rate)."""
-    cfg = _calibrated(seed, _extra(zone, ttl, requote, fr_frac, fr_delay))
+    cfg = _calibrated(
+        seed,
+        _extra(zone, ttl, requote, fr_frac, fr_delay, repost_requote, repost_ttl_immune),
+    )
     flow = _split(inten, seed + 1) if inten is not None else None
     sim = ZILobSimulator(cfg, flow)
     ages: list[float] = []
@@ -137,16 +146,18 @@ def _cell(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
     uniform_flow: bool = False,
 ) -> dict[str, Any]:
-    """Card + pins + kernel for a configuration.
+    """Card + pins + kernel on one (zone, ttl, flow) draw.
 
     ``uniform_flow=True`` honors iid on every surface. The default retains
     the historical split@3 crown for legacy v1 benchmark callers.
     """
     from quant_fund.microstructure.joint_tune_contract import surface_inputs
 
-    extra = _extra(zone, ttl, requote, fr_frac, fr_delay)
+    extra = _extra(zone, ttl, requote, fr_frac, fr_delay, repost_requote, repost_ttl_immune)
     crown_intensity = inten if uniform_flow or inten is not None else 3.0
     inputs = surface_inputs(
         zone, ttl, requote, fr_delay, horizon=horizon, seed=seed, intensity=inten, fr_frac=fr_frac
@@ -160,6 +171,8 @@ def _cell(
         requote=requote,
         fr_frac=fr_frac,
         fr_delay=fr_delay,
+        repost_requote=repost_requote,
+        repost_ttl_immune=repost_ttl_immune,
     )
     crown = _sim_crown(
         "joint",
@@ -186,7 +199,6 @@ def _cell(
         "instant_signed_ticks": kernel["instant_signed_ticks"],
         "k200": kernel["kernel_mean_ticks"].get("200"),
     }
-
     if uniform_flow:
         result["surface_inputs"] = {
             k: dict(inputs, flow_intensity=crown_intensity if k == "crown" else inten)
