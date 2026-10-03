@@ -1,3 +1,4 @@
+feat(research): wave 621 — motivic-10 canon (motivic_k, motivic_borel, motivic_height, motivic_chow, motivic_homology, motivic_class) (3681->3687 families)
 feat(research): wave 620 — stacks-2 canon (gerbe2, band_gerbe, rigid_stack, dm_stack2, inertia_stack, root_stack) (3675->3681 families)
 feat(research): wave 619 — homotopy-14 canon (unstable_htpy, tame_htpy, devissage_ss, andersen_lannes, chromatic_hopkins, thick_spectrum) (3669->3675 families)
 feat(research): wave 618 — p-adic-5 canon (fontaine_curve, untilt, perfectoid_c, b_drb, phi_mod, ad_period) (3663->3669 families)
