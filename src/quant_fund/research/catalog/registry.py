@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-692 higher-algebra-9 canon.
+        "e5_algebra",
+        "little_cubes2",
+        "swiss_cheese3",
+        "framed_discs",
+        "factorization_hom3",
+        "centralizer_alg2",
         # Wave-691 category-18 canon.
         "cat_pretopos",
         "cat_semisimple",
