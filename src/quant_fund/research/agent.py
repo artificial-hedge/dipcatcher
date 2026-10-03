@@ -6375,6 +6375,14 @@ from quant_fund.research.benches_w797 import (
     bench_second_bsde_family,
     bench_super_linear_family,
 )
+from quant_fund.research.benches_w798 import (
+    bench_anticipating_sde_family,
+    bench_delayed_sde_family,
+    bench_forward_sde_family,
+    bench_functional_sde_family,
+    bench_neutral_sde_family,
+    bench_random_sde_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6754,6 +6762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "forward_sde": bench_forward_sde_family,
+        "random_sde": bench_random_sde_family,
+        "anticipating_sde": bench_anticipating_sde_family,
+        "functional_sde": bench_functional_sde_family,
+        "delayed_sde": bench_delayed_sde_family,
+        "neutral_sde": bench_neutral_sde_family,
         "second_bsde": bench_second_bsde_family,
         "doubly_bsde": bench_doubly_bsde_family,
         "reflected_bsde2": bench_reflected_bsde2_family,
