@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-522 additive-combinatorics canon.
+        "freiman_thm",
+        "szemeredi",
+        "green_tao",
+        "roth_thm",
+        "gowers_norm",
+        "plunnecke",
         # Wave-521 analytic-NT canon.
         "explicit_formula",
         "zero_density",
