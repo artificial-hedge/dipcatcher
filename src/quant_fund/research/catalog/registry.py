@@ -3061,6 +3061,27 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-356 stochastic-processes-2 canon.
+        "markov_chain",
+        "martingale_check",
+        "poisson_process",
+        "gambler_ruin",
+        "stopping_time",
+        "markov_hitting",
+        # Wave-355 probability-2 canon.
+        "kolmogorov_axioms",
+        "conditional_expect",
+        "markov_ineq",
+        "conv_sum",
+        "moment_generating",
+        "stochastic_order",
+        # Wave-354 algebraic-geometry-4 canon.
+        "sheaf_gluing",
+        "local_ring_zn",
+        "dedekind_check",
+        "divisor_group",
+        "genus_riemann",
+        "moduli_naive",
         # Wave-353 ODE-theory canon.
         "picard_lindelof",
         "gronwall_lemma",
