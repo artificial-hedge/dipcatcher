@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-956 tensor-theory canon.
+        "tucker_rank",
+        "cp_rank",
+        "tensor_norm",
+        "tensor_trace",
+        "mode_n_product",
+        "tensor_symmetry",
         # Wave-955 linear-systems canon.
         "gram_matrix",
         "gram_determinant",
