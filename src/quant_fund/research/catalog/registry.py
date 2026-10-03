@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-567 algebraic-combinatorics canon.
+        "littlewood_richardson",
+        "knuth_rsk",
+        "macdonald_poly",
+        "schubert_calc",
+        "honeycomb_tiling",
+        "berenstein_zelevinsky",
         # Wave-566 L-functions/random-matrix canon.
         "selberg_trace2",
         "zero_spacing",

@@ -4527,6 +4527,14 @@ from quant_fund.research.benches_w566 import (
     bench_selberg_trace2_family,
     bench_zero_spacing_family,
 )
+from quant_fund.research.benches_w567 import (
+    bench_berenstein_zelevinsky_family,
+    bench_honeycomb_tiling_family,
+    bench_knuth_rsk_family,
+    bench_littlewood_richardson_family,
+    bench_macdonald_poly_family,
+    bench_schubert_calc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4906,6 +4914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "littlewood_richardson": bench_littlewood_richardson_family,
+        "knuth_rsk": bench_knuth_rsk_family,
+        "macdonald_poly": bench_macdonald_poly_family,
+        "schubert_calc": bench_schubert_calc_family,
+        "honeycomb_tiling": bench_honeycomb_tiling_family,
+        "berenstein_zelevinsky": bench_berenstein_zelevinsky_family,
         "selberg_trace2": bench_selberg_trace2_family,
         "zero_spacing": bench_zero_spacing_family,
         "montgomery_pair": bench_montgomery_pair_family,
