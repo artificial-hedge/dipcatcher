@@ -498,6 +498,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key List
+         * @description Every minted key's public fingerprint + metadata — never the
+         *     secret or its hash.
+         */
+        get: operations["key_list"];
+        put?: never;
+        /**
+         * Key Create
+         * @description Mint a managed API key. The raw ``key`` is returned once here
+         *     and never stored — the store keeps only its sha256. Requires the
+         *     bootstrap credential (``FX1_API_KEY``) or loopback dev mode.
+         */
+        post: operations["key_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/keys/{key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key Get
+         * @description One key's record by its fingerprint id.
+         */
+        get: operations["key_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Key Revoke
+         * @description Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
+         *     stays so the audit trail of which keys existed survives; auth
+         *     with it fails closed immediately after.
+         */
+        delete: operations["key_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/runs": {
         parameters: {
             query?: never;
@@ -1655,6 +1708,82 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ApiKeyCreateRequest */
+        ApiKeyCreateRequest: {
+            /**
+             * Admin
+             * @default false
+             */
+            admin: boolean;
+            /** Name */
+            name?: string | null;
+        };
+        /** ApiKeyListResponse */
+        ApiKeyListResponse: {
+            /** Data */
+            data: components["schemas"]["ApiKeyRecordModel"][];
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /**
+         * ApiKeyMintResponse
+         * @description Mint response — the only place the raw key ever appears.
+         */
+        ApiKeyMintResponse: {
+            /** Admin */
+            admin: boolean;
+            /** Created At */
+            created_at: number;
+            /** Id */
+            id: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Object
+             * @default key
+             * @constant
+             */
+            object: "key";
+            /** Prefix */
+            prefix: string;
+        };
+        /**
+         * ApiKeyRecordModel
+         * @description The wire view of a managed key — fingerprint + metadata only;
+         *     the sha256 and raw secret never leave the store.
+         */
+        ApiKeyRecordModel: {
+            /** Admin */
+            admin: boolean;
+            /** Created At */
+            created_at: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Id */
+            id: string;
+            /** Last Used At */
+            last_used_at: number | null;
+            /** Name */
+            name: string | null;
+            /**
+             * Object
+             * @default key
+             * @constant
+             */
+            object: "key";
+            /** Prefix */
+            prefix: string;
+            /** Revoked At */
+            revoked_at: number | null;
+            /** Uses */
+            uses: number;
+        };
         /**
          * BackendAttempt
          * @description One link of a backend fallback chain: which name was tried and how
@@ -2114,6 +2243,8 @@ export interface components {
             error?: string | null;
             /** Error Class */
             error_class?: string | null;
+            /** Key Id */
+            key_id?: string | null;
             /** Latency Ms */
             latency_ms: number;
             /** Metadata */
@@ -3909,12 +4040,18 @@ export interface components {
             by_backend: {
                 [key: string]: components["schemas"]["UsageBucket"];
             };
+            /** By Key */
+            by_key: {
+                [key: string]: components["schemas"]["UsageBucket"];
+            };
             /** By Model */
             by_model: {
                 [key: string]: components["schemas"]["UsageBucket"];
             };
             /** Generated At */
             generated_at: number;
+            /** Key Id */
+            key_id: string | null;
             /** Model */
             model: string | null;
             /** Records Dropped */
@@ -5238,6 +5375,191 @@ export interface operations {
             };
         };
     };
+    key_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyListResponse"];
+                };
+            };
+        };
+    };
+    key_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyMintResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     run_command: {
         parameters: {
             query?: never;
@@ -5353,6 +5675,7 @@ export interface operations {
                 model?: string | null;
                 since?: number | null;
                 until?: number | null;
+                key_id?: string | null;
             };
             header?: never;
             path?: never;

@@ -137,7 +137,9 @@ The JSON view exposes the same data under `complete.<backend>`.
 **Per-call evidence:** every gated call (sync, stream, batch item —
 success or failure) lands in a bounded in-process log of 256 records.
 A record carries `completion_id`, backend, model, ok, `latency_ms`,
-timestamp, usage, error class, and sha256 hashes of the request
+timestamp, usage, error class, `key_id` (the caller's key fingerprint —
+`"env"` for the bootstrap credential, a managed-key id, null on
+loopback-dev), and sha256 hashes of the request
 messages and the pre-citation output — evidence handles, never
 content. The id returns on `CompleteResponse.completion_id`,
 per-item on batch results, on the stream's `final` frame, and as the
@@ -147,9 +149,12 @@ original id). Probes never log. In-process, `Fx1Harness.completions()`
 
 **Usage aggregation:** `GET /harness/usage` rolls the completion ring
 into a `UsageReport` — totals (requests/ok/errors/`usage_reported`,
-prompt/completion/total token sums, mean latency) plus `by_backend`
-and `by_model` splits, with `?backend=`/`?model=`/`?since=`/`?until=`
-filters. The ring is bounded: `records_seen` counts only live records,
+prompt/completion/total token sums, mean latency) plus `by_backend`,
+`by_model`, and `by_key` splits — `by_key` buckets calls under the
+managed-key fingerprint that made them (the env bootstrap credential
+lands under `"env"`, loopback-dev calls under `"(none)"`), with
+`?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters. The
+ring is bounded: `records_seen` counts only live records,
 `records_dropped` + `ring_cap` disclose evictions, and provider-
 specific counters (e.g. `cached_tokens`) land in `other_usage` rather
 than dropping silently. `since > until` fails closed 400. The
@@ -194,7 +199,11 @@ same digested shape the job record embeds.
 | `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
-| `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model` splits, `?backend=`/`?model=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage` |
+| `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model`/`by_key` splits, `?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage [--key-id]` |
+| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?}`: `admin` keys may manage keys; requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin]` |
+| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `enabled`, `uses`, `last_used_at`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
+| `GET /harness/keys/{id}` | one key's record → `404 key_not_found`. `Fx1Harness.key_get` / `HarnessClient.key_get` / `fx1 harness key-get` |
+| `DELETE /harness/keys/{id}` | tombstone a key (`enabled:false` + `revoked_at`) — auth with it fails closed immediately; the record survives for audit. `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_revoke` / `HarnessClient.key_revoke` / `fx1 harness key-revoke` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |
@@ -405,7 +414,9 @@ to `GET /harness/completions/{id}` and its sealed
   successful completions are pinned — a gate refusal re-executes on
   retry instead of replaying a cached error.
 - **Auth:** when `FX1_API_KEY` is set, `/v1` also accepts the OpenAI
-  `Authorization: Bearer` header in place of `X-API-Key`.
+  `Authorization: Bearer` header in place of `X-API-Key`. Managed
+  `fx1k_…` keys authenticate through both headers on `/v1` — stock
+  OpenAI SDKs work with either credential unmodified.
 
 Client-side: `HarnessClient.chat_completion` /
 `chat_completion_stream` / `list_models` / `retrieve_model` in Python;
@@ -804,6 +815,20 @@ TS.
   set; with a key, every route except `/health` requires
   `X-API-Key` (constant-time compare). An empty key equals unset — never
   a bypass.
+- **Managed API keys** (`/harness/keys`) ride beside the env key: mint
+  `fx1k_…` workload keys that authenticate on every gated route like
+  `X-API-Key` (and `Authorization: Bearer` on `/v1`). A non-empty key
+  store turns remote auth on even with no `FX1_API_KEY` — provisioning
+  on loopback is the opt-in. Only the bootstrap credential (env key)
+  or loopback-dev may mint/list/revoke — `403 admin_required`
+  otherwise — and `admin:true` mints a key that can manage keys
+  itself, so a no-env-key deployment keeps a control plane. Revocation
+  is a tombstone (`enabled:false`, fail-closed); records persist under
+  `--state-dir` (journaled to `keys.jsonl`, replayed on restart —
+  `uses`/`last_used_at` are live counters, deliberately not journaled).
+  Every completion record attributes its caller's `key_id`
+  fingerprint, so `GET /harness/usage?key_id=` reads per-key spend
+  without ever exposing secrets.
 - Request bodies over 1 MiB are refused `413`; `/health` leaks only
   presence booleans.
 - The honesty gate runs before output bytes reach the caller — a

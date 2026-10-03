@@ -484,6 +484,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "until": None,
             "backend": None,
             "model": None,
+            "key_id": None,
             "records_seen": 2,
             "records_dropped": 0,
             "ring_cap": 256,
@@ -524,6 +525,19 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     "mean_latency_ms": 1.5,
                 }
             },
+            "by_key": {
+                "(none)": {
+                    "requests": 2,
+                    "ok": 2,
+                    "errors": 0,
+                    "usage_reported": 2,
+                    "prompt_tokens": 8,
+                    "completion_tokens": 12,
+                    "total_tokens": 20,
+                    "other_usage": {},
+                    "mean_latency_ms": 1.5,
+                }
+            },
         }
 
     class _FakeSDK:
@@ -532,6 +546,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.complete_calls: list[dict[str, Any]] = []
             self.batch_calls: list[dict[str, Any]] = []
             self.usage_kw: dict[str, Any] | None = None
+            self.last_key_call: tuple[str, str | None] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -689,6 +704,40 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     "results": [{"name": "tooluse", "passed": False}],
                 }
             ]
+
+        def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("create", name)
+            return {
+                "id": "kfake",
+                "object": "key",
+                "name": name,
+                "prefix": "fx1k_f",
+                "created_at": 1.0,
+                "key": "fx1k_raw",
+            }
+
+        def keys(self, **_kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "kfake",
+                    "object": "key",
+                    "name": "svc",
+                    "prefix": "fx1k_f",
+                    "created_at": 1.0,
+                    "enabled": True,
+                    "revoked_at": None,
+                    "uses": 2,
+                    "last_used_at": 3.0,
+                }
+            ]
+
+        def key_get(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("get", key_id)
+            return {"id": key_id, "object": "key", "enabled": True}
+
+        def key_revoke(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("revoke", key_id)
+            return {"id": key_id, "object": "key", "enabled": False}
 
     fake = _FakeSDK()
     with patch("fx1.sdk.Fx1Harness", return_value=fake):
@@ -1040,9 +1089,40 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         out["usage_flags_forward"] = fake.usage_kw == {
             "backend": "hosted_k3",
             "model": None,
+            "key_id": None,
             "since": 5.0,
             "until": None,
         }
+        runner.invoke(app, ["harness", "usage", "--key-id", "kfake"])
+        out["usage_key_id_forwards"] = (
+            fake.usage_kw is not None and fake.usage_kw["key_id"] == "kfake"
+        )
+
+        # managed-key lifecycle on the in-process leg
+        kc = runner.invoke(app, ["harness", "key-create", "--name", "svc"])
+        out["key_create_json"] = (
+            kc.exit_code == 0
+            and json.loads(kc.stdout)["key"] == "fx1k_raw"
+            and fake.last_key_call == ("create", "svc")
+        )
+        kl = runner.invoke(app, ["harness", "keys"])
+        out["key_list_json"] = (
+            kl.exit_code == 0
+            and json.loads(kl.stdout)[0]["id"] == "kfake"
+            and json.loads(kl.stdout)[0]["uses"] == 2
+        )
+        kg = runner.invoke(app, ["harness", "key-get", "kfake"])
+        out["key_get_json"] = (
+            kg.exit_code == 0
+            and json.loads(kg.stdout)["enabled"] is True
+            and fake.last_key_call == ("get", "kfake")
+        )
+        kr = runner.invoke(app, ["harness", "key-revoke", "kfake"])
+        out["key_revoke_json"] = (
+            kr.exit_code == 0
+            and json.loads(kr.stdout)["enabled"] is False
+            and fake.last_key_call == ("revoke", "kfake")
+        )
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -1067,6 +1147,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_batch_id: str | None = None
             self.last_wait_kw: dict[str, Any] | None = None
             self.last_usage_kw: dict[str, Any] | None = None
+            self.last_key_call: tuple[str, str | None] | None = None
             self.ft_actions: list[tuple[str, str]] = []
 
         def usage(self, **kw: Any) -> Any:
@@ -1718,6 +1799,40 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 for i, _t in enumerate(items)
             ]
 
+        def key_create(self, name: str | None = None, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("create", name)
+            return {
+                "id": "krem",
+                "object": "key",
+                "name": name,
+                "prefix": "fx1k_r",
+                "created_at": 1.0,
+                "key": "fx1k_rem",
+            }
+
+        def keys(self, **_kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "krem",
+                    "object": "key",
+                    "name": "svc",
+                    "prefix": "fx1k_r",
+                    "created_at": 1.0,
+                    "enabled": True,
+                    "revoked_at": None,
+                    "uses": 1,
+                    "last_used_at": None,
+                }
+            ]
+
+        def key_get(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("get", key_id)
+            return {"id": key_id, "object": "key", "enabled": True}
+
+        def key_revoke(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("revoke", key_id)
+            return {"id": key_id, "object": "key", "enabled": False}
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -1771,7 +1886,39 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         ruw_j = json.loads(ruw.stdout) if ruw.exit_code == 0 else {}
         out["usage_remote_mode"] = ruw_j.get("totals", {}).get("requests") == 2 and remotes[
             -1
-        ].last_usage_kw == {"backend": None, "model": "m1", "since": 5.0, "until": None}
+        ].last_usage_kw == {
+            "backend": None,
+            "model": "m1",
+            "key_id": None,
+            "since": 5.0,
+            "until": None,
+        }
+        runner.invoke(
+            app,
+            ["harness", "usage", "--remote", "http://h.test", "--key-id", "krem"],
+        )
+        last_usage = remotes[-1].last_usage_kw
+        out["usage_remote_key_id"] = last_usage is not None and last_usage["key_id"] == "krem"
+
+        # managed-key lifecycle on the remote leg
+        kc = runner.invoke(
+            app, ["harness", "key-create", "--remote", "http://h.test", "--name", "svc"]
+        )
+        out["key_create_remote"] = (
+            kc.exit_code == 0
+            and json.loads(kc.stdout)["key"] == "fx1k_rem"
+            and remotes[-1].last_key_call == ("create", "svc")
+        )
+        kl = runner.invoke(app, ["harness", "keys", "--remote", "http://h.test"])
+        out["key_list_remote"] = kl.exit_code == 0 and json.loads(kl.stdout)[0]["id"] == "krem"
+        kg = runner.invoke(app, ["harness", "key-get", "krem", "--remote", "http://h.test"])
+        out["key_get_remote"] = kg.exit_code == 0 and remotes[-1].last_key_call == ("get", "krem")
+        kr = runner.invoke(app, ["harness", "key-revoke", "krem", "--remote", "http://h.test"])
+        out["key_revoke_remote"] = (
+            kr.exit_code == 0
+            and json.loads(kr.stdout)["enabled"] is False
+            and remotes[-1].last_key_call == ("revoke", "krem")
+        )
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
             == "cmd-a"

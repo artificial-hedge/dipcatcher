@@ -1154,15 +1154,20 @@ class HarnessClient:
         model: str | None = None,
         since: float | None = None,
         until: float | None = None,
+        key_id: str | None = None,
     ) -> UsageReport:
         """Token/request accounting over the server's completion log —
         ``GET /harness/usage``. `since`/`until` are unix-second bounds;
-        since>until is a fail-closed 400 on the wire."""
+        since>until is a fail-closed 400 on the wire. ``key_id`` filters
+        to one credential fingerprint; the report's ``by_key`` splits
+        the window per key."""
         params: dict[str, Any] = {}
         if backend is not None:
             params["backend"] = backend
         if model is not None:
             params["model"] = model
+        if key_id is not None:
+            params["key_id"] = key_id
         if since is not None:
             params["since"] = since
         if until is not None:
@@ -1170,6 +1175,31 @@ class HarnessClient:
         query = f"?{urllib.parse.urlencode(params)}" if params else ""
         out = self._json("GET", f"/harness/usage{query}", idempotent=True)
         return UsageReport.model_validate(out)
+
+    def key_create(self, name: str | None = None, admin: bool = False) -> dict[str, Any]:
+        """``POST /harness/keys`` — mint a managed API key. The raw
+        ``key`` appears once in the response; it is never stored
+        server-side. ``admin=True`` keys may manage keys on the wire.
+        Requires the bootstrap credential on the wire."""
+        body: dict[str, Any] = {"admin": admin}
+        if name is not None:
+            body["name"] = name
+        return dict(self._json("POST", "/harness/keys", body))
+
+    def keys(self) -> list[dict[str, Any]]:
+        """``GET /harness/keys`` — every minted key's fingerprint +
+        metadata (never secrets)."""
+        out = self._json("GET", "/harness/keys", idempotent=True)
+        return list(out.get("data", []))
+
+    def key_get(self, key_id: str) -> dict[str, Any]:
+        """``GET /harness/keys/{id}`` — one key's record."""
+        return dict(self._json("GET", f"/harness/keys/{key_id}", idempotent=True))
+
+    def key_revoke(self, key_id: str) -> dict[str, Any]:
+        """``DELETE /harness/keys/{id}`` — tombstone the key; auth with
+        it fails closed immediately after."""
+        return dict(self._json("DELETE", f"/harness/keys/{key_id}"))
 
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs

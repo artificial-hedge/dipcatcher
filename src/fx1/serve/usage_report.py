@@ -50,6 +50,8 @@ class _Record(Protocol):
     def at(self) -> float: ...
     @property
     def usage(self) -> dict[str, int] | None: ...
+    @property
+    def key_id(self) -> str | None: ...
 
 
 class UsageBucket(BaseModel):
@@ -79,12 +81,14 @@ class UsageReport(BaseModel):
     until: float | None
     backend: str | None
     model: str | None
+    key_id: str | None
     records_seen: int
     records_dropped: int
     ring_cap: int
     totals: UsageBucket
     by_backend: dict[str, UsageBucket]
     by_model: dict[str, UsageBucket]
+    by_key: dict[str, UsageBucket]
 
 
 def _bucket(records: list[_Record]) -> UsageBucket:
@@ -128,34 +132,43 @@ def aggregate_usage(
     dropped: int,
     backend: str | None = None,
     model: str | None = None,
+    key_id: str | None = None,
     since: float | None = None,
     until: float | None = None,
 ) -> UsageReport:
     """Fold ``records`` (already backend-filtered by the caller's log
     read, further narrowed here) into a usage report. `dropped` is the
-    ring's eviction count — reported so a clipped window is explicit."""
+    ring's eviction count — reported so a clipped window is explicit.
+    ``key_id`` filters to one credential fingerprint; ``by_key`` splits
+    the retained window per key (``(none)`` buckets unauthenticated
+    calls)."""
     seen = [
         r
         for r in records
         if (model is None or r.model == model)
+        and (key_id is None or r.key_id == key_id)
         and (since is None or r.at >= since)
         and (until is None or r.at <= until)
     ]
     by_backend: dict[str, list[_Record]] = {}
     by_model: dict[str, list[_Record]] = {}
+    by_key: dict[str, list[_Record]] = {}
     for rec in seen:
         by_backend.setdefault(rec.backend, []).append(rec)
         by_model.setdefault(rec.model if rec.model is not None else "(none)", []).append(rec)
+        by_key.setdefault(rec.key_id if rec.key_id is not None else "(none)", []).append(rec)
     return UsageReport(
         generated_at=time.time(),
         since=since,
         until=until,
         backend=backend,
         model=model,
+        key_id=key_id,
         records_seen=len(seen),
         records_dropped=dropped,
         ring_cap=cap,
         totals=_bucket(seen),
         by_backend={k: _bucket(v) for k, v in sorted(by_backend.items())},
         by_model={k: _bucket(v) for k, v in sorted(by_model.items())},
+        by_key={k: _bucket(v) for k, v in sorted(by_key.items())},
     )

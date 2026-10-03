@@ -34,6 +34,7 @@ requires ``X-API-Key``; unset, only loopback clients are served.
 from __future__ import annotations
 
 import builtins
+import contextvars
 import hashlib
 import hmac
 import inspect
@@ -141,6 +142,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
+from fx1.serve.keys import ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -203,6 +205,13 @@ from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
+# The authenticated credential fingerprint for the in-flight request.
+# Set by the auth middleware; read where completion records are stamped
+# so a completion is attributable to the key that made it. ``None`` on
+# the unauthenticated loopback-dev surface.
+_REQUEST_KEY_ID: contextvars.ContextVar[str | None] = contextvars.ContextVar(
+    "fx1_request_key_id", default=None
+)
 _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
@@ -1193,11 +1202,71 @@ class CompletionRecord(_Model):
     # pairs, when declared. Evidence fields, never returned to the model.
     user: str | None = None
     metadata: dict[str, str] | None = None
+    # Which credential made the call: ``"env"`` for the bootstrap
+    # FX1_API_KEY, the managed key's sha256 fingerprint, or ``None`` on
+    # the unauthenticated loopback-dev surface. A fingerprint is not a
+    # secret — it cannot authenticate.
+    key_id: str | None = None
 
 
 class CompletionListResponse(_Model):
     items: list[CompletionRecord]
     count: int
+
+
+class ApiKeyCreateRequest(_Model):
+    name: str | None = Field(default=None, max_length=128)
+    # admin keys may themselves manage keys — the bootstrap credential
+    # mints the first admin key so an env-key-less deployment keeps a
+    # control plane after provisioning turns auth on.
+    admin: bool = False
+
+
+class ApiKeyMintResponse(_Model):
+    """Mint response — the only place the raw key ever appears."""
+
+    id: str
+    object: Literal["key"] = "key"
+    name: str | None
+    prefix: str
+    admin: bool
+    created_at: float
+    key: str
+
+
+class ApiKeyRecordModel(_Model):
+    """The wire view of a managed key — fingerprint + metadata only;
+    the sha256 and raw secret never leave the store."""
+
+    id: str
+    object: Literal["key"] = "key"
+    name: str | None
+    prefix: str
+    admin: bool
+    created_at: float
+    enabled: bool
+    revoked_at: float | None
+    uses: int
+    last_used_at: float | None
+
+
+class ApiKeyListResponse(_Model):
+    object: Literal["list"] = "list"
+    data: list[ApiKeyRecordModel]
+
+
+def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
+    return ApiKeyRecordModel(
+        id=rec["key_id"],
+        name=rec["name"],
+        prefix=rec["prefix"],
+        admin=bool(rec.get("admin")),
+        created_at=rec["created_at"],
+        enabled=rec["enabled"],
+        revoked_at=rec["revoked_at"],
+        uses=rec["uses"],
+        last_used_at=rec["last_used_at"],
+    )
 
 
 class ReceiptIndexItem(_Model):
@@ -2863,6 +2932,15 @@ class _CompletionLog:
         self._dropped = 0
 
     def append(self, rec: CompletionRecord) -> None:
+        # Attribute to the authenticated credential: the key fingerprint
+        # rides the request contextvar — record-stamping code never sees
+        # the Request. Records that set ``key_id`` explicitly (batch
+        # workers run in a thread pool where contextvars don't propagate)
+        # keep their own.
+        if rec.key_id is None:
+            ctx_key = _REQUEST_KEY_ID.get()
+            if ctx_key is not None:
+                rec = rec.model_copy(update={"key_id": ctx_key})
         with self._lock:
             self._items[rec.completion_id] = rec
             while len(self._items) > self._cap:
@@ -5850,6 +5928,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         sampling_fields = sampling_params.body_fields()
         usage_pre = getattr(backend, "total_usage", None)
         usage_pre = dict(usage_pre) if isinstance(usage_pre, dict) else None
+        # Key attribution must be captured here — worker threads in the
+        # pool do not inherit this request's contextvars.
+        req_key_id = _REQUEST_KEY_ID.get()
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
         # are per-slot verdicts: a gate refusal on one prompt does not lose
@@ -5882,6 +5963,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 at=time.time(),
                                 # usage is only honest at batch level (shared
                                 # endpoint attribution) — per-item stays None.
+                                key_id=req_key_id,
                                 error=err,
                                 error_class=cls,
                                 prompt_sha256=prompt_sha256,
@@ -6576,6 +6658,62 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
 
+def _resolve_auth(
+    request: Request,
+    api_key: str | None,
+    key_store: ApiKeyStore,
+) -> tuple[str | None, bool] | JSONResponse:
+    """Resolve the request's credential → ``(key_id, admin)``, or the
+    refusal response.
+
+    - Public paths: ``(None, False)`` — no auth consumed.
+    - Auth enabled (env key set, or any managed key exists): the env key
+      resolves as ``("env", admin)``; a managed key resolves to
+      ``(key_id, admin_flag)`` — minted ``admin`` keys can manage keys
+      themselves; anything else 401s.
+    - Auth disabled: loopback resolves ``(None, admin=True)`` — the dev
+      surface is trusted and bootstraps key provisioning; non-loopback
+      403s.
+    """
+    if request.url.path in _PUBLIC_PATHS:
+        return (None, False)
+    if api_key or key_store.has_keys:
+        provided = request.headers.get("X-API-Key")
+        # OpenAI-shape clients authenticate with Authorization: Bearer
+        # — accept it on /v1 so stock SDKs work unmodified.
+        if not provided and is_openai_path(request.url.path):
+            auth_hdr = request.headers.get("Authorization", "")
+            if auth_hdr.startswith("Bearer "):
+                provided = auth_hdr[len("Bearer ") :]
+        if provided and api_key and hmac.compare_digest(provided, api_key):
+            return ("env", True)
+        if provided:
+            key_rec = key_store.authenticate(provided)
+            if key_rec is not None:
+                return (key_rec["key_id"], bool(key_rec.get("admin")))
+        content: dict[str, Any] = {
+            "detail": "invalid or missing X-API-Key",
+            "code": "unauthorized",
+        }
+        if is_openai_path(request.url.path):
+            content = openai_error_body("invalid or missing API key", 401, "unauthorized")
+        return JSONResponse(status_code=401, content=content)
+    host = (request.client.host if request.client else "") or ""
+    if host not in _LOOPBACK_HOSTS:
+        forbidden_body: dict[str, Any] = {
+            "detail": (
+                "FX1_API_KEY is unset; non-localhost clients are "
+                "refused. Set FX1_API_KEY and send X-API-Key, or "
+                "bind to 127.0.0.1 only."
+            ),
+            "code": "forbidden",
+        }
+        if is_openai_path(request.url.path):
+            forbidden_body = openai_error_body(str(forbidden_body["detail"]), 403, "forbidden")
+        return JSONResponse(status_code=403, content=forbidden_body)
+    return (None, True)
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -6674,6 +6812,9 @@ def create_app(
     eval_spec_store = EvalSpecStore(job_max, journal=_journal("eval_specs.jsonl"))
     file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
     upload_store = UploadStore(file_max, file_bytes_max, state_dir=state_path)
+    key_store = ApiKeyStore(
+        journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
+    )
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
     # stores; the runner defaults to the real staged Pipeline (its own
@@ -6854,42 +6995,25 @@ def create_app(
                         )
                     response = JSONResponse(status_code=413, content=big_content)
                     return _finish(request, request_id, response, started)
-        if request.url.path in _PUBLIC_PATHS:
-            response = await call_next(request)
-        elif api_key:
-            provided = request.headers.get("X-API-Key")
-            # OpenAI-shape clients authenticate with Authorization: Bearer
-            # — accept it on /v1 so stock SDKs work unmodified.
-            if not provided and is_openai_path(request.url.path):
-                auth_hdr = request.headers.get("Authorization", "")
-                if auth_hdr.startswith("Bearer "):
-                    provided = auth_hdr[len("Bearer ") :]
-            if not provided or not hmac.compare_digest(provided, api_key):
-                content: dict[str, Any] = {
-                    "detail": "invalid or missing X-API-Key",
-                    "code": "unauthorized",
-                }
-                if is_openai_path(request.url.path):
-                    content = openai_error_body("invalid or missing API key", 401, "unauthorized")
-                response = JSONResponse(status_code=401, content=content)
-            else:
-                response = await call_next(request)
+        # Auth surface: ``FX1_API_KEY`` is the root credential (admin);
+        # managed keys from ``key_store`` additionally authenticate.
+        # ``request.state.admin`` gates the key-management routes — env
+        # key, or loopback dev mode (no env key and an empty store).
+        request.state.key_id = None
+        request.state.admin = False
+        auth = _resolve_auth(request, api_key, key_store)
+        if isinstance(auth, JSONResponse):
+            response = auth
         else:
-            host = (request.client.host if request.client else "") or ""
-            if host not in _LOOPBACK_HOSTS:
-                forbidden_body: dict[str, Any] = {
-                    "detail": (
-                        "FX1_API_KEY is unset; non-localhost clients are "
-                        "refused. Set FX1_API_KEY and send X-API-Key, or "
-                        "bind to 127.0.0.1 only."
-                    ),
-                    "code": "forbidden",
-                }
-                if is_openai_path(request.url.path):
-                    forbidden_body = openai_error_body(
-                        str(forbidden_body["detail"]), 403, "forbidden"
-                    )
-                response = JSONResponse(status_code=403, content=forbidden_body)
+            key_id, admin = auth
+            request.state.key_id = key_id
+            request.state.admin = admin
+            if key_id is not None:
+                ctx_token = _REQUEST_KEY_ID.set(key_id)
+                try:
+                    response = await call_next(request)
+                finally:
+                    _REQUEST_KEY_ID.reset(ctx_token)
             else:
                 response = await call_next(request)
         if rl_headers is not None:
@@ -7090,6 +7214,7 @@ def create_app(
         model: str | None = Query(default=None, max_length=256),
         since: float | None = Query(default=None, ge=0.0),
         until: float | None = Query(default=None, ge=0.0),
+        key_id: str | None = Query(default=None, max_length=64),
     ) -> UsageReport:
         """Token/request accounting over the retained completion records —
         the billing/ops view. Totals plus per-backend/per-model splits;
@@ -7105,9 +7230,87 @@ def create_app(
             dropped=completion_log.dropped,
             backend=backend,
             model=model,
+            key_id=key_id,
             since=since,
             until=until,
         )
+
+    def _require_admin(request: Request) -> None:
+        if not getattr(request.state, "admin", False):
+            raise ApiError(
+                403,
+                "key management requires the bootstrap credential",
+                code="admin_required",
+            )
+
+    @app.post(
+        "/harness/keys",
+        response_model=ApiKeyMintResponse,
+        status_code=201,
+        tags=["ops"],
+        operation_id="key_create",
+    )
+    def key_create(body: ApiKeyCreateRequest, request: Request) -> ApiKeyMintResponse:
+        """Mint a managed API key. The raw ``key`` is returned once here
+        and never stored — the store keeps only its sha256. Requires the
+        bootstrap credential (``FX1_API_KEY``) or loopback dev mode."""
+        _require_admin(request)
+        try:
+            raw, rec = key_store.mint(body.name, admin=body.admin)
+        except KeyStoreError as exc:
+            raise ApiError(400, str(exc), code=exc.code) from exc
+        return ApiKeyMintResponse(
+            id=rec["key_id"],
+            name=rec["name"],
+            prefix=rec["prefix"],
+            admin=bool(rec.get("admin")),
+            created_at=rec["created_at"],
+            key=raw,
+        )
+
+    @app.get(
+        "/harness/keys",
+        response_model=ApiKeyListResponse,
+        tags=["ops"],
+        operation_id="key_list",
+    )
+    def key_list(request: Request) -> ApiKeyListResponse:
+        """Every minted key's public fingerprint + metadata — never the
+        secret or its hash."""
+        _require_admin(request)
+        return ApiKeyListResponse(data=[_key_wire(r) for r in key_store.list()])
+
+    @app.get(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_get",
+    )
+    def key_get(key_id: str, request: Request) -> ApiKeyRecordModel:
+        """One key's record by its fingerprint id."""
+        _require_admin(request)
+        rec = key_store.get(key_id)
+        if rec is None:
+            raise ApiError(404, f"unknown key {key_id!r}", code="key_not_found")
+        return _key_wire(rec)
+
+    @app.delete(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_revoke",
+    )
+    def key_revoke(key_id: str, request: Request) -> ApiKeyRecordModel:
+        """Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
+        stays so the audit trail of which keys existed survives; auth
+        with it fails closed immediately after."""
+        _require_admin(request)
+        try:
+            rec = key_store.revoke(key_id)
+        except KeyStoreError as exc:
+            status = 404 if exc.code == "key_not_found" else 409
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        return _key_wire(rec)
 
     @app.post(
         "/harness/drain",

@@ -1122,6 +1122,9 @@ def harness_usage(
     until: float | None = typer.Option(
         None, "--until", help="Unix-second upper bound on record timestamps."
     ),
+    key_id: str | None = typer.Option(
+        None, "--key-id", help="Only count calls made under this key fingerprint."
+    ),
 ) -> None:
     """Usage accounting: token/request aggregates over the completion log.
 
@@ -1131,8 +1134,69 @@ def harness_usage(
     server's log (``GET /harness/usage``); default reads the in-process
     SDK's own log."""
     surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
-    report = _or_exit(lambda: surface.usage(backend=backend, model=model, since=since, until=until))
+    report = _or_exit(
+        lambda: surface.usage(backend=backend, model=model, key_id=key_id, since=since, until=until)
+    )
     typer.echo(json.dumps(report.model_dump(mode="json"), indent=2, sort_keys=True))
+
+
+@harness_app.command("key-create")
+def harness_key_create(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    name: str | None = typer.Option(None, "--name", help="Label for the key (≤128 chars)."),
+    admin: bool = typer.Option(
+        False,
+        "--admin",
+        help="Mint an admin key — it may itself mint/list/revoke keys.",
+    ),
+) -> None:
+    """Mint a managed API key — prints the mint record including the raw
+    ``key``, which is shown once and never stored server-side. On
+    ``--remote`` this needs the bootstrap credential (FX1_API_KEY)."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_create(name, admin=admin))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("keys")
+def harness_keys(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List managed API keys — fingerprint ids + metadata, never secrets."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.keys())
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-get")
+def harness_key_get(
+    key_id: str,
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """One managed key's record by its fingerprint id."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_get(key_id))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-revoke")
+def harness_key_revoke(
+    key_id: str,
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Tombstone a managed key — auth with it fails closed immediately
+    after; the record stays for audit."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_revoke(key_id))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
 @harness_app.command("compat")

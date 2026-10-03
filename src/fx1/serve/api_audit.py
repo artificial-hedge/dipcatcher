@@ -2509,6 +2509,120 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     out["auth_health_still_public"] = secured.get("/health").status_code == 200
 
+    # --- managed API keys --------------------------------------------------
+    # env key = bootstrap admin; minted keys serve gated routes but cannot
+    # manage keys; revocation is a tombstone; requests attribute key_id.
+    saved_api_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "k3y-material"
+    try:
+        keys_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    finally:
+        if saved_api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_api_key
+    root_h = {"X-API-Key": "k3y-material"}
+    mint = keys_client.post("/harness/keys", json={"name": "svc"}, headers=root_h)
+    mint_body = mint.json() if mint.status_code == 201 else {}
+    mkey = str(mint_body.get("key", ""))
+    kid = str(mint_body.get("id", ""))
+    out["key_mint_201_raw_once"] = mint.status_code == 201 and mkey.startswith("fx1k_")
+    out["key_mint_needs_admin"] = keys_client.post("/harness/keys", json={}).status_code == 401
+    out["key_authenticates"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": mkey}).status_code == 200
+    )
+    denied = keys_client.get("/harness/keys", headers={"X-API-Key": mkey})
+    out["key_not_admin_403"] = (
+        denied.status_code == 403 and denied.json().get("code") == "admin_required"
+    )
+    listed = keys_client.get("/harness/keys", headers=root_h)
+    listed_rows = listed.json()["data"] if listed.status_code == 200 else []
+    out["key_list_prefix_no_secret"] = (
+        listed.status_code == 200
+        and len(listed_rows) == 1
+        and listed_rows[0]["prefix"] == mkey[:13]
+        and mkey not in listed.text
+        and "sha256" not in listed.text
+    )
+    got = keys_client.get(f"/harness/keys/{kid}", headers=root_h)
+    out["key_get_by_id"] = got.status_code == 200 and got.json()["id"] == kid
+    out["key_get_unknown_404"] = (
+        keys_client.get("/harness/keys/" + "0" * 16, headers=root_h).status_code == 404
+    )
+    # an admin managed key minted by the bootstrap credential keeps the
+    # control plane — it may mint/list/revoke keys itself; a plain
+    # managed key cannot.
+    admin_mint = keys_client.post(
+        "/harness/keys", json={"name": "ops", "admin": True}, headers=root_h
+    )
+    admin_raw = str(admin_mint.json().get("key", ""))
+    out["key_admin_mint_flagged"] = (
+        admin_mint.status_code == 201 and admin_mint.json()["admin"] is True
+    )
+    out["key_admin_manages_keys"] = (
+        keys_client.post("/harness/keys", json={}, headers={"X-API-Key": admin_raw}).status_code
+        == 201
+        and keys_client.get("/harness/keys", headers={"X-API-Key": admin_raw}).status_code == 200
+    )
+    out["key_managed_cannot_mint"] = (
+        keys_client.post("/harness/keys", json={}, headers={"X-API-Key": mkey}).status_code == 403
+    )
+    # attribution: a managed-key call lands under the key's fingerprint;
+    # an env-key call lands under "env".
+    keys_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        headers={"X-API-Key": mkey},
+    )
+    keys_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        headers=root_h,
+    )
+    usage_kid = keys_client.get(f"/harness/usage?key_id={kid}", headers=root_h).json()
+    out["key_usage_filtered"] = usage_kid.get("records_seen") == 1
+    usage_all = keys_client.get("/harness/usage", headers=root_h).json()
+    out["key_usage_by_key_buckets"] = (
+        usage_all.get("by_key", {}).get(kid, {}).get("requests") == 1
+        and usage_all.get("by_key", {}).get("env", {}).get("requests") == 1
+    )
+    revoke = keys_client.delete(f"/harness/keys/{kid}", headers=root_h)
+    out["key_revoke_tombstone"] = revoke.status_code == 200 and revoke.json()["enabled"] is False
+    out["key_revoked_auth_401"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": mkey}).status_code == 401
+    )
+    out["key_revoke_again_409"] = (
+        keys_client.delete(f"/harness/keys/{kid}", headers=root_h).status_code == 409
+    )
+    out["key_revoke_unknown_404"] = (
+        keys_client.delete("/harness/keys/" + "0" * 16, headers=root_h).status_code == 404
+    )
+    # no env key + empty store → loopback dev (admin); minting turns auth on
+    noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    minted = noenv_client.post("/harness/keys", json={})
+    m_raw = minted.json()["key"] if minted.status_code == 201 else ""
+    out["key_bootstrap_loopback_201"] = minted.status_code == 201
+    out["key_store_enables_auth"] = noenv_client.get("/harness/commands").status_code == 401
+    out["key_bootstrapped_works"] = (
+        noenv_client.get("/harness/commands", headers={"X-API-Key": m_raw}).status_code == 200
+    )
+    # the FIRST mint on a no-env deployment carries admin so the operator
+    # keeps a control plane after provisioning turns auth on
+    noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    admin_minted = noenv2.post("/harness/keys", json={"admin": True})
+    out["key_admin_loopback_manages"] = (
+        admin_minted.status_code == 201
+        and admin_minted.json()["admin"] is True
+        and noenv2.get(
+            "/harness/keys", headers={"X-API-Key": admin_minted.json()["key"]}
+        ).status_code
+        == 200
+    )
+    out["key_remote_unauthed_401"] = (
+        _TC2(noenv_client.app, client=("198.51.100.9", 7)).get("/harness/commands").status_code
+        == 401
+    )
+
     out["loopback_served"] = client.get("/harness/commands").status_code == 200
     from fastapi.testclient import TestClient as _TC
 

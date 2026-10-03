@@ -569,6 +569,27 @@ def sdk_audit() -> dict[str, bool]:
         _raises(lambda: sdk_u.usage(since=2.0, until=1.0)) == "ValueError"
         and _raises(lambda: sdk_u.usage(backend="nope")) == "ValueError"
     )
+    out["usage_key_id_filter"] = sdk_u.usage(key_id="nobody").records_seen == 0
+
+    # ---- managed keys — the in-process twin of /harness/keys --------------
+    mint = sdk.key_create("svc")
+    out["key_create_raw_once"] = (
+        mint["key"].startswith("fx1k_") and bool(mint["id"]) and mint["object"] == "key"
+    )
+    listed_keys = sdk.keys()
+    out["key_list_no_secret"] = (
+        len(listed_keys) == 1
+        and listed_keys[0]["prefix"] == mint["key"][:13]
+        and mint["key"] not in str(listed_keys)
+        and "sha256" not in str(listed_keys)
+    )
+    out["key_get_roundtrip"] = sdk.key_get(mint["id"])["name"] == "svc"
+    out["key_revoke_tombstone"] = sdk.key_revoke(mint["id"])["enabled"] is False
+    out["key_fail_closed"] = (
+        _raises(lambda: sdk.key_get("0" * 16)) == "KeyError"
+        and _raises(lambda: sdk.key_revoke("0" * 16)) == "KeyError"
+        and _raises(lambda: sdk.key_revoke(mint["id"])) == "ValueError"
+    )
 
     return out
 

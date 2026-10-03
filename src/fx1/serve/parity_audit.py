@@ -3583,6 +3583,44 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and sdk.openai_response_get(_cv_r_sdk["id"])["id"] == _cv_r_sdk["id"]
         and remote.retrieve_response(_cv_r_wl["id"])["id"] == _cv_r_wl["id"]
     )
+
+    # /harness/keys — the managed-key lifecycle is identical on both legs:
+    # mint shows the raw secret once, list/get never carry it, revoke is a
+    # tombstone, and unknown/already-revoked fail closed the same way
+    # (KeyError; the wire maps a second revoke to a 409 refusal). The wire
+    # leg mints its first admin key through loopback (empty store ⇒
+    # loopback is admin), then operates keyed — minting turns auth on.
+    _k_sdk = sdk.key_create("parity")
+    _boot = client.post("/harness/keys", json={"name": "ops", "admin": True})
+    _admin_remote = HarnessClient(
+        "http://harness.test",
+        transport=_tc_transport(client),
+        api_key=_boot.json()["key"],
+    )
+    _k_wl = _admin_remote.key_create("parity")
+    _kid_sdk, _kid_wl = _k_sdk["id"], _k_wl["id"]
+    out["key_parity"] = (
+        _k_sdk["object"] == _k_wl["object"] == "key"
+        and _k_sdk["key"].startswith("fx1k_")
+        and _k_wl["key"].startswith("fx1k_")
+        and _k_sdk["prefix"] == _k_sdk["key"][:13]
+        and _k_wl["prefix"] == _k_wl["key"][:13]
+        and _k_wl["admin"] is False
+        and _boot.json()["admin"] is True
+        and sdk.key_get(_kid_sdk)["name"] == _admin_remote.key_get(_kid_wl)["name"] == "parity"
+        and sdk.keys()[0]["id"] == _kid_sdk
+        and _admin_remote.keys()[1]["id"] == _kid_wl
+        and _k_sdk["key"] not in str(sdk.keys())
+        and _k_wl["key"] not in str(_admin_remote.keys())
+        and sdk.key_revoke(_kid_sdk)["enabled"] is False
+        and _admin_remote.key_revoke(_kid_wl)["enabled"] is False
+        and _raises(lambda: sdk.key_get("0" * 16))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_get("0" * 16))[0] == "KeyError"
+        and _raises(lambda: sdk.key_revoke(_kid_sdk))[0] == "ValueError"
+        and _raises(lambda: _admin_remote.key_revoke(_kid_wl))[0] == "HarnessTransportError"
+        # provisioning turned auth on: the keyless remote now 401s
+        and _raises(lambda: remote.key_create("x"))[0] == "HarnessAuthError"
+    )
     return out
 
 

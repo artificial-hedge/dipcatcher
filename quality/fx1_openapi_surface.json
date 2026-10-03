@@ -398,6 +398,53 @@
         ]
       }
     },
+    "/harness/keys": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
+    "/harness/keys/{key_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [
@@ -429,6 +476,11 @@
         "params": [
           {
             "name": "backend",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "key_id",
             "in": "query",
             "required": false
           },
@@ -1496,5 +1548,5 @@
       }
     }
   },
-  "schema_sha256": "b77d2741c18ff22bf38881868e100d3c728d761f6907ee5e022cee41ef210a67"
+  "schema_sha256": "76b38700d4d1fa45580b5d7fc33bc13633f695b4feec6e7b671ae170d801f185"
 }

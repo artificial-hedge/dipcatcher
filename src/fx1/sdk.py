@@ -206,6 +206,9 @@ class CompletionRecord:
     # ``metadata`` evidence fields.
     user: str | None = None
     metadata: dict[str, str] | None = None
+    # Credential fingerprint on the wire (``env`` / managed-key id);
+    # in-process calls are unauthenticated so this stays None.
+    key_id: str | None = None
 
 
 class _CompletionLog:
@@ -513,6 +516,14 @@ class Fx1Harness:
         # durable half).
         self._files: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._files_lock = threading.Lock()
+        # Managed API keys — the wire's ApiKeyStore twin. Bound to
+        # ``state_dir/keys.jsonl`` when durable, so provisioning keys
+        # from the SDK writes the same journal the server replays.
+        from fx1.serve.keys import ApiKeyStore  # noqa: PLC0415
+
+        self._key_store = ApiKeyStore(
+            journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
+        )
 
     def _record_call(
         self,
@@ -571,6 +582,7 @@ class Fx1Harness:
         *,
         backend: str | None = None,
         model: str | None = None,
+        key_id: str | None = None,
         since: float | None = None,
         until: float | None = None,
     ) -> UsageReport:
@@ -589,9 +601,67 @@ class Fx1Harness:
             dropped=self._log.dropped,
             backend=backend,
             model=model,
+            key_id=key_id,
             since=since,
             until=until,
         )
+
+    # Managed API keys — the in-process twins of ``/harness/keys``.
+    # Bound to ``state_dir``'s keys.jsonl when durable, so an SDK
+    # process can provision the keys a server deployment replays.
+
+    def key_create(self, name: str | None = None, admin: bool = False) -> dict[str, Any]:
+        """Mint a managed key — returns the wire mint shape including the
+        raw ``key`` (shown once, never stored). ``admin=True`` keys may
+        manage keys on the wire surface."""
+        raw, rec = self._key_store.mint(name, admin=admin)
+        return {
+            "id": rec["key_id"],
+            "object": "key",
+            "name": rec["name"],
+            "prefix": rec["prefix"],
+            "admin": admin,
+            "created_at": rec["created_at"],
+            "key": raw,
+        }
+
+    def keys(self) -> list[dict[str, Any]]:
+        """Every minted key's fingerprint + metadata — never secrets."""
+        return [self._key_wire(rec) for rec in self._key_store.list()]
+
+    def key_get(self, key_id: str) -> dict[str, Any]:
+        """One key's record by fingerprint id; KeyError when unknown."""
+        rec = self._key_store.get(key_id)
+        if rec is None:
+            raise KeyError(key_id)
+        return self._key_wire(rec)
+
+    def key_revoke(self, key_id: str) -> dict[str, Any]:
+        """Tombstone a key; KeyError unknown, ValueError already revoked."""
+        from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
+
+        try:
+            rec = self._key_store.revoke(key_id)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return self._key_wire(rec)
+
+    @staticmethod
+    def _key_wire(rec: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id": rec["key_id"],
+            "object": "key",
+            "name": rec["name"],
+            "prefix": rec["prefix"],
+            "admin": bool(rec.get("admin")),
+            "created_at": rec["created_at"],
+            "enabled": rec["enabled"],
+            "revoked_at": rec["revoked_at"],
+            "uses": rec["uses"],
+            "last_used_at": rec["last_used_at"],
+        }
 
     def completion_receipt(self, completion_id: str) -> dict[str, Any]:
         """Export one logged call as a sealed ``fx1_completion_record.v1``

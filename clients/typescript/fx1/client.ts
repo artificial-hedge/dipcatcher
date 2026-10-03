@@ -40,6 +40,8 @@ export type CompletionListResponse =
 export type DrainResponse = components["schemas"]["DrainResponse"];
 export type UsageBucket = components["schemas"]["UsageBucket"];
 export type UsageReport = components["schemas"]["UsageReport"];
+export type ApiKeyMintResponse = components["schemas"]["ApiKeyMintResponse"];
+export type ApiKeyRecord = components["schemas"]["ApiKeyRecordModel"];
 export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
 export type EvalRecord = components["schemas"]["EvalRecord"];
@@ -698,14 +700,66 @@ export class HarnessApiClient {
     model?: string;
     since?: number;
     until?: number;
+    keyId?: string;
   }): Promise<UsageReport> {
     const q = new URLSearchParams();
     if (filter?.backend) q.set("backend", filter.backend);
     if (filter?.model) q.set("model", filter.model);
     if (filter?.since !== undefined) q.set("since", String(filter.since));
     if (filter?.until !== undefined) q.set("until", String(filter.until));
+    if (filter?.keyId) q.set("key_id", filter.keyId);
     const suffix = q.size ? `?${q.toString()}` : "";
     return this.get(`/harness/usage${suffix}`) as Promise<UsageReport>;
+  }
+
+  /**
+   * POST /harness/keys — mint a managed API key. The raw `key` appears
+   * once in the response; the server stores only its sha256. `admin`
+   * keys may manage keys on the wire. Needs the bootstrap credential
+   * on the wire.
+   */
+  async keyCreate(name?: string, admin?: boolean): Promise<ApiKeyMintResponse> {
+    const body: { name?: string; admin?: boolean } = {};
+    if (name !== undefined) body.name = name;
+    if (admin !== undefined) body.admin = admin;
+    const res = await this.send({
+      method: "POST",
+      path: "/harness/keys",
+      body,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyMintResponse;
+  }
+
+  /** GET /harness/keys — every minted key's fingerprint + metadata. */
+  async keys(): Promise<ApiKeyRecord[]> {
+    const res = await this.send({ method: "GET", path: "/harness/keys" });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    const out = (await res.json()) as { data: ApiKeyRecord[] };
+    return out.data;
+  }
+
+  /** GET /harness/keys/{id} — one key's record by fingerprint id. */
+  async key(keyId: string): Promise<ApiKeyRecord> {
+    const res = await this.send({
+      method: "GET",
+      path: `/harness/keys/${encodeURIComponent(keyId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRecord;
+  }
+
+  /**
+   * DELETE /harness/keys/{id} — tombstone the key (auth with it fails
+   * closed immediately; the record stays for audit).
+   */
+  async keyRevoke(keyId: string): Promise<ApiKeyRecord> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/harness/keys/${encodeURIComponent(keyId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRecord;
   }
 
   // ---- OpenAI-compatible ingress (/v1) ------------------------------------
