@@ -4895,6 +4895,14 @@ from quant_fund.research.benches_w612 import (
     bench_normal_ring_family,
     bench_regular_ring_family,
 )
+from quant_fund.research.benches_w613 import (
+    bench_neron_smooth_family,
+    bench_perfect_witt_family,
+    bench_semistable_reduction_family,
+    bench_verschiebung_witt_family,
+    bench_witt_teich_family,
+    bench_witt_vector_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5274,6 +5282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "witt_vector": bench_witt_vector_family,
+        "witt_teich": bench_witt_teich_family,
+        "verschiebung_witt": bench_verschiebung_witt_family,
+        "perfect_witt": bench_perfect_witt_family,
+        "neron_smooth": bench_neron_smooth_family,
+        "semistable_reduction": bench_semistable_reduction_family,
         "regular_ring": bench_regular_ring_family,
         "gorenstein_ring": bench_gorenstein_ring_family,
         "normal_ring": bench_normal_ring_family,
