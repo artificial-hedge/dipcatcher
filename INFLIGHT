@@ -1,3 +1,4 @@
+feat(research): wave 841 — orthogonal-polynomial canon (legendre_poly, chebyshev_t, hermite_poly, laguerre_poly, jacobi_poly, gegenbauer_poly) (4995->5001 families)
 feat(research): wave 840 — rational-approximation canon (pade_approx, rational_chebyshev, stieltjes_fraction, loewner_interp, nevanlinna_pick, schur_continued) (4989->4995 families)
 feat(research): wave 839 — approximation-theory canon (jackson_direct, chebyshev_alternation, kolmogorov_nwidth, bernstein_poly, markov_brothers, fourier_decay) (4983->4989 families)
 feat(research): wave 838 — discrete-geometry canon (radon_theorem, caratheodory_thm, farkas_lemma, separation_thm, lattice_point, tverberg_thm) (4977->4983 families)
