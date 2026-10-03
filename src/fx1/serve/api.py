@@ -42,6 +42,7 @@ import math
 import os
 import queue
 import re
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -105,14 +106,32 @@ from fx1.serve.contract import API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
+    EvalDiff,
     EvalRecord,
     EvalStore,
     EvalSuiteName,
+    diff_eval_records,
     eval_record_receipt,
     metered_model,
     run_eval_record,
     suite_accepts_judge,
 )
+from fx1.serve.finetune import (
+    TRAINABLE_MODELS,
+    FTEventList,
+    FTHyperparameters,
+    FTJob,
+    FTJobEntry,
+    FTJobError,
+    FTJobList,
+    FTJobRequest,
+    FTJobRunner,
+    FTJobSpec,
+    FTJobStore,
+    default_ft_runner,
+    validate_chat_jsonl,
+)
+from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -150,11 +169,7 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
-from fx1.serve.webhooks import (
-    WEBHOOK_SIGNATURE_HEADER,
-    WEBHOOK_TIMESTAMP_HEADER,
-    sign_webhook,
-)
+from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
@@ -178,6 +193,7 @@ _FILE_BYTES_ENV = "FX1_API_FILE_BYTES"
 _BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
 _BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
 _STORE_MAX_ENV = "FX1_API_STORE_MAX"
+_STATE_DIR_ENV = "FX1_API_STATE_DIR"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -376,12 +392,7 @@ class HarnessRunRequest(_Model):
     def _callback_url_http(cls, v: str | None) -> str | None:
         """Webhook target must be a real http(s) URL — the job record is
         POSTed to it on every terminal transition."""
-        if v is None:
-            return v
-        parsed = urllib.parse.urlparse(v)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
-        return v
+        return check_callback_url(v)
 
     @model_validator(mode="after")
     def _callback_secret_needs_url(self) -> HarnessRunRequest:
@@ -842,12 +853,7 @@ class EvalSubmitRequest(_Model):
     @field_validator("callback_url")
     @classmethod
     def _eval_callback_url_http(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        parsed = urllib.parse.urlparse(v)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
-        return v
+        return check_callback_url(v)
 
     @model_validator(mode="after")
     def _eval_valid(self) -> EvalSubmitRequest:
@@ -1388,51 +1394,29 @@ def _idem_lookup[IdemT: BaseModel](
     return key, cached.model_copy(update={"replayed": True})
 
 
-_WEBHOOK_MAX_ATTEMPTS = 3
-_WEBHOOK_BACKOFF_S = 0.5
-
-
-def _deliver_callback(rec: JobStatusResponse | EvalRecord) -> None:
-    """Terminal-state webhook: POST the full record to the caller's
-    ``callback_url`` — the shared contract for jobs and evals.
+def _deliver_callback(
+    rec: JobStatusResponse | EvalRecord | FTJob | _BatchRecord,
+    *,
+    body: bytes | None = None,
+) -> None:
+    """Terminal-state webhook: POST the record to the caller's
+    ``callback_url`` — the shared contract for jobs, evals, fine-tuning
+    jobs, and batches. ``body`` overrides the serialized payload (batches
+    deliver the projected OpenAI envelope, not the internal record).
     Best-effort — a dead or slow endpoint records
     ``callback_status='failed'`` on the record, never raises into the
     worker and never changes the record's own status. Transient faults
-    (network errors, 5xx) retry ``_WEBHOOK_MAX_ATTEMPTS`` times with
+    (network errors, 5xx) retry ``WEBHOOK_MAX_ATTEMPTS`` times with
     capped backoff; a 4xx is a definitive rejection and is never
     retried."""
     url = rec.callback_url
     if not url:
         return
-    for attempt in range(_WEBHOOK_MAX_ATTEMPTS):
-        if attempt:
-            time.sleep(_WEBHOOK_BACKOFF_S * (1 << (attempt - 1)))
-        rec.callback_attempts = attempt + 1
-        try:
-            payload = rec.model_dump_json().encode()
-            headers = {"Content-Type": "application/json"}
-            if rec._callback_secret:
-                ts = str(int(time.time()))
-                headers[WEBHOOK_TIMESTAMP_HEADER] = ts
-                headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(rec._callback_secret, ts, payload)
-            req = urllib.request.Request(
-                url,
-                data=payload,
-                headers=headers,
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
-                if resp.status < 400:
-                    rec.callback_status = "delivered"
-                    rec.callback_error = None
-                    return
-                rec.callback_status = "failed"
-                rec.callback_error = f"callback endpoint returned {resp.status}"
-                if 400 <= resp.status < 500:
-                    return  # definitive rejection — never retried
-        except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
-            rec.callback_status = "failed"
-            rec.callback_error = f"{type(exc).__name__}: {exc}"
+    payload = body if body is not None else rec.model_dump_json().encode()
+    ok, err, attempts = deliver_signed(url, rec._callback_secret, payload)
+    rec.callback_status = "delivered" if ok else "failed"
+    rec.callback_error = None if ok else err
+    rec.callback_attempts = attempts
 
 
 def _submit_job(
@@ -1495,6 +1479,7 @@ def _submit_job(
             inflight.release()
             return
         job.status = "running"
+        job_store.mark(job)
         try:
             result = lab.run(
                 body.command,
@@ -1521,6 +1506,7 @@ def _submit_job(
         finally:
             _deliver_callback(job)
         job.finished_at = time.time()
+        job_store.mark(job)
         metrics.release()
         inflight.release()
 
@@ -1539,6 +1525,7 @@ def _make_lifespan(
     job_store: _JobStore,
     eval_store: EvalStore,
     jobs_executor: ThreadPoolExecutor,
+    ft_store: FTJobStore | None = None,
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     """Graceful-exit contract: on shutdown the gate drains (new work gets
     503), every still-queued job flips to 'cancelled' and fires its
@@ -1554,6 +1541,9 @@ def _make_lifespan(
             _deliver_callback(pending)
         for pending_eval in eval_store.cancel_pending():
             _deliver_callback(pending_eval)
+        if ft_store is not None:
+            for pending_ft in ft_store.cancel_pending():
+                _deliver_callback(pending_ft)
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
@@ -1886,12 +1876,52 @@ class _IdemStore[IdemT: BaseModel]:
     retry a submission after a transport blip without double-executing
     the work. Read-only replays bypass the drain latch and the
     concurrency cap: the work already happened.
+
+    With a ``JobJournal`` bound, each ``put`` is journaled (key,
+    fingerprint, and the stored response itself — the replay *is* the
+    response, so the payload must ride along) and boot restores the map:
+    a retried submission post-restart replays the recorded answer
+    instead of re-running it. ``model`` is the response class to decode
+    with; required when a journal is bound.
     """
 
-    def __init__(self, max_entries: int) -> None:
+    def __init__(
+        self,
+        max_entries: int,
+        journal: JobJournal | None = None,
+        model: type[IdemT] | None = None,
+    ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            if model is None:
+                raise ValueError("_IdemStore with a journal requires the response model class")
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._map.pop(str(evict), None)
+                rec = payload.get("idem")
+                if rec is None:
+                    continue
+                self._map[str(rec["key"])] = (
+                    str(rec["fp"]),
+                    model.model_validate(rec["resp"]),
+                )
+                self._map.move_to_end(str(rec["key"]))
+            self._compact_locked()
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact(
+                [
+                    {"idem": {"key": k, "fp": fp, "resp": resp.model_dump(mode="json")}}
+                    for k, (fp, resp) in self._map.items()
+                ]
+            )
 
     def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
@@ -1904,8 +1934,17 @@ class _IdemStore[IdemT: BaseModel]:
         with self._lock:
             self._map[key] = (fingerprint, resp)
             self._map.move_to_end(key)
+            evicted: list[str] = []
             while len(self._map) > self._max:
-                self._map.popitem(last=False)
+                old_key, _ = self._map.popitem(last=False)
+                evicted.append(old_key)
+            if self._journal is not None:
+                payload: dict[str, Any] = {
+                    "idem": {"key": key, "fp": fingerprint, "resp": resp.model_dump(mode="json")}
+                }
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 class _OpenAIIdemRecord(_Model):
@@ -1966,14 +2005,75 @@ class _JobStore:
     contract as the sync route) and release it when the job finishes, so
     the queue can never grow past the declared concurrency bound. The
     store is an LRU; evicting a job also drops its idempotency mapping.
+
+    With a ``JobJournal`` bound (``--state-dir`` on serve), every
+    transition is journaled before the store mutates, and boot replays
+    the chain: terminal records come back as-was; jobs still queued or
+    running at the crash are restored as ``failed`` with an honest
+    restart error (never re-run — their payload isn't journaled), and
+    their idempotency keys still resolve so a retried submission returns
+    the lost record instead of duplicating work.
     """
 
-    def __init__(self, max_entries: int) -> None:
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._job_key: dict[str, str] = {}
+        self._job_fp: dict[str, str] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = time.time()
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._drop(str(evict))
+                if "job" not in payload:
+                    continue
+                job = JobStatusResponse.model_validate(payload["job"])
+                self._jobs[job.job_id] = job
+                self._jobs.move_to_end(job.job_id)
+                key, fp = payload.get("key"), payload.get("fp")
+                if key is not None and fp is not None:
+                    self._keys[key] = (fp, job.job_id)
+                    self._job_key[job.job_id] = key
+                    self._job_fp[job.job_id] = fp
+            for job in self._jobs.values():
+                if job.status in ("queued", "running"):
+                    job.status = "failed"
+                    job.error = "process restarted before the job reached a terminal state"
+                    job.finished_at = now
+            self._compact_locked()
+
+    def _drop(self, job_id: str) -> None:
+        self._jobs.pop(job_id, None)
+        key = self._job_key.pop(job_id, None)
+        self._job_fp.pop(job_id, None)
+        if key is not None:
+            self._keys.pop(key, None)
+
+    def _record(self, job: JobStatusResponse) -> dict[str, Any]:
+        return {
+            "job": job.model_dump(mode="json"),
+            "key": self._job_key.get(job.job_id),
+            "fp": self._job_fp.get(job.job_id),
+        }
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        post-replay so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            self._journal.compact([self._record(j) for j in self._jobs.values()])
+
+    def mark(self, job: JobStatusResponse) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``job`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(job))
 
     def get(self, job_id: str) -> JobStatusResponse | None:
         with self._lock:
@@ -1999,6 +2099,8 @@ class _JobStore:
             if job.status == "queued":
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
                 return job, "cancelled"
             return job, job.status
 
@@ -2012,6 +2114,8 @@ class _JobStore:
             for job in out:
                 job.status = "cancelled"
                 job.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(job))
             return out
 
     def get_key(self, key: str) -> tuple[str, str] | None:
@@ -2034,16 +2138,26 @@ class _JobStore:
                 self._keys[key] = (fingerprint, job.job_id)
                 self._keys.move_to_end(key)
                 self._job_key[job.job_id] = key
+                self._job_fp[job.job_id] = fingerprint
+            evicted: list[str] = []
             while len(self._jobs) > self._max:
                 old_id, _ = self._jobs.popitem(last=False)
                 old_key = self._job_key.pop(old_id, None)
+                self._job_fp.pop(old_id, None)
                 if old_key is not None:
                     self._keys.pop(old_key, None)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(job)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 class _FileRecord(_Model):
-    """A stored upload — content stays in process memory (LRU-bounded,
-    like every store on this surface; nothing durable pretends otherwise)."""
+    """A stored upload — LRU-bounded in memory; with ``--state-dir`` the
+    content rides along as a blob under ``files/`` (journaled metadata +
+    blob bytes, so a restart returns the same bytes under the same id)."""
 
     file_id: str
     filename: str
@@ -2058,13 +2172,78 @@ class _FileStore:
 
     Files are the batch input channel — one upload, then batches reference
     it by id. Bounded by entry count AND per-file bytes so an upload flood
-    can't pin the process; eviction is silent LRU like the job store."""
+    can't pin the process; eviction is silent LRU like the job store.
 
-    def __init__(self, max_entries: int, max_bytes: int) -> None:
+    With ``--state-dir`` the store is durable: content lands in
+    ``files/<file_id>.bin`` (atomic tmp+rename) *before* the journaled
+    metadata line, so replay only ever restores a record whose bytes are
+    already on disk; eviction and delete journal tombstones and unlink the
+    blob. Orphan blobs (journaled metadata lost to a torn tail, or a crash
+    between blob write and journal) are GC'd on boot — a file id can never
+    resurrect pointing at content that isn't there."""
+
+    def __init__(
+        self,
+        max_entries: int,
+        max_bytes: int,
+        state_dir: Path | None = None,
+    ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes
         self._files: OrderedDict[str, _FileRecord] = OrderedDict()
+        self._dir = Path(state_dir) / "files" if state_dir is not None else None
+        self._journal = (
+            JobJournal(Path(state_dir) / "files.jsonl") if state_dir is not None else None
+        )
+        self.recover_warnings: list[str] = []
+        if self._journal is not None:
+            res = self._journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    fid = str(evict)
+                    self._files.pop(fid, None)
+                    self._blob(fid).unlink(missing_ok=True)
+                if "file_deleted" in payload:
+                    fid = str(payload["file_deleted"])
+                    self._files.pop(fid, None)
+                    self._blob(fid).unlink(missing_ok=True)
+                    continue
+                if "file" not in payload:
+                    continue
+                meta = payload["file"]
+                fid = str(meta["file_id"])
+                blob = self._blob(fid)
+                if not blob.is_file():
+                    self.recover_warnings.append(
+                        f"file {fid}: journaled without its content blob — dropped"
+                    )
+                    continue
+                rec = _FileRecord.model_validate({**meta, "content": blob.read_bytes()})
+                self._files[fid] = rec
+                self._files.move_to_end(fid)
+            # GC blobs with no live record (torn tail / mid-eviction crash)
+            blobs = (
+                self._dir.glob("file-*.bin") if self._dir is not None and self._dir.is_dir() else ()
+            )
+            for blob in blobs:
+                if blob.stem not in self._files:
+                    blob.unlink(missing_ok=True)
+            self._compact_locked()
+
+    def _blob(self, file_id: str) -> Path:
+        if self._dir is None:  # only reachable in the journal-less mode
+            raise RuntimeError("file store has no state_dir — nothing durable to address")
+        return self._dir / f"{file_id}.bin"
+
+    @staticmethod
+    def _meta(rec: _FileRecord) -> dict[str, Any]:
+        return rec.model_dump(mode="json", exclude={"content"})
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact([{"file": self._meta(r)} for r in self._files.values()])
 
     def put(self, *, filename: str, purpose: str, content: bytes) -> _FileRecord:
         rec = _FileRecord(
@@ -2075,11 +2254,32 @@ class _FileStore:
             created_at=int(time.time()),
             content=content,
         )
+        if self._dir is not None:
+            # Blob first, fsync'd: the journaled metadata line may only ever
+            # name content that is already durable.
+            self._dir.mkdir(parents=True, exist_ok=True)
+            blob = self._blob(rec.file_id)
+            tmp = self._dir / f".{rec.file_id}.tmp"
+            with tmp.open("wb") as fh:
+                fh.write(content)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(tmp, blob)
+        evicted: list[str] = []
         with self._lock:
             self._files[rec.file_id] = rec
             self._files.move_to_end(rec.file_id)
             while len(self._files) > self._max:
-                self._files.popitem(last=False)
+                old_id, _ = self._files.popitem(last=False)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload: dict[str, Any] = {"file": self._meta(rec)}
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
+        if self._dir is not None:
+            for fid in evicted:
+                self._blob(fid).unlink(missing_ok=True)
         return rec
 
     def get(self, file_id: str) -> _FileRecord | None:
@@ -2098,7 +2298,12 @@ class _FileStore:
 
     def delete(self, file_id: str) -> _FileRecord | None:
         with self._lock:
-            return self._files.pop(file_id, None)
+            rec = self._files.pop(file_id, None)
+            if rec is not None and self._journal is not None:
+                self._journal.append({"file_deleted": file_id})
+        if rec is not None and self._dir is not None:
+            self._blob(file_id).unlink(missing_ok=True)
+        return rec
 
     @property
     def max_bytes(self) -> int:
@@ -2135,25 +2340,92 @@ class _BatchRecord(_Model):
     cancelling_at: int | None = None
     cancelled_at: int | None = None
     request_counts: _BatchCounts = Field(default_factory=_BatchCounts)
+    # fx1 extension — terminal webhook bookkeeping (the same fields the
+    # /harness/* jobs surface); projected onto the batch envelope.
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_attempts: int = 0
+    callback_error: str | None = None
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 class _BatchStore:
-    """Bounded LRU store of batches (newest-first listing)."""
+    """Bounded LRU store of batches (newest-first listing).
 
-    def __init__(self, max_entries: int) -> None:
+    With a ``JobJournal`` bound (``--state-dir``) every status transition
+    is journaled (``put``/``mark``/evict) and boot replays the chain:
+    terminal batches return as-was; a batch still mid-flight at the crash
+    recovers as ``failed`` with a restart-explaining error — its input
+    lines aren't journaled, so nothing is silently re-run.
+    ``_callback_secret`` never touches disk, so a recovered batch keeps
+    ``callback_url`` for audit but cannot deliver post-restart."""
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._batches: OrderedDict[str, _BatchRecord] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = int(time.time())
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._batches.pop(str(evict), None)
+                if "batch" not in payload:
+                    continue
+                batch = _BatchRecord.model_validate(payload["batch"])
+                self._batches[batch.batch_id] = batch
+                self._batches.move_to_end(batch.batch_id)
+            for batch in self._batches.values():
+                if batch.status not in _BATCH_TERMINAL:
+                    batch.status = "failed"
+                    batch.failed_at = now
+                    batch.errors = {
+                        "object": "list",
+                        "data": [
+                            {
+                                "code": "internal_error",
+                                "message": "process restarted before the batch "
+                                "reached a terminal state",
+                            }
+                        ],
+                    }
+            self._compact_locked()
+
+    def _record(self, batch: _BatchRecord) -> dict[str, Any]:
+        return {"batch": batch.model_dump(mode="json")}
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact([self._record(b) for b in self._batches.values()])
+
+    def mark(self, batch: _BatchRecord) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``batch`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(batch))
 
     def put(self, batch: _BatchRecord) -> None:
         with self._lock:
             self._batches[batch.batch_id] = batch
             self._batches.move_to_end(batch.batch_id)
+            evicted: list[str] = []
             while len(self._batches) > self._max:
-                self._batches.popitem(last=False)
+                old_id, _ = self._batches.popitem(last=False)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(batch)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
     def get(self, batch_id: str) -> _BatchRecord | None:
         with self._lock:
@@ -2456,6 +2728,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
+    ft_store: FTJobStore,
+    ft_runner: FTJobRunner,
+    ft_dir: Path,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -2588,6 +2863,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 inflight.release()
                 return
             record.status = "running"
+            eval_store.mark(record)
             try:
                 name, backend, attempts = _resolve_chain(body)
                 record.backend = name
@@ -2627,6 +2903,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 record.finished_at = time.time()
             finally:
                 _deliver_callback(record)
+                eval_store.mark(record)
             metrics.release()
             inflight.release()
 
@@ -2707,6 +2984,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 code="eval_not_terminal",
             )
         return eval_record_receipt(rec.model_dump(mode="json"))
+
+    @app.get(
+        "/harness/evals/{eval_id}/diff/{candidate_id}",
+        response_model=EvalDiff,
+        tags=["evals"],
+        operation_id="diff_evals",
+    )
+    def diff_evals(eval_id: str, candidate_id: str) -> EvalDiff:
+        """Promotion-gate primitive: diff two terminal eval records —
+        task-level pass/fail transitions, the honesty-gate move, and
+        ``by_kind`` counter deltas. ``comparable`` requires the same
+        suite over the same eval bank (``eval_bank_sha256``); a
+        cross-bank diff is served but reads ``verdict='unknown'``."""
+        base = eval_store.get(eval_id)
+        if base is None:
+            raise ApiError(404, f"unknown eval_id {eval_id!r}")
+        cand = eval_store.get(candidate_id)
+        if cand is None:
+            raise ApiError(404, f"unknown eval_id {candidate_id!r}")
+        for rec in (base, cand):
+            if rec.status not in _TERMINAL_JOB_STATUS or rec.report is None:
+                raise ApiError(
+                    409,
+                    f"eval {rec.eval_id!r} is {rec.status} — diffs need terminal records with reports",
+                    code="eval_not_terminal",
+                )
+        return diff_eval_records(base, cand)
 
     @app.delete(
         "/harness/evals/{eval_id}",
@@ -3226,7 +3530,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         one gated path, one envelope. Raises ``OpenAICompatError`` on
         translation or post-validation failures (callers map it to the
         wire shape)."""
-        creq = CompleteRequest(**openai_to_kwargs(body, headers))
+        creq = CompleteRequest(
+            **openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
         # sums what was actually spent (n calls × provider-reported counts).
@@ -3278,7 +3584,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         the route and the ``/v1/batches`` worker. Returns the envelope
         plus the completion-log id and raw usage (the caller decides what
         rides the idempotency record)."""
-        creq = CompleteRequest(**response_to_kwargs(body, headers))
+        creq = CompleteRequest(
+            **response_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
         # post-validate against text.format on an empty content
@@ -3314,7 +3622,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         digest binds the sent input and the verbatim ``data[]``).
 
         Returns ``(envelope, completion_id)``."""
-        ereq = EmbedRequest(**embeddings_to_kwargs(body, headers))
+        ereq = EmbedRequest(
+            **embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(
@@ -3466,7 +3776,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Model inventory — the backend names a `model` field may carry,
         plus the `fx1` alias for the default link (hosted_k3)."""
         return OpenAIModelList(
-            data=[OpenAIModel(id=m, created=_openai_created) for m in OPENAI_MODEL_IDS]
+            data=[
+                OpenAIModel(id=m, created=_openai_created)
+                for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in ft_store.models()))
+            ]
         )
 
     @app.get(
@@ -3478,9 +3791,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_retrieve_model(model: str) -> OpenAIModel:
         """OpenAI's models.retrieve — one card for a listed id; unknown
         ids fail closed 404 in the OpenAI error shape, never a
-        fabricated card."""
+        fabricated card. Registered ``ft:`` fine-tunes resolve too."""
         try:
-            return openai_model(model, created=_openai_created)
+            return openai_model(
+                model,
+                created=_openai_created,
+                extra_ids=(r["id"] for r in ft_store.models()),
+            )
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
@@ -3932,6 +4249,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         try:
             batch.status = "in_progress"
             batch.in_progress_at = int(time.time())
+            batch_store.mark(batch)
             out_lines: builtins.list[str] = []
             counts = batch.request_counts
             cancelled = False
@@ -3947,6 +4265,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
             batch.status = "finalizing"
             batch.finalizing_at = int(time.time())
+            batch_store.mark(batch)
             if out_lines:
                 rec = file_store.put(
                     filename=f"{batch.batch_id}_output.jsonl",
@@ -3979,12 +4298,31 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         finally:
             metrics.release()
             inflight.release()
+            _batch_webhook(batch)
+            batch_store.mark(batch)
+
+    def _batch_webhook(batch: _BatchRecord) -> None:
+        """Fire-once terminal webhook: the projected OpenAI envelope is the
+        payload (the same shape GET returns — never the internal record).
+        The first terminal transition fires; expiry-on-read is one."""
+        if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
+            return
+        with batch._callback_lock:
+            if batch._callback_fired:
+                return
+            batch._callback_fired = True
+        _deliver_callback(
+            batch,
+            body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),
+        )
 
     def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
         """Expiry check + envelope projection."""
         if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
             batch.status = "expired"
             batch.expired_at = int(time.time())
+            batch_store.mark(batch)
+            _batch_webhook(batch)  # expiry is a terminal transition too
         return batch_object(batch.model_dump())
 
     @app.post(
@@ -3996,15 +4334,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         file: UploadFile | None = File(default=None),
         purpose: str = Form(default=""),
     ) -> JSONResponse:
-        """Upload a batch-input JSONL (multipart/form-data). Purpose is
-        fail-closed — only ``batch`` is served; the file is validated into
-        the store as-is (shape checks happen at batch submit)."""
+        """Upload a batch-input or fine-tuning JSONL (multipart/form-data).
+        Purpose is fail-closed — ``batch`` and ``fine-tune`` are the only
+        purposes served; the file is validated into the store as-is
+        (shape checks happen at batch submit / fine-tune submit)."""
         if file is None:
             raise ApiError(400, "multipart field 'file' is required", code="invalid_request")
-        if purpose != OPENAI_FILE_PURPOSE_ACCEPT:
+        if purpose not in OPENAI_FILE_PURPOSE_ACCEPT:
             raise ApiError(
                 400,
-                f"unsupported purpose {purpose!r} — only {OPENAI_FILE_PURPOSE_ACCEPT!r} is served",
+                f"unsupported purpose {purpose!r} — only "
+                f"{sorted(OPENAI_FILE_PURPOSE_ACCEPT)} are served",
                 code="invalid_request",
             )
         data = await file.read()
@@ -4020,10 +4360,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if not filename.endswith(".jsonl"):
             raise ApiError(
                 400,
-                f"batch input must be a .jsonl file, got {filename!r}",
+                f"input must be a .jsonl file, got {filename!r}",
                 code="invalid_request",
             )
-        rec = file_store.put(filename=filename, purpose="batch", content=data)
+        rec = file_store.put(filename=filename, purpose=purpose, content=data)
         return JSONResponse(file_object(rec.model_dump()))
 
     @app.get(
@@ -4090,7 +4430,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ) -> JSONResponse:
         """Submit a batch over an uploaded input file. One worker slot
         runs the whole batch through the gated route cores; ``expires_at``
-        is +24h (the completion_window the surface declares)."""
+        is +24h (the completion_window the surface declares).
+        ``callback_url``/``callback_secret`` are the fx1 webhook
+        extension: the terminal batch envelope
+        (completed/failed/expired/cancelled — including expiry observed
+        on read) is POSTed to the URL once, HMAC-signed when the secret
+        is set; ``callback_status``/``callback_attempts``/
+        ``callback_error`` ride the projected record."""
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if replay is not None:
@@ -4148,7 +4494,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             created_at=now,
             expires_at=now + 86400,
             request_counts=_BatchCounts(total=len(parsed)),
+            callback_url=body.callback_url,
         )
+        batch._callback_secret = body.callback_secret
         batch._lines = parsed
         # the caller's X-Fx1-* routing headers apply to every line — the
         # batch inherits the submitter's backend choice, never ambient env.
@@ -4227,6 +4575,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._cancel.set()
         batch.status = "cancelling"
         batch.cancelling_at = int(time.time())
+        batch_store.mark(batch)
         return JSONResponse(_batch_project(batch))
 
     @app.post(
@@ -4569,6 +4918,323 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             results=results,
         )
 
+    # --- /v1/fine_tuning/jobs -------------------------------------------
+    # OpenAI's fine-tuning surface over the staged fx-1 Pipeline: quality
+    # gate -> frozen split -> base eval -> receipted train -> candidate
+    # eval -> ship-gate comparison. The training file is validated
+    # synchronously at submit (chat-format JSONL, every line), so a bad
+    # upload never reaches the queue. The runner is injectable; the
+    # shipped default wires the real stages and fails honestly at the
+    # trainer when no GPU backend is configured.
+
+    def _ft_worker(entry: FTJobEntry, spec: FTJobSpec) -> None:
+        """One inflight slot drives the staged pipeline; the runner checks
+        the entry's cancel event between stages — a job cancelled
+        mid-pipeline ends ``cancelled``, not ``failed``."""
+        job: FTJob = entry.job
+        try:
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                job.finished_at = int(time.time())
+                ft_store.mark(entry)
+                return
+            job.status = "running"
+            ft_store.add_event(job.id, "info", "job started", None)
+            ft_store.mark(entry)
+            outcome = ft_runner(
+                spec,
+                emit=lambda level, msg, data=None: ft_store.add_event(
+                    job.id,
+                    cast(Literal["info", "warn", "error"], level),
+                    msg,
+                    data,
+                ),
+                should_cancel=entry.cancel.is_set,
+            )
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                ft_store.add_event(job.id, "info", "job cancelled", None)
+            else:
+                for name, path in outcome.artifacts.items():
+                    try:
+                        content = Path(path).read_bytes()
+                    except OSError:
+                        continue
+                    rec = file_store.put(
+                        filename=f"{job.id}-{Path(path).name}",
+                        purpose="fine-tune-result",
+                        content=content,
+                    )
+                    job.result_files.append(rec.file_id)
+                    ft_store.add_event(
+                        job.id,
+                        "info",
+                        f"result artifact registered: {name}",
+                        {"file_id": rec.file_id, "path": str(path)},
+                    )
+                job.fine_tuned_model = outcome.fine_tuned_model
+                job.trained_tokens = outcome.trained_tokens
+                job.status = "succeeded"
+                if outcome.fine_tuned_model is not None and outcome.checkpoint:
+                    ft_store.register_model(
+                        outcome.fine_tuned_model,
+                        job_id=job.id,
+                        checkpoint=outcome.checkpoint,
+                        created=job.finished_at or int(time.time()),
+                    )
+                    ft_store.add_event(
+                        job.id,
+                        "info",
+                        f"model registered: {outcome.fine_tuned_model}",
+                        {"checkpoint": outcome.checkpoint},
+                    )
+                ft_store.add_event(
+                    job.id,
+                    "info",
+                    "job succeeded",
+                    {"checkpoint": outcome.checkpoint},
+                )
+        except Exception as exc:  # noqa: BLE001 — a runner fault is job data
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+                ft_store.add_event(job.id, "info", "job cancelled", None)
+            else:
+                job.status = "failed"
+                job.error = FTJobError(
+                    code="job_failed",
+                    message=f"{type(exc).__name__}: {exc}",
+                    param=None,
+                )
+                ft_store.add_event(
+                    job.id, "error", f"job failed: {type(exc).__name__}: {exc}", None
+                )
+        finally:
+            job.finished_at = job.finished_at or int(time.time())
+            _deliver_callback(job)
+            ft_store.mark(entry)
+            metrics.release()
+            inflight.release()
+
+    @app.post(
+        "/v1/fine_tuning/jobs",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="create_finetune_job",
+    )
+    def create_finetune_job(
+        body: FTJobRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> FTJob:
+        """Queue a gated fine-tuning run against an uploaded chat-format
+        JSONL training file. File validation is synchronous — malformed
+        corpora 400 at submit, never limbo in ``validating_files``.
+        ``callback_url``/``callback_secret`` are the fx1 webhook
+        extension: the terminal job record (succeeded/failed/cancelled)
+        is POSTed to the URL, HMAC-signed when the secret is set — the
+        same delivery contract as ``/harness/jobs`` webhooks."""
+        body_fp = _body_fp(body)
+        if idempotency_key is not None:
+            entry = ft_store.lookup_idem(idempotency_key)
+            if entry is not None:
+                if entry.body_fp != body_fp:
+                    raise ApiError(
+                        409,
+                        "Idempotency-Key reuse with a different request body",
+                        code="idempotency_conflict",
+                    )
+                return entry.job
+        if body.model not in TRAINABLE_MODELS:
+            raise ApiError(
+                400,
+                f"model {body.model!r} is not trainable through the harness "
+                f"(trainable: {list(TRAINABLE_MODELS)})",
+                code="model_not_trainable",
+            )
+        frec = file_store.get(body.training_file)
+        if frec is None:
+            raise ApiError(
+                404,
+                f"training file {body.training_file!r} not found",
+                code="file_not_found",
+            )
+        if frec.purpose != "fine-tune":
+            raise ApiError(
+                400,
+                f"file {body.training_file!r} was uploaded with purpose "
+                f"{frec.purpose!r} — training corpora upload as 'fine-tune'",
+                code="invalid_training_file",
+            )
+        try:
+            n_examples = validate_chat_jsonl(frec.content, file_id=body.training_file)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_training_file") from exc
+        vrec = None
+        if body.validation_file is not None:
+            vrec = file_store.get(body.validation_file)
+            if vrec is None:
+                raise ApiError(
+                    404,
+                    f"validation file {body.validation_file!r} not found",
+                    code="file_not_found",
+                )
+            if vrec.purpose != "fine-tune":
+                raise ApiError(
+                    400,
+                    f"file {body.validation_file!r} was uploaded with purpose "
+                    f"{vrec.purpose!r} — training corpora upload as 'fine-tune'",
+                    code="invalid_training_file",
+                )
+            try:
+                validate_chat_jsonl(vrec.content, file_id=body.validation_file)
+            except ValueError as exc:
+                raise ApiError(400, str(exc), code="invalid_training_file") from exc
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                f"harness at max_inflight={metrics.max_inflight} — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        job = FTJob(
+            id=f"ftjob-{uuid.uuid4().hex}",
+            model=body.model,
+            created_at=int(time.time()),
+            status="queued",
+            training_file=body.training_file,
+            validation_file=body.validation_file,
+            hyperparameters=body.hyperparameters or FTHyperparameters(),
+            seed=body.seed,
+            metadata=body.metadata,
+            user_provided_suffix=body.suffix,
+            callback_url=body.callback_url,
+        )
+        job._callback_secret = body.callback_secret
+        ft_name = f"ft:{body.model}:{body.suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
+        work_dir = ft_dir / job.id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        corpus_path = work_dir / "corpus.jsonl"
+        corpus_path.write_bytes(frec.content)
+        val_path = None
+        if vrec is not None:
+            val_path = work_dir / "validation.jsonl"
+            val_path.write_bytes(vrec.content)
+        spec = FTJobSpec(
+            job_id=job.id,
+            model=body.model,
+            corpus_path=corpus_path,
+            val_path=val_path,
+            hyperparameters=(
+                body.hyperparameters.model_dump(mode="json")
+                if body.hyperparameters is not None
+                else {}
+            ),
+            seed=body.seed if body.seed is not None else 17,
+            work_dir=work_dir,
+            ft_model_name=ft_name,
+        )
+        entry = ft_store.put(job, idempotency_key, body_fp)
+        hp = body.hyperparameters.model_dump() if body.hyperparameters else {}
+        if hp.get("batch_size"):
+            ft_store.add_event(
+                job.id,
+                "info",
+                "batch_size is advisory — the staged pipeline's trainer "
+                "decides batching; the value is recorded on the job",
+                {"batch_size": hp["batch_size"]},
+            )
+        ft_store.add_event(
+            job.id,
+            "info",
+            f"training file validated: {n_examples} examples",
+            {"training_file": body.training_file, "examples": n_examples},
+        )
+        try:
+            jobs_executor.submit(_ft_worker, entry, spec)
+        except RuntimeError as exc:  # executor gone (shutdown race)
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        return job
+
+    @app.get(
+        "/v1/fine_tuning/jobs",
+        response_model=FTJobList,
+        tags=["openai"],
+        operation_id="list_finetune_jobs",
+    )
+    def list_finetune_jobs(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> FTJobList:
+        """Newest-first page; ``after`` is the exclusive id cursor."""
+        jobs, has_more = ft_store.list_jobs(limit=limit, after=after)
+        return FTJobList(data=jobs, has_more=has_more)
+
+    @app.get(
+        "/v1/fine_tuning/jobs/{job_id}",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="get_finetune_job",
+    )
+    def get_finetune_job(job_id: str) -> FTJob:
+        entry = ft_store.get(job_id)
+        if entry is None:
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        return entry.job
+
+    @app.post(
+        "/v1/fine_tuning/jobs/{job_id}/cancel",
+        response_model=FTJob,
+        tags=["openai"],
+        operation_id="cancel_finetune_job",
+    )
+    def cancel_finetune_job(job_id: str) -> FTJob:
+        """Cooperative cancel — a queued job ends immediately; a running
+        one is marked and the pipeline stops at the next stage boundary."""
+        outcome = ft_store.request_cancel(job_id)
+        if outcome == "missing":
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        entry = ft_store.get(job_id)
+        assert entry is not None  # noqa: S101 — request_cancel found it
+        if outcome == "terminal":
+            raise ApiError(
+                409,
+                f"job {job_id!r} is already {entry.job.status} — only "
+                "queued or running jobs can be cancelled",
+                code="job_terminal",
+            )
+        if outcome == "queued":
+            ft_store.add_event(job_id, "info", "job cancelled", None)
+        else:
+            ft_store.add_event(
+                job_id,
+                "info",
+                "cancellation requested — takes effect at the next stage boundary",
+                None,
+            )
+        return entry.job
+
+    @app.get(
+        "/v1/fine_tuning/jobs/{job_id}/events",
+        response_model=FTEventList,
+        tags=["openai"],
+        operation_id="list_finetune_job_events",
+    )
+    def list_finetune_job_events(
+        job_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> FTEventList:
+        """Oldest-first event feed for one job (OpenAI's order)."""
+        entry = ft_store.get(job_id)
+        if entry is None:
+            raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
+        events, has_more = ft_store.list_events(job_id, limit=limit, after=after)
+        return FTEventList(data=events, has_more=has_more)
+
 
 def create_app(
     harness: Harness | None = None,
@@ -4589,6 +5255,9 @@ def create_app(
     batch_max: int | None = None,
     batch_line_max: int | None = None,
     store_max: int | None = None,
+    ft_runner: FTJobRunner | None = None,
+    ft_dir: str | os.PathLike[str] | None = None,
+    state_dir: str | os.PathLike[str] | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -4635,19 +5304,45 @@ def create_app(
     probe_cache: dict[str, BackendProbeVerdict] = {}
     probe_lock = threading.Lock()
     completion_log = _CompletionLog()
-    idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(idem_max)
-    complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
-    complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
-    openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(idem_max)
+    state_dir = state_dir or os.environ.get(_STATE_DIR_ENV) or None
+    state_path = Path(state_dir) if state_dir is not None else None
+
+    def _journal(name: str) -> JobJournal | None:
+        return JobJournal(state_path / name) if state_path is not None else None
+
+    idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(
+        idem_max, journal=_journal("idem_runs.jsonl"), model=HarnessRunResponse
+    )
+    complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(
+        idem_max, journal=_journal("idem_complete.jsonl"), model=CompleteResponse
+    )
+    complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(
+        idem_max,
+        journal=_journal("idem_complete_batch.jsonl"),
+        model=CompleteBatchResponse,
+    )
+    openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
+        idem_max, journal=_journal("idem_openai.jsonl"), model=_OpenAIIdemRecord
+    )
     file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
     batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
     batch_line_max = _env_int_bound(_BATCH_LINES_ENV, 1024, batch_line_max)
     store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
-    job_store = _JobStore(job_max)
-    eval_store = EvalStore(job_max)
-    file_store = _FileStore(file_max, file_bytes_max)
-    batch_store = _BatchStore(batch_max)
+    job_store = _JobStore(job_max, journal=_journal("jobs.jsonl"))
+    eval_store = EvalStore(job_max, journal=_journal("evals.jsonl"))
+    file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
+    batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
+    # The OpenAI-shaped fine-tuning surface: bounded like the other job
+    # stores; the runner defaults to the real staged Pipeline (its own
+    # trainer fails honestly when no GPU backend is configured).
+    ft_store = FTJobStore(job_max, journal=_journal("ft_jobs.jsonl"))
+    ft_work_root = Path(
+        ft_dir
+        if ft_dir is not None
+        else os.environ.get("FX1_FT_DIR", str(Path(tempfile.gettempdir()) / "fx1_ft"))
+    )
+    ft_runner_eff = ft_runner or default_ft_runner(resolve_backend)
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
     # and /v1/responses/{id} — `store=false` keeps a call out of it.
     envelope_store = OpenAIEnvelopeStore(store_max)
@@ -4687,7 +5382,7 @@ def create_app(
             "commands, sealed-receipt verification, and gated model "
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
-        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor),
+        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor, ft_store),
         openapi_tags=[
             {"name": "runs", "description": "Synchronous lab-command execution."},
             {"name": "jobs", "description": "Async run jobs: submit, poll, SSE, cancel, batch."},
@@ -4716,6 +5411,7 @@ def create_app(
     app.state.eval_store = eval_store
     app.state.file_store = file_store
     app.state.batch_store = batch_store
+    app.state.ft_store = ft_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -4932,6 +5628,8 @@ def create_app(
                 "openai_moderations": True,
                 "score": True,
                 "evals": True,
+                "eval_diff": True,
+                "fine_tuning": True,
             },
             eval_suites=list(EVAL_SUITES),
             limits={
@@ -5176,6 +5874,9 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        ft_store=ft_store,
+        ft_runner=ft_runner_eff,
+        ft_dir=ft_work_root,
         envelope_store=envelope_store,
         batch_line_max=batch_line_max,
         file_bytes_max=file_bytes_max,

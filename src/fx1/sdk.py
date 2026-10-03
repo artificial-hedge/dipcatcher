@@ -33,6 +33,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 import threading
 import time
 import urllib.parse
@@ -56,7 +57,19 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.evals import EvalRecord, EvalStore
+from fx1.serve.evals import EvalDiff, EvalRecord, EvalStore, diff_eval_records
+from fx1.serve.finetune import (
+    TRAINABLE_MODELS,
+    FTHyperparameters,
+    FTJob,
+    FTJobError,
+    FTJobRunner,
+    FTJobSpec,
+    FTJobStore,
+    default_ft_runner,
+    validate_chat_jsonl,
+)
+from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
     OpenAIChatRequest,
@@ -397,15 +410,37 @@ class Fx1Harness:
         harness: Harness | None = None,
         backend_resolver: BackendResolver | None = None,
         receipts_dir: str | Path = "receipts",
+        ft_runner: FTJobRunner | None = None,
+        ft_dir: str | Path | None = None,
+        state_dir: str | Path | None = None,
     ) -> None:
         self._harness = harness or Harness()
         self._resolve_backend = backend_resolver or get_backend
         self._receipts = ReceiptIndex(Path(receipts_dir))
         self._log = _CompletionLog()
-        self._eval_store = EvalStore(256)
+        # state_dir (or FX1_SDK_STATE_DIR) binds the eval/ft stores to
+        # the same hash-chained journals the server uses — an SDK
+        # process restart recovers records, idem keys, events, and the
+        # ft: model registry exactly like the wire.
+        state_path = Path(state_dir) if state_dir is not None else None
+        if state_path is None:
+            env_dir = os.environ.get("FX1_SDK_STATE_DIR")
+            state_path = Path(env_dir) if env_dir else None
+        self._eval_store = EvalStore(
+            256,
+            journal=JobJournal(state_path / "evals.jsonl") if state_path is not None else None,
+        )
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
+        # The /v1/fine_tuning twin — synchronous in process (no queue),
+        # same store/runner contract as the wire.
+        self._ft_store = FTJobStore(
+            256,
+            journal=JobJournal(state_path / "ft_jobs.jsonl") if state_path is not None else None,
+        )
+        self._ft_dir = Path(ft_dir or tempfile.gettempdir()) / "fx1_ft_sdk"
+        self._ft_runner = ft_runner or default_ft_runner(self._resolve_backend)
 
     def _record_call(
         self,
@@ -531,6 +566,9 @@ class Fx1Harness:
             created_at=time.time(),
             sampling=EVAL_SAMPLING.body_fields(),
         )
+        # Journal the in-flight record before the suite runs — a process
+        # crash mid-eval recovers it as failed, matching the wire.
+        self._eval_store.put(record, None, None)
         try:
             if model_fn is not None:
                 metric_key = f"eval:{suite}:model_fn"
@@ -698,7 +736,7 @@ class Fx1Harness:
             record.error = f"{type(exc).__name__}: {exc}"
             record.status = "failed"
             record.finished_at = time.time()
-        self._eval_store.put(record, None, None)
+        self._eval_store.mark(record)
         return record
 
     def evals(
@@ -735,6 +773,178 @@ class Fx1Harness:
                 f"eval {eval_id} is {rec.status} — receipts export on terminal records only"
             )
         return eval_record_receipt(rec.model_dump(mode="json"))
+
+    def eval_diff(self, base_id: str, candidate_id: str) -> EvalDiff:
+        """Diff two stored eval records — the wire twin is
+        ``GET /harness/evals/{base}/diff/{candidate}``. Unknown ids raise
+        ``KeyError``; non-terminal records or missing reports raise
+        ``RuntimeError`` (the wire's 404/409)."""
+        base = self._eval_store.get(base_id)
+        if base is None:
+            raise KeyError(base_id)
+        cand = self._eval_store.get(candidate_id)
+        if cand is None:
+            raise KeyError(candidate_id)
+        for rec in (base, cand):
+            if rec.status in ("queued", "running") or rec.report is None:
+                raise RuntimeError(
+                    f"eval {rec.eval_id} is {rec.status} — diffs need terminal records with reports"
+                )
+        return diff_eval_records(base, cand)
+
+    # ---- fine-tuning (the /v1/fine_tuning twin) ------------------------
+
+    def create_finetune_job(
+        self,
+        *,
+        model: str,
+        training_jsonl: bytes | str,
+        validation_jsonl: bytes | str | None = None,
+        hyperparameters: FTHyperparameters | None = None,
+        suffix: str | None = None,
+        seed: int | None = None,
+        metadata: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+    ) -> FTJob:
+        """The ``POST /v1/fine_tuning/jobs`` surface, weights-direct —
+        synchronous in process (there is no queue to observe): the corpus
+        is raw JSONL content here (the wire's file-upload step is an HTTP
+        artifact), the runner runs inline, and the returned job is
+        terminal. The record lands in the in-process store — the same
+        FTJobStore the wire serves — for ``finetune_job``/events reads.
+
+        ``callback_url``/``callback_secret`` are honored the same as the
+        wire: the terminal record POSTs to the URL, HMAC-signed via the
+        X-Fx1-Webhook-* headers when the secret is set (still real HTTP —
+        in-process doesn't mean silent).
+
+        ``ValueError`` is the wire's 400; a runner exception yields a
+        ``failed`` job record (never a raise — the job's own verdict is
+        the honest outcome).
+        """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
+        if model not in TRAINABLE_MODELS:
+            raise ValueError(
+                f"model {model!r} is not trainable through the harness "
+                f"(trainable: {list(TRAINABLE_MODELS)})"
+            )
+        corpus = (
+            training_jsonl.encode() if isinstance(training_jsonl, str) else bytes(training_jsonl)
+        )
+        n = validate_chat_jsonl(corpus, file_id="<in-process>")
+        hp = hyperparameters or FTHyperparameters()
+        job = FTJob(
+            id=f"ftjob-{uuid.uuid4().hex}",
+            model=model,
+            created_at=int(time.time()),
+            status="running",
+            hyperparameters=hp,
+            seed=seed,
+            metadata=metadata,
+            user_provided_suffix=suffix,
+            callback_url=callback_url,
+            # The wire echoes training_file=the file id; in-process carries
+            # the corpus content-length as the honest handle.
+            training_file=f"inline:{len(corpus)}B",
+        )
+        job._callback_secret = callback_secret
+        ft_name = f"ft:{model}:{suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
+        work_dir = self._ft_dir / job.id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        corpus_path = work_dir / "corpus.jsonl"
+        corpus_path.write_bytes(corpus)
+        val_path = None
+        if validation_jsonl is not None:
+            vbytes = (
+                validation_jsonl.encode()
+                if isinstance(validation_jsonl, str)
+                else bytes(validation_jsonl)
+            )
+            validate_chat_jsonl(vbytes, file_id="<validation>")
+            val_path = work_dir / "validation.jsonl"
+            val_path.write_bytes(vbytes)
+        entry = self._ft_store.put(job, None, "")
+        self._ft_store.add_event(job.id, "info", f"training corpus validated: {n} examples")
+        spec = FTJobSpec(
+            job_id=job.id,
+            model=model,
+            corpus_path=corpus_path,
+            val_path=val_path,
+            hyperparameters=hp.model_dump(mode="json"),
+            seed=seed if seed is not None else 17,
+            work_dir=work_dir,
+            ft_model_name=ft_name,
+        )
+        self._ft_store.add_event(job.id, "info", "job started")
+        try:
+            outcome = self._ft_runner(
+                spec,
+                emit=lambda level, message, data=None: self._ft_store.add_event(
+                    job.id, level, message, data
+                ),
+                should_cancel=entry.cancel.is_set,
+            )
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.fine_tuned_model = outcome.fine_tuned_model
+                job.trained_tokens = outcome.trained_tokens
+                job.status = "succeeded"
+                if outcome.fine_tuned_model is not None and outcome.checkpoint:
+                    self._ft_store.register_model(
+                        outcome.fine_tuned_model,
+                        job_id=job.id,
+                        checkpoint=outcome.checkpoint,
+                        created=int(time.time()),
+                    )
+        except Exception as exc:
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.status = "failed"
+                job.error = FTJobError(code="job_failed", message=f"{type(exc).__name__}: {exc}")
+        job.finished_at = int(time.time())
+        self._ft_store.add_event(
+            job.id, "info" if job.status == "succeeded" else "error", f"job {job.status}"
+        )
+        if job.callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                job.callback_url, callback_secret, job.model_dump_json().encode()
+            )
+            job.callback_status = "delivered" if ok else "failed"
+            job.callback_error = None if ok else err
+            job.callback_attempts = attempts
+        # Terminal state + callback verdicts ride the journal — same
+        # ordering as the wire worker (deliver, then mark).
+        self._ft_store.mark(entry)
+        return job
+
+    def finetune_jobs(self, *, limit: int | None = None) -> list[FTJob]:
+        """In-process fine-tune records, newest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs``."""
+        jobs, _has_more = self._ft_store.list_jobs(limit=limit or 100, after=None)
+        return jobs
+
+    def finetune_job(self, job_id: str) -> FTJob:
+        """One job record — ``KeyError`` on unknown ids (the wire's 404)."""
+        entry = self._ft_store.get(job_id)
+        if entry is None:
+            raise KeyError(job_id)
+        return entry.job
+
+    def finetune_job_events(self, job_id: str, *, limit: int | None = None) -> list[dict[str, Any]]:
+        """The job's event feed, oldest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs/{id}/events``."""
+        events, _has_more = self._ft_store.list_events(job_id, limit=limit or 100, after=None)
+        return [e.model_dump(mode="json") for e in events]
 
     # ---- registry ------------------------------------------------------
 
@@ -1421,13 +1631,13 @@ class Fx1Harness:
     def openai_models(self) -> OpenAIModelList:
         """The ``GET /v1/models`` inventory in-process — `fx1` plus the
         backend names an OpenAI ``model`` field may carry."""
-        return openai_models()
+        return openai_models(extra_ids=[m["id"] for m in self._ft_store.models()])
 
     def openai_model(self, model_id: str) -> OpenAIModel:
         """``GET /v1/models/{id}`` in-process — one card for a listed id;
         unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
         the SDK's request-error class."""
-        return openai_model(model_id)
+        return openai_model(model_id, extra_ids=[m["id"] for m in self._ft_store.models()])
 
     def openai_chat(
         self,
@@ -1457,7 +1667,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         # n>1 fans out into n gated calls — each choice gets its own
         # honesty-gate pass, format check, and completion-log record.
         results = [self.complete(**kwargs) for _ in range(body.n)]
@@ -1527,7 +1739,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         results = [self.complete(**kwargs) for _ in range(body.n)]
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
@@ -1598,7 +1812,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        kwargs = response_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         # a tool-call turn carries no text — nothing to post-validate
         if result.content or not result.tool_calls:
@@ -1637,7 +1853,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        kwargs = response_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
@@ -1697,7 +1915,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIEmbeddingRequest)
             else OpenAIEmbeddingRequest.model_validate(request)
         )
-        kwargs = embeddings_to_kwargs(body, dict(headers or {}))
+        kwargs = embeddings_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         prompt_sha256 = hashlib.sha256(
             json.dumps(
                 {"model": kwargs["model"], "input": kwargs["input"]},
@@ -1884,6 +2104,8 @@ class Fx1Harness:
         *,
         endpoint: str = "/v1/chat/completions",
         headers: Mapping[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """The ``/v1/batches`` surface, weights-direct — synchronous in
         process (no upload/poll machinery: lines in, the batch object +
@@ -1897,7 +2119,18 @@ class Fx1Harness:
         ``completed`` — in-process has no queue to observe) and the
         OpenAI batch-result lines the wire would write into the output
         file.
+
+        ``callback_url``/``callback_secret`` behave as on the wire: the
+        finished batch envelope POSTs to the URL once, HMAC-signed when
+        the secret is set, and ``callback_status``/``callback_attempts``/
+        ``callback_error`` land on the returned envelope.
         """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
         if endpoint not in OPENAI_BATCH_ENDPOINTS:
             raise OpenAICompatError(
                 f"endpoint must be one of {sorted(OPENAI_BATCH_ENDPOINTS)}, got {endpoint!r}"
@@ -1980,7 +2213,20 @@ class Fx1Harness:
                 "failed": failed,
             },
             "metadata": None,
+            "callback_url": callback_url,
+            "callback_status": None,
+            "callback_attempts": 0,
+            "callback_error": None,
         }
+        if callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                callback_url, callback_secret, json.dumps(batch).encode()
+            )
+            batch["callback_status"] = "delivered" if ok else "failed"
+            batch["callback_error"] = None if ok else err
+            batch["callback_attempts"] = attempts
         return batch, out_lines
 
     def _resolve_chain(

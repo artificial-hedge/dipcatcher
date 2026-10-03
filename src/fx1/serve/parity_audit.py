@@ -277,6 +277,8 @@ def _raises(fn: Any) -> tuple[str, str]:
 
 def _surfaces(
     backend: Any,
+    *,
+    ft_runner: Any = None,
 ) -> tuple[Any, TestClient]:
     """(Fx1Harness, TestClient) wired to one resolver returning `backend`'s class."""
     from fastapi.testclient import TestClient as _TC
@@ -293,15 +295,42 @@ def _surfaces(
             raise KeyError(name)
         return backend()
 
-    sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
+    sdk = Fx1Harness(
+        harness=Harness(runner=fake_runner), backend_resolver=resolver, ft_runner=ft_runner
+    )
     app = api_mod.create_app(
         harness=Harness(runner=fake_runner),
         backend_resolver=resolver,
+        ft_runner=ft_runner,
         # no receipt store -> receipt_hashes citations stay advisory, so these
         # probes can use synthetic hashes deterministically from any cwd.
         receipts_dir="/nonexistent-parity-store",
     )
     return sdk, _TC(app)
+
+
+def _start_hook_sink() -> tuple[str, list[tuple[dict[str, str], bytes]], Any]:
+    """Loopback webhook sink for parity probes — returns
+    ``(base_url, hits, server)``; each hit is ``(headers, raw_body)``.
+    Callers shut the server down."""
+    import threading as _threading  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    hits: list[tuple[dict[str, str], bytes]] = []
+
+    class _Sink(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            raw = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            hits.append((dict(self.headers.items()), raw))
+            self.send_response(404 if self.path == "/reject" else 200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), _Sink)
+    _threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{srv.server_address[1]}", hits, srv
 
 
 def _tc_transport(client: TestClient) -> Any:
@@ -1577,6 +1606,203 @@ def parity_audit() -> dict[str, bool]:
             _raises(lambda: sdk_u.moderate([]))[0] == "ValidationError"
             and _raises(lambda: remote_u.moderate([]))[0] == "ValueError"
         )
+
+        # eval-diff surface: the promotion-gate primitive is the same
+        # contract in-process and over the wire — same-suite same-bank
+        # records are comparable and verdict-classified identically; the
+        # unknown-id fault maps KeyError on both surfaces.
+        ev_a = sdk_u.run_eval("tooluse", backend="byok", seed=0)
+        ev_b = sdk_u.run_eval("tooluse", backend="byok", seed=0)
+        sdk_diff = sdk_u.eval_diff(ev_a.eval_id, ev_b.eval_id)
+        rv_a = remote_u.submit_eval("tooluse", backend="byok", seed=0)
+        rv_b = remote_u.submit_eval("tooluse", backend="byok", seed=0)
+        remote_u.wait_eval(rv_a["eval_id"], timeout_s=120)
+        remote_u.wait_eval(rv_b["eval_id"], timeout_s=120)
+        wire_diff = remote_u.diff_evals(rv_a["eval_id"], rv_b["eval_id"])
+
+        def _diff_norm(d: Any) -> dict[str, Any]:
+            dd = d.model_dump(mode="json") if hasattr(d, "model_dump") else dict(d)
+            dd.pop("base_eval_id", None)
+            dd.pop("candidate_eval_id", None)
+            return dd
+
+        out["eval_diff_parity"] = (
+            _diff_norm(sdk_diff) == _diff_norm(wire_diff)
+            and sdk_diff.same_suite
+            and sdk_diff.same_seed
+            and sdk_diff.comparable
+            and sdk_diff.verdict == "unchanged"
+        )
+        out["eval_diff_unknown_parity"] = (
+            _raises(lambda: sdk_u.eval_diff("nope", ev_b.eval_id))[0] == "KeyError"
+            and _raises(lambda: remote_u.diff_evals("nope", rv_b["eval_id"]))[0] == "KeyError"
+        )
+
+        # fine-tuning surface: the in-process twin takes the corpus inline
+        # and runs the same runner contract synchronously; the wire twin
+        # uploads a file, submits, and polls. Both land terminal-succeeded
+        # with the same ft: model name and an event feed; the model guard,
+        # unknown-id, and terminal-cancel faults map identically (400/409 →
+        # HarnessTransportError on the wire, ValueError in-process).
+        from fx1.serve.finetune import FTJobOutcome  # noqa: PLC0415
+
+        def _ft_runner(spec: Any, *, emit: Any, should_cancel: Any) -> Any:
+            emit("info", "runner working")
+            art = spec.work_dir / "receipt.json"
+            art.write_text("{}")
+            return FTJobOutcome(
+                fine_tuned_model=spec.ft_model_name,
+                artifacts={"receipt.json": art},
+                checkpoint=str(spec.work_dir / "ckpt"),
+            )
+
+        sdk_ft, ft_wire = _surfaces(_UsageBackend, ft_runner=_ft_runner)
+        remote_ft = HarnessClient("http://harness.test", transport=_tc_transport(ft_wire))
+        _corpus = (
+            b'{"messages":[{"role":"user","content":"hi"},{"role":"assistant","content":"ok"}]}\n'
+        )
+        sjob = sdk_ft.create_finetune_job(model="fx1", training_jsonl=_corpus, suffix="pp")
+        fid_w = remote_ft.upload_file(_corpus, filename="c.jsonl", purpose="fine-tune")["id"]
+        wjob = remote_ft.create_finetune_job(model="fx1", training_file=fid_w, suffix="pp")
+        wfin = remote_ft.wait_finetune_job(wjob["id"], timeout_s=30)
+        out["ft_parity"] = (
+            sjob.status == "succeeded"
+            and sjob.object == "fine_tuning.job"
+            and wfin["status"] == "succeeded"
+            and wfin["fine_tuned_model"] == f"ft:fx1:pp:{wjob['id'].split('-', 1)[1][:12]}"
+            and sjob.fine_tuned_model == f"ft:fx1:pp:{sjob.id.split('-', 1)[1][:12]}"
+            and len(wfin["result_files"]) == 1
+            and sdk_ft.finetune_job(sjob.id).id == sjob.id
+        )
+        out["ft_events_parity"] = (
+            len(remote_ft.finetune_job_events(wjob["id"])["data"]) >= 2
+            and len(sdk_ft.finetune_job_events(sjob.id)) >= 2
+        )
+        out["ft_list_parity"] = wjob["id"] in {
+            j["id"] for j in remote_ft.finetune_jobs()["data"]
+        } and sjob.id in {j.id for j in sdk_ft.finetune_jobs()}
+        out["ft_guards_parity"] = (
+            _raises(lambda: sdk_ft.create_finetune_job(model="byok", training_jsonl=_corpus))[0]
+            == "ValueError"
+            and _raises(lambda: remote_ft.create_finetune_job(model="byok", training_file=fid_w))[0]
+            == "HarnessTransportError"
+            and _raises(lambda: sdk_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_ft.finetune_job("ftjob-nope"))[0] == "KeyError"
+            and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
+            == "HarnessTransportError"
+        )
+        # Registry parity: a succeeded job's ft: name lists + resolves on
+        # both surfaces, and completions naming it land on the local_fx1
+        # lane pinned at the job's checkpoint. Unknown ft: names 404.
+        sname = sjob.fine_tuned_model
+        wname = wfin["fine_tuned_model"]
+        out["ft_model_parity"] = (
+            sname in {m.id for m in sdk_ft.openai_models().data}
+            and sdk_ft.openai_model(sname).id == sname
+            and wname in {m["id"] for m in remote_ft.list_models()["data"]}
+            and remote_ft.retrieve_model(wname)["id"] == wname
+            and _raises(lambda: sdk_ft.openai_model("ft:fx1:ghost:000000000000"))[0]
+            == "OpenAICompatError"
+            and ft_wire.get("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+        )
+        sresp, _scid = sdk_ft.openai_chat(
+            {"model": sname, "messages": [{"role": "user", "content": "hi"}]}
+        )
+        wresp = ft_wire.post(
+            "/v1/chat/completions",
+            json={"model": wname, "messages": [{"role": "user", "content": "hi"}]},
+        )
+        out["ft_model_route_parity"] = (
+            wresp.status_code == 200
+            and sresp.choices[0].message["content"]
+            == wresp.json()["choices"][0]["message"]["content"]
+            and sresp.system_fingerprint == "local_fx1"
+            and wresp.json()["system_fingerprint"] == "local_fx1"
+        )
+        wghost = ft_wire.post(
+            "/v1/chat/completions",
+            json={
+                "model": "ft:fx1:ghost:000000000000",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+        out["ft_model_route_404_parity"] = (
+            _raises(
+                lambda: sdk_ft.openai_chat(
+                    {
+                        "model": "ft:fx1:ghost:000000000000",
+                        "messages": [{"role": "user", "content": "hi"}],
+                    }
+                )
+            )[0]
+            == "OpenAICompatError"
+            and wghost.status_code == 404
+            and wghost.json()["error"]["code"] == "model_not_found"
+        )
+        # Webhook parity: the fx1 terminal-webhook extension delivers over
+        # real HTTP on BOTH surfaces — in-process isn't silent — and both
+        # records carry the same verdict fields + HMAC headers.
+        import time as _time  # noqa: PLC0415
+
+        _wh, _wh_hits, _wh_srv = _start_hook_sink()
+        try:
+            sjob_wh = sdk_ft.create_finetune_job(
+                model="fx1",
+                training_jsonl=_corpus,
+                callback_url=f"{_wh}/sdk-ft",
+                callback_secret="pw",
+            )
+            wfid2 = remote_ft.upload_file(_corpus, filename="c2.jsonl", purpose="fine-tune")["id"]
+            wjob_wh = remote_ft.create_finetune_job(
+                model="fx1",
+                training_file=wfid2,
+                callback_url=f"{_wh}/wire-ft",
+                callback_secret="pw",
+            )
+            remote_ft.wait_finetune_job(wjob_wh["id"], timeout_s=30)
+            _dl = _time.monotonic() + 10.0
+            while len(_wh_hits) < 2 and _time.monotonic() < _dl:
+                _time.sleep(0.02)
+            # delivery lands in the worker's finally, after the terminal
+            # status — re-fetch once the hit arrived for the verdict.
+            wfin_wh = remote_ft.finetune_job(wjob_wh["id"])
+            from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+            _wh_signed = all(
+                verify_webhook(
+                    "pw",
+                    h.get("X-Fx1-Webhook-Timestamp"),
+                    h.get("X-Fx1-Webhook-Signature"),
+                    b,
+                )
+                for h, b in _wh_hits
+            )
+            out["ft_webhook_parity"] = (
+                len(_wh_hits) == 2
+                and _wh_signed
+                and sjob_wh.callback_status == "delivered"
+                and wfin_wh.get("callback_status") == "delivered"
+                and wfin_wh.get("callback_attempts") == 1
+                and "callback_secret" not in wfin_wh
+            )
+            out["ft_webhook_guard_parity"] = (
+                _raises(
+                    lambda: sdk_ft.create_finetune_job(
+                        model="fx1", training_jsonl=_corpus, callback_secret="x"
+                    )
+                )[0]
+                == "ValueError"
+                # wire 422 (code validation) maps to ValueError on the client
+                and _raises(
+                    lambda: remote_ft.create_finetune_job(
+                        model="fx1", training_file=wfid2, callback_secret="x"
+                    )
+                )[0]
+                == "ValueError"
+            )
+        finally:
+            _wh_srv.shutdown()
+            _wh_srv.server_close()
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (
@@ -2550,6 +2776,52 @@ def parity_audit() -> dict[str, bool]:
         and wire_out[1]["response"]["body"]["error"]["type"]
         == sdk_b_lines[1]["response"]["body"]["error"]["type"]
     )
+    # batch webhook parity: the wire submit + the SDK's in-process twin
+    # both POST the terminal envelope to the same sink — real HTTP on
+    # both surfaces — and both records carry the delivery verdict.
+    import time as _time2  # noqa: PLC0415
+
+    _bw, _bw_hits, _bw_srv = _start_hook_sink()
+    try:
+        up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
+        bwsub = c_b.create_batch(
+            up_w["id"],
+            endpoint="/v1/chat/completions",
+            callback_url=f"{_bw}/wire-batch",
+        )
+        c_b.wait_batch(bwsub["id"], timeout_s=30, poll_s=0.01)
+        sb_out, _sb_lines = sdk_b.openai_batch(
+            batch_lines[:1],
+            callback_url=f"{_bw}/sdk-batch",
+        )
+        _dl = _time2.monotonic() + 10.0
+        while len(_bw_hits) < 2 and _time2.monotonic() < _dl:
+            _time2.sleep(0.02)
+        bwt = c_b.batch(bwsub["id"])  # verdict lands in the worker's finally
+        out["batch_webhook_parity"] = (
+            len(_bw_hits) == 2
+            and bwt.get("callback_status") == "delivered"
+            and bwt.get("callback_attempts") == 1
+            and sb_out.get("callback_status") == "delivered"
+            and sb_out.get("callback_attempts") == 1
+            and all(json.loads(b)["status"] == "completed" for _h, b in _bw_hits)
+        )
+        out["batch_webhook_guard_parity"] = (
+            _raises(lambda: sdk_b.openai_batch(batch_lines[:1], callback_secret="x"))[0]
+            == "ValueError"
+            # wire 422 (code validation) maps to ValueError on the client
+            and _raises(
+                lambda: c_b.create_batch(
+                    up_w["id"],
+                    endpoint="/v1/chat/completions",
+                    callback_secret="x",
+                )
+            )[0]
+            == "ValueError"
+        )
+    finally:
+        _bw_srv.shutdown()
+        _bw_srv.server_close()
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])
@@ -2645,7 +2917,17 @@ def parity_audit_bench() -> dict[str, Any]:
             "doc verifiable through either surface's verifier. A terminal "
             "wire job's fx1_job_record.v1 embeds the same digested run "
             "result that Fx1Harness.run_receipt seals in-process as "
-            "fx1_run_result.v1 — identical on the shared fields. Flags: "
+            "fx1_run_result.v1 — identical on the shared fields. "
+            "Fine-tuning parity holds: the SDK's synchronous "
+            "create_finetune_job produces the same terminal job fields "
+            "(status, ft:-name grammar, result_files, event feed) as the "
+            "wire route under the same runner, and guards map "
+            "ValueError↔HarnessTransportError / KeyError↔KeyError. The "
+            "model registry holds on both surfaces: a succeeded job's ft: "
+            "name lists and retrieves, completions naming it resolve to "
+            "local_fx1 at the job's checkpoint, and unregistered ft: names "
+            "fail closed (OpenAICompatError in-process, 404 on the wire). "
+            "Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

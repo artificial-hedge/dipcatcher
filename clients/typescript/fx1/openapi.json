@@ -1550,6 +1550,219 @@
         "title": "DrainResponse",
         "type": "object"
       },
+      "EvalDiff": {
+        "additionalProperties": false,
+        "description": "Deterministic comparison of two terminal eval records.",
+        "properties": {
+          "base_backend": {
+            "title": "Base Backend",
+            "type": "string"
+          },
+          "base_eval_id": {
+            "title": "Base Eval Id",
+            "type": "string"
+          },
+          "candidate_backend": {
+            "title": "Candidate Backend",
+            "type": "string"
+          },
+          "candidate_eval_id": {
+            "title": "Candidate Eval Id",
+            "type": "string"
+          },
+          "comparable": {
+            "title": "Comparable",
+            "type": "boolean"
+          },
+          "deltas": {
+            "items": {
+              "$ref": "#/components/schemas/EvalDiffDelta"
+            },
+            "title": "Deltas",
+            "type": "array"
+          },
+          "gate_base": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Base"
+          },
+          "gate_candidate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Candidate"
+          },
+          "gate_transition": {
+            "enum": [
+              "opened",
+              "closed",
+              "unchanged",
+              "unknown"
+            ],
+            "title": "Gate Transition",
+            "type": "string"
+          },
+          "object": {
+            "const": "eval_diff",
+            "default": "eval_diff",
+            "title": "Object",
+            "type": "string"
+          },
+          "same_bank": {
+            "title": "Same Bank",
+            "type": "boolean"
+          },
+          "same_seed": {
+            "title": "Same Seed",
+            "type": "boolean"
+          },
+          "same_suite": {
+            "title": "Same Suite",
+            "type": "boolean"
+          },
+          "significance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalDiffSignificance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tasks_fixed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Fixed",
+            "type": "array"
+          },
+          "tasks_only_base": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Only Base",
+            "type": "array"
+          },
+          "tasks_only_candidate": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Only Candidate",
+            "type": "array"
+          },
+          "tasks_regressed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tasks Regressed",
+            "type": "array"
+          },
+          "verdict": {
+            "enum": [
+              "improved",
+              "regressed",
+              "unchanged",
+              "unknown"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_eval_id",
+          "candidate_eval_id",
+          "base_backend",
+          "candidate_backend",
+          "same_suite",
+          "same_seed",
+          "same_bank",
+          "comparable",
+          "gate_base",
+          "gate_candidate",
+          "gate_transition",
+          "tasks_fixed",
+          "tasks_regressed",
+          "tasks_only_base",
+          "tasks_only_candidate",
+          "deltas",
+          "significance",
+          "verdict"
+        ],
+        "title": "EvalDiff",
+        "type": "object"
+      },
+      "EvalDiffDelta": {
+        "additionalProperties": false,
+        "description": "A numeric leaf that moved between the two reports' ``by_kind``.",
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "number"
+          },
+          "candidate": {
+            "title": "Candidate",
+            "type": "number"
+          },
+          "delta": {
+            "title": "Delta",
+            "type": "number"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "base",
+          "candidate",
+          "delta"
+        ],
+        "title": "EvalDiffDelta",
+        "type": "object"
+      },
+      "EvalDiffSignificance": {
+        "additionalProperties": false,
+        "description": "McNemar exact sign test on the discordant task pairs.\n\n``n_fixed`` tasks went fail\u2192pass and ``n_regressed`` went pass\u2192fail;\nunder the null the split is a fair coin, so ``p_value`` is the exact\ntwo-sided sign test. ``verdict`` stays the observed direction \u2014 the\nsignificance block is the separate evidence of whether the move is\ndistinguishable from noise at this bank size.",
+        "properties": {
+          "n_fixed": {
+            "title": "N Fixed",
+            "type": "integer"
+          },
+          "n_regressed": {
+            "title": "N Regressed",
+            "type": "integer"
+          },
+          "p_value": {
+            "title": "P Value",
+            "type": "number"
+          },
+          "significant_p05": {
+            "title": "Significant P05",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "n_fixed",
+          "n_regressed",
+          "p_value",
+          "significant_p05"
+        ],
+        "title": "EvalDiffSignificance",
+        "type": "object"
+      },
       "EvalListResponse": {
         "additionalProperties": false,
         "description": "Eval inventory page: ``total`` is the filtered count before paging.",
@@ -1881,6 +2094,527 @@
           "status"
         ],
         "title": "EvalSubmitResponse",
+        "type": "object"
+      },
+      "FTEventList": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/FTJobEvent"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "has_more"
+        ],
+        "title": "FTEventList",
+        "type": "object"
+      },
+      "FTHyperparameters": {
+        "additionalProperties": false,
+        "properties": {
+          "batch_size": {
+            "anyOf": [
+              {
+                "maximum": 512.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Size"
+          },
+          "learning_rate_multiplier": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 10.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Rate Multiplier"
+          },
+          "n_epochs": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Epochs"
+          }
+        },
+        "title": "FTHyperparameters",
+        "type": "object"
+      },
+      "FTJob": {
+        "additionalProperties": false,
+        "properties": {
+          "callback_attempts": {
+            "default": 0,
+            "title": "Callback Attempts",
+            "type": "integer"
+          },
+          "callback_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Error"
+          },
+          "callback_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "delivered",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Status"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FTJobError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimated_finish": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Finish"
+          },
+          "fine_tuned_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fine Tuned Model"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "hyperparameters": {
+            "$ref": "#/components/schemas/FTHyperparameters"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "integrations": {
+            "items": {},
+            "title": "Integrations",
+            "type": "array"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "method": {
+            "additionalProperties": true,
+            "title": "Method",
+            "type": "object"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "object": {
+            "const": "fine_tuning.job",
+            "default": "fine_tuning.job",
+            "title": "Object",
+            "type": "string"
+          },
+          "organization_id": {
+            "default": "fx1-harness",
+            "title": "Organization Id",
+            "type": "string"
+          },
+          "result_files": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Result Files",
+            "type": "array"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "status": {
+            "default": "queued",
+            "enum": [
+              "validating_files",
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trained_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trained Tokens"
+          },
+          "training_file": {
+            "title": "Training File",
+            "type": "string"
+          },
+          "user_provided_suffix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Provided Suffix"
+          },
+          "validation_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation File"
+          }
+        },
+        "required": [
+          "id",
+          "model",
+          "created_at",
+          "training_file"
+        ],
+        "title": "FTJob",
+        "type": "object"
+      },
+      "FTJobError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "param": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Param"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "FTJobError",
+        "type": "object"
+      },
+      "FTJobEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "info",
+              "warn",
+              "error"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "object": {
+            "const": "fine_tuning.job.event",
+            "default": "fine_tuning.job.event",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created_at",
+          "level",
+          "message"
+        ],
+        "title": "FTJobEvent",
+        "type": "object"
+      },
+      "FTJobList": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/FTJob"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data",
+          "has_more"
+        ],
+        "title": "FTJobList",
+        "type": "object"
+      },
+      "FTJobRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
+          "hyperparameters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FTHyperparameters"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "maxProperties": 16,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "const": "supervised",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "model": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "suffix": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "pattern": "^[a-z0-9_-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suffix"
+          },
+          "training_file": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Training File",
+            "type": "string"
+          },
+          "validation_file": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation File"
+          }
+        },
+        "required": [
+          "model",
+          "training_file"
+        ],
+        "title": "FTJobRequest",
         "type": "object"
       },
       "GateCheckRequest": {
@@ -2634,6 +3368,28 @@
         "additionalProperties": true,
         "description": "``POST /v1/batches`` body.",
         "properties": {
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
           "completion_window": {
             "const": "24h",
             "default": "24h",
@@ -5949,6 +6705,122 @@
         ]
       }
     },
+    "/harness/evals/{eval_id}/diff/{candidate_id}": {
+      "get": {
+        "description": "Promotion-gate primitive: diff two terminal eval records \u2014\ntask-level pass/fail transitions, the honesty-gate move, and\n``by_kind`` counter deltas. ``comparable`` requires the same\nsuite over the same eval bank (``eval_bank_sha256``); a\ncross-bank diff is served but reads ``verdict='unknown'``.",
+        "operationId": "diff_evals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eval_id",
+            "required": true,
+            "schema": {
+              "title": "Eval Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalDiff"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Diff Evals",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
     "/harness/evals/{eval_id}/receipt": {
       "get": {
         "description": "Export the eval record as a sealed ``fx1_eval_record.v1``\ndocument \u2014 terminal records only: a still-running eval's receipt\nwould seal a mutable report. Verify with ``POST /receipts/verify``\nor the SDK.",
@@ -7976,7 +8848,7 @@
         ]
       },
       "post": {
-        "description": "Submit a batch over an uploaded input file. One worker slot\nruns the whole batch through the gated route cores; ``expires_at``\nis +24h (the completion_window the surface declares).",
+        "description": "Submit a batch over an uploaded input file. One worker slot\nruns the whole batch through the gated route cores; ``expires_at``\nis +24h (the completion_window the surface declares).\n``callback_url``/``callback_secret`` are the fx1 webhook\nextension: the terminal batch envelope\n(completed/failed/expired/cancelled \u2014 including expiry observed\non read) is POSTed to the URL once, HMAC-signed when the secret\nis set; ``callback_status``/``callback_attempts``/\n``callback_error`` ride the projected record.",
         "operationId": "openai_batches_create",
         "parameters": [
           {
@@ -8811,7 +9683,7 @@
         ]
       },
       "post": {
-        "description": "Upload a batch-input JSONL (multipart/form-data). Purpose is\nfail-closed \u2014 only ``batch`` is served; the file is validated into\nthe store as-is (shape checks happen at batch submit).",
+        "description": "Upload a batch-input or fine-tuning JSONL (multipart/form-data).\nPurpose is fail-closed \u2014 ``batch`` and ``fine-tune`` are the only\npurposes served; the file is validated into the store as-is\n(shape checks happen at batch submit / fine-tune submit).",
         "operationId": "openai_file_upload",
         "requestBody": {
           "content": {
@@ -9223,6 +10095,602 @@
         ]
       }
     },
+    "/v1/fine_tuning/jobs": {
+      "get": {
+        "description": "Newest-first page; ``after`` is the exclusive id cursor.",
+        "operationId": "list_finetune_jobs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FTJobList"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Finetune Jobs",
+        "tags": [
+          "openai"
+        ]
+      },
+      "post": {
+        "description": "Queue a gated fine-tuning run against an uploaded chat-format\nJSONL training file. File validation is synchronous \u2014 malformed\ncorpora 400 at submit, never limbo in ``validating_files``.\n``callback_url``/``callback_secret`` are the fx1 webhook\nextension: the terminal job record (succeeded/failed/cancelled)\nis POSTed to the URL, HMAC-signed when the secret is set \u2014 the\nsame delivery contract as ``/harness/jobs`` webhooks.",
+        "operationId": "create_finetune_job",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FTJobRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FTJob"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Finetune Job",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_finetune_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FTJob"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Finetune Job",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/cancel": {
+      "post": {
+        "description": "Cooperative cancel \u2014 a queued job ends immediately; a running\none is marked and the pipeline stops at the next stage boundary.",
+        "operationId": "cancel_finetune_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FTJob"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Finetune Job",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/events": {
+      "get": {
+        "description": "Oldest-first event feed for one job (OpenAI's order).",
+        "operationId": "list_finetune_job_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FTEventList"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Finetune Job Events",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "description": "Model inventory \u2014 the backend names a `model` field may carry,\nplus the `fx1` alias for the default link (hosted_k3).",
@@ -9279,7 +10747,7 @@
     },
     "/v1/models/{model}": {
       "get": {
-        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card.",
+        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.",
         "operationId": "openai_retrieve_model",
         "parameters": [
           {

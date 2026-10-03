@@ -234,6 +234,27 @@
         ]
       }
     },
+    "/harness/evals/{eval_id}/diff/{candidate_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/evals/{eval_id}/receipt": {
       "get": {
         "params": [
@@ -682,6 +703,99 @@
         ]
       }
     },
+    "/v1/fine_tuning/jobs": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/fine_tuning/jobs/{job_id}/events": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "params": [],
@@ -769,5 +883,5 @@
       }
     }
   },
-  "schema_sha256": "fb9e122bafbd1d3f58a2ba8cc582c89d64670798fee7cd2611e5ee1802df2b1c"
+  "schema_sha256": "68b9639f6bc8d32c07addba001b2d7fe665d624cf34e13207ab9f653cb27b6fd"
 }
