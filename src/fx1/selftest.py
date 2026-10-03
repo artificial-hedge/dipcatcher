@@ -21,6 +21,7 @@ only when all pass, 2 otherwise — usable as a deploy gate.
 
 from __future__ import annotations
 
+import logging
 import os
 import threading
 import time
@@ -164,6 +165,13 @@ def run_selftest(
         }
     )
     os.environ.pop("MOONSHOT_API_KEY", None)
+
+    # request logs are noise for a gate whose stdout is the JSON report —
+    # silence the app's access logger for the run (and keep it out of any
+    # captured stdout/stderr the caller may be mixing)
+    api_logger = logging.getLogger("fx1.serve.api")
+    prev_level = api_logger.level
+    api_logger.setLevel(logging.CRITICAL)
 
     def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, "ran:" + " ".join(argv), ""
@@ -319,6 +327,7 @@ def run_selftest(
 
         _run(checks, "drained_rejects_work", _drained, True)
     finally:
+        api_logger.setLevel(prev_level)
         for srv in (server, server2):
             if srv is not None:
                 srv.should_exit = True
