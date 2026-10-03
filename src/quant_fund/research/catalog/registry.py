@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-774 random-walk canon.
+        "sparc_rw",
+        "spitzer_rw",
+        "fluctuation_rw",
+        "ladder_epoch",
+        "wiener_hopf_rw",
+        "maxwell_rw",
         # Wave-773 queueing canon.
         "mm1_queue",
         "mg1_queue",
