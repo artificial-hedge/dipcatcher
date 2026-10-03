@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-352 Lie-theory canon.
+        "cartan_matrix",
+        "weyl_group_a2",
+        "killing_form",
+        "root_lattice_a2",
+        "sl2_structure",
+        "su2_algebra",
+        # Wave-351 functional-analysis canon.
+        "banach_fixed",
+        "spectral_theorem",
+        "lp_duality",
+        "fourier_finite",
+        "compact_operator",
+        "gram_schmidt",
         # Wave-350 representation-theory-2 canon.
         "character_table_s3",
         "perm_rep",
