@@ -4703,6 +4703,14 @@ from quant_fund.research.benches_w588 import (
     bench_unstable_adams_family,
     bench_whitehead_prod_family,
 )
+from quant_fund.research.benches_w589 import (
+    bench_cartesian_closed_family,
+    bench_coherent_topos_family,
+    bench_internal_logic_family,
+    bench_power_object_family,
+    bench_pretopos_family,
+    bench_subobject_lattice_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5082,6 +5090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cartesian_closed": bench_cartesian_closed_family,
+        "internal_logic": bench_internal_logic_family,
+        "subobject_lattice": bench_subobject_lattice_family,
+        "power_object": bench_power_object_family,
+        "pretopos": bench_pretopos_family,
+        "coherent_topos": bench_coherent_topos_family,
         "ehp_sequence": bench_ehp_sequence_family,
         "james_period": bench_james_period_family,
         "whitehead_prod": bench_whitehead_prod_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-589 topos-3 canon.
+        "cartesian_closed",
+        "internal_logic",
+        "subobject_lattice",
+        "power_object",
+        "pretopos",
+        "coherent_topos",
         # Wave-588 homotopy-11 canon.
         "ehp_sequence",
         "james_period",
