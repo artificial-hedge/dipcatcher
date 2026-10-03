@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-347 topology-3/point-set canon.
+        "compact_space",
+        "connected_space",
+        "quotient_topology",
+        "product_topology",
+        "convergence_space",
+        "tietze_urysohn",
         # Wave-346 number-theory-2/homological-2 canon.
         "quadratic_recip",
         "elliptic_curve",
