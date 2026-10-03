@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-375 algebraic-geometry-5 canon.
+        "riemann_roch",
+        "sheaf_cohomology",
+        "scheme_local",
+        "blowup",
+        "elliptic_group",
+        "moduli_stable",
         # Wave-374 model-theory-3 canon.
         "quantifier_elim",
         "realize_types",
