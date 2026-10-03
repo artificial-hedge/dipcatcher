@@ -1338,6 +1338,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "X-Content-Type-Options",
         "Cache-Control",
         "Referrer-Policy",
+        "Openai-Processing-Ms",
+        "X-RateLimit-Limit-Requests",
+        "X-RateLimit-Remaining-Requests",
+        "X-RateLimit-Reset-Requests",
     }
     spec_ops = [
         op
@@ -1349,6 +1353,14 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         common <= set(resp.get("headers", {}))
         for op in spec_ops
         for resp in op.get("responses", {}).values()
+    )
+    # OpenAI's processing-ms tracing header rides every response — 2xx,
+    # 4xx and 5xx alike — and parses as a non-negative int
+    _pm_ok = client.get("/harness/version")
+    _pm_4xx = client.get("/harness/jobs/does-not-exist")
+    _pm_5xx = client.post("/harness/complete", json={"prompt": "x", "seed": 1})
+    out["processing_ms_header"] = all(
+        int(r.headers["openai-processing-ms"]) >= 0 for r in (_pm_ok, _pm_4xx, _pm_5xx)
     )
     submit_op = spec_main["paths"]["/harness/jobs"]["post"]
     out["openapi_declares_location_202"] = "Location" in submit_op["responses"]["202"].get(

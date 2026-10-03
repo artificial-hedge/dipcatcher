@@ -250,6 +250,7 @@ _STATE_DIR_ENV = "FX1_API_STATE_DIR"
 _CORS_EXPOSE_HEADERS = [
     "ETag",
     "Location",
+    "Openai-Processing-Ms",
     "Retry-After",
     "X-Fx1-Api-Version",
     "X-Fx1-Completion-Id",
@@ -258,6 +259,9 @@ _CORS_EXPOSE_HEADERS = [
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
     "X-RateLimit-Reset",
+    "X-RateLimit-Limit-Requests",
+    "X-RateLimit-Remaining-Requests",
+    "X-RateLimit-Reset-Requests",
     "X-Request-ID",
 ]
 _CORS_ALLOW_HEADERS = [
@@ -306,6 +310,24 @@ _DECLARED_COMMON_HEADERS: dict[str, dict[str, Any]] = {
     "Referrer-Policy": {
         "schema": {"type": "string"},
         "description": "Always `no-referrer`.",
+    },
+    "Openai-Processing-Ms": {
+        "schema": {"type": "integer"},
+        "description": "Server-side wall-clock milliseconds for the request — the "
+        "OpenAI-convention tracing header, present on every response.",
+    },
+    "X-RateLimit-Limit-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Managed-key rpm window size — present only on responses "
+        "authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+    },
+    "X-RateLimit-Remaining-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Requests left in the key's fixed 60 s window after this response.",
+    },
+    "X-RateLimit-Reset-Requests": {
+        "schema": {"type": "integer"},
+        "description": "Seconds until the key's rpm window reopens.",
     },
 }
 _DECLARED_RATELIMIT_HEADERS: dict[str, dict[str, Any]] = {
@@ -2837,13 +2859,17 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
+    elapsed_ms = (time.monotonic() - started) * 1000
+    # OpenAI's server-side timing header — every response carries it so
+    # clients can split transport vs processing without trusting the log
+    response.headers["Openai-Processing-Ms"] = str(int(elapsed_ms))
     request.app.state.metrics.record(response.status_code)
     logger.info(
         "request method=%s path=%s status=%d elapsed_ms=%.1f rid=%s",
         request.method,
         request.url.path,
         response.status_code,
-        (time.monotonic() - started) * 1000,
+        elapsed_ms,
         request_id,
     )
     return response
