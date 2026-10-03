@@ -6559,6 +6559,14 @@ from quant_fund.research.benches_w820 import (
     bench_special_sem_family,
     bench_triplet_char_family,
 )
+from quant_fund.research.benches_w821 import (
+    bench_compensator_rm_family,
+    bench_integer_measure_family,
+    bench_jump_measure_family,
+    bench_poisson_rm_family,
+    bench_random_measure_family,
+    bench_sato_measure_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6930,6 +6938,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "random_measure": bench_random_measure_family,
+        "integer_measure": bench_integer_measure_family,
+        "poisson_rm": bench_poisson_rm_family,
+        "compensator_rm": bench_compensator_rm_family,
+        "jump_measure": bench_jump_measure_family,
+        "sato_measure": bench_sato_measure_family,
         "doom_decomp": bench_doom_decomp_family,
         "pcdt": bench_pcdt_family,
         "special_sem": bench_special_sem_family,
