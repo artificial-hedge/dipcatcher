@@ -73,6 +73,7 @@ from fx1.serve.openai_compat import (
     openai_error_body,
     openai_model,
     openai_models,
+    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
@@ -1513,7 +1514,10 @@ class Fx1Harness:
         )
         kwargs = response_to_kwargs(body, dict(headers or {}))
         result = self.complete(**kwargs)
-        validate_response_format(response_text_format(body), result.content)
+        # a tool-call turn carries no text — nothing to post-validate
+        if result.content or not result.tool_calls:
+            validate_response_format(response_text_format(body), result.content)
+        call_items = openai_response_call_items(result.tool_calls or [])
         envelope = openai_response_object(
             rid=f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
@@ -1521,6 +1525,7 @@ class Fx1Harness:
             body=body,
             model=result.model,
             usage=result.usage,
+            call_items=call_items or None,
         )
         if body.store is not False:
             self._openai_store.put(envelope)
@@ -1546,9 +1551,11 @@ class Fx1Harness:
         )
         kwargs = response_to_kwargs(body, dict(headers or {}))
         result = self.complete(**kwargs)
-        validate_response_format(response_text_format(body), result.content)
+        if result.content or not result.tool_calls:
+            validate_response_format(response_text_format(body), result.content)
         rid = f"resp_{uuid.uuid4().hex}"
         item_id = f"msg_{uuid.uuid4().hex}"
+        call_items = openai_response_call_items(result.tool_calls or [])
         if body.store is not False:
             self._openai_store.put(
                 openai_response_object(
@@ -1558,6 +1565,7 @@ class Fx1Harness:
                     body=body,
                     model=result.model,
                     usage=result.usage,
+                    call_items=call_items or None,
                 )
             )
         events = list(
@@ -1568,6 +1576,7 @@ class Fx1Harness:
                 body=body,
                 model=result.model,
                 usage=result.usage,
+                call_items=call_items or None,
             )
         )
         if last_event_id is not None:

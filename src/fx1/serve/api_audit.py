@@ -4860,15 +4860,13 @@ def _probe_backend_probes(
         r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:bc"
     )
     # fail closed: the fields the pipeline can't honor never reach the
-    # model — tools/tool_choice/parallel_tool_calls/truncation/include/
-    # background/previous_response_id, a refused item type, an unknown
-    # item type, an empty input. `store` is honored (retrieval below).
+    # model — truncation/include/background/previous_response_id, a
+    # refused item type, an unknown item type, an empty input.
+    # tools/tool_choice/parallel_tool_calls are honored (the lane-82 tool
+    # channel probes below); `store` is honored too (retrieval below).
     out["responses_unsupported_refused"] = all(
         oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
         for k, v in (
-            ("tools", []),
-            ("tool_choice", "auto"),
-            ("parallel_tool_calls", True),
             ("truncation", "auto"),
             ("include", ["output_text"]),
             ("background", True),
@@ -4876,14 +4874,15 @@ def _probe_backend_probes(
         )
     )
     # refused item types fail at translation — a 400 invalid_request_error
-    # in the OpenAI shape, not a pydantic 422
+    # in the OpenAI shape, not a pydantic 422 (function_call /
+    # function_call_output are honored — they carry a tool history)
     out["responses_item_types_refused"] = all(
         oi_clean.post(
             "/v1/responses",
             json={"model": "fx1", "input": [{"type": t, "role": "user", "content": "x"}]},
         ).status_code
         == 400
-        for t in ("function_call", "item_reference", "reasoning", "bogus")
+        for t in ("item_reference", "reasoning", "bogus")
     )
     out["responses_empty_input_422"] = (
         oi_clean.post("/v1/responses", json={"model": "fx1", "input": []}).status_code == 422
@@ -5068,6 +5067,257 @@ def _probe_backend_probes(
         rd_app.state.inflight_slots.release()
     out["responses_over_capacity_503_shape"] = (
         r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
+    )
+
+    # ---- lane 82: the tool channel on /v1/responses ----
+    # The flattened Responses spec and the function_call output items run
+    # the same gated pipeline as chat — the request translates onto the
+    # shared tool channel (specs nest under `function`), calls land in
+    # `output` as function_call items, and a link without the channel
+    # answers 501.
+    rt_spec = {
+        "type": "function",
+        "name": "calc",
+        "description": "arithmetic",
+        "parameters": {"type": "object", "properties": {"x": {"type": "number"}}},
+    }
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc one",
+            "tools": [rt_spec],
+            "tool_choice": "required",
+            "parallel_tool_calls": True,
+        },
+    )
+    ritems = r.json().get("output") or []
+    rfc: dict[str, Any] = next((it for it in ritems if it.get("type") == "function_call"), {})
+    out["responses_tools_call_items"] = (
+        r.status_code == 200
+        and rfc.get("call_id") == "call_0"
+        and rfc.get("name") == "calc"
+        and rfc.get("arguments") == '{"x": 1}'
+        and rfc.get("status") == "completed"
+        and str(rfc.get("id", "")).startswith("fc_")
+        # a calls-only turn ships no message item
+        and not any(it.get("type") == "message" for it in ritems)
+    )
+    out["responses_tools_forwarded_verbatim"] = (
+        r.status_code == 200
+        and oi_tool.seen_tools
+        == [
+            {
+                "type": "function",
+                "function": {k: v for k, v in rt_spec.items() if k != "type"},
+            }
+        ]
+        and oi_tool.seen_choice == "required"
+        and oi_tool.seen_parallel is True
+        and r.json().get("tools") == [rt_spec]
+        and r.json().get("tool_choice") == "required"
+        and r.json().get("parallel_tool_calls") is True
+    )
+    # dict tool_choice folds onto the shared channel's {type, function:{name}}
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "tools": [rt_spec],
+            "tool_choice": {"type": "function", "name": "calc"},
+        },
+    )
+    out["responses_tool_choice_dict_folds"] = (
+        r.status_code == 200
+        and oi_tool.seen_choice == {"type": "function", "function": {"name": "calc"}}
+        and r.json().get("tool_choice") == {"type": "function", "name": "calc"}
+    )
+    r = oi_tools.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "x", "tools": [rt_spec]},
+    )
+    out["responses_tool_choice_default_auto"] = r.json().get("tool_choice") == "auto"
+    # function_call/function_call_output items fold into the shared chat
+    # history — one assistant turn per call-run, a role:tool message per
+    # output, verbatim
+    r = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "q"}],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_a",
+                    "name": "calc",
+                    "arguments": '{"a": 1}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_b",
+                    "name": "calc",
+                    "arguments": '{"b": 2}',
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_a",
+                    "output": "2",
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_b",
+                    "output": [{"type": "output_text", "text": "3"}],
+                },
+                {"role": "user", "content": "and?"},
+            ],
+        },
+    )
+    out["responses_tool_items_fold_history"] = r.status_code == 200 and oi_tool.seen_messages == [
+        {"role": "user", "content": "q"},
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_a",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": '{"a": 1}'},
+                },
+                {
+                    "id": "call_b",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": '{"b": 2}'},
+                },
+            ],
+        },
+        {"role": "tool", "content": "2", "tool_call_id": "call_a"},
+        {"role": "tool", "content": "3", "tool_call_id": "call_b"},
+        {"role": "user", "content": "and?"},
+    ]
+    # a link without the channel answers 501 — the spec never drops
+    out["responses_tools_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "tools": [rt_spec]},
+        ).status_code
+        == 501
+    )
+    # fail-closed bounds: >128 tools, tool_choice/parallel without tools,
+    # a bad dict choice, malformed items — all refuse before model spend
+    out["responses_tools_bounds_refused"] = all(
+        oi_tools.post("/v1/responses", json={"model": "fx1", "input": "x", **kw}).status_code == 422
+        for kw in (
+            {"tools": [rt_spec] * 129},
+            {"tool_choice": "auto"},
+            {"parallel_tool_calls": True},
+            {"tools": [rt_spec], "tool_choice": {"type": "function"}},
+            {"tools": [rt_spec], "tool_choice": {"type": "bogus", "name": "f"}},
+            {"tools": [{"type": "bogus", "name": "f"}]},
+        )
+    )
+    out["responses_tool_items_bad_shape_400"] = all(
+        oi_tools.post("/v1/responses", json={"model": "fx1", "input": [it]}).status_code == 400
+        for it in (
+            {"type": "function_call", "name": "calc", "arguments": "{}"},
+            {"type": "function_call", "call_id": "c", "arguments": "{}"},
+            {"type": "function_call", "call_id": "c", "name": "calc"},
+            {"type": "function_call_output", "output": "2"},
+            {"type": "function_call_output", "call_id": "c"},
+        )
+    )
+    # the stream emits the fc-item events — output_item.added, per-part
+    # arguments deltas, arguments.done, output_item.done — and the
+    # completed frame carries the same object the JSON path returns
+    rts1 = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "tools": [rt_spec],
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "resp-tools-82"},
+    )
+    _tlines = rts1.text.splitlines()
+    _tev = [ln[7:] for ln in _tlines if ln.startswith("event: ")]
+    _tdata = [_json3.loads(ln[6:]) for ln in _tlines if ln.startswith("data: ")]
+    _tfc_done: dict[str, Any] = next(
+        (
+            d["item"]
+            for d in _tdata
+            if d["type"] == "response.output_item.done" and d["item"].get("type") == "function_call"
+        ),
+        {},
+    )
+    out["responses_tool_stream_events"] = (
+        rts1.status_code == 200
+        and "response.output_item.added" in _tev
+        and "response.function_call_arguments.delta" in _tev
+        and "response.function_call_arguments.done" in _tev
+        and any(
+            d.get("type") == "response.output_item.added"
+            and d.get("item", {}).get("type") == "function_call"
+            and d["item"].get("status") == "in_progress"
+            for d in _tdata
+        )
+        and "".join(
+            d["delta"] for d in _tdata if d["type"] == "response.function_call_arguments.delta"
+        )
+        == '{"x": 1}'
+        and _tfc_done.get("call_id") == "call_0"
+        and _tfc_done.get("status") == "completed"
+        and _tdata[-1]["response"]["output"]
+        == [
+            {
+                "type": "function_call",
+                "id": _tfc_done["id"],
+                "call_id": "call_0",
+                "name": "calc",
+                "arguments": '{"x": 1}',
+                "status": "completed",
+            }
+        ]
+    )
+    # fc item ids mint once — a keyed stream replays byte-identically
+    rts2 = oi_tools.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "tools": [rt_spec],
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "resp-tools-82"},
+    )
+    out["responses_tool_stream_replay"] = (
+        rts2.status_code == 200
+        and rts1.content == rts2.content
+        and rts2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    # the retrieval index carries the fc items too — a stored calls-only
+    # response round-trips the full output
+    rt_store = oi_tools.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "calc", "tools": [rt_spec]},
+    )
+    rt_id = rt_store.json().get("id", "")
+    rget = oi_tools.get(f"/v1/responses/{rt_id}")
+    out["responses_tool_store_retrieve"] = (
+        rget.status_code == 200
+        and (rget.json().get("output") or [{}])[0].get("type") == "function_call"
+        and (rget.json().get("output") or [{}])[0].get("call_id") == "call_0"
+    )
+    out["responses_tool_store_delete"] = (
+        oi_tools.delete(f"/v1/responses/{rt_id}").status_code == 200
+        and oi_tools.get(f"/v1/responses/{rt_id}").status_code == 404
+    )
+    out["capabilities_reports_responses_tools"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_responses_tools")
+        is True
     )
 
     # ---- /v1/files + /v1/batches: the OpenAI async channel over the jobs

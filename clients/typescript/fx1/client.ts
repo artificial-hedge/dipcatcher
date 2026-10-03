@@ -736,10 +736,15 @@ export class HarnessApiClient {
   /**
    * POST /v1/responses — the OpenAI Responses surface over the gated
    * pipeline. Non-streaming only (`stream: true` is rejected here; use
-   * `responsesCreateStream`). `input` is a string or message-item list;
+   * `responsesCreateStream`). `input` is a string or message-item list
+   * (`function_call`/`function_call_output` items carry a tool history);
    * `instructions` prepends a system turn; `text.format` is the
-   * post-validated structured-output channel. Returns the `response`
-   * object plus the `X-Fx1-Completion-Id` handle.
+   * post-validated structured-output channel. `tools` takes the
+   * flattened Responses spec (`{type: "function", name, description,
+   * parameters}`), `tool_choice` is `"none" | "auto" | "required"` or
+   * `{type: "function", name}` — calls land in `output` as
+   * `function_call` items. Returns the `response` object plus the
+   * `X-Fx1-Completion-Id` handle.
    */
   async responsesCreate(
     request: OpenAIResponseRequest,

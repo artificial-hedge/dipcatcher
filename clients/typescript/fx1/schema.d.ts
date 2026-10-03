@@ -912,8 +912,13 @@ export interface paths {
          *     ``response_format`` channel (a violation is a provider-side 502),
          *     ``user``/``safety_identifier``/``metadata`` stamp the audit record.
          *
-         *     Same fail-closed rule as chat completions: ``tools``/
-         *     ``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/
+         *     ``tools`` (flattened Responses specs), ``tool_choice``
+         *     (``none``/``auto``/``required`` or ``{type: "function", name}``),
+         *     ``parallel_tool_calls``, ``function_call``/``function_call_output``
+         *     input items, and ``function_call`` output items are first-class —
+         *     the same tool channel as ``/v1/chat/completions`` under its own
+         *     grammar (a link without the channel answers 501). Same fail-closed
+         *     rule as chat completions for the rest: ``truncation``/``include``/
          *     ``background``/``previous_response_id`` refuse at validation (422).
          *     ``store`` governs the retrieval index — ``store=false`` keeps the
          *     call out of ``GET /v1/responses/{id}`` (the audit ledger still
@@ -2053,6 +2058,8 @@ export interface components {
              * @default fx1
              */
             model: string;
+            /** Parallel Tool Calls */
+            parallel_tool_calls?: boolean | null;
             /** Reasoning */
             reasoning?: {
                 [key: string]: unknown;
@@ -2074,10 +2081,42 @@ export interface components {
             text?: {
                 [key: string]: unknown;
             } | null;
+            /** Tool Choice */
+            tool_choice?: ("none" | "auto" | "required") | {
+                [key: string]: unknown;
+            } | null;
+            /** Tools */
+            tools?: components["schemas"]["OpenAIResponseTool"][] | null;
             /** Top P */
             top_p?: number | null;
             /** User */
             user?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIResponseTool
+         * @description One ``tools[]`` entry on the Responses surface — the flattened
+         *     function spec (``name``/``parameters`` sit beside ``type`` rather
+         *     than under a ``function`` key). Same bounds as the chat spec.
+         */
+        OpenAIResponseTool: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters?: {
+                [key: string]: unknown;
+            } | null;
+            /** Strict */
+            strict?: boolean | null;
+            /**
+             * Type
+             * @default function
+             * @constant
+             */
+            type: "function";
         } & {
             [key: string]: unknown;
         };

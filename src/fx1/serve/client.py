@@ -1237,21 +1237,31 @@ class HarnessClient:
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
         text_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
         """POST /v1/responses — the Responses API over the gated pipeline.
 
-        ``input`` is a string or a list of message items
+        ``input`` is a string or a list of items
         (``{"type": "message", "role": ..., "content": [{"type": "input_text",
-        "text": ...}]}`` or the shorthand ``{"role": ..., "content": "..."}``);
-        ``instructions`` prepends a system turn. ``text_format`` is the
-        ``text.format`` object (``{"type": "json_object"}`` /
-        ``{"type": "json_schema", "schema": {...}}``) — post-validated, a
-        violation is a provider-side 502.
+        "text": ...}]}`` or the shorthand ``{"role": ..., "content": "..."}``;
+        ``function_call``/``function_call_output`` items carry a tool
+        history into the next turn); ``instructions`` prepends a system
+        turn. ``text_format`` is the ``text.format`` object
+        (``{"type": "json_object"}`` / ``{"type": "json_schema",
+        "schema": {...}}``) — post-validated, a violation is a
+        provider-side 502. ``tools`` takes the flattened Responses spec
+        (``{"type": "function", "name", "description", "parameters"}``);
+        ``tool_choice`` is ``"none"``/``"auto"``/``"required"`` or
+        ``{"type": "function", "name": ...}``. Calls land in ``output`` as
+        ``{"type": "function_call", "call_id", "name", "arguments"}`` items.
 
         Returns ``(response_object, completion_id)`` — the response's
-        ``output[0].content[0].text`` is the gated text; the cid links to
+        ``output`` holds a ``message`` item whose ``content[0].text`` is
+        the gated text when the model answers in prose; the cid links to
         the completion log. ``Idempotency-Key`` replays byte-identically.
         """
         payload = self._responses_payload(
@@ -1273,6 +1283,9 @@ class HarnessClient:
             safety_identifier=safety_identifier,
             reasoning_effort=reasoning_effort,
             text_format=text_format,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
             stream=False,
         )
         if idempotency_key is not None:
@@ -1351,6 +1364,9 @@ class HarnessClient:
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
         text_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
         stream: bool = False,
     ) -> dict[str, Any]:
         fx1: dict[str, Any] = {}
@@ -1383,6 +1399,12 @@ class HarnessClient:
             payload["reasoning"] = {"effort": reasoning_effort}
         if text_format is not None:
             payload["text"] = {"format": text_format}
+        if tools is not None:
+            payload["tools"] = tools
+        if tool_choice is not None:
+            payload["tool_choice"] = tool_choice
+        if parallel_tool_calls is not None:
+            payload["parallel_tool_calls"] = parallel_tool_calls
         if fx1:
             payload["fx1"] = fx1
         return payload

@@ -29,7 +29,8 @@ import json
 import threading
 import time
 import urllib.parse
-from collections.abc import Iterator, Mapping, Sequence
+import uuid
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Literal
 
 import jsonschema
@@ -54,6 +55,7 @@ __all__ = [
     "OpenAIModel",
     "OpenAIModelList",
     "OpenAIResponseRequest",
+    "OpenAIResponseTool",
     "OpenAITool",
     "OpenAIToolFunction",
     "OPENAI_BATCH_ENDPOINTS",
@@ -73,6 +75,7 @@ __all__ = [
     "openai_messages",
     "openai_model",
     "openai_models",
+    "openai_response_call_items",
     "openai_response_events",
     "openai_response_object",
     "openai_to_kwargs",
@@ -787,9 +790,6 @@ def openai_chunks(
 # records every call regardless — retrieval is a convenience surface, not
 # the evidence).
 RESPONSES_UNSUPPORTED = (
-    "tools",
-    "tool_choice",
-    "parallel_tool_calls",
     "truncation",
     "include",
     "background",
@@ -823,8 +823,6 @@ RESPONSES_UNSUPPORTED = (
 RESPONSE_ITEM_TYPES_REFUSED = frozenset(
     {
         "item_reference",
-        "function_call",
-        "function_call_output",
         "reasoning",
         "web_search_call",
         "file_search_call",
@@ -844,6 +842,14 @@ RESPONSE_ITEM_TYPES_REFUSED = frozenset(
 RESPONSE_PART_TYPES = frozenset({"input_text", "output_text"})
 
 RESPONSE_ROLES = frozenset({"user", "assistant", "system", "developer"})
+
+
+class OpenAIResponseTool(OpenAIToolFunction):
+    """One ``tools[]`` entry on the Responses surface — the flattened
+    function spec (``name``/``parameters`` sit beside ``type`` rather
+    than under a ``function`` key). Same bounds as the chat spec."""
+
+    type: Literal["function"] = "function"
 
 
 class OpenAIResponseRequest(_Model):
@@ -870,6 +876,9 @@ class OpenAIResponseRequest(_Model):
     safety_identifier: str | None = Field(default=None, max_length=512)
     reasoning: dict[str, Any] | None = None
     text: dict[str, Any] | None = None
+    tools: list[OpenAIResponseTool] | None = None
+    tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
+    parallel_tool_calls: bool | None = None
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -929,6 +938,20 @@ class OpenAIResponseRequest(_Model):
                         raise ValueError(
                             f"text.format json_schema is not a valid schema: {exc.message}"
                         ) from exc
+        if self.tools is not None and len(self.tools) > 128:
+            raise ValueError("tools accepts at most 128 entries")
+        if isinstance(self.tool_choice, dict) and (
+            self.tool_choice.get("type") != "function"
+            or not isinstance(self.tool_choice.get("name"), str)
+        ):
+            raise ValueError(
+                "tool_choice must be 'none'|'auto'|'required' or "
+                "{type: 'function', name: 'fn_name'}"
+            )
+        if not self.tools and (
+            self.tool_choice is not None or self.parallel_tool_calls is not None
+        ):
+            raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
         present = [f for f in RESPONSES_UNSUPPORTED if getattr(self, f, None) is not None]
         extra_bad = sorted(f for f in RESPONSES_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
         bad = sorted(set(present) | set(extra_bad))
@@ -939,12 +962,14 @@ class OpenAIResponseRequest(_Model):
 
 def response_input_to_messages(
     input_: str | list[dict[str, Any]], instructions: str | None
-) -> list[dict[str, str]]:
+) -> list[dict[str, Any]]:
     """Flatten a Responses ``input`` + ``instructions`` into harness
-    ``{role, content}`` pairs. ``developer`` items map to ``system``;
-    every non-message item type and non-text content part fails
-    closed."""
-    msgs: list[dict[str, str]] = []
+    message dicts. ``developer`` items map to ``system``; consecutive
+    ``function_call`` items fold into one assistant turn's
+    ``tool_calls``; a ``function_call_output`` item maps to a
+    ``role: "tool"`` message keyed by its ``call_id``. Every other
+    non-message item type and non-text content part fails closed."""
+    msgs: list[dict[str, Any]] = []
     if instructions:
         msgs.append({"role": "system", "content": instructions})
     if isinstance(input_, str):
@@ -954,6 +979,49 @@ def response_input_to_messages(
         if not isinstance(item, dict):
             raise OpenAICompatError(f"input[{i}]: items must be objects")
         itype = item.get("type")
+        if itype == "function_call":
+            call_id = item.get("call_id")
+            name = item.get("name")
+            args = item.get("arguments")
+            if not isinstance(call_id, str) or not call_id:
+                raise OpenAICompatError(
+                    f"input[{i}]: function_call needs a non-empty string call_id"
+                )
+            if not isinstance(name, str) or not name:
+                raise OpenAICompatError(f"input[{i}]: function_call needs a non-empty string name")
+            if not isinstance(args, str):
+                raise OpenAICompatError(f"input[{i}]: function_call arguments must be a string")
+            call = {
+                "id": call_id,
+                "type": "function",
+                "function": {"name": name, "arguments": args},
+            }
+            prior = msgs[-1] if msgs else {}
+            if prior.get("role") == "assistant" and prior.get("tool_calls"):
+                prior["tool_calls"].append(call)
+            else:
+                msgs.append({"role": "assistant", "tool_calls": [call]})
+            continue
+        if itype == "function_call_output":
+            call_id = item.get("call_id")
+            output = item.get("output")
+            if not isinstance(call_id, str) or not call_id:
+                raise OpenAICompatError(
+                    f"input[{i}]: function_call_output needs a non-empty string call_id"
+                )
+            if isinstance(output, list):
+                outs: list[str] = []
+                for j, part in enumerate(output):
+                    if not isinstance(part, dict) or part.get("type") != "output_text":
+                        raise OpenAICompatError(
+                            f"input[{i}].output[{j}]: only output_text parts are supported"
+                        )
+                    outs.append(str(part.get("text", "")))
+                output = "".join(outs)
+            if not isinstance(output, str):
+                raise OpenAICompatError(f"input[{i}]: function_call_output needs a string output")
+            msgs.append({"role": "tool", "content": output, "tool_call_id": call_id})
+            continue
         if itype in RESPONSE_ITEM_TYPES_REFUSED:
             raise OpenAICompatError(f"input[{i}]: {itype!r} items are not supported")
         role = item.get("role")
@@ -1032,6 +1100,25 @@ def response_to_kwargs(
         "metadata": body.metadata,
         "service_tier": body.service_tier,
         "reasoning_effort": effort,
+        # the flattened Responses spec nests under ``function`` for the
+        # shared tool channel; a dict tool_choice folds the same way
+        "tools": (
+            [
+                {
+                    "type": "function",
+                    "function": t.model_dump(exclude_none=True, exclude={"type"}),
+                }
+                for t in body.tools
+            ]
+            if body.tools
+            else None
+        ),
+        "tool_choice": (
+            {"type": "function", "function": {"name": body.tool_choice["name"]}}
+            if isinstance(body.tool_choice, dict)
+            else body.tool_choice
+        ),
+        "parallel_tool_calls": body.parallel_tool_calls,
     }
 
 
@@ -1049,11 +1136,40 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         # fields we refuse on input are echoed as their honest constants;
         # `store` echoes the actual knob — the retrieval index honors it
         "store": body.store is not False,
-        "tools": [],
-        "tool_choice": "none",
-        "parallel_tool_calls": False,
+        "tools": ([t.model_dump(exclude_none=True) for t in body.tools] if body.tools else []),
+        # OpenAI echoes "auto" once tools are advertised without a choice
+        "tool_choice": (
+            body.tool_choice if body.tool_choice is not None else ("auto" if body.tools else "none")
+        ),
+        "parallel_tool_calls": bool(body.parallel_tool_calls),
         "truncation": "disabled",
     }
+
+
+def openai_response_call_items(
+    tool_calls: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Chat-shaped ``tool_calls`` → Responses ``function_call`` output
+    items. Ids mint once here — pass the returned items to both
+    :func:`openai_response_object` and :func:`openai_response_events` so
+    the envelope and the stream frames carry identical item ids."""
+    items: list[dict[str, Any]] = []
+    for call in tool_calls:
+        fn = call.get("function") or {}
+        args = fn.get("arguments")
+        items.append(
+            {
+                "type": "function_call",
+                "id": f"fc_{uuid.uuid4().hex}",
+                "call_id": call.get("id"),
+                "name": fn.get("name"),
+                "arguments": (
+                    args if isinstance(args, str) else json.dumps(args or {}, sort_keys=True)
+                ),
+                "status": "completed",
+            }
+        )
+    return items
 
 
 def openai_response_object(
@@ -1066,12 +1182,16 @@ def openai_response_object(
     usage: dict[str, int] | None,
     status: str = "completed",
     created: int | None = None,
+    call_items: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the ``response`` object. ``output`` carries one
-    ``message`` item with one ``output_text`` part; ``usage`` maps the
-    provider's counts onto input/output/total (``None`` when the backend
-    reports nothing — never fabricated). ``status`` is ``in_progress``
-    only inside the pre-completion stream events."""
+    ``message`` item with one ``output_text`` part — plus one
+    ``function_call`` item per tool call when the backend answered with
+    calls (a calls-only turn ships no message item, matching OpenAI).
+    ``usage`` maps the provider's counts onto input/output/total
+    (``None`` when the backend reports nothing — never fabricated).
+    ``status`` is ``in_progress`` only inside the pre-completion stream
+    events."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
         it = usage.get("prompt_tokens")
@@ -1085,19 +1205,19 @@ def openai_response_object(
                 "output_tokens": o_v,
                 "total_tokens": tt if isinstance(tt, int) else i_v + o_v,
             }
-    output = (
-        [
-            {
-                "type": "message",
-                "id": item_id,
-                "status": "completed",
-                "role": "assistant",
-                "content": [{"type": "output_text", "text": content, "annotations": []}],
-            }
-        ]
-        if status == "completed"
-        else []
-    )
+    output: list[dict[str, Any]] = []
+    if status == "completed":
+        if content or not call_items:
+            output.append(
+                {
+                    "type": "message",
+                    "id": item_id,
+                    "status": "completed",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": content, "annotations": []}],
+                }
+            )
+        output.extend(call_items or [])
     return {
         "id": rid,
         "object": "response",
@@ -1121,6 +1241,7 @@ def openai_response_events(
     model: str | None,
     usage: dict[str, int] | None,
     created: int | None = None,
+    call_items: list[dict[str, Any]] | None = None,
 ) -> Iterator[tuple[str, dict[str, Any]]]:
     """The Responses SSE event sequence over gated text — the core grammar
     a streaming client needs: ``response.created``/``in_progress``, the
@@ -1146,75 +1267,118 @@ def openai_response_events(
             "response": created_obj,
         },
     )
-    yield (
-        "response.output_item.added",
-        {
-            "type": "response.output_item.added",
-            "output_index": 0,
-            "item": {
-                "type": "message",
-                "id": item_id,
-                "status": "in_progress",
-                "role": "assistant",
-                "content": [],
-            },
-        },
-    )
-    yield (
-        "response.content_part.added",
-        {
-            "type": "response.content_part.added",
-            "item_id": item_id,
-            "output_index": 0,
-            "content_index": 0,
-            "part": {"type": "output_text", "text": "", "annotations": []},
-        },
-    )
-    for piece in _text_pieces(text):
+    next_index = 0
+    if text or not call_items:
         yield (
-            "response.output_text.delta",
+            "response.output_item.added",
             {
-                "type": "response.output_text.delta",
+                "type": "response.output_item.added",
+                "output_index": 0,
+                "item": {
+                    "type": "message",
+                    "id": item_id,
+                    "status": "in_progress",
+                    "role": "assistant",
+                    "content": [],
+                },
+            },
+        )
+        yield (
+            "response.content_part.added",
+            {
+                "type": "response.content_part.added",
                 "item_id": item_id,
                 "output_index": 0,
                 "content_index": 0,
-                "delta": piece,
+                "part": {"type": "output_text", "text": "", "annotations": []},
             },
         )
-    yield (
-        "response.output_text.done",
-        {
-            "type": "response.output_text.done",
-            "item_id": item_id,
-            "output_index": 0,
-            "content_index": 0,
-            "text": text,
-        },
-    )
-    yield (
-        "response.content_part.done",
-        {
-            "type": "response.content_part.done",
-            "item_id": item_id,
-            "output_index": 0,
-            "content_index": 0,
-            "part": {"type": "output_text", "text": text, "annotations": []},
-        },
-    )
-    yield (
-        "response.output_item.done",
-        {
-            "type": "response.output_item.done",
-            "output_index": 0,
-            "item": {
-                "type": "message",
-                "id": item_id,
-                "status": "completed",
-                "role": "assistant",
-                "content": [{"type": "output_text", "text": text, "annotations": []}],
+        for piece in _text_pieces(text):
+            yield (
+                "response.output_text.delta",
+                {
+                    "type": "response.output_text.delta",
+                    "item_id": item_id,
+                    "output_index": 0,
+                    "content_index": 0,
+                    "delta": piece,
+                },
+            )
+        yield (
+            "response.output_text.done",
+            {
+                "type": "response.output_text.done",
+                "item_id": item_id,
+                "output_index": 0,
+                "content_index": 0,
+                "text": text,
             },
-        },
-    )
+        )
+        yield (
+            "response.content_part.done",
+            {
+                "type": "response.content_part.done",
+                "item_id": item_id,
+                "output_index": 0,
+                "content_index": 0,
+                "part": {"type": "output_text", "text": text, "annotations": []},
+            },
+        )
+        yield (
+            "response.output_item.done",
+            {
+                "type": "response.output_item.done",
+                "output_index": 0,
+                "item": {
+                    "type": "message",
+                    "id": item_id,
+                    "status": "completed",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": text, "annotations": []}],
+                },
+            },
+        )
+        next_index = 1
+    # one output_item lifecycle per function call — arguments stream as
+    # function_call_arguments.delta chunks inside it
+    for k, item in enumerate(call_items or []):
+        idx = next_index + k
+        iid = str(item["id"])
+        yield (
+            "response.output_item.added",
+            {
+                "type": "response.output_item.added",
+                "output_index": idx,
+                "item": {**item, "arguments": "", "status": "in_progress"},
+            },
+        )
+        for piece in _text_pieces(str(item.get("arguments") or "")):
+            yield (
+                "response.function_call_arguments.delta",
+                {
+                    "type": "response.function_call_arguments.delta",
+                    "item_id": iid,
+                    "output_index": idx,
+                    "delta": piece,
+                },
+            )
+        yield (
+            "response.function_call_arguments.done",
+            {
+                "type": "response.function_call_arguments.done",
+                "item_id": iid,
+                "output_index": idx,
+                "arguments": item.get("arguments"),
+            },
+        )
+        yield (
+            "response.output_item.done",
+            {
+                "type": "response.output_item.done",
+                "output_index": idx,
+                "item": item,
+            },
+        )
     yield (
         "response.completed",
         {
@@ -1228,6 +1392,7 @@ def openai_response_events(
                 usage=usage,
                 status="completed",
                 created=created,
+                call_items=call_items,
             ),
         },
     )

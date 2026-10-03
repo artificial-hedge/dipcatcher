@@ -133,6 +133,7 @@ from fx1.serve.openai_compat import (
     openai_envelope,
     openai_error_body,
     openai_model,
+    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
@@ -1166,6 +1167,7 @@ def _responses_sse(
     usage: dict[str, int] | None,
     created: int | None = None,
     skip: int = 0,
+    call_items: list[dict[str, Any]] | None = None,
 ) -> Iterator[str]:
     """Serialize ``openai_response_events`` into SSE frames —
     ``event:`` + ``id:`` + ``data:`` per frame, ``id`` equal to the
@@ -1185,6 +1187,7 @@ def _responses_sse(
             model=model,
             usage=usage,
             created=created,
+            call_items=call_items,
         )
     ):
         if seq >= skip:
@@ -3134,8 +3137,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         rides the idempotency record)."""
         creq = CompleteRequest(**response_to_kwargs(body, headers))
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
-        validate_response_format(response_text_format(body), out.content)
+        # a tool-call turn carries no text — there is nothing to
+        # post-validate against text.format on an empty content
+        if out.content or not out.tool_calls:
+            validate_response_format(response_text_format(body), out.content)
         cid = out.completion_id or uuid.uuid4().hex
+        call_items = openai_response_call_items(out.tool_calls or [])
         envelope = openai_response_object(
             rid=f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
@@ -3143,6 +3150,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             body=body,
             model=out.model,
             usage=out.usage,
+            call_items=call_items or None,
         )
         if body.store is not False:
             envelope_store.put(envelope)
@@ -3328,8 +3336,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``response_format`` channel (a violation is a provider-side 502),
         ``user``/``safety_identifier``/``metadata`` stamp the audit record.
 
-        Same fail-closed rule as chat completions: ``tools``/
-        ``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/
+        ``tools`` (flattened Responses specs), ``tool_choice``
+        (``none``/``auto``/``required`` or ``{type: "function", name}``),
+        ``parallel_tool_calls``, ``function_call``/``function_call_output``
+        input items, and ``function_call`` output items are first-class —
+        the same tool channel as ``/v1/chat/completions`` under its own
+        grammar (a link without the channel answers 501). Same fail-closed
+        rule as chat completions for the rest: ``truncation``/``include``/
         ``background``/``previous_response_id`` refuse at validation (422).
         ``store`` governs the retrieval index — ``store=false`` keeps the
         call out of ``GET /v1/responses/{id}`` (the audit ledger still
@@ -3372,15 +3385,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
 
         def _resp_sse_from(env: dict[str, Any], drop: int) -> Iterator[str]:
+            env_items = [it for it in env["output"] if isinstance(it, dict)]
+            env_msg = next((it for it in env_items if it.get("type") == "message"), None)
+            env_calls = [it for it in env_items if it.get("type") == "function_call"]
             return _responses_sse(
                 body,
-                content=env["output"][0]["content"][0]["text"],
+                content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
                 rid=env["id"],
-                item_id=env["output"][0]["id"],
+                item_id=(str(env_msg["id"]) if isinstance(env_msg, dict) else ""),
                 model=env.get("model"),
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
+                call_items=env_calls or None,
             )
 
         if replay is not None:
@@ -3407,7 +3424,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         rid = str(envelope["id"])
-        item_id = str(envelope["output"][0]["id"])
+        msg_item = next(
+            (it for it in envelope["output"] if it.get("type") == "message"),
+            None,
+        )
+        env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -3428,12 +3449,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _responses_sse(
                     body,
-                    content=str(envelope["output"][0]["content"][0]["text"]),
+                    content=(
+                        str(msg_item["content"][0]["text"]) if isinstance(msg_item, dict) else ""
+                    ),
                     rid=rid,
-                    item_id=item_id,
+                    item_id=(str(msg_item["id"]) if isinstance(msg_item, dict) else ""),
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
+                    call_items=env_call_items or None,
                 ),
                 media_type="text/event-stream",
                 headers=headers,
@@ -4494,6 +4518,7 @@ def create_app(
                 "openai_compat": True,
                 "openai_retrieval": True,
                 "openai_tools": True,
+                "openai_responses_tools": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

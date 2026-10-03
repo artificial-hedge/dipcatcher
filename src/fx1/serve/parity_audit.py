@@ -740,7 +740,7 @@ def parity_audit() -> dict[str, bool]:
             and sdk.completion(sdk_resp_cid or "").metadata == {"lane": "78"}
         )
         # refused fields refuse identically on both surfaces
-        resp_tools = {**resp_body, "tools": []}
+        resp_tools = {**resp_body, "truncation": "auto"}
         wire_rt = client.post("/v1/responses", json=resp_tools)
         sdk_rt = _raises(lambda: sdk.openai_response(resp_tools))[0]
         out["openai_response_refusal_parity"] = (
@@ -750,7 +750,7 @@ def parity_audit() -> dict[str, bool]:
         )
         resp_item_refuse = {
             **resp_body,
-            "input": [{"type": "function_call", "role": "user", "content": "x"}],
+            "input": [{"type": "computer_call", "role": "user", "content": "x"}],
         }
         wire_rf = client.post("/v1/responses", json=resp_item_refuse)
         sdk_rf = _raises(lambda: sdk.openai_response(resp_item_refuse))[0]
@@ -787,6 +787,98 @@ def parity_audit() -> dict[str, bool]:
             wire_rs.status_code == 200
             and [_resp_norm(p) for p in wire_revents] == [_resp_norm(p) for _e, p in sdk_revents]
             and [e for e, _p in sdk_revents] == [p["type"] for p in wire_revents]
+        )
+
+        # lane 82: the tool channel on /v1/responses — envelope, echo,
+        # item folding, refusal shape, and stream grammar all identical
+        # across the wire/SDK surfaces
+        rtool_body = {
+            "model": "fx1",
+            "input": "calc one",
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "calc",
+                    "description": "arithmetic",
+                    "parameters": {"type": "object"},
+                }
+            ],
+            "tool_choice": "required",
+            "parallel_tool_calls": True,
+        }
+        wire_rtc = client_t.post("/v1/responses", json=rtool_body)
+        sdk_rtc, _rtc_cid = sdk_t.openai_response(rtool_body)
+        wire_rtc_o = wire_rtc.json()["output"]
+        sdk_rtc_o = sdk_rtc["output"]
+        out["openai_responses_tools_parity"] = (
+            wire_rtc.status_code == 200
+            and [{k: v for k, v in it.items() if k != "id"} for it in wire_rtc_o]
+            == [{k: v for k, v in it.items() if k != "id"} for it in sdk_rtc_o]
+            == [
+                {
+                    "type": "function_call",
+                    "call_id": "call_p",
+                    "name": "calc",
+                    "arguments": '{"x": 1}',
+                    "status": "completed",
+                }
+            ]
+            and wire_rtc.json()["tool_choice"] == sdk_rtc["tool_choice"] == "required"
+            and wire_rtc.json()["parallel_tool_calls"] == sdk_rtc["parallel_tool_calls"] is True
+        )
+        # fc/fco input items fold to the same shared history on both
+        # surfaces — the tool-capable stub would see identical messages
+        hist_body = {
+            "model": "fx1",
+            "input": [
+                {"role": "user", "content": "q"},
+                {
+                    "type": "function_call",
+                    "call_id": "call_a",
+                    "name": "calc",
+                    "arguments": "{}",
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_a",
+                    "output": "2",
+                },
+                {"role": "user", "content": "and?"},
+            ],
+        }
+        wire_hist = client_t.post("/v1/responses", json=hist_body)
+        sdk_hist = _raises(lambda: sdk_t.openai_response(hist_body))[0]
+        out["openai_responses_tool_items_parity"] = (
+            wire_hist.status_code == 200
+            and sdk_hist == ""
+            and wire_hist.json()["output"][0]["type"] == "function_call"
+        )
+        # bounds refuse identically on both surfaces
+        tool_bad = {**rtool_body, "tools": []}
+        wire_tb = client_t.post("/v1/responses", json=tool_bad)
+        sdk_tb = _raises(lambda: sdk_t.openai_response(tool_bad))[0]
+        out["openai_responses_tool_bounds_parity"] = (
+            wire_tb.status_code == 422 and sdk_tb == "ValidationError"
+        )
+        # a link without the channel 501s identically
+        wire_tn = client.post("/v1/responses", json=rtool_body)
+        sdk_tn = _raises(lambda: sdk.openai_response(rtool_body))[0]
+        out["openai_responses_tools_501_parity"] = (
+            wire_tn.status_code == 501 and sdk_tn == "NotImplementedError"
+        )
+        # stream: identical (event, payload) sequences modulo minted ids
+        wire_rts = client_t.post("/v1/responses", json={**rtool_body, "stream": True})
+        wire_rtevents = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_rts.text.splitlines()
+            if ln.startswith("data: ")
+        ]
+        sdk_rtevents, _ = sdk_t.openai_response_stream(rtool_body)
+        out["openai_responses_tools_stream_parity"] = (
+            wire_rts.status_code == 200
+            and [_resp_norm(p) for p in wire_rtevents] == [_resp_norm(p) for _e, p in sdk_rtevents]
+            and [e for e, _p in sdk_rtevents] == [p["type"] for p in wire_rtevents]
+            and "response.function_call_arguments.delta" in [p["type"] for p in wire_rtevents]
         )
 
         from fx1.serve.byok_audit import byok_audit_bench

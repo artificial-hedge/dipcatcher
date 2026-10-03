@@ -358,16 +358,33 @@ same OpenAI error taxonomy:
   (`{role, content: "…"}`), or full items with `input_text` /
   `output_text` parts; `instructions` prepends a system turn and
   `developer` roles map to system. Parts join by concatenation
-  (per the spec), empty input is 422/400, and item types outside
-  `message` (`function_call`, `function_call_output`,
-  `computer_call`, …) fail closed 400 — the harness never fabricates
-  tool output.
+  (per the spec), empty input is 422/400, `function_call` and
+  `function_call_output` items carry the agent's tool history
+  (they fold onto the shared chat channel — assistant
+  `tool_calls` + `role:"tool"` messages), and item types outside
+  that set (`computer_call`, `reasoning`, …) fail closed 400 —
+  the harness never fabricates tool output.
 - **Envelope:** the `response` object — `{id: "resp_…", status:
   "completed", output: [{type:"message", content: [{type:
   "output_text", …}]}], usage: {input_tokens, output_tokens,
   total_tokens} or null}` — plus request echoes (`temperature`,
   `top_p`, `max_output_tokens`, `metadata`, `instructions`,
-  `service_tier`, `reasoning`, `text`).
+  `service_tier`, `reasoning`, `text`). A tool-call turn appends
+  `{type: "function_call", call_id, name, arguments,
+  status: "completed"}` items to `output` (a calls-only turn ships
+  no message item).
+- **Tools channel:** `tools` takes the flattened Responses spec
+  (`{type: "function", name, description, parameters, strict}`),
+  `tool_choice` is `none`/`auto`/`required` or
+  `{type: "function", name}`, `parallel_tool_calls` sets the
+  parallel flag — all three translate onto the same shared tool
+  channel as `/v1/chat/completions` (specs nest under
+  `function`, a dict choice folds to `{type, function:{name}}`),
+  verbatim to tool-capable links; a link without the channel
+  answers 501. Validation mirrors chat: >128 tools refuse 422,
+  `tool_choice`/`parallel_tool_calls` without tools refuse 422,
+  malformed `function_call`/`function_call_output` items refuse
+  400.
 - **Decode contract:** `max_output_tokens` maps to `max_tokens`;
   `reasoning.effort`, `service_tier`, `user`, `safety_identifier`,
   `metadata` forward like their chat counterparts; `text.format`
@@ -379,14 +396,18 @@ same OpenAI error taxonomy:
   `output_item.added` → `content_part.added` → `output_text.delta`
   ×N → `done`s → `response.completed`) with `event:` + `id:` +
   `data:` per frame — `id` is the frame index, no `[DONE]` sentinel
-  (the completed event is terminal). `Last-Event-ID` resume works
-  identically to the chat stream: the keyed response replays
-  byte-identically, frames ≤ the cursor dropped.
-- **Fail-closed surface:** `tools`/`tool_choice`, `truncation`,
-  `background`, `previous_response_id`, `include`,
-  `parallel_tool_calls`, and every other unsupported field refuse
-  422 at validation; nothing is silently dropped. `store` is
-  honored, not refused (retrieval section below).
+  (the completed event is terminal). Tool calls emit their own
+  `function_call` item events at their own `output_index` —
+  `output_item.added` → `function_call_arguments.delta` ×N →
+  `function_call_arguments.done` → `output_item.done` — and the
+  completed frame embeds the same response object the JSON path
+  returns. `Last-Event-ID` resume works identically to the chat
+  stream: the keyed response replays byte-identically, frames ≤
+  the cursor dropped.
+- **Fail-closed surface:** `truncation`, `background`,
+  `previous_response_id`, `include`, and every other unsupported
+  field refuse 422 at validation; nothing is silently dropped.
+  `store` is honored, not refused (retrieval section below).
 - **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`
   dedup space — same key + body replays the stored envelope (or the
   pinned stream) byte-identically; a key reused under a different
