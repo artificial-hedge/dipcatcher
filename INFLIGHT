@@ -1,3 +1,4 @@
+feat(research): wave 931 — population-metaheuristics canon (ant_colony, pso_swarm, diff_evolution, genetic_tsp, firefly_algo, harmony_search) (5535->5541 families)
 feat(research): wave 930 — metaheuristics canon (lin_kernighan, two_opt_move, three_opt_move, tabu_search, iterated_local, grasp_meta) (5529->5535 families)
 feat(research): wave 929 — information-geometry-4 canon (mahalanobis_div, bhat_distance, hellinger_dist, jeffreys_div, d_total_var, chi_square_div) (5523->5529 families)
 feat(research): wave 928 — computational-geometry-6 canon (convex_hull_3d, polygon_boolean, medial_axis, polygon_centroid, shape_context, beta_skeleton) (5517->5523 families)

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-931 population-metaheuristics canon.
+        "ant_colony",
+        "pso_swarm",
+        "diff_evolution",
+        "genetic_tsp",
+        "firefly_algo",
+        "harmony_search",
         # Wave-930 metaheuristics canon.
         "lin_kernighan",
         "two_opt_move",

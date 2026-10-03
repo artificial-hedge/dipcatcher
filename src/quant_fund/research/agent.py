@@ -7439,6 +7439,14 @@ from quant_fund.research.benches_w930 import (
     bench_three_opt_move_family,
     bench_two_opt_move_family,
 )
+from quant_fund.research.benches_w931 import (
+    bench_ant_colony_family,
+    bench_diff_evolution_family,
+    bench_firefly_algo_family,
+    bench_genetic_tsp_family,
+    bench_harmony_search_family,
+    bench_pso_swarm_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7810,6 +7818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ant_colony": bench_ant_colony_family,
+        "pso_swarm": bench_pso_swarm_family,
+        "diff_evolution": bench_diff_evolution_family,
+        "genetic_tsp": bench_genetic_tsp_family,
+        "firefly_algo": bench_firefly_algo_family,
+        "harmony_search": bench_harmony_search_family,
         "lin_kernighan": bench_lin_kernighan_family,
         "two_opt_move": bench_two_opt_move_family,
         "three_opt_move": bench_three_opt_move_family,
