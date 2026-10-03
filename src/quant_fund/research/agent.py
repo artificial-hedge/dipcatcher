@@ -3359,6 +3359,14 @@ from quant_fund.research.benches_w420 import (
     bench_regulator_family,
     bench_splitting_prime_family,
 )
+from quant_fund.research.benches_w421 import (
+    bench_endo_coend_family,
+    bench_frobenius_alg_family,
+    bench_profunctor_toy_family,
+    bench_span_compose_family,
+    bench_star_autonomous_family,
+    bench_traced_monoidal_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3738,6 +3746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "traced_monoidal": bench_traced_monoidal_family,
+        "star_autonomous": bench_star_autonomous_family,
+        "frobenius_alg": bench_frobenius_alg_family,
+        "span_compose": bench_span_compose_family,
+        "profunctor_toy": bench_profunctor_toy_family,
+        "endo_coend": bench_endo_coend_family,
         "dirichlet_unit": bench_dirichlet_unit_family,
         "regulator": bench_regulator_family,
         "ideal_class": bench_ideal_class_family,
