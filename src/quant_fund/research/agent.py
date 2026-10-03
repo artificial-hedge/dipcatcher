@@ -4519,6 +4519,14 @@ from quant_fund.research.benches_w565 import (
     bench_prime_gaps_family,
     bench_zhang_maynard_family,
 )
+from quant_fund.research.benches_w566 import (
+    bench_gue_statistics_family,
+    bench_keating_snaith_family,
+    bench_montgomery_pair_family,
+    bench_rudnick_sarnak_family,
+    bench_selberg_trace2_family,
+    bench_zero_spacing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4898,6 +4906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "selberg_trace2": bench_selberg_trace2_family,
+        "zero_spacing": bench_zero_spacing_family,
+        "montgomery_pair": bench_montgomery_pair_family,
+        "gue_statistics": bench_gue_statistics_family,
+        "keating_snaith": bench_keating_snaith_family,
+        "rudnick_sarnak": bench_rudnick_sarnak_family,
         "bhargava_lic": bench_bhargava_lic_family,
         "cohen_lenstra": bench_cohen_lenstra_family,
         "elliptic_rank": bench_elliptic_rank_family,

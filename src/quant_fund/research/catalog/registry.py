@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-566 L-functions/random-matrix canon.
+        "selberg_trace2",
+        "zero_spacing",
+        "montgomery_pair",
+        "gue_statistics",
+        "keating_snaith",
+        "rudnick_sarnak",
         # Wave-565 arithmetic-statistics canon.
         "bhargava_lic",
         "cohen_lenstra",
