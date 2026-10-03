@@ -4847,6 +4847,14 @@ from quant_fund.research.benches_w606 import (
     bench_nil_k_family,
     bench_pedersen_weibel_family,
 )
+from quant_fund.research.benches_w607 import (
+    bench_cocartesian_family,
+    bench_homotopy_cat_family,
+    bench_horn_filler_family,
+    bench_kan_complex_family,
+    bench_mapping_space_family,
+    bench_nerve_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5226,6 +5234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kan_complex": bench_kan_complex_family,
+        "horn_filler": bench_horn_filler_family,
+        "nerve_cat": bench_nerve_cat_family,
+        "mapping_space": bench_mapping_space_family,
+        "homotopy_cat": bench_homotopy_cat_family,
+        "cocartesian": bench_cocartesian_family,
         "connective_k": bench_connective_k_family,
         "higher_k": bench_higher_k_family,
         "k_spectrum": bench_k_spectrum_family,

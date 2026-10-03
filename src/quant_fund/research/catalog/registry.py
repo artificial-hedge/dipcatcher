@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-607 infinity-categories-3 canon.
+        "kan_complex",
+        "horn_filler",
+        "nerve_cat",
+        "mapping_space",
+        "homotopy_cat",
+        "cocartesian",
         # Wave-606 algebraic-K-5 canon.
         "connective_k",
         "higher_k",
