@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-472 motivic-3 canon.
+        "alg_cobordism",
+        "hermitian_k",
+        "oriented_coh",
+        "slice_spec",
+        "motivic_stem2",
+        "rostmotive",
         # Wave-471 p-adic-geometry-2/perfectoid canon.
         "perfectoid2",
         "diamond_geo",
