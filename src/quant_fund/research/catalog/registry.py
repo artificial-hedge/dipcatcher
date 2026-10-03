@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-766 empirical-process-2 canon.
+        "dudley_theorem",
+        "varadarajan_thm",
+        "dvoretzky_thm",
+        "vc_class",
+        "bracketing_ent",
+        "bounded_lip",
         # Wave-765 LIL/LLN canon.
         "strassen_lil",
         "chung_lil",

@@ -6119,6 +6119,14 @@ from quant_fund.research.benches_w765 import (
     bench_levy_convergence_family,
     bench_strassen_lil_family,
 )
+from quant_fund.research.benches_w766 import (
+    bench_bounded_lip_family,
+    bench_bracketing_ent_family,
+    bench_dudley_theorem_family,
+    bench_dvoretzky_thm_family,
+    bench_varadarajan_thm_family,
+    bench_vc_class_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6498,6 +6506,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dudley_theorem": bench_dudley_theorem_family,
+        "varadarajan_thm": bench_varadarajan_thm_family,
+        "dvoretzky_thm": bench_dvoretzky_thm_family,
+        "vc_class": bench_vc_class_family,
+        "bracketing_ent": bench_bracketing_ent_family,
+        "bounded_lip": bench_bounded_lip_family,
         "strassen_lil": bench_strassen_lil_family,
         "chung_lil": bench_chung_lil_family,
         "kolmogorov_3series": bench_kolmogorov_3series_family,
