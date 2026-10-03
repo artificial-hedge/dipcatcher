@@ -2471,6 +2471,14 @@ from quant_fund.research.benches_w309 import (
     bench_sidh_lite_family,
     bench_uov_sig_family,
 )
+from quant_fund.research.benches_w310 import (
+    bench_gottesman_knill_family,
+    bench_repetition_qec_family,
+    bench_shor_code_family,
+    bench_steane_code_family,
+    bench_surface_code_family,
+    bench_syndrome_circuit_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2850,6 +2858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gottesman_knill": bench_gottesman_knill_family,
+        "steane_code": bench_steane_code_family,
+        "surface_code": bench_surface_code_family,
+        "shor_code": bench_shor_code_family,
+        "syndrome_circuit": bench_syndrome_circuit_family,
+        "repetition_qec": bench_repetition_qec_family,
         "mceliece_lite": bench_mceliece_lite_family,
         "bike_lite": bench_bike_lite_family,
         "hqc_lite": bench_hqc_lite_family,

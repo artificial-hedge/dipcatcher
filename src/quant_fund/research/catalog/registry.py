@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-310 quantum-error-correction canon.
+        "gottesman_knill",
+        "steane_code",
+        "surface_code",
+        "shor_code",
+        "syndrome_circuit",
+        "repetition_qec",
         # Wave-309 post-quantum-3 canon.
         "mceliece_lite",
         "bike_lite",
