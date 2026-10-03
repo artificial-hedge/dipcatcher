@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-630 infinity-categories-4 canon.
+        "quasi_cat2",
+        "inner_horn",
+        "joyal_horn",
+        "fib_infty",
+        "cartesian_morphism",
+        "infty_functor",
         # Wave-629 deformations-3 canon.
         "deform_functor2",
         "tangent_def",
