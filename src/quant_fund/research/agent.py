@@ -7735,6 +7735,14 @@ from quant_fund.research.benches_w967 import (
     bench_taf_dim_family,
     bench_z_stability_family,
 )
+from quant_fund.research.benches_w968 import (
+    bench_baaj_julg_family,
+    bench_cuntz_picture_family,
+    bench_ext_functor_family,
+    bench_kasparov_prod_family,
+    bench_kk_duality_family,
+    bench_kk_theory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8106,6 +8114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kk_theory": bench_kk_theory_family,
+        "kasparov_prod": bench_kasparov_prod_family,
+        "ext_functor": bench_ext_functor_family,
+        "baaj_julg": bench_baaj_julg_family,
+        "cuntz_picture": bench_cuntz_picture_family,
+        "kk_duality": bench_kk_duality_family,
         "cstar_dynamics": bench_cstar_dynamics_family,
         "crossed_product": bench_crossed_product_family,
         "rokhlin_action": bench_rokhlin_action_family,
