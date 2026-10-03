@@ -1,3 +1,4 @@
+feat(research): wave 525 — ergodic-theory canon (birkhoff, mean_ergodic, mixing_weak, entropy_ks, bernoulli_shift, osceledets) (3105->3111 families)
 feat(research): wave 524 — Ramsey-theory canon (hales_jewett, rado_thm, gallai_thm, schur_thm, hindman, furstenberg) (3099->3105 families)
 feat(research): wave 523 — incidence-geometry canon (erdos_distinct, sz_trotter, kakeya, ff_kakeya, joints_thm, guth_katz) (3093->3099 families)
 feat(research): wave 522 — additive-combinatorics canon (freiman_thm, szemeredi, green_tao, roth_thm, gowers_norm, plunnecke) (3087->3093 families)
