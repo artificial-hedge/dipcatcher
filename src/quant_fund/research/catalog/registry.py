@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-946 positive-matrix canon.
+        "perron_frobenius",
+        "douglas_factor",
+        "cholesky_piv",
+        "matrix_square_root",
+        "polar_decomp",
+        "sylvester_matrix",
         # Wave-945 matrix-norm canon.
         "kyfan_norm",
         "schatten_norm",
