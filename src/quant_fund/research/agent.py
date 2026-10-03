@@ -3823,6 +3823,14 @@ from quant_fund.research.benches_w478 import (
     bench_motivic_pi0_family,
     bench_quadratic_k_family,
 )
+from quant_fund.research.benches_w479 import (
+    bench_ahb_ring_family,
+    bench_drinfeld_sym_family,
+    bench_fargues_diam_family,
+    bench_prism_2_family,
+    bench_scholze_diamond_family,
+    bench_tilting_equiv_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4202,6 +4210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fargues_diam": bench_fargues_diam_family,
+        "tilting_equiv": bench_tilting_equiv_family,
+        "scholze_diamond": bench_scholze_diamond_family,
+        "ahb_ring": bench_ahb_ring_family,
+        "prism_2": bench_prism_2_family,
+        "drinfeld_sym": bench_drinfeld_sym_family,
         "levine_morel": bench_levine_morel_family,
         "quadratic_k": bench_quadratic_k_family,
         "mgl_spec": bench_mgl_spec_family,
