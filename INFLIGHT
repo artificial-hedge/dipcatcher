@@ -1,3 +1,4 @@
+feat(research): wave 412 — 2-category canon (two_cat, bicat_comp, mate_calc, double_cat, lax_functor, cat_enriched) (2427->2433 families)
 feat(research): wave 411 — algebraic-geometry-9 canon (blow_up, intersection_mult, tangent_cone, normalization, divisor_class, dualizing) (2421->2427 families)
 feat(research): wave 410 — set-theory-3 canon (forcing2, inner_model, descriptive3, recursion3, proof_mining, ordinal_notation) (2415->2421 families)
 feat(research): wave 409 — homotopy-5 canon (spectral_seq2, eilenberg_zilber, dold_kan, postnikov, stable_range, cohend) (2409->2415 families)
