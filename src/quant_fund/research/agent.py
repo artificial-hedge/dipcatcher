@@ -6151,6 +6151,14 @@ from quant_fund.research.benches_w769 import (
     bench_stein_equation_family,
     bench_stein_method_family,
 )
+from quant_fund.research.benches_w770 import (
+    bench_frechet_domain_family,
+    bench_gumbel_domain_family,
+    bench_hill_est_family,
+    bench_peak_over_family,
+    bench_pickands_est_family,
+    bench_weibull_domain_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6530,6 +6538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gumbel_domain": bench_gumbel_domain_family,
+        "weibull_domain": bench_weibull_domain_family,
+        "frechet_domain": bench_frechet_domain_family,
+        "peak_over": bench_peak_over_family,
+        "hill_est": bench_hill_est_family,
+        "pickands_est": bench_pickands_est_family,
         "stein_method": bench_stein_method_family,
         "stein_equation": bench_stein_equation_family,
         "barbour_stein": bench_barbour_stein_family,
