@@ -33,7 +33,7 @@ def _bench_baire_category(seed: int = 0) -> float:
     # a single point is nowhere dense: complement dense
     pt = 0.375
     comp = np.setdiff1d(g, [pt])
-    checks.append(bool(np.min(np.abs(comp - pt))) <= 1.0 / 2**10 + 1e-12)
+    checks.append(bool(np.min(np.abs(comp - pt)) <= 1.0 / 2**10 + 1e-12))
     # Baire on discrete model: intersection of k dense-open grid sets is nonempty
     checks.append(len(inter) > 1024 - 20)
     return float(sum(checks) / len(checks))
