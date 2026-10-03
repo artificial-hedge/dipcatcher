@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-623 higher-operads canon.
+        "dendroidal2",
+        "operadic_nerve",
+        "infty_operad2",
+        "a_infinity2",
+        "e_infinity3",
+        "cyclic_operad",
         # Wave-622 prismatic canon.
         "prism2",
         "prismatic_site",
