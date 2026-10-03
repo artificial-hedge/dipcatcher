@@ -3159,6 +3159,14 @@ from quant_fund.research.benches_w395 import (
     bench_partition_count_family,
     bench_stirling_cycle_family,
 )
+from quant_fund.research.benches_w396 import (
+    bench_cm_points_family,
+    bench_cyclotomic_field_family,
+    bench_hensel_field_family,
+    bench_idele_class_family,
+    bench_kronecker_weber_family,
+    bench_local_field_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3538,6 +3546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cyclotomic_field": bench_cyclotomic_field_family,
+        "kronecker_weber": bench_kronecker_weber_family,
+        "local_field": bench_local_field_family,
+        "hensel_field": bench_hensel_field_family,
+        "cm_points": bench_cm_points_family,
+        "idele_class": bench_idele_class_family,
         "catalan_dp": bench_catalan_dp_family,
         "stirling_cycle": bench_stirling_cycle_family,
         "partition_count": bench_partition_count_family,

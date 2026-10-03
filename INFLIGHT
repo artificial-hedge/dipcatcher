@@ -1,3 +1,4 @@
+feat(research): wave 396 — algebraic-number-theory-2 canon (cyclotomic_field, kronecker_weber, local_field, hensel_field, cm_points, idele_class) (2331->2337 families)
 feat(research): wave 395 — combinatorial-enumeration canon (catalan_dp, stirling_cycle, partition_count, bell_triangle, eulerian_num, inclusion_excl) (2325->2331 families)
 feat(research): wave 394 — order-theory canon (downset_lattice, zeta_mobius, linear_extension, sperner_bound, dilworth_partition, birkhoff_rep) (2319->2325 families)
 feat(research): wave 393 — algebraic-topology-4 canon (eilenberg_steenrod, cap_product, thom_isom, serre_class, obstruction_toy, k_theory) (2313->2319 families)
