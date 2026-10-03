@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-407 algebraic-geometry-8 canon.
+        "cech_cohom",
+        "serre_duality",
+        "adjunction2",
+        "scheme_fiber",
+        "hilbert_scheme",
+        "flattening",
         # Wave-406 homological-algebra-3 canon.
         "poincare_duality2",
         "universal_coeff",
