@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-599 monad-theory canon.
+        "monad_theorem",
+        "klesli_cat",
+        "codensity_monad",
+        "monadicity",
+        "distributive_law",
+        "algebra_cat",
         # Wave-598 algebraic-K-4 canon.
         "borel_regulator",
         "soul_elem",
