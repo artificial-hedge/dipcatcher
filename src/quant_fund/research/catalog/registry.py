@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-485 p-adic-4 canon.
+        "lubin_tate2",
+        "bc_space",
+        "local_shimura",
+        "scholze_weinstein",
+        "fargues_curve2",
+        "banach_colmez2",
         # Wave-484 synthetic-math-2 canon.
         "internal_univ",
         "virtual_hodge",
