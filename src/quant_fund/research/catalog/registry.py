@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-413 Galois-3 canon.
+        "artin_lemma",
+        "normal_basis",
+        "kummer_ext",
+        "abelian_ext",
+        "frobenius_el",
+        "inseparable",
         # Wave-412 2-category canon.
         "two_cat",
         "bicat_comp",

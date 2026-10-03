@@ -3295,6 +3295,14 @@ from quant_fund.research.benches_w412 import (
     bench_mate_calc_family,
     bench_two_cat_family,
 )
+from quant_fund.research.benches_w413 import (
+    bench_abelian_ext_family,
+    bench_artin_lemma_family,
+    bench_frobenius_el_family,
+    bench_inseparable_family,
+    bench_kummer_ext_family,
+    bench_normal_basis_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3674,6 +3682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "artin_lemma": bench_artin_lemma_family,
+        "normal_basis": bench_normal_basis_family,
+        "kummer_ext": bench_kummer_ext_family,
+        "abelian_ext": bench_abelian_ext_family,
+        "frobenius_el": bench_frobenius_el_family,
+        "inseparable": bench_inseparable_family,
         "two_cat": bench_two_cat_family,
         "bicat_comp": bench_bicat_comp_family,
         "mate_calc": bench_mate_calc_family,
