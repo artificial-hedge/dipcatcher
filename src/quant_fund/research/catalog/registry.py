@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-884 wavelet-2/spectral-elem canon.
+        "wavelet_matrix",
+        "second_gen_wavelet",
+        "nodal_dg",
+        "multidomain_sem",
+        "boundary_element",
+        "marquina_flux",
         # Wave-883 fixed-point-acceleration canon.
         "tangent_predictor",
         "is_drift",

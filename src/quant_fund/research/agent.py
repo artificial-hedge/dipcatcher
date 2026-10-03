@@ -7063,6 +7063,14 @@ from quant_fund.research.benches_w883 import (
     bench_subgradient_descent_family,
     bench_tangent_predictor_family,
 )
+from quant_fund.research.benches_w884 import (
+    bench_boundary_element_family,
+    bench_marquina_flux_family,
+    bench_multidomain_sem_family,
+    bench_nodal_dg_family,
+    bench_second_gen_wavelet_family,
+    bench_wavelet_matrix_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7434,6 +7442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wavelet_matrix": bench_wavelet_matrix_family,
+        "second_gen_wavelet": bench_second_gen_wavelet_family,
+        "nodal_dg": bench_nodal_dg_family,
+        "multidomain_sem": bench_multidomain_sem_family,
+        "boundary_element": bench_boundary_element_family,
+        "marquina_flux": bench_marquina_flux_family,
         "tangent_predictor": bench_tangent_predictor_family,
         "is_drift": bench_is_drift_family,
         "cv_optimal": bench_cv_optimal_family,
