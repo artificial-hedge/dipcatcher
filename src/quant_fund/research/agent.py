@@ -2528,6 +2528,14 @@ from quant_fund.research.benches_w316 import (
     bench_trotter_suzuki_family,
     bench_vqd_states_family,
 )
+from quant_fund.research.benches_w317 import (
+    bench_canny_edge_family,
+    bench_distance_transform_family,
+    bench_nlm_denoise_family,
+    bench_otsu_threshold_family,
+    bench_slic_superpixels_family,
+    bench_watershed_seg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2907,6 +2915,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "canny_edge": bench_canny_edge_family,
+        "otsu_threshold": bench_otsu_threshold_family,
+        "watershed_seg": bench_watershed_seg_family,
+        "slic_superpixels": bench_slic_superpixels_family,
+        "nlm_denoise": bench_nlm_denoise_family,
+        "distance_transform": bench_distance_transform_family,
         "trotter_suzuki": bench_trotter_suzuki_family,
         "qdrift": bench_qdrift_family,
         "shadow_tomography": bench_shadow_tomography_family,

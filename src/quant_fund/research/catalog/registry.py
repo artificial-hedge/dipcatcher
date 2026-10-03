@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-317 image-processing canon.
+        "canny_edge",
+        "otsu_threshold",
+        "watershed_seg",
+        "slic_superpixels",
+        "nlm_denoise",
+        "distance_transform",
         # Wave-316 quantum-3 canon.
         "trotter_suzuki",
         "qdrift",
