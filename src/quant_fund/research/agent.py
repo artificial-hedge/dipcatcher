@@ -2680,6 +2680,22 @@ from quant_fund.research.benches_w335 import (
     bench_subobject_classifier_family,
     bench_yoneda_embed_family,
 )
+from quant_fund.research.benches_w336 import (
+    bench_busy_beaver_family,
+    bench_compactness_lite_family,
+    bench_pr_functions_family,
+    bench_ramsey_theory_family,
+    bench_turing_degrees_family,
+    bench_ultraproduct_family,
+)
+from quant_fund.research.benches_w337 import (
+    bench_church_encoding_family,
+    bench_de_bruijn_family,
+    bench_knuth_bendix_family,
+    bench_lambda_typing_family,
+    bench_ski_combinator_family,
+    bench_unification_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3059,6 +3075,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ski_combinator": bench_ski_combinator_family,
+        "de_bruijn": bench_de_bruijn_family,
+        "church_encoding": bench_church_encoding_family,
+        "lambda_typing": bench_lambda_typing_family,
+        "unification": bench_unification_family,
+        "knuth_bendix": bench_knuth_bendix_family,
+        "pr_functions": bench_pr_functions_family,
+        "turing_degrees": bench_turing_degrees_family,
+        "busy_beaver": bench_busy_beaver_family,
+        "ultraproduct": bench_ultraproduct_family,
+        "ramsey_theory": bench_ramsey_theory_family,
+        "compactness_lite": bench_compactness_lite_family,
         "fin_limit": bench_fin_limit_family,
         "subobject_classifier": bench_subobject_classifier_family,
         "exponential_obj": bench_exponential_obj_family,
