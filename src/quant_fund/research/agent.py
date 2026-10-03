@@ -7103,6 +7103,14 @@ from quant_fund.research.benches_w888 import (
     bench_trefethen_diff_family,
     bench_zernike_poly_family,
 )
+from quant_fund.research.benches_w889 import (
+    bench_chebyshev_u_family,
+    bench_epsilon_algo_family,
+    bench_hexahedral_basis_family,
+    bench_quadrilateral_basis_family,
+    bench_spline_theory_family,
+    bench_walsh_table_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7474,6 +7482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quadrilateral_basis": bench_quadrilateral_basis_family,
+        "hexahedral_basis": bench_hexahedral_basis_family,
+        "chebyshev_u": bench_chebyshev_u_family,
+        "walsh_table": bench_walsh_table_family,
+        "epsilon_algo": bench_epsilon_algo_family,
+        "spline_theory": bench_spline_theory_family,
         "thin_plate_spline": bench_thin_plate_spline_family,
         "polyharmonic_rbf": bench_polyharmonic_rbf_family,
         "trefethen_diff": bench_trefethen_diff_family,
