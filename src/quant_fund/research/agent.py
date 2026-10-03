@@ -5935,6 +5935,14 @@ from quant_fund.research.benches_w742 import (
     bench_mehta_rmt_family,
     bench_soshnikov_rmt_family,
 )
+from quant_fund.research.benches_w743 import (
+    bench_baik_rmt_family,
+    bench_borodin_olshanski_family,
+    bench_bourgade_rmt_family,
+    bench_chafai_rmt_family,
+    bench_cipolloni_erdos_family,
+    bench_tao_vu_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6314,6 +6322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "baik_rmt": bench_baik_rmt_family,
+        "tao_vu": bench_tao_vu_family,
+        "borodin_olshanski": bench_borodin_olshanski_family,
+        "cipolloni_erdos": bench_cipolloni_erdos_family,
+        "bourgade_rmt": bench_bourgade_rmt_family,
+        "chafai_rmt": bench_chafai_rmt_family,
         "soshnikov_rmt": bench_soshnikov_rmt_family,
         "erdos_yau": bench_erdos_yau_family,
         "forrester_rmt": bench_forrester_rmt_family,

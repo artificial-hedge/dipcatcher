@@ -1,3 +1,4 @@
+feat(research): wave 743 — random-matrix-2 canon (baik_rmt, tao_vu, borodin_olshanski, cipolloni_erdos, bourgade_rmt, chafai_rmt) (4413->4419 families)
 feat(research): wave 742 — random-matrix canon (soshnikov_rmt, erdos_yau, forrester_rmt, mehta_rmt, deift_rmt, johansson_rmt) (4407->4413 families)
 feat(research): wave 741 — percolation-2 canon (beffara_nolin, hara_slade, gandre_liggett, heyman_redner, aiten_chayes, newman_percolation) (4401->4407 families)
 feat(research): wave 740 — percolation canon (smirnov_percolation, duminil_copin, kesten_percolation, cardy_formula, russo_seymour, grimmett_percolation) (4395->4401 families)
