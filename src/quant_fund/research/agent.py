@@ -4231,6 +4231,14 @@ from quant_fund.research.benches_w529 import (
     bench_kam_theorem_family,
     bench_twist_map_family,
 )
+from quant_fund.research.benches_w530 import (
+    bench_dominated_split_family,
+    bench_katok_horseshoe_family,
+    bench_lyapunov_chart_family,
+    bench_nonuniform_hyp_family,
+    bench_osceledets_reg_family,
+    bench_pesin_theory_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4610,6 +4618,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pesin_theory": bench_pesin_theory_family,
+        "nonuniform_hyp": bench_nonuniform_hyp_family,
+        "dominated_split": bench_dominated_split_family,
+        "osceledets_reg": bench_osceledets_reg_family,
+        "lyapunov_chart": bench_lyapunov_chart_family,
+        "katok_horseshoe": bench_katok_horseshoe_family,
         "kam_theorem": bench_kam_theorem_family,
         "aubry_mather": bench_aubry_mather_family,
         "twist_map": bench_twist_map_family,

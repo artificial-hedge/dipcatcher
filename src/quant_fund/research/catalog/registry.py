@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-530 nonuniform-hyperbolicity canon.
+        "pesin_theory",
+        "nonuniform_hyp",
+        "dominated_split",
+        "osceledets_reg",
+        "lyapunov_chart",
+        "katok_horseshoe",
         # Wave-529 KAM/Aubry-Mather canon.
         "kam_theorem",
         "aubry_mather",
