@@ -5895,6 +5895,14 @@ from quant_fund.research.benches_w737 import (
     bench_rhoade_vargas_family,
     bench_sheffield_quantum_family,
 )
+from quant_fund.research.benches_w738 import (
+    bench_abraham_bipartite_family,
+    bench_bettinelli_jacob_family,
+    bench_chapuy_dolega_family,
+    bench_curien_legall_family,
+    bench_le_gall_miermont_family,
+    bench_marckert_mokkadem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6274,6 +6282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "marckert_mokkadem": bench_marckert_mokkadem_family,
+        "le_gall_miermont": bench_le_gall_miermont_family,
+        "curien_legall": bench_curien_legall_family,
+        "abraham_bipartite": bench_abraham_bipartite_family,
+        "bettinelli_jacob": bench_bettinelli_jacob_family,
+        "chapuy_dolega": bench_chapuy_dolega_family,
         "sheffield_quantum": bench_sheffield_quantum_family,
         "gaines_sle": bench_gaines_sle_family,
         "miller_wu": bench_miller_wu_family,

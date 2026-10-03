@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-738 Brownian-map canon.
+        "marckert_mokkadem",
+        "le_gall_miermont",
+        "curien_legall",
+        "abraham_bipartite",
+        "bettinelli_jacob",
+        "chapuy_dolega",
         # Wave-737 LQG-2 canon.
         "sheffield_quantum",
         "gaines_sle",
