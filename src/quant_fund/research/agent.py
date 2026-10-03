@@ -4423,6 +4423,14 @@ from quant_fund.research.benches_w553 import (
     bench_quintic_invariants_family,
     bench_toric_mirror_family,
 )
+from quant_fund.research.benches_w554 import (
+    bench_donaldson_thomas_family,
+    bench_gopakumar_vafa_family,
+    bench_gw_descendant_family,
+    bench_kontsevich_mgn_family,
+    bench_mnop_conj_family,
+    bench_pandharipande_thomas_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4802,6 +4810,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kontsevich_mgn": bench_kontsevich_mgn_family,
+        "gw_descendant": bench_gw_descendant_family,
+        "donaldson_thomas": bench_donaldson_thomas_family,
+        "pandharipande_thomas": bench_pandharipande_thomas_family,
+        "gopakumar_vafa": bench_gopakumar_vafa_family,
+        "mnop_conj": bench_mnop_conj_family,
         "mirror_symmetry": bench_mirror_symmetry_family,
         "givental_j": bench_givental_j_family,
         "quantum_cohomology": bench_quantum_cohomology_family,
