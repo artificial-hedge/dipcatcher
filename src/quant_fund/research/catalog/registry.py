@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-362 complex-analysis canon.
+        "cauchy_integral",
+        "residue_calc",
+        "laurent_series",
+        "argument_principle",
+        "conformal_map",
+        "liouville",
+        # Wave-361 algebraic-topology-2 canon.
+        "homotopy_pi1",
+        "simplicial_homology",
+        "chain_homotopy",
+        "euler_homology",
+        "degree_map",
+        "covering_lift",
         # Wave-360 PDE-theory canon.
         "energy_method",
         "maximum_principle",

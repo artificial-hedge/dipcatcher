@@ -2880,6 +2880,22 @@ from quant_fund.research.benches_w360 import (
     bench_wave_dalembert_family,
     bench_weak_solution_family,
 )
+from quant_fund.research.benches_w361 import (
+    bench_chain_homotopy_family,
+    bench_covering_lift_family,
+    bench_degree_map_family,
+    bench_euler_homology_family,
+    bench_homotopy_pi1_family,
+    bench_simplicial_homology_family,
+)
+from quant_fund.research.benches_w362 import (
+    bench_argument_principle_family,
+    bench_cauchy_integral_family,
+    bench_conformal_map_family,
+    bench_laurent_series_family,
+    bench_liouville_family,
+    bench_residue_calc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3259,6 +3275,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cauchy_integral": bench_cauchy_integral_family,
+        "residue_calc": bench_residue_calc_family,
+        "laurent_series": bench_laurent_series_family,
+        "argument_principle": bench_argument_principle_family,
+        "conformal_map": bench_conformal_map_family,
+        "liouville": bench_liouville_family,
+        "homotopy_pi1": bench_homotopy_pi1_family,
+        "simplicial_homology": bench_simplicial_homology_family,
+        "chain_homotopy": bench_chain_homotopy_family,
+        "euler_homology": bench_euler_homology_family,
+        "degree_map": bench_degree_map_family,
+        "covering_lift": bench_covering_lift_family,
         "energy_method": bench_energy_method_family,
         "maximum_principle": bench_maximum_principle_family,
         "heat_kernel": bench_heat_kernel_family,
