@@ -7791,6 +7791,14 @@ from quant_fund.research.benches_w974 import (
     bench_real_interp_k_family,
     bench_reiteration_thm_family,
 )
+from quant_fund.research.benches_w975 import (
+    bench_dist_convolution_family,
+    bench_paley_wiener_family,
+    bench_schwartz_dist_family,
+    bench_sing_support_family,
+    bench_sobolev_trace_family,
+    bench_temper_dist_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8162,6 +8170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "schwartz_dist": bench_schwartz_dist_family,
+        "temper_dist": bench_temper_dist_family,
+        "dist_convolution": bench_dist_convolution_family,
+        "sing_support": bench_sing_support_family,
+        "paley_wiener": bench_paley_wiener_family,
+        "sobolev_trace": bench_sobolev_trace_family,
         "real_interp_k": bench_real_interp_k_family,
         "complex_interp": bench_complex_interp_family,
         "lorentz_space": bench_lorentz_space_family,
