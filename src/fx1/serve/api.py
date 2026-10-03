@@ -80,6 +80,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    ValidationError,
     field_validator,
     model_validator,
 )
@@ -109,12 +110,18 @@ from fx1.serve.evals import (
     EVAL_SUITES,
     EvalDiff,
     EvalRecord,
+    EvalSpec,
+    EvalSpecItemSchema,
+    EvalSpecStore,
     EvalStore,
     EvalSuiteName,
     diff_eval_records,
     eval_record_receipt,
     metered_model,
+    report_task_items,
     run_eval_record,
+    run_wire,
+    spec_wire,
     suite_accepts_judge,
 )
 from fx1.serve.finetune import (
@@ -912,6 +919,214 @@ class EvalListResponse(_Model):
 
     records: list[EvalRecord]
     total: int
+
+
+# ---- /v1/evals — the OpenAI Evals-shaped spec/run surface -------------------
+#
+# OpenAI's evals API separates the eval (a named container declaring the
+# datasource shape + grading criteria) from its runs (executions against
+# a model). ``data_source_config.item_schema`` is the harness twin of the
+# submission knobs — validated fail-closed at spec create so a bad spec
+# can never exist; credentials never live on a spec (BYOK blocks attach
+# to the run body only — the spec is stored state and must stay
+# export-safe).
+
+
+class EvalSpecCriterion(_Model):
+    """One declared testing criterion — grader kwargs ride ``extra`` (the
+    suite's own graders are the measurements; criteria are declarative)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str = Field(min_length=1, max_length=255)
+    type: str | None = None
+
+
+class EvalSpecDataSource(_Model):
+    """``data_source_config`` — custom type + the validated item_schema."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["custom"]
+    item_schema: EvalSpecItemSchema
+    include_sample_schema: bool | None = None
+
+
+class EvalSpecCreate(_Model):
+    """``POST /v1/evals`` body — name + config + criteria + metadata."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=255)
+    data_source_config: EvalSpecDataSource
+    testing_criteria: list[EvalSpecCriterion] = Field(default_factory=list, max_length=64)
+    metadata: dict[str, str] | None = None
+
+
+class EvalSpecUpdate(_Model):
+    """``POST /v1/evals/{id}`` — metadata/name edits; the datasource is
+    frozen (a spec's declared shape is evidence once runs bind to it)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _some_field(self) -> EvalSpecUpdate:
+        if self.name is None and self.metadata is None:
+            raise ValueError("update must carry name or metadata")
+        return self
+
+
+class EvalSpecWire(_Model):
+    """The OpenAI ``eval`` object."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval"] = "eval"
+    name: str
+    data_source_config: dict[str, Any]
+    testing_criteria: list[dict[str, Any]]
+    metadata: dict[str, str]
+    created_at: int
+
+
+class EvalSpecPage(_Model):
+    """``{object:'list', data:[eval], has_more}`` — the OpenAI list shape."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalSpecWire]
+    has_more: bool
+
+
+class EvalSpecDeleted(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.deleted"] = "eval.deleted"
+    deleted: Literal[True] = True
+
+
+class EvalRunDataSource(_Model):
+    """Optional run-time overrides on the spec's item_schema."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["custom"] = "custom"
+    source: dict[str, Any] | None = None
+
+
+class EvalRunCreate(_Model):
+    """``POST /v1/evals/{id}/runs`` — ``model`` is the eval target: a
+    backend link name (``hosted_k3``/``local_fx1``/``byok``), the base
+    ``fx1``, or a registered ``ft:`` name (resolves to local_fx1 at the
+    card's checkpoint — unregistered names fail closed). ``byok``
+    carries the credentials for a byok link — never stored on the spec
+    or record."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(min_length=1, max_length=512)
+    data_source: EvalRunDataSource | None = None
+    byok: ByokOverride | None = None
+    judge_byok: ByokOverride | None = None
+    metadata: dict[str, str] | None = None
+    callback_url: str | None = None
+    callback_secret: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _run_callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _run_valid(self) -> EvalRunCreate:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
+
+
+class EvalRunCounts(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    total: int
+    passed: int
+    failed: int
+    errored: int
+
+
+class EvalRunError(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class EvalRunObject(_Model):
+    """The OpenAI ``eval.run`` object over the record."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run"] = "eval.run"
+    eval_id: str | None
+    model: str
+    status: str
+    created_at: int
+    suite: str
+    seed: int
+    backend: str
+    result_counts: EvalRunCounts | None = None
+    per_testing_criteria_results: list[dict[str, Any]] = []
+    error: EvalRunError | None = None
+    receipt_url: str
+
+
+class EvalRunPage(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalRunObject]
+    has_more: bool
+
+
+class EvalOutputItem(_Model):
+    """One per-task verdict row — ``datasource_item`` is the suite's raw
+    report row, served verbatim."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run.output_item"] = "eval.run.output_item"
+    run_id: str
+    eval_id: str | None
+    created_at: int
+    status: Literal["pass", "fail"]
+    datasource_item_id: str
+    datasource_item: dict[str, Any]
+    results: list[dict[str, Any]]
+
+
+class EvalOutputItemPage(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    object: Literal["list"] = "list"
+    data: list[EvalOutputItem]
+    has_more: bool
+    first_id: str | None = None
+    last_id: str | None = None
+
+
+class EvalRunDeleted(_Model):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    object: Literal["eval.run.deleted"] = "eval.run.deleted"
+    deleted: Literal[True] = True
 
 
 class CompleteBatchItem(_Model):
@@ -2769,6 +2984,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ft_dir: Path,
     bg_cancel: dict[str, threading.Event],
     conv_store: OpenAIEnvelopeStore,
+    eval_spec_store: EvalSpecStore,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -3083,6 +3299,257 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(409, f"eval {eval_id!r} is {outcome}")
         _deliver_callback(rec)  # cancelled is terminal — fire the webhook
         return rec
+
+    # ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------
+
+    def _spec_or_404(eval_id: str) -> EvalSpec:
+        spec = eval_spec_store.get(eval_id)
+        if spec is None:
+            raise ApiError(404, f"eval '{eval_id}' not found", code="eval_not_found")
+        return spec
+
+    def _run_or_404(eval_id: str, run_id: str) -> EvalRecord:
+        bare = run_id.removeprefix("evalrun_")
+        rec = eval_store.get(bare)
+        if rec is None or rec.eval_spec != eval_id:
+            raise ApiError(404, f"run '{run_id}' not found", code="run_not_found")
+        return rec
+
+    def _run_model_backend(
+        model: str,
+    ) -> tuple[Literal["hosted_k3", "local_fx1", "byok"], str | None]:
+        """``model`` → (backend, checkpoint_dir): link names pass through;
+        ``fx1`` is the base checkpoint; ``ft:<name>`` resolves through the
+        model-card registry to its checkpoint (unregistered fails closed)."""
+        if model in ("hosted_k3", "local_fx1", "byok"):
+            return cast(Literal["hosted_k3", "local_fx1", "byok"], model), None
+        if model == "fx1":
+            return "local_fx1", None
+        if model.startswith("ft:"):
+            ckpt = ft_store.checkpoint_for(model)
+            if ckpt is None:
+                raise ApiError(404, f"model '{model}' not found", code="model_not_found")
+            return "local_fx1", ckpt
+        raise ApiError(400, f"unknown eval model {model!r}", code="invalid_request")
+
+    @app.post(
+        "/v1/evals",
+        response_model=EvalSpecWire,
+        status_code=201,
+        operation_id="createEval",
+        tags=["evals"],
+    )
+    def eval_spec_create(body: EvalSpecCreate) -> EvalSpecWire:
+        spec = EvalSpec(
+            spec_id=f"eval_{uuid.uuid4().hex[:24]}",
+            name=body.name,
+            data_source_config=body.data_source_config.model_dump(exclude_none=True),
+            testing_criteria=[c.model_dump(exclude_none=True) for c in body.testing_criteria],
+            metadata=body.metadata or {},
+            created_at=time.time(),
+        )
+        eval_spec_store.put(spec)
+        return EvalSpecWire.model_validate(spec_wire(spec))
+
+    @app.get("/v1/evals", response_model=EvalSpecPage, operation_id="listEvals", tags=["evals"])
+    def eval_spec_list(limit: int = 20, after: str | None = None) -> EvalSpecPage:
+        if not 1 <= limit <= 100:
+            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+        page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        return EvalSpecPage(
+            data=[EvalSpecWire.model_validate(spec_wire(s)) for s in page], has_more=more
+        )
+
+    @app.get(
+        "/v1/evals/{eval_id}", response_model=EvalSpecWire, operation_id="getEval", tags=["evals"]
+    )
+    def eval_spec_get(eval_id: str) -> EvalSpecWire:
+        return EvalSpecWire.model_validate(spec_wire(_spec_or_404(eval_id)))
+
+    @app.post(
+        "/v1/evals/{eval_id}",
+        response_model=EvalSpecWire,
+        operation_id="updateEval",
+        tags=["evals"],
+    )
+    def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
+        spec = _spec_or_404(eval_id)
+        if body.name is not None:
+            spec.name = body.name
+        if body.metadata is not None:
+            spec.metadata = body.metadata
+        eval_spec_store.update(spec)
+        return EvalSpecWire.model_validate(spec_wire(spec))
+
+    @app.delete(
+        "/v1/evals/{eval_id}",
+        response_model=EvalSpecDeleted,
+        operation_id="deleteEval",
+        tags=["evals"],
+    )
+    def eval_spec_delete(eval_id: str) -> EvalSpecDeleted:
+        spec = eval_spec_store.delete(eval_id)
+        if spec is None:
+            raise ApiError(404, f"eval '{eval_id}' not found", code="eval_not_found")
+        return EvalSpecDeleted(id=eval_id)
+
+    @app.post(
+        "/v1/evals/{eval_id}/runs",
+        response_model=EvalRunObject,
+        status_code=201,
+        operation_id="createEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_create(
+        eval_id: str,
+        body: EvalRunCreate,
+        response: Response,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> EvalRunObject:
+        """Submit a run under the spec: ``model`` resolves to the backend
+        chain head, the spec's item_schema supplies the suite knobs, and
+        ``data_source.source`` may override them per run. Same capacity
+        gates as ``/harness/evals`` (503 over_capacity / draining)."""
+        spec = _spec_or_404(eval_id)
+        schema = EvalSpecItemSchema.model_validate(spec.data_source_config["item_schema"])
+        if body.data_source is not None and body.data_source.source:
+            merged = {**schema.model_dump(), **body.data_source.source}
+            try:
+                schema = EvalSpecItemSchema.model_validate(merged)
+            except ValidationError as exc:
+                raise ApiError(
+                    422, f"data_source.source failed validation: {exc.errors()[0].get('msg')}"
+                ) from exc
+        backend, ckpt = _run_model_backend(body.model)
+        if body.judge_byok is not None and schema.judge_backend != "byok":
+            raise ApiError(422, "judge_byok applies only when judge_backend='byok'")
+        sub = EvalSubmitRequest(
+            suite=schema.suite,
+            backend=backend,
+            seed=schema.seed,
+            checkpoint_dir=ckpt or schema.checkpoint_dir,
+            byok=body.byok,
+            timeout_s=schema.timeout_s,
+            fallbacks=schema.fallbacks,
+            judge_backend=schema.judge_backend,
+            judge_byok=body.judge_byok,
+            callback_url=body.callback_url,
+            callback_secret=body.callback_secret,
+        )
+        # The run's dedupe namespace is scoped to the spec — the same
+        # Idempotency-Key under a different eval is a different run.
+        scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
+        submitted = _submit_eval(sub, scoped_key)
+        rec = eval_store.get(submitted.eval_id)
+        if rec is None:
+            raise ApiError(404, f"run '{submitted.eval_id}' evicted")
+        if not submitted.replayed:
+            rec.eval_spec = spec.spec_id
+            rec.eval_model = body.model
+            eval_store.mark(rec)
+        response.headers["Location"] = f"/v1/evals/{eval_id}/runs/{rec.eval_id}"
+        return EvalRunObject.model_validate(run_wire(rec))
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs",
+        response_model=EvalRunPage,
+        operation_id="listEvalRuns",
+        tags=["evals"],
+    )
+    def eval_run_list(eval_id: str, limit: int = 20) -> EvalRunPage:
+        _spec_or_404(eval_id)
+        if not 1 <= limit <= 100:
+            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+        page, _total = eval_store.list_records(spec=eval_id, limit=limit + 1)
+        more = len(page) > limit
+        return EvalRunPage(
+            data=[EvalRunObject.model_validate(run_wire(r)) for r in page[:limit]],
+            has_more=more,
+        )
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs/{run_id}",
+        response_model=EvalRunObject,
+        operation_id="getEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_get(eval_id: str, run_id: str) -> EvalRunObject:
+        _spec_or_404(eval_id)
+        return EvalRunObject.model_validate(run_wire(_run_or_404(eval_id, run_id)))
+
+    @app.post(
+        "/v1/evals/{eval_id}/runs/{run_id}/cancel",
+        response_model=EvalRunObject,
+        operation_id="cancelEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_cancel(eval_id: str, run_id: str) -> EvalRunObject:
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        cancelled, outcome = eval_store.cancel(rec.eval_id)
+        if cancelled is None or outcome != "cancelled":
+            raise ApiError(409, f"run '{run_id}' is {outcome}")
+        _deliver_callback(cancelled)
+        return EvalRunObject.model_validate(run_wire(cancelled))
+
+    @app.delete(
+        "/v1/evals/{eval_id}/runs/{run_id}",
+        response_model=EvalRunDeleted,
+        operation_id="deleteEvalRun",
+        tags=["evals"],
+    )
+    def eval_run_delete(eval_id: str, run_id: str) -> EvalRunDeleted:
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        if rec.status not in _TERMINAL_JOB_STATUS:
+            raise ApiError(409, f"run '{run_id}' is {rec.status} — only terminal runs delete")
+        eval_store.delete(rec.eval_id)
+        return EvalRunDeleted(id=run_id)
+
+    @app.get(
+        "/v1/evals/{eval_id}/runs/{run_id}/output_items",
+        response_model=EvalOutputItemPage,
+        operation_id="listEvalRunOutputItems",
+        tags=["evals"],
+    )
+    def eval_run_items(
+        eval_id: str, run_id: str, limit: int = 20, after: str | None = None
+    ) -> EvalOutputItemPage:
+        """Per-task verdict rows from the completed run's report — the
+        suite's raw rows verbatim, paged by cursor (index-encoded ids)."""
+        _spec_or_404(eval_id)
+        rec = _run_or_404(eval_id, run_id)
+        if not 1 <= limit <= 100:
+            raise ApiError(400, "limit must be 1..100", code="invalid_request")
+        tasks = (
+            report_task_items(rec.report)
+            if rec.status == "succeeded" and isinstance(rec.report, dict)
+            else []
+        )
+        start = 0
+        if after is not None:
+            m = re.fullmatch(r"evalrun_.+-(\d+)", after)
+            start = int(m.group(1)) + 1 if m else 0
+        page = tasks[start : start + limit]
+        items = [
+            EvalOutputItem(
+                id=f"evalrun_{rec.eval_id}-{start + i}",
+                run_id=f"evalrun_{rec.eval_id}",
+                eval_id=eval_id,
+                created_at=int(rec.finished_at or rec.created_at),
+                status="pass" if t["passed"] else "fail",
+                datasource_item_id=t["name"],
+                datasource_item=t["row"],
+                results=[{"name": rec.suite, "passed": t["passed"]}],
+            )
+            for i, t in enumerate(page)
+        ]
+        return EvalOutputItemPage(
+            data=items,
+            has_more=start + len(page) < len(tasks),
+            first_id=items[0].id if items else None,
+            last_id=items[-1].id if items else None,
+        )
 
     @app.post(
         "/harness/complete",
@@ -6143,6 +6610,7 @@ def create_app(
     store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
     job_store = _JobStore(job_max, journal=_journal("jobs.jsonl"))
     eval_store = EvalStore(job_max, journal=_journal("evals.jsonl"))
+    eval_spec_store = EvalSpecStore(job_max, journal=_journal("eval_specs.jsonl"))
     file_store = _FileStore(file_max, file_bytes_max, state_dir=state_path)
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
@@ -6229,6 +6697,7 @@ def create_app(
     app.state.idem_store = idem_store
     app.state.job_store = job_store
     app.state.eval_store = eval_store
+    app.state.eval_spec_store = eval_spec_store
     app.state.file_store = file_store
     app.state.batch_store = batch_store
     app.state.ft_store = ft_store
@@ -6702,6 +7171,7 @@ def create_app(
         file_bytes_max=file_bytes_max,
         bg_cancel=_bg_cancel,
         conv_store=conv_store,
+        eval_spec_store=eval_spec_store,
     )
 
     _mount_receipt_routes(app, receipt_index)

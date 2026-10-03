@@ -46,6 +46,17 @@ export type EvalSubmitRequest =
 export type EvalSubmitResponse =
   components["schemas"]["EvalSubmitResponse"];
 export type EvalSuiteName = EvalSubmitRequest["suite"];
+export type EvalSpecCreate = components["schemas"]["EvalSpecCreate"];
+export type EvalSpecUpdate = components["schemas"]["EvalSpecUpdate"];
+export type EvalSpecWire = components["schemas"]["EvalSpecWire"];
+export type EvalSpecPage = components["schemas"]["EvalSpecPage"];
+export type EvalSpecDeleted = components["schemas"]["EvalSpecDeleted"];
+export type EvalRunCreate = components["schemas"]["EvalRunCreate"];
+export type EvalRunObject = components["schemas"]["EvalRunObject"];
+export type EvalRunPage = components["schemas"]["EvalRunPage"];
+export type EvalRunDeleted = components["schemas"]["EvalRunDeleted"];
+export type EvalOutputItemPage =
+  components["schemas"]["EvalOutputItemPage"];
 export type FTEventList = components["schemas"]["FTEventList"];
 export type FTHyperparameters =
   components["schemas"]["FTHyperparameters"];
@@ -1675,6 +1686,146 @@ export class HarnessApiClient {
       if (Date.now() >= deadline) return e;
       await new Promise((r) => setTimeout(r, pollMs));
     }
+  }
+
+  // ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------------
+
+  /**
+   * POST /v1/evals — declare a named eval container (201). The
+   * `item_schema` pins the suite knobs; credentials never live on a
+   * spec — BYOK credentials go on the run body.
+   */
+  evalSpecCreate(body: EvalSpecCreate): Promise<EvalSpecWire> {
+    return this.post("/v1/evals", body) as Promise<EvalSpecWire>;
+  }
+
+  /** GET /v1/evals — newest-first spec page (`limit` 1-100). */
+  evalSpecs(opts: { limit?: number } = {}): Promise<EvalSpecPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(`/v1/evals${suffix}`) as Promise<EvalSpecPage>;
+  }
+
+  /** GET /v1/evals/{evalId}. */
+  evalSpec(evalId: string): Promise<EvalSpecWire> {
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}`,
+    ) as Promise<EvalSpecWire>;
+  }
+
+  /**
+   * POST /v1/evals/{evalId} — edit name/metadata. The datasource
+   * (item_schema) is frozen once runs bind.
+   */
+  evalSpecUpdate(
+    evalId: string,
+    body: EvalSpecUpdate,
+  ): Promise<EvalSpecWire> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}`,
+      body,
+    ) as Promise<EvalSpecWire>;
+  }
+
+  /**
+   * DELETE /v1/evals/{evalId} — journaled tombstone; bound runs stay
+   * readable.
+   */
+  async evalSpecDelete(evalId: string): Promise<EvalSpecDeleted> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/evals/${encodeURIComponent(evalId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalSpecDeleted;
+  }
+
+  /**
+   * POST /v1/evals/{evalId}/runs — submit a suite run under the spec
+   * (201; the run object is also the Location header). `model` is a link
+   * name (hosted_k3|local_fx1|byok), `fx1`, or a registered `ft:` name.
+   * An `Idempotency-Key` dedupes retries within the spec.
+   */
+  evalRunCreate(
+    evalId: string,
+    body: EvalRunCreate,
+    idempotencyKey?: string,
+  ): Promise<EvalRunObject> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs`,
+      body,
+      idempotencyKey,
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** GET /v1/evals/{evalId}/runs — newest-first run page. */
+  evalRuns(evalId: string, opts: { limit?: number } = {}): Promise<EvalRunPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs${suffix}`,
+    ) as Promise<EvalRunPage>;
+  }
+
+  /** GET /v1/evals/{evalId}/runs/{runId} — `evalrun_` prefix optional. */
+  evalRun(evalId: string, runId: string): Promise<EvalRunObject> {
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}`,
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** POST .../runs/{runId}/cancel — cooperative cancel of a queued run. */
+  evalRunCancel(evalId: string, runId: string): Promise<EvalRunObject> {
+    return this.post(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}/cancel`,
+      {},
+    ) as Promise<EvalRunObject>;
+  }
+
+  /** DELETE .../runs/{runId} — terminal runs only (409 while live). */
+  async evalRunDelete(
+    evalId: string,
+    runId: string,
+  ): Promise<EvalRunDeleted> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalRunDeleted;
+  }
+
+  /**
+   * GET .../runs/{runId}/output_items — per-task verdict rows verbatim
+   * from the suite report (newest-openai `has_more`/`first_id`/`last_id`
+   * paging contract).
+   */
+  evalRunOutputItems(
+    evalId: string,
+    runId: string,
+    opts: { limit?: number } = {},
+  ): Promise<EvalOutputItemPage> {
+    const suffix =
+      opts.limit !== undefined ? `?limit=${opts.limit}` : "";
+    return this.get(
+      `/v1/evals/${encodeURIComponent(evalId)}/runs/${encodeURIComponent(runId)}/output_items${suffix}`,
+    ) as Promise<EvalOutputItemPage>;
+  }
+
+  /**
+   * Poll a run's record until terminal and return the terminal run
+   * object. Runs are suite records underneath — `waitEval` semantics.
+   */
+  async waitEvalRun(
+    evalId: string,
+    runId: string,
+    opts: { pollMs?: number; timeoutS?: number } = {},
+  ): Promise<EvalRunObject> {
+    const rec = await this.waitEval(
+      runId.startsWith("evalrun_") ? runId.slice(8) : runId,
+      opts,
+    );
+    return this.evalRun(evalId, rec.eval_id);
   }
 
   // ---- receipt store --------------------------------------------------------

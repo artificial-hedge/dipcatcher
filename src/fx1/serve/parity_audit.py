@@ -1749,6 +1749,77 @@ def parity_audit() -> dict[str, bool]:  # noqa: C901 NOSONAR
             and _raises(lambda: remote_u.diff_evals("nope", rv_b["eval_id"]))[0] == "KeyError"
         )
 
+        # /v1/evals spec+run surface: the SDK's in-process twins and the
+        # wire client mint the same wire objects — the spec carries the
+        # pinned suite knobs and the run lands the same terminal shape.
+        # Remote runs dispatch to workers; the SDK twin runs the suite
+        # synchronously — both end "completed" with the same counts.
+        s_spec = sdk_u.eval_spec_create(
+            "tooluse-par",
+            suite="tooluse",
+            seed=0,
+            testing_criteria=[{"name": "all-pass"}],
+        )
+        r_spec = remote_u.eval_spec_create(
+            "tooluse-par",
+            suite="tooluse",
+            seed=0,
+            testing_criteria=[{"name": "all-pass"}],
+        )
+
+        def _spec_norm(d: Any) -> dict[str, Any]:
+            dd = dict(d)
+            dd.pop("id", None)
+            dd.pop("created_at", None)
+            return dd
+
+        out["evalspec_parity"] = (
+            _spec_norm(s_spec) == _spec_norm(r_spec)
+            and s_spec["object"] == "eval"
+            and s_spec["data_source_config"]["item_schema"]["suite"] == "tooluse"
+        )
+        out["evalspec_update_parity"] = (
+            sdk_u.eval_spec_update(s_spec["id"], name="renamed")["name"]
+            == remote_u.eval_spec_update(r_spec["id"], name="renamed")["name"]
+            == "renamed"
+        )
+        s_run = sdk_u.eval_run_create(s_spec["id"], model="byok")
+        r_run_sub = remote_u.eval_run_create(r_spec["id"], model="byok")
+        remote_u.wait_eval(r_run_sub["id"].removeprefix("evalrun_"), timeout_s=120)
+        r_run = remote_u.eval_run_get(r_spec["id"], r_run_sub["id"])
+        out["evalrun_parity"] = (
+            s_run["status"] == r_run["status"] == "completed"
+            and s_run["result_counts"] == r_run["result_counts"]
+            and s_run["object"] == r_run["object"] == "eval.run"
+            and s_run["eval_id"] == s_spec["id"]
+            and r_run["eval_id"] == r_spec["id"]
+        )
+
+        def _item_norm(it: Any) -> dict[str, Any]:
+            dd = dict(it)
+            for k in ("id", "run_id", "eval_id", "created_at"):
+                dd.pop(k, None)
+            return dd
+
+        s_items = sdk_u.eval_run_items(s_spec["id"], s_run["id"])
+        r_items = remote_u.eval_run_output_items(r_spec["id"], r_run["id"])
+        out["evalrun_items_parity"] = (
+            [(_item_norm(it)) for it in s_items] == [_item_norm(it) for it in r_items["data"]]
+            and len(s_items) > 0
+            and all(it.get("object") == "eval.run.output_item" for it in s_items)
+            and all(any("name" in r and "passed" in r for r in it["results"]) for it in s_items)
+        )
+        out["evalrun_list_parity"] = (
+            sdk_u.eval_runs(s_spec["id"])[0]["id"] == s_run["id"]
+            and remote_u.eval_runs(r_spec["id"])["data"][0]["id"] == r_run["id"]
+        )
+        sdk_u.eval_spec_delete(s_spec["id"])
+        out["evalspec_delete_parity"] = (
+            remote_u.eval_run_delete(r_spec["id"], r_run["id"])["deleted"] is True
+            and remote_u.eval_spec_delete(r_spec["id"])["deleted"] is True
+            and _raises(lambda: sdk_u.eval_spec_get(s_spec["id"]))[0] == "KeyError"
+        )
+
         # fine-tuning surface: the in-process twin takes the corpus inline
         # and runs the same runner contract synchronously; the wire twin
         # uploads a file, submits, and polls. Both land terminal-succeeded

@@ -611,6 +611,164 @@ class HarnessClient:
         )
         return dict(out)
 
+    # ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ----------
+
+    def eval_spec_create(
+        self,
+        name: str,
+        *,
+        suite: str,
+        seed: int = 0,
+        backend: str | None = None,
+        fallbacks: list[str] | None = None,
+        checkpoint_dir: str | None = None,
+        judge_backend: str | None = None,
+        timeout_s: float | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals — declare the named eval container. The
+        item_schema pins suite knobs; credentials never live on a spec."""
+        item_schema: dict[str, Any] = {"suite": suite, "seed": seed}
+        if backend is not None:
+            item_schema["backend"] = backend
+        if fallbacks is not None:
+            item_schema["fallbacks"] = fallbacks
+        if checkpoint_dir is not None:
+            item_schema["checkpoint_dir"] = checkpoint_dir
+        if judge_backend is not None:
+            item_schema["judge_backend"] = judge_backend
+        if timeout_s is not None:
+            item_schema["timeout_s"] = timeout_s
+        body: dict[str, Any] = {
+            "name": name,
+            "data_source_config": {"type": "custom", "item_schema": item_schema},
+        }
+        if testing_criteria is not None:
+            body["testing_criteria"] = testing_criteria
+        if metadata is not None:
+            body["metadata"] = metadata
+        return dict(self._json("POST", "/v1/evals", body))
+
+    def eval_spec_get(self, eval_id: str) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}."""
+        return dict(self._json("GET", f"/v1/evals/{urllib.parse.quote(eval_id)}", idempotent=True))
+
+    def eval_specs(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
+        """GET /v1/evals — newest-first spec page."""
+        q = f"?limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        return dict(self._json("GET", f"/v1/evals{q}", idempotent=True))
+
+    def eval_spec_update(
+        self,
+        eval_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals/{eval_id} — name/metadata edits."""
+        body: dict[str, Any] = {}
+        if name is not None:
+            body["name"] = name
+        if metadata is not None:
+            body["metadata"] = metadata
+        return dict(self._json("POST", f"/v1/evals/{urllib.parse.quote(eval_id)}", body))
+
+    def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:
+        """DELETE /v1/evals/{eval_id} — journaled tombstone."""
+        return dict(self._json("DELETE", f"/v1/evals/{urllib.parse.quote(eval_id)}"))
+
+    def eval_run_create(
+        self,
+        eval_id: str,
+        *,
+        model: str,
+        data_source: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
+        judge_byok: dict[str, str] | None = None,
+        metadata: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/evals/{eval_id}/runs — ``model`` is a link name,
+        ``fx1``, or a registered ``ft:`` name (resolves to its
+        checkpoint). Same capacity/drain gates as ``submit_eval``."""
+        body: dict[str, Any] = {"model": model}
+        if data_source is not None:
+            body["data_source"] = data_source
+        if byok is not None:
+            body["byok"] = byok
+        if judge_byok is not None:
+            body["judge_byok"] = judge_byok
+        if metadata is not None:
+            body["metadata"] = metadata
+        if callback_url is not None:
+            body["callback_url"] = callback_url
+        if callback_secret is not None:
+            body["callback_secret"] = callback_secret
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs",
+                body,
+                extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
+            )
+        )
+
+    def eval_runs(self, eval_id: str, *, limit: int = 20) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}/runs — newest-first run page."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs?limit={limit}",
+                idempotent=True,
+            )
+        )
+
+    def eval_run_get(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """GET /v1/evals/{eval_id}/runs/{run_id}."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+                idempotent=True,
+            )
+        )
+
+    def eval_run_cancel(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """POST .../runs/{run_id}/cancel — queued runs cancel; running or
+        terminal map the 409 through."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/cancel",
+                {},
+            )
+        )
+
+    def eval_run_delete(self, eval_id: str, run_id: str) -> dict[str, Any]:
+        """DELETE .../runs/{run_id} — terminal records only (409 live)."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}",
+            )
+        )
+
+    def eval_run_output_items(
+        self, eval_id: str, run_id: str, *, limit: int = 20, after: str | None = None
+    ) -> dict[str, Any]:
+        """GET .../output_items — per-task verdict rows verbatim."""
+        q = f"?limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/evals/{urllib.parse.quote(eval_id)}/runs/{urllib.parse.quote(run_id)}/output_items{q}",
+                idempotent=True,
+            )
+        )
+
     # ---- fine-tuning (/v1/fine_tuning/jobs) ----------------------------------
 
     def create_finetune_job(

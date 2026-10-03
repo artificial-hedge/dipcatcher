@@ -348,6 +348,58 @@ def sdk_audit() -> dict[str, bool]:
             else:
                 os.environ[k] = v
 
+    # ---- /v1/evals spec+run twins ------------------------------------------
+    sdk_e = Fx1Harness(backend_resolver=lambda *a, **k: fake)
+    spec = sdk_e.eval_spec_create("spec-a", suite="tooluse", seed=0, metadata={"lane": "audit"})
+    out["evalspec_create"] = (
+        spec["id"].startswith("eval_")
+        and spec["object"] == "eval"
+        and spec["name"] == "spec-a"
+        and spec["data_source_config"]["item_schema"]["suite"] == "tooluse"
+        and spec["metadata"] == {"lane": "audit"}
+    )
+    out["evalspec_bad_suite_rejected"] = (
+        _raises(lambda: sdk_e.eval_spec_create("x", suite="nope")) == "ValidationError"
+    )
+    out["evalspec_list_get"] = (
+        sdk_e.eval_specs(limit=5)[0]["id"] == spec["id"]
+        and sdk_e.eval_spec_get(spec["id"])["id"] == spec["id"]
+        and _raises(lambda: sdk_e.eval_spec_get("eval_nope")) == "KeyError"
+    )
+    out["evalspec_update"] = (
+        sdk_e.eval_spec_update(spec["id"], name="renamed")["name"] == "renamed"
+        and _raises(lambda: sdk_e.eval_spec_update(spec["id"])) == "ValueError"
+    )
+    run = sdk_e.eval_run_create(spec["id"], model="byok")
+    out["evalrun_completed"] = (
+        run["object"] == "eval.run"
+        and run["id"].startswith("evalrun_")
+        and run["eval_id"] == spec["id"]
+        and run["model"] == "byok"
+        and run["status"] == "completed"
+        and "result_counts" in run
+    )
+    items = sdk_e.eval_run_items(spec["id"], run["id"])
+    out["evalrun_items"] = (
+        len(items) > 0
+        and all(it["object"] == "eval.run.output_item" for it in items)
+        and all(any("name" in r and "passed" in r for r in it["results"]) for it in items)
+    )
+    out["evalrun_list_get"] = (
+        sdk_e.eval_runs(spec["id"])[0]["id"] == run["id"]
+        and sdk_e.eval_run_get(spec["id"], run["id"])["id"] == run["id"]
+    )
+    out["evalrun_cross_spec_404"] = (
+        _raises(lambda: sdk_e.eval_run_get("eval_nope", run["id"])) == "KeyError"
+    )
+    sdk_e.eval_run_delete(spec["id"], run["id"])
+    sdk_e.eval_spec_delete(spec["id"])
+    out["evalspec_run_delete"] = (
+        _raises(lambda: sdk_e.eval_run_get(spec["id"], run["id"])) == "KeyError"
+        and _raises(lambda: sdk_e.eval_spec_get(spec["id"])) == "KeyError"
+        and _raises(lambda: sdk_e.eval_spec_delete(spec["id"])) == "KeyError"
+    )
+
     return out
 
 

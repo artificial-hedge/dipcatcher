@@ -95,6 +95,32 @@ def _json_meta(raw: str | None) -> dict[str, str] | None:
     return meta
 
 
+def _json_obj_opt(raw: str | None, flag: str) -> dict[str, Any] | None:
+    """A JSON-object flag — object or None, clean exit on anything else."""
+    if raw is None:
+        return None
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        _bad_arg(f"{flag} must be a JSON object")
+    if not isinstance(obj, dict):
+        _bad_arg(f"{flag} must be a JSON object")
+    return obj
+
+
+def _json_list_opt(raw: str | None, flag: str) -> list[dict[str, Any]] | None:
+    """A JSON list-of-objects flag (testing_criteria entries)."""
+    if raw is None:
+        return None
+    try:
+        obj = json.loads(raw)
+    except json.JSONDecodeError:
+        _bad_arg(f"{flag} must be a JSON list of objects")
+    if not (isinstance(obj, list) and all(isinstance(it, dict) for it in obj)):
+        _bad_arg(f"{flag} must be a JSON list of objects")
+    return obj
+
+
 def _response_frame_of(event: Any) -> tuple[str | None, str | None]:
     """One stream frame → ``(delta text, incomplete reason)``."""
     payload = event[1] if isinstance(event, tuple) else event
@@ -1484,6 +1510,311 @@ def harness_eval_diff(
         lambda: _remote_client(remote or "", api_key, timeout_s).diff_evals(base_id, candidate_id)
     )
     typer.echo(json.dumps(st, indent=2))
+
+
+# ---- /v1/evals — the OpenAI Evals-shaped spec/run surface ------------------
+
+
+@harness_app.command("eval-spec-create")
+def harness_eval_spec_create(
+    name: str = typer.Argument(..., help="Human label for the eval container."),
+    suite: str = typer.Option(
+        ...,
+        "--suite",
+        help="Eval suite: capability|calibration|tooluse|retrieval|ts_reasoning|ext_bench|options_reasoning.",
+    ),
+    seed: int = typer.Option(0, "--seed", help="Eval seed (the banks are seeded)."),
+    backend: str | None = typer.Option(
+        None, "--backend", help="Pin the chain head (runs may still choose another model)."
+    ),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    judge_backend: str | None = typer.Option(
+        None, "--judge-backend", help="Grader link for judge suites."
+    ),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+    criteria_json: str | None = typer.Option(
+        None, "--criteria", help='testing_criteria as a JSON list, e.g. \'[{"name": "all-pass"}]\'.'
+    ),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Spec metadata as a JSON object of string pairs."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Declare a named eval container — ``POST /v1/evals`` (remote) or the
+    in-process twin. The item_schema pins suite knobs; credentials never
+    live on a spec."""
+    criteria = _json_list_opt(criteria_json, "--criteria")
+    metadata = _json_meta(metadata_json)
+    if remote is not None:
+        spec = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_spec_create(
+                name,
+                suite=suite,
+                seed=seed,
+                backend=backend,
+                checkpoint_dir=str(checkpoint_dir) if checkpoint_dir else None,
+                judge_backend=judge_backend,
+                timeout_s=backend_timeout,
+                testing_criteria=criteria,
+                metadata=metadata,
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(
+            lambda: Fx1Harness().eval_spec_create(
+                name,
+                suite=suite,
+                seed=seed,
+                backend=backend,
+                checkpoint_dir=checkpoint_dir,
+                judge_backend=judge_backend,
+                timeout_s=backend_timeout,
+                testing_criteria=criteria,
+                metadata=metadata,
+            )
+        )
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-list")
+def harness_eval_spec_list(
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List declared eval specs (newest first) — ``GET /v1/evals``."""
+    if remote is not None:
+        page = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_specs(limit=limit))
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {"object": "list", "data": _or_exit(lambda: Fx1Harness().eval_specs(limit=limit))}
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-spec-get")
+def harness_eval_spec_get(
+    eval_id: str = typer.Argument(..., help="eval_ id from eval-spec-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print one eval spec — ``GET /v1/evals/{id}``."""
+    if remote is not None:
+        spec = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_spec_get(eval_id))
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(lambda: Fx1Harness().eval_spec_get(eval_id))
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-update")
+def harness_eval_spec_update(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    name: str | None = typer.Option(None, "--name", help="New display name."),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Replacement metadata as a JSON object."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Edit a spec's name/metadata — the datasource is frozen once runs bind."""
+    metadata = _json_meta(metadata_json)
+    if remote is not None:
+        spec = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_spec_update(
+                eval_id, name=name, metadata=metadata
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        spec = _or_exit(
+            lambda: Fx1Harness().eval_spec_update(eval_id, name=name, metadata=metadata)
+        )
+    typer.echo(json.dumps(spec, indent=2))
+
+
+@harness_app.command("eval-spec-delete")
+def harness_eval_spec_delete(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Delete an eval spec — journaled tombstone; bound runs stay readable."""
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).eval_spec_delete(eval_id))
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    _or_exit(lambda: Fx1Harness().eval_spec_delete(eval_id))
+    typer.echo(json.dumps({"id": eval_id, "object": "eval.deleted", "deleted": True}))
+
+
+@harness_app.command("eval-run")
+def harness_eval_run(
+    eval_id: str = typer.Argument(..., help="eval_ id from eval-spec-create."),
+    model: str = typer.Option(
+        ...,
+        "--model",
+        help="Eval target: a link name (hosted_k3|local_fx1|byok), fx1, or a registered ft: name.",
+    ),
+    data_source_json: str | None = typer.Option(
+        None,
+        "--data-source",
+        help='Item-schema overrides as JSON, e.g. \'{"type":"custom","source":{"seed":1}}\'.',
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Remote: status poll interval, seconds."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Submit a run under an eval spec — ``POST /v1/evals/{id}/runs``.
+    Remote polls to the terminal run object; in-process runs are
+    synchronous (the terminal object prints directly)."""
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    data_source = _json_obj_opt(data_source_json, "--data-source")
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        run = _or_exit(
+            lambda: client.eval_run_create(eval_id, model=model, data_source=data_source, byok=byok)
+        )
+        bare = run["id"].removeprefix("evalrun_")
+        _or_exit(lambda: client.wait_eval(bare, poll_s=poll_s, timeout_s=None))
+        typer.echo(json.dumps(_or_exit(lambda: client.eval_run_get(eval_id, bare)), indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    run = _or_exit(
+        lambda: Fx1Harness().eval_run_create(
+            eval_id,
+            model=model,
+            byok=byok,
+            data_source_overrides=(data_source or {}).get("source"),
+        )
+    )
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-list")
+def harness_eval_run_list(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List a spec's runs (newest first) — ``GET /v1/evals/{id}/runs``."""
+    if remote is not None:
+        page = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_runs(eval_id, limit=limit)
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {
+            "object": "list",
+            "data": _or_exit(lambda: Fx1Harness().eval_runs(eval_id, limit=limit)),
+        }
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-run-get")
+def harness_eval_run_get(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print one run — ``GET /v1/evals/{id}/runs/{run_id}``."""
+    if remote is not None:
+        run = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_get(eval_id, run_id)
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        run = _or_exit(lambda: Fx1Harness().eval_run_get(eval_id, run_id))
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-cancel")
+def harness_eval_run_cancel(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a queued run — ``POST .../runs/{run_id}/cancel`` (remote only:
+    in-process runs are synchronous, already terminal)."""
+    _need_remote(remote)
+    run = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).eval_run_cancel(eval_id, run_id)
+    )
+    typer.echo(json.dumps(run, indent=2))
+
+
+@harness_app.command("eval-run-delete")
+def harness_eval_run_delete(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Delete a terminal run record — ``DELETE .../runs/{run_id}``."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_delete(eval_id, run_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    _or_exit(lambda: Fx1Harness().eval_run_delete(eval_id, run_id))
+    typer.echo(json.dumps({"id": run_id, "object": "eval.run.deleted", "deleted": True}))
+
+
+@harness_app.command("eval-run-items")
+def harness_eval_run_items(
+    eval_id: str = typer.Argument(..., help="eval_ id."),
+    run_id: str = typer.Argument(..., help="evalrun_ id."),
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Per-task verdict rows from a completed run — ``.../output_items``."""
+    if remote is not None:
+        page = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).eval_run_output_items(
+                eval_id, run_id, limit=limit
+            )
+        )
+    else:
+        from fx1.sdk import Fx1Harness
+
+        page = {
+            "object": "list",
+            "data": _or_exit(lambda: Fx1Harness().eval_run_items(eval_id, run_id, limit=limit)),
+        }
+    typer.echo(json.dumps(page, indent=2))
 
 
 @harness_app.command("ft-create")

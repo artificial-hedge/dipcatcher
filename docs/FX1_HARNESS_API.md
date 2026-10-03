@@ -234,6 +234,14 @@ same digested shape the job record embeds.
 | `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
 | `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
 | `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
+| `POST /v1/evals` | create an `eval` spec container (`name`, `data_source_config.item_schema` = suite knobs — credentials never on the spec) → `201`; `Fx1Harness.eval_spec_create` / `HarnessClient.eval_spec_create` / `client.evalSpecCreate` / `fx1 harness eval-spec-create` |
+| `GET /v1/evals` | newest-first spec page (`?limit≤100`, `?after=`); `Fx1Harness.eval_specs` / `HarnessClient.eval_specs` / `client.evalSpecs` / `fx1 harness eval-spec-list` |
+| `GET` / `POST` / `DELETE` `/v1/evals/{id}` | fetch / rename+remetadata / tombstone a spec — delete journals and orphans the `/v1` run subresources (records stay on `/harness/evals/{id}`) |
+| `POST /v1/evals/{id}/runs` | run the spec — `model` resolves to a backend (`ft:` names via the registry), `data_source.source` may override suite knobs per run, BYOK on the body; `201` + `Location` (bare id) + per-spec `Idempotency-Key` scope; `Fx1Harness.eval_run_create` / `HarnessClient.eval_run_create` / `client.evalRunCreate` / `fx1 harness eval-run` |
+| `GET /v1/evals/{id}/runs` / `.../{run_id}` | list the spec's runs / poll one (`result_counts` once `completed`, `per_testing_criteria_results: []` honest-empty) |
+| `POST /v1/evals/{id}/runs/{run_id}/cancel` | cooperative cancel of a queued run (`409` terminal); `HarnessClient.eval_run_cancel` / `client.evalRunCancel` / `fx1 harness eval-run-cancel` |
+| `DELETE /v1/evals/{id}/runs/{run_id}` | drop a terminal run's `eval.run` object (`{id, object:"eval.run", deleted:true}`, `409` non-terminal); the `/harness/evals` record survives |
+| `GET /v1/evals/{id}/runs/{run_id}/output_items` | per-task verdict rows verbatim (`?limit≤100`); `Fx1Harness.eval_run_items` / `HarnessClient.eval_run_output_items` / `client.evalRunOutputItems` / `fx1 harness eval-run-items` |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |

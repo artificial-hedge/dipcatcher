@@ -58,7 +58,13 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.evals import EvalDiff, EvalRecord, EvalStore, diff_eval_records
+from fx1.serve.evals import (
+    EvalDiff,
+    EvalRecord,
+    EvalSpecStore,
+    EvalStore,
+    diff_eval_records,
+)
 from fx1.serve.finetune import (
     TRAINABLE_MODELS,
     FTHyperparameters,
@@ -452,6 +458,11 @@ class Fx1Harness:
             256,
             journal=JobJournal(state_path / "evals.jsonl") if state_path is not None else None,
         )
+        # The /v1/evals spec containers — journaled alongside the records.
+        self._eval_spec_store = EvalSpecStore(
+            256,
+            journal=JobJournal(state_path / "eval_specs.jsonl") if state_path is not None else None,
+        )
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
@@ -819,6 +830,210 @@ class Fx1Harness:
                     f"eval {rec.eval_id} is {rec.status} — diffs need terminal records with reports"
                 )
         return diff_eval_records(base, cand)
+
+    # ---- /v1/evals — named spec containers + bound runs ----------------
+
+    def eval_spec_create(
+        self,
+        name: str,
+        *,
+        suite: str,
+        seed: int = 0,
+        backend: str | None = None,
+        fallbacks: list[str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        judge_backend: str | None = None,
+        timeout_s: float | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """The ``POST /v1/evals`` twin — declare a named eval container.
+        The item_schema pins the suite knobs (validated fail-closed);
+        credentials never live on a spec."""
+        from fx1.serve.evals import EvalSpec, EvalSpecItemSchema, spec_wire  # noqa: PLC0415
+
+        item_schema = EvalSpecItemSchema.model_validate(
+            {
+                "suite": suite,
+                "seed": seed,
+                "backend": backend,
+                "fallbacks": fallbacks or [],
+                "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir is not None else None,
+                "judge_backend": judge_backend,
+                "timeout_s": timeout_s,
+            }
+        )
+        spec = EvalSpec(
+            spec_id=f"eval_{uuid.uuid4().hex[:24]}",
+            name=name,
+            data_source_config={
+                "type": "custom",
+                "item_schema": item_schema.model_dump(exclude_none=True),
+            },
+            testing_criteria=list(testing_criteria or []),
+            metadata=dict(metadata or {}),
+            created_at=time.time(),
+        )
+        self._eval_spec_store.put(spec)
+        return spec_wire(spec)
+
+    def eval_spec_get(self, spec_id: str) -> dict[str, Any]:
+        """``GET /v1/evals/{id}`` twin — KeyError on unknown ids."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        return spec_wire(spec)
+
+    def eval_specs(self, *, limit: int = 20, after: str | None = None) -> list[dict[str, Any]]:
+        """``GET /v1/evals`` twin — newest-first page."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        page, _more = self._eval_spec_store.list_specs(limit=limit, after=after)
+        return [spec_wire(s) for s in page]
+
+    def eval_spec_update(
+        self,
+        spec_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/evals/{id}`` twin — name/metadata edits only; the
+        datasource is frozen once runs bind to it."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        if name is None and metadata is None:
+            raise ValueError("update must carry name or metadata")
+        if name is not None:
+            spec.name = name
+        if metadata is not None:
+            spec.metadata = dict(metadata)
+        self._eval_spec_store.update(spec)
+        return spec_wire(spec)
+
+    def eval_spec_delete(self, spec_id: str) -> None:
+        """``DELETE /v1/evals/{id}`` twin — journaled tombstone; runs
+        under it stay readable (evidence is never spec-cascaded)."""
+        if self._eval_spec_store.delete(spec_id) is None:
+            raise KeyError(spec_id)
+
+    def eval_run_create(
+        self,
+        spec_id: str,
+        *,
+        model: str,
+        model_fn: Callable[[list[dict[str, str]]], str] | None = None,
+        byok: dict[str, str] | None = None,
+        judge_byok: dict[str, str] | None = None,
+        data_source_overrides: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """The ``POST /v1/evals/{id}/runs`` twin — synchronous in process
+        (returns the terminal run object). ``model`` maps to the backend
+        chain head: a link name, ``fx1``, or a registered ``ft:`` name;
+        ``model_fn`` is the weights-direct leg."""
+        from fx1.serve.evals import EvalSpecItemSchema, run_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        schema = EvalSpecItemSchema.model_validate(spec.data_source_config["item_schema"])
+        if data_source_overrides:
+            schema = EvalSpecItemSchema.model_validate(
+                {**schema.model_dump(), **data_source_overrides}
+            )
+        backend, ckpt = self._eval_model_backend(model)
+        record = self.run_eval(
+            schema.suite,
+            model_fn=model_fn,
+            backend=backend,
+            checkpoint_dir=ckpt or schema.checkpoint_dir,
+            byok=byok,
+            timeout_s=schema.timeout_s,
+            fallbacks=list(schema.fallbacks),
+            judge_backend=schema.judge_backend,
+            judge_byok=judge_byok,
+            seed=schema.seed,
+        )
+        record.eval_spec = spec.spec_id
+        record.eval_model = model
+        self._eval_store.mark(record)
+        return run_wire(record)
+
+    def _eval_model_backend(self, model: str) -> tuple[str, str | None]:
+        """The wire's ``model``→backend mapping: link names pass through,
+        ``fx1`` is the base checkpoint, ``ft:`` resolves via the card
+        registry (unregistered → KeyError, the wire's 404)."""
+        if model in ("hosted_k3", "local_fx1", "byok"):
+            return model, None
+        if model == "fx1":
+            return "local_fx1", None
+        if model.startswith("ft:"):
+            ckpt = self._ft_store.checkpoint_for(model)
+            if ckpt is None:
+                raise KeyError(model)
+            return "local_fx1", ckpt
+        raise ValueError(f"unknown eval model {model!r}")
+
+    def eval_runs(self, spec_id: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        """``GET /v1/evals/{id}/runs`` twin — newest-first."""
+        from fx1.serve.evals import run_wire  # noqa: PLC0415
+
+        if self._eval_spec_store.get(spec_id) is None:
+            raise KeyError(spec_id)
+        page, _total = self._eval_store.list_records(spec=spec_id, limit=limit)
+        return [run_wire(r) for r in page]
+
+    def eval_run_get(self, spec_id: str, run_id: str) -> dict[str, Any]:
+        """``GET /v1/evals/{id}/runs/{run_id}`` twin."""
+        from fx1.serve.evals import run_wire  # noqa: PLC0415
+
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        return run_wire(rec)
+
+    def eval_run_items(
+        self, spec_id: str, run_id: str, *, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """``.../output_items`` twin — per-task verdict rows verbatim."""
+        from fx1.serve.evals import report_task_items  # noqa: PLC0415
+
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        tasks = (
+            report_task_items(rec.report)
+            if rec.status == "succeeded" and isinstance(rec.report, dict)
+            else []
+        )
+        return [
+            {
+                "id": f"evalrun_{rec.eval_id}-{i}",
+                "object": "eval.run.output_item",
+                "run_id": f"evalrun_{rec.eval_id}",
+                "eval_id": spec_id,
+                "created_at": int(rec.finished_at or rec.created_at),
+                "status": "pass" if t["passed"] else "fail",
+                "datasource_item_id": t["name"],
+                "datasource_item": t["row"],
+                "results": [{"name": rec.suite, "passed": t["passed"]}],
+            }
+            for i, t in enumerate(tasks[:limit])
+        ]
+
+    def eval_run_delete(self, spec_id: str, run_id: str) -> None:
+        """``DELETE .../runs/{run_id}`` twin — terminal records only."""
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        if rec.status in ("queued", "running"):
+            raise RuntimeError(f"eval {rec.eval_id} is {rec.status} — only terminal runs delete")
+        self._eval_store.delete(rec.eval_id)
 
     # ---- fine-tuning (the /v1/fine_tuning twin) ------------------------
 

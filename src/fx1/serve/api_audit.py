@@ -4261,6 +4261,183 @@ def _probe_backend_probes(  # noqa: C901 NOSONAR
         == "eval_not_terminal"
     )
 
+    # /v1/evals — the OpenAI Evals-shaped spec/run surface over the same
+    # store. Specs declare suite knobs in item_schema; runs bind a model
+    # (backend link or ft: name); everything cross-links to /harness/evals.
+    spec1 = eval_app.post(
+        "/v1/evals",
+        json={
+            "name": "tooluse-baseline",
+            "data_source_config": {
+                "type": "custom",
+                "item_schema": {"suite": "tooluse", "seed": 0},
+            },
+            "testing_criteria": [{"name": "all-pass"}],
+            "metadata": {"lane": "audit"},
+        },
+    )
+    spec1_j = spec1.json() if spec1.status_code == 201 else {}
+    spec1_id = spec1_j.get("id", "")
+    out["evalspec_create_201"] = (
+        spec1.status_code == 201
+        and spec1_id.startswith("eval_")
+        and spec1_j.get("object") == "eval"
+        and spec1_j.get("name") == "tooluse-baseline"
+        and spec1_j.get("metadata") == {"lane": "audit"}
+        and (spec1_j.get("data_source_config") or {}).get("item_schema", {}).get("suite")
+        == "tooluse"
+    )
+    out["evalspec_bad_suite_422"] = (
+        eval_app.post(
+            "/v1/evals",
+            json={
+                "name": "x",
+                "data_source_config": {"type": "custom", "item_schema": {"suite": "nope"}},
+            },
+        ).status_code
+        == 422
+    )
+    spec_list = eval_app.get("/v1/evals?limit=10").json()
+    out["evalspec_list"] = spec_list.get("object") == "list" and any(
+        s.get("id") == spec1_id for s in spec_list.get("data", [])
+    )
+    out["evalspec_get"] = (
+        eval_app.get(f"/v1/evals/{spec1_id}").json().get("id") == spec1_id
+        and eval_app.get("/v1/evals/eval_nope").status_code == 404
+    )
+    spec_upd = eval_app.post(
+        f"/v1/evals/{spec1_id}",
+        json={"name": "tooluse-baseline-v2", "metadata": {"lane": "audit", "v": "2"}},
+    )
+    out["evalspec_update"] = (
+        spec_upd.status_code == 200
+        and spec_upd.json().get("name") == "tooluse-baseline-v2"
+        and spec_upd.json().get("metadata", {}).get("v") == "2"
+        and eval_app.post(f"/v1/evals/{spec1_id}", json={}).status_code == 422
+    )
+    # A spec whose schema validator rejects a combination fail-closes 422.
+    out["evalspec_schema_validated"] = (
+        eval_app.post(
+            "/v1/evals",
+            json={
+                "name": "bad-chain",
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {
+                        "suite": "tooluse",
+                        "backend": "byok",
+                        "fallbacks": ["local_fx1", "local_fx1"],
+                    },
+                },
+            },
+        ).status_code
+        == 422
+    )
+
+    run1 = eval_app.post(
+        f"/v1/evals/{spec1_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    run1_j = run1.json() if run1.status_code == 201 else {}
+    run1_id = run1_j.get("id", "")
+    out["evalrun_create_201"] = (
+        run1.status_code == 201
+        and run1_id.startswith("evalrun_")
+        and run1_j.get("object") == "eval.run"
+        and run1_j.get("eval_id") == spec1_id
+        and run1_j.get("model") == "byok"
+        and run1.headers.get("location") == f"/v1/evals/{spec1_id}/runs/{run1_id[8:]}"
+    )
+    # Same key, same body → replay; same key, different body → 409.
+    run1_replay = eval_app.post(
+        f"/v1/evals/{spec1_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    out["evalrun_idem_replay"] = (
+        run1_replay.status_code == 201
+        and run1_replay.json().get("id") == run1_id
+        and eval_app.post(
+            f"/v1/evals/{spec1_id}/runs",
+            json={"model": "local_fx1"},
+            headers={"Idempotency-Key": "spec-run-1"},
+        ).status_code
+        == 409
+    )
+    ev_run_rec = _wait_eval(eval_app, run1_j.get("eval_run_id") or run1_id[8:] or "")
+    run1_term = eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}").json()
+    out["evalrun_terminal_completed"] = (
+        ev_run_rec.get("status") == "succeeded"
+        and run1_term.get("status") == "completed"
+        and (run1_term.get("result_counts") or {}).get("total", 0) > 0
+        and run1_term.get("receipt_url") == f"/harness/evals/{run1_id[8:]}/receipt"
+    )
+    out["evalrun_list"] = any(
+        r.get("id") == run1_id
+        for r in eval_app.get(f"/v1/evals/{spec1_id}/runs").json().get("data", [])
+    )
+    items = eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}/output_items").json()
+    out["evalrun_output_items"] = (
+        items.get("object") == "list"
+        and len(items.get("data", [])) > 0
+        and all(it.get("object") == "eval.run.output_item" for it in items.get("data", []))
+        and all(
+            any("name" in r and "passed" in r for r in it.get("results", []))
+            for it in items.get("data", [])
+        )
+    )
+    out["evalrun_404s"] = (
+        eval_app.get("/v1/evals/eval_nope/runs").status_code == 404
+        and eval_app.get(f"/v1/evals/{spec1_id}/runs/evalrun_nope").status_code == 404
+        and eval_app.post(f"/v1/evals/{spec1_id}/runs/evalrun_nope/cancel").status_code == 404
+    )
+
+    # A second spec namespaces idempotency and list/get — cross-spec run
+    # ids must not leak.
+    spec2_id = (
+        eval_app.post(
+            "/v1/evals",
+            json={
+                "name": "retrieval",
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": "retrieval", "seed": 1},
+                },
+            },
+        )
+        .json()
+        .get("id", "")
+    )
+    out["evalrun_cross_spec_404"] = (
+        eval_app.get(f"/v1/evals/{spec2_id}/runs/{run1_id}").status_code == 404
+        and eval_app.get(f"/v1/evals/{spec2_id}/runs/{run1_id}/output_items").status_code == 404
+    )
+    spec2_reuse = eval_app.post(
+        f"/v1/evals/{spec2_id}/runs",
+        json={"model": "byok"},
+        headers={"Idempotency-Key": "spec-run-1"},
+    )
+    out["evalrun_idem_per_spec"] = (
+        spec2_reuse.status_code == 201 and spec2_reuse.json().get("id") != run1_id
+    )
+    eval_run_delete = eval_app.delete(f"/v1/evals/{spec1_id}/runs/{run1_id}")
+    out["evalrun_delete_terminal_200"] = (
+        eval_run_delete.status_code == 200
+        and eval_run_delete.json().get("object") == "eval.run.deleted"
+        and eval_app.get(f"/v1/evals/{spec1_id}/runs/{run1_id}").status_code == 404
+    )
+    spec_del = eval_app.delete(f"/v1/evals/{spec1_id}")
+    out["evalspec_delete"] = (
+        spec_del.status_code == 200
+        and spec_del.json().get("object") == "eval.deleted"
+        and spec_del.json().get("deleted") is True
+        and eval_app.get(f"/v1/evals/{spec1_id}").status_code == 404
+        # The surviving spec's runs still resolve through the run surface.
+        and eval_app.get(f"/v1/evals/{spec2_id}/runs/{spec2_reuse.json().get('id')}").status_code
+        == 200
+    )
+
     # Cancel on a running eval is 409 — suite runners have no kill handle.
     # The gate event is set before wait expires so the suite completes.
     gate_ev = _threading.Event()

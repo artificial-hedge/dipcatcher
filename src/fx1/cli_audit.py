@@ -155,6 +155,17 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         "eval-cancel",
         "eval-wait",
         "eval-diff",
+        "eval-spec-create",
+        "eval-spec-list",
+        "eval-spec-get",
+        "eval-spec-update",
+        "eval-spec-delete",
+        "eval-run",
+        "eval-run-list",
+        "eval-run-get",
+        "eval-run-cancel",
+        "eval-run-delete",
+        "eval-run-items",
         "ft-create",
         "ft-jobs",
         "ft-status",
@@ -554,6 +565,71 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         def commands(self, role: Any = None) -> list[str]:
             return ["cmd-a", "cmd-b"]
 
+        def eval_spec_create(self, name: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_create = {"name": name, **kw}
+            return {
+                "id": "eval_x",
+                "object": "eval",
+                "name": name,
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": kw.get("suite"), "seed": kw.get("seed")},
+                },
+                "testing_criteria": kw.get("testing_criteria") or [],
+                "metadata": kw.get("metadata") or {},
+                "created_at": 1,
+            }
+
+        def eval_specs(self, **kw: Any) -> list[dict[str, Any]]:
+            return [{"id": "eval_x", "object": "eval", "name": "t"}]
+
+        def eval_spec_get(self, spec_id: str) -> dict[str, Any]:
+            return {"id": spec_id, "object": "eval", "name": "t"}
+
+        def eval_spec_update(self, spec_id: str, **kw: Any) -> dict[str, Any]:
+            return {"id": spec_id, "object": "eval", "name": kw.get("name") or "t"}
+
+        def eval_spec_delete(self, spec_id: str) -> None:
+            self.last_spec_delete = spec_id
+
+        def eval_run_create(self, spec_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_create = {"spec_id": spec_id, **kw}
+            return {
+                "id": "evalrun_y",
+                "object": "eval.run",
+                "eval_id": spec_id,
+                "model": kw.get("model"),
+                "status": "completed",
+                "result_counts": {"total": 1, "passed": 1, "failed": 0, "errored": 0},
+            }
+
+        def eval_runs(self, spec_id: str, **kw: Any) -> list[dict[str, Any]]:
+            return [{"id": "evalrun_y", "object": "eval.run", "eval_id": spec_id}]
+
+        def eval_run_get(self, spec_id: str, run_id: str) -> dict[str, Any]:
+            return {
+                "id": run_id,
+                "object": "eval.run",
+                "eval_id": spec_id,
+                "status": "completed",
+            }
+
+        def eval_run_delete(self, spec_id: str, run_id: str) -> None:
+            self.last_run_delete = (spec_id, run_id)
+
+        def eval_run_items(self, spec_id: str, run_id: str, **kw: Any) -> list[dict[str, Any]]:
+            return [
+                {
+                    "id": "evalrun_y-0",
+                    "object": "eval.run.output_item",
+                    "run_id": run_id,
+                    "status": "fail",
+                    "datasource_item_id": "t1",
+                    "datasource_item": {"task_id": "t1"},
+                    "results": [{"name": "tooluse", "passed": False}],
+                }
+            ]
+
     fake = _FakeSDK()
     with patch("fx1.sdk.Fx1Harness", return_value=fake):
         out["complete_block_echoes_content"] = (
@@ -583,6 +659,79 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+
+        # /v1/evals local leg — the in-process SDK twins; bad --criteria
+        # JSON fails before the SDK is touched.
+        rsc = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-spec-create",
+                "local-eval",
+                "--suite",
+                "tooluse",
+                "--criteria",
+                '[{"name":"all-pass"}]',
+            ],
+        )
+        out["local_evalspec_create"] = (
+            rsc.exit_code == 0
+            and json.loads(rsc.stdout).get("id") == "eval_x"
+            and fake.last_spec_create["suite"] == "tooluse"
+        )
+        out["local_evalspec_bad_criteria_2"] = (
+            runner.invoke(
+                app,
+                ["harness", "eval-spec-create", "x", "--suite", "tooluse", "--criteria", "{}"],
+            ).exit_code
+            == 2
+        )
+        rer_l = runner.invoke(app, ["harness", "eval-run", "eval_x", "--model", "byok"])
+        out["local_evalrun"] = (
+            rer_l.exit_code == 0
+            and json.loads(rer_l.stdout).get("status") == "completed"
+            and fake.last_run_create["spec_id"] == "eval_x"
+        )
+        out["local_evalrun_family"] = (
+            json.loads(runner.invoke(app, ["harness", "eval-run-list", "eval_x"]).stdout).get(
+                "data"
+            )[0]["id"]
+            == "evalrun_y"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-get", "eval_x", "evalrun_y"]).stdout
+            ).get("status")
+            == "completed"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-items", "eval_x", "evalrun_y"]).stdout
+            )
+            .get("data")[0]
+            .get("object")
+            == "eval.run.output_item"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-run-delete", "eval_x", "evalrun_y"]).stdout
+            ).get("deleted")
+            is True
+        )
+        rcnl = runner.invoke(app, ["harness", "eval-run-cancel", "eval_x", "evalrun_y"])
+        out["local_evalrun_cancel_refused"] = rcnl.exit_code == 2 and "--remote" in rcnl.output
+        out["local_evalspec_family"] = (
+            json.loads(runner.invoke(app, ["harness", "eval-spec-list"]).stdout)
+            .get("data")[0]
+            .get("id")
+            == "eval_x"
+            and json.loads(runner.invoke(app, ["harness", "eval-spec-get", "eval_x"]).stdout).get(
+                "id"
+            )
+            == "eval_x"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-spec-update", "eval_x", "--name", "n2"]).stdout
+            ).get("name")
+            == "n2"
+            and json.loads(
+                runner.invoke(app, ["harness", "eval-spec-delete", "eval_x"]).stdout
+            ).get("deleted")
+            is True
+        )
         # in-process leg: hint flags land on the Responses body —
         # verbosity nests under text (merging with --format), cache hints
         # ride top-level
@@ -1072,6 +1221,100 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
                 "has_more": False,
             }
 
+        def eval_spec_create(self, name: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_create = {"name": name, **kw}
+            return {
+                "id": "eval_x",
+                "object": "eval",
+                "name": name,
+                "data_source_config": {
+                    "type": "custom",
+                    "item_schema": {"suite": kw.get("suite"), "seed": kw.get("seed")},
+                },
+                "testing_criteria": kw.get("testing_criteria") or [],
+                "metadata": kw.get("metadata") or {},
+                "created_at": 1,
+            }
+
+        def eval_specs(self, **kw: Any) -> dict[str, Any]:
+            self.last_spec_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "eval_x", "object": "eval", "name": "t"}],
+                "has_more": False,
+            }
+
+        def eval_spec_get(self, eval_id: str) -> dict[str, Any]:
+            self.last_spec_id = eval_id
+            return {"id": eval_id, "object": "eval", "name": "t"}
+
+        def eval_spec_update(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_spec_update = {"id": eval_id, **kw}
+            return {"id": eval_id, "object": "eval", "name": kw.get("name") or "t"}
+
+        def eval_spec_delete(self, eval_id: str) -> dict[str, Any]:
+            self.last_spec_id = eval_id
+            return {"id": eval_id, "object": "eval.deleted", "deleted": True}
+
+        def eval_run_create(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_create = {"eval_id": eval_id, **kw}
+            return {
+                "id": "evalrun_y",
+                "object": "eval.run",
+                "eval_id": eval_id,
+                "model": kw.get("model"),
+                "status": "queued",
+            }
+
+        def eval_runs(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run_query = {"eval_id": eval_id, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "evalrun_y", "object": "eval.run", "eval_id": eval_id}],
+                "has_more": False,
+            }
+
+        def eval_run_get(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "id": run_id,
+                "object": "eval.run",
+                "eval_id": eval_id,
+                "status": "completed",
+            }
+
+        def eval_run_cancel(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "id": run_id,
+                "object": "eval.run",
+                "eval_id": eval_id,
+                "status": "canceled",
+            }
+
+        def eval_run_delete(self, eval_id: str, run_id: str) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {"id": run_id, "object": "eval.run.deleted", "deleted": True}
+
+        def eval_run_output_items(self, eval_id: str, run_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_run = (eval_id, run_id)
+            return {
+                "object": "list",
+                "data": [
+                    {
+                        "id": "evalrun_y-0",
+                        "object": "eval.run.output_item",
+                        "run_id": run_id,
+                        "eval_id": eval_id,
+                        "status": "fail",
+                        "datasource_item_id": "t1",
+                        "datasource_item": {"task_id": "t1"},
+                        "results": [{"name": "tooluse", "passed": False}],
+                    }
+                ],
+                "has_more": False,
+            }
+
         def files(self) -> list[dict[str, Any]]:
             return [{"id": "file-1", "object": "file", "purpose": "batch"}]
 
@@ -1423,6 +1666,148 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 NOSONAR
             red.exit_code == 0
             and json.loads(red.stdout).get("object") == "eval_diff"
             and remotes[-1].last_diff == ("ev-a", "ev-b")
+        )
+
+        # /v1/evals spec+run family on --remote: every verb forwards to the
+        # matching HarnessClient method and prints the wire object.
+        res = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-spec-create",
+                "my-eval",
+                "--suite",
+                "tooluse",
+                "--criteria",
+                '[{"name":"all-pass"}]',
+                "--metadata",
+                '{"lane":"a"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_evalspec_create"] = (
+            res.exit_code == 0
+            and json.loads(res.stdout).get("id") == "eval_x"
+            and remotes[-1].last_spec_create["name"] == "my-eval"
+            and remotes[-1].last_spec_create["suite"] == "tooluse"
+            and remotes[-1].last_spec_create["testing_criteria"] == [{"name": "all-pass"}]
+        )
+        out["remote_evalspec_list"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "eval-spec-list", "--remote", "http://h.test"]
+                ).stdout
+            )
+            .get("data")[0]
+            .get("id")
+            == "eval_x"
+        )
+        out["remote_evalspec_family"] = (
+            all(
+                json.loads(
+                    runner.invoke(
+                        app, ["harness", name, "eval_x", "--remote", "http://h.test"]
+                    ).stdout
+                ).get("id")
+                == "eval_x"
+                for name in ("eval-spec-get", "eval-spec-delete")
+            )
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-spec-update",
+                        "eval_x",
+                        "--name",
+                        "renamed",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("name")
+            == "renamed"
+        )
+        rer = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-run",
+                "eval_x",
+                "--model",
+                "byok",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_evalrun"] = (
+            rer.exit_code == 0
+            and remotes[-1].last_run_create["eval_id"] == "eval_x"
+            and remotes[-1].last_run_create["model"] == "byok"
+            and remotes[-1].last_job == "y"  # wait_eval re-attached to the bare id
+            and json.loads(rer.stdout).get("status") == "completed"
+        )
+        out["remote_evalrun_family"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "eval-run-list", "eval_x", "--remote", "http://h.test"]
+                ).stdout
+            )
+            .get("data")[0]
+            .get("id")
+            == "evalrun_y"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "eval-run-get", "eval_x", "evalrun_y", "--remote", "http://h.test"],
+                ).stdout
+            ).get("status")
+            == "completed"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-cancel",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("status")
+            == "canceled"
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-delete",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            ).get("deleted")
+            is True
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "eval-run-items",
+                        "eval_x",
+                        "evalrun_y",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )
+            .get("data")[0]
+            .get("object")
+            == "eval.run.output_item"
         )
 
     # ready under drain: client raises the mapped 503, CLI exits 1
