@@ -5,20 +5,14 @@ from __future__ import annotations
 from itertools import combinations
 
 
-def extends_to_ultrafilter(
-    universe: int, filt: list[list[int]]
-) -> list[list[int]]:
+def extends_to_ultrafilter(universe: int, filt: list[list[int]]) -> list[list[int]]:
     """On the finite BA P({0..n-1}): extend a filter to the ultrafilter
     of all subsets containing a chosen point of its intersection."""
     inter = set(range(universe))
     for s in filt:
         inter &= set(s)
     point = min(inter)
-    subsets = [
-        list(c)
-        for r in range(universe + 1)
-        for c in combinations(range(universe), r)
-    ]
+    subsets = [list(c) for r in range(universe + 1) for c in combinations(range(universe), r)]
     return [s for s in subsets if point in s]
 
 
