@@ -927,6 +927,44 @@ def harness_version(
     typer.echo(json.dumps({"api_version": API_VERSION, "fx1_version": __version__, "local": True}))
 
 
+@harness_app.command("selftest")
+def harness_selftest(
+    remote: str | None = typer.Option(
+        None,
+        "--remote",
+        help="Smoke a live deployment (read-only checks); unset boots a "
+        "stub engine + the production app on loopback and runs the full "
+        "golden path.",
+    ),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    state_dir: str | None = typer.Option(
+        None,
+        "--state-dir",
+        help="Also prove durability: restart the local app on this dir and "
+        "recover the job record (local mode only).",
+    ),
+) -> None:
+    """Golden-path smoke: zero-config proof the harness actually works.
+
+    Local mode spins a stub OpenAI engine and the production app on
+    loopback, then walks auth, commands, a BYOK completion, SSE stream,
+    idempotent replay, the async job lifecycle, sealed-receipt verify,
+    drain, and in-process parity. Remote mode runs read-only checks only.
+    Exits 0 when every check passes, 2 otherwise — usable as a deploy gate."""
+    from fx1.selftest import run_selftest
+
+    report = run_selftest(
+        remote=remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        state_dir=state_dir,
+        timeout_s=timeout_s,
+    )
+    typer.echo(json.dumps(report.as_dict(), indent=2))
+    if not report.ok:
+        raise typer.Exit(code=2)
+
+
 @harness_app.command("compat")
 def harness_compat(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
