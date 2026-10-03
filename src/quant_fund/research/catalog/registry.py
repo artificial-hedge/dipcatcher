@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-676 higher-algebra-7 canon.
+        "en_algebra2",
+        "thom_transpose",
+        "higher_brace2",
+        "koszul_operad2",
+        "operad_lie",
+        "center_hochschild",
         # Wave-675 higher-algebra-6 canon.
         "e3_algebra",
         "getzler_jones",
