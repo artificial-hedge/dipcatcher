@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-295 astronomy/orbital-mechanics canon.
+        "orbital_elements",
+        "kepler_solve",
+        "lambert_problem",
+        "tle_propagate",
+        "orbit_maneuver",
+        "gauss_iod",
         # Wave-294 compiler-4 canon.
         "tree_cover",
         "modulo_sched",
