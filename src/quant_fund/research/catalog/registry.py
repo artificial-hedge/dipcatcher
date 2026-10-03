@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-461 DAG-2/shifted-symplectic canon.
+        "shifted_sympl",
+        "lagrangian_int",
+        "derived_critical",
+        "lie_algebroid",
+        "moment_map",
+        "quant_dag",
         # Wave-460 condensed-2/analytic-rings canon.
         "analytic_ring2",
         "solid_tensor",

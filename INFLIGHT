@@ -1,3 +1,4 @@
+feat(research): wave 461 — DAG-2/shifted-symplectic canon (shifted_sympl, lagrangian_int, derived_critical, lie_algebroid, moment_map, quant_dag) (2721->2727 families)
 feat(research): wave 460 — condensed-2/analytic-rings canon (analytic_ring2, solid_tensor, trace_class, clausen_scholze, solid_derived, pyknotic) (2715->2721 families)
 feat(research): wave 459 — order-theory-2/domain-theory canon (fixed_points_ord, chain_cond, scott_cpo, way_below, galois_insertion, denotational) (2709->2715 families)
 feat(research): wave 458 — matroid-3 canon (transversal_mat, matroid_rep, tutte_poly, matroid_minor, regular_mat, delta_matroid) (2703->2709 families)
