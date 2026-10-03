@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-907 union-find + priority-queue canon.
+        "union_find",
+        "dsu_rollback",
+        "potential_dsu",
+        "van_emde_boas",
+        "interval_heap",
+        "weak_heap",
         # Wave-906 persistent-structure canon.
         "skip_list",
         "persistent_array",
