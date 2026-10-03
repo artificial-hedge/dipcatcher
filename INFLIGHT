@@ -1,3 +1,4 @@
+feat(research): wave 511 — Fargues-Scholze canon (fs_diamond, geometric_satake, v_sheaf, bun_g, hecke_stack, y_diamond) (3021->3027 families)
 feat(research): wave 510 — spectral-AG canon (spectral_scheme2, connective_e_ring, spectral_alg, spectral_stack, elliptic_cohor, taf_lurie) (3015->3021 families)
 feat(research): wave 509 — Weil-II/l-adic canon (etale_site2, l_adic_sheaf, frobenius_action, groth_lefschetz, deligne_weil2, purity_thm) (3009->3015 families)
 feat(research): wave 508 — anabelian-geometry canon (anabelian_geo, section_conj, fundamental_grp, etale_pi1, groth_tei, tamagawa_mochi) (3003->3009 families)
