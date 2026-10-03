@@ -2625,3 +2625,4 @@ wave 224 (2026-10-02): string-algorithm canon — aho_corasick, suffix_automaton
 wave 225 (2026-10-02): physics-simulation canon — nbody_leapfrog, barnes_hut, sph_fluid, rigid_collision, verlet_cloth, fem_truss; 1323→1329 families.
 wave 226 (2026-10-02): compiler/formal-language canon — regex_engine, dfa_minimize, cyk_parser, dominance_tree, liveness_dce, linscan_regalloc; 1329→1335 families.
 wave 227 (2026-10-02): compression canon — huffman_codes, arithmetic_coding, lzw_compress, golomb_rice, rans_coder, lz78_dict; 1335→1341 families.
+wave 228 (2026-10-02): CRDT canon — gcounter, pncounter, orset, lww_map, twopset, rga_sequence; 1341→1347 families.
