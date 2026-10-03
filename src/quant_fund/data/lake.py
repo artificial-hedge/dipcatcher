@@ -12,6 +12,11 @@ from quant_fund.config.models import AppConfig
 
 
 def _fsync_dir(path: Path) -> None:
+    # Python's directory open/fsync sequence below is not supported on
+    # Windows. The temporary file is flushed, but the subsequent rename is
+    # not made power-loss durable by this helper on Windows.
+    if os.name == "nt":
+        return
     fd = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
     try:
         os.fsync(fd)
@@ -24,35 +29,63 @@ class Lake:
         self.root = Path(root)
         for part in ("raw", "bronze", "silver", "gold", "metadata"):
             (self.root / part).mkdir(parents=True, exist_ok=True)
+        # Serialize replacement of the same destination within this Lake
+        # instance, including normalized path aliases. Temporary files are
+        # still private to each writer; locks do not coordinate processes
+        # or separate Lake instances.
+        self._rename_locks: dict[str, threading.Lock] = {}
+        self._rename_locks_guard = threading.Lock()
+
+    def _rename_lock(self, path: Path) -> threading.Lock:
+        # Use the validated destination, not the caller's spelling. normcase
+        # also folds case on Windows, while preserving POSIX case sensitivity.
+        # Do not resolve the final symlink: os.replace replaces that entry.
+        key = os.path.normcase(os.path.abspath(path))
+        with self._rename_locks_guard:
+            lock = self._rename_locks.get(key)
+            if lock is None:
+                lock = self._rename_locks[key] = threading.Lock()
+            return lock
 
     def _resolve(self, rel: str) -> Path:
         # Lake-relative paths only: no absolute paths, no traversal — a bad
-        # caller must not be able to write outside the lake root.
-        parts = Path(rel).parts
+        # caller must not be able to write outside the lake root. On Windows,
+        # is_absolute() is False for drive-relative rooted paths such as
+        # "/abs/x" or "C:x", so the drive/root checks are required as well.
+        candidate = Path(rel)
+        parts = candidate.parts
         if (
             not rel
-            or Path(rel).is_absolute()
+            or candidate.is_absolute()
+            or bool(candidate.drive)
+            or bool(candidate.root)
             or "\\" in rel
             or any(part in (".", "..") for part in parts)
         ):
             raise ValueError(f"lake path must be a clean relative path, got {rel!r}")
-        return self.root / rel
+        return self.root / candidate
 
     def write_parquet(self, frame: pl.DataFrame, rel: str) -> Path:
-        # Unique tmp + fsync + os.replace + dir fsync: a crash mid-write can
-        # never leave a truncated or unflushed parquet at the canonical path,
-        # and concurrent writers to the same path cannot share a tmp file.
+        """Publish a complete, flushed parquet via same-directory replacement.
+
+        POSIX additionally fsyncs the destination directory. Windows skips
+        that step, so successful return does not guarantee persistence of
+        the rename across power loss. This is not a multi-process lock.
+        """
         path = self._resolve(rel)
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
         try:
             frame.write_parquet(tmp)
-            fd = os.open(tmp, os.O_RDONLY)
+            # Windows rejects fsync on a read-only handle (EBADF); open
+            # read-write there so the flush still reaches the filesystem.
+            fd = os.open(tmp, os.O_RDWR if os.name == "nt" else os.O_RDONLY)
             try:
                 os.fsync(fd)
             finally:
                 os.close(fd)
-            os.replace(tmp, path)
+            with self._rename_lock(path):
+                os.replace(tmp, path)
             _fsync_dir(path.parent)
         except BaseException:
             tmp.unlink(missing_ok=True)

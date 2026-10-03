@@ -12,6 +12,7 @@ __pycache__/
 htmlcov/
 dist/
 build/
+node_modules/
 .env
 .mlflow/
 mlruns/
@@ -92,5 +93,11 @@ mutants/
 proofs/
 leakage-report.json
 
-# Advisory lock taken by `corpus-epoch` stamps (serialized head read->write)
-.epoch_stamp.lock
+# Stray nested trees created by the off-machine sftp clobber (root cause in
+# tools/guard-config.ps1): the Mac-side `put -r src /D:/dipcatcher/src`
+# re-creates src/src & tests/tests, and a scripts/scripts tree was committed
+# the same way. Ignore the nested trees so a routine `git add .`/`git add -A`
+# can never re-track them.
+/src/src/
+/tests/tests/
+/scripts/scripts/

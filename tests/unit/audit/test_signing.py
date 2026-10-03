@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import stat
 from pathlib import Path
 
@@ -21,7 +22,9 @@ def test_ed25519_roundtrip_is_deterministic(tmp_path: Path) -> None:
     signer = Ed25519Signer.generate()
     path = tmp_path / "ledger.key"
     signer.write(path)
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    # Windows has no POSIX mode bits; chmod(0o600) only toggles read-only.
+    if os.name != "nt":
+        assert stat.S_IMODE(path.stat().st_mode) == 0o600
     loaded = Ed25519Signer.from_path(path)
     assert loaded.public_key == signer.public_key
     assert (tmp_path / "ledger.key.pub").read_text(

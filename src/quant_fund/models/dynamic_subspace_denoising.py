@@ -458,4 +458,8 @@ def principal_angles(a: Array, b: Array) -> Array:
             raise ValueError(f"{name} must have orthonormal columns")
     svals = np.linalg.svd(ma.T @ mb, compute_uv=False)
     svals = np.clip(np.asarray(svals, dtype=float), -1.0, 1.0)
+    # Values within machine epsilon of 1 are roundoff noise in an exact overlap;
+    # clipping them prevents arccos from magnifying the noise into a near-zero
+    # principal angle (especially sensitive to BLAS differences on Windows).
+    svals = np.where(np.isclose(svals, 1.0, atol=np.finfo(float).eps), 1.0, svals)
     return np.asarray(np.arccos(svals), dtype=float)

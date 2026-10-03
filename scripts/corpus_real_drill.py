@@ -11,6 +11,7 @@ input's digest so family membership is reproducible.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -24,7 +25,26 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=Path("receipts/corpus_real_drill.json"))
     ap.add_argument("--q", type=float, default=0.05)
     ap.add_argument("--glob", default="*.json")
+    ap.add_argument(
+        "--membership",
+        type=Path,
+        help=(
+            "JSON list of receipt basenames pinning the audit's input set; "
+            "without it the glob audits whatever the dir holds at run time "
+            "(byte-reproducible replays require this pin)."
+        ),
+    )
     args = ap.parse_args()
+
+    members = None
+    membership_sha256 = None
+    if args.membership is not None:
+        raw_membership = args.membership.read_bytes()
+        loaded = json.loads(raw_membership)
+        if not isinstance(loaded, list) or not all(isinstance(m, str) for m in loaded):
+            raise SystemExit("membership file must be a JSON list of basenames")
+        members = set(loaded)
+        membership_sha256 = hashlib.sha256(raw_membership).hexdigest()
 
     receipts_dir = args.receipts.resolve()
     out_path = args.out.resolve()
@@ -35,7 +55,12 @@ def main() -> int:
     if out_path.parent == receipts_dir and out_path.is_file():
         out_path.unlink()
 
-    report = corpus_audit(receipts_dir, q=args.q, glob=args.glob)
+    report = corpus_audit(receipts_dir, q=args.q, glob=args.glob, members=members)
+    report.pop("code_revision", None)
+    report.pop("meta", None)
+    if membership_sha256 is not None:
+        report["params"]["membership"] = str(args.membership)
+        report["params"]["membership_sha256"] = membership_sha256
     sealed = seal_receipt(report)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")

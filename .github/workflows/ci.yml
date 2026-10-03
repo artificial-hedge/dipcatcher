@@ -78,9 +78,13 @@ jobs:
       - name: Dependency vulnerability audit
         run: |
           set -o pipefail
-          uv export --format requirements.txt --no-hashes --no-emit-project \
-            --all-extras --all-groups \
-            | uvx --from pip-audit==2.10.1 pip-audit --strict --format json -r /dev/stdin \
+          uv export --frozen --quiet --format requirements.txt --no-hashes --no-emit-project \
+            --all-extras --all-groups -o /tmp/locked-requirements.txt
+          # Audit every platform's locked packages, including the Windows/Linux
+          # optional packages that the Ubuntu runner would otherwise skip.
+          sed 's/ ;.*//' /tmp/locked-requirements.txt > /tmp/all-platform-requirements.txt
+          uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps \
+            --format json -r /tmp/all-platform-requirements.txt \
             | tee dependency-audit.json
       - name: Upload dependency audit
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -653,6 +657,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: TLC downloader regression tests (offline)
+        run: python scripts/test_run_tlc.py
       - name: TLC order-lifecycle model check
         run: bash scripts/run_tlc.sh
       - name: SMT proofs, conformance, and stateful tests
@@ -690,6 +696,8 @@ jobs:
       - name: Admission gate on diff-changed receipts
         if: github.event_name == 'pull_request'
         run: make admission-gate ADMISSION_BASE=FETCH_HEAD
+      - name: Replay carriers (byte-exact artifact reproduction)
+        run: make replay-sweep
 
   pretrade-risk:
     runs-on: ubuntu-latest

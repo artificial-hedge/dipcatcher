@@ -29,7 +29,16 @@ from quant_fund.research.fleet_eval import DEFAULT_TAUS, SyntheticShard, fleet_h
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-BARS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/file_us_wide/bronze/bars.parquet")
+BARS = Path("data/file_us_wide/bronze/bars.parquet")
+OUT_DIR = Path("receipts")
+_args = sys.argv[1:]
+if "--out" in _args:
+    _i = _args.index("--out")
+    OUT_DIR = Path(_args[_i + 1])
+    _args = _args[:_i] + _args[_i + 2 :]
+_pos = [a for a in _args if not a.startswith("--")]
+if _pos:
+    BARS = Path(_pos[0])
 SYMBOL = "NVDA"
 N_TRAIN = 1000
 N_EVAL = 300
@@ -86,6 +95,8 @@ def _atomic_write_text(path: Path, text: str) -> None:
 
 
 def _seal(report: dict, out: Path):
+    report.pop("code_revision", None)
+    report.pop("meta", None)
     canonical = json.loads(canonical_json_bytes(dict(report)))
     digest = hash_bytes(canonical_json_bytes(canonical))
     payload = {**canonical, "receipt_sha256": digest}
@@ -115,13 +126,13 @@ def main() -> None:
     for name, stream in streams.items():
         report = localize_report(stream.tolist(), stream_name=name, data_label="yahoo_eod")
         report["drill"] = {
-            "tape": str(BARS.resolve()),
+            "tape": str(BARS),
             "shard": shard.config,
             "n_train": N_TRAIN,
             "n_eval": N_EVAL,
             "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
         }
-        out = Path("receipts") / f"cp_real_drill_{name}.json"
+        out = OUT_DIR / f"cp_real_drill_{name}.json"
         ok = _seal(report, out)
         results[name] = {
             "receipt": str(out),

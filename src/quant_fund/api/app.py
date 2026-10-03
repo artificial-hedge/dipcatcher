@@ -124,7 +124,9 @@ async def _authenticate_request(
         return await call_next(request)
     if expected:
         provided = request.headers.get("X-API-Key")
-        if not provided or not hmac.compare_digest(provided, expected):
+        if not provided or not hmac.compare_digest(
+            provided.encode("utf-8"), expected.encode("utf-8")
+        ):
             return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
         return await call_next(request)
     if not _client_is_loopback(request):

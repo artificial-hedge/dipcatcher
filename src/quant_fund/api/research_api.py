@@ -422,7 +422,9 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
             response = await call_next(request)
         elif cfg.api_key:
             provided = request.headers.get("X-API-Key")
-            if not provided or not hmac.compare_digest(provided, cfg.api_key):
+            if not provided or not hmac.compare_digest(
+                provided.encode("utf-8"), cfg.api_key.encode("utf-8")
+            ):
                 response = JSONResponse(
                     status_code=401, content={"detail": "invalid or missing X-API-Key"}
                 )

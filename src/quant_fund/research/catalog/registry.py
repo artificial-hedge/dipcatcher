@@ -588,6 +588,2603 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ross_recovery",
         "ait_sahalia",
         "toda_yamamoto",
+        # wave 55 — Diebold-Mariano + Harvey-Leybourne-Newbold
+        # predictive-accuracy test, Engle-Granger/Phillips-Ouliaris
+        # residual cointegration + ECM adjustment speed, Glosten-
+        # Milgrom sequential-trade learning with martingale-price
+        # diagnostics, Hasbrouck information share bounds +
+        # Gonzalo-Granger permanent weights, BDS correlation-
+        # integral independence test, Cochrane-Piazzesi tent-shaped
+        # return-forecasting bond factor, Engle-Ng sign/size-bias
+        # asymmetry diagnostics. Same SYNTHETIC diagnostic contract.
+        "diebold_mariano",
+        "engle_granger",
+        "glosten_milgrom",
+        "hasbrouck_is",
+        "bds",
+        "cochrane_piazzesi",
+        "engle_ng",
+        # wave 52 — Shin-Yu-Greenwood-Nimmo nonlinear ARDL
+        # (asymmetric long/short-run multipliers, bounds-F),
+        # Adrian-Boyarchenko-Giannone growth-at-risk (Koenker-
+        # Bassett LP quantiles + isotonic crossing fix), Melick-
+        # Thomas mixture implied-PDF recovery (martingale-pinned
+        # least squares), Bandi-Russell noise/volatility
+        # separation (optimal sparse sampling), Hong-Li PIT
+        # density-forecast M-statistic, Beveridge-Nelson
+        # permanent/transitory decomposition. Same SYNTHETIC
+        # diagnostic contract.
+        "nardl",
+        "growth_at_risk",
+        "melick_thomas",
+        "bandi_russell",
+        "hong_li",
+        "beveridge_nelson",
+        # wave 53 — Corradi-Swanson out-of-sample predictive-
+        # accuracy test (moving-block bootstrap), Engle-Kroner
+        # variance-targeted diagonal BEKK(1,1) multivariate
+        # GARCH, Andersen quadratic-exponential Heston
+        # discretization (positive under Feller violation),
+        # Hansen-Lunde-Nason model confidence set (block-boot
+        # T_max step-down), Christoffersen-Pelletier Weibull-
+        # duration VaR clustering backtest, Shephard-Sheppard
+        # HEAVY(P) two-equation realized-measure volatility.
+        # Same SYNTHETIC diagnostic contract.
+        "corradi_swanson",
+        "engle_kroner_bekk",
+        "heston_qe",
+        "model_confidence_set",
+        "christoffersen_pelletier",
+        "sheppard_heavy",
+        # wave 54 — Pesaran-Timmermann directional-accuracy sign test,
+        # Giacomini-Rossi fluctuation predictive-ability break
+        # detection, Muller-Watson low-frequency correlation and
+        # predictive tests over cosine transforms, Romano-Wolf
+        # stepdown familywise multiple-testing, Christensen-
+        # Diebold-Rudebusch arbitrage-free Nelson-Siegel yield curve
+        # with the verified adjustment-to-yield formula, Danielsson-
+        # de Vries tail-simulation extreme VaR. Same SYNTHETIC
+        # diagnostic contract.
+        "pesaran_timmermann",
+        "giacomini_rossi",
+        "muller_watson",
+        "romano_wolf",
+        "christensen_diebold_rudebusch",
+        "danielsson_devries",
+        # wave 56 — Kwiatkowski-Phillips-Schmidt-Shin level/trend
+        # stationarity LM test, Elliott-Rothenberg-Stock DF-GLS
+        # quasi-differenced unit-root test with Ng-Perron MAIC lag
+        # selection, Ng-Perron modified-ADF battery (MZ_a/MZ_t/MSB/
+        # MPT with AR spectral-density LRV), Phillips-Perron Z
+        # nonparametric unit-root corrections, Zivot-Andrews
+        # endogenous level+trend break minimum-t test, Lee-
+        # Strazicich LM unit-root with endogenous crash break.
+        # Same SYNTHETIC diagnostic contract.
+        "kpss",
+        "ers_dfgls",
+        "ng_perron",
+        "phillips_perron",
+        "zivot_andrews",
+        "lee_strazicich",
+        # wave 57 — MODWT maximal-overlap discrete wavelet
+        # multiresolution with adjoint synthesis and boundary-
+        # trimmed scale variance/correlation, Geweke spectral
+        # frequency-domain Granger-causality measure with VAR
+        # transfer-function decomposition, Kostakis-Magdalinos-
+        # Stamatogiannis IVX-Wald persistence-robust predictive
+        # inference, Bai-Ng panel information criteria + Ahn-
+        # Horenstein eigenvalue-ratio factor-rank selection,
+        # Wooldridge cluster-robust serial-correlation test on
+        # within-transformed residuals, Belloni-Chernozhukov-
+        # Hansen post-double-selection lasso inference. Same
+        # SYNTHETIC diagnostic contract.
+        "wavelet_modwt",
+        "geweke_spectral",
+        "ivx",
+        "bai_ng_ic",
+        "wooldridge_serial",
+        "lasso_pds",
+        # wave 58 — Davis-Mikosch extremogram + Ferro-Segers
+        # extremal index tail-dependence battery, Jaeger echo-
+        # state reservoir (spectral-radius normalized, ridge
+        # readout, NARMA driver), Bates stochastic-volatility-
+        # plus-jump pricing (little-trap Riccati + Merton
+        # compensator, Gauss-Legendre probabilities), Cleveland
+        # STL robust LOESS seasonal decomposition, Killick-
+        # Fearnhead-Eckley PELT pruned optimal partitioning +
+        # Fryzlewicz wild binary segmentation, Brillinger
+        # dynamic principal components (Daniell-smoothed
+        # cross-spectral eigendecomposition). Same SYNTHETIC
+        # diagnostic contract.
+        "extremogram",
+        "echo_state",
+        "bates_svj",
+        "stl_loess",
+        "pelt_wbs",
+        "spectral_pca",
+        # wave 59 — Huang empirical-mode decomposition +
+        # Hilbert marginal spectrum (cubic-envelope sifting,
+        # instantaneous-frequency extraction), Gallant-Nychka
+        # semi-nonparametric density (squared Hermite-polynomial
+        # expansion over a Gaussian kernel, penalized ML),
+        # Acharya-Engle-Richardson SRISK systemic capital
+        # shortfall (worst-alpha MES + long-run compounding),
+        # Torrence-Compo Morlet cross-wavelet coherence (scale-
+        # and time-smoothed squared coherency), Balke-Fomby /
+        # Enders-Granger threshold cointegration (TAR/MTAR ECM,
+        # SSR-grid threshold search, asymmetry F-test),
+        # Chernozhukov extremal quantile regression (inter-
+        # mediate-order QR + Hill tail index + Weissman
+        # extrapolation). Same SYNTHETIC diagnostic contract.
+        "emd_hht",
+        "gallant_snp",
+        "srisk",
+        "wavelet_coherence",
+        "tar_coint",
+        "extreme_qr",
+        # wave 60 — Shumway-Stoffer EM state-space estimation
+        # (RTS smoother + closed-form M-step, lag-1 covariance
+        # recursion), Geweke-Porter-Hudak residual memory test
+        # + Marinucci-Robinson fractional cointegration, Teras-
+        # vira LSTAR/ESTAR grid-NLS with Luukkonen-Saikkonen-
+        # Terasvirta LM3 linearity test, Engle-Lilien-Robins
+        # GARCH-in-mean joint QMLE (risk premium in the mean),
+        # Bauwens-Giot logarithmic ACD (Weibull/lognormal
+        # innovations, unconstrained positivity), Wigner-Ville
+        # and pseudo-WVD analytic-signal time-frequency
+        # distribution. Same SYNTHETIC diagnostic contract.
+        "kalman_em",
+        "fractional_coint",
+        "star_model",
+        "garch_in_mean",
+        "log_acd",
+        "wigner_ville",
+        # wave 61 — Dümbgen-Rufibach log-concave density MLE
+        # (shape-constrained, bandwidth-free nonparametric
+        # estimation), Sakoe-Chiba banded DTW with warp
+        # registration (phase/amplitude decomposition),
+        # Chow-Lin GLS + Denton proportional temporal
+        # disaggregation with exact additivity, Chen-Liu-Tiao
+        # joint-iterative AO/IO/LS/TC outlier battery
+        # (Bonferroni threshold, MAD-robust sigma), Rocha-
+        # Cribari-Neto beta autoregression (link-scale
+        # recursion, joint precision MLE), Ferland-Latour-
+        # Oraichi Poisson INGARCH(1,1). Same SYNTHETIC
+        # diagnostic contract.
+        "log_concave",
+        "dtw_warp",
+        "chow_lin",
+        "chen_tiao_outliers",
+        "beta_ar",
+        "ingarch",
+        # wave 62 — Meucci entropy pooling (min relative
+        # entropy posterior under scenario views, dual-
+        # exponential tilting), Antolin-Diaz & Rubio-Ramirez
+        # narrative SVAR (event-level sign + dominance
+        # restrictions over rotation draws), Verbesselt BFAST
+        # seasonal+trend break detection (Chow-F scan + BIC
+        # second break), Nolan alpha-stable fit (McCulloch
+        # quantile init + Kogon-Williams CF regression),
+        # Kemna-Vorst geometric Asian closed form +
+        # Turnbull-Wakeman moment match + geometric-CV
+        # arithmetic MC, Black-Litterman reverse-optimized
+        # equilibrium + Idzorek view posterior. Same
+        # SYNTHETIC diagnostic contract.
+        "entropy_pooling",
+        "narrative_svar",
+        "bfast",
+        "stable_dist",
+        "asian_option",
+        "black_litterman",
+        # wave 63 — Higham/Qi-Sun nearest correlation
+        # matrix (Dykstra alternating corrections and
+        # semismooth Newton on the dual), Lee-Carter
+        # stochastic mortality (age-centred SVD +
+        # random-walk kappa), Clauset-Shalizi-Newman
+        # power-law tails (KS-optimal x_min + Hill MLE +
+        # parametric-bootstrap p-value), Vasicek/Hull-
+        # White futures convexity adjustment (Gaussian
+        # integral closed form vs Hull heuristic),
+        # Jurado-Ludvigson-Ng macro uncertainty factor
+        # (common factor of forecast-error variances),
+        # inverse-Gaussian first-passage law with the
+        # Siegmund corrected-continuity barrier lift.
+        # Same SYNTHETIC diagnostic contract.
+        "higham_corr",
+        "lee_carter",
+        "power_law",
+        "convexity_adj",
+        "jln_uncertainty",
+        "first_passage",
+        # wave 64 — Lugannani-Rice saddlepoint tail
+        # probabilities and the renormalized saddlepoint
+        # density (gamma/normal CGF), Kraskov-Stogbauer-
+        # Grassberger kNN mutual information plus its
+        # conditional form, Schreiber transfer entropy
+        # built on the conditional KSG estimator,
+        # Brownian-bridge midpoint moments with the
+        # closed-form barrier hit probability for MC
+        # refinement, Jarrow-Turnbull reduced-form
+        # credit (piecewise-flat hazard bootstrap,
+        # survival curve, risky bond, par CDS), and
+        # Campbell-Shiller log-linear VAR return
+        # variance decomposition (dividend-news vs
+        # discount-rate news). Same SYNTHETIC
+        # diagnostic contract.
+        "saddlepoint",
+        "mutual_info",
+        "transfer_entropy",
+        "brownian_bridge",
+        "jarrow_turnbull",
+        "campbell_shiller",
+        # Wave 65 — LIBOR market model (terminal-
+        # measure forward simulation, Black caplets,
+        # MC swaptions), Fang-Oosterlee COS Fourier-
+        # cosine pricing, Obizhaeva-Wang transient-
+        # impact optimal execution (block + rate
+        # schedule, KKT cost), Margrabe/Kirk spread
+        # and quanto options, Gerber-Shiu Esscher-
+        # measure pricing on exponential-Levy CFs,
+        # and Wu-Xia shadow-rate EKF term structure
+        # at the zero lower bound. Same SYNTHETIC
+        # diagnostic contract.
+        "libor_market",
+        "cos_method",
+        "obizhaeva_wang",
+        "spread_options",
+        "esscher",
+        "shadow_rate",
+        # Wave 66 — Giles multilevel Monte Carlo
+        # (coupled coarse/fine Euler levels, variance
+        # decay beta), Black-Karasinski calibrated
+        # trinomial lattice (Arrow-Debreu bond
+        # repricing, caplets), Battiston DebtRank
+        # systemic-risk propagation vs in-strength
+        # centrality, Scheffer critical-slowing-down
+        # early-warning signals (rolling AC1/variance
+        # Kendall-tau + IAAFT surrogates), Bandt-
+        # Pompe permutation entropy on the Rosso
+        # complexity-entropy plane, and Liu-Wang
+        # SVGD particle posterior transport. Same
+        # SYNTHETIC diagnostic contract.
+        "mlmc",
+        "black_karasinski",
+        "debtrank",
+        "ews_signals",
+        "permutation_entropy",
+        "svgd",
+        # Wave 67 — Skilling nested-sampling
+        # evidence estimation (prior-shrinkage
+        # trajectory, posterior-weighted dead
+        # points), Del-Moral tempering SMC with
+        # ESS-triggered resample + RW mutation,
+        # Wood/Drovandi Bayesian synthetic
+        # likelihood (Gaussian surrogate on
+        # summaries + RW-MH), Auerbach-
+        # Gorodnichenko state-dependent local
+        # projections (logistic transition,
+        # Newey-West), Andrews-Soares GMS
+        # moment-inequality testing (kappa
+        # selection + bootstrap max-stat), and
+        # Euler risk contributions (ES tail
+        # conditional means, kernel-smoothed
+        # VaR). Same SYNTHETIC diagnostic
+        # contract.
+        "nested_sampling",
+        "smc_samplers",
+        "synthetic_likelihood",
+        "state_dependent_lp",
+        "moment_inequalities",
+        "euler_risk",
+        # Wave 68 — Demeterfi variance-swap
+        # replication (OTM-strip quadrature,
+        # Andersen-Bondarenko corridor IV),
+        # Roberts-Tweedie MALA/ULA Langevin
+        # MCMC with optimal-scaling acceptance
+        # advantage, Ramsay-Silverman
+        # trapezoid-weighted FPCA (Karhunen-
+        # Loeve eigenpairs, FVE), Andrieu-
+        # Doucet-Holenstein particle Gibbs
+        # (conditional SMC + PMMH marginal
+        # parameter update), Ripley K/L
+        # second-order clustering with
+        # Monte-Carlo CSR envelopes, and
+        # Daubechies-Lu-Wu synchrosqueezed
+        # wavelet ridges. Same SYNTHETIC
+        # diagnostic contract.
+        "vix_replication",
+        "mala",
+        "functional_pca",
+        "particle_gibbs",
+        "ripley_k",
+        "synchrosqueezing",
+        # Wave 69 — Dragomiretskiy-Zosso
+        # variational mode decomposition
+        # (one-sided-spectrum ADMM, spectral-
+        # peak initialization), Stockwell-
+        # Mansinha-Lowe S-transform (1/f-
+        # width Gaussian TF), Hotelling CCA
+        # with Wold PLS-SVD and Anderson
+        # reduced-rank regression, Tenen-
+        # baum-de Silva-Langford Isomap
+        # (kNN-graph geodesics + classical
+        # MDS), Matheron ordinary kriging
+        # with fitted exponential vario-
+        # gram, and Hyndman innovations
+        # ETS damped-trend + Theta + SBA-
+        # corrected Croston. Same
+        # SYNTHETIC diagnostic contract.
+        "vmd",
+        "stockwell",
+        "cca",
+        "isomap",
+        "kriging",
+        "innovations_ets",
+        # Wave 70 — Dandawate-Giannakis
+        # cyclic-moment cyclostationarity
+        # (per-segment demeaned second-
+        # order moment), Gilles empirical
+        # wavelet transform (spectrum-
+        # minima band boundaries + Meyer-
+        # raised-cosine filters), rank-
+        # based inference (Mann-Whitney
+        # common-language effect size,
+        # Wilcoxon, Kruskal-Wallis,
+        # Jonckheere-Terpstra trend),
+        # Drasgow polychoric/tetrachoric
+        # latent correlations (threshold-
+        # ML + bivariate-normal integrals),
+        # Aitchison compositional analy-
+        # sis (clr/ilr + variation matrix
+        # + Dirichlet moment fit), and
+        # Fan-Lv SIS/ISIS sure-indepen-
+        # dence screening. Same
+        # SYNTHETIC diagnostic contract.
+        "cyclostationary",
+        "empirical_wavelets",
+        "nonparametric_tests",
+        "polychoric",
+        "compositional",
+        "sure_screening",
+        # Wave 71 — Birnbaum/Lord item
+        # response theory (Rasch JML +
+        # two-stage 2PL calibration),
+        # Lazarsfeld-Goodman latent class
+        # EM (restarted Bernoulli mixture
+        # + BIC), Wilks/Pillai/Hotelling-
+        # Roy MANOVA omnibus (Bartlett
+        # chi^2), Schonemann-Gower
+        # orthogonal + generalized
+        # Procrustes shape alignment,
+        # Barlow PAVA isotonic regres-
+        # sion + Zadrozny-Elkan calibra-
+        # tion, and Lopez de Prado
+        # hierarchical risk parity (Ward
+        # dendrogram + recursive IVP
+        # bisection). Same SYNTHETIC
+        # diagnostic contract.
+        "item_response",
+        "latent_class",
+        "manova",
+        "procrustes",
+        "isotonic",
+        "hrp",
+        # Wave 72 — Thurstone-Harman
+        # principal-axis factor analysis
+        # (SMC-iterated communalities +
+        # Kaiser varimax), Neal (2003)
+        # slice sampling (stepping-out +
+        # shrinkage MCMC), Kuiper (1960)
+        # rotation-invariant V-statistic
+        # (one- and two-sample, Stephens
+        # tail), Eilers-Marx P-splines
+        # (de Boor basis + difference
+        # penalty + GCV), Duchon-Wahba
+        # thin-plate splines (r^2 log r
+        # radial kernel + ridge), and
+        # James-Stein minimax shrinkage
+        # (positive-part + Efron-Morris
+        # empirical Bayes). Same
+        # SYNTHETIC diagnostic contract.
+        "factor_analysis",
+        "slice_sampling",
+        "kuiper",
+        "p_spline",
+        "thin_plate",
+        "james_stein",
+        # Wave-73 families — Mardia
+        # (1970) multivariate skew/kurtosis
+        # omnibus (n*b1p chi^2 + b2p z),
+        # Mantel (1967) distance-matrix
+        # correlation + partial form
+        # (row/col permutation), Moran
+        # (1950) I + Geary (1954) c +
+        # Getis-Ord (1992) G spatial
+        # autocorrelation, Friedman (1937)
+        # blocked ranks + Kendall W +
+        # Page (1963) ordered L, Fisher
+        # (1922) exact + McNemar (1947)
+        # + Cochran-Mantel-Haenszel (1959)
+        # contingency tables, and
+        # Hoeffding (1948) D non-monotone
+        # independence. Same SYNTHETIC
+        # diagnostic contract.
+        "mardia",
+        "mantel",
+        "moran",
+        "friedman",
+        "contingency",
+        "hoeffding",
+        # Wave-74 families — Siegel &
+        # Tukey (1960) rank-spread +
+        # Ansari-Bradley (1960) dispersion,
+        # Mood (1950) chi^2 median test,
+        # Cochran (1950) Q for related
+        # binary columns, Quade (1979)
+        # range-weighted block ranks, van
+        # der Waerden (1952) normal-scores
+        # k-sample, and Dunn (1964) post-hoc
+        # with Holm (1979) step-down. Same
+        # SYNTHETIC diagnostic contract.
+        "dispersion_tests",
+        "median_tests",
+        "cochran_q",
+        "quade",
+        "van_der_waerden",
+        "dunn_test",
+        # Wave-75 families — Cronbach
+        # (1951) alpha / KR-20 / Spearman-
+        # Brown split-half reliability,
+        # Shrout-Fleiss (1979) / McGraw-
+        # Wong (1996) ICC forms + SEM,
+        # Holland-Thayer (1988) MH DIF
+        # (ETS A/B/C) + Swaminathan-Rogers
+        # (1990) logistic DIF, Cronbach et
+        # al. (1972) G-theory variance
+        # components + D-study, McDonald
+        # (1999) omega composite
+        # reliability, and Wright-Masters
+        # (1982) Rasch infit/outfit. Same
+        # SYNTHETIC diagnostic contract.
+        "cronbach",
+        "icc",
+        "dif",
+        "g_theory",
+        "omega",
+        "rasch_fit",
+        # Wave-76 families — Horvitz-Thompson
+        # (1952) / Hajek (1971) design-based
+        # survey estimation, post-stratification
+        # + Deming-Stephan (1940) iterative
+        # raking, Deville-Sarndal (1992) GREG
+        # calibration, Fay-Herriot (1979) EBLUP
+        # small-area estimation, one-stage
+        # cluster sampling, and Kish (1965)
+        # design effects. Same SYNTHETIC
+        # diagnostic contract.
+        "horvitz_thompson",
+        "poststrat",
+        "calibration_survey",
+        "fay_herriot",
+        "cluster_sampling",
+        "design_effects",
+        # Wave-77 families — Liang-Zeger
+        # (1986) GEE marginal models,
+        # Laird-Ware (1982) LMM via EM
+        # ML + BLUPs, Cohen (1960) /
+        # Fleiss (1971) / Krippendorff
+        # (1970) inter-rater agreement +
+        # Lin (1989) CCC + Bland-Altman
+        # (1986) LoA, Liu-Ting-Zhou
+        # (2008) isolation forest +
+        # Hariri (2019) extended variant,
+        # HEGY (1990) seasonal unit
+        # roots + Canova-Hansen (1995)
+        # seasonal stability, and van
+        # Buuren (2011) MICE PMM +
+        # Rubin (1987) pooling. Same
+        # SYNTHETIC diagnostic contract.
+        "gee",
+        "lmm",
+        "interrater",
+        "isolation_forest",
+        "hegy",
+        "mice",
+        # Wave-78 families — Tukey (1949)
+        # HSD / Dunnett (1955) many-to-
+        # one / Games-Howell (1976) /
+        # Scheffe (1953) S-method post-
+        # hoc comparisons, Plackett
+        # (1975)-Luce (1959) MM + Borda
+        # + Condorcet-Copeland + MC3
+        # rank aggregation, Montgomery
+        # / Roberts (1959) / Page (1954)
+        # SPC (xbar-R, EWMA, CUSUM,
+        # Kane capability), Roncalli
+        # (2013)/Maillard (2010) ERC
+        # risk parity, Mantegna (1999)
+        # MST + Tumminello (2005) PMFG
+        # topology, and Matteson-James
+        # (2014) E-divisive energy
+        # changepoints. Same SYNTHETIC
+        # diagnostic contract.
+        "multiple_comparisons",
+        "rank_aggregation",
+        "spc",
+        "risk_parity",
+        "mst_topology",
+        "e_divisive",
+        # wave 79 — Hyvarinen (1999)
+        # FastICA deflationary ICA,
+        # Reiner-Rubinstein (1991)
+        # closed-form barrier options,
+        # Schuirmann (1987) TOST
+        # equivalence testing, Robins
+        # (2000) marginal structural
+        # models via stabilized IPTW,
+        # Lee-Seung (1999/2001)
+        # multiplicative-update NMF
+        # with cophenetic consensus,
+        # and Pitt-Shephard (1999)
+        # auxiliary particle filter.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "fastica",
+        "barrier_options",
+        "tost",
+        "msm_causal",
+        "nmf",
+        "auxiliary_pf",
+        # wave 80 — Royston-Parmar
+        # (2011/2013) RMST + Uno (2004)
+        # variance, Hull (2018) OIS
+        # zero-curve bootstrap with
+        # fixed-point tenor stripping,
+        # Henze-Zirkler (1990) BHEP
+        # MVN test, Epps-Singleton
+        # (1985) ECF normality,
+        # Watson (1961) U^2 circular
+        # uniformity + Stephens (1970)
+        # table, and Szekely-Rizzo
+        # (2005) energy-distance MVN.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "rmst",
+        "ois_curve",
+        "henze_zirkler",
+        "epps_singleton",
+        "watson",
+        "energy_test",
+        # wave 81 — Mosimann (1962) /
+        # Minka (2000) Dirichlet-
+        # multinomial, Banerjee (2005)
+        # vMF mixture EM, Freimer-
+        # Mudholkar-Kollia-Lin (1988)
+        # GLD + King-MacGillivray
+        # (1999) starship, Tukey (1977)
+        # g-and-h letter values,
+        # Robbins-Monro (1951) /
+        # Kiefer-Wolfowitz (1952) /
+        # Spall (1992) stochastic
+        # approximation, and von
+        # Neumann (1949) / Dykstra
+        # (1983) / Douglas-Rachford
+        # (1956) convex projections.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "dirichlet_multinomial",
+        "vonmises_fisher",
+        "fkml",
+        "gandh",
+        "robbins_monro",
+        "pocs",
+        # wave 82 — DeLong (1988)
+        # correlated-AUC variance +
+        # pairwise comparison, Passing-
+        # Bablok (1983) robust method
+        # comparison + Deming (1943)
+        # orthogonal fit, McNemar
+        # (1947) / Bowker (1948) /
+        # Stuart (1955) / Bhapkar
+        # (1979) marginal homogeneity,
+        # Mardia-Watson-Wheeler (1972)
+        # + Rao (1976) spacing +
+        # Watson-Beran runs circular
+        # tests, Samejima (1969) GRM +
+        # Masters (1982) PCM IRT, and
+        # Welch (1951) heteroscedastic
+        # ANOVA + Games-Howell (1976).
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "delong_auc",
+        "passing_bablok",
+        "marginal_homogeneity",
+        "circular_tests",
+        "graded_irt",
+        "welch_anova",
+        # wave 83 — Lin (1989)
+        # concordance correlation +
+        # Bland-Altman (1986) limits
+        # of agreement, Belsley-Kuh-
+        # Welsch (1980) influence
+        # diagnostics, Lan-DeMets
+        # (1983) alpha-spending group
+        # sequential (O'Brien-Fleming
+        # 1979 / Pocock 1977) +
+        # conditional power, Torgerson
+        # (1958) classical MDS +
+        # SMACOF (de Leeuw 1977),
+        # Benzécri (1973) correspon-
+        # dence analysis, and Mardia
+        # (1976) / Fisher-Lee (1983) /
+        # Jammalamadaka-Sarma (1988)
+        # circular correlation.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lin_ccc",
+        "influence",
+        "group_sequential",
+        "mds",
+        "correspondence_analysis",
+        "circular_correlation",
+        # wave 84 — Hosking (1990)
+        # L-moments + regional
+        # frequency (GEV/GLO/GPA,
+        # discordancy/heterogeneity),
+        # Saltelli (2010) Sobol
+        # indices + Morris (1991)
+        # elementary effects,
+        # Andersen-Gill (1982)
+        # recurrent events (MCF,
+        # PWP, WLW + cluster
+        # sandwich), Dawid-Skene
+        # (1979) EM + GLAD (2009)
+        # annotation models,
+        # Keogh (2007) matrix
+        # profile + SAX (Lin 2007),
+        # and Hyndman (2011) MinT
+        # reconciliation (OLS/WLS/
+        # shrunk). Same SYNTHETIC
+        # diagnostic contract.
+        "lmoments",
+        "sobol_sensitivity",
+        "recurrent_events",
+        "dawid_skene",
+        "matrix_profile",
+        "hierarchical_reconciliation",
+        # wave 85 — Hansen (2006)
+        # CMA-ES + CSA, Dunning-Ertl
+        # (2019) t-digest + Flajolet
+        # (2007) HLL + Cormode-
+        # Muthukrishnan (2005) CMS +
+        # GK (2001) sketches, Schmidt
+        # (1986) MUSIC + Roy-Kailath
+        # (1989) ESPRIT, Mack (1993)
+        # chain-ladder + BF (1972) +
+        # ODP bootstrap (1999), Erlang
+        # (1917) B/C/A + PK + Whitt
+        # G/G/c + Jackson (1957),
+        # and Atkinson (1970) /
+        # Shorrocks (1980) / FGT
+        # (1984) inequality indices.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "cma_es",
+        "sketches",
+        "music_esprit",
+        "chain_ladder",
+        "erlang_queueing",
+        "inequality_indices",
+        # wave 86 — ASTM E1049-85
+        # rainflow + Miner damage +
+        # Goodman/Gerber/SWT
+        # corrections, Blom &
+        # Bar-Shalom (1988) IMM +
+        # Bar-Shalom & Tse (1975)
+        # PDA, Karrer-Newman (2011)
+        # DC-SBM + Amini (2013)
+        # spectral + Danon (2005)
+        # NMI, Elkan-Noto (2008) +
+        # du Plessis (2014) + Kiryo
+        # (2017) nnPU, Perrin (2003)
+        # GR4J + McCarthy (1938)
+        # Muskingum + NSE/KGE, and
+        # Brinson-Hood-Beebower
+        # (1986) + Carino (1999)
+        # attribution. Same SYNTHETIC
+        # diagnostic contract.
+        "rainflow_fatigue",
+        "bayesian_tracking",
+        "sbm_inference",
+        "pu_learning",
+        "gr4j_hydrology",
+        "brinson_attribution",
+        # wave 87 — Avellaneda-Stoikov
+        # (2008) optimal market making
+        # (reservation price + GLFT
+        # intensity), Gillespie (1977)
+        # direct SSA + tau-leaping with
+        # SIR/Schlogl networks, Hamilton
+        # (2018) + HP + Baxter-King/
+        # Christiano-Fitzgerald cycle
+        # filters, Corwin-Schultz (2012)
+        # high-low spread + Roll (1984)
+        # + Amihud (2002), Fotheringham-
+        # Brunsdon-Charlton (2002) GWR
+        # adaptive bandwidth, and
+        # Schmittlein (1987)/Fader-
+        # Hardie-Lee (2005) Pareto/BG-NBD
+        # CLV. Same SYNTHETIC diagnostic
+        # contract.
+        "avellaneda_stoikov",
+        "gillespie_ssa",
+        "hamilton_filter",
+        "corwin_schultz",
+        "gwr_spatial",
+        "pareto_nbd",
+        # wave 88 — Tauchen (1986),
+        # Tauchen-Hussey (1991) and
+        # Rouwenhorst (1995) AR(1)
+        # discretization, Lomb (1976)/
+        # Scargle (1982)/Press-Rybicki
+        # (1989) irregular periodogram,
+        # Broomhead-King (1986)/
+        # Golyandina (2001) SSA,
+        # Beck-Katz (1995) PCSE +
+        # Parks (1967) FGLS, Quandt
+        # (1960)/Andrews (1993)/
+        # Andrews-Ploberger (1994)/
+        # Nyblom (1989) stability, and
+        # Friedman (1984) supersmoother
+        # with Cleveland (1979) LOWESS.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "markov_discretization",
+        "lomb_scargle",
+        "singular_spectrum",
+        "beck_katz",
+        "quandt_andrews",
+        "friedman_supersmoother",
+        # Wave-89: classical hypothesis-
+        # testing canon — KS/Cramer-von
+        # Mises/Anderson-Darling (1952/
+        # 1954) EDF tests, Shapiro-Wilk
+        # (1965)/Jarque-Bera (1980)/
+        # D'Agostino-Pearson (1973)
+        # normality, Levene (1960)/
+        # Brown-Forsythe (1974)/
+        # Fligner-Killeen (1976)/
+        # O'Brien (1979) scale
+        # homogeneity, Ansari-Bradley
+        # (1960)/Mood (1954)/Klotz
+        # (1962)/Conover (1980)/
+        # Gastwirth (1965) rank scale,
+        # Goldfeld-Quandt (1965)/Park
+        # (1966)/Glejser (1969)/
+        # Breusch-Pagan (1979)/White
+        # (1980) heteroskedasticity, and
+        # Durbin-Watson (1950)/Durbin-h
+        # (1970)/Breusch-Godfrey (1978)/
+        # Ljung-Box (1978) serial
+        # diagnostics. Same SYNTHETIC
+        # diagnostic contract.
+        "edf_tests",
+        "normality_tests",
+        "scale_homogeneity",
+        "score_scale",
+        "het_regressions",
+        "serial_diagnostics",
+        # Wave-90: Friedman (1991)
+        # MARS hinge splines,
+        # Breiman-Friedman (1985) ACE /
+        # Tibshirani (1988) AVAS,
+        # Friedman-Stuetzle (1981)
+        # projection pursuit,
+        # Newton-Raftery (1994)/
+        # Gelfand-Dey (1994)/Chib
+        # (1995)/Savage-Dickey/Ogata
+        # (1989) marginal likelihoods,
+        # Brent (1973)/Ridders (1979)/
+        # Illinois root finders, and
+        # SOBI (1997)/JADE (1993)/FOBI
+        # (1989) blind source
+        # separation. Same SYNTHETIC
+        # diagnostic contract.
+        "mars_regression",
+        "ace_avas",
+        "projection_pursuit",
+        "marginal_likelihood",
+        "root_finders",
+        "blind_sources",
+        # Wave-91:
+        # Nelder-Mead (1965)/Powell
+        # (1964)/nonlinear-CG/BFGS +
+        # Levenberg-Marquardt,
+        # k-means++/PAM/DBSCAN/OPTICS
+        # clustering, LLE/Laplacian
+        # eigenmaps/diffusion map/
+        # t-SNE manifold learning,
+        # Huber/S/LTS/MM robust
+        # regression, Robbins/
+        # Tweedie/Kiefer-Wolfowitz
+        # empirical Bayes, and
+        # 2^k/PB/CCD/Box-Behnken/
+        # LHS/Fedorov-Dopt design.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "unconstrained_optimizers",
+        "clustering_methods",
+        "manifold_learning",
+        "robust_regression",
+        "empirical_bayes",
+        "design_experiments",
+        # Wave-92 canon: simulated
+        # annealing/DE/PSO/GA +
+        # NSGA-II metaheuristics,
+        # GP-EI/UCB/PI Bayesian
+        # optimization, fuzzy
+        # c-means + PC/PE/Xie-Beni,
+        # Kohonen SOM + LVQ1,
+        # PageRank/HITS/conductance
+        # link topology, and
+        # successive-halving/
+        # Hyperband search. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "metaheuristic_optimizers",
+        "bayesian_optimization",
+        "fuzzy_clustering",
+        "self_organizing_maps",
+        "pagerank_topology",
+        "hyperband_search",
+        # Wave-93 canon: CART/random
+        # forest/GBM tree ensembles,
+        # NCA/LMNN metric learning,
+        # SVDD/Mahalanobis/LOF
+        # one-class classification,
+        # Laplace GP classification,
+        # Gerchberg-Saxton HIO +
+        # Wirtinger-flow phase
+        # retrieval, and Rendle
+        # factorization machines.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "tree_ensembles",
+        "metric_learning",
+        "one_class_classification",
+        "gp_classification",
+        "phase_retrieval",
+        "factorization_machine",
+        # Wave-94 canon: Pegasos +
+        # kernel SVMs, Fisher LDA/QDA
+        # + regularized DA, coordinate
+        # -descent elastic-net paths,
+        # KRR/RFF/Nyström kernel
+        # methods, collapsed-Gibbs
+        # LDA topics, and
+        # perceptron/PA/OGD/FTRL
+        # online convex learners.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "svm_classifiers",
+        "discriminant_analysis",
+        "coordinate_descent_enet",
+        "kernel_methods",
+        "lda_topics",
+        "online_convex",
+        # Wave-95 canon: Bayesian
+        # linear + ARD evidence,
+        # Bayes-net structure +
+        # exact marginals, linear
+        # + Polak-Ribière CG,
+        # FW / pairwise FW over
+        # Δ and ℓ1, OMP + K-SVD,
+        # and (μ/μ,λ)/(1+1) ES.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "bayesian_linear",
+        "graphical_models",
+        "conjugate_gradient",
+        "frank_wolfe",
+        "sparse_coding",
+        "evolution_strategies",
+        # Wave-96 canon: Gaussian /
+        # multinomial / Bernoulli NB,
+        # AdaBoost.M1 + LogitBoost
+        # stumps, EP Bayesian probit,
+        # item-kNN + ALS-WR + bias-MF
+        # collaborative filtering,
+        # Apriori association rules,
+        # and fictitious play /
+        # support enumeration /
+        # regret matching.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "naive_bayes",
+        "adaboost",
+        "expectation_propagation",
+        "collaborative_filtering",
+        "association_rules",
+        "nash_equilibrium",
+        # Wave-97 canon: ISTA /
+        # FISTA prox-gradient,
+        # Gauss/CC/Simpson
+        # quadrature, RK45 +
+        # EM/Milstein solvers,
+        # label-prop + self-train,
+        # OvR / softmax / ECOC,
+        # and sparse PCA. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "proximal_gradient",
+        "quadrature",
+        "ode_solvers",
+        "semisupervised",
+        "multiclass",
+        "sparse_pca",
+        # Wave-98 canon: value /
+        # policy iteration, TD(0) /
+        # SARSA / Q-learning,
+        # sum-product + loopy BP,
+        # ELM, nearest shrunken
+        # centroids, CEM. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "mdp_solvers",
+        "td_learning",
+        "belief_propagation",
+        "extreme_learning",
+        "nearest_centroid",
+        "cross_entropy_method",
+        # Wave-99 canon: conjugate
+        # Gibbs, Laplace approx,
+        # Gaussian KDE + LOO-CV,
+        # whitened tensor power,
+        # Dirichlet evidential,
+        # and mean-shrinkage MTL.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "gibbs_sampler",
+        "laplace_approx",
+        "kde",
+        "tensor_power",
+        "evidential",
+        "multi_task",
+        # Wave-100 canon: homotopy
+        # continuation, Anderson
+        # acceleration, sequence
+        # accel, LSQR/CGLS, low-
+        # discrepancy QMC, and
+        # symplectic integrators.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "homotopy_continuation",
+        "anderson_accel",
+        "sequence_accel",
+        "iterative_ls",
+        "qmc_sequences",
+        "symplectic_ode",
+        # Wave-101 canon: graph
+        # traversal/topo/bipartite,
+        # shortest paths, Dinic
+        # max-flow + min-cut,
+        # Hungarian + Hopcroft-Karp,
+        # Tarjan SCC + bridges/
+        # articulation, Algorithm X.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "graph_traversal",
+        "shortest_paths",
+        "network_flow",
+        "assignment",
+        "graph_components",
+        "exact_cover",
+        # Wave-102 canon: multi-
+        # armed bandits — UCB1/
+        # eps-greedy/ETC, KL-UCB,
+        # LinUCB + linear TS,
+        # EXP3 + Hedge, SE + LUCB
+        # best arm, SW-/D-UCB.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "stochastic_bandits",
+        "kl_bandits",
+        "contextual_bandits",
+        "adversarial_bandits",
+        "best_arm",
+        "nonstationary_bandits",
+        # Wave-103 canon: Krylov +
+        # randomized NLA — Lanczos,
+        # Arnoldi/GMRES, HMT rSVD,
+        # Nystrom, CUR leverage,
+        # interpolative decomp.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lanczos",
+        "arnoldi_gmres",
+        "randomized_svd",
+        "nystrom",
+        "cur_decomp",
+        "interpolative_decomp",
+        # Wave-104 canon: OT II —
+        # Sinkhorn + transport LP,
+        # EMD 1-D/LP + Bures,
+        # Gromov-Wasserstein,
+        # unbalanced KL-UOT,
+        # fixed-support barycenter,
+        # fused GW. Same SYNTHETIC
+        # diagnostic contract.
+        "sinkhorn",
+        "emd_lp",
+        "gromov_wasserstein",
+        "unbalanced_ot",
+        "wasserstein_barycenter",
+        "fused_gromov",
+        # Wave-105 canon: game-tree
+        # search on a subtraction-race
+        # DAG — alpha-beta + TT, UCT,
+        # PUCT, NegaScout, PN, df-pn.
+        "alpha_beta",
+        "mcts",
+        "puct",
+        "negascout",
+        "proof_number",
+        "dfpn",
+        # Wave-106 canon: stiff
+        # time integration — BDF,
+        # Adams PECE, Radau IIA,
+        # Strang split, ETDRK4,
+        # Crank–Nicolson. Orders
+        # measured vs exact.
+        "bdf",
+        "adams",
+        "radau",
+        "strang",
+        "etdrk4",
+        "crank_nicolson",
+        # Wave-107 canon: transport
+        # & HJB PDE — ADI,
+        # Lax–Wendroff, WENO5,
+        # level set, fast
+        # marching, Godunov.
+        "adi",
+        "lax_wendroff",
+        "weno",
+        "level_set",
+        "fast_marching",
+        "godunov",
+        # Wave-108 canon: matrix
+        # functions & equations —
+        # expm Padé, sqrtm,
+        # Sylvester, CARE,
+        # matrix sign, Toeplitz.
+        "expm_pade",
+        "matrix_sqrt",
+        "sylvester",
+        "riccati_care",
+        "matrix_sign",
+        "toeplitz_solve",
+        # Wave-109 canon: motion
+        # planning — Dubins,
+        # RRT*, PRM, DWA,
+        # min-snap, Frenet.
+        "dubins",
+        "rrt",
+        "prm",
+        "dwa",
+        "min_snap",
+        "frenet",
+        # Wave-110 canon: digital
+        # comms — Viterbi,
+        # GF(256), RS, Costas,
+        # Gardner, RRC.
+        "viterbi_decode",
+        "gf256",
+        "reed_solomon",
+        "costas",
+        "gardner",
+        "rrc_filter",
+        # Wave-111 canon: geometry —
+        # Kabsch, ICP, Fréchet,
+        # Hausdorff, hull,
+        # Delaunay.
+        "kabsch",
+        "icp",
+        "frechet",
+        "hausdorff",
+        "convex_hull",
+        "delaunay",
+        # Wave-112 canon: DSP filters —
+        # remez, IIR design, biquad,
+        # filtfilt, resample, Farrow.
+        "remez",
+        "iir_design",
+        "biquad",
+        "filtfilt",
+        "resample_poly",
+        "farrow",
+        # Wave-113 canon: multi-target
+        # tracking — JV, JPDA, PHD,
+        # MHT, CI, TDOA.
+        "jonker_volgenant",
+        "jpda",
+        "phd",
+        "mht",
+        "cov_int",
+        "tdoa",
+        # Wave-114 canon: GNSS — Gold
+        # codes, Klobuchar, Allan
+        # variance, strapdown, LAMBDA,
+        # RTK.
+        "gold_code",
+        "klobuchar",
+        "allan_variance",
+        "strapdown",
+        "lambda_method",
+        "rtk",
+        # Wave-115 canon: UQ — Smolyak,
+        # PCE, BQ, KL, active
+        # subspace, MIMC.
+        "smolyak",
+        "pce",
+        "bayesian_quadrature",
+        "kl_expand",
+        "active_subspace",
+        "mimc",
+        # Wave-116 canon: game theory —
+        # CFR, Lemke–Howson,
+        # replicator, Wardrop, VCG,
+        # Nash bargaining.
+        "cfr",
+        "lemke_howson",
+        "replicator",
+        "wardrop",
+        "vcg",
+        "nash_bargain",
+        # Wave-117 canon: reinforcement
+        # learning — GAE, V-trace, TRPO,
+        # PPO, DDPG, TD3.
+        "gae",
+        "vtrace",
+        "trpo",
+        "ppo",
+        "ddpg",
+        "td3",
+        # Wave-118 canon: POMDP solvers —
+        # QMDP, grid VI, PBVI, Perseus,
+        # HSVI, POMCP.
+        "qmdp",
+        "grid_pomdp",
+        "pbvi",
+        "perseus",
+        "hsvi",
+        "pomcp",
+        # Wave-119 canon: multi-agent RL —
+        # VDN, QMIX, COMA, MADDPG,
+        # MAPPO, mean-field Q.
+        "vdn",
+        "qmix",
+        "coma",
+        "maddpg",
+        "mappo",
+        "mf_q",
+        # Wave-120 canon: cooperative games —
+        # nucleolus, Banzhaf, Owen, Myerson
+        # auction, Groves, envy-free.
+        "nucleolus",
+        "banzhaf",
+        "owen",
+        "myerson_auction",
+        "groves",
+        "envy_free",
+        # Wave-121 canon: best-arm
+        # identification — LUCB,
+        # sequential halving, median
+        # elim, UGapE, TTTS, TnS.
+        "lil_ucb",
+        "sequential_halving",
+        "median_elim",
+        "ugape",
+        "ttts",
+        "track_stop",
+        # Wave-122 exec-summary SOTA:
+        # RL execution, ML SOR,
+        # OFI, PG market maker,
+        # options flow, dark pool.
+        "exec_rl",
+        "smart_router",
+        "order_flow_imbalance",
+        "pg_mm",
+        "options_flow",
+        "dark_pool",
+        # Wave-123 exec-summary NLP/gen:
+        # say-echo-do, multimodal,
+        # ts diffusion, ts GAN,
+        # econ calendar, quantcode.
+        "say_echo_do",
+        "multimodal_fusion",
+        "ts_diffusion",
+        "synthetic_gan",
+        "econ_calendar",
+        "quantcode_bench",
+        # Wave-124 exec-summary graph/meta:
+        # asset + counterparty GNNs,
+        # MAML, EWC, FedAvg, insider.
+        "asset_gnn",
+        "counterparty_gnn",
+        "maml_portfolio",
+        "continual_learning",
+        "fed_avg",
+        "insider_anomaly",
+        # Wave-125 exec-summary pricing/XAI:
+        # PINN, QUBO, SHAP, adv-robust,
+        # risk flow, PCMCI miner.
+        "pinn_pricing",
+        "qubo_portfolio",
+        "xai_shap",
+        "adversarial_robust",
+        "risk_flow",
+        "causal_miner",
+        # Wave-126 exec-summary deep-DL:
+        # TFT, PatchTST, DeepLOB, set-
+        # transformer, NODE, world model.
+        "tft_forecaster",
+        "patchtst",
+        "lob_transformer",
+        "set_transformer",
+        "neural_ode",
+        "world_model",
+        # Wave-127 exec-summary DL-2:
+        # contrastive repr, hypernet
+        # alloc, neural Thompson, BNN
+        # ensemble, option VAE, diff
+        # policy.
+        "contrastive_repr",
+        "hypernetwork_alloc",
+        "neural_thompson",
+        "bnn_ensemble",
+        "option_vae",
+        "diff_policy",
+        # Wave-128 exec-summary DL-3:
+        # KAN, TSMixer, Informer,
+        # chart-CNN, MAE, graph-
+        # temporal.
+        "kan_forecaster",
+        "ts_mixer",
+        "informer_attn",
+        "cnn_alpha",
+        "mask_autoencoder",
+        "graph_temporal",
+        # Wave-129 exec-summary DL-4:
+        # iTransformer, TCN, FT-
+        # Transformer, N-BEATS,
+        # Mamba, CrossFormer.
+        "itransformer",
+        "tcn_forecaster",
+        "ft_transformer",
+        "nbeats_deep",
+        "mambats",
+        "crossformer",
+        # Wave-130 offline-RL:
+        # decision trf, CQL, IQL,
+        # trajectory trf, SAC,
+        # GAIL.
+        "decision_transformer",
+        "cql_agent",
+        "iql_agent",
+        "trajectory_transformer",
+        "sac_agent",
+        "gail_imitation",
+        # Wave-131 generative-seq:
+        # VQ-VAE, flow matching,
+        # score SDE, consistency,
+        # EBM, Perceiver.
+        "vq_vae_ts",
+        "flow_matching_ts",
+        "score_sde_ts",
+        "consistency_ts",
+        "energy_ts",
+        "perceiver_ts",
+        # Wave-132 OOD canon:
+        # Mahalanobis, MSP+ODIN,
+        # GradNorm, energy, kNN,
+        # ViM.
+        "mahalanobis_ood",
+        "max_softmax_ood",
+        "gradient_norm_ood",
+        "energy_ood",
+        "knn_ood",
+        "vim_ood",
+        # Wave-133 amortized-UQ
+        # canon: CNP, ANP, deep
+        # kernel GP, ConvNP,
+        # meta-UQ, LL-GP.
+        "neural_process",
+        "attentive_np",
+        "deep_kernel_gp",
+        "convnp",
+        "meta_uq",
+        "llaplace_gp",
+        # Wave-134 differentiable
+        # optimization: OptNet QP,
+        # cvx layer, ICNN,
+        # declarative, SPD, MPC.
+        "optnet_qp",
+        "cvxpy_layer",
+        "input_convex",
+        "deep_declarative",
+        "spd_net",
+        "diff_mpc",
+        # Wave-135 GNN canon:
+        # ChebNet, SAGE, GIN,
+        # U-Net, APPNP, JK.
+        "chebnet",
+        "graphsage",
+        "gin_gnn",
+        "graph_unet",
+        "apnp_prop",
+        "jk_net",
+        # Wave-136 attention canon:
+        # Linformer, Performer,
+        # linear, sliding, Sinkhorn,
+        # Nyström.
+        "linformer_attn",
+        "performer_attn",
+        "linear_attn",
+        "sliding_attn",
+        "sinkhorn_attn",
+        "nystrom_attn",
+        # Wave-137 distributional-RL
+        # canon: C51, QR-DQN, IQN,
+        # NoisyNet, PER, bootstrap.
+        "c51_dqn",
+        "qr_dqn",
+        "iqn_dqn",
+        "noisy_net",
+        "prioritized_replay",
+        "bootstrapped_dqn",
+        # Wave-138 memory + world
+        # model: LSH, mem-kNN, NTM,
+        # DNC, RSSM, MPC.
+        "reformer_lsh",
+        "memorizing_transformer",
+        "ntm_memory",
+        "dnc_memory",
+        "rssm_world",
+        "mpc_planning",
+        # Wave-139 SSL + TTA canon:
+        # BYOL, Barlow, VICReg, Tent,
+        # SHOT, TTT.
+        "byol",
+        "barlow_twins",
+        "vicreg",
+        "tent_tta",
+        "shot_tta",
+        "ttt_layer",
+        # Wave-140 geometric canon:
+        # hyperbolic, capsule, SIREN,
+        # E(n)-GNN, monotone, soft-sort.
+        "hyperbolic_nn",
+        "capsule_dynamic",
+        "siren_inr",
+        "equivar_gnn",
+        "monotonic_net",
+        "sort_net",
+        # Wave-141 certified robustness:
+        # smoothing, IBP, CROWN,
+        # Lipschitz, vector neurons, Gumbel-top-k.
+        "randomized_smoothing",
+        "ibp_bounds",
+        "crown_bound",
+        "lipschitz_net",
+        "vector_neurons",
+        "gumbel_topk",
+        # Wave-142 sequence exotics:
+        # S4, RWKV, Hyena, RetNet,
+        # DeltaNet, MoD routing.
+        "s4_ssm",
+        "rwkv_wkv",
+        "hyena_conv",
+        "retnet_decay",
+        "delta_net",
+        "mixture_of_depths",
+        # Wave-143 PEFT canon:
+        # LoRA, QLoRA-NF4, DoRA,
+        # prompt, prefix, task-vector merge.
+        "lora_ft",
+        "qlora_nf4",
+        "dora_weight",
+        "prompt_tuning",
+        "prefix_tuning",
+        "task_vector_merge",
+        # Wave-144 inference canon:
+        # spec decode, paged KV, flash,
+        # GQA, sliding window, ring.
+        "speculative_decoding",
+        "paged_kv_cache",
+        "flash_attn",
+        "gqa_attn",
+        "sliding_window_cache",
+        "ring_attn",
+        # Wave-145 retrieval canon:
+        # BM25, DPR, ColBERT,
+        # HyDE, cross-encoder, RRF.
+        "bm25_retriever",
+        "dpr_retriever",
+        "colbert_late",
+        "hyde_retrieval",
+        "reranker_crossenc",
+        "rrf_fusion",
+        # Wave-146 test-time compute:
+        # SC, PRM, MCTS, debate,
+        # unlearning, KG embeddings.
+        "consistency_vote",
+        "verifier_prm",
+        "mcts_reason",
+        "debate_multiagent",
+        "unlearn_ga",
+        "knowledge_graph_embed",
+        # Wave-147 alignment canon:
+        # BT reward model, DPO, IPO,
+        # KTO, GRPO, KL-PPO RLHF.
+        "reward_model",
+        "dpo_train",
+        "ipo_train",
+        "kto_train",
+        "grpo_train",
+        "rlhf_ppo",
+        # Wave-148 interpretability canon:
+        # SAE, steering, probes,
+        # lens, patching, ablation.
+        "sae_feature",
+        "activation_steering",
+        "probe_linear",
+        "logit_lens",
+        "patch_activation",
+        "circuit_ablation",
+        # Wave-149 data-dynamics canon:
+        # distill, herding, curriculum,
+        # smoothing, mixup, SAM.
+        "dataset_distillation",
+        "coreset_herding",
+        "curriculum_magnitude",
+        "label_smoothing",
+        "mixup_cutmix",
+        "sharpness_sam",
+        # Wave-150 compression canon:
+        # mag-prune, LTH, int8,
+        # KD, low-rank, Fisher.
+        "magnitude_pruning",
+        "lottery_ticket",
+        "quant_int8",
+        "kd_distill",
+        "lowrank_factor",
+        "fisher_prune",
+        # Wave-151 agentic canon:
+        # ReAct, Toolformer, ToT,
+        # Reflexion, multi-agent, judge.
+        "react_loop",
+        "toolformer_call",
+        "plan_search",
+        "reflexion_retry",
+        "multi_agent_pipeline",
+        "judge_pairwise",
+        # Wave-152 privacy canon:
+        # DP-SGD, sec-agg, FedAvg,
+        # PATE, DLG, canary.
+        "dp_sgd",
+        "secure_agg",
+        "fedavg_hetero",
+        "pate_teacher",
+        "gradient_leakage",
+        "canary_exposure",
+        # Wave-153 NAS canon:
+        # random, evolution, DARTS,
+        # ENAS-RL, one-shot, surrogate.
+        "random_search_nas",
+        "evolution_nas",
+        "darts_nas",
+        "enas_controller",
+        "one_shot_nas",
+        "arch_predictor",
+        # Wave-154 vision canon:
+        # CNN, ViT, CLIP, SimCLR,
+        # DDIM, rollout.
+        "convnet_baseline",
+        "vit_classifier",
+        "clip_align",
+        "simclr_views",
+        "diffusion_ddim",
+        "attention_rollout",
+        # Wave-155 causal-DL canon:
+        # TARNet, Dragonnet, DeepIV,
+        # CEVAE, CFRNet, DR-value.
+        "tarnet_ite",
+        "dragonnet_dr",
+        "deep_iv",
+        "cevae_latent",
+        "causal_rep",
+        "policy_value",
+        # Wave-156 tabular canon:
+        # BPE, tab-ResNet, NODE,
+        # GrowNet, soft tree, TabM.
+        "tokenizer_bpe",
+        "tabular_resnet",
+        "node_net",
+        "grownet_boost",
+        "soft_tree",
+        "tabm_mini",
+        # Wave-157 anomaly canon:
+        # SVDD, DAGMM, USAD,
+        # anom-Transformer, RRCF, TranAD.
+        "deep_svdd",
+        "dagmm",
+        "usad",
+        "anom_transformer",
+        "rrcf",
+        "tranad",
+        # Wave-158 LTR canon:
+        # RankNet, ListNet, ListMLE,
+        # LambdaRank, ApproxNDCG, NeuralSort.
+        "ranknet_ltr",
+        "listnet_ltr",
+        "listmle_ltr",
+        "lambdarank_ltr",
+        "approx_ndcg_ltr",
+        "neural_sort_ltr",
+        # Wave-159 optimizer canon:
+        # Muon, Lion, Sophia,
+        # Lookahead, LAMB, Adafactor.
+        "muon_opt",
+        "lion_opt",
+        "sophia_opt",
+        "lookahead_opt",
+        "lamb_opt",
+        "adafactor_opt",
+        # Wave-160 FL canon:
+        # SCAFFOLD, FedNova, Ditto,
+        # MOON, FedOpt-Adam, MimeLite.
+        "scaffold_fl",
+        "fednova_fl",
+        "ditto_fl",
+        "moon_fl",
+        "fedopt_adam",
+        "mime_lite",
+        # Wave-161 neural-operator canon:
+        # FNO, DeepONet, low-rank,
+        # PINO, GNO, CNO.
+        "fno_1d",
+        "deeponet",
+        "lowrank_op",
+        "pino_residual",
+        "gno_lite",
+        "cno_lite",
+        # Wave-162 TS-foundation canon:
+        # Chronos, TimesFM, Moirai,
+        # Lag-Llama, Timer, MOMENT.
+        "chronos_lite",
+        "timesfm_lite",
+        "moirai_lite",
+        "lagllama_lite",
+        "timer_lite",
+        "moment_lite",
+        # Wave-163 lifelong-CL canon:
+        # PackNet, LwF, DER,
+        # A-GEM, Piggyback, HAT.
+        "packnet_cl",
+        "lwf_cl",
+        "der_cl",
+        "agem_cl",
+        "piggyback_cl",
+        "hat_cl",
+        # Wave-164 Bayesian-DL canon:
+        # SWA-Gaussian, MC-dropout,
+        # BBB, snapshot ens, concrete
+        # dropout, VCL.
+        "swag_diag",
+        "mc_dropout",
+        "bbb_vi",
+        "snapshot_ens",
+        "concrete_dropout",
+        "vcl_online",
+        # Wave-165 conditional-density canon:
+        # MDN, cond-flow, diffusion
+        # regressor, het-GP, CRPS net,
+        # kernel mixture.
+        "mdn_cond",
+        "flow_regression",
+        "diffusion_regressor",
+        "het_gp",
+        "crps_net",
+        "kernel_mixture",
+        # Wave-166 meta-learning canon:
+        # Reptile, ProtoNet, Matching,
+        # ANIL, Meta-SGD, R2D2.
+        "reptile",
+        "protonet",
+        "matching_net",
+        "anil_meta",
+        "meta_sgd",
+        "r2d2_meta",
+        # Wave-167 graph-exotics canon:
+        # algo reasoning, PNA, virtual
+        # node, GPS, oversmooth, DGN.
+        "algo_reasoning",
+        "pna_agg",
+        "virtual_node",
+        "gps_transformer",
+        "oversmooth_metric",
+        "dgn_directional",
+        # Wave-168 RL-exotics canon:
+        # AWAC, REDQ, TD7-SALE,
+        # CrossQ, DR3, OB2I.
+        "awac",
+        "redq",
+        "td7_lite",
+        "crossq",
+        "dr3_reg",
+        "ob2i",
+        # Wave-169 amortized-inference canon:
+        # ADVI, IWAE, NF-VI, SVGP,
+        # structured VI, VRNN.
+        "advi_bbvi",
+        "iwae_bound",
+        "nf_vi",
+        "sparse_gp_sv",
+        "structured_vi",
+        "vrnn_seq",
+        # Wave-170 causal-DL-2 canon:
+        # X/R/S-T learners, CFRNET-balance,
+        # CATE distill, DR-learner.
+        "xlearner",
+        "rlearner",
+        "slearner_tlearner",
+        "causal_rep_bal",
+        "cate_distill",
+        "net_drlearner",
+        # Wave-171 conformal-2 canon:
+        # CQR, survival CP, APS, LTT,
+        # full CP, risk control.
+        "cqr_pred",
+        "survival_cp",
+        "aps_cp",
+        "ltt_cp",
+        "full_cp",
+        "risk_cp",
+        # Wave-172 bandit-exotics canon:
+        # PSRL, Gittins, Whittle,
+        # CUCB, corruption-robust, NeuralUCB.
+        "psrl",
+        "gittins_index",
+        "whittle_restless",
+        "cucb",
+        "corrupt_bandit",
+        "neural_ucb",
+        # Wave-173 diffusion-exotics canon:
+        # EDM, rectified flow, stoch interp,
+        # DDIM-ODE, cold diffusion, distill.
+        "edm_karras",
+        "rectified_flow",
+        "stoch_interp",
+        "ddim_ode",
+        "cold_diffusion",
+        "diff_distill",
+        # Wave-174 graph-temporal canon:
+        # DCRNN, STGCN, Graph WaveNet,
+        # ASTGCN, MTGNN, AGCRN.
+        "dcrnn_lite",
+        "stgcn_lite",
+        "gwnet_lite",
+        "astgcn",
+        "mtgnn_lite",
+        "agcrn",
+        # Wave-175 LM-components canon:
+        # RoPE, ALiBi, SwiGLU, RMSNorm,
+        # MoE router, muP init.
+        "rope_attn",
+        "alibi_attn",
+        "swiglu_ffn",
+        "rmsnorm_block",
+        "moe_router",
+        "mup_init",
+        # Wave-176 data-centric canon:
+        # BALD, cartography, EL2N,
+        # forgetting, influence, prototypicality.
+        "active_bald",
+        "data_cartography",
+        "el2n_scoring",
+        "forgetting_events",
+        "influence_func",
+        "proto_prune",
+        # Wave-177 neuromorphic canon:
+        # LIF, STDP, surrogate SNN,
+        # Izhikevich, LSM, temporal coding.
+        "lif_neuron",
+        "stdp_learn",
+        "surrogate_snn",
+        "izhikevich",
+        "lsm_reservoir",
+        "temporal_code",
+        # Wave-178 multi-task-gradient canon:
+        # PCGrad, MGDA, CAGrad, GradNorm,
+        # Nash-MTL, IMTL-G.
+        "pcgrad",
+        "mgda_mtl",
+        "cagrad_mtl",
+        "gradnorm_bal",
+        "nash_mtl",
+        "imtl_g",
+        # Wave-179 survival-DL canon:
+        # DeepSurv, DeepHit, Cox-Time,
+        # Nnet-survival, DRSA, PC-Hazard.
+        "deepsurv",
+        "deephit",
+        "cox_time",
+        "nnet_surv",
+        "drsa_surv",
+        "pchazard",
+        # Wave-180 PDMP / exotic-sampling canon:
+        # BPS, Zig-Zag, Boomerang, kinetic
+        # Langevin, elliptical slice, RMALA.
+        "bouncy_particle",
+        "zigzag_sampler",
+        "boomerang_sampler",
+        "kinetic_langevin",
+        "elliptical_slice",
+        "riemannian_mala",
+        # Wave-181 LM-arch-2 canon:
+        # Mamba-2 SSD, xLSTM mLSTM, RWKV-7,
+        # Titans memory, Gated DeltaNet, Longhorn.
+        "mamba2_ssd",
+        "xlstm_mlstm",
+        "rwkv7",
+        "titans_memory",
+        "gated_deltanet",
+        "longhorn_ssm",
+        # Wave-182 normalizing-flow canon:
+        # RealNVP, Glow, NSF, MAF, planar, IAF.
+        "real_nvp",
+        "glow_flow",
+        "neural_spline_flow",
+        "maf_flow",
+        "planar_flow",
+        "iaf_flow",
+        # Wave-183 causal-structure-DL canon:
+        # NOTEARS, DAGMA, GOLEM, NOTEARS-MLP,
+        # DAG-GNN, CAM-prune.
+        "notears",
+        "dagma_lin",
+        "golem_ev",
+        "notears_mlp",
+        "dag_gnn",
+        "cam_prune",
+        # Wave-184 training-dynamics canon:
+        # Hessian eig, NTK, edge-of-stability,
+        # LMC, catapult, grokking.
+        "hessian_eig",
+        "ntk_kernel",
+        "edge_stability",
+        "mode_connectivity",
+        "catapult_phase",
+        "neural_grok",
+        # Wave-185 differentiable-algorithm canon:
+        # STE, Gumbel relax, P&M grad,
+        # IFT, ODE adjoint, smooth argmax.
+        "st_estimator",
+        "gumbel_relax",
+        "perturb_map",
+        "implicit_diff",
+        "ode_adjoint",
+        "smooth_argmax",
+        # Wave-186 energy-based-model canon:
+        # ISM, DSM, NCE, CD, PCD, adversarial.
+        "score_matching",
+        "denoising_sm",
+        "noise_contrastive",
+        "contrastive_divergence",
+        "persistent_cd",
+        "adversarial_ebm",
+        # Wave-187 scientific-ML/PDE canon:
+        # DeepRitz, weak form, BSDE, spectral,
+        # MOL, Feynman-Kac MC.
+        "deepritz_pinn",
+        "weak_form_pinn",
+        "fbsde_solver",
+        "spectral_pde",
+        "moc_lines",
+        "feynman_kac_mc",
+        # Wave-188 active-learning canon:
+        # entropy, margin, QBC, k-center,
+        # BADGE, EGL.
+        "entropy_query",
+        "margin_sampling",
+        "qbc_committee",
+        "coreset_kcenter",
+        "badge_embed",
+        "egl_change",
+        # Wave-189 self-play/game-AI canon:
+        # AZ-lite, ExIt, NFSP, PSRO,
+        # deep-CFR, MCCFR.
+        "alphazero_lite",
+        "expert_iteration",
+        "nfsp",
+        "psro",
+        "deep_cfr",
+        "mccfr_outcome",
+        # Wave-190 classical causal-discovery canon:
+        # GES, FCI, ICA/Direct/VAR-LiNGAM, MMPC.
+        "ges_search",
+        "fci_alg",
+        "ica_lingam",
+        "direct_lingam",
+        "var_lingam",
+        "mmmb_select",
+        # Wave-191 exploration canon: count bonus, RND, ICM, NGU,
+        # RIDE, Go-Explore.
+        "count_bonus",
+        "rnd_explore",
+        "icm_explore",
+        "ngu_explore",
+        "ride_explore",
+        "go_explore",
+        # Wave-192 info-theory canon: MMD, HSIC, MINE, NWJ,
+        # copula MI, LSD.
+        "mmd_two_sample",
+        "hsic_independence",
+        "mine_mi",
+        "nwj_mi",
+        "copula_mi",
+        "lsd_deptest",
+        # Wave-193 optimal-control canon: LQR, DDP, MPPI, PMP,
+        # MPC-QP, LQG.
+        "lqr_control",
+        "ddp_solve",
+        "mppi_control",
+        "pmp_bangbang",
+        "mpc_qp",
+        "lqg_control",
+        # Wave-194 stochastic-process canon: CIR, OU bridge,
+        # Poisson/Hawkes thinning, Merton jumps, GP bridge.
+        "cir_sim",
+        "ou_bridge",
+        "poisson_thinning",
+        "hawkes_thinning",
+        "levy_jump",
+        "gp_bridge",
+        # Wave-195 ensemble/adaptive-MCMC canon: emcee stretch,
+        # DE-MCMC, DRAM, RJMCMC, pCN, independence MH.
+        "emcee_stretch",
+        "de_mcmc",
+        "dram",
+        "rjmcmc",
+        "pcn_sampler",
+        "indep_mh",
+        # Wave-196 eigen canon: power+deflation, inverse iteration,
+        # Jacobi, shifted QR, Hessenberg, bidiagonalization.
+        "power_iter",
+        "inverse_iter",
+        "jacobi_eig",
+        "qr_eig",
+        "hessenberg_red",
+        "bidiag_svd",
+        # Wave-197 inventory canon: EOQ, newsvendor, (s,S), Wagner-Whitin,
+        # base stock, Clark-Scarf echelon.
+        "eoq_model",
+        "newsvendor",
+        "ss_policy",
+        "wagner_whitin",
+        "base_stock",
+        "clark_scarf",
+        # Wave-198 scheduling canon: Johnson flow-shop, NEH, LPT,
+        # knapsack DP, TSP branch-bound, WSPT.
+        "johnson_flowshop",
+        "neh_heuristic",
+        "lpt_schedule",
+        "knapsack_dp",
+        "tsp_branchbound",
+        "spt_weighted",
+        # Wave-199 quantum canon: QAOA MaxCut, VQE Ising, Grover, QPE,
+        # quantum kernel, continuous-time quantum walk.
+        "qaoa_maxcut",
+        "vqe_ising",
+        "grover_search",
+        "qpe_phase",
+        "qkernel_svm",
+        "quantum_walk",
+        # Wave-200 tensor-network canon: TT-SVD, DMRG, cross interp,
+        # TEBD, MPS fidelity, TT rounding.
+        "tt_svd",
+        "dmrg_tfim",
+        "tensor_cross",
+        "tebd_quench",
+        "mps_fidelity",
+        "tt_round",
+        # Wave-201 stochastic-control canon: PSOR, CRR, Kushner MCA,
+        # HJB penalty, AB dual, exercise boundary.
+        "psor_american",
+        "crr_tree",
+        "kushner_mca",
+        "hjb_penalty",
+        "dual_american",
+        "exercise_boundary",
+        # Wave-202 game-theory canon: LQ-MFG, flocking, Cournot,
+        # Stackelberg, stochastic-game VI, potential game.
+        "mfg_lq",
+        "mfg_flocking",
+        "nash_cournot",
+        "stackelberg_game",
+        "stochastic_game_vi",
+        "potential_game",
+        # Wave-203 information-geometry canon: Fisher-Rao, natural
+        # gradient, mirror descent, Bregman NMF, alpha geodesic, JKO.
+        "fisher_rao",
+        "natural_gradient",
+        "mirror_descent",
+        "bregman_nmf",
+        "alpha_geodesic",
+        "jko_scheme",
+        # Wave-204 queueing + reliability canon: Jackson, BCMP MVA,
+        # Gordon-Newell, CTMC availability, renewal reward, vacations.
+        "jackson_network",
+        "bcmp_mva",
+        "gordon_newell",
+        "ctmc_availability",
+        "renewal_reward",
+        "vacation_queue",
+        # Wave-205 auction canon: Vickrey, first-price BNE, all-pay,
+        # ascending clock, double auction, GSP positions.
+        "vickrey_auction",
+        "first_price_auction",
+        "all_pay_auction",
+        "ascending_clock",
+        "double_auction",
+        "gsp_auction",
+        # Wave-206 RL-theory canon: UCB bound, Hedge, eps-decay, PI
+        # contraction, TD rate, Q-learning rate.
+        "ucb_bound",
+        "mw_hedge",
+        "egreedy_decay",
+        "pi_contraction",
+        "td_rate",
+        "qlearn_rate",
+        # Wave-207 crypto canon: SHA-256, AES S-box, Shamir, Pedersen,
+        # Diffie-Hellman, secp256k1.
+        "sha256_impl",
+        "aes_sbox",
+        "shamir_secret",
+        "pedersen_commit",
+        "diffie_hellman",
+        "ecc_secp256k1",
+        # Wave-208 signal canon: CWT ridge, cepstrum, MVDR, Hilbert,
+        # LPC formants, Goertzel.
+        "cwt_ridge",
+        "cepstrum_pitch",
+        "mvdr_beamformer",
+        "hilbert_instant",
+        "lpc_formant",
+        "goertzel_detect",
+        # Wave-209 reliability canon: Weibull life, fault tree, RAM
+        # Markov, FMEA, Arrhenius life-stress, RBD redundancy.
+        "weibull_life",
+        "fault_tree",
+        "ram_markov",
+        "fmea_rpn",
+        "life_stress",
+        "redundancy_block",
+        # Wave-210 coding canon: LDPC BP, turbo BCJR, polar SC, BCH,
+        # CRC, block interleaver.
+        "ldpc_decoder",
+        "turbo_decoder",
+        "polar_code",
+        "bch_code",
+        "crc_check",
+        "conv_interleaver",
+        # Wave-211 integer-programming canon: Gomory cuts, column
+        # generation, Benders, Lagrangian, branch-and-cut, Held-Karp.
+        "gomory_cut",
+        "column_generation",
+        "benders_decomp",
+        "lagrangian_relax",
+        "branch_and_cut",
+        "held_karp",
+        # Wave-212 approximation-algorithm canon: greedy, primal-dual,
+        # LP rounding, FPTAS, local search, Christofides.
+        "greedy_set_cover",
+        "primal_dual_vc",
+        "lp_rounding_sc",
+        "fptas_knapsack",
+        "local_search_maxcut",
+        "christofides_tsp",
+        # Wave-213 SDP/relaxation canon: Goemans-Williamson SDP,
+        # eigenvalue opt, SoS, Shor QCQP, spectral bisection, Hoffman.
+        "sdp_maxcut",
+        "eigenvalue_opt",
+        "sos_certificate",
+        "qcqp_relax",
+        "spectral_bisection",
+        "hoffman_bound",
+        # Wave-214 online-algorithms canon: ski rental, marking paging,
+        # work-function k-server, RANKING, secretary/prophet, OGD.
+        "ski_rental",
+        "marking_paging",
+        "work_function_kserver",
+        "ranking_matching",
+        "secretary_prophet",
+        "online_gradient",
+        # Wave-215 stochastic-programming canon: L-shaped, scenario
+        # tree, SAA, chance-scenario, DRO Wasserstein, robust budget.
+        "two_stage_lshaped",
+        "scenario_tree",
+        "saa_consistency",
+        "chance_scenario",
+        "dro_wasserstein",
+        "robust_budget",
+        # Wave-216 advanced-MC-sampling canon: parallel tempering,
+        # Wang-Landau, umbrella, metadynamics, WHAM, thermo-integration.
+        "parallel_tempering",
+        "wang_landau",
+        "umbrella_sampling",
+        "metadynamics",
+        "wham",
+        "thermo_integration",
+        # Wave-217 estimation/filtering canon: H-inf, cubature KF,
+        # MHE, variational Bayes, Huber filter, particle smoother.
+        "hinf_filter",
+        "cubature_kalman",
+        "mhe",
+        "variational_bayes",
+        "huber_filter",
+        "particle_smoother",
+        # Wave-218 advanced-derivatives canon: Dupire local vol, SABR,
+        # deep hedging, Heston calib, barrier adjoint, Andreasen-Huge.
+        "dupire_localvol",
+        "sabr_calib",
+        "deep_hedge",
+        "heston_calib",
+        "barrier_adjoint",
+        "andreasen_huge",
+        # Wave-219 SAT/symbolic canon: CDCL, WalkSAT, unit prop,
+        # 2-SAT SCC, BDD, LTL model check.
+        "cdcl_solver",
+        "walksat",
+        "unit_propagation",
+        "twosat_scc",
+        "bdd_ops",
+        "ltl_mc",
+        # Wave-220 verification canon: k-induction, IC3/PDR,
+        # BMC, invariant synth, Hoare, ranking fns, CEGAR.
+        "k_induction",
+        "ic3_pdr",
+        "bmc_unroll",
+        "invariant_synth",
+        "hoare_logic",
+        "ranking_function",
+        "cegar_loop",
+        # Wave-221 algebra canon: Groebner, resultant,
+        # poly GCD, GF(2) factor, LLL, Newton interp.
+        "buchberger",
+        "resultant",
+        "poly_gcd",
+        "gf2_factor",
+        "lll_reduce",
+        "newton_interp",
+        # Wave-222 number theory: Miller-Rabin, Pollard
+        # rho, Tonelli-Shanks, CF/Pell, CRT, EC scalar.
+        "miller_rabin",
+        "pollard_rho",
+        "tonelli_shanks",
+        "continued_fraction",
+        "crt_garner",
+        "ec_scalar",
+        # Wave-223 distributed systems: Paxos, Raft,
+        # vector clocks, consistent hashing, gossip, PBFT.
+        "paxos",
+        "raft_election",
+        "vector_clock",
+        "consistent_hash",
+        "gossip_epidemic",
+        "pbft_lite",
+        # Wave-224 string algorithms: Aho-Corasick, SAM,
+        # KMP, edit distance, LZ77, BWT.
+        "aho_corasick",
+        "suffix_automaton",
+        "kmp_search",
+        "edit_distance",
+        "lz77",
+        "bwt_transform",
+        # Wave-225 physics simulation: leapfrog N-body,
+        # Barnes-Hut, SPH, rigid impulses, Verlet cloth, FEM truss.
+        "nbody_leapfrog",
+        "barnes_hut",
+        "sph_fluid",
+        "rigid_collision",
+        "verlet_cloth",
+        "fem_truss",
+        # Wave-226 compiler/formal-language canon: regex NFA, Hopcroft
+        # DFA minimization, CYK, dominators, liveness/DCE, linear-scan.
+        "regex_engine",
+        "dfa_minimize",
+        "cyk_parser",
+        "dominance_tree",
+        "liveness_dce",
+        "linscan_regalloc",
+        # Wave-227 compression canon: Huffman, arithmetic, LZW/LZ78,
+        # Golomb-Rice, rANS.
+        "huffman_codes",
+        "arithmetic_coding",
+        "lzw_compress",
+        "golomb_rice",
+        "rans_coder",
+        "lz78_dict",
+        # Wave-228 CRDT canon: counters, sets, registers, sequences.
+        "gcounter",
+        "pncounter",
+        "orset",
+        "lww_map",
+        "twopset",
+        "rga_sequence",
+        # Wave-229 probabilistic-membership canon: Bloom, cuckoo,
+        # XOR/quotient filters, MinHash-LSH, SimHash.
+        "bloom_filter",
+        "cuckoo_filter",
+        "xor_filter",
+        "quotient_filter",
+        "minhash_lsh",
+        "simhash",
+        # Wave-230 computational-geometry canon: triangulation,
+        # clipping, intersection, point location, closest pair,
+        # calipers.
+        "ear_clipping",
+        "sutherland_hodgman",
+        "segment_intersection",
+        "point_in_polygon",
+        "closest_pair",
+        "rotating_calipers",
+        # Wave-231 architecture canon: pipeline, cache, branch
+        # prediction, Tomasulo, paging/TLB, roofline.
+        "cpu_pipeline",
+        "cache_sim",
+        "branch_predictor",
+        "tomasulo_sim",
+        "paging_sim",
+        "roofline_model",
+        # Wave-232 blockchain canon: Merkle, PoW, UTXO, retarget,
+        # fork choice, block validation.
+        "merkle_tree",
+        "proof_of_work",
+        "utxo_set",
+        "difficulty_retarget",
+        "fork_resolution",
+        "block_validator",
+        # Wave-233 compiler-2 canon: SSA, SCCP, GVN, coalescing,
+        # scheduling, LICM.
+        "ssa_construct",
+        "sccp_const",
+        "gvn_elim",
+        "reg_coalesce",
+        "instr_sched",
+        "licm_hoist",
+        # Wave-234 database canon: B+tree, WAL, joins, planner, MVCC,
+        # LSM.
+        "btree_index",
+        "wal_recovery",
+        "join_algos",
+        "query_planner",
+        "mvcc_isolation",
+        "lsm_tree",
+        # Wave-235 OS canon: schedulers, paging, deadlock, disk, journal.
+        "round_robin_sched",
+        "cfs_scheduler",
+        "demand_paging",
+        "deadlock_detect",
+        "disk_sched",
+        "fs_journal",
+        # Wave-236 graphics canon.
+        "raycaster",
+        "bresenham_line",
+        "scanline_fill",
+        "zbuffer_render",
+        "quaternion_slerp",
+        "bsp_tree",
+        "mvp_transform",
+        # Wave-237 parser canon.
+        "recursive_descent",
+        "pratt_parser",
+        "earley_parser",
+        "slr_parser",
+        "peg_packrat",
+        "ll1_table",
+        # Wave-238 networking canon.
+        "tcp_aimd",
+        "sliding_window",
+        "token_bucket",
+        "rtt_estimator",
+        "nat_table",
+        "http2_flow",
+        # Wave-239 PL canon: HM inference, interpreter, CPS, macros, GC.
+        "hm_inference",
+        "tree_walk_interp",
+        "cps_transform",
+        "macro_expand",
+        "gc_marksweep",
+        "simple_types",
+        # Wave-240 applied-crypto canon.
+        "rsa_toy",
+        "winternitz_ots",
+        "merkle_ots",
+        "blind_sig",
+        "zkp_schnorr",
+        "commit_reveal",
+        # Wave-241 databases-2 canon.
+        "aries_recovery",
+        "two_phase_lock",
+        "selinger_join",
+        "mvcc_gc",
+        "buffer_pool",
+        "blink_tree",
+        # Wave-242 consensus/distributed-2 canon.
+        "multi_paxos",
+        "epaxos",
+        "viewstamped",
+        "zab_protocol",
+        "swim_gossip",
+        "two_three_pc",
+        # Wave-243 numeric-2 canon.
+        "bignum",
+        "fft_radix2",
+        "int_sqrt",
+        "karatsuba",
+        "ntt",
+        "strassen",
+        # Wave-244 IR canon.
+        "inverted_index",
+        "lsh_dedup",
+        "ngram_spell",
+        "positional_index",
+        # Wave-245 OS-2 canon.
+        "elf_loader",
+        "malloc_freelist",
+        "mlfq_sched",
+        "mmap_pager",
+        "semaphore_monitor",
+        "syscall_layer",
+        # Wave-246 language-runtime canon.
+        "bytecode_vm",
+        "closure_conv",
+        "inline_cache",
+        "nan_tagging",
+        # Wave-247 concurrency canon.
+        "atomics_tas",
+        "bakery_lock",
+        "channel_select",
+        # Wave-248 formal-language canon.
+        "brzozowski_deriv",
+        "cellular_automata",
+        # Wave-249 bioinformatics canon.
+        "debruijn_assemble",
+        "fm_index",
+        "motif_scan",
+        # Wave-250 graph-3 canon.
+        "astar_search",
+        "bidirectional_dijkstra",
+        "bron_kerbosch",
+        # Wave-251 numerical-linalg-2 canon.
+        "givens_qr",
+        "jacobi_svd",
+        "ldlt_solve",
+        "lu_pivots",
+        "orth_iter",
+        "sturm_eig",
+        # Wave-252 interpreters-3 canon.
+        "gen_gc",
+        "compacting_gc",
+        "dispatch_table",
+        "anf_cps",
+        "trampoline_tc",
+        # Wave-253 automata-3 canon.
+        "tree_automata",
+        "buchi_automata",
+        "weighted_fst",
+        "cfg_pda_equiv",
+        "two_way_dfa",
+        "register_automata",
+        # Wave-254 applied-crypto-2 canon.
+        "tls_handshake",
+        "hmac_construct",
+        "aead_etm",
+        "merkle_damgard",
+        "cbc_padding",
+        "pbkdf2_kdf",
+        # Wave-255 optimization-2 canon.
+        "simplex_lp",
+        "ellipsoid_method",
+        "barrier_ip",
+        "admm_lasso",
+        "coord_descent",
+        "proj_gradient",
+        # Wave-256 memory-models canon.
+        "hazard_pointer",
+        "seqlock",
+        "ms_queue",
+        "epoch_reclaim",
+        "flat_combining",
+        "rcu_lock",
+        # Wave-257 lattice-crypto canon.
+        "lwe_kex",
+        "ntru_toy",
+        "bfv_fhe",
+        "sis_hash",
+        "sigma_or_proof",
+        "chaum_pedersen",
+        # Wave-258 databases-3 canon.
+        "cascades_opt",
+        "vectorized_exec",
+        "zone_map",
+        "func_dep",
+        "bitmap_index",
+        "adaptive_qp",
+        # Wave-259 networking-2 canon.
+        "bgp_pathvec",
+        "dns_resolver",
+        "nat_traversal",
+        "arp_table",
+        "dhcp_lease",
+        "eth_switch",
+        # Wave-260 matching canon.
+        # Wave-261 robotics-2 canon.
+        # Wave-262 HPC canon.
+        # Wave-263 real-time canon.
+        # Wave-264 numerical-linalg-3 canon.
+        # Wave-265 program-analysis canon.
+        "fuzzer_mutate",
+        "taint_track",
+        "asan_shadow",
+        "symbolic_exec",
+        "contract_check",
+        "grammar_fuzz",
+        # Wave-266 graphics-2 canon.
+        "triangle_raster",
+        "phong_shade",
+        "mipmap_sample",
+        "shadow_map",
+        "bump_map",
+        "ssao_lite",
+        # Wave-267 GPU-architecture canon.
+        "warp_scheduler",
+        "simt_divergence",
+        "bank_conflict",
+        "mem_coalesce",
+        "occupancy_calc",
+        "shared_mem_tile",
+        # Wave-268 crypto-4 canon.
+        "elgamal_enc",
+        "paillier_he",
+        "fiat_shamir",
+        "ot_12",
+        "chacha_stream",
+        "poly1305_mac",
+        # Wave-269 computer-vision canon.
+        "lk_flow",
+        "orb_feature",
+        "homography_4pt",
+        "ransac_plane",
+        "epipolar_8pt",
+        "stereo_disparity",
+        # Wave-270 computational-physics-2 canon.
+        "lj_md",
+        "fdtd_wave",
+        "lattice_boltzmann",
+        "ising_metro",
+        "pic_plasma",
+        "dmc_solver",
+        # Wave-271 networking-3 canon.
+        "ospf_lsa",
+        "stp_spanning",
+        "vlan_tag",
+        "csma_ca",
+        "icmp_path",
+        "diffserv_qos",
+        # Wave-272 control-theory-2 canon.
+        "pid_antiwindup",
+        "sliding_mode",
+        "gain_schedule",
+        "smith_predictor",
+        "backstepping",
+        "repetitive_ctrl",
+        # Wave-273 compiler-3 canon.
+        "partial_eval",
+        "peephole_opt",
+        "strength_red",
+        "const_fold",
+        "loop_unroll",
+        "inline_expand",
+        # Wave-274 bioinformatics-2 canon.
+        "hmm_profile",
+        "star_msa",
+        "gc_skew",
+        "orf_find",
+        "kmer_count",
+        "seq_logo",
+        # Wave-275 databases-4 canon.
+        "columnar_scan",
+        "simd_filter",
+        "late_materialize",
+        "radix_join",
+        "graceful_hash",
+        "index_intersect",
+        # Wave-276 distributed-systems-3 canon.
+        "ra_mutex",
+        "token_ring",
+        "bully_elect",
+        "chord_look",
+        "quorum_rw",
+        "causal_bcast",
+        # Wave-277 signal-processing-4 canon.
+        "stft_istft",
+        "chirp_z",
+        "fir_window",
+        "prony_model",
+        "wola_synth",
+        "decimate_int",
+        # Wave-278 econ-models-2 canon.
+        "rbc_sim",
+        "nk_phillips",
+        "taylor_rule",
+        "solow_model",
+        "olg_model",
+        "cobweb_model",
+        # Wave-279 control-theory-3 canon.
+        "luen_obsv",
+        "dist_obsv",
+        "mrac_adapt",
+        "flat_track",
+        "lyap_synth",
+        "l2_gain",
+        # Wave-280 algebraic-topology canon.
+        "simp_betti",
+        "boundary_sq",
+        "euler_char",
+        "rips_h1",
+        "graph_h1",
+        "winding_deg",
+        # Wave-281 abstract-algebra canon.
+        "group_table",
+        "perm_group",
+        "galois_field",
+        "poly_ring",
+        "ideal_member",
+        "matrix_grp",
+        # Wave-282 combinatorics canon.
+        "subset_sum_dp",
+        "stirling_count",
+        "gray_code",
+        "inversion_count",
+        "ramsey_bound",
+        "latin_square",
+        # Wave-293 graphics-3 canon.
+        "deferred_shade",
+        "sdf_raymarch",
+        "frustum_cull",
+        "lod_select",
+        "env_map",
+        "shadow_pcf",
+        # Wave-292 networking-4 canon.
+        "quic_streams",
+        "tls13_trans",
+        "qpack_pack",
+        "wg_ik",
+        "doh_wire",
+        "sctp_tsn",
+        # Wave-291 VLSI/EDA canon.
+        "netlist_parse",
+        "sta_timing",
+        "a_star_route",
+        "drc_check",
+        "place_quadratic",
+        "levelize",
+        # Wave-290 chem-informatics canon.
+        "smiles_parse",
+        "morgan_fp",
+        "tanimoto",
+        "mol_descriptors",
+        "substruct",
+        "ring_detect",
+        # Wave-289 category-theory canon.
+        "fin_cat",
+        "functor_check",
+        "nat_trans",
+        "adjunction",
+        "limit_prod",
+        "monad_laws",
+        # Wave-288 measure-theory canon.
+        "leb_measure",
+        "leb_integral",
+        "conv_prob",
+        "weak_conv",
+        "fubini_swap",
+        "radon_nikodym",
+        # Wave-287 differential-geometry canon.
+        "first_ff",
+        "gauss_curve",
+        "frenet_frame",
+        "christoffel",
+        "geodesic_sphere",
+        "surf_area",
+        # Wave-286 security-defensive canon.
+        "beacon_detect",
+        "entropy_dns",
+        "cred_stuffing",
+        "impossible_travel",
+        "exfil_zscore",
+        "sig_score",
+        # Wave-285 information-theory canon.
+        "markov_entropy",
+        "blahut_arimoto",
+        "kl_knn",
+        "type_class",
+        "elias_gamma",
+        "miller_madow",
+        # Wave-284 bioinformatics-3 canon.
+        "nj_tree",
+        "fitch_pars",
+        "seed_extend",
+        "band_align",
+        "jc69_lik",
+        "codon_usage",
+        # Wave-283 robotics-3 canon.
+        "fk_dh",
+        "ik_jac",
+        "ray_lidar",
+        "pot_field",
+        "bezier_curve",
+        "odom_comp",
+        "divide_conquer_eig",
+        "dqds",
+        "block_lanczos",
+        "randomized_qb",
+        "sparse_cholesky",
+        "fgmres",
+        "edf_scheduler",
+        "rms_scheduler",
+        "wcet_est",
+        "debounce_fsm",
+        "watchdog_task",
+        "ring_buffer",
+        "stencil_halo",
+        "mesi_cache",
+        "ring_allreduce",
+        "simd_lanes",
+        "task_dag",
+        "numa_alloc",
+        "ekf_slam",
+        "occupancy_grid",
+        "pure_pursuit",
+        "stanley",
+        "particle_slam",
+        "frontier_explore",
+        "gale_shapley",
+        "hopcroft_karp",
+        "kuhn_munkres",
+        "konig_cover",
+        "gale_chu",
+        "topo_layers",
+        "critical_path",
+        "dinic_flow",
+        "mincost_flow",
+        "needleman_wunsch",
+        "smith_waterman",
+        "upgma_tree",
+        "dfa_equiv",
+        "mealy_moore",
+        "pda_sim",
+        "turing_machine",
+        "peterson_lock",
+        "rw_lock",
+        "work_stealing",
+        "tail_call_tramp",
+        "threaded_interp",
+        "posting_merge",
+        "wand_bmw",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
@@ -648,22 +3245,30 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     """Return True iff *payload* has no forbidden research-headline metric keys.
 
     Fail closed: any mapping key whose underscore tokens include sharpe / sortino /
-    calmar / pnl / nav marks the blob unclean. Values are not scanned (keys only).
+    calmar / pnl / nav marks the blob unclean. Scalar metric values are not scanned.
 
     Scope: research family / scorecard blobs only. Paper ``analytics_export`` may
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
 
-    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
-    not a metric — receipts that embed other receipts carry it nested (e.g. a
-    tournament manifest quoting its benchmark manifest).
+    ``live_pnl_claim`` itself is exempt at any depth only when its value is
+    literally False: it is the honesty flag, not a metric. Receipts that embed
+    other receipts carry it nested (e.g. a tournament manifest quoting its
+    benchmark manifest); a true or malformed nested flag must fail closed too.
     """
-    for key in _iter_mapping_keys(payload):
-        if key == "live_pnl_claim":
-            continue
-        parts = str(key).lower().replace("-", "_").split("_")
-        if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
-            return False
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if key == "live_pnl_claim":
+                if value is not False:
+                    return False
+                continue
+            parts = str(key).lower().replace("-", "_").split("_")
+            if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
+                return False
+            if not family_blob_forbidden_metrics_absent(value):
+                return False
+    elif isinstance(payload, (list, tuple)):
+        return all(family_blob_forbidden_metrics_absent(item) for item in payload)
     return True
 
 

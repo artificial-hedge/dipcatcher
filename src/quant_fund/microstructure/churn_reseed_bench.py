@@ -70,6 +70,7 @@ def _reseed_fates(
     fr_delay: int = 280,
     repost_requote: float | None = None,
     repost_ttl_immune: bool = False,
+    record_inputs: bool = False,
 ) -> dict[str, Any]:
     """sim_reseed's measure plus per-vacancy and repost fates."""
     extra = _extra(zone, ttl, rq, fr_frac, fr_delay, repost_requote, repost_ttl_immune)
@@ -122,7 +123,9 @@ def _reseed_fates(
         "walked": sim.n_repost_drop_walked,
     }
     arr = np.asarray(lat, dtype=float)
-    return {
+    from quant_fund.microstructure.joint_tune_contract import surface_inputs
+
+    result = {
         "n_emptied": n_emp,
         "reseed_rate_500": round(len(lat) / n_emp, 4) if n_emp else None,
         "reseed_latency_p50": round(float(np.median(arr)), 1) if arr.size else None,
@@ -134,6 +137,11 @@ def _reseed_fates(
         "repost_drops": drops,
         "repost_fate_sums": due == sim.n_repost_rested + sum(drops.values()),
     }
+    if record_inputs:
+        result["inputs"] = surface_inputs(
+            zone, ttl, rq, fr_delay, horizon=horizon, seed=seed, intensity=inten, fr_frac=fr_frac
+        )
+    return result
 
 
 def churn_reseed_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:

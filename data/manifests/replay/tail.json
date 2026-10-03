@@ -1,0 +1,36 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/tail_real_drill.py",
+  "receipt_sha256": "b014d84a3218cc6ea333e824f763401a38d91e6daa2261fdb81b99fccee1aaa9",
+  "replay": {
+    "argv": [
+      "scripts/tail_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/tail_real_drill.json",
+        "sha256": "c7de8c6ace2fcdf08d3fa67b7df900425139ff52b4add92cfa520f9bcb663259"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4",
+      "receipt": "receipts/tail_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

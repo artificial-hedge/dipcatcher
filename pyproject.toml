@@ -48,11 +48,18 @@ dependencies = [
     # previously relied on transitive pulls; declared per P6.10 hygiene.
     "cryptography>=44",
     "threadpoolctl>=3.5",
+    # Post-validation for the OpenAI surface's response_format json_schema
+    # mode — the harness can't constrain-decode arbitrary backends, so the
+    # gate validates the returned text against the declared schema.
+    "jsonschema>=4.23",
+    # FastAPI multipart parsing for POST /v1/files (the OpenAI batch-input
+    # upload contract is multipart/form-data).
+    "python-multipart>=0.0.20",
     "exchange-calendars==4.13.2",
 ]
 
 [project.optional-dependencies]
-nn = ["torch>=2.4", "tirex-2>=0.3.0"]
+nn = ["torch>=2.6", "tirex-2>=0.3.0"]
 # shap 0.52 pins numba<0.63 on darwin x86_64, and that numba pins numpy<2.4.
 # Keeping shap there forks uv.lock into numpy 2.3.5 and 2.5.3. Phase-1
 # rejects a duplicated locked runtime package, so the extra is omitted on
@@ -102,6 +109,12 @@ docs = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+# Security floors for transitive packages; these are not runtime imports.
+# urllib3: CVE-2026-97687/97688/97689; virtualenv: activation/config injection
+# and downloaded-wheel integrity fixes through 21.7.13.
+constraint-dependencies = ["urllib3>=2.8.0", "virtualenv>=21.7.13"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/fx1", "src/quant_fund"]

@@ -3,7 +3,12 @@ from datetime import UTC, datetime
 import pytest
 
 from quant_fund.config import load_config
-from quant_fund.portfolio.risk_gate import check_order, resolve_gate_predicted_vol
+from quant_fund.portfolio.risk_gate import (
+    check_order,
+    exceeds_limit,
+    funded,
+    resolve_gate_predicted_vol,
+)
 from quant_fund.schemas.errors import RiskGateRejected
 from quant_fund.schemas.orders import Order, OrderSide
 
@@ -140,3 +145,47 @@ def test_risk_gate_name_vol_still_fail_closed_when_overlay_present() -> None:
             config=cfg,
             market_predicted_vol=float("nan"),
         )
+
+
+@pytest.mark.parametrize("age", [float("nan"), float("inf"), float("-inf")])
+def test_risk_gate_rejects_nonfinite_freshness(age: float) -> None:
+    cfg = load_config("configs/research.yaml")
+    with pytest.raises(RiskGateRejected, match="price age must be finite"):
+        check_order(_order(), **_kwargs(), config=cfg, price_age_bars=age)
+    with pytest.raises(RiskGateRejected, match="model age must be finite"):
+        check_order(_order(), **_kwargs(), config=cfg, model_age_hours=age)
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("other", [0.0, 1.0, float("nan"), float("inf"), float("-inf")])
+def test_limit_and_funding_helpers_fail_closed(invalid: float, other: float) -> None:
+    assert exceeds_limit(invalid, other)
+    assert exceeds_limit(other, invalid)
+    assert not funded(invalid, other)
+    assert not funded(other, invalid)
+
+
+@pytest.mark.parametrize("limit", [0.0, 1.0, 1_000_000.0])
+def test_limit_and_funding_helpers_preserve_finite_slack(limit: float) -> None:
+    import math
+
+    adjacent = math.nextafter(limit, math.inf)
+    assert not exceeds_limit(limit, limit)
+    assert not exceeds_limit(adjacent, limit)
+    assert funded(limit, limit)
+    assert funded(limit, adjacent)
+    material_breach = limit + max(1e-6, limit * 1e-6)
+    assert exceeds_limit(material_breach, limit)
+    assert not funded(limit, material_breach)
+
+
+def test_risk_gate_accepts_freshness_at_limits_or_omitted() -> None:
+    cfg = load_config("configs/research.yaml")
+    check_order(_order(), **_kwargs(), config=cfg)
+    check_order(
+        _order(),
+        **_kwargs(),
+        config=cfg,
+        price_age_bars=cfg.risk_gate.stale_price_bars,
+        model_age_hours=cfg.risk_gate.stale_model_hours,
+    )

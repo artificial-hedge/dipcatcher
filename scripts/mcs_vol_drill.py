@@ -10,6 +10,7 @@ Usage: ``python -m scripts.mcs_vol_drill``
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -34,6 +35,10 @@ ALPHA = 0.05
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--out-dir", type=Path, default=Path("receipts"))
+    out_dir = ap.parse_args().out_dir
+
     forecasters = resolve_vol_models(None)
     shard = resolve_vol_shard_generators([SHARD])[SHARD](N_BARS, SEED)
     origins = build_origins(
@@ -62,9 +67,10 @@ def main() -> None:
         "model_errors": errors,
         "source": "vol_bench._eval_shard_model per-origin QLIKE",
     }
-    path = write_mcs_receipt(receipt, Path("receipts"))
-    path.rename(path.with_name("mcs_vol_drill.json"))
-    final = Path("receipts/mcs_vol_drill.json")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = write_mcs_receipt(receipt, out_dir)
+    final = out_dir / "mcs_vol_drill.json"
+    path.rename(final)
     ok = verify_receipt_file(final)
     print(
         json.dumps(

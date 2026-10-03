@@ -1,0 +1,11 @@
+"""Generated feature wrapper for 'reversal_1'; binds to the existing registry."""
+
+from fx1.capabilities import owner_references
+from fx1.extensions.contracts import FeatureExtension
+
+MODULE = FeatureExtension(
+    kind="feature",
+    owner="reversal_1",
+    references=owner_references("feature", "reversal_1"),
+    module=__name__,
+)

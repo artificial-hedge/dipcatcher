@@ -176,11 +176,17 @@ _NONNUMERIC_TEXT = st.text(min_size=1).filter(_unparseable_float_text)
 _NONFINITE_TEXT = st.sampled_from(["nan", "-nan", "inf", "-inf", "Infinity", "1e999"])
 
 
+# Bytes only qualify as a "not numeric" fault when float() cannot parse them;
+# parseable bytes such as b"0" coerce successfully and hit a different
+# rejection branch (positivity), which is not what this test pins.
+_UNPARSEABLE_BYTES = st.binary(min_size=1).filter(_unparseable_float_text)
+
+
 @settings(max_examples=60, deadline=None)
 @given(
     batch=valid_batch(),
     field=st.sampled_from((*PRICE_FIELDS, "volume")),
-    bad=st.one_of(_NONNUMERIC_TEXT, st.none(), st.binary(min_size=1)),
+    bad=st.one_of(_NONNUMERIC_TEXT, st.none(), _UNPARSEABLE_BYTES),
 )
 def test_non_numeric_fields_fail_closed(
     batch: list[dict[str, object]], field: str, bad: object

@@ -240,7 +240,7 @@ fn hash_many(chunks: &Bound<'_, PyAny>) -> PyResult<Vec<String>> {
     let mut out = Vec::new();
     for item in chunks.try_iter()? {
         let item = item?;
-        let blob = item.downcast::<PyBytes>().map_err(|_| {
+        let blob = item.cast::<PyBytes>().map_err(|_| {
             pyo3::exceptions::PyTypeError::new_err("hash_many expects a sequence of bytes")
         })?;
         out.push(hashing::sha256_hex(blob.as_bytes()));

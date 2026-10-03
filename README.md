@@ -862,7 +862,7 @@ C4Context
   System_Ext(moonshot, "Moonshot hosted Kimi K3", "optional hosted eval; needs MOONSHOT_API_KEY")
   System_Ext(tapes, "Public exchange tapes", "opt-in collection only, e.g. Binance bars")
   System_Ext(broker, "Alpaca account", "referenced target venue -- NOT connected")
-  Rel(researcher, harness, "make targets, dipcatcher CLI")
+  Rel(researcher, harness, "Makefile targets, dipcatcher CLI")
   Rel(researcher, fx1, "fx1 CLI")
   Rel(harness, fx1, "gate-passed receipts become corpus lines")
   Rel(fx1, moonshot, "hosted base-model eval (opt-in)")
@@ -1394,7 +1394,7 @@ dipcatcher/
 ├── data/            # 30 tracked files; generated data/* subtrees are gitignored
 ├── artifacts/       # 30 committed artifacts (equity parquets, champion JSON)
 ├── verifier/        # 24 files -- acceptance-history ledger (v1..v8)
-├── replay/          # 20 files -- deterministic replay/visualization tooling
+├── replay/          # 20 files -- deterministic replay + visualization tooling
 ├── research/        # 18 files -- reality-filter trial ledgers
 ├── rust/            # 10 files -- optional quant_core native extension (maturin)
 ├── quality/         # 7 files -- mypy/audit ratchet baselines
@@ -2039,7 +2039,7 @@ flowchart TD
   S --> C["run an event-driven backtest"] --> CR["configs/backtest.yaml — next-open fills"]
   S --> D["run fully offline"] --> DR["make demo-data, then configs/demo.yaml"]
   S --> E["check environment readiness"] --> ER["dipcatcher doctor --config <cfg>"]
-  S --> F["freeze a scoring protocol"] --> FR["configs/sota_protocol*.yaml — never edit after cited"]
+  S --> F["freeze a scoring protocol"] --> FR["configs/sota_protocol.yaml — never edit after cited"]
   S --> G["go live"] --> GR["refused: allow_live raises; see the five conditions"]
 ```
 
@@ -2945,7 +2945,7 @@ into the second as training data.
 | LoRA / QLoRA | parameter-efficient fine-tuning; v0.x never full-fine-tunes |
 | ZeRO-3 | sharded multi-node training configs, generated never hand-edited |
 | distillation | FINAL_K3 teacher into a smaller servable fx-1 student |
-| verifier ledger | `verifier/v1..v8` acceptance history of the harness itself |
+| verifier ledger | `verifier/vN` acceptance history of the harness itself |
 
 ### Environment variables
 
