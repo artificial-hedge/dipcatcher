@@ -3775,6 +3775,14 @@ from quant_fund.research.benches_w472 import (
     bench_rostmotive_family,
     bench_slice_spec_family,
 )
+from quant_fund.research.benches_w473 import (
+    bench_cartier_mod_family,
+    bench_crystalline_stack_family,
+    bench_cyclotomic2_family,
+    bench_thh_2_family,
+    bench_trt_functor_family,
+    bench_witt_vec2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4154,6 +4162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "thh_2": bench_thh_2_family,
+        "cyclotomic2": bench_cyclotomic2_family,
+        "cartier_mod": bench_cartier_mod_family,
+        "witt_vec2": bench_witt_vec2_family,
+        "crystalline_stack": bench_crystalline_stack_family,
+        "trt_functor": bench_trt_functor_family,
         "alg_cobordism": bench_alg_cobordism_family,
         "hermitian_k": bench_hermitian_k_family,
         "oriented_coh": bench_oriented_coh_family,
