@@ -2111,6 +2111,14 @@ from quant_fund.research.benches_w264 import (
     bench_randomized_qb_family,
     bench_sparse_cholesky_family,
 )
+from quant_fund.research.benches_w265 import (
+    bench_asan_shadow_family,
+    bench_contract_check_family,
+    bench_fuzzer_mutate_family,
+    bench_grammar_fuzz_family,
+    bench_symbolic_exec_family,
+    bench_taint_track_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2382,6 +2390,12 @@ def _provenance(
         "randomized_qb": bench_randomized_qb_family,
         "sparse_cholesky": bench_sparse_cholesky_family,
         "fgmres": bench_fgmres_family,
+        "fuzzer_mutate": bench_fuzzer_mutate_family,
+        "taint_track": bench_taint_track_family,
+        "asan_shadow": bench_asan_shadow_family,
+        "symbolic_exec": bench_symbolic_exec_family,
+        "contract_check": bench_contract_check_family,
+        "grammar_fuzz": bench_grammar_fuzz_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

@@ -2935,6 +2935,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # Wave-262 HPC canon.
         # Wave-263 real-time canon.
         # Wave-264 numerical-linalg-3 canon.
+        # Wave-265 program-analysis canon.
+        "fuzzer_mutate",
+        "taint_track",
+        "asan_shadow",
+        "symbolic_exec",
+        "contract_check",
+        "grammar_fuzz",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
