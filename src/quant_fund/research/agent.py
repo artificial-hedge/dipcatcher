@@ -2512,6 +2512,14 @@ from quant_fund.research.benches_w314 import (
     bench_marching_cubes_family,
     bench_nurbs_eval_family,
 )
+from quant_fund.research.benches_w315 import (
+    bench_dmp_control_family,
+    bench_ds_motion_family,
+    bench_grasp_epsilon_family,
+    bench_rmpflow_family,
+    bench_rrt_connect_family,
+    bench_wbc_qp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2891,6 +2899,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rmpflow": bench_rmpflow_family,
+        "ds_motion": bench_ds_motion_family,
+        "wbc_qp": bench_wbc_qp_family,
+        "grasp_epsilon": bench_grasp_epsilon_family,
+        "rrt_connect": bench_rrt_connect_family,
+        "dmp_control": bench_dmp_control_family,
         "nurbs_eval": bench_nurbs_eval_family,
         "catmull_clark": bench_catmull_clark_family,
         "loop_subdiv": bench_loop_subdiv_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-315 robotics-5 canon.
+        "rmpflow",
+        "ds_motion",
+        "wbc_qp",
+        "grasp_epsilon",
+        "rrt_connect",
+        "dmp_control",
         # Wave-314 geometry-processing canon.
         "nurbs_eval",
         "catmull_clark",

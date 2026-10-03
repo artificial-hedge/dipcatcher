@@ -1,3 +1,4 @@
+feat(research): wave 315 — robotics-5 canon (rmpflow, ds_motion, wbc_qp, grasp_epsilon, rrt_connect, dmp_control) (1858->1864 families)
 feat(research): wave 314 — geometry-processing canon (nurbs_eval, catmull_clark, loop_subdiv, marching_cubes, half_edge, laplacian_smooth) (1852->1858 families)
 feat(research): wave 313 — numerical-4/multigrid canon (v_cycle, amg_lite, bicgstab, minres, chebyshev_iter, ilu_precond) (1846->1852 families)
 feat(research): wave 312 — distributed-4 canon (hlc_clock, delta_crdt, raft_log, bracha_bcast, tot_order, quorum_weighted, abd_register) (1839->1846 families)
