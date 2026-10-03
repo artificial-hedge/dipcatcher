@@ -1749,6 +1749,15 @@ from quant_fund.research.benches_w219 import (
     bench_unit_propagation_family,
     bench_walksat_family,
 )
+from quant_fund.research.benches_w220 import (
+    bench_bmc_unroll_family,
+    bench_cegar_loop_family,
+    bench_hoare_logic_family,
+    bench_ic3_pdr_family,
+    bench_invariant_synth_family,
+    bench_k_induction_family,
+    bench_ranking_function_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4614,6 +4623,13 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "twosat_scc": bench_twosat_scc_family(),
         "bdd_ops": bench_bdd_ops_family(),
         "ltl_mc": bench_ltl_mc_family(),
+        "k_induction": bench_k_induction_family(),
+        "ic3_pdr": bench_ic3_pdr_family(),
+        "bmc_unroll": bench_bmc_unroll_family(),
+        "invariant_synth": bench_invariant_synth_family(),
+        "hoare_logic": bench_hoare_logic_family(),
+        "ranking_function": bench_ranking_function_family(),
+        "cegar_loop": bench_cegar_loop_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
