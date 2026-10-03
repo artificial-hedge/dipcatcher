@@ -1,3 +1,4 @@
+feat(research): wave 509 — Weil-II/l-adic canon (etale_site2, l_adic_sheaf, frobenius_action, groth_lefschetz, deligne_weil2, purity_thm) (3009->3015 families)
 feat(research): wave 508 — anabelian-geometry canon (anabelian_geo, section_conj, fundamental_grp, etale_pi1, groth_tei, tamagawa_mochi) (3003->3009 families)
 feat(research): wave 507 — quasi-category/Joyal canon (quasi_cat, joyal_model, homotopy_coherent, nerve_quasi, htc_colimit, marking_qcat) (2997->3003 families)
 feat(research): wave 506 — NIP/distal model-theory canon (dp_rank, forking_seq, honest_def, uniform_def, distality, nip_formula) (2991->2997 families)

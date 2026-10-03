@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-509 Weil-II/l-adic canon.
+        "etale_site2",
+        "l_adic_sheaf",
+        "frobenius_action",
+        "groth_lefschetz",
+        "deligne_weil2",
+        "purity_thm",
         # Wave-508 anabelian-geometry canon.
         "anabelian_geo",
         "section_conj",
