@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-969 operator K-theory canon.
+        "k0_algebra",
+        "k1_algebra",
+        "bott_periodicity_k",
+        "six_term_exact",
+        "pimsner_voicul",
+        "elliott_invariant",
         # Wave-968 KK-theory canon.
         "kk_theory",
         "kasparov_prod",
