@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-976 nuclear-spaces canon.
+        "nuclear_map",
+        "frechet_nuclear",
+        "gelfand_triple",
+        "hilbert_schmidt_emb",
+        "trace_duality",
+        "diam_dim",
         # Wave-975 distribution-theory canon.
         "schwartz_dist",
         "temper_dist",
