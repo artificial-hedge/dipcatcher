@@ -3727,6 +3727,14 @@ from quant_fund.research.benches_w466 import (
     bench_sheaf_homotopy_family,
     bench_stacky_sheaf_family,
 )
+from quant_fund.research.benches_w467 import (
+    bench_constructible_l_family,
+    bench_core_model_family,
+    bench_large_card_family,
+    bench_pcf_theory_family,
+    bench_proper_forcing_family,
+    bench_square_princ_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4106,6 +4114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "constructible_l": bench_constructible_l_family,
+        "large_card": bench_large_card_family,
+        "pcf_theory": bench_pcf_theory_family,
+        "proper_forcing": bench_proper_forcing_family,
+        "core_model": bench_core_model_family,
+        "square_princ": bench_square_princ_family,
         "micro_supp": bench_micro_supp_family,
         "kashiwara_schapira": bench_kashiwara_schapira_family,
         "loc_system": bench_loc_system_family,
