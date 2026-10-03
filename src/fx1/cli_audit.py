@@ -1407,6 +1407,30 @@ def cli_audit() -> dict[str, Any]:
                 ).exit_code
                 == 2
             )
+            # a file-* positional skips the upload — the id goes verbatim.
+            rft_id = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    "file-preloaded",
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                    "--validation-file",
+                    "file-val",
+                ],
+            )
+            out["remote_ft_create_fileid"] = (
+                rft_id.exit_code == 0
+                and remotes[-1].last_upload is None
+                and (remotes[-1].last_ft_create or {}).get("training_file") == "file-preloaded"
+                and (remotes[-1].last_ft_create or {}).get("validation_file") == "file-val"
+            )
+            # in-process, file-* ids are an arg fault — the twin needs bytes.
+            out["ft_create_fileid_inprocess_2"] = (
+                runner.invoke(app, ["harness", "ft-create", "file-x"]).exit_code == 2
+            )
         rfj = runner.invoke(
             app,
             [

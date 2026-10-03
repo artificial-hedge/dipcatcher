@@ -1329,15 +1329,17 @@ def harness_eval_diff(
 
 @harness_app.command("ft-create")
 def harness_ft_create(
-    training_file: Path = typer.Argument(
-        ..., help="Chat-format .jsonl corpus ({messages:[...]} per line)."
+    training_file: str = typer.Argument(
+        ...,
+        help="Chat-format .jsonl corpus ({messages:[...]} per line), or a "
+        "file-* id already uploaded with purpose=fine-tune (remote only).",
     ),
     model: str = typer.Option("fx1", "--model", help="Trainable model: fx1|local_fx1."),
     suffix: str | None = typer.Option(
         None, "--suffix", help="Fine-tuned model name suffix (a-z0-9_-)."
     ),
-    validation_file: Path | None = typer.Option(
-        None, "--validation-file", help="Optional held-out .jsonl corpus."
+    validation_file: str | None = typer.Option(
+        None, "--validation-file", help="Optional held-out .jsonl corpus, or a file-* id."
     ),
     seed: int | None = typer.Option(None, "--seed", help="Pipeline seed."),
     epochs: int | None = typer.Option(None, "--epochs", help="n_epochs hyperparameter (1-50)."),
@@ -1359,32 +1361,49 @@ def harness_ft_create(
     job), or ``--remote`` uploads the corpus (purpose=fine-tune) then
     submits and waits. Corpus validation is synchronous either way — a
     malformed file fails before the job exists."""
-    corpus = training_file.read_bytes() if training_file.exists() else None
-    if corpus is None:
-        typer.echo(f"error: {training_file} does not exist", err=True)
-        raise typer.Exit(code=2)
+
+    def _resolve_input(raw: str, remote_mode: bool) -> tuple[str | None, bytes | None]:
+        """A ``file-*`` string is an already-uploaded id (remote leg only —
+        the in-process twin needs the corpus bytes); otherwise a path."""
+        if raw.startswith("file-"):
+            if not remote_mode:
+                _bad_arg(f"{raw} is an uploaded id — the in-process leg needs a path")
+            return raw, None
+        p = Path(raw)
+        content = p.read_bytes() if p.exists() else None
+        if content is None:
+            _bad_arg(f"{raw} does not exist")
+        return None, content
+
+    train_id, corpus = _resolve_input(training_file, remote is not None)
+    val_id_opt: str | None = None
+    val_bytes: bytes | None = None
+    if validation_file is not None:
+        val_id_opt, val_bytes = _resolve_input(validation_file, remote is not None)
     hp = {"n_epochs": epochs} if epochs is not None else None
     if remote is not None:
         client = _remote_client(remote, api_key, timeout_s)
-        up = _or_exit(
-            lambda: client.upload_file(corpus, filename=training_file.name, purpose="fine-tune")
-        )
-        val_id = None
-        if validation_file is not None:
-            vbytes = validation_file.read_bytes() if validation_file.exists() else None
-            if vbytes is None:
-                typer.echo(f"error: {validation_file} does not exist", err=True)
-                raise typer.Exit(code=2)
-            vup = _or_exit(
+        up_id = (
+            train_id
+            or _or_exit(
                 lambda: client.upload_file(
-                    vbytes, filename=validation_file.name, purpose="fine-tune"
+                    corpus or b"", filename=Path(training_file).name, purpose="fine-tune"
                 )
-            )
-            val_id = vup["id"]
+            )["id"]
+        )
+        val_id = val_id_opt
+        if validation_file is not None and val_id is None:
+            val_id = _or_exit(
+                lambda: client.upload_file(
+                    val_bytes or b"",
+                    filename=Path(validation_file).name,
+                    purpose="fine-tune",
+                )
+            )["id"]
         job = _or_exit(
             lambda: client.create_finetune_job(
                 model=model,
-                training_file=up["id"],
+                training_file=up_id,
                 hyperparameters=hp,
                 suffix=suffix,
                 validation_file=val_id,
@@ -1404,13 +1423,12 @@ def harness_ft_create(
     harness = Fx1Harness()
     from fx1.serve.finetune import FTHyperparameters
 
+    assert corpus is not None  # _resolve_input returns bytes or exits in-process
     ftjob = _or_exit(
         lambda: harness.create_finetune_job(
             model=model,
             training_jsonl=corpus,
-            validation_jsonl=(
-                validation_file.read_bytes() if validation_file is not None else None
-            ),
+            validation_jsonl=val_bytes,
             hyperparameters=FTHyperparameters(**hp) if hp is not None else None,
             suffix=suffix,
             seed=seed,
