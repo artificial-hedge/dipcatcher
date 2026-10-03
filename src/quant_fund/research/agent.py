@@ -6847,6 +6847,14 @@ from quant_fund.research.benches_w856 import (
     bench_sobol_seq_family,
     bench_stratified_mc_family,
 )
+from quant_fund.research.benches_w857 import (
+    bench_clenshaw_curtis_family,
+    bench_fejer_quad_family,
+    bench_gauss_chebyshev_family,
+    bench_gauss_kronrod_family,
+    bench_gauss_legendre_family,
+    bench_newton_cotes_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7218,6 +7226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gauss_legendre": bench_gauss_legendre_family,
+        "gauss_chebyshev": bench_gauss_chebyshev_family,
+        "clenshaw_curtis": bench_clenshaw_curtis_family,
+        "newton_cotes": bench_newton_cotes_family,
+        "gauss_kronrod": bench_gauss_kronrod_family,
+        "fejer_quad": bench_fejer_quad_family,
         "monte_carlo_quad": bench_monte_carlo_quad_family,
         "quasi_mc": bench_quasi_mc_family,
         "halton_seq": bench_halton_seq_family,

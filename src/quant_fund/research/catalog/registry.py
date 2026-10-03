@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-857 classical-quadrature canon.
+        "gauss_legendre",
+        "gauss_chebyshev",
+        "clenshaw_curtis",
+        "newton_cotes",
+        "gauss_kronrod",
+        "fejer_quad",
         # Wave-856 quadrature/quasi-MC canon.
         "monte_carlo_quad",
         "quasi_mc",
