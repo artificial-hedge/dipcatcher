@@ -1,3 +1,4 @@
+feat(research): wave 444 — DAG-stacks canon (derived_stack, cotangent_cx, geometric_stk, tannaka_rec, quasi_smooth, perf_stack) (2619->2625 families)
 feat(research): wave 443 — motivic-2 canon (motivic_coh, chow_group, milnor_conj, voevodsky_dm, motivic_stem, brauer_grp) (2613->2619 families)
 feat(research): wave 442 — model-categories-2 canon (cofibrant_rep, quillen_equiv, monoidal_model, enriched_model, reedy_model, localization_mc) (2607->2613 families)
 feat(research): wave 441 — Galois-representations canon (gal_rep, fontaine_ring, filtered_module, weil_deligne, hecke_eigensys, ribet_toy) (2601->2607 families)

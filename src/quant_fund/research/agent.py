@@ -3543,6 +3543,14 @@ from quant_fund.research.benches_w443 import (
     bench_motivic_stem_family,
     bench_voevodsky_dm_family,
 )
+from quant_fund.research.benches_w444 import (
+    bench_cotangent_cx_family,
+    bench_derived_stack_family,
+    bench_geometric_stk_family,
+    bench_perf_stack_family,
+    bench_quasi_smooth_family,
+    bench_tannaka_rec_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3922,6 +3930,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_stack": bench_derived_stack_family,
+        "cotangent_cx": bench_cotangent_cx_family,
+        "geometric_stk": bench_geometric_stk_family,
+        "tannaka_rec": bench_tannaka_rec_family,
+        "quasi_smooth": bench_quasi_smooth_family,
+        "perf_stack": bench_perf_stack_family,
         "motivic_coh": bench_motivic_coh_family,
         "chow_group": bench_chow_group_family,
         "milnor_conj": bench_milnor_conj_family,
