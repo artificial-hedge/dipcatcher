@@ -2383,6 +2383,14 @@ from quant_fund.research.benches_w298 import (
     bench_mi_register_family,
     bench_radon_fbp_family,
 )
+from quant_fund.research.benches_w299 import (
+    bench_expectimax_family,
+    bench_isomcts_family,
+    bench_mast_playout_family,
+    bench_rave_mc_family,
+    bench_retrograde_wdl_family,
+    bench_tablebase_dtm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2762,6 +2770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tablebase_dtm": bench_tablebase_dtm_family,
+        "retrograde_wdl": bench_retrograde_wdl_family,
+        "rave_mc": bench_rave_mc_family,
+        "mast_playout": bench_mast_playout_family,
+        "expectimax": bench_expectimax_family,
+        "isomcts": bench_isomcts_family,
         "radon_fbp": bench_radon_fbp_family,
         "art_sirt": bench_art_sirt_family,
         "cs_mri": bench_cs_mri_family,

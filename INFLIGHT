@@ -1,3 +1,4 @@
+feat(research): wave 299 — game-playing-2 canon (tablebase_dtm, retrograde_wdl, rave_mc, mast_playout, expectimax, isomcts) (1767->1773 families)
 feat(research): wave 298 — medical-imaging canon (radon_fbp, art_sirt, cs_mri, hu_moments, chan_vese, mi_register) (1761->1767 families)
 feat(research): wave 297 — post-quantum crypto canon (ntt_ring, kyber_kem, dilithium_sig, frodokem, xmss_sig, sphincs_sig) (1755->1761 families)
 feat(research): wave 296 — robotics-4 canon (lqr_funnel, chomp, gjk_epa, ilqr, rts_smoother, se3_spline) (1749->1755 families)
