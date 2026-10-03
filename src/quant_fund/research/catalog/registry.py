@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-454 intersection-cohomology-2 canon.
+        "ic_stalk",
+        "decomp_thm",
+        "riemann_hilbert",
+        "fourier_sato",
+        "vanishing_cycles",
+        "middle_ext",
         # Wave-453 higher-algebra-2 canon.
         "operad_koszul",
         "bar_cobar",
