@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import math
 
 __all__ = [
     "WEBHOOK_SIGNATURE_HEADER",
@@ -51,23 +52,33 @@ def verify_webhook(
     tolerance_s: float = _DEFAULT_TOLERANCE_S,
     now: float | None = None,
 ) -> bool:
-    """Authenticate a webhook delivery. Constant-time compare; the
-    timestamp must parse and sit within ``tolerance_s`` of ``now`` so a
-    captured request can't be replayed later. Any malformed input is a
-    plain ``False`` — never an exception."""
-    if not secret or not timestamp or not signature:
+    """Authenticate a webhook delivery using a constant-time signature compare.
+
+    Timestamps and tolerances must be finite. Nonnegative ``tolerance_s``
+    allows at most that many seconds of past or future clock skew (inclusive);
+    a finite negative tolerance explicitly disables the freshness check.
+    Any malformed input is a plain ``False`` — never an exception.
+    """
+    if not isinstance(secret, str) or not secret:
+        return False
+    if not isinstance(timestamp, str) or not timestamp or not timestamp.isascii():
+        return False
+    if not isinstance(signature, str) or not signature.isascii():
         return False
     if not signature.startswith("sha256="):
         return False
     try:
         ts = float(timestamp)
-    except ValueError:
-        return False
-    if tolerance_s >= 0:
-        import time  # noqa: PLC0415 — local import keeps the module leaf
-
-        ref = time.time() if now is None else now
-        if abs(ref - ts) > tolerance_s:
+        if not math.isfinite(ts) or not math.isfinite(tolerance_s):
             return False
-    expected = sign_webhook(secret, timestamp, body)
-    return hmac.compare_digest(expected, signature)
+        if tolerance_s >= 0:
+            import time  # noqa: PLC0415 — local import keeps the module leaf
+
+            ref = time.time() if now is None else now
+            if not math.isfinite(ref) or abs(ref - ts) > tolerance_s:
+                return False
+        expected = sign_webhook(secret, timestamp, body)
+        return hmac.compare_digest(expected, signature)
+    except (TypeError, ValueError, OverflowError):
+        # Includes encoding failures (UnicodeError is a ValueError subclass).
+        return False
