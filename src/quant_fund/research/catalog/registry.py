@@ -3061,6 +3061,27 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-319 proof-automation canon.
+        "congruence_closure",
+        "ring_normalize",
+        "omega_lia",
+        "nelson_oppen",
+        "term_rewrite",
+        "tseitin_cnf",
+        # Wave-318 type-theory canon.
+        "bidirectional_tc",
+        "nbe_eval",
+        "dep_types",
+        "unify_meta",
+        "proof_kernel",
+        "tactic_engine",
+        # Wave-317 image-processing canon.
+        "canny_edge",
+        "otsu_threshold",
+        "watershed_seg",
+        "slic_superpixels",
+        "nlm_denoise",
+        "distance_transform",
         # Wave-316 quantum-3 canon.
         "trotter_suzuki",
         "qdrift",
