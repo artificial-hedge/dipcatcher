@@ -6447,6 +6447,14 @@ from quant_fund.research.benches_w806 import (
     bench_marked_hawkes_family,
     bench_merton_jump_family,
 )
+from quant_fund.research.benches_w807 import (
+    bench_cayley_moser_family,
+    bench_chow_robbins_family,
+    bench_free_boundary_family,
+    bench_markov_stopping_family,
+    bench_secretary_dp_family,
+    bench_snell_envelope_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6826,6 +6834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "snell_envelope": bench_snell_envelope_family,
+        "secretary_dp": bench_secretary_dp_family,
+        "cayley_moser": bench_cayley_moser_family,
+        "chow_robbins": bench_chow_robbins_family,
+        "markov_stopping": bench_markov_stopping_family,
+        "free_boundary": bench_free_boundary_family,
         "jump_diffusion": bench_jump_diffusion_family,
         "merton_jump": bench_merton_jump_family,
         "kou_model": bench_kou_model_family,

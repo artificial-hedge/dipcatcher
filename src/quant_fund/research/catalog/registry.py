@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-807 optimal-stopping canon.
+        "snell_envelope",
+        "secretary_dp",
+        "cayley_moser",
+        "chow_robbins",
+        "markov_stopping",
+        "free_boundary",
         # Wave-806 jump-process canon.
         "jump_diffusion",
         "merton_jump",
