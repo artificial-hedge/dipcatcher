@@ -6295,6 +6295,14 @@ from quant_fund.research.benches_w787 import (
     bench_tame_map_family,
     bench_young_integral_family,
 )
+from quant_fund.research.benches_w788 import (
+    bench_clark_ocone_family,
+    bench_divergence_op_family,
+    bench_nourdin_peccati_family,
+    bench_nualart_pardoux_family,
+    bench_skorohod_int_family,
+    bench_wiener_chaos_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6674,6 +6682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "clark_ocone": bench_clark_ocone_family,
+        "nualart_pardoux": bench_nualart_pardoux_family,
+        "divergence_op": bench_divergence_op_family,
+        "wiener_chaos": bench_wiener_chaos_family,
+        "skorohod_int": bench_skorohod_int_family,
+        "nourdin_peccati": bench_nourdin_peccati_family,
         "ito_signature": bench_ito_signature_family,
         "lyons_extension": bench_lyons_extension_family,
         "tame_map": bench_tame_map_family,
