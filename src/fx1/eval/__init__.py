@@ -122,7 +122,6 @@ __all__ = [
 __all__ = sorted(set(_ATTR_TO_MODULE) | {"eval_prompt_surface"})
 
 
-
 def eval_prompt_surface() -> list[str]:
     """Every message content the eval surface presents to a model.
     The decontamination target: canonical bank prompts, red-team tasks,

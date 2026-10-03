@@ -186,6 +186,7 @@ nav:
       - Northset audit: AUDIT_NORTHSET.md
       - P6.9 mutation audit: AUDIT_P69_TESTS.md
       - P6.10 deps audit: AUDIT_P610_DEPS.md
+      - Dependency audit 2026-10: DEPENDENCY_AUDIT_2026_10_01.md
       - Security evidence: SECURITY_EVIDENCE.md
       - Forward shadow record: FORWARD_SHADOW_RECORD.md
       - Ranker probability experiment: RANKER_PROBABILITY_EXPERIMENT.md
@@ -196,10 +197,12 @@ nav:
       - Model cards: MODEL_CARDS.md
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
+      - Code quality inventory: CODE_QUALITY_INVENTORY.md
       - Audit ledger: AUDIT_LEDGER.md
       - Evidence integrity: EVIDENCE_INTEGRITY.md
       - fx1 audit: AUDIT_FX1.md
       - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
+      - fx1 wave-3 audit: AUDIT_FX1_WAVE3.md
       - market-sim audit: AUDIT_MARKET_SIM.md
       - models audit: AUDIT_MODELS.md
       - mutation audit: AUDIT_MUTATION.md
@@ -218,6 +221,7 @@ nav:
       - Reality trial 2026: REALITY_TRIAL_2026.md
       - Reality pre-reg survivorship: REALITY_PREREGISTRATION_SURVIVORSHIP.md
       - Reality trial survivorship 2026: REALITY_TRIAL_SURVIVORSHIP_2026.md
+      - "Survivorship: total return 2026": REALITY_TRIAL_SURVIVORSHIP_TOTAL_RETURN_2026.md
       - Recorded trial batches: research/findings.md
   - Operations:
       - Platform matrix: PLATFORM_MATRIX.md
@@ -235,6 +239,9 @@ nav:
       - Data: FX1_DATA.md
       - Datasources: FX1_DATASOURCES.md
       - API stability: FX1_API_STABILITY.md
+      - Harness endpoints: FX1_HARNESS_API.md
+      - Capability progress: FX1_CAPABILITY_PROGRESS.md
+      - fx-1 operations: FX1_OPERATIONS.md
   - Decisions:
       - decisions/index.md
       - "ADR-001: uv and Python 3.12": decisions/001-uv-python312.md

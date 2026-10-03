@@ -10,7 +10,9 @@ Pinned contract:
 - ``TraceRecorder.admit`` writes only after every assistant message (incl.
   ``reasoning_content`` and serialized ``tool_call`` JSON) passes the
   honesty gate; a refused trajectory writes nothing — it is dropped
-  entirely rather than recorded as a negative.
+  entirely rather than recorded as a negative. ``verify_ok`` alone is a
+  claim: a positive example also requires ``artifact_receipts``, else the
+  trajectory is admitted but demoted to ``negative``.
 - Tool results (``role=tool``) are observations and are not gated.
 - ``notebook_examples`` splits on ``#`` sections, binds ``receipt_sha256``
   to the whole file's sha256, and caps the quoted content; the assistant
@@ -86,7 +88,12 @@ def fx1_tail_audit() -> dict[str, Any]:
 
     # ---------------- traces ------------------------------------
     def _traj(
-        *, verify_ok: bool, reasoning: str = "", content: str = "done", tool: str | None = None
+        *,
+        verify_ok: bool,
+        reasoning: str = "",
+        content: str = "done",
+        tool: str | None = None,
+        receipts: list[str] | None = None,
     ) -> Trajectory:
         step = TraceStep(
             reasoning_content=reasoning,
@@ -94,14 +101,26 @@ def fx1_tail_audit() -> dict[str, Any]:
             tool_call=ToolCall(name="t", arguments={"q": tool}) if tool else None,
             tool_result="obs" if tool else None,
         )
-        return Trajectory(session_id="s1", user_intent="do it", steps=[step], verify_ok=verify_ok)
+        return Trajectory(
+            session_id="s1",
+            user_intent="do it",
+            steps=[step],
+            verify_ok=verify_ok,
+            artifact_receipts=receipts or [],
+        )
 
     with tempfile.TemporaryDirectory() as td:
         log = Path(td) / "traces.jsonl"
         rec = TraceRecorder(log)
+        # A positive example needs evidence: verify_ok + artifact receipts.
         out["admit_positive"] = (
-            rec.admit(_traj(verify_ok=True), "sys")
+            rec.admit(_traj(verify_ok=True, receipts=["a" * 64]), "sys")
             and not json.loads(log.read_text(encoding="utf-8").strip())["negative"]
+        )
+        # verify_ok without receipts is a bare claim — demoted to negative.
+        out["verify_no_receipts_demoted"] = (
+            rec.admit(_traj(verify_ok=True), "sys")
+            and json.loads(log.read_text(encoding="utf-8").strip().splitlines()[-1])["negative"]
         )
         out["admit_negative"] = (
             rec.admit(_traj(verify_ok=False), "sys")
@@ -110,7 +129,7 @@ def fx1_tail_audit() -> dict[str, Any]:
         refused = rec.admit(_traj(verify_ok=True, content="Sharpe 2.4"), "sys")
         after_lines = log.read_text(encoding="utf-8").strip().splitlines()
         out["admit_dishonest_refused"] = not refused
-        out["flag_refused_traces_dropped"] = len(after_lines) == 2  # pos + neg only
+        out["flag_refused_traces_dropped"] = len(after_lines) == 3  # pos + demoted + neg
         out["tool_call_gated"] = not rec.admit(_traj(verify_ok=True, tool="pnl: 4"), "sys")
         out["reasoning_gated"] = not rec.admit(_traj(verify_ok=True, reasoning="nav 1.9"), "sys")
         out["tool_result_ungated"] = rec.admit(_traj(verify_ok=True, tool="x"), "sys")

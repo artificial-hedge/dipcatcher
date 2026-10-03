@@ -1,3 +1,31 @@
+feat(research): wave 293 — graphics-3 canon (deferred_shade, sdf_raymarch, frustum_cull, lod_select, env_map, shadow_pcf) (1731->1737 families)
+feat(research): wave 292 — networking-4 canon (quic_streams, tls13_trans, qpack_pack, wg_ik, doh_wire, sctp_tsn) (1725->1731 families)
+feat(research): wave 291 — VLSI/EDA canon (netlist_parse, sta_timing, a_star_route, drc_check, place_quadratic, levelize) (1719->1725 families)
+feat(research): wave 290 — chem-informatics canon (smiles_parse, morgan_fp, tanimoto, mol_descriptors, substruct, ring_detect) (1713->1719 families)
+feat(research): wave 289 — category-theory canon (fin_cat, functor_check, nat_trans, adjunction, limit_prod, monad_laws) (1707->1713 families)
+feat(research): wave 288 — measure-theory canon (leb_measure, leb_integral, conv_prob, weak_conv, fubini_swap, radon_nikodym) (1701->1707 families)
+feat(research): wave 287 — differential-geometry canon (first_ff, gauss_curve, frenet_frame, christoffel, geodesic_sphere, surf_area) (1695->1701 families)
+feat(research): wave 286 — security-defensive canon (beacon_detect, entropy_dns, cred_stuffing, impossible_travel, exfil_zscore, sig_score) (1689->1695 families)
+feat(research): wave 285 — information-theory canon (markov_entropy, blahut_arimoto, kl_knn, type_class, elias_gamma, miller_madow) (1683->1689 families)
+feat(research): wave 284 — bioinformatics-3 canon (nj_tree, fitch_pars, seed_extend, band_align, jc69_lik, codon_usage) (1677->1683 families)
+feat(research): wave 283 — robotics-3 canon (fk_dh, ik_jac, ray_lidar, pot_field, bezier_curve, odom_comp) (1671->1677 families)
+feat(research): wave 282 — combinatorics canon (subset_sum_dp, stirling_count, gray_code, inversion_count, ramsey_bound, latin_square) (1665->1671 families)
+feat(research): wave 281 — abstract-algebra canon (group_table, perm_group, galois_field, poly_ring, ideal_member, matrix_grp) (1659->1665 families)
+feat(research): wave 280 — algebraic-topology canon (simp_betti, boundary_sq, euler_char, rips_h1, graph_h1, winding_deg) (1653->1659 families)
+feat(research): wave 279 — control-theory-3 canon (luen_obsv, dist_obsv, mrac_adapt, flat_track, lyap_synth, l2_gain) (1647->1653 families)
+feat(research): wave 278 — econ-models-2 canon (rbc_sim, nk_phillips, taylor_rule, solow_model, olg_model, cobweb_model) (1641->1647 families)
+feat(research): wave 277 — signal-processing-4 canon (stft_istft, chirp_z, fir_window, prony_model, wola_synth, decimate_int) (1635->1641 families)
+feat(research): wave 276 — distributed-systems-3 canon (ra_mutex, token_ring, bully_elect, chord_look, quorum_rw, causal_bcast) (1629->1635 families)
+feat(research): wave 275 — databases-4 canon (columnar_scan, simd_filter, late_materialize, radix_join, graceful_hash, index_intersect) (1623->1629 families)
+feat(research): wave 274 — bioinformatics-2 canon (hmm_profile, star_msa, gc_skew, orf_find, kmer_count, seq_logo) (1617->1623 families)
+feat(research): wave 273 — compiler-3 canon (partial_eval, peephole_opt, strength_red, const_fold, loop_unroll, inline_expand) (1611->1617 families)
+feat(research): wave 272 — control-theory-2 canon (pid_antiwindup, sliding_mode, gain_schedule, smith_predictor, backstepping, repetitive_ctrl) (1605->1611 families)
+feat(research): wave 271 — networking-3 canon (ospf_lsa, stp_spanning, vlan_tag, csma_ca, icmp_path, diffserv_qos) (1599->1605 families)
+feat(research): wave 270 — computational-physics-2 canon (lj_md, fdtd_wave, lattice_boltzmann, ising_metro, pic_plasma, dmc_solver) (1593->1599 families)
+feat(research): wave 269 — computer-vision canon (lk_flow, orb_feature, homography_4pt, ransac_plane, epipolar_8pt, stereo_disparity) (1587->1593 families)
+feat(research): wave 268 — crypto-4 canon (elgamal_enc, paillier_he, fiat_shamir, ot_12, chacha_stream, poly1305_mac) (1581->1587 families)
+feat(research): wave 267 — GPU-architecture canon (warp_scheduler, simt_divergence, bank_conflict, mem_coalesce, occupancy_calc, shared_mem_tile) (1575->1581 families)
+feat(research): wave 266 — graphics-2 canon (triangle_raster, phong_shade, mipmap_sample, shadow_map, bump_map, ssao_lite) (1569->1575 families)
 owner: opencode (resumed session)
 slice: DATA-SNOOPING SUITE — max-level enhancement of the multiple-testing layer
 status: COMPLETE + VERIFIED 2026-09-17 ~18:45 IST
@@ -1232,3 +1260,1435 @@ wave 51 (devin/w51-canon-integration): BKM model-free option-implied
   moments, GSADF recursive bubble detection, PSS pooled-mean-group
   ARDL, Ross recovery, Ait-Sahalia CKLS likelihood, Toda-Yamamoto
   MWALD — 6 modules + benches_w51 (scorecard 277->283 families).
+wave 55 (devin/w55-canon-integration): Diebold-Mariano + HLN
+  accuracy test, Engle-Granger/Phillips-Ouliaris cointegration,
+  Glosten-Milgrom learning, Hasbrouck information share, BDS
+  independence test, Cochrane-Piazzesi bond factor, Engle-Ng
+  asymmetry diagnostics — 7 modules + benches_w55 (scorecard
+  301->308 families).
+
+## wave 52 (devin/w52-canon-integration, in flight)
+  6 SOTA lanes on devin/w52-lanes: nardl (Shin-Yu-Greenwood-Nimmo
+  nonlinear ARDL — asymmetric long/short multipliers, bounds-F,
+  Wald symmetry), growth_at_risk (Adrian-Boyarchenko-Giannone —
+  Koenker-Bassett LP quantile surface, isotonic crossing fix,
+  GaR/upside/asymmetry), melick_thomas (3-component lognormal
+  implied-PDF recovery, martingale-pinned least_squares, tail
+  mass), bandi_russell (noise/volatility separation — MA(1) level
+  noise, optimal sparse sampling m*, bias-corrected RV), hong_li
+  (PIT density-forecast eval — integer-Fourier L2 M-statistic,
+  Berkowitz LR, score correlogram), beveridge_nelson (companion-
+  form permanent/transitory decomposition, closed-form Neumann
+  gain). benches_w52 adapters (seeds +299..304); registry +6
+  families (283->289 title convention); agent.py scorecard wired;
+  audit_coverage re-pinned (metrics 98->107, models 309->369,
+  research 184->196 — merged-tree drift incl. w51 pending);
+  arch diagrams regen. 46 module tests + 6 wiring tests green;
+  mypy --strict clean; PR pending (w51 #690 still open).
+
+wave 54 (devin/w54-canon-integration): Pesaran-Timmermann sign test,
+  Giacomini-Rossi fluctuation test, Muller-Watson low-frequency
+  correlation, Romano-Wolf stepdown, Christensen-Diebold-Rudebusch
+  AFNS curve, Danielsson-de Vries tail-simulation VaR — 6 modules +
+  benches_w54 (scorecard 295->301 families).
+
+---
+owner: devin (wave 56 canon)
+slice: unit-root inference battery — KPSS, ERS DF-GLS, Ng-Perron,
+  Phillips-Perron, Zivot-Andrews, Lee-Strazicich
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - models: kpss.py (level/trend LM stationarity test, Bartlett NW
+    LRV, l4 lag rule), ers_dfgls.py (quasi-detrended DF t-stat at
+    c=-7/-13.5, Ng-Perron MAIC lag pick), ng_perron.py (MZa/MZt/MSB/
+    MPT battery, AR spectral-density LRV, unanimous-reject gate),
+    phillips_perron.py (Z_pi/Z_t nonparametric corrections, joint
+    AND decision), zivot_andrews.py (model-C endogenous level+trend
+    break, min-t over trimmed lambda grid, break-date recovery),
+    lee_strazicich.py (LM score unit root under crash-function
+    null, lagged partial-sum regressor, lambda-invariant
+    conservative cv floor).
+  - benches_w56.py: +324..329 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "kpss","ers_dfgls","ng_perron",
+    "phillips_perron","zivot_andrews","lee_strazicich"; agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w56.
+  - Canon staged on top of w54-canon (carries w52/w53 merges) so
+    the chain stays clean as #691/#695/#698 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+wave 107 (2026-09-30): transport/HJB PDE canon — adi, lax_wendroff, weno, level_set, fast_marching, godunov; 614→620 families.
+wave 108 (2026-09-30): matrix functions & equations — expm_pade, matrix_sqrt, sylvester, riccati_care, matrix_sign, toeplitz_solve; 620→626 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 57 canon)
+slice: frequency/multiresolution + robust-inference battery — MODWT
+  wavelets, Geweke spectral, IVX, Bai-Ng IC, Wooldridge serial,
+  lasso PDS
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - wavelet_modwt.py (MODWT circular-conv pyramid, /sqrt(2)
+    filter normalization, adjoint synthesis, boundary-trimmed
+    scale variance + correlation), geweke_spectral.py (VAR(p)
+    transfer function, conditional-variance spectral
+    decompositions, Breitung-Candelon band measure), ivx.py
+    (IVX-Wald joint regression, NW HAC with PSD-projected
+    indefinite meat, scale-free wald), bai_ng_ic.py (PC1/IC1/
+    IC2/IC3 + Ahn-Horenstein ER/GR on standardized X'X eigs),
+    wooldridge_serial.py (pooled e~e_lag score, cluster(id)
+    sandwich, -1/(Tbar-1) within-transform null center),
+    lasso_pds.py (unit-variance coordinate-descent lasso,
+    BCCH pilot residual-scale lambda, union-support post-
+    double-selection OLS + t-CI).
+  - benches_w57.py: +330..335 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "wavelet_modwt","geweke_spectral","ivx",
+    "bai_ng_ic","wooldridge_serial","lasso_pds"; agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w57.
+  - Canon staged on top of w56-canon so the chain stays clean
+    as #691/#695/#698/#702 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+
+---
+owner: devin (wave 58 canon)
+slice: extremes/segmentation/generative battery — extremogram,
+  echo-state, Bates SVJ, STL-LOESS, PELT+WBS, spectral PCA
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - extremogram.py (Davis-Mikosch lagged tail correlogram,
+    admissible-denominator bias fix, Ferro-Segers intervals
+    extremal index, chi(u) tail profile), echo_state.py
+    (Jaeger ESN — spectral-radius normalized reservoir, leak,
+    ridge readout, washout, NARMA-10 driver), bates_svj.py
+    (little-trap Riccati Heston CF + Merton lognormal-jump
+    compensator, Gauss-Legendre P1/P2 probabilities),
+    stl_loess.py (Cleveland STL inner/outer loops, tricube
+    local-linear LOESS, bisquare robustness weights),
+    pelt_wbs.py (PELT pruning inequality optimal partition +
+    Fryzlewicz wild binary segmentation random-interval
+    CUSUM), spectral_pca.py (Brillinger dynamic PCA — Daniell-
+    smoothed cross-spectral eigendecomposition).
+  - benches_w58.py: +336..341 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "extremogram","echo_state","bates_svj",
+    "stl_loess","pelt_wbs","spectral_pca"; agent.py import+dict
+    wiring; tests: 6 module files + test_benches_w58.
+  - Canon staged on top of w57-canon so the chain stays clean
+    as #695/#698/#702/#704 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 59 canon)
+slice: decomposition/tail/systemic battery — emd_hht.py (Huang
+  EMD cubic-envelope sifting + Hilbert instantaneous frequency
+  and marginal spectrum), gallant_snp.py (Gallant-Nychka
+  squared-Hermite SNP density, penalized ML, Gauss-Hermite
+  normalization), srisk.py (Acharya-Engle-Richardson SRISK —
+  worst-alpha MES, long-run compounding, leverage-floored
+  capital need), wavelet_coherence.py (Torrence-Compo Morlet
+  CWT coherence, scale + time smoothing, Maraun-Kurths guard),
+  tar_coint.py (Balke-Fomby / Enders-Granger TAR+MTAR ECM,
+  SSR-grid threshold search, asymmetry t-test), extreme_qr.py
+  (Chernozhukov extremal quantile regression — intermediate-
+  order QR, Hill tail index on tail residuals, Weissman
+  extrapolation factor).
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w59-lanes (ea0470dc): six new models, all
+    bench_*() self-checks score=1.0, 33 unit tests green.
+  - benches_w59.py: +342..347 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "emd_hht","gallant_snp","srisk",
+    "wavelet_coherence","tar_coint","extreme_qr"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w59.
+  - Canon staged on top of w58-canon so the chain stays clean
+    as #695/#698/#702/#704/#706 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 60 canon)
+slice: state-space/tail/time-freq battery — kalman_em.py
+  (Shumway-Stoffer EM, proper lag-1 covariance recursion,
+  closed-form M-step), fractional_coint.py (GPH log-
+  periodogram on cointegrating residual vs raw series,
+  memory-gap test), star_model.py (Terasvirta LSTAR/ESTAR
+  grid-NLS, per-regime intercepts, LST LM3 third-order
+  Taylor linearity test), garch_in_mean.py (Engle-Lilien-
+  Robins ARCH-M joint QMLE, bounded L-BFGS-B, lam/sqrth
+  variants), log_acd.py (Bauwens-Giot log-ACD(1,1), Weibull
+  unit-mean + lognormal innovations, unconstrained
+  positivity), wigner_ville.py (analytic-signal WVD +
+  pseudo-WVD time smoothing, chirp ridge tracking).
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w60-lanes (82da0085): six new models, all
+    bench_*() self-checks score=1.0, 33 unit tests green.
+  - benches_w60.py: +348..353 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "kalman_em","fractional_coint","star_model",
+    "garch_in_mean","log_acd","wigner_ville"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w60.
+  - Canon staged on top of w59-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 61 canon)
+slice: models/log_concave.py, models/dtw_warp.py,
+  models/chow_lin.py, models/chen_tiao_outliers.py,
+  models/beta_ar.py, models/ingarch.py,
+  research/benches_w61.py, registry/agent wiring,
+  tests/unit/research/test_benches_w61.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w61-lanes (437e5bb3): six new models, all
+    bench_*() self-checks score=1.0, 30 unit tests green.
+  - log_concave.py (Dümbgen-Rufibach shape-constrained
+    log-density MLE, piecewise-linear phi, exact mass=1),
+    dtw_warp.py (Sakoe-Chiba banded DTW on z-normalized
+    series + phase/amplitude warp registration),
+    chow_lin.py (AR(1)-GLS Chow-Lin with rho profile ML +
+    Denton proportional first-difference, exact annual
+    additivity), chen_tiao_outliers.py (joint-iterative
+    AO/IO/LS/TC battery — resid regressors via pi(B),
+    MAD-robust sigma, Bonferroni threshold, dedupe),
+    beta_ar.py (Rocha-Cribari-Neto BARMA(1,1) link-scale
+    recursion, joint (alpha,phi,theta,nu) conditional ML),
+    ingarch.py (Ferland-Latour-Oraichi Poisson INGARCH(1,1)
+    conditional MLE, persistence + uncond-mean checks).
+  - benches_w61.py: +354..359 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "log_concave","dtw_warp","chow_lin",
+    "chen_tiao_outliers","beta_ar","ingarch"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w61.
+  - Canon staged on top of w60-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 62 canon)
+slice: models/entropy_pooling.py, models/narrative_svar.py,
+  models/bfast.py, models/stable_dist.py,
+  models/asian_option.py, models/black_litterman.py,
+  research/benches_w62.py, registry/agent wiring,
+  tests/unit/research/test_benches_w62.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w62-lanes (92149e8a): six new models, all
+    bench_*() self-checks score=1.0, 30 unit tests green.
+  - entropy_pooling.py (Meucci min-relative-entropy views —
+    dual exponential tilting via BFGS on log-partition,
+    effective_n reporting), narrative_svar.py (Antolin-Diaz
+    & Rubio-Ramirez event-level sign + dominance
+    restrictions over RWZ rotation draws, honest admissible
+    set not point estimate), bfast.py (Verbesselt seasonal+
+    trend break detection — Chow-F scan, BIC second break,
+    honest n_breaks_capped flag), stable_dist.py (Nolan S(0)
+    alpha-stable: McCulloch quantile init + Kogon-Williams
+    CF regression on weighted frequency grid), asian_option.py
+    (Kemna-Vorst geometric closed form + Turnbull-Wakeman
+    moment matching + geometric-CV arithmetic MC, 99%+
+    variance reduction), black_litterman.py (reverse-
+    optimized equilibrium + He-Litterman posterior with
+    Idzorek omega, exact no-view collapse).
+  - benches_w62.py: +360..365 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "entropy_pooling","narrative_svar","bfast",
+    "stable_dist","asian_option","black_litterman"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w62.
+  - Canon staged on top of w61-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 63 canon)
+slice: models/higham_corr.py, models/lee_carter.py,
+  models/power_law.py, models/convexity_adj.py,
+  models/jln_uncertainty.py, models/first_passage.py,
+  research/benches_w63.py, registry/agent wiring,
+  tests/unit/research/test_benches_w63.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w63-lanes (cf36075a): six new models, all
+    bench_*() self-checks score=1.0, 30 unit tests green.
+  - higham_corr.py (Higham Dykstra alternating corrections +
+    Qi-Sun semismooth Newton on the dual — both agree on the
+    Frobenius optimum), lee_carter.py (Lee-Carter SVD on
+    age-centred log mortality + random-walk-drift kappa
+    forecast, beats naive last-value baseline), power_law.py
+    (Clauset-Shalizi-Newman: KS-optimal x_min, Hill MLE alpha,
+    parametric-bootstrap p-value; accepts true Pareto, rejects
+    exponential tail), convexity_adj.py (Vasicek/Hull-White
+    exact Gaussian convexity — validated against independent
+    path-simulated MC, honest SE reporting; Hull heuristic
+    kept as labeled reference), jln_uncertainty.py (JLN common
+    factor of rolling forecast-error variances; corr 0.96 to
+    planted latent uncertainty), first_passage.py (inverse-
+    Gaussian hitting-time CDF vs path MC within 4 SE;
+    Siegmund corrected-continuity lift recovers the
+    discretely-monitored hit probability).
+  - benches_w63.py: +366..371 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "higham_corr","lee_carter","power_law",
+    "convexity_adj","jln_uncertainty","first_passage";
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w63.
+  - Canon staged on top of w62-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 64 canon)
+slice: models/saddlepoint.py, models/mutual_info.py,
+  models/transfer_entropy.py, models/brownian_bridge.py,
+  models/jarrow_turnbull.py, models/campbell_shiller.py,
+  research/benches_w64.py, registry/agent wiring,
+  tests/unit/research/test_benches_w64.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w64-lanes (768915bd): six new models, all
+    bench_*() self-checks score=1.0, 32 unit tests green.
+  - saddlepoint.py (Lugannani-Rice tail probs + renormalized
+    saddlepoint density on gamma/normal CGF; gamma tail error
+    6e-6, normal exact), mutual_info.py (Kraskov-Stogbauer-
+    Grassberger kNN MI + conditional form; indep ~0, Gaussian
+    0.324 vs true 0.337, nonlinear 2.19 nats),
+    transfer_entropy.py (Schreiber TE on conditional KSG;
+    driven AR system recovers direction 0.298 vs -0.024),
+    brownian_bridge.py (bridge midpoint mean/var, exact
+    barrier hit probability; bridge-refined midpoint MC
+    reproduces the closed form to 0.0014),
+    jarrow_turnbull.py (reduced-form credit: piecewise-flat
+    hazard bootstrap repricing to 6e-12, risky bond, par CDS
+    vs continuous-accrual within 0.8%), campbell_shiller.py
+    (Campbell 1991 log-linear VAR decomposition; dividend-
+    news/discount-news/covariance shares sum to exactly 1).
+  - benches_w64.py: +372..377 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "saddlepoint","mutual_info",
+    "transfer_entropy","brownian_bridge","jarrow_turnbull",
+    "campbell_shiller"; agent.py import+dict wiring; tests:
+    6 module files + test_benches_w64.
+  - Canon staged on top of w63-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 65 canon)
+slice: models/libor_market.py, models/cos_method.py,
+  models/obizhaeva_wang.py, models/spread_options.py,
+  models/esscher.py, models/shadow_rate.py,
+  research/benches_w65.py, registry/agent wiring,
+  tests/unit/research/test_benches_w65.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w65-lanes (c50b6dbe): six new models, all
+    bench_*() self-checks score=1.0, 32 unit tests green.
+  - libor_market.py (LFM terminal-measure drift mu_i =
+    -sigma_i * sum_{j>i} delta_j L_j sigma_j rho_ij/(1+d_jL_j)
+    via Cholesky; caplet MC vs Black-76 2.6%, swaption <=
+    caplet strip, swap rate err 5e-5), cos_method.py (Fang-
+    Oosterlee cosine inversion on [a,b] from cumulants,
+    chi/psi closed forms; vs Black-76 call 6e-14, put 2e-15,
+    parity exact), obizhaeva_wang.py (transient-impact OW
+    schedule = end blocks + rho*block continuous rate;
+    closed-form within 3% of exact KKT-QP solution, 9.5%
+    better than TWAP, resilience-4 cost 0.49x resilience-1),
+    spread_options.py (Margrabe exchange, Kirk approximation,
+    quanto drift adjustment; MC Margrabe err 0.49%, Kirk
+    0.06%, quanto rho effect +3336bp), esscher.py (Gerber-Shiu
+    two-tail Esscher pricing on exponential-Levy CFs with
+    Gauss-Legendre Gil-Pelaez; VG-vs-GP agreement 0.0, Black-
+    Scholes limit 8e-15, VG martingale theta 1.75),
+    shadow_rate.py (Wu-Xia censored short rate + affine long
+    yields; EKF recovers latent state corr 0.9996, bound
+    share 0.82 vs true 0.85, monotone yield loadings).
+  - benches_w65.py: +378..383 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "libor_market","cos_method",
+    "obizhaeva_wang","spread_options","esscher","shadow_rate";
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w65.
+  - Canon staged on top of w64-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/#717
+    land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 66 canon)
+slice: models/mlmc.py, models/black_karasinski.py,
+  models/debtrank.py, models/ews_signals.py,
+  models/permutation_entropy.py, models/svgd.py,
+  research/benches_w66.py, registry/agent wiring,
+  tests/unit/research/test_benches_w66.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w66-lanes (7199b685): six new models, all
+    bench_*() self-checks score=1.0, 40 unit tests green.
+  - mlmc.py (Giles multilevel MC: coupled coarse/fine Euler
+    levels with summed Brownian innovations, fixed-N level
+    allocation, log-log beta fit; BS call err 0.17 inside
+    4-sigma band, beta 0.99), black_karasinski.py (Hull
+    moment-matched trinomial probs with expected-position
+    branching, brentq alpha calibration per level, Arrow-
+    Debreu bond repricing 3e-16, caplet vol monotone,
+    lognormal positivity), debtrank.py (Battiston R1
+    cumulative distress propagation, per-node profile,
+    in-strength comparator; small hub rank 0 vs in-strength
+    leader rank 7 — propagation beats centrality),
+    ews_signals.py (Scheffer rolling AC1/variance/skew,
+    Kendall-tau trend, IAAFT phase surrogates; imposed CSD
+    detected tau 0.81/0.87 p=0.016, stationary control
+    clean), permutation_entropy.py (Bandt-Pompe ordinal
+    patterns, normalized Shannon entropy, Rosso JS
+    complexity-entropy plane; ordering periodic < AR <
+    noise, C noise 0.003 < C AR 0.11), svgd.py (Liu-Wang
+    RBF-kernel particle transport, median bandwidth,
+    score + repulsion; Gaussian mean err 2e-4 var err
+    4%, bimodal split 45/55).
+  - benches_w66.py: +384..389 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "mlmc","black_karasinski","debtrank",
+    "ews_signals","permutation_entropy","svgd"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w66.
+  - Canon staged on top of w65-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 67 canon)
+slice: >-
+  src/quant_fund/models/{nested_sampling,smc_samplers,
+  synthetic_likelihood,state_dependent_lp,moment_inequalities,
+  euler_risk}.py + tests, research/benches_w67.py,
+  registry/agent wiring, tests/unit/research/test_benches_w67.py
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w67-lanes (ee93c35c): six new models, all
+    score=1.0 SYNTHETIC benches, 38 unit tests green:
+    nested_sampling.py (Skilling evidence Z + posterior draws
+    + information H; MH constrained draws on truncated prior,
+    dead-point logX trajectory; Gaussian vs analytic logz_err
+    0.033 mean_err 0.003 sd_err 0.016), smc_samplers.py
+    (Del-Moral beta-tempering ladder, ESS<0.5n resample, RW
+    Metropolis mutation, log-mean-weight logZ estimator;
+    posterior mean_err 0.007 sd 0.39 vs 0.40 analytic, logz_err
+    0.54 within MC-variance tolerance — Jensen bias on the
+    log-transformed mean-weight estimator documented in bench),
+    synthetic_likelihood.py (Wood/Drovandi Gaussian surrogate
+    on summary stats, shrink+ridge PSD, RW-MH BSL chain;
+    mean_err 0.008 sd_err 0.0005, likelihood-ratio 107),
+    state_dependent_lp.py (Auerbach-Gorodnichenko logistic
+    transition interacted LP per horizon, Newey-West SEs;
+    beta_E 0.75 vs true 1.0, beta_R 3.05 vs 2.8, gap 2.29),
+    moment_inequalities.py (Andrews-Soares max-stat GMS,
+    kappa=sqrt(n/ln n) selection, correlation-preserving
+    Gaussian bootstrap; null p 0.65, violated p 0.0, deep
+    stat 19 vs crit 2.05), euler_risk.py (ES contributions
+    w_i E[X_i | L >= q] summing to ES exactly, Gaussian-
+    kernel-smoothed VaR contributions; Euler sum err 1e-15,
+    analytic rel err 0.007).
+  - benches_w67.py: +390..395 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "nested_sampling","smc_samplers",
+    "synthetic_likelihood","state_dependent_lp",
+    "moment_inequalities","euler_risk" (356->362); agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w67.
+  - Canon staged on top of w66-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720/#723 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 68 canon)
+slice: >-
+  src/quant_fund/models/{vix_replication,mala,functional_pca,
+  particle_gibbs,ripley_k,synchrosqueezing}.py + tests,
+  research/benches_w68.py, registry/agent wiring,
+  tests/unit/research/test_benches_w68.py
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w68-lanes (5c8cf61a): six new models, all
+    score=1.0 SYNTHETIC benches, 37 unit tests green:
+    vix_replication.py (Demeterfi OTM-strip variance-swap
+    replication, put-call-parity forward, Andersen-Bondarenko
+    corridor strike; BS-surface recovery sig_err 2e-4),
+    mala.py (Roberts-Tweedie MALA + ULA + RWM baseline;
+    correlated-Gaussian moments err 0.03, acceptance 0.81 vs
+    RWM 0.58 at matched step), functional_pca.py (Ramsay-
+    Silverman trapezoid-weighted KL decomposition, scores,
+    FVE; Brownian eigenvalues lam_err 0.021, phi1_err 3e-4,
+    FVE1 0.81), particle_gibbs.py (Andrieu-Doucet-Holenstein
+    conditional SMC with pinned reference ancestor + PMMH
+    marginal-likelihood parameter update via bootstrap filter
+    with common random numbers; path-mean vs Kalman-smoother
+    corr 0.86, 80%-band coverage 0.74, phi err 0.06),
+    ripley_k.py (Ripley K/L with isotropic edge correction,
+    Matern cluster generator, Monte-Carlo CSR envelopes;
+    CSR dev 0.038 < cluster dev 0.076, envelope containment
+    0.83/1.0), synchrosqueezing.py (Daubechies-Lu-Wu Morlet
+    CWT phase transform + frequency reallocation, ridge
+    extraction; linear-chirp IF err 0.0014, energy
+    concentration 0.997).
+  - benches_w68.py: +396..401 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "vix_replication","mala","functional_pca",
+    "particle_gibbs","ripley_k","synchrosqueezing" (362->368);
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w68.
+  - Canon staged on top of w67-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720/#723/#725 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+--- owner: devin (wave 69 canon)
+slice: 6 modules + benches_w69 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w69-lanes @b63cfc1b off origin/main: vmd.py
+    (Dragomiretskiy-Zosso VMD, one-sided-spectrum ADMM with
+    smoothed-peak center init; 3-carrier decomposition freq err
+    9e-4, recon 0.14), stockwell.py (Stockwell-Mansinha-Lowe
+    S-transform, Gaussian window sd ~1/f, positive-bin form;
+    linear-chirp ridge err 0.0019), cca.py (Hotelling CCA via
+    whitened-coherence SVD + Wold PLS-SVD + Anderson RRR with
+    oblique-projector Y-space basis; shared-direction align
+    0.90), isomap.py (Tenenbaum-de Silva-Langford kNN-graph
+    Floyd-Warshall geodesics + classical MDS; Swiss-roll latent
+    ordering |rho| 0.98), kriging.py (Matheron ordinary kriging
+    + binned empirical variogram + exponential sill/range grid
+    fit; held-out RMSE ratio 0.41 vs marginal sd, exact at
+    knots), innovations_ets.py (Hyndman ETS(A,Ad,N) innovations
+    filter + SSE-grid smoothing params, Theta method, Croston+
+    SBA; damped-trend MASE ratio 0.57 vs naive).
+  - benches_w69.py: +402..407 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "vmd","stockwell","cca","isomap","kriging",
+    "innovations_ets" (368->374); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w69.
+  - Canon staged on top of w68-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 70 canon)
+slice: Dandawate-Giannakis cyclostationarity, Gilles EWT, rank
+  tests, Drasgow polychoric, Aitchison CoDA, Fan-Lv SIS/ISIS
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w70-lanes: cyclostationary.py (cyclic-moment
+    alpha detector with per-segment demeaned x^2 + cyclic
+    autocorrelation; planted alpha err 0.0008, contrast 4.13),
+    empirical_wavelets.py (spectrum-minima band boundaries +
+    Gilles Meyer raised-cosine filters centered on edges;
+    cover err 8e-5, leakage 8e-33), nonparametric_tests.py
+    (Mann-Whitney U + common-language ES, Wilcoxon signed-rank,
+    Kruskal-Wallis, Jonckheere-Terpstra trend; planted-shift CL
+    dev 0.235, JT p 6.6e-5, null size 0.82), polychoric.py
+    (threshold-ML polychoric/tetrachoric via 20pt Gauss-
+    Laguerre bivariate-normal rectangle integrals; planted rho
+    err 0.007), compositional.py (clr/ilr + Helmert sub-
+    composition inverses, variation matrix, Dirichlet moments;
+    ilr roundtrip 3e-16, a0 err 0.024), sure_screening.py
+    (Fan-Lv SIS marginal-|corr| screening + ISIS residualized
+    re-screening; strong+hidden recovered, top-gap 0.81).
+  - benches_w70.py: +408..413 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "cyclostationary","empirical_wavelets",
+    "nonparametric_tests","polychoric","compositional",
+    "sure_screening" (374->380); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w70.
+  - Canon staged on top of w69-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 71 canon)
+slice: Rasch/2PL IRT JML, latent class EM, MANOVA omnibus,
+  orthogonal Procrustes, isotonic PAVA, hierarchical risk parity
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w71-lanes: item_response.py (Rasch JML alternating
+    Newton + two-stage 2PL item calibration on Rasch abilities with
+    log-a ridge; difficulty MAE 0.156, theta rho 0.85, disc ordering
+    corr 0.71), latent_class.py (restarted Bernoulli EM + BIC;
+    planted 2-class acc 0.9+, pi err <0.1), manova.py (Wilks/Pillai/
+    Hotelling-Lawley/Roy + Bartlett chi^2; planted shift p<0.01,
+    null size respected), procrustes.py (Schonemann orthogonal
+    alignment + GPA consensus; rot err <1e-6, scale 1/3 recovered,
+    GPA disp<0.02), isotonic.py (PAVA + Zadrozny-Elkan calibration;
+    monotone MSE ratio <0.5, Brier improvement), hrp.py (Lopez de
+    Prado Ward dendrogram + recursive IVP bisection; block spread
+    <0.6, diagonal-cov IVP limit dev <0.15).
+  - benches_w71.py: +414..419 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "item_response","latent_class","manova",
+    "procrustes","isotonic","hrp" (380->386); agent.py import+dict
+    wiring; tests: 6 module files + test_benches_w71.
+  - Canon staged on top of w70-canon so the chain stays clean as
+    the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 72 canon)
+slice: PAF/varimax factor analysis, slice-sampling MCMC, Kuiper V,
+  Eilers-Marx P-splines, thin-plate surfaces, James-Stein shrinkage
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w72-lanes: factor_analysis.py (SMC-iterated
+    principal-axis + Kaiser varimax; planted 2-factor congruence
+    >0.9), slice_sampling.py (Neal stepping-out + shrinkage MCMC;
+    Gamma(3,1) mean err <0.3, bimodal modes recovered),
+    kuiper.py (rotation-invariant V = D+ + D-, Stephens corrected
+    tail; vonmises bump rejected, null size held), p_spline.py
+    (Eilers-Marx B-spline basis + difference penalty + GCV; smooth
+    recovery MSE ratio <0.4), thin_plate.py (Duchon-Wahba r^2 log r
+    radial kernel + ridge system; held-out ratio <0.3, lam=0
+    interpolation exact), james_stein.py (positive-part + Efron-
+    Morris EB; JS gain >0.15, PP weakly dominant).
+  - benches_w72.py: +420..425 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "factor_analysis","slice_sampling","kuiper",
+    "p_spline","thin_plate","james_stein" (386->392); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w72.
+  - Canon staged on top of w71-canon so the chain stays clean as
+    the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 73 canon)
+slice: 6 model modules + benches_w73 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w73-lanes: mardia.py (Mardia b1p chi^2 + b2p z
+    omnibus MVN test; t(4) kurtosis rejected, MVN null held),
+    mantel.py (row/col-permutation distance correlation +
+    first-order partial), moran.py (Moran I + Geary c +
+    Getis-Ord G on weight matrices; ring-lattice sinusoid
+    rejected, iid held), friedman.py (Friedman Q + Kendall W
+    + Page L ordered-alternative; monotone effect rejected),
+    contingency.py (Fisher-Irwin exact, McNemar exact/chi^2,
+    CMH common-odds, phi + Cramér V), hoeffding.py
+    (Hoeffding D + permutation p; circular dependence
+    detected where rho~0).
+  - benches_w73.py: +426..431 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "mardia","mantel","moran","friedman",
+    "contingency","hoeffding" (392->398); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w73.
+  - Canon staged on top of w72-canon so the chain stays clean as
+    the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 74 canon)
+slice: 6 model modules + benches_w74 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w74-lanes: dispersion_tests.py (Siegel-Tukey
+    1960 zig-zag end ranks + Ansari-Bradley |r-(N+1)/2|,
+    normal-approx z; 3x scale rejected, null held),
+    median_tests.py (Mood chi^2 on grand-median split +
+    Brown-Mood two-sample z), cochran_q.py (k-related
+    binary columns, informative-block denominator),
+    quade.py (range-weighted block ranks, T3 F-form +
+    chi^2), van_der_waerden.py (Phi^{-1}(rank/(N+1))
+    normal scores, chi^2_{k-1}), dunn_test.py (pairwise
+    mean-rank z + Holm/Bonferroni adjust; shifted pairs
+    rejected, null pair held).
+  - benches_w74.py: +432..437 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "dispersion_tests","median_tests","cochran_q",
+    "quade","van_der_waerden","dunn_test" (398->404); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w74.
+  - Canon staged on top of w73-canon so the chain stays clean as
+    the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 75 canon)
+slice: 6 model modules + benches_w75 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w75-lanes: cronbach.py (Cronbach 1951 alpha +
+    KR-20 + Spearman-Brown odd/even split-half + alpha-if-
+    deleted), icc.py (Shrout-Fleiss/McGraw-Wong two-way ANOVA
+    forms ICC(1,1)/(2,1)/(3,1) + SEM), dif.py (Holland-Thayer
+    MH common-odds Delta_MH on score strata + CMH chi^2 +
+    ETS A/B/C; Swaminathan-Rogers nested-deviance logistic
+    uniform/nonuniform DIF), g_theory.py (person x rater
+    variance components + G/Phi + D-study), omega.py
+    (McDonald omega via principal-axis one-factor loadings +
+    resid RMS), rasch_fit.py (1PL Newton JML + Wright-Masters
+    infit/outfit mean squares; planted noisy item flagged).
+  - benches_w75.py: +438..443 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "cronbach","icc","dif","g_theory","omega",
+    "rasch_fit" (404->410); agent.py import+dict wiring; tests:
+    6 module files + test_benches_w75.
+  - Canon staged on top of w74-canon so the chain stays clean as
+    the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 76 canon)
+slice: 6 model modules + benches_w76 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w76-lanes: horvitz_thompson.py (Horvitz-
+    Thompson 1952 total + Hartley-Rao/SYG-approx variance;
+    Hajek 1971 ratio mean + linearized SE), poststrat.py
+    (post-stratification weights + Deming-Stephan 1940 IPF
+    raking over marginal tables + Kish design effect),
+    calibration_survey.py (Deville-Sarndal 1992 GREG weights
+    + truncated/bounded calibration), fay_herriot.py
+    (Fay-Herriot 1979 area-level EBLUP: moment-A Newton
+    iteration + B-s shrinkage + Prasad-Rao g1+g2 MSE),
+    cluster_sampling.py (one-stage cluster totals/means +
+    Sen-Yates-Grundy-style variance + ICC + deff),
+    design_effects.py (Kish 1965 deff = 1 + CV^2, effective
+    n, weight-share concentration, Winsorized deff curve).
+  - benches_w76.py: +444..449 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "horvitz_thompson","poststrat",
+    "calibration_survey","fay_herriot","cluster_sampling",
+    "design_effects" (410->416); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w76.
+  - Canon staged on top of w75-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 77 canon)
+slice: 6 model modules + benches_w77 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w77-lanes: gee.py (Liang-Zeger 1986 marginal
+    models, independence/exchangeable/AR1 working correlation,
+    Huber-Royall sandwich SE, gaussian+binomial families),
+    lmm.py (Laird-Ware 1982 EM ML: random intercept and
+    intercept+slope unstructured D, BLUPs, ICC),
+    interrater.py (Cohen 1960 + weighted 1968, Fleiss 1971,
+    Krippendorff alpha nominal/ordinal/interval, Lin 1989 CCC,
+    Bland-Altman 1986), isolation_forest.py (Liu-Ting-Zhou
+    2008 path-length scores + Hariri 2019 extended random-
+    hyperplane variant), hegy.py (HEGY 1990 quarterly roots
+    + Canova-Hansen 1995 seasonal stability, internally
+    simulated MC null distributions), mice.py (van Buuren
+    2011 chained PMM on originally-observed donors + Rubin
+    1987 / Barnard-Rubin pooling).
+  - benches_w77.py: +450..455 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "gee","lmm","interrater","isolation_forest",
+    "hegy","mice" (416->422); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w77.
+  - Canon staged on top of w76-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+---
+owner: devin (wave 78 canon)
+slice: 6 model modules + benches_w78 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w78-lanes: multiple_comparisons.py (Tukey
+    1949 HSD via studentized_range, Dunnett 1955 many-to-
+    one with equicorrelated multivariate-t MC null, Games-
+    Howell 1976 Welch, Scheffe 1953 S-method F),
+    rank_aggregation.py (Plackett 1975/Luce 1959 Hunter
+    2004 MM, Borda, Condorcet-Copeland, MC3 maximin
+    stationary ranking), spc.py (Montgomery xbar-R factor
+    tables, Roberts 1959 EWMA time-varying limits, Page
+    1954 tabular CUSUM, Kane 1986 Cp/Cpk/Cpm capability,
+    phase-I reference windows), risk_parity.py (Roncalli
+    2013/Maillard 2010 ERC via cyclical coordinate descent
+    + RC shares + effective rank), mst_topology.py
+    (Mantegna 1999 MST degree/hub/path concentration +
+    Tumminello 2005 PMFG planar bound), e_divisive.py
+    (Matteson-James 2014 energy-divergence recursive
+    bisection + permutation significance).
+  - benches_w78.py: +456..461 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "multiple_comparisons","rank_aggregation",
+    "spc","risk_parity","mst_topology","e_divisive"
+    (422->428); agent.py import+dict wiring; tests: 6 module
+    files + test_benches_w78.
+  - Canon staged on top of w77-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 79 canon)
+slice: six models lanes + benches_w79 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: fastica.py (Hyvarinen 1999
+    FastICA deflationary tanh-alpha fixed-point + Gram-
+    Schmidt reortho + whitening), barrier_options.py
+    (Reiner-Rubinstein 1991 six-term a-f decomposition,
+    all 8 single-barrier types, in+out=vanilla parity),
+    tost.py (Schuirmann 1987 two-one-sided equivalence
+    for means/ratios + Fisher-z correlations), msm_causal.py
+    (Robins 2000 two-visit MSM stabilized IPTW, Gaussian
+    density + logistic propensities, treatment-confounder
+    feedback), nmf.py (Lee-Seung 1999/2001 fro/KL
+    multiplicative updates + SVD seeding + cophenetic
+    consensus), auxiliary_pf.py (Pitt-Shephard 1999 APF
+    two-stage lookahead resampling for SV state space vs
+    bootstrap PF loglik).
+  - benches_w79.py: +462..467 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "fastica","barrier_options","tost",
+    "msm_causal","nmf","auxiliary_pf" (428->434); agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w79.
+  - Canon staged on top of w78-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 80 canon)
+slice: six models lanes + benches_w80 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: rmst.py (Royston-Parmar
+    2011/2013 restricted mean survival time + Uno 2004
+    residual-area variance + two-arm diff/ratio z-tests),
+    ois_curve.py (Hull 2018 OIS bootstrap, log-linear DF
+    interp, fixed-point tenor stripping, par repricing),
+    henze_zirkler.py (Henze-Zirkler 1990 BHEP ECF MVN test,
+    lognormal null moments), epps_singleton.py (Epps-
+    Singleton 1985 ECF normality G1 chi2(4)), watson.py
+    (Watson 1961 U^2 circular uniformity, Stephens 1970
+    modified table + Rayleigh), energy_test.py (Szekely-
+    Rizzo 2005 energy MVN statistic, hyp1f1 moments,
+    parametric bootstrap).
+  - benches_w80.py: +468..473 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "rmst","ois_curve","henze_zirkler",
+    "epps_singleton","watson","energy_test" (434->440);
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w80.
+  - Canon staged on top of w79-canon so the chain stays clean
+    as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 81 canon)
+slice: six models lanes + benches_w81 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: dirichlet_multinomial.py
+    (Mosimann 1962 MoM + Minka 2000 fixed-point/Newton
+    MLE), vonmises_fisher.py (Banerjee 2005 movMF soft-EM,
+    Sra 2012 A_p^-1 Newton + Ulrich-Wood sampler),
+    fkml.py (FKML 1988 generalized lambda, linearized
+    quantile regression + King-MacGillivray starship),
+    gandh.py (Tukey 1977 g-and-h, Hoaglin letter values,
+    Gauss-Hermite moments), robbins_monro.py (RM 1951,
+    Polyak-Ruppert 1992, Kiefer-Wolfowitz 1952, SPSA
+    Spall 1992), pocs.py (von Neumann 1949 AP, Dykstra
+    1983 corrected AP, Douglas-Rachford 1956).
+  - benches_w81.py: +474..479 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "dirichlet_multinomial",
+    "vonmises_fisher","fkml","gandh","robbins_monro",
+    "pocs" (440->446); agent.py wiring; tests: 6 module
+    files + test_benches_w81 (42 tests total).
+  - Canon staged on top of w80-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 82 canon)
+slice: six models lanes + benches_w82 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: delong_auc.py (DeLong 1988
+    placement-value variance + paired AUC comparison),
+    passing_bablok.py (Passing-Bablok 1983 shifted-median
+    slope + Deming orthogonal + jackknife se),
+    marginal_homogeneity.py (McNemar 1947, Bowker 1948,
+    Stuart-Maxwell 1955, Bhapkar 1979), circular_tests.py
+    (Mardia-Watson-Wheeler 1972 permutation p, Rao 1976
+    spacing, Watson-Beran runs), graded_irt.py (Samejima
+    1969 GRM + Masters 1982 PCM joint ML), welch_anova.py
+    (Welch 1951 + Games-Howell 1976).
+  - benches_w82.py: +480..485 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "delong_auc","passing_bablok",
+    "marginal_homogeneity","circular_tests","graded_irt",
+    "welch_anova" (446->452); agent.py wiring; tests: 6
+    module files + test_benches_w82 (40+ tests).
+  - Canon staged on top of w81-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 83 canon)
+slice: six models lanes + benches_w83 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - src/quant_fund/models: lin_ccc_blandaltman.py (Lin 1989
+    concordance correlation + Bland-Altman 1986 limits of
+    agreement), influence_diagnostics.py (Belsley-Kuh-Welsch
+    1980 leverage/studentized/Cook/DFBETAS/DFFITS/COVRATIO
+    via QR rank-1 update identities), group_sequential.py
+    (Lan-DeMets 1983 alpha-spending, O'Brien-Fleming 1979 /
+    Pocock 1977 boundaries via Armitage-McPherson-Rowe
+    recursion + conditional power), mds.py (Torgerson 1958
+    classical scaling + de Leeuw 1977 SMACOF),
+    correspondence_analysis.py (Benzecri 1973 SVD on
+    standardized residuals), circular_correlation.py
+    (Mardia 1976 circular-linear, Fisher-Lee 1983
+    circular-circular, Jammalamadaka-Sarma 1988 rank).
+  - benches_w83.py: +486..491 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "lin_ccc","influence","group_sequential",
+    "mds","correspondence_analysis","circular_correlation"
+    (452->458); agent.py wiring; tests: 6 module files +
+    test_benches_w83 (39+ tests).
+  - Canon staged on top of w82-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 84 canon)
+slice: six models lanes + benches_w84 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: lmoments.py (Hosking 1990
+    PWM/L-moments, GEV/GLO/GPA/normal fits, discordancy +
+    heterogeneity statistics), sobol_sensitivity.py
+    (Saltelli 2010 first/total-order + Campolongo Morris
+    1991 elementary effects), recurrent_events.py
+    (Andersen-Gill 1982 counting-process Cox PH, Nelson-
+    Aalen MCF + Lawless-Nadeau var, PWP gap, WLW marginal,
+    cluster sandwich), dawid_skene.py (Dawid-Skene 1979
+    EM annotation + GLAD Whitehill 2009 product model),
+    matrix_profile.py (Keogh 2007 z-normalized matrix
+    profile, motif/discord + SAX Lin 2007),
+    hierarchical_reconciliation.py (Hyndman 2011 MinT
+    OLS/WLS/Ledoit-shrunk + incoherence diagnostics).
+  - benches_w84.py: +492..497 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "lmoments","sobol_sensitivity",
+    "recurrent_events","dawid_skene","matrix_profile",
+    "hierarchical_reconciliation" (458->464); agent.py
+    wiring; tests: 6 module files + test_benches_w84
+    (36+ tests).
+  - Canon staged on top of w83-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 85 canon)
+slice: six models lanes + benches_w85 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: cma_es.py (Hansen 2006
+    mu/mu_w,lambda CMA-ES, rank-mu+rank-one updates,
+    CSA step-size control), sketches.py (Dunning-Ertl
+    2019 t-digest k1 scale, Flajolet 2007 HyperLogLog,
+    Cormode-Muthukrishnan 2005 Count-Min conservative,
+    Greenwald-Khanna 2001 quantiles), music_esprit.py
+    (Schmidt 1986 MUSIC/root-MUSIC + Roy-Kailath 1989
+    LS/TLS-ESPRIT subspace estimation), chain_ladder.py
+    (age-to-age factors, Mack 1993 MSE decomposition,
+    Bornhuetter-Ferguson 1972, England-Verrall 1999 ODP
+    bootstrap), erlang_queueing.py (Erlang 1917 B/C/A,
+    Pollaczek-Khinchine M/G/1, Allen-Cunneen/Whitt
+    G/G/c, Jackson 1957 open networks), inequality_
+    indices.py (Lorenz/Gini covariance form, Shorrocks
+    1980 GE, Theil T/L, Atkinson 1970, FGT 1984).
+  - benches_w85.py: +498..503 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "cma_es","sketches","music_esprit",
+    "chain_ladder","erlang_queueing","inequality_
+    indices" (464->470); agent.py wiring; tests: 6
+    module files + test_benches_w85 (44+ tests).
+  - Canon staged on top of w84-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+
+---
+owner: devin (wave 86 canon)
+slice: six models lanes + benches_w86 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: rainflow_fatigue.py (ASTM
+    E1049-85 four-point rainflow + Palmgren-Miner
+    damage + Goodman/Gerber/SWT mean-stress
+    corrections), bayesian_tracking.py (Blom &
+    Bar-Shalom 1988 IMM + Bar-Shalom & Tse 1975 PDA
+    gating/association), sbm_inference.py (Karrer-
+    Newman 2011 DC-SBM loglik + Amini 2013 regularized
+    spectral + Danon 2005 NMI), pu_learning.py
+    (Elkan-Noto 2008 e-correction + du Plessis 2014
+    unbiased risk + Kiryo 2017 nnPU clipping),
+    gr4j_hydrology.py (Perrin 2003 GR4J + McCarthy
+    1938 Muskingum + NSE/KGE), brinson_attribution.py
+    (Brinson-Hood-Beebower 1986 BHB/BF + Carino 1999
+    logarithmic linking).
+  - benches_w86.py: +504..509 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "rainflow_fatigue","bayesian_
+    tracking","sbm_inference","pu_learning",
+    "gr4j_hydrology","brinson_attribution"
+    (470->476); agent.py wiring; tests: 6 module
+    files + test_benches_w86 (40+ tests).
+  - Canon staged on top of w85-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+  wave87:
+  - "avellaneda_stoikov","gillespie_ssa","hamilton_filter",
+    "corwin_schultz","gwr_spatial","pareto_nbd"
+    (476->482); agent.py wiring; tests: 6 module
+    files + test_benches_w87 (32 tests).
+  - Canon staged on top of w86-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+  wave88:
+  - "markov_discretization","lomb_scargle","singular_spectrum",
+    "beck_katz","quandt_andrews","friedman_supersmoother"
+    (482->488); agent.py wiring; tests: 6 module
+    files + test_benches_w88 (34 tests).
+  - Canon staged on top of w87-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+  wave89:
+  - "edf_tests","normality_tests","scale_homogeneity",
+    "score_scale","het_regressions","serial_diagnostics"
+    (506->512); agent.py wiring; tests: 6 module
+    files + test_benches_w89 (41 tests).
+  - Canon staged on top of w88-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+note: canon PR to follow.
+  wave90:
+  - "mars_regression","ace_avas","projection_pursuit",
+    "marginal_likelihood","root_finders","blind_sources"
+    (512->518); agent.py wiring; tests: 6 module
+    files + test_benches_w90 (41 tests).
+  - Canon staged on top of w89-canon.
+  wave91:
+  - "unconstrained_optimizers","clustering_methods",
+    "manifold_learning","robust_regression",
+    "empirical_bayes","design_experiments"
+    (518->524); agent.py wiring; tests: 6 module
+    files + test_benches_w91 (43 tests).
+  - Canon staged on top of w90-canon.
+  wave92:
+  - "metaheuristic_optimizers","bayesian_optimization",
+    "fuzzy_clustering","self_organizing_maps",
+    "pagerank_topology","hyperband_search"
+    (524->530); agent.py wiring; tests: 6 module
+    files + test_benches_w92 (30 tests).
+  - Canon staged on top of w91-canon.
+  wave93:
+  - "tree_ensembles","metric_learning",
+    "one_class_classification","gp_classification",
+    "phase_retrieval","factorization_machine"
+    (530->536); agent.py wiring; tests: 6 module
+    files + test_benches_w93 (25 tests).
+  - Canon staged on top of w92-canon.
+  wave94:
+  - "svm_classifiers","discriminant_analysis",
+    "coordinate_descent_enet","kernel_methods",
+    "lda_topics","online_convex"
+    (536->542); agent.py wiring; tests: 6 module
+    files + test_benches_w94 (21 tests).
+  - Canon staged on top of w93-canon.
+  wave95:
+  - "bayesian_linear","graphical_models",
+    "conjugate_gradient","frank_wolfe",
+    "sparse_coding","evolution_strategies"
+    (542->548); agent.py wiring; tests: 6 module
+    files + test_benches_w95 (19 tests).
+  - Canon staged on top of w94-canon.
+  wave96:
+  - "naive_bayes","adaboost",
+    "expectation_propagation","collaborative_filtering",
+    "association_rules","nash_equilibrium"
+    (548->554); agent.py wiring; tests: 6 module
+    files + test_benches_w96 (23 tests).
+  - Canon staged on top of w95-canon.
+  wave97:
+  - "proximal_gradient","quadrature",
+    "ode_solvers","semisupervised",
+    "multiclass","sparse_pca"
+    (554->560); agent.py wiring; tests: 6 module
+    files + test_benches_w97.
+  - Canon staged on top of w96-canon.
+  wave98:
+  - "mdp_solvers","td_learning",
+    "belief_propagation","extreme_learning",
+    "nearest_centroid","cross_entropy_method"
+    (560->566); agent.py wiring; tests: 6 module
+    files + test_benches_w98.
+  - Canon staged on top of w97-canon.
+  wave99:
+  - "gibbs_sampler","laplace_approx",
+    "kde","tensor_power","evidential",
+    "multi_task"
+    (566->572); agent.py wiring; tests: 6 module
+    files + test_benches_w99.
+  - Canon staged on top of w98-canon.
+  wave100:
+  - "homotopy_continuation","anderson_accel",
+    "sequence_accel","iterative_ls",
+    "qmc_sequences","symplectic_ode"
+    (572->578); agent.py wiring; tests: 6 module
+    files + test_benches_w100.
+  - Canon staged on top of w99-canon.
+  wave101:
+  - "graph_traversal","shortest_paths",
+    "network_flow","assignment",
+    "graph_components","exact_cover"
+    (578->584); agent.py wiring; tests: 6 module
+    files + test_benches_w101.
+  - Canon staged on top of w100-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+wave 109 (2026-09-30): motion-planning canon — dubins, rrt, prm, dwa, min_snap, frenet; 626→632 families.
+wave 110 (2026-09-30): digital-comms canon — viterbi_decode, gf256, reed_solomon, costas, gardner, rrc_filter; 632→638 families.
+wave 111 (2026-09-30): computational-geometry canon — kabsch, icp, frechet, hausdorff, convex_hull, delaunay; 638→644 families.
+wave 112 (2026-09-30): DSP filter canon — remez, iir_design, biquad, filtfilt, resample_poly, farrow; 644→650 families.
+wave 113 (2026-09-30): multi-target tracking canon — jonker_volgenant, jpda, phd, mht, cov_int, tdoa; 650→656 families.
+wave 114 (2026-09-30): GNSS canon — gold_code, klobuchar, allan_variance, strapdown, lambda_method, rtk; 656→662 families.
+wave 115 (2026-09-30): UQ canon — smolyak, pce, bayesian_quadrature, kl_expand, active_subspace, mimc; 662→668 families.
+wave 116 (2026-09-30): game-theory canon — cfr, lemke_howson, replicator, wardrop, vcg, nash_bargain; 668→674 families.
+wave 117 (2026-09-30): RL canon — gae, vtrace, trpo, ppo, ddpg, td3; 674→680 families.
+wave 118 (2026-09-30): POMDP canon — qmdp, grid_pomdp, pbvi, perseus, hsvi, pomcp; 680→686 families.
+wave 119 (2026-09-30): MARL canon — vdn, qmix, coma, maddpg, mappo, mf_q; 686→692 families.
+wave 120 (2026-09-30): coop-game + mechanism canon — nucleolus, banzhaf, owen, myerson_auction, groves, envy_free; 692→698 families.
+wave 121 (2026-10-01): best-arm-ID canon — lil_ucb, sequential_halving, median_elim, ugape, ttts, track_stop; 698→704 families.
+wave 122 (2026-10-01): exec-summary SOTA — exec_rl, smart_router, order_flow_imbalance, pg_mm, options_flow, dark_pool; 704→710 families.
+wave 123 (2026-10-01): exec-summary NLP/generative — say_echo_do, multimodal_fusion, ts_diffusion, synthetic_gan, econ_calendar, quantcode_bench; 710→716 families.
+note: canon PR to follow.
+wave 124 (2026-10-02): exec-summary graph/meta/continual — asset_gnn, counterparty_gnn, maml_portfolio, continual_learning, fed_avg, insider_anomaly; 716→722 families.
+wave 125 (2026-10-02): exec-summary pricing/quantum/XAI — pinn_pricing, qubo_portfolio, xai_shap, adversarial_robust, risk_flow, causal_miner; 722→728 families.
+wave 126 (2026-10-02): exec-summary deep-DL — tft_forecaster, patchtst, lob_transformer, set_transformer, neural_ode, world_model; 728→734 families.
+wave 127 (2026-10-02): exec-summary DL-2 — contrastive_repr, hypernetwork_alloc, neural_thompson, bnn_ensemble, option_vae, diff_policy; 734→740 families.
+wave 128 (2026-10-02): exec-summary DL-3 — kan_forecaster, ts_mixer, informer_attn, cnn_alpha, mask_autoencoder, graph_temporal; 740→746 families.
+wave 129 (2026-10-02): exec-summary DL-4 — itransformer, tcn_forecaster, ft_transformer, nbeats_deep, mambats, crossformer; 746→752 families.
+wave 130 (2026-10-02): offline-RL sequence decision — decision_transformer, cql_agent, iql_agent, trajectory_transformer, sac_agent, gail_imitation; 752→758 families.
+wave 131 (2026-10-02): generative sequence — vq_vae_ts, flow_matching_ts, score_sde_ts, consistency_ts, energy_ts, perceiver_ts; 758→764 families.
+wave 132 (2026-10-02): OOD-detection canon — mahalanobis_ood, max_softmax_ood, gradient_norm_ood, energy_ood, knn_ood, vim_ood; 764→770 families.
+wave 133 (2026-10-02): neural-process + amortized-UQ canon — neural_process, attentive_np, deep_kernel_gp, convnp, meta_uq, llaplace_gp; 770→776 families.
+wave 134 (2026-10-02): differentiable-optimization canon — optnet_qp, cvxpy_layer, input_convex, deep_declarative, spd_net, diff_mpc; 776→782 families.
+wave 135 (2026-10-02): graph-neural-net canon — chebnet, graphsage, gin_gnn, graph_unet, apnp_prop, jk_net; 782→788 families.
+wave 136 (2026-10-02): attention-efficiency canon — linformer_attn, performer_attn, linear_attn, sliding_attn, sinkhorn_attn, nystrom_attn; 788→794 families.
+wave 137 (2026-10-02): distributional-RL canon — c51_dqn, qr_dqn, iqn_dqn, noisy_net, prioritized_replay, bootstrapped_dqn; 794→800 families.
+wave 138 (2026-10-02): memory + world-model canon — reformer_lsh, memorizing_transformer, ntm_memory, dnc_memory, rssm_world, mpc_planning; 800→806 families.
+wave 139 (2026-10-02): self-supervised + TTA canon — byol, barlow_twins, vicreg, tent_tta, shot_tta, ttt_layer; 806→812 families.
+wave 140 (2026-10-02): geometric + structured nets — hyperbolic_nn, capsule_dynamic, siren_inr, equivar_gnn, monotonic_net, sort_net; 812→818 families.
+wave 141 (2026-10-02): certified robustness — randomized_smoothing, ibp_bounds, crown_bound, lipschitz_net, vector_neurons, gumbel_topk; 818→824 families.
+wave 142 (2026-10-02): sequence exotics — s4_ssm, rwkv_wkv, hyena_conv, retnet_decay, delta_net, mixture_of_depths; 824→830 families.
+wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tuning, prefix_tuning, task_vector_merge; 830→836 families.
+wave 144 (2026-10-02): inference-engine canon — speculative_decoding, paged_kv_cache, flash_attn, gqa_attn, sliding_window_cache, ring_attn; 836→842 families.
+wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colbert_late, hyde_retrieval, reranker_crossenc, rrf_fusion; 842→848 families.
+wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vote, verifier_prm, mcts_reason, debate_multiagent, unlearn_ga, knowledge_graph_embed; 848→854 families.
+wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
+wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steering, probe_linear, logit_lens, patch_activation, circuit_ablation; 860→866 families.
+wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
+wave 150 (2026-10-02): compression canon — magnitude_pruning, lottery_ticket, quant_int8, kd_distill, lowrank_factor, fisher_prune; 872→878 families.
+wave 151 (2026-10-02): agentic canon — react_loop, toolformer_call, plan_search, reflexion_retry, multi_agent_pipeline, judge_pairwise; 878→884 families.
+wave 152 (2026-10-02): privacy canon — dp_sgd, secure_agg, fedavg_hetero, pate_teacher, gradient_leakage, canary_exposure; 884→890 families.
+wave 153 (2026-10-02): NAS canon — random_search_nas, evolution_nas, darts_nas, enas_controller, one_shot_nas, arch_predictor; 890→896 families.
+wave 154 (2026-10-02): vision canon — convnet_baseline, vit_classifier, clip_align, simclr_views, diffusion_ddim, attention_rollout; 896→902 families.
+wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, cevae_latent, causal_rep, policy_value; 902→908 families.
+wave 156 (2026-10-02): tabular-DL canon — tokenizer_bpe, tabular_resnet, node_net, grownet_boost, soft_tree, tabm_mini; 908→914 families.
+wave 157 (2026-10-02): anomaly-detection canon — deep_svdd, dagmm, usad, anom_transformer, rrcf, tranad; 914→920 families.
+wave 158 (2026-10-02): LTR canon — ranknet_ltr, listnet_ltr, listmle_ltr, lambdarank_ltr, approx_ndcg_ltr, neural_sort_ltr; 920→926 families.
+wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, lookahead_opt, lamb_opt, adafactor_opt; 926→932 families.
+wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, fedopt_adam, mime_lite; 932→938 families.
+wave 161 (2026-10-02): neural-operator canon — fno_1d, deeponet, lowrank_op, pino_residual, gno_lite, cno_lite; 938→944 families.
+wave 162 (2026-10-02): TS-foundation canon — chronos_lite, timesfm_lite, moirai_lite, lagllama_lite, timer_lite, moment_lite; 944→950 families.
+wave 163 (2026-10-02): lifelong-CL canon — packnet_cl, lwf_cl, der_cl, agem_cl, piggyback_cl, hat_cl; 950→956 families.
+wave 164 (2026-10-02): Bayesian-DL canon — swag_diag, mc_dropout, bbb_vi, snapshot_ens, concrete_dropout, vcl_online; 956→962 families.
+wave 165 (2026-10-02): conditional-density canon — mdn_cond, flow_regression, diffusion_regressor, het_gp, crps_net, kernel_mixture; 962→968 families.
+wave 166 (2026-10-02): meta-learning canon — reptile, protonet, matching_net, anil_meta, meta_sgd, r2d2_meta; 968→974 families.
+wave 167 (2026-10-02): graph-exotics canon — algo_reasoning, pna_agg, virtual_node, gps_transformer, oversmooth_metric, dgn_directional; 974→980 families.
+wave 168 (2026-10-02): RL-exotics canon — awac, redq, td7_lite, crossq, dr3_reg, ob2i; 980→986 families.
+wave 169 (2026-10-02): amortized-inference canon — advi_bbvi, iwae_bound, nf_vi, sparse_gp_sv, structured_vi, vrnn_seq; 986→992 families.
+wave 170 (2026-10-02): causal-DL-2 canon — xlearner, rlearner, slearner_tlearner, causal_rep_bal, cate_distill, net_drlearner; 992→998 families.
+wave 171 (2026-10-02): conformal-2 canon — cqr_pred, survival_cp, aps_cp, ltt_cp, full_cp, risk_cp; 998→1004 families.
+wave 172 (2026-10-02): bandit-exotics canon — psrl, gittins_index, whittle_restless, cucb, corrupt_bandit, neural_ucb; 1004→1010 families.
+wave 173 (2026-10-02): diffusion-exotics canon — edm_karras, rectified_flow, stoch_interp, ddim_ode, cold_diffusion, diff_distill; 1010→1016 families.
+wave 174 (2026-10-02): graph-temporal canon — dcrnn_lite, stgcn_lite, gwnet_lite, astgcn, mtgnn_lite, agcrn; 1016→1022 families.
+wave 175 (2026-10-02): LM-components canon — rope_attn, alibi_attn, swiglu_ffn, rmsnorm_block, moe_router, mup_init; 1022→1028 families.
+wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2n_scoring, forgetting_events, influence_func, proto_prune; 1028→1034 families.
+wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
+wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mtl, gradnorm_bal, nash_mtl, imtl_g; 1040→1046 families.
+wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_surv, drsa_surv, pchazard; 1046→1052 families.
+wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
+wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titans_memory, gated_deltanet, longhorn_ssm; 1058→1064 families.
+wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.
+wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.
+wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge_stability, mode_connectivity, catapult_phase, neural_grok; 1076→1082 families.
+wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
+wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.
+wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn, fbsde_solver, spectral_pde, moc_lines, feynman_kac_mc; 1094→1100 families.
+wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
+wave 189 (2026-10-02): self-play/game-AI canon — alphazero_lite, expert_iteration, nfsp, psro, deep_cfr, mccfr_outcome; 1106→1112 families.
+wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg, ica_lingam, direct_lingam, var_lingam, mmmb_select; 1112→1118 families.
+wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.
+wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, mine_mi, nwj_mi, copula_mi, lsd_deptest; 1124→1130 families.
+wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
+wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
+wave 195 (2026-10-02): ensemble/adaptive-MCMC canon — emcee_stretch, de_mcmc, dram, rjmcmc, pcn_sampler, indep_mh; 1142→1148 families.
+wave 196 (2026-10-02): eigen-decomposition canon — power_iter, inverse_iter, jacobi_eig, qr_eig, hessenberg_red, bidiag_svd; 1148→1154 families.
+wave 197 (2026-10-02): inventory-theory canon — eoq_model, newsvendor, ss_policy, wagner_whitin, base_stock, clark_scarf; 1154→1160 families.
+wave 198 (2026-10-02): scheduling/combinatorial canon — johnson_flowshop, neh_heuristic, lpt_schedule, knapsack_dp, tsp_branchbound, spt_weighted; 1160→1166 families.
+wave 199 (2026-10-02): quantum-computing canon — qaoa_maxcut, vqe_ising, grover_search, qpe_phase, qkernel_svm, quantum_walk; 1166→1172 families.
+wave 200 (2026-10-02): tensor-network canon — tt_svd, dmrg_tfim, tensor_cross, tebd_quench, mps_fidelity, tt_round; 1172→1178 families.
+wave 201 (2026-10-02): stochastic-control canon — psor_american, crr_tree, kushner_mca, hjb_penalty, dual_american, exercise_boundary; 1178→1184 families.
+wave 202 (2026-10-02): game-theory canon — mfg_lq, mfg_flocking, nash_cournot, stackelberg_game, stochastic_game_vi, potential_game; 1184→1190 families.
+wave 203 (2026-10-02): information-geometry canon — fisher_rao, natural_gradient, mirror_descent, bregman_nmf, alpha_geodesic, jko_scheme; 1190→1196 families.
+wave 204 (2026-10-02): queueing + reliability canon — jackson_network, bcmp_mva, gordon_newell, ctmc_availability, renewal_reward, vacation_queue; 1196→1202 families.
+wave 205 (2026-10-02): auction-theory canon — vickrey_auction, first_price_auction, all_pay_auction, ascending_clock, double_auction, gsp_auction; 1202→1208 families.
+wave 206 (2026-10-02): RL-theory canon — ucb_bound, mw_hedge, egreedy_decay, pi_contraction, td_rate, qlearn_rate; 1208→1214 families.
+wave 207 (2026-10-02): crypto-primitives canon — sha256_impl, aes_sbox, shamir_secret, pedersen_commit, diffie_hellman, ecc_secp256k1; 1214→1220 families.
+wave 208 (2026-10-02): signal-processing-3 canon — cwt_ridge, cepstrum_pitch, mvdr_beamformer, hilbert_instant, lpc_formant, goertzel_detect; 1220→1226 families.
+wave 209 (2026-10-02): reliability-engineering canon — weibull_life, fault_tree, ram_markov, fmea_rpn, life_stress, redundancy_block; 1226→1232 families.
+wave 210 (2026-10-02): coding-theory canon — ldpc_decoder, turbo_decoder, polar_code, bch_code, crc_check, conv_interleaver; 1232→1238 families.
+wave 211 (2026-10-02): integer-programming canon — gomory_cut, column_generation, benders_decomp, lagrangian_relax, branch_and_cut, held_karp; 1238→1244 families.
+wave 212 (2026-10-02): approximation-algorithm canon — greedy_set_cover, primal_dual_vc, lp_rounding_sc, fptas_knapsack, local_search_maxcut, christofides_tsp; 1244→1250 families.
+wave 213 (2026-10-02): SDP/relaxation canon — sdp_maxcut, eigenvalue_opt, sos_certificate, qcqp_relax, spectral_bisection, hoffman_bound; 1250→1256 families.
+wave 214 (2026-10-02): online-algorithms canon — ski_rental, marking_paging, work_function_kserver, ranking_matching, secretary_prophet, online_gradient; 1256→1262 families.
+wave 215 (2026-10-02): stochastic-programming canon — two_stage_lshaped, scenario_tree, saa_consistency, chance_scenario, dro_wasserstein, robust_budget; 1262→1268 families.
+wave 216 (2026-10-02): advanced-MC-sampling canon — parallel_tempering, wang_landau, umbrella_sampling, metadynamics, wham, thermo_integration; 1268→1274 families.
+wave 217 (2026-10-02): estimation/filtering canon — hinf_filter, cubature_kalman, mhe, variational_bayes, huber_filter, particle_smoother; 1274→1280 families.
+wave 218 (2026-10-02): advanced-derivatives canon — dupire_localvol, sabr_calib, deep_hedge, heston_calib, barrier_adjoint, andreasen_huge; 1280→1286 families.
+wave 219 (2026-10-02): SAT/symbolic canon — cdcl_solver, walksat, unit_propagation, twosat_scc, bdd_ops, ltl_mc; 1286→1292 families.
+wave 220 (2026-10-02): program-verification canon — k_induction, ic3_pdr, bmc_unroll, invariant_synth, hoare_logic, ranking_function, cegar_loop; 1292→1299 families.
+wave 221 (2026-10-02): computational-algebra canon — buchberger, resultant, poly_gcd, gf2_factor, lll_reduce, newton_interp; 1299→1305 families.
+wave 222 (2026-10-02): number-theory canon — miller_rabin, pollard_rho, tonelli_shanks, continued_fraction, crt_garner, ec_scalar; 1305→1311 families.
+wave 223 (2026-10-02): distributed-systems canon — paxos, raft_election, vector_clock, consistent_hash, gossip_epidemic, pbft_lite; 1311→1317 families.
+wave 224 (2026-10-02): string-algorithm canon — aho_corasick, suffix_automaton, kmp_search, edit_distance, lz77, bwt_transform; 1317→1323 families.
+wave 225 (2026-10-02): physics-simulation canon — nbody_leapfrog, barnes_hut, sph_fluid, rigid_collision, verlet_cloth, fem_truss; 1323→1329 families.
+wave 226 (2026-10-02): compiler/formal-language canon — regex_engine, dfa_minimize, cyk_parser, dominance_tree, liveness_dce, linscan_regalloc; 1329→1335 families.
+wave 227 (2026-10-02): compression canon — huffman_codes, arithmetic_coding, lzw_compress, golomb_rice, rans_coder, lz78_dict; 1335→1341 families.
+wave 228 (2026-10-02): CRDT canon — gcounter, pncounter, orset, lww_map, twopset, rga_sequence; 1341→1347 families.
+wave 229 (2026-10-02): probabilistic-membership canon — bloom_filter, cuckoo_filter, xor_filter, quotient_filter, minhash_lsh, simhash; 1347→1353 families.
+wave 230 (2026-10-02): computational-geometry canon — ear_clipping, sutherland_hodgman, segment_intersection, point_in_polygon, closest_pair, rotating_calipers; 1353→1359 families.
+wave 231 (2026-10-02): architecture canon — cpu_pipeline, cache_sim, branch_predictor, tomasulo_sim, paging_sim, roofline_model; 1359→1365 families.
+wave 232 (2026-10-02): blockchain canon — merkle_tree, proof_of_work, utxo_set, difficulty_retarget, fork_resolution, block_validator; 1365→1371 families.
+wave 233 (2026-10-02): compiler-2 canon — ssa_construct, sccp_const, gvn_elim, reg_coalesce, instr_sched, licm_hoist; 1371→1377 families.
+wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, join_algos, query_planner, mvcc_isolation, lsm_tree; 1377→1383 families.
+wave 235 (2026-10-02): OS-internals canon — round_robin_sched, cfs_scheduler, demand_paging, deadlock_detect, disk_sched, fs_journal; 1383→1389 families.
+wave 236 (2026-10-02): graphics canon — raycaster, bresenham_line, scanline_fill, zbuffer_render, quaternion_slerp, bsp_tree, mvp_transform; 1389→1395 families.
+wave 237 (2026-10-02): parser canon — recursive_descent, pratt_parser, earley_parser, slr_parser, peg_packrat, ll1_table; 1395→1401 families.
+wave 238 (2026-10-02): networking canon — tcp_aimd, sliding_window, token_bucket, rtt_estimator, nat_table, http2_flow; 1401→1407 families.
+wave 239 (2026-10-02): PL canon — hm_inference, tree_walk_interp, cps_transform, macro_expand, gc_marksweep, simple_types; 1407→1413 families.
+wave 240 (2026-10-02): applied-crypto canon — rsa_toy, winternitz_ots, merkle_ots, blind_sig, zkp_schnorr, commit_reveal; 1413→1419 families.
+wave 241 (2026-10-02): databases-2 canon — aries_recovery, two_phase_lock, selinger_join, mvcc_gc, buffer_pool, blink_tree; 1419→1425 families.
+wave 242 (2026-10-02): consensus-2 canon — multi_paxos, epaxos, viewstamped, zab_protocol, swim_gossip, two_three_pc; 1425→1431 families.
+wave 243 (2026-10-02): numeric-2 canon — fft_radix2, ntt, karatsuba, strassen, int_sqrt, bignum; 1431→1437 families.
+wave 244 (2026-10-02): IR canon — inverted_index, posting_merge, wand_bmw, lsh_dedup, ngram_spell, positional_index; 1437→1443 families.
+wave 245 (2026-10-02): OS-2 canon — elf_loader, malloc_freelist, mmap_pager, mlfq_sched, semaphore_monitor, syscall_layer; 1443→1449 families.
+wave 246 (2026-10-02): language-runtime canon — bytecode_vm, threaded_interp, closure_conv, tail_call_tramp, inline_cache, nan_tagging; 1449→1455 families.
+wave 247 (2026-10-02): concurrency canon — peterson_lock, bakery_lock, rw_lock, atomics_tas, work_stealing, channel_select; 1455→1461 families.
+wave 248 (2026-10-02): formal-language canon — turing_machine, pda_sim, brzozowski_deriv, dfa_equiv, mealy_moore, cellular_automata; 1461→1467 families.
+wave 249 (2026-10-02): bioinformatics canon — smith_waterman, needleman_wunsch, debruijn_assemble, fm_index, upgma_tree, motif_scan; 1467→1473 families.
+wave 250 (2026-10-02): graph-3 canon — dinic_flow, mincost_flow, astar_search, bidirectional_dijkstra, critical_path, bron_kerbosch; 1473→1479 families.
+wave 251 (2026-10-02): numerical-linalg-2 canon — ldlt_solve, givens_qr, jacobi_svd, orth_iter, lu_pivots, sturm_eig; 1479→1485 families.
+wave 252 (2026-10-02): interpreters-3 canon — gen_gc, compacting_gc, dispatch_table, poly_inline_cache, anf_cps, trampoline_tc; 1485→1491 families.
+wave 253 (2026-10-02): automata-3 canon — tree_automata, buchi_automata, weighted_fst, cfg_pda_equiv, two_way_dfa, register_automata; 1491→1497 families.
+wave 254 (2026-10-02): applied-crypto-2 canon — tls_handshake, hmac_construct, aead_etm, merkle_damgard, cbc_padding, pbkdf2_kdf; 1497→1503 families.
+wave 255 (2026-10-02): optimization-2 canon — simplex_lp, ellipsoid_method, barrier_ip, admm_lasso, coord_descent, proj_gradient; 1503→1509 families.
+wave 256 (2026-10-02): memory-models canon — hazard_pointer, seqlock, ms_queue, epoch_reclaim, flat_combining, rcu_lock; 1509→1515 families.
+wave 257 (2026-10-02): crypto-3 canon — lwe_kex, ntru_toy, bfv_fhe, sis_hash, sigma_or_proof, chaum_pedersen; 1515→1521 families.
+wave 258 (2026-10-02): databases-3 canon — cascades_opt, vectorized_exec, zone_map, func_dep, bitmap_index, adaptive_qp; 1521→1527 families.
+wave 259 (2026-10-02): networking-2 canon — bgp_pathvec, dns_resolver, nat_traversal, arp_table, dhcp_lease, eth_switch; 1527→1533 families.
+wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
+wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
+- w261 robotics-2 canon (ekf_slam, occupancy_grid, pure_pursuit, stanley, particle_slam, frontier_explore) 1539->1545
+- w262 HPC canon (stencil_halo, mesi_cache, ring_allreduce, simd_lanes, task_dag, numa_alloc) 1545->1551
+- w263 real-time canon (edf_scheduler, rms_scheduler, wcet_est, debounce_fsm, watchdog_task, ring_buffer) 1551->1557
+- w264 numerical-linalg-3 canon (divide_conquer_eig, dqds, block_lanczos, randomized_qb, sparse_cholesky, fgmres) 1557->1563
+- w265 program-analysis canon (fuzzer_mutate, taint_track, asan_shadow, symbolic_exec, contract_check, grammar_fuzz) 1563->1569

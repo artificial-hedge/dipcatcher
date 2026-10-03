@@ -1,0 +1,54 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/cp_real_drill.py",
+  "receipt_sha256": "25c3029a98ff75d9b021a73f375b501fbee4ce1ade3acc1de504bc2936b83e06",
+  "replay": {
+    "argv": [
+      "scripts/cp_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/cp_real_drill_gaussian_pit.json",
+        "sha256": "e952542bd4bb35172b347e0c3620f50b5493c17e12dd0391e4f23850712273df"
+      },
+      {
+        "path": "data/metadata/replay/cp_real_drill_gaussian_minus_conf_t_pinball.json",
+        "sha256": "f92a768da70761784f50887c52ef38054382a02fba31121a056a679249d2e4a6"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "params",
+        "result"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62",
+      "drift_reason": "contract_field_addition",
+      "receipt": "receipts/cp_real_drill_gaussian_pit.json"
+    },
+    {
+      "claim_diff_keys": [
+        "params",
+        "result"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7",
+      "drift_reason": "contract_field_addition",
+      "receipt": "receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

@@ -1,0 +1,46 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/loss_cs_real_drill.py",
+  "receipt_sha256": "bf936a83f55bbac1cddd88942afd78a557a0231c7ba257ef68b021b7af07937b",
+  "replay": {
+    "argv": [
+      "scripts/loss_cs_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/loss_cs_real_drill_gaussian_vs_conf_t.json",
+        "sha256": "5b6067e11c351d69ca66aacbf665671324f8bfcf99620215b3dcd597f017d984"
+      },
+      {
+        "path": "data/metadata/replay/loss_cs_real_drill_conf_t_vs_empirical.json",
+        "sha256": "13be53cfb930e988d5f12a1ef7619ae06f519f2987076b17f7edc7ccc2da0b38"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de",
+      "receipt": "receipts/loss_cs_real_drill_gaussian_vs_conf_t.json"
+    },
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763",
+      "receipt": "receipts/loss_cs_real_drill_conf_t_vs_empirical.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

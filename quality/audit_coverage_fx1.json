@@ -15,14 +15,20 @@
       "n_modules": 28,
       "status": "audited"
     },
+    "extensions": {
+      "status": "pending"
+    },
     "forecast": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 14,
       "status": "audited"
     },
+    "operations": {
+      "status": "pending"
+    },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 7,
+      "n_modules": 20,
       "status": "audited"
     },
     "train": {
@@ -35,6 +41,9 @@
     "__init__.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "capabilities.py": {
+      "status": "pending"
     },
     "cli.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -106,6 +115,13 @@
       "status": "audited"
     },
     "sbom_audit.py": {
+      "status": "audited"
+    },
+    "sdk.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "sdk_audit.py": {
       "status": "audited"
     },
     "tail_audit.py": {

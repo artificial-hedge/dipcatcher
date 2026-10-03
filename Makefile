@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify audit-js audit-rust audit-kronos audit-all
 
 .DEFAULT_GOAL := help
 
@@ -56,9 +56,30 @@ audit-obs: ## Audit ledger and observability tests
 	uv run pytest tests/unit/audit tests/unit/observe -q
 	uv run mypy src/quant_fund/audit src/quant_fund/observe
 
-audit: ## Locked-deps vulnerability audit (pip-audit)
-	uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups \
-		| uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+# Remove export markers before scanning so Windows/Linux extras are audited
+# on every host. --disable-pip --no-deps queries the exported pins directly.
+audit: ## All-platform locked Python dependency vulnerability audit (pip-audit)
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements" "$$requirements.all"' EXIT; \
+		uv export --frozen --quiet --format requirements.txt --no-hashes --no-emit-project \
+		--all-extras --all-groups -o "$$requirements"; \
+		sed 's/ ;.*//' "$$requirements" > "$$requirements.all"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements.all"
+
+audit-js: ## Audit all three locked npm dependency trees
+	cd web && npm audit
+	cd replay && npm audit
+	cd clients/typescript && npm audit
+
+audit-rust: ## Audit the native extension (requires cargo-audit)
+	cargo audit --file rust/quant_core/Cargo.lock
+
+audit-kronos: ## Resolve and audit the independent vendored Kronos dependencies
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements"' EXIT; \
+		uv pip compile third_party/kronos/webui/requirements.txt --python-version 3.12 \
+		--quiet -o "$$requirements"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements"
+
+audit-all: audit audit-js audit-rust audit-kronos ## Repository-wide dependency audits
 
 doctor: ## Harness environment check
 	uv run dipcatcher doctor
@@ -313,6 +334,10 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+
+replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or all-skip
+	uv run dipcatcher replay-all --strict \
+		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 ADMISSION_BASE ?= origin/main
 admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)

@@ -10,6 +10,90 @@ total / 104B active MoE, Kimi K3 License).
 verification layer. `src/fx1/harness.py` is the typed bridge; `fx1 harness list`
 shows the registered lab surfaces.
 
+## Consuming the harness
+
+The same contract — registry, backends, honesty gate, receipt verifier —
+is exposed four ways, all implemented over one code path:
+
+| Surface | Entry point | Use when |
+|---|---|---|
+| HTTP API | `fx1 harness serve` → `src/fx1/serve/api.py` | fx-1 (or any service) calls over the network |
+| Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
+| CLI | `fx1 harness {list,run,complete,batch,verify,health}` | shell/CI |
+| Direct | `Harness().run(...)` / `get_backend(name)` | library composition |
+
+The full wire contract — routes, auth, idempotency, async jobs +
+signed webhooks, version negotiation, ops knobs — is
+[FX1_HARNESS_API.md](FX1_HARNESS_API.md).
+
+Completion routes beyond `POST /harness/complete`:
+`POST /harness/complete/batch` fans up to 64 conversations over one
+shared backend (per-item `ok`/`error_class` verdicts; a gate refusal
+fails the slot, not the request — SDK twin `complete_many`), and
+`POST /harness/complete/stream` emits SSE `token` events + a `final`
+envelope + `[DONE]` — deltas are buffered and the joined text passes
+the honesty gate before any frame leaves, so gate refusals are plain
+JSON 502s, never truncated streams (SDK twin `stream_complete` returns
+the gated chunk list).
+
+Backends (the model side of `complete`/eval lanes):
+
+- `hosted_k3` — the K3 endpoint (`MOONSHOT_API_KEY`), temperature 0.
+- `local_fx1` — weights-direct: attaches to a running engine
+  (`FX1_LOCAL_SERVE_URL`) or spawns one (`FX1_LOCAL_SERVE_CMD`, with
+  `$checkpoint_dir`/`$python` template vars); a card'd checkpoint dir
+  (`--checkpoint-dir` or `FX1_CHECKPOINT_DIR`) is required and
+  signature-gated before any spawn.
+- `byok` — bring-your-own-key to any OpenAI-compatible endpoint:
+  `FX1_BYOK_BASE_URL` + `FX1_BYOK_API_KEY` + `FX1_BYOK_MODEL` (kwargs
+  beat env). Construction fails closed on missing credentials; the URL
+  must be http(s) with a netloc.
+
+Every surface returns structured errors mirroring HTTP status classes
+(`404` unknown command/backend, `422` contract violation, `503`
+unconfigured backend, `502` honesty-gate refusal), and `complete` always
+closes the backend — spawned engines never leak. The honesty gate runs
+before output bytes reach the caller; cited receipts are appended to
+completions as a provenance footer.
+
+`fx1 harness serve` binds loopback-only unless `FX1_API_KEY` is set, in
+which case every route requires `X-API-Key` (constant-time compare);
+`/health` leaks presence booleans only — never env values.
+
+Long-running commands go through the async job surface:
+`POST /harness/jobs` (submit) → `GET /harness/jobs/{id}` (poll),
+`/harness/jobs/{id}/events` (SSE frame per state change — SDK twin
+`stream_job`/`wait_run_stream`, CLI `harness watch`), or a signed
+`callback_url` webhook (`callback_secret` → HMAC-SHA256 over
+`<timestamp>.<body>`; receivers verify with
+`fx1.serve.webhooks.verify_webhook`). `POST /harness/jobs/batch` submits
+up to 64 runs in one call with per-item `{error, code}` outcomes;
+dedup is `Idempotency-Key` (header) or `idempotency_key` (body), and
+replays return the original job.
+
+Ops knobs — CLI flags or env, fail-closed on out-of-range values:
+`--max-inflight`/`FX1_API_MAX_INFLIGHT` (16, concurrent heavy
+requests), `--job-max`/`FX1_API_JOB_MAX` and `--idem-max`/
+`FX1_API_IDEM_MAX` (1024 store capacities), `--sse-keepalive-s`/
+`FX1_API_SSE_KEEPALIVE_S` (15s), `--rate-limit-rps`/
+`FX1_API_RATE_LIMIT_RPS` (0 = off; per-client token bucket, 429 +
+`Retry-After`), and `--gzip-min-bytes`/`FX1_API_GZIP_MIN_BYTES` (1024;
+response compression only when the client advertises
+`Accept-Encoding: gzip` — 0 disables). Bodies over 1 MiB are refused
+(413); job stores evict oldest on capacity.
+
+The CLI fronts either surface: every `fx1 harness` subcommand takes
+`--remote URL` (drives the API through `HarnessClient` — the same wire
+client fx-1 uses) plus `--api-key`/`--timeout`, falling back to
+`FX1_API_KEY`; without it they run the in-process SDK. `fx1 harness
+batch prompts.jsonl` reads a JSON array or JSONL of strings/`{"prompt":
+...}` records and writes the gated completions as JSON (stdout or
+`--out`). Faults are one clean stderr line plus exit 2 — never a
+traceback. Parity of all three surfaces (SDK / API / remote client,
+byte-identical payloads and error classes) is sealed by
+`receipts/fx1_parity_audit.json`; the real-socket lifecycle is sealed by
+`receipts/fx1_e2e_audit.json`.
+
 ## What the plumbing enforces
 
 The table is the corpus and eval contract. It is a plan for a future training

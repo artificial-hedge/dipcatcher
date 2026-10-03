@@ -7,6 +7,7 @@ and ``rel`` must not escape the lake root.
 
 from __future__ import annotations
 
+import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -85,3 +86,117 @@ def test_concurrent_writers_same_rel_never_share_tmp(tmp_path: Path) -> None:
     assert int(result["close"][0]) in range(8)
     assert result["security_id"][0] == f"S{int(result['close'][0])}"
     assert not list((tmp_path / "silver").glob("*.tmp"))
+
+
+@pytest.mark.parametrize("alias", ["silver//bars.parquet", "silver/./bars.parquet"])
+def test_rename_lock_uses_normalized_destination(tmp_path: Path, alias: str) -> None:
+    lake = Lake(tmp_path)
+    canonical = lake._resolve("silver/bars.parquet")
+    assert lake._rename_lock(canonical) is lake._rename_lock(lake._resolve(alias))
+    assert lake._rename_lock(canonical) is not lake._rename_lock(
+        lake._resolve("silver/other.parquet")
+    )
+
+
+def test_rename_lock_applies_platform_case_normalization(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Exercise Windows key policy on any host, without claiming Windows I/O.
+    import ntpath
+
+    monkeypatch.setattr(os.path, "normcase", ntpath.normcase)
+    lake = Lake(tmp_path)
+    assert lake._rename_lock(lake._resolve("silver/Bars.parquet")) is lake._rename_lock(
+        lake._resolve("SILVER/bars.parquet")
+    )
+
+
+def test_concurrent_alias_writers_serialize_replace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import time
+
+    lake = Lake(tmp_path)
+    aliases = ["silver/raced.parquet", "silver//raced.parquet", "silver/./raced.parquet"]
+    barrier = threading.Barrier(len(aliases))
+    guard = threading.Lock()
+    active = 0
+    maximum = 0
+    original_replace = os.replace
+    original_lock = lake._rename_lock
+
+    def ready_lock(path: Path) -> threading.Lock:
+        barrier.wait(timeout=10)
+        return original_lock(path)
+
+    def observed_replace(src: Path, dst: Path) -> None:
+        nonlocal active, maximum
+        with guard:
+            active += 1
+            maximum = max(maximum, active)
+        try:
+            # Widen the critical section to expose differently keyed locks.
+            time.sleep(0.05)
+            original_replace(src, dst)
+        finally:
+            with guard:
+                active -= 1
+
+    monkeypatch.setattr(lake, "_rename_lock", ready_lock)
+    monkeypatch.setattr(os, "replace", observed_replace)
+    with ThreadPoolExecutor(max_workers=len(aliases)) as pool:
+        futures = [
+            pool.submit(lake.write_parquet, _frame(tag), rel) for tag, rel in enumerate(aliases)
+        ]
+        for future in futures:
+            future.result(timeout=15)
+
+    assert maximum == 1
+    result = lake.read_parquet(aliases[0])
+    assert result.height == 1
+    tag = int(result["close"][0])
+    assert tag in range(len(aliases))
+    assert result["security_id"][0] == f"S{tag}"
+    assert not list((tmp_path / "silver").glob(".*.tmp"))
+
+
+def test_rename_lock_preserves_posix_case_sensitivity(tmp_path: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("POSIX case-sensitive lock policy")
+    lake = Lake(tmp_path)
+    assert lake._rename_lock(lake._resolve("silver/Bars.parquet")) is not lake._rename_lock(
+        lake._resolve("silver/bars.parquet")
+    )
+
+
+def test_fsync_dir_platform_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Verify dispatch and cleanup with a fake OS; no Windows I/O is exercised.
+    from types import SimpleNamespace
+
+    import quant_fund.data.lake as module
+
+    events: list[object] = []
+
+    def open_directory(path: Path, flags: int) -> int:
+        events.append((path, flags))
+        return 42
+
+    def fail_flush(fd: int) -> None:
+        events.append(("fsync", fd))
+        raise OSError("directory flush failed")
+
+    fake_os = SimpleNamespace(
+        name="nt",
+        O_RDONLY=0,
+        O_DIRECTORY=65536,
+        open=open_directory,
+        fsync=fail_flush,
+        close=lambda fd: events.append(("close", fd)),
+    )
+    monkeypatch.setattr(module, "os", fake_os)
+    module._fsync_dir(tmp_path)
+    assert events == []
+    fake_os.name = "posix"
+    with pytest.raises(OSError, match="directory flush failed"):
+        module._fsync_dir(tmp_path)
+    assert events == [(tmp_path, 65536), ("fsync", 42), ("close", 42)]

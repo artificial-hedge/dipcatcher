@@ -109,6 +109,15 @@ def run_ref(bars, weights, cfg):
     return run_backtest(bars, weights, cfg, initial_nav=INIT_NAV)
 
 
+def _profile_table(pr: cProfile.Profile, sort: str, n: int) -> str:
+    """Render one cProfile table. A fresh buffer per sort key is required:
+    appending two sorts to one StringIO makes the caller re-print the first
+    table's prefix when it slices ``[:N]``."""
+    s = io.StringIO()
+    pstats.Stats(pr, stream=s).sort_stats(sort).print_stats(n)
+    return s.getvalue()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--reps", type=int, default=9)
@@ -126,11 +135,8 @@ def main():
         pr.enable()
         run_fast(bars, weights, cfg)
         pr.disable()
-        s = io.StringIO()
-        pstats.Stats(pr, stream=s).sort_stats("tottime").print_stats(25)
-        print(s.getvalue()[:6000])
-        pstats.Stats(pr, stream=s).sort_stats("cumtime").print_stats(15)
-        print(s.getvalue()[:3000])
+        print(_profile_table(pr, "tottime", 25)[:6000])
+        print(_profile_table(pr, "cumtime", 15)[:3000])
         return
 
     # interleaved timing

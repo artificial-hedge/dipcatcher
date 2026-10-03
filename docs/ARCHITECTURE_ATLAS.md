@@ -350,7 +350,7 @@ flowchart LR
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|1| quant_fund_research
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|192| quant_fund_utils
+  quant_fund_microstructure -->|202| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
@@ -453,7 +453,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_hedge_lab
   quant_fund_research -->|122| quant_fund_metrics
   quant_fund_research -->|17| quant_fund_microstructure
-  quant_fund_research -->|263| quant_fund_models
+  quant_fund_research -->|312| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
   quant_fund_research -->|6| quant_fund_portfolio
@@ -489,6 +489,30 @@ flowchart LR
   quant_fund_validation -->|1| quant_fund_registry
   quant_fund_validation -->|1| quant_fund_research
   quant_fund_validation -->|2| quant_fund_utils
+  src -->|3| quant_fund
+  src -->|1| quant_fund_api
+  src -->|3| quant_fund_backtest
+  src -->|1| quant_fund_cli
+  src -->|31| quant_fund_config
+  src -->|33| quant_fund_data
+  src -->|8| quant_fund_execution
+  src -->|7| quant_fund_features
+  src -->|2| quant_fund_fusion
+  src -->|2| quant_fund_labels
+  src -->|75| quant_fund_metrics
+  src -->|24| quant_fund_microstructure
+  src -->|62| quant_fund_models
+  src -->|5| quant_fund_monitoring
+  src -->|17| quant_fund_northset
+  src -->|4| quant_fund_paper
+  src -->|20| quant_fund_pipeline
+  src -->|11| quant_fund_portfolio
+  src -->|3| quant_fund_registry
+  src -->|3| quant_fund_reporting
+  src -->|11| quant_fund_research
+  src -->|33| quant_fund_schemas
+  src -->|21| quant_fund_utils
+  src -->|11| quant_fund_validation
   classDef ghost stroke-dasharray: 5 5,color:#888
   %% ghost nodes are lazily referenced packages absent from this tree
 ```
@@ -725,8 +749,8 @@ sequenceDiagram
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 107 |
-| `quant_fund.microstructure` | 116 |
-| `quant_fund.models` | 369 |
+| `quant_fund.microstructure` | 121 |
+| `quant_fund.models` | 418 |
 | `quant_fund.monitoring` | 7 |
 | `quant_fund.native` | 7 |
 | `quant_fund.northset` | 10 |
@@ -745,7 +769,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 196 |
+| `quant_fund.research` | 204 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -753,10 +777,11 @@ sequenceDiagram
 | `quant_fund.stress` | 14 |
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
+| `src` | 151 |
 
-- Modules scanned: **1368**
-- Packages: **79**
-- Cross-package import edges: **338**
+- Modules scanned: **1581**
+- Packages: **80**
+- Cross-package import edges: **362**
 
 <!-- END GENERATED: coverage -->
 

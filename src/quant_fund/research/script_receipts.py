@@ -400,6 +400,13 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
     return errors
 
 
+def joint_tune_v2_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Check the frozen v2 numerical/provenance contract; v1 is unchanged."""
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    return measurement_receipt_contract_errors(payload) + contract_errors(payload)
+
+
 #: The wave-21b tape/sim measurement lanes emit ``schema``-tagged receipts
 #: with a shared envelope; each registers the measurement contract so no
 #: committed receipt verifies on its seal alone.
@@ -407,9 +414,12 @@ _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
     "aftermath_flow.v1",
     "anchor_scan.v1",
+    "band_occupancy.v1",
     "band_shape.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
+    "churn_reseed.v1",
+    "churn_stability.v1",
     "closure_fit.v1",
     "closure_stack.v1",
     "continuation_attr.v1",
@@ -431,9 +441,16 @@ _MEASUREMENT_SCHEMAS = (
     "exec_cost_real.v1",
     "exec_cost_split.v1",
     "flee_wide.v1",
+    "floor_compose.v1",
+    "floor_pins.v1",
+    "floor_rate.v1",
+    "floor_reseed.v1",
+    "floor_stability.v1",
     "flow_couple.v1",
     "full_impact.v1",
     "full_stack.v1",
+    "gap_close.v1",
+    "iid_floor.v1",
     "glft_bench.v1",
     "hawkes_mv.v1",
     "hawkes_real.v1",
@@ -450,6 +467,8 @@ _MEASUREMENT_SCHEMAS = (
     "instant_decomp.v1",
     "intraday_shape.v1",
     "joint_fit.v1",
+    "grammar_map.v1",
+    "joint_tune.v1",
     "joint_stability.v1",
     "level_gap.v1",
     "lob_exec.v1",
@@ -463,6 +482,7 @@ _MEASUREMENT_SCHEMAS = (
     "mid_jump.v1",
     "order_lifetime.v1",
     "order_revision.v1",
+    "mortal_repost.v1",
     "pin_stability.v1",
     "place_law.v1",
     "place_mix.v1",
@@ -470,12 +490,14 @@ _MEASUREMENT_SCHEMAS = (
     "price_clustering.v1",
     "price_improvement.v1",
     "propagator_real.v1",
+    "quote_floor.v1",
     "quote_place.v1",
     "refill_hazard.v1",
     "regime_clock.v1",
     "release_chase.v1",
     "reload_gate.v1",
     "repost_frontier.v1",
+    "repost_latency.v1",
     "reseed_hazard.v1",
     "round_lot.v1",
     "sign_autocorr_real.v1",
@@ -502,6 +524,13 @@ _MEASUREMENT_SCHEMAS = (
     "vol_signature.v1",
     "vpin.v1",
     "wave23_map.v1",
+    "wave24_map.v1",
+    "zone_embargo.v1",
+    "zone_card.v1",
+    "zone_map.v1",
+    "zone_churn.v1",
+    "zone_ttl.v1",
+    "zone_stability.v1",
 )
 
 
@@ -513,6 +542,7 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "incumbent_bench.v1": incumbent_bench_contract_errors,
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
+    "joint_tune.v2": joint_tune_v2_contract_errors,
     **{s: measurement_receipt_contract_errors for s in _MEASUREMENT_SCHEMAS},
 }
 

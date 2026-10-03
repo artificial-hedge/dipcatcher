@@ -19,17 +19,17 @@ execution endpoints.
 # from the repo root — re-exports the spec from the live FastAPI app
 uv run --no-sync python scripts/export_research_api_openapi.py
 
-# from clients/typescript — regenerates schema.d.ts
-npx --yes openapi-typescript openapi.json -o schema.d.ts
+# from clients/typescript — install locked tools and regenerate schema.d.ts
+npm ci
+npm run generate:schema
 ```
 
 ## Typecheck
 
 ```bash
 cd clients/typescript
-npx --yes -p typescript@5.6.3 tsc --noEmit --strict --module nodenext \
-  --moduleResolution nodenext --target es2022 --skipLibCheck \
-  --allowImportingTsExtensions client.ts
+npm ci
+npm run typecheck
 ```
 
 ## Usage

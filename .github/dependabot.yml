@@ -16,23 +16,40 @@ updates:
           - ruff
           - mypy
           - pre-commit
-  # PEP 621 / pip ecosystem for the same manifest. A pip PR that does not
-  # refresh uv.lock fails `uv lock --check` in CI; merge the uv PR when both
-  # open for the same bump. Kept so the pip ecosystem is configured, which
-  # is what Scorecard and reviewers look for alongside GitHub Actions.
+  # Vendored Kronos has independent pip requirements; the root is managed
+  # exclusively by uv so duplicate root Python update PRs cannot drift.
   - package-ecosystem: pip
-    directory: /
+    directories:
+      - /third_party/kronos
+      - /third_party/kronos/webui
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      dev-tools:
+      kronos:
         patterns:
-          - pytest*
-          - hypothesis
-          - ruff
-          - mypy
-          - pre-commit
+          - "*"
+  - package-ecosystem: npm
+    directories:
+      - /web
+      - /replay
+      - /clients/typescript
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      tooling:
+        dependency-type: development
+  - package-ecosystem: cargo
+    directory: /rust/quant_core
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      python-bindings:
+        patterns:
+          - pyo3*
+          - numpy
   - package-ecosystem: github-actions
     directory: /
     schedule:

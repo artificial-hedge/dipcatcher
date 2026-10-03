@@ -14,6 +14,7 @@ Features at decision time ``t`` are computed only from bars with
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from numbers import Integral
 
 import polars as pl
 
@@ -88,6 +89,7 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
     The bucket timestamp is the last source ``event_time`` inside it, so the
     aggregate is not labeled before its last print. ``available_time`` is the
     max availability in the bucket and must be at or after that timestamp.
+    Duplicate (security_id, event_time) keys are rejected before aggregation.
     """
     if not every or not str(every).strip():
         raise ValueError("resample every must be a non-empty polars duration, e.g. '1d'")
@@ -113,6 +115,8 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
             raise PointInTimeError(f"resample input has null {name}")
     if frame.filter(pl.col("event_time") > pl.col("available_time")).height:
         raise PointInTimeError("bar event_time is after its available_time")
+    if frame.select(["security_id", "event_time"]).is_duplicated().any():
+        raise PointInTimeError("duplicate (security_id, event_time) bars")
     frame = frame.sort(["security_id", "event_time"])
     frame = frame.with_columns(pl.col("event_time").dt.truncate(every).alias("_bucket"))
     aggs: list[pl.Expr] = [
@@ -151,22 +155,28 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
     return out.drop("_bucket").sort(["security_id", "event_time"])
 
 
+def _is_integer_count(value: object) -> bool:
+    """Accept integral scalar counts, including NumPy integers, but not bools."""
+    return isinstance(value, Integral) and not isinstance(value, bool)
+
+
 class OhlcvFeaturePipeline:
     """Trailing return, momentum, and volatility from the decision close.
 
     ``ret_1`` is ``close[t] / close[t-1] - 1`` (known at t). ``mom_k`` is the
     same over ``k`` bars. ``vol_w`` is the trailing standard deviation of
-    ``ret_1``. None of these expressions shift forward.
+    ``ret_1``. None of these expressions shift forward. Window counts must be
+    integers (excluding booleans); they are never rounded or truncated.
     """
 
     def __init__(self, lookbacks: list[int], vol_window: int) -> None:
-        windows = [int(k) for k in lookbacks]
-        if not windows or any(k < 1 for k in windows):
+        if not lookbacks or any(not _is_integer_count(k) or k < 1 for k in lookbacks):
             raise ValueError("lookbacks must be positive integers")
+        windows = [int(k) for k in lookbacks]
         if len(set(windows)) != len(windows):
             raise ValueError("lookbacks must be unique")
-        if int(vol_window) < 2:
-            raise ValueError("vol_window must be >= 2")
+        if not _is_integer_count(vol_window) or vol_window < 2:
+            raise ValueError("vol_window must be an integer >= 2")
         self.lookbacks = tuple(sorted(windows))
         self.vol_window = int(vol_window)
 
