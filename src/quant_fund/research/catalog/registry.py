@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-979 ergodic-2 canon.
+        "weyl_equidist",
+        "van_der_corput",
+        "horocycle_flow",
+        "unipotent_ergodic",
+        "ratner_thm",
+        "disjointness_dyn",
         # Wave-978 harmonic-analysis-2 canon.
         "hausdorff_young",
         "restriction_est",

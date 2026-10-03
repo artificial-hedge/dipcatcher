@@ -7823,6 +7823,14 @@ from quant_fund.research.benches_w978 import (
     bench_restriction_est_family,
     bench_strichartz_est_family,
 )
+from quant_fund.research.benches_w979 import (
+    bench_disjointness_dyn_family,
+    bench_horocycle_flow_family,
+    bench_ratner_thm_family,
+    bench_unipotent_ergodic_family,
+    bench_van_der_corput_family,
+    bench_weyl_equidist_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8194,6 +8202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "weyl_equidist": bench_weyl_equidist_family,
+        "van_der_corput": bench_van_der_corput_family,
+        "horocycle_flow": bench_horocycle_flow_family,
+        "unipotent_ergodic": bench_unipotent_ergodic_family,
+        "ratner_thm": bench_ratner_thm_family,
+        "disjointness_dyn": bench_disjointness_dyn_family,
         "hausdorff_young": bench_hausdorff_young_family,
         "restriction_est": bench_restriction_est_family,
         "bochner_riesz": bench_bochner_riesz_family,
