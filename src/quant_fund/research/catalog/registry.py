@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1221 derm-eye-ent canon.
+        "dermatology_studies",
+        "ophthalmology_studies",
+        "otolaryngology_studies",
+        "audiology_medicine",
+        "optometry_studies",
+        "dermatopathology",
         # Wave-1220 infectious-immune canon.
         "infectious_disease_medicine",
         "hiv_medicine",

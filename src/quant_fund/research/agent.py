@@ -9759,6 +9759,14 @@ from quant_fund.research.benches_w1220 import (
     bench_infectious_disease_medicine_family,
     bench_rheumatology_studies_family,
 )
+from quant_fund.research.benches_w1221 import (
+    bench_audiology_medicine_family,
+    bench_dermatology_studies_family,
+    bench_dermatopathology_family,
+    bench_ophthalmology_studies_family,
+    bench_optometry_studies_family,
+    bench_otolaryngology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10130,6 +10138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dermatology_studies": bench_dermatology_studies_family,
+        "ophthalmology_studies": bench_ophthalmology_studies_family,
+        "otolaryngology_studies": bench_otolaryngology_studies_family,
+        "audiology_medicine": bench_audiology_medicine_family,
+        "optometry_studies": bench_optometry_studies_family,
+        "dermatopathology": bench_dermatopathology_family,
         "infectious_disease_medicine": bench_infectious_disease_medicine_family,
         "hiv_medicine": bench_hiv_medicine_family,
         "antimicrobial_stewardship": bench_antimicrobial_stewardship_family,
