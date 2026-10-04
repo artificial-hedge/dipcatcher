@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-799 path-PDE canon.
+        "path_dependent_pde",
+        "functional_ito",
+        "dupire_functional",
+        "viscosity_path",
+        "path_sobolev",
+        "kolmogorov_path",
         # Wave-798 forward-SDE canon.
         "forward_sde",
         "random_sde",
