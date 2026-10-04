@@ -12847,6 +12847,14 @@ from quant_fund.research.benches_w1606 import (
     bench_salt_qa_studies_family,
     bench_vicuna_qa_studies_family,
 )
+from quant_fund.research.benches_w1607 import (
+    bench_bamboo_lemur_qa_studies_family,
+    bench_bearded_saki_qa_studies_family,
+    bench_owl_monkey_qa_studies_family,
+    bench_pale_titi_qa_studies_family,
+    bench_uakari_2_qa_studies_family,
+    bench_woolly_lemur_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14956,6 +14964,12 @@ def _provenance(
         "decorator_qa_studies": bench_decorator_qa_studies_family,
         "fiddler_qa_studies": bench_fiddler_qa_studies_family,
         "alpaca_qa_studies": bench_alpaca_qa_studies_family,
+        "bamboo_lemur_qa_studies": bench_bamboo_lemur_qa_studies_family,
+        "bearded_saki_qa_studies": bench_bearded_saki_qa_studies_family,
+        "owl_monkey_qa_studies": bench_owl_monkey_qa_studies_family,
+        "pale_titi_qa_studies": bench_pale_titi_qa_studies_family,
+        "uakari_2_qa_studies": bench_uakari_2_qa_studies_family,
+        "woolly_lemur_qa_studies": bench_woolly_lemur_qa_studies_family,
         "aoudad_qa_studies": bench_aoudad_qa_studies_family,
         "dromedary_qa_studies": bench_dromedary_qa_studies_family,
         "guanaco_qa_studies": bench_guanaco_qa_studies_family,
