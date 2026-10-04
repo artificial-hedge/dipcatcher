@@ -13431,6 +13431,14 @@ from quant_fund.research.benches_w1679 import (
     bench_troll_qa_studies_family,
     bench_vaetter_qa_studies_family,
 )
+from quant_fund.research.benches_w1680 import (
+    bench_coatlicue_qa_studies_family,
+    bench_mictlan_qa_studies_family,
+    bench_mixcoatl_qa_studies_family,
+    bench_tlaloc_qa_studies_family,
+    bench_tonatiuh_qa_studies_family,
+    bench_xipe_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
