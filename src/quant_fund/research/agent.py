@@ -4439,6 +4439,14 @@ from quant_fund.research.benches_w555 import (
     bench_torus_fibration_family,
     bench_wrapped_fukaya_family,
 )
+from quant_fund.research.benches_w556 import (
+    bench_earthquake_map_family,
+    bench_extremal_length_family,
+    bench_mapping_class_family,
+    bench_pseudo_anosov_family,
+    bench_quadratic_diff_family,
+    bench_weil_petersson_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4818,6 +4826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "weil_petersson": bench_weil_petersson_family,
+        "mapping_class": bench_mapping_class_family,
+        "quadratic_diff": bench_quadratic_diff_family,
+        "earthquake_map": bench_earthquake_map_family,
+        "extremal_length": bench_extremal_length_family,
+        "pseudo_anosov": bench_pseudo_anosov_family,
         "hms_conjecture": bench_hms_conjecture_family,
         "landau_ginzburg": bench_landau_ginzburg_family,
         "syz_mirror": bench_syz_mirror_family,
