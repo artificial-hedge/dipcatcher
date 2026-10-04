@@ -8135,6 +8135,14 @@ from quant_fund.research.benches_w1017 import (
     bench_stress_tensor_family,
     bench_viscoelasticity_family,
 )
+from quant_fund.research.benches_w1018 import (
+    bench_four_vectors_family,
+    bench_geodesic_motion_family,
+    bench_gravitational_lensing_family,
+    bench_gravitational_waves_family,
+    bench_lorentz_transformation_family,
+    bench_spacetime_interval_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8506,6 +8514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lorentz_transformation": bench_lorentz_transformation_family,
+        "spacetime_interval": bench_spacetime_interval_family,
+        "four_vectors": bench_four_vectors_family,
+        "geodesic_motion": bench_geodesic_motion_family,
+        "gravitational_lensing": bench_gravitational_lensing_family,
+        "gravitational_waves": bench_gravitational_waves_family,
         "navier_cauchy": bench_navier_cauchy_family,
         "stress_tensor": bench_stress_tensor_family,
         "rheology": bench_rheology_family,
