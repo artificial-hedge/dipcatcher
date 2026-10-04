@@ -5391,6 +5391,14 @@ from quant_fund.research.benches_w674 import (
     bench_spectral_curve_family,
     bench_spectral_gm_family,
 )
+from quant_fund.research.benches_w675 import (
+    bench_boards_operad_family,
+    bench_cyclotomic_e_n_family,
+    bench_e3_algebra_family,
+    bench_getzler_jones_family,
+    bench_surfaces_operad_family,
+    bench_tadv_hochschild_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5770,6 +5778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e3_algebra": bench_e3_algebra_family,
+        "getzler_jones": bench_getzler_jones_family,
+        "tadv_hochschild": bench_tadv_hochschild_family,
+        "cyclotomic_e_n": bench_cyclotomic_e_n_family,
+        "surfaces_operad": bench_surfaces_operad_family,
+        "boards_operad": bench_boards_operad_family,
         "derived_k3": bench_derived_k3_family,
         "spectral_gm": bench_spectral_gm_family,
         "analytic_spec": bench_analytic_spec_family,
