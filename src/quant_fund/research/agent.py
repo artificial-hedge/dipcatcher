@@ -12383,6 +12383,14 @@ from quant_fund.research.benches_w1548 import (
     bench_malkoha_qa_studies_family,
     bench_turaco_qa_studies_family,
 )
+from quant_fund.research.benches_w1549 import (
+    bench_cassowary_qa_studies_family,
+    bench_emu_qa_studies_family,
+    bench_kiwi_qa_studies_family,
+    bench_ostrich_qa_studies_family,
+    bench_rhea_qa_studies_family,
+    bench_tinamou_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14277,6 +14285,12 @@ def _provenance(
         "hoatzin_qa_studies": bench_hoatzin_qa_studies_family,
         "malkoha_qa_studies": bench_malkoha_qa_studies_family,
         "turaco_qa_studies": bench_turaco_qa_studies_family,
+        "cassowary_qa_studies": bench_cassowary_qa_studies_family,
+        "emu_qa_studies": bench_emu_qa_studies_family,
+        "kiwi_qa_studies": bench_kiwi_qa_studies_family,
+        "ostrich_qa_studies": bench_ostrich_qa_studies_family,
+        "rhea_qa_studies": bench_rhea_qa_studies_family,
+        "tinamou_qa_studies": bench_tinamou_qa_studies_family,
         "emerald_dove_qa_studies": bench_emerald_dove_qa_studies_family,
         "fruit_dove_qa_studies": bench_fruit_dove_qa_studies_family,
         "ground_dove_qa_studies": bench_ground_dove_qa_studies_family,

@@ -4104,6 +4104,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hoatzin_qa_studies",
         "malkoha_qa_studies",
         "turaco_qa_studies",
+        # Wave-1549 ratite canon.
+        "cassowary_qa_studies",
+        "emu_qa_studies",
+        "kiwi_qa_studies",
+        "ostrich_qa_studies",
+        "rhea_qa_studies",
+        "tinamou_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
