@@ -8527,6 +8527,14 @@ from quant_fund.research.benches_w1066 import (
     bench_middle_eastern_studies_family,
     bench_slavic_studies_family,
 )
+from quant_fund.research.benches_w1067 import (
+    bench_archival_studies_family,
+    bench_digital_humanities_family,
+    bench_information_science_family,
+    bench_knowledge_organization_family,
+    bench_library_science_family,
+    bench_museum_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8898,6 +8906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "library_science": bench_library_science_family,
+        "information_science": bench_information_science_family,
+        "archival_studies": bench_archival_studies_family,
+        "museum_studies": bench_museum_studies_family,
+        "digital_humanities": bench_digital_humanities_family,
+        "knowledge_organization": bench_knowledge_organization_family,
         "latin_american_studies": bench_latin_american_studies_family,
         "asian_studies": bench_asian_studies_family,
         "european_studies": bench_european_studies_family,
