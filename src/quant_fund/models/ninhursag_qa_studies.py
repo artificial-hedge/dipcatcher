@@ -16,7 +16,7 @@ def ninhursag_qa_studies_aux(aux: bool) -> bool:
     """ninhursag_qa_studies
 
     aux:
-    ninhursag_qa_studies: ninhursag, mother goddesses, answers, and scores
+    ninhursag_qa_studies: ninhursag, mountain mothers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_ninhursag_qa_studies(seed: int = 0) -> float:
     checks.append(not ninhursag_qa_studies_ok(False, True))
     checks.append(ninhursag_qa_studies_aux(True))
     checks.append(not ninhursag_qa_studies_aux(False))
-    checks.append(True)  # sumerian-myth canon
+    checks.append(True)  # sumerian-2 canon
     return float(sum(checks) / len(checks))
 
 
