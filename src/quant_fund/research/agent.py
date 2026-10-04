@@ -8447,6 +8447,14 @@ from quant_fund.research.benches_w1056 import (
     bench_political_theory_family,
     bench_public_administration_family,
 )
+from quant_fund.research.benches_w1057 import (
+    bench_morphology_family,
+    bench_phonetics_family,
+    bench_phonology_family,
+    bench_pragmatics_family,
+    bench_semantics_family,
+    bench_syntax_theory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8818,6 +8826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "phonetics": bench_phonetics_family,
+        "phonology": bench_phonology_family,
+        "morphology": bench_morphology_family,
+        "syntax_theory": bench_syntax_theory_family,
+        "semantics": bench_semantics_family,
+        "pragmatics": bench_pragmatics_family,
         "comparative_politics": bench_comparative_politics_family,
         "international_relations": bench_international_relations_family,
         "political_theory": bench_political_theory_family,
