@@ -5574,6 +5574,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "obatala_qa_studies",
         "oya_qa_studies",
         "shango_qa_studies",
+        # Wave-1759 aztec-deity-4 canon.
+        "citlali_qa_studies",
+        "malinal_qa_studies",
+        "metzli_qa_studies",
+        "tepoz_qa_studies",
+        "tonaca_qa_studies",
+        "xochipilli_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
