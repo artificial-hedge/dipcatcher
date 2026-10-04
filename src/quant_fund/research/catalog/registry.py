@@ -3159,6 +3159,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "discourse_qa_studies",
         "hedge_qa_studies",
         "implicit_qa_studies",
+        # Wave-1414 folk-commonsense canon.
+        "afford_qa_studies",
+        "counter_qa_studies",
+        "custom_qa_studies",
+        "everyday_qa_studies",
+        "folk_qa_studies",
+        "moral_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
