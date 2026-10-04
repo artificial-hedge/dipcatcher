@@ -4871,6 +4871,14 @@ from quant_fund.research.benches_w609 import (
     bench_orient_cohom_family,
     bench_thom_constr_family,
 )
+from quant_fund.research.benches_w610 import (
+    bench_first_order_family,
+    bench_obstruction_def_family,
+    bench_prorepresent_family,
+    bench_schlessinger2_family,
+    bench_semiuniversal_family,
+    bench_versal_def_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5250,6 +5258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "schlessinger2": bench_schlessinger2_family,
+        "prorepresent": bench_prorepresent_family,
+        "versal_def": bench_versal_def_family,
+        "semiuniversal": bench_semiuniversal_family,
+        "first_order": bench_first_order_family,
+        "obstruction_def": bench_obstruction_def_family,
         "e_infty_space": bench_e_infty_space_family,
         "brave_new_ring": bench_brave_new_ring_family,
         "thom_constr": bench_thom_constr_family,
