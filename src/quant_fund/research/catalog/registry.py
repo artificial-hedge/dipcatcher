@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1077 visual arts canon.
+        "painting_techniques",
+        "sculpture_methods",
+        "printmaking",
+        "art_conservation",
+        "art_history",
+        "visual_culture",
         # Wave-1076 archaeology canon.
         "field_archaeology",
         "archaeometry",
