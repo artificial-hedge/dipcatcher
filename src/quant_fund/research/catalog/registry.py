@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1028 chemical-engineering canon.
+        "reaction_kinetics",
+        "thermo_props",
+        "separation_proc",
+        "heat_exchanger",
+        "fluid_dynamics2",
+        "process_control",
         # Wave-1027 materials-science canon.
         "crystal_structure",
         "polymer_physics",
