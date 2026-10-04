@@ -3586,6 +3586,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ibis_qa_studies",
         "kingfisher_qa_studies",
         "loon_qa_studies",
+        # Wave-1475 invertebrate canon.
+        "cicada_qa_studies",
+        "dragonfly_qa_studies",
+        "grasshopper_qa_studies",
+        "ladybug_qa_studies",
+        "mantis_qa_studies",
+        "scorpion_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
