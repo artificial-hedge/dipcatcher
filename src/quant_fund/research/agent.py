@@ -9831,6 +9831,14 @@ from quant_fund.research.benches_w1229 import (
     bench_pediatric_oncology_family,
     bench_pediatrics_studies_family,
 )
+from quant_fund.research.benches_w1230 import (
+    bench_acute_care_studies_family,
+    bench_disaster_medicine_family,
+    bench_emergency_medicine_studies_family,
+    bench_resuscitation_medicine_family,
+    bench_toxicology_medicine_family,
+    bench_trauma_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10202,6 +10210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "emergency_medicine_studies": bench_emergency_medicine_studies_family,
+        "trauma_medicine": bench_trauma_medicine_family,
+        "toxicology_medicine": bench_toxicology_medicine_family,
+        "disaster_medicine": bench_disaster_medicine_family,
+        "acute_care_studies": bench_acute_care_studies_family,
+        "resuscitation_medicine": bench_resuscitation_medicine_family,
         "pediatrics_studies": bench_pediatrics_studies_family,
         "neonatal_medicine_studies": bench_neonatal_medicine_studies_family,
         "pediatric_cardiology": bench_pediatric_cardiology_family,
