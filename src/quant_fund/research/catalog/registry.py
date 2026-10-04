@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1039 environmental-engineering canon.
+        "water_treatment",
+        "air_pollution_control",
+        "waste_management",
+        "environmental_remediation",
+        "wastewater_engineering",
+        "noise_control",
         # Wave-1038 medicine canon.
         "human_physiology",
         "pharmacokinetics",

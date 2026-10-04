@@ -8303,6 +8303,14 @@ from quant_fund.research.benches_w1038 import (
     bench_pathology_family,
     bench_pharmacokinetics_family,
 )
+from quant_fund.research.benches_w1039 import (
+    bench_air_pollution_control_family,
+    bench_environmental_remediation_family,
+    bench_noise_control_family,
+    bench_waste_management_family,
+    bench_wastewater_engineering_family,
+    bench_water_treatment_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8674,6 +8682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "water_treatment": bench_water_treatment_family,
+        "air_pollution_control": bench_air_pollution_control_family,
+        "waste_management": bench_waste_management_family,
+        "environmental_remediation": bench_environmental_remediation_family,
+        "wastewater_engineering": bench_wastewater_engineering_family,
+        "noise_control": bench_noise_control_family,
         "human_physiology": bench_human_physiology_family,
         "pharmacokinetics": bench_pharmacokinetics_family,
         "immunology": bench_immunology_family,
