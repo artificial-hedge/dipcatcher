@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1019 geophysics-3 canon.
+        "seismic_waves",
+        "earthquake_magnitude",
+        "plate_tectonics",
+        "gravity_anomaly",
+        "geomagnetism",
+        "heat_flow_geo",
         # Wave-1018 relativity-2 canon.
         "lorentz_transformation",
         "spacetime_interval",
