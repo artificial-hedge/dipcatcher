@@ -4384,6 +4384,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ribbon_seal_qa_studies",
         "ringed_seal_qa_studies",
         "ross_seal_qa_studies",
+        # Wave-1589 cetacean-2 canon.
+        "porpoise_qa_studies",
+        "right_whale_qa_studies",
+        "rissos_qa_studies",
+        "river_dolphin_qa_studies",
+        "spinner_qa_studies",
+        "vaquita_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
