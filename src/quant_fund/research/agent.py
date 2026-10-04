@@ -11247,6 +11247,14 @@ from quant_fund.research.benches_w1406 import (
     bench_timedial_qa_studies_family,
     bench_timetravel_lite_studies_family,
 )
+from quant_fund.research.benches_w1407 import (
+    bench_canard_lite_studies_family,
+    bench_clarq_lite_studies_family,
+    bench_doqa_lite_studies_family,
+    bench_duread_qa_studies_family,
+    bench_orchid_qa_studies_family,
+    bench_qrecc_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12349,6 +12357,12 @@ def _provenance(
         "time_qa_studies": bench_time_qa_studies_family,
         "timedial_qa_studies": bench_timedial_qa_studies_family,
         "timetravel_lite_studies": bench_timetravel_lite_studies_family,
+        "canard_lite_studies": bench_canard_lite_studies_family,
+        "clarq_lite_studies": bench_clarq_lite_studies_family,
+        "doqa_lite_studies": bench_doqa_lite_studies_family,
+        "duread_qa_studies": bench_duread_qa_studies_family,
+        "orchid_qa_studies": bench_orchid_qa_studies_family,
+        "qrecc_lite_studies": bench_qrecc_lite_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
