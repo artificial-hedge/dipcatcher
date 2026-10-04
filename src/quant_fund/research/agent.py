@@ -9527,6 +9527,14 @@ from quant_fund.research.benches_w1191 import (
     bench_public_relations_studies_family,
     bench_publishing_studies_family,
 )
+from quant_fund.research.benches_w1192 import (
+    bench_acupuncture_studies_family,
+    bench_chiropractic_studies_family,
+    bench_herbal_medicine_family,
+    bench_homeopathy_family,
+    bench_naturopathy_family,
+    bench_osteopathy_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9898,6 +9906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "acupuncture_studies": bench_acupuncture_studies_family,
+        "chiropractic_studies": bench_chiropractic_studies_family,
+        "naturopathy": bench_naturopathy_family,
+        "homeopathy": bench_homeopathy_family,
+        "herbal_medicine": bench_herbal_medicine_family,
+        "osteopathy_studies": bench_osteopathy_studies_family,
         "journalism_studies": bench_journalism_studies_family,
         "advertising_studies": bench_advertising_studies_family,
         "broadcasting_studies": bench_broadcasting_studies_family,
