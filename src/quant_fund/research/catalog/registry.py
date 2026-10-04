@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1119 history-2 canon.
+        "social_history",
+        "cultural_history",
+        "military_history",
+        "diplomatic_history",
+        "history_of_technology",
+        "history_of_medicine",
         # Wave-1118 linguistics-4 canon.
         "theoretical_linguistics",
         "field_linguistics",
