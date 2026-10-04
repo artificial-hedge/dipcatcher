@@ -6495,6 +6495,14 @@ from quant_fund.research.benches_w812 import (
     bench_small_set_family,
     bench_split_chain_family,
 )
+from quant_fund.research.benches_w813 import (
+    bench_diffusion_semigroup_family,
+    bench_feller_boundary_family,
+    bench_kreyn_resolvent_family,
+    bench_scale_measure_family,
+    bench_speed_measure_family,
+    bench_yosida_op_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6866,6 +6874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "feller_boundary": bench_feller_boundary_family,
+        "scale_measure": bench_scale_measure_family,
+        "speed_measure": bench_speed_measure_family,
+        "diffusion_semigroup": bench_diffusion_semigroup_family,
+        "yosida_op": bench_yosida_op_family,
+        "kreyn_resolvent": bench_kreyn_resolvent_family,
         "regenerative": bench_regenerative_family,
         "epsilon_coupling": bench_epsilon_coupling_family,
         "small_set": bench_small_set_family,

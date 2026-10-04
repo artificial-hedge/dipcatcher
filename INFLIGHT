@@ -1,3 +1,4 @@
+feat(research): wave 813 — diffusion-theory canon (feller_boundary, scale_measure, speed_measure, diffusion_semigroup, yosida_op, kreyn_resolvent) (4827->4833 families)
 feat(research): wave 812 — regenerative canon (regenerative, epsilon_coupling, small_set, petite_set, split_chain, nummelin) (4821->4827 families)
 feat(research): wave 811 — point-process canon (cambrian_pp, papangelou, gneding_metric, void_prob, j_function, ergodic_pp) (4815->4821 families)
 feat(research): wave 809 — Markov-chain canon (doeblin_coupling, harris_recurrent, ergodic_markov, mixing_time, drift_lyapunov, cutoff_phenomenon) (4809->4815 families)
