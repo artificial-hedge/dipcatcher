@@ -9087,6 +9087,14 @@ from quant_fund.research.benches_w1136 import (
     bench_labor_law_family,
     bench_tax_law_family,
 )
+from quant_fund.research.benches_w1137 import (
+    bench_adult_education_family,
+    bench_bilingual_education_family,
+    bench_early_childhood_education_family,
+    bench_educational_leadership_family,
+    bench_gifted_education_family,
+    bench_instructional_design_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9458,6 +9466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "early_childhood_education": bench_early_childhood_education_family,
+        "bilingual_education": bench_bilingual_education_family,
+        "gifted_education": bench_gifted_education_family,
+        "adult_education": bench_adult_education_family,
+        "instructional_design": bench_instructional_design_family,
+        "educational_leadership": bench_educational_leadership_family,
         "environmental_law": bench_environmental_law_family,
         "family_law": bench_family_law_family,
         "labor_law": bench_labor_law_family,

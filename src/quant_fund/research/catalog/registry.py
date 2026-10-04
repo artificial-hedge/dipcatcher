@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1137 education-4 canon.
+        "early_childhood_education",
+        "bilingual_education",
+        "gifted_education",
+        "adult_education",
+        "instructional_design",
+        "educational_leadership",
         # Wave-1136 law-4 canon.
         "environmental_law",
         "family_law",
