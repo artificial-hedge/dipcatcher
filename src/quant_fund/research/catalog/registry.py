@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1251 urology-andrology canon.
+        "prostate_studies",
+        "bladder_studies",
+        "andrology_studies",
+        "erectile_studies",
+        "incontinence_studies",
+        "bph_studies",
         # Wave-1250 ent-head-neck canon.
         "sinus_studies",
         "laryngology_studies",
