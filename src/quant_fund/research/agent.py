@@ -9991,6 +9991,14 @@ from quant_fund.research.benches_w1249 import (
     bench_skin_cancer_studies_family,
     bench_vitiligo_studies_family,
 )
+from quant_fund.research.benches_w1250 import (
+    bench_cochlear_studies_family,
+    bench_head_neck_surgery_studies_family,
+    bench_laryngology_studies_family,
+    bench_otology_studies_family,
+    bench_rhinology_studies_family,
+    bench_sinus_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10362,6 +10370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sinus_studies": bench_sinus_studies_family,
+        "laryngology_studies": bench_laryngology_studies_family,
+        "otology_studies": bench_otology_studies_family,
+        "rhinology_studies": bench_rhinology_studies_family,
+        "head_neck_surgery_studies": bench_head_neck_surgery_studies_family,
+        "cochlear_studies": bench_cochlear_studies_family,
         "skin_cancer_studies": bench_skin_cancer_studies_family,
         "psoriasis_studies": bench_psoriasis_studies_family,
         "eczema_studies": bench_eczema_studies_family,
