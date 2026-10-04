@@ -4426,6 +4426,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "proboscis_qa_studies",
         "siamang_qa_studies",
         "snub_nosed_qa_studies",
+        # Wave-1595 felid-2 canon.
+        "andean_cat_qa_studies",
+        "bay_cat_qa_studies",
+        "flat_headed_qa_studies",
+        "geoffroys_qa_studies",
+        "marbled_cat_qa_studies",
+        "pampas_cat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
