@@ -7927,6 +7927,14 @@ from quant_fund.research.benches_w991 import (
     bench_mosco_conv_family,
     bench_two_scale_conv_family,
 )
+from quant_fund.research.benches_w992 import (
+    bench_limiting_absorption_family,
+    bench_radiation_cond_family,
+    bench_resonances_thy_family,
+    bench_scattering_matrix_family,
+    bench_trace_class_scatt_family,
+    bench_wave_operators_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8298,6 +8306,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wave_operators": bench_wave_operators_family,
+        "scattering_matrix": bench_scattering_matrix_family,
+        "limiting_absorption": bench_limiting_absorption_family,
+        "trace_class_scatt": bench_trace_class_scatt_family,
+        "resonances_thy": bench_resonances_thy_family,
+        "radiation_cond": bench_radiation_cond_family,
         "homogenization": bench_homogenization_family,
         "two_scale_conv": bench_two_scale_conv_family,
         "gamma_convergence": bench_gamma_convergence_family,
