@@ -3152,6 +3152,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "distress_qa_studies",
         "emotion_qa_studies",
         "empathy_qa_studies",
+        # Wave-1413 discourse-pragmatics canon.
+        "anaphora_qa_studies",
+        "coherence_qa_studies",
+        "dialogue_act_studies",
+        "discourse_qa_studies",
+        "hedge_qa_studies",
+        "implicit_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
