@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1226 pathology canon.
+        "pathology_studies",
+        "anatomical_pathology",
+        "clinical_pathology",
+        "histopathology_studies",
+        "cytopathology",
+        "molecular_pathology",
         # Wave-1225 surgery canon.
         "general_surgery_studies",
         "trauma_surgery",
