@@ -13383,6 +13383,14 @@ from quant_fund.research.benches_w1673 import (
     bench_rakshasa_qa_studies_family,
     bench_yaksha_qa_studies_family,
 )
+from quant_fund.research.benches_w1674 import (
+    bench_genii_qa_studies_family,
+    bench_lares_qa_studies_family,
+    bench_larvae_qa_studies_family,
+    bench_lemures_qa_studies_family,
+    bench_manes_qa_studies_family,
+    bench_penates_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
