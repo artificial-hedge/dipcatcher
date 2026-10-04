@@ -9175,6 +9175,14 @@ from quant_fund.research.benches_w1147 import (
     bench_neuroscience_2_family,
     bench_physiology_2_family,
 )
+from quant_fund.research.benches_w1148 import (
+    bench_geochronology_2_family,
+    bench_geology_3_family,
+    bench_geomorphology_2_family,
+    bench_mineralogy_2_family,
+    bench_petrology_2_family,
+    bench_stratigraphy_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9546,6 +9554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "geology_3": bench_geology_3_family,
+        "petrology_2": bench_petrology_2_family,
+        "mineralogy_2": bench_mineralogy_2_family,
+        "stratigraphy_2": bench_stratigraphy_2_family,
+        "geomorphology_2": bench_geomorphology_2_family,
+        "geochronology_2": bench_geochronology_2_family,
         "anatomy": bench_anatomy_family,
         "physiology_2": bench_physiology_2_family,
         "endocrinology_2": bench_endocrinology_2_family,
