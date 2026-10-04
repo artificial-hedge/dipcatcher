@@ -5112,6 +5112,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "muspell_qa_studies",
         "svartalf_qa_studies",
         "ymir_qa_studies",
+        # Wave-1693 mesopotamian-myth-2 canon.
+        "asag_qa_studies",
+        "edimmu_qa_studies",
+        "galla_qa_studies",
+        "lamassu_qa_studies",
+        "shedu_qa_studies",
+        "utukku_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
