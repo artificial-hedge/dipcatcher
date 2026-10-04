@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-865 a-posteriori error-estimation canon.
+        "residual_estimator",
+        "zienkiewicz_zhu",
+        "recovery_error",
+        "dual_weighted_res",
+        "goal_oriented",
+        "equilibrated_flux",
         # Wave-864 stochastic-Galerkin/UQ canon.
         "stochastic_galerkin",
         "poly_chaos_uq",
