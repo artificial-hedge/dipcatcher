@@ -8279,6 +8279,14 @@ from quant_fund.research.benches_w1035 import (
     bench_reactor_physics_family,
     bench_thermal_hydraulics_family,
 )
+from quant_fund.research.benches_w1036 import (
+    bench_drilling_engineering_family,
+    bench_enhanced_recovery_family,
+    bench_formation_evaluation_family,
+    bench_production_engineering_family,
+    bench_reservoir_engineering_family,
+    bench_well_testing_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8650,6 +8658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "reservoir_engineering": bench_reservoir_engineering_family,
+        "drilling_engineering": bench_drilling_engineering_family,
+        "production_engineering": bench_production_engineering_family,
+        "formation_evaluation": bench_formation_evaluation_family,
+        "well_testing": bench_well_testing_family,
+        "enhanced_recovery": bench_enhanced_recovery_family,
         "reactor_physics": bench_reactor_physics_family,
         "radiation_protection": bench_radiation_protection_family,
         "nuclear_fuel_cycle": bench_nuclear_fuel_cycle_family,
