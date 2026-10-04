@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-803 signature canon.
+        "signature_kernel",
+        "pde_signature",
+        "truncated_sig",
+        "signature_gan2",
+        "expected_sig",
+        "sig_inversion",
         # Wave-802 neural-SDE canon.
         "latent_sde",
         "neural_cde",
