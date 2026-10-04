@@ -3936,6 +3936,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cottongrass_qa_studies",
         "reed_qa_studies",
         "rush_qa_studies",
+        # Wave-1525 moss canon.
+        "clubmoss_qa_studies",
+        "haircap_qa_studies",
+        "hornwort_qa_studies",
+        "liverwort_qa_studies",
+        "quillwort_qa_studies",
+        "sphagnum_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
