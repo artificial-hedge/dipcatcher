@@ -7,7 +7,7 @@ from itertools import combinations
 
 def subobjects(n: int) -> int:
     """Number of subobjects of an n-element set = 2^n."""
-    return 2**n
+    return int(2**n)
 
 
 def characteristic_map(sub: list[int], univ: int) -> list[bool]:

@@ -3061,14 +3061,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1260 clinical-research-methods canon.
+        "adaptive_trial_studies",
+        "clinical_trial_studies",
+        "comparative_effectiveness_studies",
+        "meta_analysis_studies",
+        "outcomes_research_studies",
+        "rwe_studies",
         # Wave-1259 drug-discovery canon.
-    "qsar_studies",
-    "docking_studies",
-    "admet_studies",
-    "lead_optimization_studies",
-    "virtual_screening_studies",
-    "de_novo_design_studies",
-# Wave-1258 omics canon.
+        "qsar_studies",
+        "docking_studies",
+        "admet_studies",
+        "lead_optimization_studies",
+        "virtual_screening_studies",
+        "de_novo_design_studies",
+        # Wave-1258 omics canon.
         "transcriptome_studies",
         "proteome_studies",
         "metabolome_studies",

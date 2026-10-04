@@ -1,3 +1,4 @@
+w1260 clinical-research-methods canon: clinical_trial_studies, adaptive_trial_studies, meta_analysis_studies, rwe_studies, outcomes_research_studies, comparative_effectiveness_studies (7509->7515)
 w1259 drug-discovery canon: qsar_studies, docking_studies, admet_studies, lead_optimization_studies, virtual_screening_studies, de_novo_design_studies (7503->7509)
 w1258 omics canon: transcriptome_studies, proteome_studies, metabolome_studies, microbiome_studies, methylome_studies, interactome_studies (7497->7503)
 w1257 clinical-lab canon: immunoassay_studies, pcr_studies, serology_studies, culture_studies, microscopy_studies, flow_cytometry_studies (7491->7497)

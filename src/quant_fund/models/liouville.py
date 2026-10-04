@@ -30,7 +30,7 @@ def _bench_liouville(seed: int = 0) -> float:
 
     th = np.linspace(0, 2 * np.pi, 2000)
     m_b = float(np.max(np.abs(f(np.exp(1j * th)))))
-    checks.append(m_b > abs(f(0.5)))
+    checks.append(bool(m_b > float(abs(f(np.asarray(0.5))))))
     # interior point cannot exceed boundary max for holomorphic non-constant f
     rng = np.random.default_rng(seed)
     interior = rng.uniform(-0.9, 0.9, 400) + 1j * rng.uniform(-0.9, 0.9, 400)

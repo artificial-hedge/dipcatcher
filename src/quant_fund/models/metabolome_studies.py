@@ -1,4 +1,5 @@
 """metabolome_studies module (SYNTHETIC)."""
+
 from __future__ import annotations
 
 
