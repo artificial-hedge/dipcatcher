@@ -8151,6 +8151,14 @@ from quant_fund.research.benches_w1019 import (
     bench_plate_tectonics_family,
     bench_seismic_waves_family,
 )
+from quant_fund.research.benches_w1020 import (
+    bench_food_web_family,
+    bench_island_biogeography_family,
+    bench_logistic_growth_family,
+    bench_lotka_volterra_family,
+    bench_neutral_theory_family,
+    bench_predator_prey_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8522,6 +8530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "predator_prey": bench_predator_prey_family,
+        "lotka_volterra": bench_lotka_volterra_family,
+        "logistic_growth": bench_logistic_growth_family,
+        "island_biogeography": bench_island_biogeography_family,
+        "neutral_theory": bench_neutral_theory_family,
+        "food_web": bench_food_web_family,
         "seismic_waves": bench_seismic_waves_family,
         "earthquake_magnitude": bench_earthquake_magnitude_family,
         "plate_tectonics": bench_plate_tectonics_family,
