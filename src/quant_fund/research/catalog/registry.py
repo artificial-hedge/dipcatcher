@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1321 multimodal-eval canon.
+        "chart_gqa_studies",
+        "mathvista_studies",
+        "mkqa_studies",
+        "mmmlu_studies",
+        "mmmu_studies",
+        "videomme_studies",
         # Wave-1320 agent-eval canon.
         "gaia_bench_studies",
         "mmbench_agent_studies",
