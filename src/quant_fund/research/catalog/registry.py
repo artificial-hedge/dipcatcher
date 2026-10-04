@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1186 ux canon.
+        "ux_design",
+        "hci_studies",
+        "information_architecture",
+        "interaction_design",
+        "accessibility_studies",
+        "service_design",
         # Wave-1185 game canon.
         "game_design",
         "esports_studies",

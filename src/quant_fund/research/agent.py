@@ -9479,6 +9479,14 @@ from quant_fund.research.benches_w1185 import (
     bench_interactive_media_family,
     bench_ludology_family,
 )
+from quant_fund.research.benches_w1186 import (
+    bench_accessibility_studies_family,
+    bench_hci_studies_family,
+    bench_information_architecture_family,
+    bench_interaction_design_family,
+    bench_service_design_family,
+    bench_ux_design_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9850,6 +9858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ux_design": bench_ux_design_family,
+        "hci_studies": bench_hci_studies_family,
+        "information_architecture": bench_information_architecture_family,
+        "interaction_design": bench_interaction_design_family,
+        "accessibility_studies": bench_accessibility_studies_family,
+        "service_design": bench_service_design_family,
         "game_design": bench_game_design_family,
         "esports_studies": bench_esports_studies_family,
         "interactive_media": bench_interactive_media_family,
