@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1393 MCP-web canon.
+        "hamming_mcp_studies",
+        "mcp_bench_studies",
+        "net_hack_studies",
+        "tool_sandbox_studies",
+        "videoweb_studies",
+        "webshop_lite_studies",
         # Wave-1392 toolbench canon.
         "meta_tool_studies",
         "nest_tools_studies",

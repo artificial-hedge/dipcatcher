@@ -11135,6 +11135,14 @@ from quant_fund.research.benches_w1392 import (
     bench_ultra_tool_studies_family,
     bench_work_plus_studies_family,
 )
+from quant_fund.research.benches_w1393 import (
+    bench_hamming_mcp_studies_family,
+    bench_mcp_bench_studies_family,
+    bench_net_hack_studies_family,
+    bench_tool_sandbox_studies_family,
+    bench_videoweb_studies_family,
+    bench_webshop_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12159,6 +12167,12 @@ def _provenance(
         "toolqa_lite_studies": bench_toolqa_lite_studies_family,
         "ultra_tool_studies": bench_ultra_tool_studies_family,
         "work_plus_studies": bench_work_plus_studies_family,
+        "hamming_mcp_studies": bench_hamming_mcp_studies_family,
+        "mcp_bench_studies": bench_mcp_bench_studies_family,
+        "net_hack_studies": bench_net_hack_studies_family,
+        "tool_sandbox_studies": bench_tool_sandbox_studies_family,
+        "videoweb_studies": bench_videoweb_studies_family,
+        "webshop_lite_studies": bench_webshop_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
