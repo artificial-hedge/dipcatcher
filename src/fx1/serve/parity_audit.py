@@ -60,6 +60,10 @@ from typing import TYPE_CHECKING, Any
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
+_MESSAGES_PATH = "/v1/messages"
+_TERSE_PROMPT = "be terse"
+
+
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
@@ -900,7 +904,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         # the same fail-closed refusals, and the same completion log
         resp_body = {
             "model": "fx1",
-            "instructions": "be terse",
+            "instructions": _TERSE_PROMPT,
             "input": [
                 {"role": "developer", "content": [{"type": "input_text", "text": "d"}]},
                 {"role": "user", "content": "ping"},
@@ -3921,17 +3925,17 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     _am_req = {
         "model": "fx1",
         "max_tokens": 64,
-        "system": "be terse",
+        "system": _TERSE_PROMPT,
         "messages": [{"role": "user", "content": "ping"}],
         "fx1": {"backend": "byok"},
     }
-    _am_wire = client.post("/v1/messages", json=_am_req, headers=_am_auth)
+    _am_wire = client.post(_MESSAGES_PATH, json=_am_req, headers=_am_auth)
     _am_sdk, _am_sdk_cid = sdk.anthropic_message(dict(_am_req))
     _am_remote, _am_remote_cid = _am_keyed.create_message(
         [{"role": "user", "content": "ping"}],
         model="fx1",
         max_tokens=64,
-        system="be terse",
+        system=_TERSE_PROMPT,
         backend="byok",
     )
     out["anthropic_envelope_parity"] = (
@@ -3952,7 +3956,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         [{"role": "user", "content": "ping"}],
         model="fx1",
         max_tokens=64,
-        system="be terse",
+        system=_TERSE_PROMPT,
         backend="byok",
     )
     _sdk_events, _ = sdk.anthropic_message_stream(dict(_am_req))
@@ -3973,7 +3977,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     # 422 anthropic-shaped on the wire, ValueError in-process and through
     # the client (422 maps to ValueError in the client's error table)
     _am_bad = {"model": "fx1", "messages": [{"role": "user", "content": "x"}]}
-    _wire_bad = client.post("/v1/messages", json=_am_bad, headers=_am_auth)
+    _wire_bad = client.post(_MESSAGES_PATH, json=_am_bad, headers=_am_auth)
     out["anthropic_failclosed_parity"] = (
         _wire_bad.status_code == 422
         and _wire_bad.json().get("type") == "error"
@@ -3985,11 +3989,75 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         == "ValueError"
         # a wrong key is refused in the Anthropic error envelope — the
         # auth failure itself is drop-in-shaped, not an OpenAI body
-        and client.post("/v1/messages", json=_am_req, headers={"x-api-key": "sk-wrong"}).json()
+        and client.post(_MESSAGES_PATH, json=_am_req, headers={"x-api-key": "sk-wrong"}).json()
         == {
             "type": "error",
             "error": {"type": "authentication_error", "message": "invalid or missing API key"},
         }
+    )
+
+    # --- legacy /v1/completions parity ---------------------------------
+    # the pre-chat text surface over the same gated pipeline — the wire
+    # envelope, the in-process SDK twin, and the remote client's
+    # create_completion must produce the same text_completion object,
+    # and legacy-only fields refuse identically on all legs.
+    _lc_wire = client.post(
+        "/v1/completions",
+        json={
+            "model": "fx1",
+            "prompt": "ping",
+            "max_tokens": 32,
+            "fx1": {"backend": "byok"},
+        },
+        headers=_am_auth,
+    )
+    _lc_sdk, _lc_sdk_cid = sdk.openai_completion(
+        {"model": "fx1", "prompt": "ping", "max_tokens": 32, "fx1": {"backend": "byok"}}
+    )
+    _lc_remote, _lc_remote_cid = _am_keyed.create_completion(
+        "ping", model="fx1", max_tokens=32, backend="byok"
+    )
+    out["legacy_envelope_parity"] = (
+        _lc_wire.status_code == 200
+        and _lc_wire.json()["object"] == "text_completion"
+        and _lc_wire.json()["choices"][0]["text"] == _lc_sdk["choices"][0]["text"]
+        and _lc_remote["choices"][0]["text"] == _lc_sdk["choices"][0]["text"]
+        and _lc_wire.json()["choices"][0]["finish_reason"]
+        == _lc_sdk["choices"][0]["finish_reason"]
+        == _lc_remote["choices"][0]["finish_reason"]
+        and bool(_lc_sdk_cid)
+        and bool(_lc_remote_cid)
+    )
+    # stream parity — the wire's legacy chunk grammar re-assembles to
+    # the same text the in-process SDK stream emits
+    _sdk_lchunks, _ = sdk.openai_completion_stream(
+        {"model": "fx1", "prompt": "ping", "max_tokens": 32, "fx1": {"backend": "byok"}}
+    )
+    _remote_lchunks, _remote_lcid = _am_keyed.create_completion_stream(
+        "ping", model="fx1", max_tokens=32, backend="byok"
+    )
+    out["legacy_stream_parity"] = (
+        "".join(c["choices"][0]["text"] for c in _sdk_lchunks)
+        == "".join(c["choices"][0]["text"] for c in _remote_lchunks)
+        == _lc_wire.json()["choices"][0]["text"]
+        and _sdk_lchunks[-1]["choices"][0]["finish_reason"] == "stop"
+        and _remote_lchunks[-1]["choices"][0]["finish_reason"] == "stop"
+        and bool(_remote_lcid)
+    )
+    # fail-closed parity — suffix/best_of/logprobs refuse on the wire
+    # (422 openai-shaped) and in-process (ValueError) identically
+    _lc_bad = client.post(
+        "/v1/completions",
+        json={"model": "fx1", "prompt": "x", "suffix": "s"},
+        headers=_am_auth,
+    )
+    out["legacy_failclosed_parity"] = (
+        _lc_bad.status_code == 422
+        and _lc_bad.json().get("error", {}).get("type") == "invalid_request_error"
+        and _raises(lambda: sdk.openai_completion({"model": "fx1", "prompt": "x", "suffix": "s"}))[
+            0
+        ]
+        == "ValidationError"
     )
     return out
 

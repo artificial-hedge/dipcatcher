@@ -95,6 +95,7 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAICompletionRequest,
     OpenAIEmbeddingRequest,
     OpenAIEnvelopeStore,
     OpenAIModel,
@@ -108,10 +109,13 @@ from fx1.serve.openai_compat import (
     batch_output_line,
     chained_response_input,
     chat_messages_for_store,
+    completion_events,
     conversation_id_of,
     embeddings_to_kwargs,
     file_search_call_item,
+    legacy_to_chat,
     openai_chunks,
+    openai_completion_envelope,
     openai_conversation_object,
     openai_embedding_envelope,
     openai_envelope,
@@ -2351,6 +2355,84 @@ class Fx1Harness:
         if last_event_id is not None:
             events = events[last_event_id + 1 :]
         return events, cid
+
+    def openai_completion(
+        self,
+        request: OpenAICompletionRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """One legacy ``/v1/completions`` call, weights-direct.
+
+        ``request`` is the same body ``POST /v1/completions`` takes — a
+        dict or a parsed :class:`OpenAICompletionRequest`. Each ``prompt``
+        element translates into one gated user turn
+        (``legacy_to_chat`` → :meth:`openai_chat`) and the envelopes fold
+        into the flat ``text_completion`` choices array — the wire's own
+        translation layer, so this leg cannot drift: same fail-closed
+        validation (``suffix``/``best_of``/``logprobs`` refuse), same
+        gate, same metering.
+
+        Returns the ``text_completion`` envelope plus the last
+        completion-log id for receipt lookup.
+        """
+        body = (
+            request
+            if isinstance(request, OpenAICompletionRequest)
+            else OpenAICompletionRequest.model_validate(request)
+        )
+        prompts = [body.prompt] if isinstance(body.prompt, str) else list(body.prompt)
+        envs: list[dict[str, Any]] = []
+        cid: str | None = None
+        for prompt in prompts:
+            env, cid = self.openai_chat(legacy_to_chat(body, prompt), headers=headers)
+            envs.append(env.model_dump(mode="json"))
+        return (
+            openai_completion_envelope(
+                cid=cid or uuid.uuid4().hex,
+                envs=envs,
+                prompts=prompts,
+                echo=body.echo,
+            ),
+            cid,
+        )
+
+    def openai_completion_stream(
+        self,
+        request: OpenAICompletionRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+        last_event_id: int | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """The legacy ``stream: true`` surface in-process — the
+        ``text_completion`` chunk payloads, minus the wire framing.
+
+        Runs the same gated completion as :meth:`openai_completion`,
+        then emits the per-choice content deltas + ``finish_reason``
+        terminal frames (plus the ``choices: []`` usage frame when
+        ``stream_options.include_usage``) — identical to what
+        ``POST /v1/completions`` serializes. ``last_event_id`` applies
+        the same sequence filter the wire's resume uses.
+
+        Returns ``(chunks, completion_id)``.
+        """
+        if last_event_id is not None and last_event_id < 0:
+            raise ValueError(f"last_event_id must be >= 0, got {last_event_id}")
+        body = (
+            request
+            if isinstance(request, OpenAICompletionRequest)
+            else OpenAICompletionRequest.model_validate(request)
+        )
+        env, cid = self.openai_completion(body, headers=headers)
+        chunks = list(
+            completion_events(
+                env,
+                include_usage=bool((body.stream_options or {}).get("include_usage")),
+            )
+        )
+        if last_event_id is not None:
+            chunks = chunks[last_event_id + 1 :]
+        return chunks, cid
 
     def openai_response(
         self,

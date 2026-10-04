@@ -161,6 +161,7 @@ from fx1.serve.openai_compat import (
     OpenAIChatResponse,
     OpenAIChatUpdate,
     OpenAICompatError,
+    OpenAICompletionRequest,
     OpenAIConversationCreate,
     OpenAIConversationItemsAdd,
     OpenAIConversationUpdate,
@@ -184,12 +185,15 @@ from fx1.serve.openai_compat import (
     batch_output_line,
     chained_response_input,
     chat_messages_for_store,
+    completion_events,
     conversation_id_of,
     embeddings_to_kwargs,
     file_object,
     file_search_call_item,
     is_openai_path,
+    legacy_to_chat,
     openai_chunks,
+    openai_completion_envelope,
     openai_conversation_object,
     openai_embedding_envelope,
     openai_envelope,
@@ -224,6 +228,9 @@ from fx1.serve.vectorstores import (
 )
 from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
+
+_OBJ_CHAT_COMPLETION = "chat.completion"
+_EV_JOB_CANCELLED = "job cancelled"
 
 _API_KEY_ENV = "FX1_API_KEY"
 # The authenticated credential fingerprint for the in-flight request.
@@ -1756,6 +1763,31 @@ def _openai_sse(
     yield f"id: {seq}\ndata: [DONE]\n\n"
 
 
+def _legacy_sse(
+    env: dict[str, Any],
+    *,
+    body: OpenAICompletionRequest,
+    skip: int = 0,
+) -> Iterator[str]:
+    """Serialize ``completion_events`` payloads into SSE frames + the
+    terminal ``[DONE]`` marker — the legacy ``/v1/completions`` stream
+    grammar. Frame ids/indexing and ``Last-Event-ID`` resume semantics
+    match ``_openai_sse`` (a replayed keyed call regenerates the frames
+    byte-identically and ``skip`` drops the prefix)."""
+
+    def _frame(payload: dict[str, Any], seq: int) -> str:
+        return f"id: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
+
+    seq = 0
+    for payload in completion_events(
+        env, include_usage=bool((body.stream_options or {}).get("include_usage"))
+    ):
+        if seq >= skip:
+            yield _frame(payload, seq)
+        seq += 1
+    yield f"id: {seq}\ndata: [DONE]\n\n"
+
+
 def _breaker_key_name(name: str, byok: ByokOverride | None) -> str:
     """Backend key for one chain link — a BYOK endpoint gets its own
     circuit keyed by endpoint hash wherever it sits in the chain."""
@@ -1792,6 +1824,41 @@ def _idem_lookup[IdemT: BaseModel](
     if fp != body_fp:
         raise ApiError(409, "Idempotency-Key reuse with a different request body")
     return key, cached.model_copy(update={"replayed": True})
+
+
+_RESUME_MISS_MSG = (
+    "Last-Event-ID resume needs a pinned stream under this Idempotency-Key — nothing stored"
+)
+
+
+def _resume_skip(last_event_id: str | None, *, stream: bool, idempotency_key: str | None) -> int:
+    """``Last-Event-ID`` → chunk-skip count, fail-closed.
+
+    The header is SSE-only (400 on non-stream), must parse to an int >= 0,
+    and only means anything under an ``Idempotency-Key`` — resuming needs
+    the pinned stream the key names. Returns the number of already
+    delivered frames the caller's SSE generator should skip."""
+    if last_event_id is None:
+        return 0
+    if not stream:
+        raise ApiError(400, "Last-Event-ID applies to stream requests only", code="bad_resume")
+    try:
+        seen = int(last_event_id)
+    except ValueError as exc:
+        raise ApiError(
+            400,
+            f"Last-Event-ID must be a frame index, got {last_event_id!r}",
+            code="bad_resume",
+        ) from exc
+    if seen < 0:
+        raise ApiError(400, "Last-Event-ID must be >= 0", code="bad_resume")
+    if not (idempotency_key or "").strip():
+        raise ApiError(
+            400,
+            "resuming a stream needs the original call's Idempotency-Key",
+            code="resume_needs_key",
+        )
+    return seen + 1
 
 
 def _deliver_callback(
@@ -2073,6 +2140,28 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
                 "X-Fx1-Receipt-Valid": "true" if valid else "false",
             },
         )
+
+
+def _mount_v1_catch_all(app: FastAPI) -> None:
+    """Catch-all for unmapped ``/v1`` paths — a stock SDK hitting a route
+    the surface doesn't implement gets the provider's own error grammar
+    (OpenAI ``Invalid URL (METHOD /path)`` / Anthropic ``not_found_error``
+    under ``/v1/messages``), not FastAPI's ``{"detail": "Not Found"}``.
+    Registered last so method mismatches land here too — matching OpenAI,
+    which 404s unknown method+path pairs."""
+
+    @app.api_route(
+        "/v1/{path:path}",
+        methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+        include_in_schema=False,
+    )
+    def _v1_catch_all(request: Request) -> JSONResponse:
+        path = request.url.path
+        if path == "/v1/messages" or path.startswith("/v1/messages/"):
+            body: dict[str, Any] = anthropic_error_body("Not Found", 404)
+        else:
+            body = openai_error_body(f"Invalid URL ({request.method} {path})", 404, "not_found")
+        return JSONResponse(status_code=404, content=body)
 
 
 def _mount_job_routes(
@@ -2878,6 +2967,10 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
+    if is_openai_path(request.url.path):
+        # OpenAI's api-version response header — the stock SDK + proxies
+        # log it for compat debugging on every /v1 call
+        response.headers["openai-version"] = API_VERSION
     elapsed_ms = (time.monotonic() - started) * 1000
     # OpenAI's server-side timing header — every response carries it so
     # clients can split transport vs processing without trusting the log
@@ -3135,6 +3228,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
     openai_idem_store: _IdemStore[_OpenAIIdemRecord],
     anthropic_idem_store: _IdemStore[_OpenAIIdemRecord],
+    legacy_idem_store: _IdemStore[_OpenAIIdemRecord],
     breaker: _BackendBreaker | None,
     receipt_index: _ReceiptIndex,
     metrics: _Metrics,
@@ -3210,6 +3304,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
         return str(completion_record_receipt(rec.model_dump(mode="json"))["receipt_sha256"])
+
+    def _completion_headers(cid: str, *, replay: bool = False) -> dict[str, str]:
+        """The completion-surface response headers — the call's log id
+        plus the sealed receipt digest when the record still lives in the
+        bounded log. ``replay`` marks a byte-identical idempotent hit."""
+        out = {"X-Fx1-Completion-Id": cid}
+        if replay:
+            out["X-Fx1-Idempotent-Replay"] = "true"
+        rsha = _completion_receipt_sha(cid)
+        if rsha is not None:
+            out["X-Fx1-Receipt-Sha256"] = rsha
+        return out
 
     def _resolve_candidate(
         name: str,
@@ -4743,51 +4849,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """
         # resume parsing first — a malformed Last-Event-ID fails before
         # any idempotency store work or model spend
-        skip = 0
-        if last_event_id is not None:
-            if not body.stream:
-                raise ApiError(
-                    400, "Last-Event-ID applies to stream requests only", code="bad_resume"
-                )
-            try:
-                seen = int(last_event_id)
-            except ValueError as exc:
-                raise ApiError(
-                    400,
-                    f"Last-Event-ID must be a frame index, got {last_event_id!r}",
-                    code="bad_resume",
-                ) from exc
-            if seen < 0:
-                raise ApiError(400, "Last-Event-ID must be >= 0", code="bad_resume")
-            if not (idempotency_key or "").strip():
-                raise ApiError(
-                    400,
-                    "resuming a stream needs the original call's Idempotency-Key",
-                    code="resume_needs_key",
-                )
-            skip = seen + 1
+        skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if skip and replay is None:
-            raise ApiError(
-                409,
-                "Last-Event-ID resume needs a pinned stream under this "
-                "Idempotency-Key — nothing stored",
-                code="resume_miss",
-            )
+            raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
         if replay is not None:
             env = replay.envelope
             cid_replay = str(env["id"]).removeprefix("chatcmpl-")
             # re-pin in the retrieval index — a replay refreshes the entry
             if body.store is not False:
                 envelope_store.put(env)
-            headers = {
-                "X-Fx1-Completion-Id": cid_replay,
-                "X-Fx1-Idempotent-Replay": "true",
-            }
-            _rsha = _completion_receipt_sha(cid_replay)
-            if _rsha is not None:
-                headers["X-Fx1-Receipt-Sha256"] = _rsha
+            headers = _completion_headers(cid_replay, replay=True)
             if body.stream:
                 return StreamingResponse(
                     _openai_sse(
@@ -4813,10 +4886,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         if key is not None:
             openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
-        headers = {"X-Fx1-Completion-Id": cid}
-        _rsha = _completion_receipt_sha(cid)
-        if _rsha is not None:
-            headers["X-Fx1-Receipt-Sha256"] = _rsha
+        headers = _completion_headers(cid)
         if body.stream:
             return StreamingResponse(
                 _openai_sse(
@@ -4881,43 +4951,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         # resume parsing first — a malformed Last-Event-ID refuses before
         # any idempotency store work or model spend
-        skip = 0
-        if last_event_id is not None:
-            if not body.stream:
-                return _refusal(400, "Last-Event-ID applies to stream requests only")
-            try:
-                seen = int(last_event_id)
-            except ValueError:
-                return _refusal(
-                    400,
-                    f"Last-Event-ID must be a frame index, got {last_event_id!r}",
-                )
-            if seen < 0:
-                return _refusal(400, "Last-Event-ID must be >= 0")
-            if not (idempotency_key or "").strip():
-                return _refusal(
-                    400,
-                    "resuming a stream needs the original call's Idempotency-Key",
-                )
-            skip = seen + 1
+        try:
+            skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
+        except ApiError as exc:
+            return _refusal(exc.status_code, str(exc.detail))
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, anthropic_idem_store, body_fp)
         if skip and replay is None:
-            return _refusal(
-                409,
-                "Last-Event-ID resume needs a pinned stream under this "
-                "Idempotency-Key — nothing stored",
-            )
+            return _refusal(409, _RESUME_MISS_MSG)
         if replay is not None:
             env = replay.envelope
             cid_replay = str(env["id"]).removeprefix("chatcmpl-")
-            headers = {
-                "X-Fx1-Completion-Id": cid_replay,
-                "X-Fx1-Idempotent-Replay": "true",
-            }
-            _rsha = _completion_receipt_sha(cid_replay)
-            if _rsha is not None:
-                headers["X-Fx1-Receipt-Sha256"] = _rsha
+            headers = _completion_headers(cid_replay, replay=True)
             if body.stream:
                 return StreamingResponse(
                     anthropic_sse(env, model=body.model, skip=skip),
@@ -4939,10 +4984,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return _refusal(exc.status_code, str(exc.detail))
         if key is not None:
             anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
-        headers = {"X-Fx1-Completion-Id": cid}
-        _rsha = _completion_receipt_sha(cid)
-        if _rsha is not None:
-            headers["X-Fx1-Receipt-Sha256"] = _rsha
+        headers = _completion_headers(cid)
         if body.stream:
             return StreamingResponse(
                 anthropic_sse(env_chat, model=body.model),
@@ -4950,6 +4992,83 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 headers=headers,
             )
         return JSONResponse(anthropic_envelope(env_chat, model=body.model), headers=headers)
+
+    @app.post(
+        "/v1/completions",
+        # the JSON path returns the legacy ``text_completion`` object;
+        # stream=true returns the legacy SSE chunk grammar
+        responses={200: {"model": None}},
+        tags=["openai"],
+        operation_id="openai_completions",
+    )
+    def openai_completions(
+        body: OpenAICompletionRequest,
+        request: Request,
+        _slot_held: None = Depends(slot),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+        last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+    ) -> Response:
+        """Legacy ``/v1/completions`` — the ``text_completion`` surface
+        ``client.completions.create`` and pre-chat agents still target.
+
+        Each ``prompt`` element becomes one user turn through the shared
+        gated pipeline (same honesty gate, fail-closed validation, and
+        completion-log metering as ``/v1/chat/completions``); ``n`` repeats
+        within an element, so ``prompt=[a,b]`` with ``n=2`` lands four
+        flat choices. ``echo`` prepends the prompt to each choice's text.
+        ``suffix``, ``best_of`` and ``logprobs`` refuse 422 — the
+        pipeline has no FIM head and no token-logprob scorer.
+
+        ``store`` is tolerated and ignored (legacy completions have no
+        retrieval twin); ``Idempotency-Key`` replay and ``Last-Event-ID``
+        stream resume work exactly like the chat surface — a pinned call
+        replays byte-identically (JSON or SSE) and a resumed keyed stream
+        drops frames at or below the delivered index.
+        """
+        # resume parsing first — a malformed Last-Event-ID fails before
+        # any idempotency store work or model spend
+        skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, legacy_idem_store, body_fp)
+        if skip and replay is None:
+            raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
+        if replay is not None:
+            env_legacy = replay.envelope
+            cid_replay = str(env_legacy["id"]).removeprefix("cmpl-")
+            headers = _completion_headers(cid_replay, replay=True)
+            if body.stream:
+                return StreamingResponse(
+                    _legacy_sse(env_legacy, body=body, skip=skip),
+                    media_type="text/event-stream",
+                    headers=headers,
+                )
+            return JSONResponse(env_legacy, headers=headers)
+        prompts = [body.prompt] if isinstance(body.prompt, str) else list(body.prompt)
+        try:
+            envs: list[dict[str, Any]] = []
+            cid = ""
+            for prompt_text in prompts:
+                env_chat, cid = _openai_chat_core(
+                    legacy_to_chat(body, prompt_text), request.headers
+                )
+                envs.append(env_chat)
+            env_legacy = openai_completion_envelope(
+                cid=cid, envs=envs, prompts=prompts, echo=body.echo
+            )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        except ValidationError as exc:
+            raise ApiError(400, str(exc)) from exc
+        if key is not None:
+            legacy_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_legacy))
+        headers = _completion_headers(cid)
+        if body.stream:
+            return StreamingResponse(
+                _legacy_sse(env_legacy, body=body),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        return JSONResponse(env_legacy, headers=headers)
 
     @app.post(
         "/v1/responses",
@@ -5011,38 +5130,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         on ``/v1/chat/completions`` (the stream's terminal frame is
         ``response.completed``, not ``[DONE]``).
         """
-        skip = 0
-        if last_event_id is not None:
-            if not body.stream:
-                raise ApiError(
-                    400, "Last-Event-ID applies to stream requests only", code="bad_resume"
-                )
-            try:
-                seen = int(last_event_id)
-            except ValueError as exc:
-                raise ApiError(
-                    400,
-                    f"Last-Event-ID must be a frame index, got {last_event_id!r}",
-                    code="bad_resume",
-                ) from exc
-            if seen < 0:
-                raise ApiError(400, "Last-Event-ID must be >= 0", code="bad_resume")
-            if not (idempotency_key or "").strip():
-                raise ApiError(
-                    400,
-                    "resuming a stream needs the original call's Idempotency-Key",
-                    code="resume_needs_key",
-                )
-            skip = seen + 1
+        skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if skip and replay is None:
-            raise ApiError(
-                409,
-                "Last-Event-ID resume needs a pinned stream under this "
-                "Idempotency-Key — nothing stored",
-                code="resume_miss",
-            )
+            raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
 
         def _resp_sse_from(env: dict[str, Any], drop: int) -> Iterator[str]:
             env_items = [it for it in env["output"] if isinstance(it, dict)]
@@ -5355,7 +5447,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     )
     def openai_chat_retrieve(completion_id: str) -> dict[str, Any]:
         """Retrieve a stored chat completion (``chatcmpl-…``)."""
-        return _stored_envelope(completion_id, object_="chat.completion")
+        return _stored_envelope(completion_id, object_=_OBJ_CHAT_COMPLETION)
 
     @app.post(
         "/v1/chat/completions/{completion_id}",
@@ -5367,7 +5459,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Update a stored chat completion's ``metadata`` (the only
         mutable field — choices/usage are sealed at creation)."""
         env = envelope_store.get(completion_id)
-        if env is None or env.get("object") != "chat.completion":
+        if env is None or env.get("object") != _OBJ_CHAT_COMPLETION:
             raise ApiError(
                 404,
                 f"{completion_id!r} not found — evicted, deleted, or sent with store=false",
@@ -5392,7 +5484,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     )
     def openai_chat_delete(completion_id: str) -> dict[str, Any]:
         """Drop a stored chat completion from the retrieval index."""
-        return _drop_envelope(completion_id, object_="chat.completion")
+        return _drop_envelope(completion_id, object_=_OBJ_CHAT_COMPLETION)
 
     @app.get(
         "/v1/responses/{response_id}",
@@ -5958,7 +6050,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             for k, v in request.query_params.multi_items()
             if k.startswith("metadata[") and k.endswith("]") and len(k) > 10
         }
-        envs = envelope_store.list_envelopes("chat.completion")
+        envs = envelope_store.list_envelopes(_OBJ_CHAT_COMPLETION)
         if model is not None:
             envs = [e for e in envs if e.get("model") == model]
         if meta_filter:
@@ -5990,7 +6082,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (OpenAI's ``chat.completions.messages.list``)."""
         return _request_items(
             completion_id,
-            object_="chat.completion",
+            object_=_OBJ_CHAT_COMPLETION,
             key="messages",
             limit=limit,
             after=after,
@@ -6972,7 +7064,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 already = status_now == "cancelled"
                 job.status = "cancelled"
                 if not already:
-                    ft_store.add_event(job.id, "info", "job cancelled", None)
+                    ft_store.add_event(job.id, "info", _EV_JOB_CANCELLED, None)
             else:
                 for name, path in outcome.artifacts.items():
                     try:
@@ -7018,7 +7110,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 already = job.status == "cancelled"
                 job.status = "cancelled"
                 if not already:
-                    ft_store.add_event(job.id, "info", "job cancelled", None)
+                    ft_store.add_event(job.id, "info", _EV_JOB_CANCELLED, None)
             else:
                 job.status = "failed"
                 job.error = FTJobError(
@@ -7219,7 +7311,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 code="job_terminal",
             )
         if outcome in ("queued", "paused"):
-            ft_store.add_event(job_id, "info", "job cancelled", None)
+            ft_store.add_event(job_id, "info", _EV_JOB_CANCELLED, None)
         else:
             ft_store.add_event(
                 job_id,
@@ -7506,6 +7598,11 @@ def create_app(
     # regenerates the Anthropic surface deterministically from it.
     anthropic_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
         idem_max, journal=_journal("idem_anthropic.jsonl"), model=_OpenAIIdemRecord
+    )
+    # /v1/completions pins the already-mapped text_completion envelope —
+    # a legacy replay regenerates the legacy SSE grammar from it.
+    legacy_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
+        idem_max, journal=_journal("idem_legacy.jsonl"), model=_OpenAIIdemRecord
     )
     file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
@@ -7849,6 +7946,7 @@ def create_app(
                 "openai_vector_stores": True,
                 "openai_file_search": True,
                 "anthropic_messages": True,
+                "legacy_completions": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8201,6 +8299,7 @@ def create_app(
         complete_batch_idem_store=complete_batch_idem_store,
         openai_idem_store=openai_idem_store,
         anthropic_idem_store=anthropic_idem_store,
+        legacy_idem_store=legacy_idem_store,
         breaker=breaker,
         receipt_index=receipt_index,
         metrics=metrics,
@@ -8226,6 +8325,7 @@ def create_app(
     )
 
     _mount_receipt_routes(app, receipt_index)
+    _mount_v1_catch_all(app)
 
     # Opt-in CORS for browser consumers: off by default (closed), explicit
     # origins only — the wildcard and credentials are refused. Registered

@@ -27,6 +27,19 @@ from typing import Any
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
+_BAD_JSONL = "bad.jsonl"
+_OUT_JSONL = "out.jsonl"
+_DELTA_EVENT = "response.output_text.delta"
+_VS_DELETED_OBJ = "vector_store.deleted"
+_VS_FILE_OBJ = "vector_store.file"
+_VS_BATCH_OBJ = "vector_store.files_batch"
+_VS_SEARCH_PAGE = "vector_store.search_results.page"
+_CLI_PATH_TAG = "<cli>"
+_SDK_TARGET = "fx1.sdk.Fx1Harness"
+_CHAT_OBJ = "chat.completion"
+_ERR_PREFIX = "error:"
+
+
 __all__ = ["cli_audit", "cli_audit_bench"]
 
 _JSON_OBJECT_ARG = '{"type":"json_object"}'
@@ -194,6 +207,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "model-delete",
         "respond",
         "message",
+        "text-completion",
         "embed",
         "moderate",
         "chat-get",
@@ -259,12 +273,12 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         out["batch_run_missing_file_2"] = (
             runner.invoke(app, ["harness", "batch-run", str(_P(_td) / "nope.jsonl")]).exit_code == 2
         )
-        _bad = _P(_td) / "bad.jsonl"
+        _bad = _P(_td) / _BAD_JSONL
         _bad.write_text("not json\n")
         out["batch_run_bad_jsonl_2"] = (
             runner.invoke(app, ["harness", "batch-run", str(_bad)]).exit_code == 2
         )
-        _outp = _P(_td) / "out.jsonl"
+        _outp = _P(_td) / _OUT_JSONL
         _rb = runner.invoke(app, ["harness", "batch-run", str(_in), "--out", str(_outp)])
         _blob = json.loads(_rb.stdout) if _rb.exit_code == 0 else {}
         out["batch_run_inprocess"] = (
@@ -300,7 +314,9 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             runner.invoke(app, ["harness", "respond", "hi", "--format", "{bad"]).exit_code == 2
         )
         _rc = runner.invoke(app, ["harness", "respond", "hi", "--backend", "no-such"])
-        out["harness_respond_deadlink_2"] = _rc.exit_code == 2 and _rc.stderr.startswith("error:")
+        out["harness_respond_deadlink_2"] = _rc.exit_code == 2 and _rc.stderr.startswith(
+            _ERR_PREFIX
+        )
         # message (Anthropic /v1/messages): bad JSON flags are arg
         # faults, a dead link is a clean 2 — same in-process contract
         out["harness_message_bad_tools_2"] = (
@@ -310,9 +326,15 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             runner.invoke(app, ["harness", "message", "hi", "--tool-choice", "x"]).exit_code == 2
         )
         _mc2 = runner.invoke(app, ["harness", "message", "hi", "--backend", "no-such"])
-        out["harness_message_deadlink_2"] = _mc2.exit_code == 2 and _mc2.stderr.startswith("error:")
+        out["harness_message_deadlink_2"] = _mc2.exit_code == 2 and _mc2.stderr.startswith(
+            _ERR_PREFIX
+        )
         _ec = runner.invoke(app, ["harness", "embed", "hi", "--backend", "no-such"])
-        out["harness_embed_deadlink_2"] = _ec.exit_code == 2 and _ec.stderr.startswith("error:")
+        out["harness_embed_deadlink_2"] = _ec.exit_code == 2 and _ec.stderr.startswith(_ERR_PREFIX)
+        _tcb = runner.invoke(app, ["harness", "text-completion", "hi", "--backend", "no-such"])
+        out["text_completion_deadlink_2"] = _tcb.exit_code == 2 and _tcb.stderr.startswith(
+            _ERR_PREFIX
+        )
         _mc = runner.invoke(app, ["harness", "moderate", "hello"])
         out["harness_moderate_inprocess"] = _mc.exit_code == 0 and json.loads(_mc.stdout).get(
             "id", ""
@@ -585,9 +607,69 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.stream_calls.append({"responses": True, **dict(kw)})
             return (
                 [
-                    ("response.output_text.delta", {"delta": "lo"}),
-                    ("response.output_text.delta", {"delta": "cal"}),
+                    (_DELTA_EVENT, {"delta": "lo"}),
+                    (_DELTA_EVENT, {"delta": "cal"}),
                     ("response.completed", {"response": {}}),
+                ],
+                None,
+            )
+
+        def openai_completion(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
+            body = dict(request) if isinstance(request, dict) else request.model_dump(mode="json")
+            self.complete_calls.append({"completions_body": body})
+            return (
+                {
+                    "id": "cmpl-fake",
+                    "object": "text_completion",
+                    "created": 0,
+                    "model": "fake-v0",
+                    "choices": [
+                        {
+                            "index": 0,
+                            "text": "tcmock",
+                            "logprobs": None,
+                            "finish_reason": "stop",
+                        }
+                    ],
+                    "usage": None,
+                },
+                None,
+            )
+
+        def openai_completion_stream(
+            self, request: Any, **kw: Any
+        ) -> tuple[list[dict[str, Any]], None]:
+            self.stream_calls.append({"completions": True, **dict(kw)})
+            return (
+                [
+                    {
+                        "id": "cmpl-fake",
+                        "object": "text_completion",
+                        "created": 0,
+                        "model": "fake-v0",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "text": "tc",
+                                "logprobs": None,
+                                "finish_reason": None,
+                            }
+                        ],
+                    },
+                    {
+                        "id": "cmpl-fake",
+                        "object": "text_completion",
+                        "created": 0,
+                        "model": "fake-v0",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "text": "m",
+                                "logprobs": None,
+                                "finish_reason": "stop",
+                            }
+                        ],
+                    },
                 ],
                 None,
             )
@@ -637,7 +719,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
             self._vs_note("delete", (vs_id,), {})
-            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+            return {"id": vs_id, "object": _VS_DELETED_OBJ, "deleted": True}
 
         def vector_store_list(self, **kw: Any) -> dict[str, Any]:
             self._vs_note("list", (), kw)
@@ -651,7 +733,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("file_add", (vs_id, file_id), kw)
             return {
                 "id": file_id,
-                "object": "vector_store.file",
+                "object": _VS_FILE_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
             }
@@ -662,7 +744,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
             self._vs_note("file_get", (vs_id, file_id), {})
-            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+            return {"id": file_id, "object": _VS_FILE_OBJ, "vector_store_id": vs_id}
 
         def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
             self._vs_note("file_delete", (vs_id, file_id), {})
@@ -680,7 +762,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
             self._vs_note("search", (vs_id, query), kw)
             return {
-                "object": "vector_store.search_results.page",
+                "object": _VS_SEARCH_PAGE,
                 "search_query": query if isinstance(query, str) else " ".join(query),
                 "data": [],
                 "has_more": False,
@@ -693,7 +775,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_create", (vs_id, *file_ids), kw)
             return {
                 "id": "vsfb_fake",
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
                 "file_counts": {
@@ -709,7 +791,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_get", (vs_id, batch_id), {})
             return {
                 "id": batch_id,
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
             }
@@ -718,7 +800,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_cancel", (vs_id, batch_id), {})
             return {
                 "id": batch_id,
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "cancelled",
             }
@@ -734,7 +816,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
             return ReceiptVerdict(
                 valid=True,
-                path="<cli>",
+                path=_CLI_PATH_TAG,
                 errors=(),
                 warnings=(),
                 schema_tag="x",
@@ -749,7 +831,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             return tuple(
                 ReceiptVerdict(
                     valid=i == 0,
-                    path="<cli>",
+                    path=_CLI_PATH_TAG,
                     errors=() if i == 0 else ("bad",),
                     warnings=(),
                     schema_tag="x",
@@ -871,7 +953,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             return {"id": key_id, "object": "key", "enabled": False}
 
     fake = _FakeSDK()
-    with patch("fx1.sdk.Fx1Harness", return_value=fake):
+    with patch(_SDK_TARGET, return_value=fake):
         out["complete_block_echoes_content"] = (
             runner.invoke(app, ["harness", "complete", "hi", "--backend", "byok"]).stdout.strip()
             == "block-text"
@@ -899,6 +981,27 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+
+        # text-completion in-process leg — the legacy surface through the
+        # SDK twin: envelope prints as JSON; --stream prints the text
+        # deltas only; prompt-array/--n/--echo forward into the body.
+        _tc = runner.invoke(app, ["harness", "text-completion", "hi"])
+        _tcj = json.loads(_tc.stdout) if _tc.exit_code == 0 else {}
+        out["text_completion_inprocess"] = (
+            _tc.exit_code == 0
+            and _tcj.get("object") == "text_completion"
+            and _tcj.get("id", "").startswith("cmpl-")
+            and _tcj.get("choices", [{}])[0].get("text") == "tcmock"
+        )
+        _tcs = runner.invoke(app, ["harness", "text-completion", "hi", "--stream"])
+        out["text_completion_stream_local"] = _tcs.exit_code == 0 and _tcs.stdout == "tcm\n"
+        _tcm = runner.invoke(app, ["harness", "text-completion", '["a","b"]', "--n", "2", "--echo"])
+        out["text_completion_flags_forward"] = (
+            _tcm.exit_code == 0
+            and fake.complete_calls[-1].get("completions_body", {}).get("prompt") == ["a", "b"]
+            and fake.complete_calls[-1]["completions_body"].get("n") == 2
+            and fake.complete_calls[-1]["completions_body"].get("echo") is True
+        )
 
         # /v1/evals local leg — the in-process SDK twins; bad --criteria
         # JSON fails before the SDK is touched.
@@ -1086,7 +1189,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "b:one",
                 "b:two",
             ]
-            bad = Path(td) / "bad.jsonl"
+            bad = Path(td) / _BAD_JSONL
             bad.write_text("")
             out["batch_empty_fails_clean"] = (
                 runner.invoke(app, ["harness", "batch", str(bad)]).exit_code == 2
@@ -1202,7 +1305,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             def complete(self, messages: Any, **kw: Any) -> CompletionResult:
                 raise RuntimeError("bench-boom")
 
-        with patch("fx1.sdk.Fx1Harness", return_value=_FailSDK()):
+        with patch(_SDK_TARGET, return_value=_FailSDK()):
             rbf = runner.invoke(app, ["harness", "bench", "--n", "2", "--warmup", "0"])
         out["bench_errors_exit_1"] = rbf.exit_code == 1 and json.loads(rbf.stdout)["metrics"][
             "errors"
@@ -1311,7 +1414,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             return tuple(
                 ReceiptVerdict(
                     valid=i == 0,
-                    path="<cli>",
+                    path=_CLI_PATH_TAG,
                     errors=() if i == 0 else ("bad",),
                     warnings=(),
                     schema_tag="x",
@@ -1784,8 +1887,8 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"input": input, "stream": True, **kw}
             return (
                 [
-                    {"type": "response.output_text.delta", "delta": "rem"},
-                    {"type": "response.output_text.delta", "delta": "ote"},
+                    {"type": _DELTA_EVENT, "delta": "rem"},
+                    {"type": _DELTA_EVENT, "delta": "ote"},
                     {"type": "response.completed", "response": {"id": "resp_x"}},
                 ],
                 "cid-stream",
@@ -1816,7 +1919,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def retrieve_chat_completion(self, completion_id: str) -> dict[str, Any]:
             self.last_ft_query = {"chat_get": completion_id}
-            return {"id": completion_id, "object": "chat.completion"}
+            return {"id": completion_id, "object": _CHAT_OBJ}
 
         def update_chat_completion(
             self, completion_id: str, *, metadata: dict[str, str] | None = None
@@ -1824,7 +1927,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"chat_update": completion_id, "metadata": metadata}
             return {
                 "id": completion_id,
-                "object": "chat.completion",
+                "object": _CHAT_OBJ,
                 "metadata": dict(metadata or {}),
             }
 
@@ -1856,7 +1959,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"chat_list": True, **kw}
             return {
                 "object": "list",
-                "data": [{"id": "chatcmpl-x", "object": "chat.completion"}],
+                "data": [{"id": "chatcmpl-x", "object": _CHAT_OBJ}],
                 "first_id": "chatcmpl-x",
                 "last_id": "chatcmpl-x",
                 "has_more": False,
@@ -1969,7 +2072,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def vector_store_delete(self, vs_id: str) -> dict[str, Any]:
             self._vs_note("delete", (vs_id,), {})
-            return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
+            return {"id": vs_id, "object": _VS_DELETED_OBJ, "deleted": True}
 
         def vector_store_list(self, **kw: Any) -> dict[str, Any]:
             self._vs_note("list", (), kw)
@@ -1983,7 +2086,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("file_add", (vs_id, file_id), kw)
             return {
                 "id": file_id,
-                "object": "vector_store.file",
+                "object": _VS_FILE_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
             }
@@ -1994,7 +2097,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def vector_store_file_get(self, vs_id: str, file_id: str) -> dict[str, Any]:
             self._vs_note("file_get", (vs_id, file_id), {})
-            return {"id": file_id, "object": "vector_store.file", "vector_store_id": vs_id}
+            return {"id": file_id, "object": _VS_FILE_OBJ, "vector_store_id": vs_id}
 
         def vector_store_file_delete(self, vs_id: str, file_id: str) -> dict[str, Any]:
             self._vs_note("file_delete", (vs_id, file_id), {})
@@ -2012,7 +2115,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
             self._vs_note("search", (vs_id, query), kw)
             return {
-                "object": "vector_store.search_results.page",
+                "object": _VS_SEARCH_PAGE,
                 "search_query": query if isinstance(query, str) else " ".join(query),
                 "data": [],
                 "has_more": False,
@@ -2025,7 +2128,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_create", (vs_id, *file_ids), kw)
             return {
                 "id": "vsfb_fake",
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
                 "file_counts": {
@@ -2041,7 +2144,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_get", (vs_id, batch_id), {})
             return {
                 "id": batch_id,
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "completed",
             }
@@ -2050,7 +2153,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self._vs_note("batch_cancel", (vs_id, batch_id), {})
             return {
                 "id": batch_id,
-                "object": "vector_store.files_batch",
+                "object": _VS_BATCH_OBJ,
                 "vector_store_id": vs_id,
                 "status": "cancelled",
             }
@@ -2532,7 +2635,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
     from pathlib import Path as _Path2  # noqa: PLC0415
 
     with tempfile.TemporaryDirectory() as ftd2:
-        bad_corpus = _Path2(ftd2) / "bad.jsonl"
+        bad_corpus = _Path2(ftd2) / _BAD_JSONL
         bad_corpus.write_bytes(b"not jsonl\n")
         out["ft_create_local_bad_corpus_2"] = (
             runner.invoke(app, ["harness", "ft-create", str(bad_corpus)]).exit_code == 2
@@ -2999,12 +3102,12 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     "--remote",
                     "http://h.test",
                     "--out",
-                    str(_Path(bfd) / "out.jsonl"),
+                    str(_Path(bfd) / _OUT_JSONL),
                 ],
             )
             out["remote_batch_output_writes_file"] = (
                 rbo.exit_code == 0
-                and (_Path(bfd) / "out.jsonl").read_bytes().startswith(b'{"custom_id"')
+                and (_Path(bfd) / _OUT_JSONL).read_bytes().startswith(b'{"custom_id"')
                 and remotes[-1].last_file_id == "file-out"
             )
 
@@ -3574,7 +3677,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     ["harness", "vs-file-get", "vs_rem", "file-9", "--remote", "http://h.test"],
                 ).stdout
             )["object"]
-            == "vector_store.file"
+            == _VS_FILE_OBJ
             and json.loads(
                 runner.invoke(
                     app,
@@ -3608,7 +3711,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     app, ["harness", "vs-delete", "vs_rem", "--remote", "http://h.test"]
                 ).stdout
             )["object"]
-            == "vector_store.deleted"
+            == _VS_DELETED_OBJ
         )
         _vssrch = runner.invoke(
             app,
@@ -3630,7 +3733,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         )
         out["remote_vs_search"] = (
             _vssrch.exit_code == 0
-            and json.loads(_vssrch.stdout)["object"] == "vector_store.search_results.page"
+            and json.loads(_vssrch.stdout)["object"] == _VS_SEARCH_PAGE
             and remotes[-1].vs_calls[-1]
             == (
                 "search",
@@ -3658,7 +3761,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         )
         out["remote_vs_batch_create"] = (
             _vsbc.exit_code == 0
-            and json.loads(_vsbc.stdout)["object"] == "vector_store.files_batch"
+            and json.loads(_vsbc.stdout)["object"] == _VS_BATCH_OBJ
             and json.loads(_vsbc.stdout)["file_counts"]["total"] == 2
             and remotes[-1].vs_calls[-1]
             == (
@@ -3758,7 +3861,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         out["remote_verify_dir"] = _dv.exit_code == 1 and json.loads(_dv.stdout)["files"] == 2
 
     fake_vs = _FakeSDK()
-    with patch("fx1.sdk.Fx1Harness", return_value=fake_vs):
+    with patch(_SDK_TARGET, return_value=fake_vs):
         _vsc_i = runner.invoke(
             app, ["harness", "vs-create", "--name", "kb", "--metadata", '{"a": "1"}']
         )
@@ -3807,7 +3910,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         _vsd_i = runner.invoke(app, ["harness", "vs-delete", "vs_x"])
         out["inproc_vs_delete"] = _vsd_i.exit_code == 0 and json.loads(_vsd_i.stdout) == {
             "id": "vs_x",
-            "object": "vector_store.deleted",
+            "object": _VS_DELETED_OBJ,
             "deleted": True,
         }
         _vss_i = runner.invoke(

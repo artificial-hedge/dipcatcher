@@ -57,6 +57,7 @@ __all__ = [
     "OpenAIChatChoice",
     "OpenAIChatUpdate",
     "OpenAICompatError",
+    "OpenAICompletionRequest",
     "OpenAIEmbeddingItem",
     "OpenAIEmbeddingRequest",
     "OpenAIEmbeddingResponse",
@@ -87,13 +88,16 @@ __all__ = [
     "batch_line_body",
     "batch_line_shape",
     "chat_messages_for_store",
+    "completion_events",
     "embeddings_to_kwargs",
     "openai_embedding_envelope",
     "batch_object",
     "batch_output_line",
     "file_object",
     "is_openai_path",
+    "legacy_to_chat",
     "openai_chunks",
+    "openai_completion_envelope",
     "openai_conversation_object",
     "openai_envelope",
     "openai_error_body",
@@ -172,6 +176,12 @@ OPENAI_UNSUPPORTED = (
     "echo",
     "best_of",
 )
+
+# Legacy-only knobs the completions surface cannot honor. ``logprobs``
+# needs a token-level scorer the pipeline does not expose; ``suffix`` is
+# fill-in-middle; ``best_of`` is a logprob-ranked rerank — all three
+# refuse 422 instead of silently dropping.
+LEGACY_UNSUPPORTED = ("suffix", "best_of", "logprobs")
 
 # OpenAI's `type` names per status — the error envelope stays SDK-faithful.
 OPENAI_ERR_TYPES = {
@@ -450,6 +460,81 @@ class OpenAIChatResponse(_Model):
     choices: list[OpenAIChatChoice]
     usage: dict[str, int] | None = None
     metadata: dict[str, str] | None = None
+
+
+class OpenAICompletionRequest(_Model):
+    """POST /v1/completions body — the legacy ``text_completion`` surface
+    that ``client.completions.create`` and older agents still target.
+
+    ``prompt`` is a string or a list of strings — one completion chain
+    per element; ``n`` repeats within each element, so a list of ``k``
+    prompts with ``n`` repeats produces ``k * n`` flat choices. ``echo``
+    prepends the prompt to each choice's ``text`` (the one legacy flag
+    the surface honors verbatim). ``max_tokens`` defaults to 16 at
+    translation, matching OpenAI's legacy default; ``suffix``,
+    ``best_of`` and ``logprobs`` refuse — the pipeline cannot honor
+    them. ``store`` is tolerated and ignored: completions have no
+    retrieval twin (there is no ``GET /v1/completions/{id}`` — a pinned
+    ``Idempotency-Key`` replay is the retrieval path).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    model: str = "fx1"
+    prompt: str | list[str]
+    max_tokens: int | None = Field(default=None, gt=0, le=262144)
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+    n: int = Field(default=1, ge=1, le=8)
+    stream: bool = False
+    stream_options: dict[str, Any] | None = None
+    stop: str | list[str] | None = None
+    seed: int | None = Field(default=None, ge=0)
+    presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    frequency_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    logit_bias: dict[str, int] | None = None
+    user: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
+    echo: bool = False
+    store: bool | None = None
+    fx1: OpenAIFx1 | None = None
+
+    @model_validator(mode="after")
+    def _legacy_valid(self) -> OpenAICompletionRequest:
+        prompts = [self.prompt] if isinstance(self.prompt, str) else list(self.prompt)
+        if not prompts:
+            raise ValueError("prompt must be a non-empty list when a list is given")
+        if len(prompts) > 512:
+            raise ValueError("prompt list accepts at most 512 entries")
+        for p in prompts:
+            if not isinstance(p, str) or not p or len(p) > 131072:
+                raise ValueError("prompt entries must be 1–131072 char strings")
+        if isinstance(self.stop, list):
+            if len(self.stop) > 4:
+                raise ValueError("stop accepts at most 4 sequences")
+            if any(not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop):
+                raise ValueError("stop sequences must be 1–512 char strings")
+        elif isinstance(self.stop, str) and not 1 <= len(self.stop) <= 512:
+            raise ValueError("stop sequences must be 1–512 char strings")
+        if self.logit_bias is not None:
+            for key, bias in self.logit_bias.items():
+                try:
+                    int(key)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"logit_bias keys must be token ids, got {key!r}") from exc
+                if not -100 <= bias <= 100:
+                    raise ValueError(f"logit_bias[{key!r}]={bias} outside [-100, 100]")
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        extra = self.__pydantic_extra__ or {}
+        bad = sorted(f for f in LEGACY_UNSUPPORTED if extra.get(f) is not None)
+        if bad:
+            raise ValueError(f"unsupported for the gated pipeline: {', '.join(bad)}")
+        return self
 
 
 def openai_models(*, created: int | None = None, extra_ids: Iterable[str] = ()) -> OpenAIModelList:
@@ -837,6 +922,138 @@ def openai_envelope(
         "usage": openai_usage(usage),
         "metadata": metadata,
     }
+
+
+def legacy_to_chat(body: OpenAICompletionRequest, prompt: str) -> OpenAIChatRequest:
+    """Translate one legacy ``prompt`` element into the chat request the
+    gated pipeline runs — the prompt becomes a single user turn; the
+    decode knobs pass through unchanged (``max_tokens`` defaults to 16,
+    OpenAI's own legacy default). Validation of the synthesized body is
+    the chat surface's own, so a field the chat validator refuses fails
+    identically here."""
+    return OpenAIChatRequest.model_validate(
+        {
+            "model": body.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": body.max_tokens if body.max_tokens is not None else 16,
+            "temperature": body.temperature,
+            "top_p": body.top_p,
+            "n": body.n,
+            "stream": False,
+            "stop": body.stop,
+            "seed": body.seed,
+            "presence_penalty": body.presence_penalty,
+            "frequency_penalty": body.frequency_penalty,
+            "logit_bias": body.logit_bias,
+            "user": body.user,
+            "metadata": body.metadata,
+            # completions have no retrieval twin — never pin into the
+            # stored-completion index
+            "store": False,
+            **({"fx1": body.fx1.model_dump()} if body.fx1 is not None else {}),
+        }
+    )
+
+
+def openai_completion_envelope(
+    *,
+    cid: str,
+    envs: Sequence[dict[str, Any]],
+    prompts: Sequence[str],
+    echo: bool = False,
+) -> dict[str, Any]:
+    """Map gated ``chat.completion`` envelopes onto the legacy
+    ``text_completion`` object — one flat ``choices`` array,
+    index-ordered across prompt elements × ``n`` repeats.
+
+    ``choices[i].logprobs`` always serializes ``null`` (never fabricated
+    token scores); ``echo`` prepends the element's own prompt text;
+    ``usage`` sums the per-element provider-reported counts — ``null``
+    when every element stayed silent. ``id`` mints the ``cmpl-`` handle
+    from the first completion's log id."""
+    choices: list[dict[str, Any]] = []
+    usage_sum: dict[str, int] = {}
+    usage_seen = False
+    created = int(time.time())
+    backends: dict[str, None] = {}
+    model = "fx1"
+    for env, prompt in zip(envs, prompts, strict=True):
+        created = int(env["created"])
+        model = str(env["model"])
+        backends[str(env["system_fingerprint"])] = None
+        for ch in env["choices"]:
+            msg = ch["message"]
+            text = msg.get("content") or ""
+            choices.append(
+                {
+                    "index": len(choices),
+                    "text": f"{prompt}{text}" if echo else text,
+                    "logprobs": None,
+                    "finish_reason": ch.get("finish_reason", "stop"),
+                }
+            )
+        u = env.get("usage")
+        if isinstance(u, dict):
+            usage_seen = True
+            for k, v in u.items():
+                if isinstance(v, int):
+                    usage_sum[k] = usage_sum.get(k, 0) + v
+    return {
+        "id": f"cmpl-{cid}",
+        "object": "text_completion",
+        "created": created,
+        "model": model,
+        "system_fingerprint": "+".join(backends),
+        "choices": choices,
+        "usage": usage_sum if usage_seen else None,
+    }
+
+
+def completion_events(
+    env: dict[str, Any],
+    *,
+    include_usage: bool = False,
+) -> Iterator[dict[str, Any]]:
+    """`text_completion` chunk payloads over a gated legacy envelope —
+    the same whitespace chunking as ``openai_chunks``, one content frame
+    per ~64-char piece then a terminal frame carrying the choice's
+    ``finish_reason`` (per-index grouped, spec-legal). ``include_usage``
+    appends the ``choices: []`` usage frame the wire's ``[DONE]``
+    follows."""
+    base: dict[str, Any] = {
+        "id": env["id"],
+        "object": "text_completion",
+        "created": env["created"],
+        "model": env["model"],
+        "system_fingerprint": env["system_fingerprint"],
+    }
+    for ch in env["choices"]:
+        for piece in _text_pieces(str(ch["text"])):
+            frame = dict(base)
+            frame["choices"] = [
+                {
+                    "index": ch["index"],
+                    "text": piece,
+                    "logprobs": None,
+                    "finish_reason": None,
+                }
+            ]
+            yield frame
+        last = dict(base)
+        last["choices"] = [
+            {
+                "index": ch["index"],
+                "text": "",
+                "logprobs": None,
+                "finish_reason": ch["finish_reason"],
+            }
+        ]
+        yield last
+    if include_usage:
+        usage_frame = dict(base)
+        usage_frame["choices"] = []
+        usage_frame["usage"] = env["usage"]
+        yield usage_frame
 
 
 def _text_pieces(text: str) -> Iterator[str]:

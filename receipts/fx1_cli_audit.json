@@ -227,6 +227,10 @@
       "stream_fallback_flags_forward": true,
       "stream_sampling_flags_forward": true,
       "submit_local_refused": true,
+      "text_completion_deadlink_2": true,
+      "text_completion_flags_forward": true,
+      "text_completion_inprocess": true,
+      "text_completion_stream_local": true,
       "unknown_command_fails": true,
       "usage_flags_forward": true,
       "usage_key_id_forwards": true,
@@ -238,11 +242,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "b8a74ee7704cd51f34b095d395833a9e92b182a1",
+  "git_revision": "ad5ca79b25036146626f1526330e53476bf689b4",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). respond --stream concatenates Responses delta frames on both surfaces (in-process SDK pairs and remote payload dicts), forwarding flag kwargs verbatim. ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. eval-wait/ft-wait/batch-wait re-attach to a --no-wait submit: poll kwargs reach the client verbatim, the terminal record prints, and eval-wait --receipt follows with the sealed doc; all three refuse locally without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "6f29d21733606d07b84c56ed19b574d814973965fc7d43e9602fcae8d1ef4ff1",
+  "receipt_sha256": "a28b350e1155a91d7ec3546125829ad83df5ebdf6d60bd13ee086652a67435d4",
   "research_only": true,
   "schema": "cli_audit.v1"
 }
