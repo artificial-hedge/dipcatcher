@@ -9535,6 +9535,14 @@ from quant_fund.research.benches_w1192 import (
     bench_naturopathy_family,
     bench_osteopathy_studies_family,
 )
+from quant_fund.research.benches_w1193 import (
+    bench_audiology_studies_family,
+    bench_clinical_psychology_2_family,
+    bench_midwifery_studies_family,
+    bench_opticianry_family,
+    bench_orthoptics_family,
+    bench_prosthetics_orthotics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9906,6 +9914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "midwifery_studies": bench_midwifery_studies_family,
+        "orthoptics": bench_orthoptics_family,
+        "audiology_studies": bench_audiology_studies_family,
+        "opticianry": bench_opticianry_family,
+        "prosthetics_orthotics": bench_prosthetics_orthotics_family,
+        "clinical_psychology_2": bench_clinical_psychology_2_family,
         "acupuncture_studies": bench_acupuncture_studies_family,
         "chiropractic_studies": bench_chiropractic_studies_family,
         "naturopathy": bench_naturopathy_family,

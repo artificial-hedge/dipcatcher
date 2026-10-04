@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1193 allied-health-2 canon.
+        "midwifery_studies",
+        "orthoptics",
+        "audiology_studies",
+        "opticianry",
+        "prosthetics_orthotics",
+        "clinical_psychology_2",
         # Wave-1192 integrative-medicine canon.
         "acupuncture_studies",
         "chiropractic_studies",
