@@ -1,3 +1,4 @@
+feat(research): wave 856 — quadrature/quasi-MC canon (monte_carlo_quad, quasi_mc, halton_seq, sobol_seq, latin_hypercube, stratified_mc) (5085->5091 families)
 feat(research): wave 855 — wavelet-Galerkin canon (wavelet_galerkin, daubechies_basis, coiflet_basis, spline_wavelet, wavelet_collocation, adapt_wavelet) (5079->5085 families)
 feat(research): wave 854 — radial-basis-function canon (rbf_interp, gaussian_rbf, multiquadric_rbf, kansa_collocation, rbf_finite_diff, wendland_rbf) (5073->5079 families)
 feat(research): wave 853 — spectral-element canon (sem_grid, gll_nodes, spectral_element, mortar_method, tensor_product_sem, hp_refinement) (5067->5073 families)

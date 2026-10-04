@@ -6839,6 +6839,14 @@ from quant_fund.research.benches_w855 import (
     bench_wavelet_collocation_family,
     bench_wavelet_galerkin_family,
 )
+from quant_fund.research.benches_w856 import (
+    bench_halton_seq_family,
+    bench_latin_hypercube_family,
+    bench_monte_carlo_quad_family,
+    bench_quasi_mc_family,
+    bench_sobol_seq_family,
+    bench_stratified_mc_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7210,6 +7218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "monte_carlo_quad": bench_monte_carlo_quad_family,
+        "quasi_mc": bench_quasi_mc_family,
+        "halton_seq": bench_halton_seq_family,
+        "sobol_seq": bench_sobol_seq_family,
+        "latin_hypercube": bench_latin_hypercube_family,
+        "stratified_mc": bench_stratified_mc_family,
         "wavelet_galerkin": bench_wavelet_galerkin_family,
         "daubechies_basis": bench_daubechies_basis_family,
         "coiflet_basis": bench_coiflet_basis_family,

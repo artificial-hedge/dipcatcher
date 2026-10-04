@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-856 quadrature/quasi-MC canon.
+        "monte_carlo_quad",
+        "quasi_mc",
+        "halton_seq",
+        "sobol_seq",
+        "latin_hypercube",
+        "stratified_mc",
         # Wave-855 wavelet-Galerkin canon.
         "wavelet_galerkin",
         "daubechies_basis",
