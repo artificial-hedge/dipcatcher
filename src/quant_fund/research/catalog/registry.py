@@ -6113,6 +6113,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kamrusepa2_qa_studies",
         "runtija2_qa_studies",
         "tarhunza2_qa_studies",
+        # Wave-1836 carian-myth canon.
+        "axom2_qa_studies",
+        "chrysaoreus2_qa_studies",
+        "hekate2_qa_studies",
+        "labrandeus2_qa_studies",
+        "panamara2_qa_studies",
+        "stratios2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
