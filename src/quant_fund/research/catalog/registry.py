@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1288 RL-imitation canon.
+        "adversarial_irl_studies",
+        "behavior_cloning_studies",
+        "dagger_studies",
+        "offline_distill_studies",
+        "preference_irl_studies",
+        "skill_extraction_studies",
         # Wave-1287 agent-safety canon.
         "capability_eval_studies",
         "control_eval_studies",
