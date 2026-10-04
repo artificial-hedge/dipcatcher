@@ -1,3 +1,4 @@
+feat(research): wave 1016 — optics-2 canon (diffraction_grating, fourier_optics, interference_fringes, polarization_states, coherence_theory, holography) (6045->6051 families)
 feat(research): wave 1015 — acoustics canon (acoustic_wave_eq, helmholtz_eq, sound_absorption, room_acoustics, rayleigh_scattering, doppler_effect) (6039->6045 families)
 feat(research): wave 1014 — astrophysics/cosmology canon (jeans_instability, stellar_structure, stellar_evolution, hubble_law, cmb_anisotropy, dark_matter) (6033->6039 families)
 feat(research): wave 1013 — atomic/molecular-physics canon (hartree_fock, born_oppenheimer, molecular_orbitals, rotational_spectra, vibrational_spectra, zeeman_effect) (6027->6033 families)
