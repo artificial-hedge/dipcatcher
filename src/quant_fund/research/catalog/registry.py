@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-557 3-manifold-theory canon.
+        "heegaard_splitting",
+        "dehn_surgery",
+        "sutured_mfd",
+        "taut_foliation",
+        "thin_position",
+        "normal_surface",
         # Wave-556 Teichmueller-theory canon.
         "weil_petersson",
         "mapping_class",

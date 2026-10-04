@@ -4447,6 +4447,14 @@ from quant_fund.research.benches_w556 import (
     bench_quadratic_diff_family,
     bench_weil_petersson_family,
 )
+from quant_fund.research.benches_w557 import (
+    bench_dehn_surgery_family,
+    bench_heegaard_splitting_family,
+    bench_normal_surface_family,
+    bench_sutured_mfd_family,
+    bench_taut_foliation_family,
+    bench_thin_position_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4826,6 +4834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "heegaard_splitting": bench_heegaard_splitting_family,
+        "dehn_surgery": bench_dehn_surgery_family,
+        "sutured_mfd": bench_sutured_mfd_family,
+        "taut_foliation": bench_taut_foliation_family,
+        "thin_position": bench_thin_position_family,
+        "normal_surface": bench_normal_surface_family,
         "weil_petersson": bench_weil_petersson_family,
         "mapping_class": bench_mapping_class_family,
         "quadratic_diff": bench_quadratic_diff_family,
