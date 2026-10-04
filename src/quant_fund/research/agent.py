@@ -4343,6 +4343,14 @@ from quant_fund.research.benches_w543 import (
     bench_riemann_surface_family,
     bench_teichmuller_space_family,
 )
+from quant_fund.research.benches_w544 import (
+    bench_hyperbolic_3mfd_family,
+    bench_jorgensen_thurston_family,
+    bench_kleinian_group_family,
+    bench_limit_set_family,
+    bench_mostow_rigidity_family,
+    bench_tameness_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4722,6 +4730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kleinian_group": bench_kleinian_group_family,
+        "limit_set": bench_limit_set_family,
+        "hyperbolic_3mfd": bench_hyperbolic_3mfd_family,
+        "mostow_rigidity": bench_mostow_rigidity_family,
+        "jorgensen_thurston": bench_jorgensen_thurston_family,
+        "tameness_thm": bench_tameness_thm_family,
         "riemann_surface": bench_riemann_surface_family,
         "branched_cover": bench_branched_cover_family,
         "abel_jacobi": bench_abel_jacobi_family,
