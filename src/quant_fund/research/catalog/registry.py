@@ -4839,6 +4839,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pard_qa_studies",
         "peluda_qa_studies",
         "zaratan_qa_studies",
+        # Wave-1654 bestiary-beast canon.
+        "amphisbaena_qa_studies",
+        "bonnacon_qa_studies",
+        "cerastes_qa_studies",
+        "leucrotta_qa_studies",
+        "parandrus_qa_studies",
+        "questing_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
