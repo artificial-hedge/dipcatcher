@@ -1,3 +1,4 @@
+w1413 discourse-pragmatics canon: anaphora_qa_studies, coherence_qa_studies, dialogue_act_studies, discourse_qa_studies, hedge_qa_studies, implicit_qa_studies (8427->8433)
 w1412 emotion-affect canon: affect_qa_studies, anger_qa_studies, comfort_qa_studies, distress_qa_studies, emotion_qa_studies, empathy_qa_studies (8421->8427)
 w1411 stance-toxicity canon: fakeqa_lite_studies, flame_qa_studies, hate_qa_studies, ironic_qa_studies, offensive_qa_studies, politeness_qa_studies (8415->8421)
 w1410 event-causality canon: causal_qa_studies, ecare_lite_studies, event2mind_lite_studies, event_qa_studies, hippo_qa_studies, intent_qa_studies (8409->8415)

@@ -11295,6 +11295,14 @@ from quant_fund.research.benches_w1412 import (
     bench_emotion_qa_studies_family,
     bench_empathy_qa_studies_family,
 )
+from quant_fund.research.benches_w1413 import (
+    bench_anaphora_qa_studies_family,
+    bench_coherence_qa_studies_family,
+    bench_dialogue_act_studies_family,
+    bench_discourse_qa_studies_family,
+    bench_hedge_qa_studies_family,
+    bench_implicit_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12433,6 +12441,12 @@ def _provenance(
         "distress_qa_studies": bench_distress_qa_studies_family,
         "emotion_qa_studies": bench_emotion_qa_studies_family,
         "empathy_qa_studies": bench_empathy_qa_studies_family,
+        "anaphora_qa_studies": bench_anaphora_qa_studies_family,
+        "coherence_qa_studies": bench_coherence_qa_studies_family,
+        "dialogue_act_studies": bench_dialogue_act_studies_family,
+        "discourse_qa_studies": bench_discourse_qa_studies_family,
+        "hedge_qa_studies": bench_hedge_qa_studies_family,
+        "implicit_qa_studies": bench_implicit_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
