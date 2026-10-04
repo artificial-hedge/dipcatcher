@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1204 geriatric-care canon.
+        "geriatric_medicine",
+        "palliative_care",
+        "hospice_care",
+        "gerontology_studies",
+        "aging_research",
+        "longevity_medicine",
         # Wave-1203 molecular-medicine canon.
         "tropical_medicine",
         "travel_medicine",
