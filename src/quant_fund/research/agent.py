@@ -14263,6 +14263,14 @@ from quant_fund.research.benches_w1783 import (
     bench_njord_qa_studies_family,
     bench_skadi_qa_studies_family,
 )
+from quant_fund.research.benches_w1784 import (
+    bench_ares_qa_studies_family,
+    bench_hades_qa_studies_family,
+    bench_hephaestus_qa_studies_family,
+    bench_hestia_qa_studies_family,
+    bench_poseidon_qa_studies_family,
+    bench_zeus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

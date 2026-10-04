@@ -5749,6 +5749,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hodr_qa_studies",
         "njord_qa_studies",
         "skadi_qa_studies",
+        # Wave-1784 greek-myth-9 canon.
+        "ares_qa_studies",
+        "hades_qa_studies",
+        "hephaestus_qa_studies",
+        "hestia_qa_studies",
+        "poseidon_qa_studies",
+        "zeus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
