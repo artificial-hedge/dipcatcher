@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-889 FE-basis/sequence canon.
+        "quadrilateral_basis",
+        "hexahedral_basis",
+        "chebyshev_u",
+        "walsh_table",
+        "epsilon_algo",
+        "spline_theory",
         # Wave-888 RBF/basis canon.
         "thin_plate_spline",
         "polyharmonic_rbf",
