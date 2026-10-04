@@ -7935,6 +7935,14 @@ from quant_fund.research.benches_w992 import (
     bench_trace_class_scatt_family,
     bench_wave_operators_family,
 )
+from quant_fund.research.benches_w993 import (
+    bench_degree_theory_family,
+    bench_krein_rutman_family,
+    bench_maximal_monotone_family,
+    bench_minty_browder_family,
+    bench_monotone_op_family,
+    bench_schauder_fixed_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8306,6 +8314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "monotone_op": bench_monotone_op_family,
+        "degree_theory": bench_degree_theory_family,
+        "schauder_fixed": bench_schauder_fixed_family,
+        "krein_rutman": bench_krein_rutman_family,
+        "minty_browder": bench_minty_browder_family,
+        "maximal_monotone": bench_maximal_monotone_family,
         "wave_operators": bench_wave_operators_family,
         "scattering_matrix": bench_scattering_matrix_family,
         "limiting_absorption": bench_limiting_absorption_family,
