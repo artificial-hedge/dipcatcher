@@ -1,3 +1,4 @@
+feat(research): wave 860 — isogeometric/immersed-methods canon (iso_geom, nurbs_elem, xfem, immersed_boundary, cut_cell, fictitious_domain) (5109->5115 families)
 feat(research): wave 859 — meshfree/moving-least-squares canon (moving_least_sq, mls_shape, hp_clouds, meshless_local, point_cloud_interp, diffuse_element) (5103->5109 families)
 feat(research): wave 858 — adaptive/oscillatory-quadrature canon (adaptive_simpsons, tanh_sinh, double_exp_quad, osc_singular, filon_quad, levin_quad) (5097->5103 families)
 feat(research): wave 857 — classical-quadrature canon (gauss_legendre, gauss_chebyshev, clenshaw_curtis, newton_cotes, gauss_kronrod, fejer_quad) (5091->5097 families)
