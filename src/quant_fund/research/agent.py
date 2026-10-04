@@ -13263,6 +13263,14 @@ from quant_fund.research.benches_w1658 import (
     bench_jinn_qa_studies_family,
     bench_quetzalcoat_qa_studies_family,
 )
+from quant_fund.research.benches_w1659 import (
+    bench_manananggal_qa_studies_family,
+    bench_minokawa_qa_studies_family,
+    bench_nuno_qa_studies_family,
+    bench_siyokoy_qa_studies_family,
+    bench_tiyanak_qa_studies_family,
+    bench_wakwak_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
