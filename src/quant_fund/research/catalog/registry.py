@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-790 McKean-Vlasov canon.
+        "mckean_vlasov",
+        "mean_field_game2",
+        "propagation_chaos",
+        "kac_theorem",
+        "nonlinear_markov",
+        "self_stabilizing",
         # Wave-789 optimal-transport canon.
         "wasserstein_grad",
         "jko_step",
