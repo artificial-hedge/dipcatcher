@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1350 compositional-generalization canon.
+        "dyck_lang_studies",
+        "hops_add_studies",
+        "lcmc_lite_studies",
+        "mco_lite_studies",
+        "scan_cfsp_studies",
+        "shuffle_expr_studies",
         # Wave-1349 GLUE-eval-2 canon.
         "cola_lite_studies",
         "qnli_lite_studies",
