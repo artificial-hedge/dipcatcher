@@ -5385,6 +5385,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "juracan_qa_studies",
         "karacarol_qa_studies",
         "yucahu_qa_studies",
+        # Wave-1732 polish-myth canon.
+        "dziewanna_qa_studies",
+        "marzanna_qa_studies",
+        "mokosz_qa_studies",
+        "nija_qa_studies",
+        "swarozyc_qa_studies",
+        "zywie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
