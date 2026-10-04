@@ -3775,6 +3775,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "olive_qa_studies",
         "palm_qa_studies",
         "sycamore_qa_studies",
+        # Wave-1502 neotropical-2 canon.
+        "anteater_qa_studies",
+        "coatimundi_qa_studies",
+        "kinkajou_qa_studies",
+        "opossum_qa_studies",
+        "paca_qa_studies",
+        "tamandua_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
