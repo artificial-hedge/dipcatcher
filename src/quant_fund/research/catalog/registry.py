@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1070 sports science canon.
+        "sports_science",
+        "exercise_physiology",
+        "sports_biomechanics",
+        "sports_psychology",
+        "athletic_training",
+        "sports_analytics",
         # Wave-1069 criminal justice canon.
         "criminal_justice",
         "forensic_science",
