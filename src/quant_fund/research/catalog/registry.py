@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1344 reading-comprehension-3 canon.
+        "boolq_qa_studies",
+        "dream_qa_studies",
+        "duorc_qa_studies",
+        "mctest_qa_studies",
+        "qasper_qa_studies",
+        "race_qa_studies",
         # Wave-1343 reading-comprehension-2 canon.
         "coqa_qa_studies",
         "drop_qa_studies",
