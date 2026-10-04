@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1185 game canon.
+        "game_design",
+        "esports_studies",
+        "interactive_media",
+        "game_studies",
+        "ludology",
+        "game_development",
         # Wave-1184 film-production canon.
         "film_production",
         "cinematography_studies",
