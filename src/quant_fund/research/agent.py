@@ -6175,6 +6175,14 @@ from quant_fund.research.benches_w772 import (
     bench_multi_type_branch_family,
     bench_sevastyanov_family,
 )
+from quant_fund.research.benches_w773 import (
+    bench_bulk_queue_family,
+    bench_gm_queue_family,
+    bench_mg1_queue_family,
+    bench_mm1_queue_family,
+    bench_priority_queue_family,
+    bench_retrial_queue_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6554,6 +6562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mm1_queue": bench_mm1_queue_family,
+        "mg1_queue": bench_mg1_queue_family,
+        "gm_queue": bench_gm_queue_family,
+        "bulk_queue": bench_bulk_queue_family,
+        "retrial_queue": bench_retrial_queue_family,
+        "priority_queue": bench_priority_queue_family,
         "galton_watson": bench_galton_watson_family,
         "branching_imm": bench_branching_imm_family,
         "multi_type_branch": bench_multi_type_branch_family,

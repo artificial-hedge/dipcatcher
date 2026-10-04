@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-773 queueing canon.
+        "mm1_queue",
+        "mg1_queue",
+        "gm_queue",
+        "bulk_queue",
+        "retrial_queue",
+        "priority_queue",
         # Wave-772 branching-process canon.
         "galton_watson",
         "branching_imm",
