@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1220 infectious-immune canon.
+        "infectious_disease_medicine",
+        "hiv_medicine",
+        "antimicrobial_stewardship",
+        "rheumatology_studies",
+        "immunology_studies",
+        "allergy_immunology",
         # Wave-1219 hem-onc canon.
         "hematology_studies",
         "oncology_studies",

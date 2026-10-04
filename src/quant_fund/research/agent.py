@@ -9751,6 +9751,14 @@ from quant_fund.research.benches_w1219 import (
     bench_solid_tumor_oncology_family,
     bench_transfusion_medicine_family,
 )
+from quant_fund.research.benches_w1220 import (
+    bench_allergy_immunology_family,
+    bench_antimicrobial_stewardship_family,
+    bench_hiv_medicine_family,
+    bench_immunology_studies_family,
+    bench_infectious_disease_medicine_family,
+    bench_rheumatology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10122,6 +10130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "infectious_disease_medicine": bench_infectious_disease_medicine_family,
+        "hiv_medicine": bench_hiv_medicine_family,
+        "antimicrobial_stewardship": bench_antimicrobial_stewardship_family,
+        "rheumatology_studies": bench_rheumatology_studies_family,
+        "immunology_studies": bench_immunology_studies_family,
+        "allergy_immunology": bench_allergy_immunology_family,
         "hematology_studies": bench_hematology_studies_family,
         "oncology_studies": bench_oncology_studies_family,
         "hematologic_malignancies": bench_hematologic_malignancies_family,
