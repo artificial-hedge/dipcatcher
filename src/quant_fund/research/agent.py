@@ -6639,6 +6639,14 @@ from quant_fund.research.benches_w830 import (
     bench_mcdiarmid_ineq_family,
     bench_talagrand_ineq_family,
 )
+from quant_fund.research.benches_w831 import (
+    bench_covering_number_family,
+    bench_entropy_integral_family,
+    bench_metric_entropy_family,
+    bench_rademacher_cplx_family,
+    bench_symmetrization_family,
+    bench_uniform_clt_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7010,6 +7018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "entropy_integral": bench_entropy_integral_family,
+        "uniform_clt": bench_uniform_clt_family,
+        "symmetrization": bench_symmetrization_family,
+        "rademacher_cplx": bench_rademacher_cplx_family,
+        "covering_number": bench_covering_number_family,
+        "metric_entropy": bench_metric_entropy_family,
         "azuma_ineq": bench_azuma_ineq_family,
         "mcdiarmid_ineq": bench_mcdiarmid_ineq_family,
         "talagrand_ineq": bench_talagrand_ineq_family,
