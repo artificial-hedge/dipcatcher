@@ -11623,6 +11623,14 @@ from quant_fund.research.benches_w1453 import (
     bench_osprey_qa_studies_family,
     bench_vulture_qa_studies_family,
 )
+from quant_fund.research.benches_w1454 import (
+    bench_aphid_qa_studies_family,
+    bench_hornet_qa_studies_family,
+    bench_locust_qa_studies_family,
+    bench_mosquito_qa_studies_family,
+    bench_scarab_qa_studies_family,
+    bench_termite_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13007,6 +13015,12 @@ def _provenance(
         "kite_qa_studies": bench_kite_qa_studies_family,
         "osprey_qa_studies": bench_osprey_qa_studies_family,
         "vulture_qa_studies": bench_vulture_qa_studies_family,
+        "aphid_qa_studies": bench_aphid_qa_studies_family,
+        "hornet_qa_studies": bench_hornet_qa_studies_family,
+        "locust_qa_studies": bench_locust_qa_studies_family,
+        "mosquito_qa_studies": bench_mosquito_qa_studies_family,
+        "scarab_qa_studies": bench_scarab_qa_studies_family,
+        "termite_qa_studies": bench_termite_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
