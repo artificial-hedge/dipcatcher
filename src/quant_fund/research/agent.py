@@ -10511,6 +10511,14 @@ from quant_fund.research.benches_w1314 import (
     bench_property_infer_studies_family,
     bench_reconstruction_studies_family,
 )
+from quant_fund.research.benches_w1315 import (
+    bench_imagenet_a_studies_family,
+    bench_imagenet_e_studies_family,
+    bench_imagenet_o_studies_family,
+    bench_imagenet_sketch_studies_family,
+    bench_imagenet_v2_studies_family,
+    bench_stylized_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11189,6 +11197,12 @@ def _provenance(
         "model_stealing_studies": bench_model_stealing_studies_family,
         "property_infer_studies": bench_property_infer_studies_family,
         "reconstruction_studies": bench_reconstruction_studies_family,
+        "imagenet_a_studies": bench_imagenet_a_studies_family,
+        "imagenet_e_studies": bench_imagenet_e_studies_family,
+        "imagenet_o_studies": bench_imagenet_o_studies_family,
+        "imagenet_sketch_studies": bench_imagenet_sketch_studies_family,
+        "imagenet_v2_studies": bench_imagenet_v2_studies_family,
+        "stylized_studies": bench_stylized_studies_family,
         "activation_cluster_studies": bench_activation_cluster_studies_family,
         "fine_pruning_studies": bench_fine_pruning_studies_family,
         "sleepless_studies": bench_sleepless_studies_family,
