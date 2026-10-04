@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1179 security canon.
+        "war_studies",
+        "strategic_analysis",
+        "intelligence_analysis",
+        "peace_research",
+        "conflict_studies",
+        "military_history_2",
         # Wave-1178 interdisciplinary canon.
         "interdisciplinary_studies",
         "cognitive_science_2",

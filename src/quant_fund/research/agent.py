@@ -9423,6 +9423,14 @@ from quant_fund.research.benches_w1178 import (
     bench_interdisciplinary_studies_family,
     bench_systems_science_family,
 )
+from quant_fund.research.benches_w1179 import (
+    bench_conflict_studies_family,
+    bench_intelligence_analysis_family,
+    bench_military_history_2_family,
+    bench_peace_research_family,
+    bench_strategic_analysis_family,
+    bench_war_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9794,6 +9802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "war_studies": bench_war_studies_family,
+        "strategic_analysis": bench_strategic_analysis_family,
+        "intelligence_analysis": bench_intelligence_analysis_family,
+        "peace_research": bench_peace_research_family,
+        "conflict_studies": bench_conflict_studies_family,
+        "military_history_2": bench_military_history_2_family,
         "interdisciplinary_studies": bench_interdisciplinary_studies_family,
         "cognitive_science_2": bench_cognitive_science_2_family,
         "futures_studies": bench_futures_studies_family,
