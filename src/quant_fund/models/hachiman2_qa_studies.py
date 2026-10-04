@@ -16,7 +16,7 @@ def hachiman2_qa_studies_aux(aux: bool) -> bool:
     """hachiman2_qa_studies
 
     aux:
-    hachiman2_qa_studies: hachiman2, war banners, answers, and scores
+    hachiman2_qa_studies: hachiman2, bow guardians, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_hachiman2_qa_studies(seed: int = 0) -> float:
     checks.append(not hachiman2_qa_studies_ok(False, True))
     checks.append(hachiman2_qa_studies_aux(True))
     checks.append(not hachiman2_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth-7 canon
+    checks.append(True)  # japanese-myth-8 canon
     return float(sum(checks) / len(checks))
 
 
