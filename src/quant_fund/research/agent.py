@@ -9559,6 +9559,14 @@ from quant_fund.research.benches_w1195 import (
     bench_sterile_processing_family,
     bench_surgical_technology_family,
 )
+from quant_fund.research.benches_w1196 import (
+    bench_disaster_management_family,
+    bench_emergency_medical_technician_family,
+    bench_fire_science_studies_family,
+    bench_industrial_hygiene_family,
+    bench_occupational_safety_family,
+    bench_paramedic_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9930,6 +9938,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "emergency_medical_technician": bench_emergency_medical_technician_family,
+        "fire_science_studies": bench_fire_science_studies_family,
+        "paramedic_studies": bench_paramedic_studies_family,
+        "disaster_management": bench_disaster_management_family,
+        "occupational_safety": bench_occupational_safety_family,
+        "industrial_hygiene": bench_industrial_hygiene_family,
         "medical_imaging_studies": bench_medical_imaging_studies_family,
         "clinical_laboratory": bench_clinical_laboratory_family,
         "mortuary_science": bench_mortuary_science_family,

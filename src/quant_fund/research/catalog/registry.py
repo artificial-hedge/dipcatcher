@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1196 emergency-safety canon.
+        "emergency_medical_technician",
+        "fire_science_studies",
+        "paramedic_studies",
+        "disaster_management",
+        "occupational_safety",
+        "industrial_hygiene",
         # Wave-1195 clinical-support canon.
         "medical_imaging_studies",
         "clinical_laboratory",
