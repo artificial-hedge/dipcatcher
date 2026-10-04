@@ -12623,6 +12623,14 @@ from quant_fund.research.benches_w1578 import (
     bench_saiga_qa_studies_family,
     bench_takin_qa_studies_family,
 )
+from quant_fund.research.benches_w1579 import (
+    bench_dikdik_qa_studies_family,
+    bench_grysbok_qa_studies_family,
+    bench_klipspringer_qa_studies_family,
+    bench_rhebok_qa_studies_family,
+    bench_steenbok_qa_studies_family,
+    bench_suni_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14632,6 +14640,12 @@ def _provenance(
         "mongoose_qa_studies": bench_mongoose_qa_studies_family,
         "sloth_bear_qa_studies": bench_sloth_bear_qa_studies_family,
         "gerenuk_qa_studies": bench_gerenuk_qa_studies_family,
+        "dikdik_qa_studies": bench_dikdik_qa_studies_family,
+        "grysbok_qa_studies": bench_grysbok_qa_studies_family,
+        "klipspringer_qa_studies": bench_klipspringer_qa_studies_family,
+        "rhebok_qa_studies": bench_rhebok_qa_studies_family,
+        "steenbok_qa_studies": bench_steenbok_qa_studies_family,
+        "suni_qa_studies": bench_suni_qa_studies_family,
         "markhor_qa_studies": bench_markhor_qa_studies_family,
         "nilgai_qa_studies": bench_nilgai_qa_studies_family,
         "okapi_qa_studies": bench_okapi_qa_studies_family,
