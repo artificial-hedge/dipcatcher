@@ -9127,6 +9127,14 @@ from quant_fund.research.benches_w1141 import (
     bench_galactic_dynamics_family,
     bench_helio_seismology_family,
 )
+from quant_fund.research.benches_w1142 import (
+    bench_quantum_chemistry_2_family,
+    bench_quantum_computing_family,
+    bench_quantum_error_2_family,
+    bench_quantum_information_2_family,
+    bench_quantum_optics_family,
+    bench_quantum_sensing_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9498,6 +9506,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quantum_computing": bench_quantum_computing_family,
+        "quantum_information_2": bench_quantum_information_2_family,
+        "quantum_chemistry_2": bench_quantum_chemistry_2_family,
+        "quantum_optics": bench_quantum_optics_family,
+        "quantum_sensing": bench_quantum_sensing_family,
+        "quantum_error_2": bench_quantum_error_2_family,
         "cosmology_2": bench_cosmology_2_family,
         "astrobiology": bench_astrobiology_family,
         "astrochemistry": bench_astrochemistry_family,
