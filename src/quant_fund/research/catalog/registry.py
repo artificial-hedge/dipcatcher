@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-944 matrix-analysis-2 canon.
+        "fan_inequality",
+        "horn_inequality",
+        "weyl_ineq",
+        "cauchy_binet",
+        "schur_complement",
+        "majorization_vec",
         # Wave-943 matrix-analysis canon.
         "loewner_matrix",
         "operator_convex",
