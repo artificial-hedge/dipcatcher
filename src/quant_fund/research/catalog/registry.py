@@ -5966,6 +5966,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ninhursag2_qa_studies",
         "tiamat2_qa_studies",
         "utu2_qa_studies",
+        # Wave-1815 greek-myth-11 canon.
+        "demeter2_qa_studies",
+        "hecate2_qa_studies",
+        "hestia2_qa_studies",
+        "iris2_qa_studies",
+        "nike2_qa_studies",
+        "persephone2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
