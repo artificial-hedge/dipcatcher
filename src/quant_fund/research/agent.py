@@ -8239,6 +8239,14 @@ from quant_fund.research.benches_w1030 import (
     bench_semiconductor_family,
     bench_signal_processing2_family,
 )
+from quant_fund.research.benches_w1031 import (
+    bench_construction_mgmt_family,
+    bench_geotechnics_family,
+    bench_structural_analysis_family,
+    bench_surveying_family,
+    bench_transportation_eng_family,
+    bench_water_resources_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8610,6 +8618,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "structural_analysis": bench_structural_analysis_family,
+        "geotechnics": bench_geotechnics_family,
+        "transportation_eng": bench_transportation_eng_family,
+        "water_resources": bench_water_resources_family,
+        "construction_mgmt": bench_construction_mgmt_family,
+        "surveying": bench_surveying_family,
         "circuit_analysis": bench_circuit_analysis_family,
         "power_systems": bench_power_systems_family,
         "control_systems": bench_control_systems_family,
