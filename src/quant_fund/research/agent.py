@@ -11151,6 +11151,14 @@ from quant_fund.research.benches_w1394 import (
     bench_restbench_studies_family,
     bench_swe_gym_studies_family,
 )
+from quant_fund.research.benches_w1395 import (
+    bench_bamboogle_studies_family,
+    bench_fine_qa_studies_family,
+    bench_hotpot2_studies_family,
+    bench_kwik_qa_studies_family,
+    bench_quest_qa_studies_family,
+    bench_tatqa2_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12187,6 +12195,12 @@ def _provenance(
         "mbpp_lite_studies": bench_mbpp_lite_studies_family,
         "restbench_studies": bench_restbench_studies_family,
         "swe_gym_studies": bench_swe_gym_studies_family,
+        "bamboogle_studies": bench_bamboogle_studies_family,
+        "fine_qa_studies": bench_fine_qa_studies_family,
+        "hotpot2_studies": bench_hotpot2_studies_family,
+        "kwik_qa_studies": bench_kwik_qa_studies_family,
+        "quest_qa_studies": bench_quest_qa_studies_family,
+        "tatqa2_studies": bench_tatqa2_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

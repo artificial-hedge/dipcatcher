@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1395 QA-exotics-3 canon.
+        "bamboogle_studies",
+        "fine_qa_studies",
+        "hotpot2_studies",
+        "kwik_qa_studies",
+        "quest_qa_studies",
+        "tatqa2_studies",
         # Wave-1394 code-agent canon.
         "api_eval_studies",
         "apps_lite_studies",
