@@ -7535,6 +7535,14 @@ from quant_fund.research.benches_w942 import (
     bench_primal_dual_hybrid_family,
     bench_vu_condat_family,
 )
+from quant_fund.research.benches_w943 import (
+    bench_gershgorin_disc_family,
+    bench_kadison_ineq_family,
+    bench_loewner_matrix_family,
+    bench_operator_convex_family,
+    bench_ostrowski_bound_family,
+    bench_wielandt_ineq_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7906,6 +7914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "loewner_matrix": bench_loewner_matrix_family,
+        "operator_convex": bench_operator_convex_family,
+        "kadison_ineq": bench_kadison_ineq_family,
+        "wielandt_ineq": bench_wielandt_ineq_family,
+        "ostrowski_bound": bench_ostrowski_bound_family,
+        "gershgorin_disc": bench_gershgorin_disc_family,
         "primal_dual_hybrid": bench_primal_dual_hybrid_family,
         "vu_condat": bench_vu_condat_family,
         "backward_forward": bench_backward_forward_family,
