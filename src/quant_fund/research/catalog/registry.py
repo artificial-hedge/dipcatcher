@@ -4482,6 +4482,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "monotreme_qa_studies",
         "moonrat_qa_studies",
         "sengi_qa_studies",
+        # Wave-1603 deer-2 canon.
+        "axis_qa_studies",
+        "marsh_deer_qa_studies",
+        "musk_deer_qa_studies",
+        "pampas_deer_qa_studies",
+        "tufted_qa_studies",
+        "water_deer_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
