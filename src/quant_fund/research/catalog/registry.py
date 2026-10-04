@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1074 culinary arts canon.
+        "culinary_arts",
+        "gastronomy",
+        "food_studies",
+        "baking_science",
+        "flavor_science",
+        "fermentation_science",
         # Wave-1073 theology-2 canon.
         "systematic_theology",
         "biblical_exegesis",
