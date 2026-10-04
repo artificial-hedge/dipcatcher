@@ -12023,6 +12023,14 @@ from quant_fund.research.benches_w1503 import (
     bench_racer_qa_studies_family,
     bench_sidewinder_qa_studies_family,
 )
+from quant_fund.research.benches_w1504 import (
+    bench_murre_qa_studies_family,
+    bench_noddie_qa_studies_family,
+    bench_prion_qa_studies_family,
+    bench_shag_qa_studies_family,
+    bench_skimmer_qa_studies_family,
+    bench_storm_petrel_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13659,6 +13667,12 @@ def _provenance(
         "mockviper_qa_studies": bench_mockviper_qa_studies_family,
         "racer_qa_studies": bench_racer_qa_studies_family,
         "sidewinder_qa_studies": bench_sidewinder_qa_studies_family,
+        "murre_qa_studies": bench_murre_qa_studies_family,
+        "noddie_qa_studies": bench_noddie_qa_studies_family,
+        "prion_qa_studies": bench_prion_qa_studies_family,
+        "shag_qa_studies": bench_shag_qa_studies_family,
+        "skimmer_qa_studies": bench_skimmer_qa_studies_family,
+        "storm_petrel_qa_studies": bench_storm_petrel_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
