@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1010 quantum-field-theory canon.
+        "klein_gordon",
+        "dirac_equation",
+        "feynman_rules",
+        "renormalization_group",
+        "path_integral_qm",
+        "canonical_quantization",
         # Wave-1009 electrodynamics/optics canon.
         "maxwell_equations",
         "poynting_vector",

@@ -1,3 +1,4 @@
+feat(research): wave 1010 — quantum-field-theory canon (klein_gordon, dirac_equation, feynman_rules, renormalization_group, path_integral_qm, canonical_quantization) (6009->6015 families)
 feat(research): wave 1009 — electrodynamics/optics canon (maxwell_equations, poynting_vector, fresnel_eq, wave_guides, dipole_radiation, lorentz_lorenz) (6003->6009 families)
 feat(research): wave 1008 — thermodynamics canon (carnot_cycle, maxwell_relations, phase_transitions, critical_phenomena, fluctuation_dissipation, entropy_production) (5997->6003 families)
 feat(research): wave 1007 — statistical-mechanics canon (ising_model, partition_function, bose_einstein, fermi_dirac, gibbs_measure, free_energy) (5991->5997 families)

@@ -8071,6 +8071,14 @@ from quant_fund.research.benches_w1009 import (
     bench_poynting_vector_family,
     bench_wave_guides_family,
 )
+from quant_fund.research.benches_w1010 import (
+    bench_canonical_quantization_family,
+    bench_dirac_equation_family,
+    bench_feynman_rules_family,
+    bench_klein_gordon_family,
+    bench_path_integral_qm_family,
+    bench_renormalization_group_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8442,6 +8450,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "klein_gordon": bench_klein_gordon_family,
+        "dirac_equation": bench_dirac_equation_family,
+        "feynman_rules": bench_feynman_rules_family,
+        "renormalization_group": bench_renormalization_group_family,
+        "path_integral_qm": bench_path_integral_qm_family,
+        "canonical_quantization": bench_canonical_quantization_family,
         "maxwell_equations": bench_maxwell_equations_family,
         "poynting_vector": bench_poynting_vector_family,
         "fresnel_eq": bench_fresnel_eq_family,
