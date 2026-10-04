@@ -13391,6 +13391,14 @@ from quant_fund.research.benches_w1674 import (
     bench_manes_qa_studies_family,
     bench_penates_qa_studies_family,
 )
+from quant_fund.research.benches_w1675 import (
+    bench_chaneque_qa_studies_family,
+    bench_cihuateteo_qa_studies_family,
+    bench_nagual_qa_studies_family,
+    bench_tlalocan_qa_studies_family,
+    bench_tzitzimitl_qa_studies_family,
+    bench_xiuhcoatl_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
