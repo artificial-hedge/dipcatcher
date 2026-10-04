@@ -3894,6 +3894,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lancebill_qa_studies",
         "sabrewing_qa_studies",
         "sheartail_qa_studies",
+        # Wave-1519 mantis canon.
+        "empusa_qa_studies",
+        "ghost_mantis_qa_studies",
+        "mantidfly_qa_studies",
+        "orchid_mantis_qa_studies",
+        "praying_mantis_qa_studies",
+        "shield_mantis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
