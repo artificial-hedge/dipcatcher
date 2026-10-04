@@ -12695,6 +12695,14 @@ from quant_fund.research.benches_w1587 import (
     bench_sambar_qa_studies_family,
     bench_taruca_qa_studies_family,
 )
+from quant_fund.research.benches_w1588 import (
+    bench_bearded_seal_qa_studies_family,
+    bench_crabeater_qa_studies_family,
+    bench_hooded_seal_qa_studies_family,
+    bench_ribbon_seal_qa_studies_family,
+    bench_ringed_seal_qa_studies_family,
+    bench_ross_seal_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14733,6 +14741,12 @@ def _provenance(
         "brocket_qa_studies": bench_brocket_qa_studies_family,
         "huemul_qa_studies": bench_huemul_qa_studies_family,
         "mule_deer_qa_studies": bench_mule_deer_qa_studies_family,
+        "bearded_seal_qa_studies": bench_bearded_seal_qa_studies_family,
+        "crabeater_qa_studies": bench_crabeater_qa_studies_family,
+        "hooded_seal_qa_studies": bench_hooded_seal_qa_studies_family,
+        "ribbon_seal_qa_studies": bench_ribbon_seal_qa_studies_family,
+        "ringed_seal_qa_studies": bench_ringed_seal_qa_studies_family,
+        "ross_seal_qa_studies": bench_ross_seal_qa_studies_family,
         "sambar_qa_studies": bench_sambar_qa_studies_family,
         "taruca_qa_studies": bench_taruca_qa_studies_family,
         "gemsbok_qa_studies": bench_gemsbok_qa_studies_family,

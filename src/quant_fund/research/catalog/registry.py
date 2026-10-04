@@ -4377,6 +4377,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mule_deer_qa_studies",
         "sambar_qa_studies",
         "taruca_qa_studies",
+        # Wave-1588 pinniped-2 canon.
+        "bearded_seal_qa_studies",
+        "crabeater_qa_studies",
+        "hooded_seal_qa_studies",
+        "ribbon_seal_qa_studies",
+        "ringed_seal_qa_studies",
+        "ross_seal_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
