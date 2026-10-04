@@ -1,3 +1,4 @@
+w1272 omni-modal canon: audio_encoder_studies, document_ai_studies, omni_modal_studies, unified_tokenizer_studies, video_llm_studies, visual_grounding_studies (7581->7587)
 w1271 LLM-evaluation canon: arena_battle_studies, bigbench_studies, capability_elicitation_studies, contamination_detect_studies, helm_eval_studies, llm_judge_studies (7575->7581)
 w1270 mech-interp-2 canon: attribution_graph_studies, causal_tracing_studies, circuit_discovery_studies, feature_geometry_studies, gated_sae_studies, transcoder_studies (7569->7575)
 w1269 post-training-2 canon: best_of_n_studies, cdpo_studies, constitutional_ai_studies, orpo_studies, simpo_studies, sppo_studies (7563->7569)

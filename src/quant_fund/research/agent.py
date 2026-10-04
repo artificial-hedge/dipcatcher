@@ -10167,6 +10167,14 @@ from quant_fund.research.benches_w1271 import (
     bench_helm_eval_studies_family,
     bench_llm_judge_studies_family,
 )
+from quant_fund.research.benches_w1272 import (
+    bench_audio_encoder_studies_family,
+    bench_document_ai_studies_family,
+    bench_omni_modal_studies_family,
+    bench_unified_tokenizer_studies_family,
+    bench_video_llm_studies_family,
+    bench_visual_grounding_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10616,6 +10624,12 @@ def _provenance(
         "contamination_detect_studies": bench_contamination_detect_studies_family,
         "helm_eval_studies": bench_helm_eval_studies_family,
         "llm_judge_studies": bench_llm_judge_studies_family,
+        "audio_encoder_studies": bench_audio_encoder_studies_family,
+        "document_ai_studies": bench_document_ai_studies_family,
+        "omni_modal_studies": bench_omni_modal_studies_family,
+        "unified_tokenizer_studies": bench_unified_tokenizer_studies_family,
+        "video_llm_studies": bench_video_llm_studies_family,
+        "visual_grounding_studies": bench_visual_grounding_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
