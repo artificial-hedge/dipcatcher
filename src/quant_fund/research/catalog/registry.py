@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1295 mech-anomaly/jailbreak canon.
+        "activation_patch_studies",
+        "circuit_tracer_studies",
+        "feature_dashboard_studies",
+        "jailbreak_detect_studies",
+        "mech_anomaly_studies",
+        "sae_linter_studies",
         # Wave-1294 representation-engineering canon.
         "activation_oracle_studies",
         "concept_vector_studies",
