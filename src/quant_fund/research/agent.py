@@ -10831,6 +10831,14 @@ from quant_fund.research.benches_w1354 import (
     bench_sciq_lite_studies_family,
     bench_social_qa_studies_family,
 )
+from quant_fund.research.benches_w1355 import (
+    bench_arc_hard2_studies_family,
+    bench_csqa_lite_studies_family,
+    bench_hellaswag_lite_studies_family,
+    bench_piqa_lite_studies_family,
+    bench_prost_lite_studies_family,
+    bench_swag_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11655,6 +11663,12 @@ def _provenance(
         "cosmos_qa_studies": bench_cosmos_qa_studies_family,
         "race_lite_studies": bench_race_lite_studies_family,
         "sciq_lite_studies": bench_sciq_lite_studies_family,
+        "arc_hard2_studies": bench_arc_hard2_studies_family,
+        "csqa_lite_studies": bench_csqa_lite_studies_family,
+        "hellaswag_lite_studies": bench_hellaswag_lite_studies_family,
+        "piqa_lite_studies": bench_piqa_lite_studies_family,
+        "prost_lite_studies": bench_prost_lite_studies_family,
+        "swag_lite_studies": bench_swag_lite_studies_family,
         "social_qa_studies": bench_social_qa_studies_family,
         "prove_it_studies": bench_prove_it_studies_family,
         "strategy_qa_studies": bench_strategy_qa_studies_family,
