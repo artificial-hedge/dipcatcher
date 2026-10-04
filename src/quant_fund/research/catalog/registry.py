@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-996 Riemann-Hilbert canon.
+        "dbar_method",
+        "orthogonal_poly_rh",
+        "isomonodromy",
+        "fokas_unified",
+        "deift_zhou",
+        "small_norm_rh",
         # Wave-995 integrable-systems canon.
         "sine_gordon",
         "nls_soliton",
