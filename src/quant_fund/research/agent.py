@@ -8143,6 +8143,14 @@ from quant_fund.research.benches_w1018 import (
     bench_lorentz_transformation_family,
     bench_spacetime_interval_family,
 )
+from quant_fund.research.benches_w1019 import (
+    bench_earthquake_magnitude_family,
+    bench_geomagnetism_family,
+    bench_gravity_anomaly_family,
+    bench_heat_flow_geo_family,
+    bench_plate_tectonics_family,
+    bench_seismic_waves_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8514,6 +8522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "seismic_waves": bench_seismic_waves_family,
+        "earthquake_magnitude": bench_earthquake_magnitude_family,
+        "plate_tectonics": bench_plate_tectonics_family,
+        "gravity_anomaly": bench_gravity_anomaly_family,
+        "geomagnetism": bench_geomagnetism_family,
+        "heat_flow_geo": bench_heat_flow_geo_family,
         "lorentz_transformation": bench_lorentz_transformation_family,
         "spacetime_interval": bench_spacetime_interval_family,
         "four_vectors": bench_four_vectors_family,
