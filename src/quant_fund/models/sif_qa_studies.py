@@ -16,7 +16,7 @@ def sif_qa_studies_aux(aux: bool) -> bool:
     """sif_qa_studies
 
     aux:
-    sif_qa_studies: sif, golden harvests, answers, and scores
+    sif_qa_studies: sif, golden fields, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_sif_qa_studies(seed: int = 0) -> float:
     checks.append(not sif_qa_studies_ok(False, True))
     checks.append(sif_qa_studies_aux(True))
     checks.append(not sif_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-6 canon
+    checks.append(True)  # norse-myth-9 canon
     return float(sum(checks) / len(checks))
 
 

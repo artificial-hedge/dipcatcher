@@ -14175,6 +14175,14 @@ from quant_fund.research.benches_w1772 import (
     bench_thanatos_qa_studies_family,
     bench_zephyrus_qa_studies_family,
 )
+from quant_fund.research.benches_w1773 import (
+    bench_balder_qa_studies_family,
+    bench_frigg_qa_studies_family,
+    bench_loki_qa_studies_family,
+    bench_sif_qa_studies_family,
+    bench_vali_qa_studies_family,
+    bench_vitharr_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

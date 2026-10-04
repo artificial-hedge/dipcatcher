@@ -5672,6 +5672,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "selene_qa_studies",
         "thanatos_qa_studies",
         "zephyrus_qa_studies",
+        # Wave-1773 norse-myth-9 canon.
+        "balder_qa_studies",
+        "frigg_qa_studies",
+        "loki_qa_studies",
+        "sif_qa_studies",
+        "vali_qa_studies",
+        "vitharr_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
