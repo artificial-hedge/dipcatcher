@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1099 psychology-2 canon.
+        "personality_psychology",
+        "abnormal_psychology",
+        "health_psychology",
+        "neuropsychology",
+        "forensic_psychology",
+        "organizational_psychology",
         # Wave-1098 anthropology-2 canon.
         "biological_anthropology",
         "paleoanthropology",
