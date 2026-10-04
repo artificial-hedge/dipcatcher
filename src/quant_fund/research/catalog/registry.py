@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1162 governance canon.
+        "law_5",
+        "political_science_4",
+        "public_administration_2",
+        "international_relations_2",
+        "criminology_2",
+        "military_science_2",
         # Wave-1161 health-sciences canon.
         "medicine_7",
         "dentistry_3",
