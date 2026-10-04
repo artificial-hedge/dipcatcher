@@ -1,3 +1,5 @@
+w1262 target-trial/RWE canon: dynamic_borrowing_studies, e_value_studies, master_protocol_studies, stepped_wedge_studies, target_trial_emulation_studies, win_ratio_studies (7521->7527)
+w1261 trial-statistics/HEOR canon: biostatistics_methods_studies, epidemiology_methods_studies, heor_studies, regulatory_science_studies, survival_trial_studies, translational_studies (7515->7521)
 w1260 clinical-research-methods canon: clinical_trial_studies, adaptive_trial_studies, meta_analysis_studies, rwe_studies, outcomes_research_studies, comparative_effectiveness_studies (7509->7515)
 w1259 drug-discovery canon: qsar_studies, docking_studies, admet_studies, lead_optimization_studies, virtual_screening_studies, de_novo_design_studies (7503->7509)
 w1258 omics canon: transcriptome_studies, proteome_studies, metabolome_studies, microbiome_studies, methylome_studies, interactome_studies (7497->7503)

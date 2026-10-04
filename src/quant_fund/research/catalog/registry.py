@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1262 target-trial/RWE canon.
+        "dynamic_borrowing_studies",
+        "e_value_studies",
+        "master_protocol_studies",
+        "stepped_wedge_studies",
+        "target_trial_emulation_studies",
+        "win_ratio_studies",
+        # Wave-1261 trial-statistics/HEOR canon.
+        "biostatistics_methods_studies",
+        "epidemiology_methods_studies",
+        "heor_studies",
+        "regulatory_science_studies",
+        "survival_trial_studies",
+        "translational_studies",
         # Wave-1260 clinical-research-methods canon.
         "adaptive_trial_studies",
         "clinical_trial_studies",
