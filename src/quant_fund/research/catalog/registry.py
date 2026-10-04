@@ -5175,6 +5175,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pachamama_qa_studies",
         "supay_qa_studies",
         "viracocha_qa_studies",
+        # Wave-1702 mayan-myth canon.
+        "chac_qa_studies",
+        "hunab_qa_studies",
+        "itzamna_qa_studies",
+        "ixchel_qa_studies",
+        "kukulcan_qa_studies",
+        "yumkaax_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

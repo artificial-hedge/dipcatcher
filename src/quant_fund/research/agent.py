@@ -13607,6 +13607,14 @@ from quant_fund.research.benches_w1701 import (
     bench_supay_qa_studies_family,
     bench_viracocha_qa_studies_family,
 )
+from quant_fund.research.benches_w1702 import (
+    bench_chac_qa_studies_family,
+    bench_hunab_qa_studies_family,
+    bench_itzamna_qa_studies_family,
+    bench_ixchel_qa_studies_family,
+    bench_kukulcan_qa_studies_family,
+    bench_yumkaax_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
