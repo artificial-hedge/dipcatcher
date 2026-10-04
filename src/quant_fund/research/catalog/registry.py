@@ -6050,6 +6050,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kydyr2_qa_studies",
         "tenger2_qa_studies",
         "ulgen2_qa_studies",
+        # Wave-1827 siberian-myth-2 canon.
+        "abaasy2_qa_studies",
+        "buga2_qa_studies",
+        "khosun2_qa_studies",
+        "kyys2_qa_studies",
+        "naa2_qa_studies",
+        "num2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
