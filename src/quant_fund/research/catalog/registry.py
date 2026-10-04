@@ -5462,6 +5462,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tangaroa_qa_studies",
         "tawhirimatea_qa_studies",
         "tumatauenga_qa_studies",
+        # Wave-1743 zulu-myth canon.
+        "impundulu_qa_studies",
+        "inkanyamba_qa_studies",
+        "mamlambo_qa_studies",
+        "tikoloshe_qa_studies",
+        "unkulunkulu_qa_studies",
+        "usilosimapundu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
