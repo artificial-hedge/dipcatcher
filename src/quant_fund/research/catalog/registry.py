@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1177 formal-sciences canon.
+        "formal_sciences",
+        "mathematical_logic",
+        "axiomatic_systems",
+        "proof_calculus",
+        "model_checking_2",
+        "formal_ontology",
         # Wave-1176 theology canon.
         "theology_3",
         "religious_studies_3",
