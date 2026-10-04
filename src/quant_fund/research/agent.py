@@ -9391,6 +9391,14 @@ from quant_fund.research.benches_w1174 import (
     bench_sports_management_family,
     bench_tourism_family,
 )
+from quant_fund.research.benches_w1175 import (
+    bench_automotive_technology_family,
+    bench_carpentry_trades_family,
+    bench_electrical_trades_family,
+    bench_plumbing_hvac_family,
+    bench_refrigeration_technology_family,
+    bench_welding_technology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9762,6 +9770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "electrical_trades": bench_electrical_trades_family,
+        "plumbing_hvac": bench_plumbing_hvac_family,
+        "welding_technology": bench_welding_technology_family,
+        "carpentry_trades": bench_carpentry_trades_family,
+        "automotive_technology": bench_automotive_technology_family,
+        "refrigeration_technology": bench_refrigeration_technology_family,
         "recreation": bench_recreation_family,
         "leisure_studies": bench_leisure_studies_family,
         "tourism": bench_tourism_family,

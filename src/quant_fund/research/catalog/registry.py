@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1175 trades canon.
+        "electrical_trades",
+        "plumbing_hvac",
+        "welding_technology",
+        "carpentry_trades",
+        "automotive_technology",
+        "refrigeration_technology",
         # Wave-1174 recreation canon.
         "recreation",
         "leisure_studies",
