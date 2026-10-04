@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1087 documentary-sciences canon.
+        "epigraphy",
+        "diplomatics",
+        "sigillography",
+        "heraldry",
+        "genealogy_studies",
+        "onomastics",
         # Wave-1086 near-eastern canon.
         "assyriology",
         "egyptology",
