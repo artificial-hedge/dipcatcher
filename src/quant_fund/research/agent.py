@@ -12039,6 +12039,14 @@ from quant_fund.research.benches_w1505 import (
     bench_teal_qa_studies_family,
     bench_wigeon_qa_studies_family,
 )
+from quant_fund.research.benches_w1506 import (
+    bench_bufflehead_qa_studies_family,
+    bench_canvasback_qa_studies_family,
+    bench_eider_qa_studies_family,
+    bench_mallard_qa_studies_family,
+    bench_merganser_qa_studies_family,
+    bench_scoter_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13687,6 +13695,12 @@ def _provenance(
         "shoveler_qa_studies": bench_shoveler_qa_studies_family,
         "teal_qa_studies": bench_teal_qa_studies_family,
         "wigeon_qa_studies": bench_wigeon_qa_studies_family,
+        "bufflehead_qa_studies": bench_bufflehead_qa_studies_family,
+        "canvasback_qa_studies": bench_canvasback_qa_studies_family,
+        "eider_qa_studies": bench_eider_qa_studies_family,
+        "mallard_qa_studies": bench_mallard_qa_studies_family,
+        "merganser_qa_studies": bench_merganser_qa_studies_family,
+        "scoter_qa_studies": bench_scoter_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
