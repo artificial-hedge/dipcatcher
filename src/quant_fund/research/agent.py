@@ -10615,6 +10615,14 @@ from quant_fund.research.benches_w1327 import (
     bench_realtoxicity_studies_family,
     bench_toxigen_eval_studies_family,
 )
+from quant_fund.research.benches_w1328 import (
+    bench_apps_bench_studies_family,
+    bench_class_eval_studies_family,
+    bench_code_contests_studies_family,
+    bench_multipl_e_studies_family,
+    bench_polyglot_bench_studies_family,
+    bench_repobench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11344,6 +11352,12 @@ def _provenance(
         "crowspairs_studies": bench_crowspairs_studies_family,
         "holist_bias_studies": bench_holist_bias_studies_family,
         "realtoxicity_studies": bench_realtoxicity_studies_family,
+        "apps_bench_studies": bench_apps_bench_studies_family,
+        "class_eval_studies": bench_class_eval_studies_family,
+        "code_contests_studies": bench_code_contests_studies_family,
+        "multipl_e_studies": bench_multipl_e_studies_family,
+        "polyglot_bench_studies": bench_polyglot_bench_studies_family,
+        "repobench_studies": bench_repobench_studies_family,
         "toxigen_eval_studies": bench_toxigen_eval_studies_family,
         "ruler_bench_studies": bench_ruler_bench_studies_family,
         "zero_scrolls_studies": bench_zero_scrolls_studies_family,
