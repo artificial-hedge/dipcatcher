@@ -11511,6 +11511,14 @@ from quant_fund.research.benches_w1439 import (
     bench_gorge_qa_studies_family,
     bench_mesa_qa_studies_family,
 )
+from quant_fund.research.benches_w1440 import (
+    bench_bamboo_qa_studies_family,
+    bench_cactus_qa_studies_family,
+    bench_fern_qa_studies_family,
+    bench_moss_qa_studies_family,
+    bench_pine_qa_studies_family,
+    bench_vine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12811,6 +12819,12 @@ def _provenance(
         "fjord_qa_studies": bench_fjord_qa_studies_family,
         "gorge_qa_studies": bench_gorge_qa_studies_family,
         "mesa_qa_studies": bench_mesa_qa_studies_family,
+        "bamboo_qa_studies": bench_bamboo_qa_studies_family,
+        "cactus_qa_studies": bench_cactus_qa_studies_family,
+        "fern_qa_studies": bench_fern_qa_studies_family,
+        "moss_qa_studies": bench_moss_qa_studies_family,
+        "pine_qa_studies": bench_pine_qa_studies_family,
+        "vine_qa_studies": bench_vine_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
