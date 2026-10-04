@@ -10743,6 +10743,14 @@ from quant_fund.research.benches_w1343 import (
     bench_quail_qa_studies_family,
     bench_quoref_qa_studies_family,
 )
+from quant_fund.research.benches_w1344 import (
+    bench_boolq_qa_studies_family,
+    bench_dream_qa_studies_family,
+    bench_duorc_qa_studies_family,
+    bench_mctest_qa_studies_family,
+    bench_qasper_qa_studies_family,
+    bench_race_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11523,6 +11531,12 @@ def _provenance(
         "nlp_bias_studies": bench_nlp_bias_studies_family,
         "pronoun_bias_studies": bench_pronoun_bias_studies_family,
         "coqa_qa_studies": bench_coqa_qa_studies_family,
+        "boolq_qa_studies": bench_boolq_qa_studies_family,
+        "dream_qa_studies": bench_dream_qa_studies_family,
+        "duorc_qa_studies": bench_duorc_qa_studies_family,
+        "mctest_qa_studies": bench_mctest_qa_studies_family,
+        "qasper_qa_studies": bench_qasper_qa_studies_family,
+        "race_qa_studies": bench_race_qa_studies_family,
         "drop_qa_studies": bench_drop_qa_studies_family,
         "news_qa_studies": bench_news_qa_studies_family,
         "quac_qa_studies": bench_quac_qa_studies_family,
