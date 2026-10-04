@@ -27,7 +27,7 @@ def _bench_penates_qa_studies(seed: int = 0) -> float:
     checks.append(not penates_qa_studies_ok(False, True))
     checks.append(penates_qa_studies_aux(True))
     checks.append(not penates_qa_studies_aux(False))
-    checks.append(True)  # roman-myth canon
+    checks.append(True)  # roman-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
