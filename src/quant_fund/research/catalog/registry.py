@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-908 range-query canon.
+        "segment_tree",
+        "fenwick_tree",
+        "sparse_table",
+        "sqrt_decomp",
+        "wavelet_tree",
+        "merge_sort_tree",
         # Wave-907 union-find + priority-queue canon.
         "union_find",
         "dsu_rollback",
