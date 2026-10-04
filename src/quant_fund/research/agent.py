@@ -9583,6 +9583,14 @@ from quant_fund.research.benches_w1198 import (
     bench_sleep_medicine_family,
     bench_wound_care_family,
 )
+from quant_fund.research.benches_w1199 import (
+    bench_cardiac_electrophysiology_family,
+    bench_dialysis_technology_family,
+    bench_hepatobiliary_studies_family,
+    bench_interventional_radiology_family,
+    bench_nuclear_cardiology_family,
+    bench_transplant_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9954,6 +9962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dialysis_technology": bench_dialysis_technology_family,
+        "transplant_studies": bench_transplant_studies_family,
+        "hepatobiliary_studies": bench_hepatobiliary_studies_family,
+        "cardiac_electrophysiology": bench_cardiac_electrophysiology_family,
+        "interventional_radiology": bench_interventional_radiology_family,
+        "nuclear_cardiology": bench_nuclear_cardiology_family,
         "sleep_medicine": bench_sleep_medicine_family,
         "pain_management": bench_pain_management_family,
         "wound_care": bench_wound_care_family,

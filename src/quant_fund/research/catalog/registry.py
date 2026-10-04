@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1199 interventional-medicine canon.
+        "dialysis_technology",
+        "transplant_studies",
+        "hepatobiliary_studies",
+        "cardiac_electrophysiology",
+        "interventional_radiology",
+        "nuclear_cardiology",
         # Wave-1198 procedural-medicine canon.
         "sleep_medicine",
         "pain_management",
