@@ -10111,6 +10111,14 @@ from quant_fund.research.benches_w1264 import (
     bench_structural_nested_studies_family,
     bench_transportability_studies_family,
 )
+from quant_fund.research.benches_w1265 import (
+    bench_colocalization_studies_family,
+    bench_genetic_correlation_studies_family,
+    bench_heritability_ldscore_studies_family,
+    bench_mendelian_randomization_studies_family,
+    bench_pleiotropy_robust_studies_family,
+    bench_polygenic_score_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10518,6 +10526,12 @@ def _provenance(
         "self_controlled_studies": bench_self_controlled_studies_family,
         "structural_nested_studies": bench_structural_nested_studies_family,
         "transportability_studies": bench_transportability_studies_family,
+        "colocalization_studies": bench_colocalization_studies_family,
+        "genetic_correlation_studies": bench_genetic_correlation_studies_family,
+        "heritability_ldscore_studies": bench_heritability_ldscore_studies_family,
+        "mendelian_randomization_studies": bench_mendelian_randomization_studies_family,
+        "pleiotropy_robust_studies": bench_pleiotropy_robust_studies_family,
+        "polygenic_score_studies": bench_polygenic_score_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
