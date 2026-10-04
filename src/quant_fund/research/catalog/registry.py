@@ -3082,6 +3082,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "emrqa_lite_studies",
         "head_qa_lite_studies",
         "medmcqa_lite_studies",
+        # Wave-1403 vision-doc-QA canon.
+        "ai2d_lite_studies",
+        "chart_qa_lite_studies",
+        "docvqa_lite_studies",
+        "infovqa_lite_studies",
+        "mmqa_lite_studies",
+        "ocrvqa_lite_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
