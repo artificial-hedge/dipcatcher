@@ -3439,6 +3439,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kite_qa_studies",
         "osprey_qa_studies",
         "vulture_qa_studies",
+        # Wave-1454 insect-2 canon.
+        "aphid_qa_studies",
+        "hornet_qa_studies",
+        "locust_qa_studies",
+        "mosquito_qa_studies",
+        "scarab_qa_studies",
+        "termite_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
