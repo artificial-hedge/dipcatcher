@@ -5602,6 +5602,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "heimdall_qa_studies",
         "idunn_qa_studies",
         "tyr_qa_studies",
+        # Wave-1763 egyptian-3 canon.
+        "hapi_qa_studies",
+        "khnum_qa_studies",
+        "menhit_qa_studies",
+        "nephthys_qa_studies",
+        "serqet_qa_studies",
+        "tefnut_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
