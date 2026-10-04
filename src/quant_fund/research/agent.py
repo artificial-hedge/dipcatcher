@@ -11639,6 +11639,14 @@ from quant_fund.research.benches_w1455 import (
     bench_toad_qa_studies_family,
     bench_tree_frog_qa_studies_family,
 )
+from quant_fund.research.benches_w1456 import (
+    bench_barracuda_qa_studies_family,
+    bench_catfish_qa_studies_family,
+    bench_cod_qa_studies_family,
+    bench_piranha_qa_studies_family,
+    bench_salmon_qa_studies_family,
+    bench_tuna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13035,6 +13043,12 @@ def _provenance(
         "salamander_qa_studies": bench_salamander_qa_studies_family,
         "toad_qa_studies": bench_toad_qa_studies_family,
         "tree_frog_qa_studies": bench_tree_frog_qa_studies_family,
+        "barracuda_qa_studies": bench_barracuda_qa_studies_family,
+        "catfish_qa_studies": bench_catfish_qa_studies_family,
+        "cod_qa_studies": bench_cod_qa_studies_family,
+        "piranha_qa_studies": bench_piranha_qa_studies_family,
+        "salmon_qa_studies": bench_salmon_qa_studies_family,
+        "tuna_qa_studies": bench_tuna_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
