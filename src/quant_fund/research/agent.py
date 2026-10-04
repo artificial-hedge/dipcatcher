@@ -11895,6 +11895,14 @@ from quant_fund.research.benches_w1487 import (
     bench_kittiwake_qa_studies_family,
     bench_tropicbird_qa_studies_family,
 )
+from quant_fund.research.benches_w1488 import (
+    bench_bobcat_qa_studies_family,
+    bench_dingo_qa_studies_family,
+    bench_kodkod_qa_studies_family,
+    bench_oncilla_qa_studies_family,
+    bench_panther_qa_studies_family,
+    bench_tiger_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13463,6 +13471,12 @@ def _provenance(
         "fulmar_qa_studies": bench_fulmar_qa_studies_family,
         "gull_qa_studies": bench_gull_qa_studies_family,
         "jaeger_qa_studies": bench_jaeger_qa_studies_family,
+        "bobcat_qa_studies": bench_bobcat_qa_studies_family,
+        "dingo_qa_studies": bench_dingo_qa_studies_family,
+        "kodkod_qa_studies": bench_kodkod_qa_studies_family,
+        "oncilla_qa_studies": bench_oncilla_qa_studies_family,
+        "panther_qa_studies": bench_panther_qa_studies_family,
+        "tiger_qa_studies": bench_tiger_qa_studies_family,
         "kittiwake_qa_studies": bench_kittiwake_qa_studies_family,
         "tropicbird_qa_studies": bench_tropicbird_qa_studies_family,
         "grebe_qa_studies": bench_grebe_qa_studies_family,

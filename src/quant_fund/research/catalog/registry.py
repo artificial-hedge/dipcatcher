@@ -3677,6 +3677,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "jaeger_qa_studies",
         "kittiwake_qa_studies",
         "tropicbird_qa_studies",
+        # Wave-1488 wildcat-2 canon.
+        "bobcat_qa_studies",
+        "dingo_qa_studies",
+        "kodkod_qa_studies",
+        "oncilla_qa_studies",
+        "panther_qa_studies",
+        "tiger_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
