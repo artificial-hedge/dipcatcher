@@ -11431,6 +11431,14 @@ from quant_fund.research.benches_w1429 import (
     bench_neutron_qa_studies_family,
     bench_photon_qa_studies_family,
 )
+from quant_fund.research.benches_w1430 import (
+    bench_animal_qa_studies_family,
+    bench_bird_qa_studies_family,
+    bench_ecosystem_qa_studies_family,
+    bench_fish_qa_studies_family,
+    bench_habitat_qa_studies_family,
+    bench_insect_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12671,6 +12679,12 @@ def _provenance(
         "molecule_qa_studies": bench_molecule_qa_studies_family,
         "neutron_qa_studies": bench_neutron_qa_studies_family,
         "photon_qa_studies": bench_photon_qa_studies_family,
+        "animal_qa_studies": bench_animal_qa_studies_family,
+        "bird_qa_studies": bench_bird_qa_studies_family,
+        "ecosystem_qa_studies": bench_ecosystem_qa_studies_family,
+        "fish_qa_studies": bench_fish_qa_studies_family,
+        "habitat_qa_studies": bench_habitat_qa_studies_family,
+        "insect_qa_studies": bench_insect_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

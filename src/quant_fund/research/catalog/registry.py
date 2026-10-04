@@ -3271,6 +3271,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "molecule_qa_studies",
         "neutron_qa_studies",
         "photon_qa_studies",
+        # Wave-1430 wildlife canon.
+        "animal_qa_studies",
+        "bird_qa_studies",
+        "ecosystem_qa_studies",
+        "fish_qa_studies",
+        "habitat_qa_studies",
+        "insect_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
