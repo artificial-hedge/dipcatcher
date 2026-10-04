@@ -8063,6 +8063,14 @@ from quant_fund.research.benches_w1008 import (
     bench_maxwell_relations_family,
     bench_phase_transitions_family,
 )
+from quant_fund.research.benches_w1009 import (
+    bench_dipole_radiation_family,
+    bench_fresnel_eq_family,
+    bench_lorentz_lorenz_family,
+    bench_maxwell_equations_family,
+    bench_poynting_vector_family,
+    bench_wave_guides_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8434,6 +8442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "maxwell_equations": bench_maxwell_equations_family,
+        "poynting_vector": bench_poynting_vector_family,
+        "fresnel_eq": bench_fresnel_eq_family,
+        "wave_guides": bench_wave_guides_family,
+        "dipole_radiation": bench_dipole_radiation_family,
+        "lorentz_lorenz": bench_lorentz_lorenz_family,
         "carnot_cycle": bench_carnot_cycle_family,
         "maxwell_relations": bench_maxwell_relations_family,
         "phase_transitions": bench_phase_transitions_family,
