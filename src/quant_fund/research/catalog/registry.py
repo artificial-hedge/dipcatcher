@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1315 OOD-robustness canon.
+        "imagenet_a_studies",
+        "imagenet_e_studies",
+        "imagenet_o_studies",
+        "imagenet_sketch_studies",
+        "imagenet_v2_studies",
+        "stylized_studies",
         # Wave-1314 privacy-inference canon.
         "attribute_infer_studies",
         "extraction_studies",

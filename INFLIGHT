@@ -1,3 +1,4 @@
+w1315 OOD-robustness canon: imagenet_a_studies, imagenet_e_studies, imagenet_o_studies, imagenet_sketch_studies, imagenet_v2_studies, stylized_studies (7839->7845)
 w1314 privacy-inference canon: attribute_infer_studies, extraction_studies, inversion_studies, model_stealing_studies, property_infer_studies, reconstruction_studies (7833->7839)
 w1313 privacy-attack canon: abs_scan_studies, activation_cluster_studies, fine_pruning_studies, sleepless_studies, strip_defense_studies, watermark_studies (7827->7833)
 w1312 risk-domain canon: bio_risk_eval_studies, chem_risk_eval_studies, cyber_sec_eval_studies, lab_bench_studies, malicious_instruct_studies, wmdp_studies (7821->7827)
