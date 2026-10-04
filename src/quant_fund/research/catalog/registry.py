@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-891 optimization/IGA canon.
+        "trust_region_dogleg",
+        "bfgs_update",
+        "lebesgue_const",
+        "iga_colloc",
+        "trimmed_cad",
+        "newton_armijo",
         # Wave-890 special-function canon.
         "zeta_fn",
         "elliptic_fn",
