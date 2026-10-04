@@ -6274,6 +6274,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "munidis_qa_studies",
         "quangeio_qa_studies",
         "reo_qa_studies",
+        # Wave-1859 welsh-myth-3 canon.
+        "beli_qa_studies",
+        "cassivellaunus_qa_studies",
+        "llefelys_qa_studies",
+        "manawydan_qa_studies",
+        "matholwch_qa_studies",
+        "pwll_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
