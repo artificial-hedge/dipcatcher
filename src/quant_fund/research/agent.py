@@ -7775,6 +7775,14 @@ from quant_fund.research.benches_w972 import (
     bench_freeness_check_family,
     bench_matrix_model_free_family,
 )
+from quant_fund.research.benches_w973 import (
+    bench_banach_mazur_family,
+    bench_djt_space_family,
+    bench_gl_property_family,
+    bench_kalton_loc_family,
+    bench_schauder_basis_family,
+    bench_type_cotype_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8146,6 +8154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "banach_mazur": bench_banach_mazur_family,
+        "type_cotype": bench_type_cotype_family,
+        "gl_property": bench_gl_property_family,
+        "djt_space": bench_djt_space_family,
+        "schauder_basis": bench_schauder_basis_family,
+        "kalton_loc": bench_kalton_loc_family,
         "free_entropy": bench_free_entropy_family,
         "free_fisher_info": bench_free_fisher_info_family,
         "free_cumulant": bench_free_cumulant_family,

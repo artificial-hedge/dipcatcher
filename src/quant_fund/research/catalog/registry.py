@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-973 Banach-space-geometry canon.
+        "banach_mazur",
+        "type_cotype",
+        "gl_property",
+        "djt_space",
+        "schauder_basis",
+        "kalton_loc",
         # Wave-972 free-probability-2 canon.
         "free_entropy",
         "free_fisher_info",
