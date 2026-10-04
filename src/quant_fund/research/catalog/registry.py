@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1133 physics-4 canon.
+        "statistical_field_theory",
+        "conformal_field_theory",
+        "lattice_field_theory",
+        "string_theory_math",
+        "loop_quantum_gravity",
+        "holography_ads",
         # Wave-1132 history-4 canon.
         "history_of_emotions",
         "history_of_sexuality",

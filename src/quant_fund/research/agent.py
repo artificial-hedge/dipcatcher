@@ -9055,6 +9055,14 @@ from quant_fund.research.benches_w1132 import (
     bench_history_of_the_book_family,
     bench_microhistory_family,
 )
+from quant_fund.research.benches_w1133 import (
+    bench_conformal_field_theory_family,
+    bench_holography_ads_family,
+    bench_lattice_field_theory_family,
+    bench_loop_quantum_gravity_family,
+    bench_statistical_field_theory_family,
+    bench_string_theory_math_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9426,6 +9434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "statistical_field_theory": bench_statistical_field_theory_family,
+        "conformal_field_theory": bench_conformal_field_theory_family,
+        "lattice_field_theory": bench_lattice_field_theory_family,
+        "string_theory_math": bench_string_theory_math_family,
+        "loop_quantum_gravity": bench_loop_quantum_gravity_family,
+        "holography_ads": bench_holography_ads_family,
         "history_of_emotions": bench_history_of_emotions_family,
         "history_of_sexuality": bench_history_of_sexuality_family,
         "history_of_the_book": bench_history_of_the_book_family,
