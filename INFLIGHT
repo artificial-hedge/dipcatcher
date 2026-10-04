@@ -1,3 +1,4 @@
+feat(research): wave 854 — radial-basis-function canon (rbf_interp, gaussian_rbf, multiquadric_rbf, kansa_collocation, rbf_finite_diff, wendland_rbf) (5073->5079 families)
 feat(research): wave 853 — spectral-element canon (sem_grid, gll_nodes, spectral_element, mortar_method, tensor_product_sem, hp_refinement) (5067->5073 families)
 feat(research): wave 852 — boundary-element canon (bem_kernel, fredholm_solve, nystrom_method, singular_integrals, fast_multipole, galerkin_bem) (5061->5067 families)
 feat(research): wave 851 — discontinuous-Galerkin canon (dg_discretization, numerical_flux_dg, penalty_dg, modal_basis, limiter_tvb, rkdg_step) (5055->5061 families)
