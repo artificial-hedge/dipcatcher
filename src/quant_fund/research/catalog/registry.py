@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1059 history canon.
+        "historiography",
+        "ancient_history",
+        "medieval_history",
+        "modern_history",
+        "economic_history",
+        "intellectual_history",
         # Wave-1058 philosophy canon.
         "metaphysics",
         "epistemology",

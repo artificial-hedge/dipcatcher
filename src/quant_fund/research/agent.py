@@ -8463,6 +8463,14 @@ from quant_fund.research.benches_w1058 import (
     bench_metaphysics_family,
     bench_philosophy_of_science_family,
 )
+from quant_fund.research.benches_w1059 import (
+    bench_ancient_history_family,
+    bench_economic_history_family,
+    bench_historiography_family,
+    bench_intellectual_history_family,
+    bench_medieval_history_family,
+    bench_modern_history_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8834,6 +8842,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "historiography": bench_historiography_family,
+        "ancient_history": bench_ancient_history_family,
+        "medieval_history": bench_medieval_history_family,
+        "modern_history": bench_modern_history_family,
+        "economic_history": bench_economic_history_family,
+        "intellectual_history": bench_intellectual_history_family,
         "metaphysics": bench_metaphysics_family,
         "epistemology": bench_epistemology_family,
         "ethics_philosophy": bench_ethics_philosophy_family,
