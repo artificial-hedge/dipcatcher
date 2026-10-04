@@ -3299,6 +3299,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rain_qa_studies",
         "storm_qa_studies",
         "wind_qa_studies",
+        # Wave-1434 material canon.
+        "alloy_qa_studies",
+        "ceramic_qa_studies",
+        "glass_qa_studies",
+        "iron_qa_studies",
+        "steel_qa_studies",
+        "wood_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

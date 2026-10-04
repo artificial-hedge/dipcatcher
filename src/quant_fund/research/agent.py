@@ -11463,6 +11463,14 @@ from quant_fund.research.benches_w1433 import (
     bench_storm_qa_studies_family,
     bench_wind_qa_studies_family,
 )
+from quant_fund.research.benches_w1434 import (
+    bench_alloy_qa_studies_family,
+    bench_ceramic_qa_studies_family,
+    bench_glass_qa_studies_family,
+    bench_iron_qa_studies_family,
+    bench_steel_qa_studies_family,
+    bench_wood_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12727,6 +12735,12 @@ def _provenance(
         "rain_qa_studies": bench_rain_qa_studies_family,
         "storm_qa_studies": bench_storm_qa_studies_family,
         "wind_qa_studies": bench_wind_qa_studies_family,
+        "alloy_qa_studies": bench_alloy_qa_studies_family,
+        "ceramic_qa_studies": bench_ceramic_qa_studies_family,
+        "glass_qa_studies": bench_glass_qa_studies_family,
+        "iron_qa_studies": bench_iron_qa_studies_family,
+        "steel_qa_studies": bench_steel_qa_studies_family,
+        "wood_qa_studies": bench_wood_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
