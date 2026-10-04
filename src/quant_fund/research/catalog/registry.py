@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-985 Hardy-space/BMO canon.
+        "hardy_h1",
+        "bmo_space",
+        "atomic_h1",
+        "carleson_measure",
+        "john_nirenberg",
+        "fefferman_stein",
         # Wave-984 modulation-spaces canon.
         "modulation_space",
         "short_time_ft",

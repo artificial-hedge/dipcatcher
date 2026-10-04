@@ -7871,6 +7871,14 @@ from quant_fund.research.benches_w984 import (
     bench_short_time_ft_family,
     bench_wigner_dist_family,
 )
+from quant_fund.research.benches_w985 import (
+    bench_atomic_h1_family,
+    bench_bmo_space_family,
+    bench_carleson_measure_family,
+    bench_fefferman_stein_family,
+    bench_hardy_h1_family,
+    bench_john_nirenberg_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8242,6 +8250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hardy_h1": bench_hardy_h1_family,
+        "bmo_space": bench_bmo_space_family,
+        "atomic_h1": bench_atomic_h1_family,
+        "carleson_measure": bench_carleson_measure_family,
+        "john_nirenberg": bench_john_nirenberg_family,
+        "fefferman_stein": bench_fefferman_stein_family,
         "modulation_space": bench_modulation_space_family,
         "short_time_ft": bench_short_time_ft_family,
         "gabor_frame": bench_gabor_frame_family,
