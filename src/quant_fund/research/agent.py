@@ -8215,6 +8215,14 @@ from quant_fund.research.benches_w1027 import (
     bench_polymer_physics_family,
     bench_superconductivity_family,
 )
+from quant_fund.research.benches_w1028 import (
+    bench_fluid_dynamics2_family,
+    bench_heat_exchanger_family,
+    bench_process_control_family,
+    bench_reaction_kinetics_family,
+    bench_separation_proc_family,
+    bench_thermo_props_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8586,6 +8594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "reaction_kinetics": bench_reaction_kinetics_family,
+        "thermo_props": bench_thermo_props_family,
+        "separation_proc": bench_separation_proc_family,
+        "heat_exchanger": bench_heat_exchanger_family,
+        "fluid_dynamics2": bench_fluid_dynamics2_family,
+        "process_control": bench_process_control_family,
         "crystal_structure": bench_crystal_structure_family,
         "polymer_physics": bench_polymer_physics_family,
         "metallurgy": bench_metallurgy_family,
