@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-859 meshfree/moving-least-squares canon.
+        "moving_least_sq",
+        "mls_shape",
+        "hp_clouds",
+        "meshless_local",
+        "point_cloud_interp",
+        "diffuse_element",
         # Wave-858 adaptive/oscillatory-quadrature canon.
         "adaptive_simpsons",
         "tanh_sinh",

@@ -6863,6 +6863,14 @@ from quant_fund.research.benches_w858 import (
     bench_osc_singular_family,
     bench_tanh_sinh_family,
 )
+from quant_fund.research.benches_w859 import (
+    bench_diffuse_element_family,
+    bench_hp_clouds_family,
+    bench_meshless_local_family,
+    bench_mls_shape_family,
+    bench_moving_least_sq_family,
+    bench_point_cloud_interp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7234,6 +7242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "moving_least_sq": bench_moving_least_sq_family,
+        "mls_shape": bench_mls_shape_family,
+        "hp_clouds": bench_hp_clouds_family,
+        "meshless_local": bench_meshless_local_family,
+        "point_cloud_interp": bench_point_cloud_interp_family,
+        "diffuse_element": bench_diffuse_element_family,
         "adaptive_simpsons": bench_adaptive_simpsons_family,
         "tanh_sinh": bench_tanh_sinh_family,
         "double_exp_quad": bench_double_exp_quad_family,
