@@ -3411,6 +3411,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orca_qa_studies",
         "otter_qa_studies",
         "walrus_qa_studies",
+        # Wave-1450 farm canon.
+        "barn_qa_studies",
+        "cow_qa_studies",
+        "goat_qa_studies",
+        "horse_qa_studies",
+        "pig_qa_studies",
+        "sheep_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
