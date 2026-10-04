@@ -9927,6 +9927,14 @@ from quant_fund.research.benches_w1241 import (
     bench_marrow_studies_family,
     bench_thrombosis_medicine_family,
 )
+from quant_fund.research.benches_w1242 import (
+    bench_fracture_studies_family,
+    bench_osteoporosis_studies_family,
+    bench_physiatry_studies_family,
+    bench_physical_therapy_studies_family,
+    bench_rehabilitation_studies_family,
+    bench_sports_injury_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10298,6 +10306,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rehabilitation_studies": bench_rehabilitation_studies_family,
+        "physical_therapy_studies": bench_physical_therapy_studies_family,
+        "sports_injury_studies": bench_sports_injury_studies_family,
+        "fracture_studies": bench_fracture_studies_family,
+        "osteoporosis_studies": bench_osteoporosis_studies_family,
+        "physiatry_studies": bench_physiatry_studies_family,
         "anemia_studies": bench_anemia_studies_family,
         "coagulation_studies": bench_coagulation_studies_family,
         "hemoglobin_studies": bench_hemoglobin_studies_family,
