@@ -16,7 +16,7 @@ def verethragna_qa_studies_aux(aux: bool) -> bool:
     """verethragna_qa_studies
 
     aux:
-    verethragna_qa_studies: verethragna, victory gods, answers, and scores
+    verethragna_qa_studies: verethragna, victory falcons, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_verethragna_qa_studies(seed: int = 0) -> float:
     checks.append(not verethragna_qa_studies_ok(False, True))
     checks.append(verethragna_qa_studies_aux(True))
     checks.append(not verethragna_qa_studies_aux(False))
-    checks.append(True)  # persian-myth canon
+    checks.append(True)  # persian-2 canon
     return float(sum(checks) / len(checks))
 
 
