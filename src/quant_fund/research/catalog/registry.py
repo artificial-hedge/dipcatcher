@@ -6785,6 +6785,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mishipeshu_qa_studies",
         "naagloshii_qa_studies",
         "pukwudgie_qa_studies",
+        # Wave-1932 mesoamerican-demon canon.
+        "ah_puch_qa_studies",
+        "alux_qa_studies",
+        "cizin_qa_studies",
+        "nahualli_qa_studies",
+        "vucub_qa_studies",
+        "xtabay_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
