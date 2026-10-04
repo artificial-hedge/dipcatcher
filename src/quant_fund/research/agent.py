@@ -8295,6 +8295,14 @@ from quant_fund.research.benches_w1037 import (
     bench_pest_management_family,
     bench_soil_science_family,
 )
+from quant_fund.research.benches_w1038 import (
+    bench_cardiology_family,
+    bench_human_physiology_family,
+    bench_immunology_family,
+    bench_neuroscience_med_family,
+    bench_pathology_family,
+    bench_pharmacokinetics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8666,6 +8674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "human_physiology": bench_human_physiology_family,
+        "pharmacokinetics": bench_pharmacokinetics_family,
+        "immunology": bench_immunology_family,
+        "pathology": bench_pathology_family,
+        "neuroscience_med": bench_neuroscience_med_family,
+        "cardiology": bench_cardiology_family,
         "crop_science": bench_crop_science_family,
         "soil_science": bench_soil_science_family,
         "agronomy": bench_agronomy_family,

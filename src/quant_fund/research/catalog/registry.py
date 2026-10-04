@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1038 medicine canon.
+        "human_physiology",
+        "pharmacokinetics",
+        "immunology",
+        "pathology",
+        "neuroscience_med",
+        "cardiology",
         # Wave-1037 agriculture canon.
         "crop_science",
         "soil_science",
