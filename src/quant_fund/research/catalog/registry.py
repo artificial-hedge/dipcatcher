@@ -5168,6 +5168,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lugh_qa_studies",
         "manannan_qa_studies",
         "morrigan_qa_studies",
+        # Wave-1701 incan-myth canon.
+        "illapa_qa_studies",
+        "inti_qa_studies",
+        "mamaquilla_qa_studies",
+        "pachamama_qa_studies",
+        "supay_qa_studies",
+        "viracocha_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
