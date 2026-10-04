@@ -9383,6 +9383,14 @@ from quant_fund.research.benches_w1173 import (
     bench_media_studies_3_family,
     bench_rhetoric_2_family,
 )
+from quant_fund.research.benches_w1174 import (
+    bench_hospitality_family,
+    bench_leisure_studies_family,
+    bench_recreation_family,
+    bench_recreation_therapy_family,
+    bench_sports_management_family,
+    bench_tourism_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9754,6 +9762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "recreation": bench_recreation_family,
+        "leisure_studies": bench_leisure_studies_family,
+        "tourism": bench_tourism_family,
+        "hospitality": bench_hospitality_family,
+        "sports_management": bench_sports_management_family,
+        "recreation_therapy": bench_recreation_therapy_family,
         "communication_3": bench_communication_3_family,
         "journalism_3": bench_journalism_3_family,
         "media_studies_3": bench_media_studies_3_family,
