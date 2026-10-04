@@ -4139,6 +4139,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "spring_peeper_qa_studies",
         "treefrog_qa_studies",
         "wood_frog_qa_studies",
+        # Wave-1554 spider canon.
+        "black_widow_qa_studies",
+        "huntsman_qa_studies",
+        "jumping_spider_qa_studies",
+        "orb_weaver_qa_studies",
+        "tarantula_qa_studies",
+        "wolf_spider_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
