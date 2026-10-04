@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1107 medicine-3 canon.
+        "gastroenterology",
+        "endocrinology",
+        "hematology",
+        "pulmonology",
+        "nephrology",
+        "infectious_diseases",
         # Wave-1106 materials-2 canon.
         "semiconductors_materials",
         "composite_materials",
