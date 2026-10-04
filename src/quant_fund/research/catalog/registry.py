@@ -3180,6 +3180,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "broker_qa_studies",
         "credit_qa_studies",
         "earnings_qa_studies",
+        # Wave-1417 instruction-task canon.
+        "checklist_qa_studies",
+        "flow_qa_studies",
+        "guide_qa_studies",
+        "howto_qa_studies",
+        "instruct_qa_studies",
+        "lesson_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
