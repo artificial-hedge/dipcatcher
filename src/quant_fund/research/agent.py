@@ -13287,6 +13287,14 @@ from quant_fund.research.benches_w1661 import (
     bench_huginn_qa_studies_family,
     bench_muninn_qa_studies_family,
 )
+from quant_fund.research.benches_w1662 import (
+    bench_banshee_qa_studies_family,
+    bench_dullahan_qa_studies_family,
+    bench_kelpie_qa_studies_family,
+    bench_leprechaun_qa_studies_family,
+    bench_puca_qa_studies_family,
+    bench_selkie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
