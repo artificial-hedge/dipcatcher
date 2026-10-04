@@ -9679,6 +9679,14 @@ from quant_fund.research.benches_w1210 import (
     bench_personality_disorders_family,
     bench_psychotic_disorders_family,
 )
+from quant_fund.research.benches_w1211 import (
+    bench_epilepsy_studies_family,
+    bench_headache_medicine_family,
+    bench_movement_disorders_family,
+    bench_neurodevelopmental_disorders_family,
+    bench_neuropsychiatry_studies_family,
+    bench_pediatric_neurology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10050,6 +10058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pediatric_neurology": bench_pediatric_neurology_family,
+        "neurodevelopmental_disorders": bench_neurodevelopmental_disorders_family,
+        "neuropsychiatry_studies": bench_neuropsychiatry_studies_family,
+        "headache_medicine": bench_headache_medicine_family,
+        "epilepsy_studies": bench_epilepsy_studies_family,
+        "movement_disorders": bench_movement_disorders_family,
         "forensic_psychiatry": bench_forensic_psychiatry_family,
         "geriatric_psychiatry": bench_geriatric_psychiatry_family,
         "mood_disorders": bench_mood_disorders_family,
