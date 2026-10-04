@@ -10551,6 +10551,14 @@ from quant_fund.research.benches_w1319 import (
     bench_ood_bench_studies_family,
     bench_wild_bench_studies_family,
 )
+from quant_fund.research.benches_w1320 import (
+    bench_gaia_bench_studies_family,
+    bench_mmbench_agent_studies_family,
+    bench_osworld_studies_family,
+    bench_screen_eval_studies_family,
+    bench_vsi_bench_studies_family,
+    bench_webvoyager_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11246,6 +11254,12 @@ def _provenance(
         "math_bench_studies": bench_math_bench_studies_family,
         "multirc_studies": bench_multirc_studies_family,
         "ninco_studies": bench_ninco_studies_family,
+        "gaia_bench_studies": bench_gaia_bench_studies_family,
+        "mmbench_agent_studies": bench_mmbench_agent_studies_family,
+        "osworld_studies": bench_osworld_studies_family,
+        "screen_eval_studies": bench_screen_eval_studies_family,
+        "vsi_bench_studies": bench_vsi_bench_studies_family,
+        "webvoyager_studies": bench_webvoyager_studies_family,
         "objectnet_studies": bench_objectnet_studies_family,
         "ood_bench_studies": bench_ood_bench_studies_family,
         "wild_bench_studies": bench_wild_bench_studies_family,
