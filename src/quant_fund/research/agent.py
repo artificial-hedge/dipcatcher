@@ -5079,6 +5079,14 @@ from quant_fund.research.benches_w635 import (
     bench_weil_divisor2_family,
     bench_zariski_main_family,
 )
+from quant_fund.research.benches_w636 import (
+    bench_ek_subfactor_family,
+    bench_gyro_cat_family,
+    bench_haagerup_sub_family,
+    bench_sovereign_cat_family,
+    bench_sylleptic_family,
+    bench_yang_lee_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5458,6 +5466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sylleptic": bench_sylleptic_family,
+        "haagerup_sub": bench_haagerup_sub_family,
+        "ek_subfactor": bench_ek_subfactor_family,
+        "gyro_cat": bench_gyro_cat_family,
+        "yang_lee_cat": bench_yang_lee_cat_family,
+        "sovereign_cat": bench_sovereign_cat_family,
         "excellent_ring": bench_excellent_ring_family,
         "zariski_main": bench_zariski_main_family,
         "going_up": bench_going_up_family,
