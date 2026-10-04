@@ -12407,6 +12407,14 @@ from quant_fund.research.benches_w1551 import (
     bench_fer_de_lance_qa_studies_family,
     bench_rattlesnake_qa_studies_family,
 )
+from quant_fund.research.benches_w1552 import (
+    bench_box_turtle_qa_studies_family,
+    bench_map_turtle_qa_studies_family,
+    bench_painted_turtle_qa_studies_family,
+    bench_slider_qa_studies_family,
+    bench_snapping_turtle_qa_studies_family,
+    bench_tortoise_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14314,6 +14322,12 @@ def _provenance(
         "tegu_qa_studies": bench_tegu_qa_studies_family,
         "uromastyx_qa_studies": bench_uromastyx_qa_studies_family,
         "bushmaster_qa_studies": bench_bushmaster_qa_studies_family,
+        "box_turtle_qa_studies": bench_box_turtle_qa_studies_family,
+        "map_turtle_qa_studies": bench_map_turtle_qa_studies_family,
+        "painted_turtle_qa_studies": bench_painted_turtle_qa_studies_family,
+        "slider_qa_studies": bench_slider_qa_studies_family,
+        "snapping_turtle_qa_studies": bench_snapping_turtle_qa_studies_family,
+        "tortoise_qa_studies": bench_tortoise_qa_studies_family,
         "copperhead_qa_studies": bench_copperhead_qa_studies_family,
         "coral_snake_qa_studies": bench_coral_snake_qa_studies_family,
         "cottonmouth_qa_studies": bench_cottonmouth_qa_studies_family,

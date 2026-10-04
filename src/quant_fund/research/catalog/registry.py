@@ -4125,6 +4125,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cottonmouth_qa_studies",
         "fer_de_lance_qa_studies",
         "rattlesnake_qa_studies",
+        # Wave-1552 turtle canon.
+        "box_turtle_qa_studies",
+        "map_turtle_qa_studies",
+        "painted_turtle_qa_studies",
+        "slider_qa_studies",
+        "snapping_turtle_qa_studies",
+        "tortoise_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
