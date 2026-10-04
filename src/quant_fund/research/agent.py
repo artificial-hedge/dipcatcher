@@ -12503,6 +12503,14 @@ from quant_fund.research.benches_w1563 import (
     bench_pistol_shrimp_qa_studies_family,
     bench_porcelain_crab_qa_studies_family,
 )
+from quant_fund.research.benches_w1564 import (
+    bench_bobtail_squid_qa_studies_family,
+    bench_cuttlefish_qa_studies_family,
+    bench_nautilus_qa_studies_family,
+    bench_nudibranch_qa_studies_family,
+    bench_sea_slug_qa_studies_family,
+    bench_vampire_squid_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14452,6 +14460,12 @@ def _provenance(
         "pufferfish_qa_studies": bench_pufferfish_qa_studies_family,
         "cleaner_shrimp_qa_studies": bench_cleaner_shrimp_qa_studies_family,
         "decorator_crab_qa_studies": bench_decorator_crab_qa_studies_family,
+        "bobtail_squid_qa_studies": bench_bobtail_squid_qa_studies_family,
+        "cuttlefish_qa_studies": bench_cuttlefish_qa_studies_family,
+        "nautilus_qa_studies": bench_nautilus_qa_studies_family,
+        "nudibranch_qa_studies": bench_nudibranch_qa_studies_family,
+        "sea_slug_qa_studies": bench_sea_slug_qa_studies_family,
+        "vampire_squid_qa_studies": bench_vampire_squid_qa_studies_family,
         "hermit_crab_qa_studies": bench_hermit_crab_qa_studies_family,
         "mantis_shrimp_qa_studies": bench_mantis_shrimp_qa_studies_family,
         "pistol_shrimp_qa_studies": bench_pistol_shrimp_qa_studies_family,

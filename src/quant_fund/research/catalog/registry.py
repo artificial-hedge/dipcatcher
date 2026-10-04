@@ -4209,6 +4209,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mantis_shrimp_qa_studies",
         "pistol_shrimp_qa_studies",
         "porcelain_crab_qa_studies",
+        # Wave-1564 cephalopod canon.
+        "bobtail_squid_qa_studies",
+        "cuttlefish_qa_studies",
+        "nautilus_qa_studies",
+        "nudibranch_qa_studies",
+        "sea_slug_qa_studies",
+        "vampire_squid_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
