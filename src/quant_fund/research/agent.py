@@ -8999,6 +8999,14 @@ from quant_fund.research.benches_w1125 import (
     bench_health_economics_family,
     bench_urban_economics_family,
 )
+from quant_fund.research.benches_w1126 import (
+    bench_community_psychology_family,
+    bench_consumer_psychology_family,
+    bench_cross_cultural_psychology_family,
+    bench_political_psychology_family,
+    bench_positive_psychology_family,
+    bench_social_cognition_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9370,6 +9378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "social_cognition": bench_social_cognition_family,
+        "positive_psychology": bench_positive_psychology_family,
+        "cross_cultural_psychology": bench_cross_cultural_psychology_family,
+        "consumer_psychology": bench_consumer_psychology_family,
+        "political_psychology": bench_political_psychology_family,
+        "community_psychology": bench_community_psychology_family,
         "development_economics": bench_development_economics_family,
         "environmental_economics": bench_environmental_economics_family,
         "health_economics": bench_health_economics_family,
