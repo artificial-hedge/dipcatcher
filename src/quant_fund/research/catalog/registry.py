@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-781 regeneration/Khinchin canon.
+        "karlin_mcg",
+        "keilson_stieltjes",
+        "palm_khinchin",
+        "regen_proc",
+        "wold_proc",
+        "korolyuk",
         # Wave-780 queueing-network canon.
         "bcmp_net",
         "mean_value",
