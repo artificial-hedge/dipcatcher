@@ -5799,6 +5799,14 @@ from quant_fund.research.benches_w725 import (
     bench_p_group_iwasawa_family,
     bench_shimura_period_family,
 )
+from quant_fund.research.benches_w726 import (
+    bench_diamond_taylor_wiles_family,
+    bench_jetchev_skinner_family,
+    bench_kisin_crystalline_family,
+    bench_mazur_deform_family,
+    bench_wan_sss_family,
+    bench_wiles_taylor_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6178,6 +6186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jetchev_skinner": bench_jetchev_skinner_family,
+        "wan_sss": bench_wan_sss_family,
+        "wiles_taylor": bench_wiles_taylor_family,
+        "diamond_taylor_wiles": bench_diamond_taylor_wiles_family,
+        "kisin_crystalline": bench_kisin_crystalline_family,
+        "mazur_deform": bench_mazur_deform_family,
         "p_group_iwasawa": bench_p_group_iwasawa_family,
         "shimura_period": bench_shimura_period_family,
         "arithmetic_arnold": bench_arithmetic_arnold_family,
