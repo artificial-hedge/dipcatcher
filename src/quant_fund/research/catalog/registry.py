@@ -3698,6 +3698,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "thyme_qa_studies",
         "violet_qa_studies",
         "zinnia_qa_studies",
+        # Wave-1491 tree canon.
+        "cypress_qa_studies",
+        "eucalyptus_qa_studies",
+        "hemlock_qa_studies",
+        "laurel_qa_studies",
+        "magnolia_qa_studies",
+        "spruce_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
