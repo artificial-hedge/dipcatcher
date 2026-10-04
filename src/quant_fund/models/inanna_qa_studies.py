@@ -16,7 +16,7 @@ def inanna_qa_studies_aux(aux: bool) -> bool:
     """inanna_qa_studies
 
     aux:
-    inanna_qa_studies: inanna, queen of heaven, answers, and scores
+    inanna_qa_studies: inanna, star queens, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_inanna_qa_studies(seed: int = 0) -> float:
     checks.append(not inanna_qa_studies_ok(False, True))
     checks.append(inanna_qa_studies_aux(True))
     checks.append(not inanna_qa_studies_aux(False))
-    checks.append(True)  # sumerian-myth canon
+    checks.append(True)  # sumerian-4 canon
     return float(sum(checks) / len(checks))
 
 

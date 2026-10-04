@@ -16,7 +16,7 @@ def enki_qa_studies_aux(aux: bool) -> bool:
     """enki_qa_studies
 
     aux:
-    enki_qa_studies: enki, wisdom god, answers, and scores
+    enki_qa_studies: enki, craft sages, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_enki_qa_studies(seed: int = 0) -> float:
     checks.append(not enki_qa_studies_ok(False, True))
     checks.append(enki_qa_studies_aux(True))
     checks.append(not enki_qa_studies_aux(False))
-    checks.append(True)  # mesopotamian-myth canon
+    checks.append(True)  # sumerian-4 canon
     return float(sum(checks) / len(checks))
 
 
