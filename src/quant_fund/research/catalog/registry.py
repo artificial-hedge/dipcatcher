@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1016 optics-2 canon.
+        "diffraction_grating",
+        "fourier_optics",
+        "interference_fringes",
+        "polarization_states",
+        "coherence_theory",
+        "holography",
         # Wave-1015 acoustics canon.
         "acoustic_wave_eq",
         "helmholtz_eq",
