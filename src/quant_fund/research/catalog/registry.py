@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1289 reasoning/CoT canon.
+        "analogical_prompt_studies",
+        "cot_studies",
+        "reflexion_studies",
+        "scratchpad_studies",
+        "self_consistency_studies",
+        "stepwise_verify_studies",
         # Wave-1288 RL-imitation canon.
         "adversarial_irl_studies",
         "behavior_cloning_studies",
