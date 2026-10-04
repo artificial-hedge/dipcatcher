@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1108 sociology-3 canon.
+        "industrial_sociology",
+        "political_sociology",
+        "sociology_of_education",
+        "sociology_of_religion",
+        "environmental_sociology",
+        "cultural_sociology",
         # Wave-1107 medicine-3 canon.
         "gastroenterology",
         "endocrinology",
