@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1376 dialogue-system canon.
+        "blender_bot_studies",
+        "conv_ai2_studies",
+        "daily_dialog_studies",
+        "dstc_lite_studies",
+        "empathy_dialog_studies",
+        "persona_chat_studies",
         # Wave-1375 scientific-summarization canon.
         "facet_sum_studies",
         "ms2_lite_studies",
