@@ -3068,6 +3068,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kgqa_lite_studies",
         "pweb_qa_studies",
         "qald_lite_studies",
+        # Wave-1401 math-word-2 canon.
+        "alg514_lite_studies",
+        "dolphin_lite_studies",
+        "draw_lite_studies",
+        "lila_lite_studies",
+        "math_doc_studies",
+        "math_eval_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
