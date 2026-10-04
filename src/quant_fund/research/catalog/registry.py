@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1320 agent-eval canon.
+        "gaia_bench_studies",
+        "mmbench_agent_studies",
+        "osworld_studies",
+        "screen_eval_studies",
+        "vsi_bench_studies",
+        "webvoyager_studies",
         # Wave-1319 benchmark-eval canon.
         "math_bench_studies",
         "multirc_studies",
