@@ -5882,6 +5882,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "moana2_qa_studies",
         "ranginui2_qa_studies",
         "tanemahuta2_qa_studies",
+        # Wave-1803 celtic-myth-4 canon.
+        "andrasta2_qa_studies",
+        "borvo2_qa_studies",
+        "epona2_qa_studies",
+        "etercuni2_qa_studies",
+        "maponos2_qa_studies",
+        "rosmerta2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
