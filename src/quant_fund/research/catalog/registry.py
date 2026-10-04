@@ -4405,6 +4405,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "titi_qa_studies",
         "uakari_qa_studies",
         "woolly_qa_studies",
+        # Wave-1592 prosimian canon.
+        "bushbaby_qa_studies",
+        "galago_qa_studies",
+        "indri_qa_studies",
+        "loris_qa_studies",
+        "potto_qa_studies",
+        "tarsier_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
