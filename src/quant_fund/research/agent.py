@@ -13031,6 +13031,14 @@ from quant_fund.research.benches_w1629 import (
     bench_thunderbird_qa_studies_family,
     bench_yeti_2_qa_studies_family,
 )
+from quant_fund.research.benches_w1630 import (
+    bench_bigfoot_qa_studies_family,
+    bench_bunyip_qa_studies_family,
+    bench_loch_ness_qa_studies_family,
+    bench_rougarou_qa_studies_family,
+    bench_skinwalker_qa_studies_family,
+    bench_wendigo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15233,6 +15241,12 @@ def _provenance(
         "mothman_qa_studies": bench_mothman_qa_studies_family,
         "thunderbird_qa_studies": bench_thunderbird_qa_studies_family,
         "yeti_2_qa_studies": bench_yeti_2_qa_studies_family,
+        "bigfoot_qa_studies": bench_bigfoot_qa_studies_family,
+        "bunyip_qa_studies": bench_bunyip_qa_studies_family,
+        "loch_ness_qa_studies": bench_loch_ness_qa_studies_family,
+        "rougarou_qa_studies": bench_rougarou_qa_studies_family,
+        "skinwalker_qa_studies": bench_skinwalker_qa_studies_family,
+        "wendigo_qa_studies": bench_wendigo_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
