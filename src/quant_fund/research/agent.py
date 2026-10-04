@@ -9935,6 +9935,14 @@ from quant_fund.research.benches_w1242 import (
     bench_rehabilitation_studies_family,
     bench_sports_injury_studies_family,
 )
+from quant_fund.research.benches_w1243 import (
+    bench_healthcare_infection_studies_family,
+    bench_mycosis_studies_family,
+    bench_opportunistic_studies_family,
+    bench_sepsis_studies_family,
+    bench_sexually_transmitted_studies_family,
+    bench_tuberculosis_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10306,6 +10314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sepsis_studies": bench_sepsis_studies_family,
+        "tuberculosis_studies": bench_tuberculosis_studies_family,
+        "mycosis_studies": bench_mycosis_studies_family,
+        "sexually_transmitted_studies": bench_sexually_transmitted_studies_family,
+        "healthcare_infection_studies": bench_healthcare_infection_studies_family,
+        "opportunistic_studies": bench_opportunistic_studies_family,
         "rehabilitation_studies": bench_rehabilitation_studies_family,
         "physical_therapy_studies": bench_physical_therapy_studies_family,
         "sports_injury_studies": bench_sports_injury_studies_family,
