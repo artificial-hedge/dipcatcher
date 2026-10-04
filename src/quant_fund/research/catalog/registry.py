@@ -4566,6 +4566,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pere_david_qa_studies",
         "red_deer_qa_studies",
         "wapiti_qa_studies",
+        # Wave-1615 lemur-4 canon.
+        "golden_brown_qa_studies",
+        "gray_mouse_qa_studies",
+        "pygmy_qa_studies",
+        "slender_qa_studies",
+        "slow_qa_studies",
+        "thin_spined_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
