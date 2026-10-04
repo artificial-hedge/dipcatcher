@@ -4496,6 +4496,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rabbit_qa_studies",
         "shrew_qa_studies",
         "springhare_qa_studies",
+        # Wave-1605 intertidal-2 canon.
+        "decorator_qa_studies",
+        "fiddler_qa_studies",
+        "rock_crab_qa_studies",
+        "sea_snake_qa_studies",
+        "skate_qa_studies",
+        "wobbegong_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -12831,6 +12831,14 @@ from quant_fund.research.benches_w1604 import (
     bench_shrew_qa_studies_family,
     bench_springhare_qa_studies_family,
 )
+from quant_fund.research.benches_w1605 import (
+    bench_decorator_qa_studies_family,
+    bench_fiddler_qa_studies_family,
+    bench_rock_crab_qa_studies_family,
+    bench_sea_snake_qa_studies_family,
+    bench_skate_qa_studies_family,
+    bench_wobbegong_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14937,6 +14945,12 @@ def _provenance(
         "rabbit_qa_studies": bench_rabbit_qa_studies_family,
         "shrew_qa_studies": bench_shrew_qa_studies_family,
         "springhare_qa_studies": bench_springhare_qa_studies_family,
+        "decorator_qa_studies": bench_decorator_qa_studies_family,
+        "fiddler_qa_studies": bench_fiddler_qa_studies_family,
+        "rock_crab_qa_studies": bench_rock_crab_qa_studies_family,
+        "sea_snake_qa_studies": bench_sea_snake_qa_studies_family,
+        "skate_qa_studies": bench_skate_qa_studies_family,
+        "wobbegong_qa_studies": bench_wobbegong_qa_studies_family,
         "water_deer_qa_studies": bench_water_deer_qa_studies_family,
         "moonrat_qa_studies": bench_moonrat_qa_studies_family,
         "sengi_qa_studies": bench_sengi_qa_studies_family,
