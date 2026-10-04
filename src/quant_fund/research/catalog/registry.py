@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-631 etale-2 canon.
+        "etale_cover3",
+        "etale_site3",
+        "constructible_sh",
+        "weil_sheaf",
+        "torsion_sheaf",
+        "ql_sheaf",
         # Wave-630 infinity-categories-4 canon.
         "quasi_cat2",
         "inner_horn",
