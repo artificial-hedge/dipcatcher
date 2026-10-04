@@ -1,3 +1,4 @@
+feat(research): wave 714 — motivic-25 canon (motivic_total, motivic_partial, motivic_functor, motivic_nerve, derived_proper2, derived_separated2) (4239->4245 families)
 feat(research): wave 713 — spectral-AG-10 canon (spectral_semi, spectral_artin, spectral_gal, spectral_dirac, derived_affine, derived_projective) (4233->4239 families)
 feat(research): wave 712 — motivic-24 canon (motivic_additive, motivic_additive_cat, motivic_cover, motivic_gysin2, motivic_chern2, motivic_filtration2) (4227->4233 families)
 feat(research): wave 711 — homotopy-31 canon (homotopy_sheaf2, stable_inf_cat, homotopy_stable4, homotopy_local, stable_sheaf2, stable_coalgebra) (4221->4227 families)
