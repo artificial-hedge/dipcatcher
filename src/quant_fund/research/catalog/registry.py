@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1273 AI-safety canon.
+        "alignment_eval_studies",
+        "guardrail_studies",
+        "hallucination_detect_studies",
+        "jailbreak_defense_studies",
+        "red_team_studies",
+        "sleeper_agent_studies",
         # Wave-1272 omni-modal canon.
         "audio_encoder_studies",
         "document_ai_studies",
