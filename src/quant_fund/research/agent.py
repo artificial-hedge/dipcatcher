@@ -9879,6 +9879,14 @@ from quant_fund.research.benches_w1235 import (
     bench_rheumatology_medicine_family,
     bench_spondyloarthritis_studies_family,
 )
+from quant_fund.research.benches_w1236 import (
+    bench_chronic_pain_studies_family,
+    bench_fibromyalgia_studies_family,
+    bench_headache_studies_family,
+    bench_interventional_pain_studies_family,
+    bench_neuropathic_pain_studies_family,
+    bench_opioid_stewardship_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10250,6 +10258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chronic_pain_studies": bench_chronic_pain_studies_family,
+        "fibromyalgia_studies": bench_fibromyalgia_studies_family,
+        "headache_studies": bench_headache_studies_family,
+        "neuropathic_pain_studies": bench_neuropathic_pain_studies_family,
+        "opioid_stewardship_studies": bench_opioid_stewardship_studies_family,
+        "interventional_pain_studies": bench_interventional_pain_studies_family,
         "rheumatology_medicine": bench_rheumatology_medicine_family,
         "spondyloarthritis_studies": bench_spondyloarthritis_studies_family,
         "inflammatory_arthritis_studies": bench_inflammatory_arthritis_studies_family,
