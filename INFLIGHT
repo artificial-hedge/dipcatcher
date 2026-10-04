@@ -1,3 +1,4 @@
+feat(research): wave 963 — spectral-theory-2 canon (fredholm_index, weyl_theorem, essential_spectrum, browder_operator, riesz_schauder, atkinson_thm) (5727->5733 families)
 feat(research): wave 962 — von-Neumann-algebra canon (von_neumann_alg, double_commutant, predual_space, normal_state, tomita_takesaki, jones_index) (5721->5727 families)
 feat(research): wave 961 — semigroup-theory canon (c0_semigroup, hille_yosida, lumer_phillips, analytic_semigroup, cosine_family, trotter_kato) (5715->5721 families)
 feat(research): wave 960 — banach-algebra canon (banach_algebra, gelfand_transform, c_star_algebra, spectrum_algebra, holomorphic_calculus, positive_functional) (5709->5715 families)
