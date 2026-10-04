@@ -4748,6 +4748,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kohryu_qa_studies",
         "seiryu_qa_studies",
         "suzaku_qa_studies",
+        # Wave-1641 mythic-beast canon.
+        "bixie_qa_studies",
+        "fenghuang_qa_studies",
+        "hundun_qa_studies",
+        "qiongqi_qa_studies",
+        "taotie_qa_studies",
+        "taowu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
