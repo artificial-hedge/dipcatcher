@@ -3712,6 +3712,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "possum_qa_studies",
         "quoll_qa_studies",
         "thylacine_qa_studies",
+        # Wave-1493 antelope-2 canon.
+        "bongo_qa_studies",
+        "duiker_qa_studies",
+        "hartebeest_qa_studies",
+        "nyala_qa_studies",
+        "topi_qa_studies",
+        "waterbuck_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
