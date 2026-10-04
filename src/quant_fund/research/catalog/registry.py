@@ -4825,6 +4825,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "papin_qa_studies",
         "yara_qa_studies",
         "yowie_qa_studies",
+        # Wave-1652 european-beast canon.
+        "cuco_qa_studies",
+        "dahu_qa_studies",
+        "gargouille_qa_studies",
+        "lavellan_qa_studies",
+        "muscaliet_qa_studies",
+        "tarasque_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

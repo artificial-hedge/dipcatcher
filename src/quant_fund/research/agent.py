@@ -13207,6 +13207,14 @@ from quant_fund.research.benches_w1651 import (
     bench_yara_qa_studies_family,
     bench_yowie_qa_studies_family,
 )
+from quant_fund.research.benches_w1652 import (
+    bench_cuco_qa_studies_family,
+    bench_dahu_qa_studies_family,
+    bench_gargouille_qa_studies_family,
+    bench_lavellan_qa_studies_family,
+    bench_muscaliet_qa_studies_family,
+    bench_tarasque_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15541,6 +15549,12 @@ def _provenance(
         "papin_qa_studies": bench_papin_qa_studies_family,
         "yara_qa_studies": bench_yara_qa_studies_family,
         "yowie_qa_studies": bench_yowie_qa_studies_family,
+        "cuco_qa_studies": bench_cuco_qa_studies_family,
+        "dahu_qa_studies": bench_dahu_qa_studies_family,
+        "gargouille_qa_studies": bench_gargouille_qa_studies_family,
+        "lavellan_qa_studies": bench_lavellan_qa_studies_family,
+        "muscaliet_qa_studies": bench_muscaliet_qa_studies_family,
+        "tarasque_qa_studies": bench_tarasque_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
