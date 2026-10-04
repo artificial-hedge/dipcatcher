@@ -8591,6 +8591,14 @@ from quant_fund.research.benches_w1074 import (
     bench_food_studies_family,
     bench_gastronomy_family,
 )
+from quant_fund.research.benches_w1075 import (
+    bench_architecture_theory_family,
+    bench_building_science_family,
+    bench_industrial_design_family,
+    bench_interior_design_family,
+    bench_landscape_architecture_family,
+    bench_urban_design_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8962,6 +8970,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "architecture_theory": bench_architecture_theory_family,
+        "urban_design": bench_urban_design_family,
+        "landscape_architecture": bench_landscape_architecture_family,
+        "interior_design": bench_interior_design_family,
+        "industrial_design": bench_industrial_design_family,
+        "building_science": bench_building_science_family,
         "culinary_arts": bench_culinary_arts_family,
         "gastronomy": bench_gastronomy_family,
         "food_studies": bench_food_studies_family,
