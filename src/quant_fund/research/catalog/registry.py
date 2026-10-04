@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1209 behavioral-health canon.
+        "addiction_medicine",
+        "eating_disorders",
+        "sleep_disorders",
+        "psychosomatic_medicine",
+        "consultation_liaison",
+        "community_psychiatry",
         # Wave-1208 therapy-modalities canon.
         "marriage_family_therapy",
         "group_therapy",
