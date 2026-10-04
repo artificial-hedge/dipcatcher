@@ -6092,6 +6092,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "reshef2_qa_studies",
         "tanit2_qa_studies",
         "yam2_qa_studies",
+        # Wave-1833 armenian-2 canon.
+        "anahit2_qa_studies",
+        "aramazd2_qa_studies",
+        "astghik2_qa_studies",
+        "mher2_qa_studies",
+        "tir2_qa_studies",
+        "vahagn2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
