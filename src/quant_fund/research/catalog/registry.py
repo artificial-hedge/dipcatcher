@@ -3726,6 +3726,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "skink_qa_studies",
         "terrapin_qa_studies",
         "tuatara_qa_studies",
+        # Wave-1495 mustelid-2 canon.
+        "grison_qa_studies",
+        "sable_qa_studies",
+        "stoat_qa_studies",
+        "tayra_qa_studies",
+        "weasel_qa_studies",
+        "zorilla_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
