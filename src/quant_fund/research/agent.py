@@ -8263,6 +8263,14 @@ from quant_fund.research.benches_w1033 import (
     bench_physiological_modeling_family,
     bench_tissue_engineering_family,
 )
+from quant_fund.research.benches_w1034 import (
+    bench_ergonomics_family,
+    bench_facility_layout_family,
+    bench_manufacturing_sys_family,
+    bench_operations_research_family,
+    bench_quality_control_family,
+    bench_supply_chain_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8634,6 +8642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "operations_research": bench_operations_research_family,
+        "supply_chain": bench_supply_chain_family,
+        "manufacturing_sys": bench_manufacturing_sys_family,
+        "quality_control": bench_quality_control_family,
+        "ergonomics": bench_ergonomics_family,
+        "facility_layout": bench_facility_layout_family,
         "biomechanics": bench_biomechanics_family,
         "medical_devices": bench_medical_devices_family,
         "tissue_engineering": bench_tissue_engineering_family,

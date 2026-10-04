@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1034 industrial-engineering canon.
+        "operations_research",
+        "supply_chain",
+        "manufacturing_sys",
+        "quality_control",
+        "ergonomics",
+        "facility_layout",
         # Wave-1033 biomedical-engineering canon.
         "biomechanics",
         "medical_devices",
