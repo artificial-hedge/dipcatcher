@@ -207,6 +207,13 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "model-delete",
         "respond",
         "message",
+        "message-batch",
+        "message-batches",
+        "message-batch-status",
+        "message-batch-wait",
+        "message-batch-cancel",
+        "message-batch-results",
+        "message-batch-delete",
         "text-completion",
         "embed",
         "moderate",
@@ -616,7 +623,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
 
         def openai_completion(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
             body = dict(request) if isinstance(request, dict) else request.model_dump(mode="json")
-            self.complete_calls.append({"completions_body": body})
+            self.complete_calls.append({"completions_body": body, **dict(kw)})
             return (
                 {
                     "id": "cmpl-fake",
@@ -639,7 +646,8 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def openai_completion_stream(
             self, request: Any, **kw: Any
         ) -> tuple[list[dict[str, Any]], None]:
-            self.stream_calls.append({"completions": True, **dict(kw)})
+            body = dict(request) if isinstance(request, dict) else request.model_dump(mode="json")
+            self.stream_calls.append({"completions": True, "completions_body": body, **dict(kw)})
             return (
                 [
                     {
@@ -684,6 +692,36 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 )
                 for m in batch
             ]
+
+        def anthropic_batch(
+            self, requests: Any, **kw: Any
+        ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+            self.batch_calls.append({"anthropic": True, "n": len(requests), **kw})
+            return (
+                {
+                    "id": "msgbatch_fake",
+                    "type": "message_batch",
+                    "processing_status": "ended",
+                    "request_counts": {
+                        "processing": 0,
+                        "succeeded": len(requests),
+                        "errored": 0,
+                        "canceled": 0,
+                        "expired": 0,
+                    },
+                    "results_url": None,
+                },
+                [
+                    {
+                        "custom_id": r["custom_id"],
+                        "result": {
+                            "type": "succeeded",
+                            "message": {"id": "msg_x", "type": "message"},
+                        },
+                    }
+                    for r in requests
+                ],
+            )
 
         def run(self, name: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
@@ -1002,6 +1040,43 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and fake.complete_calls[-1]["completions_body"].get("n") == 2
             and fake.complete_calls[-1]["completions_body"].get("echo") is True
         )
+
+        # message-batch in-process leg — the Anthropic async surface's
+        # weights-direct twin: {custom_id, params} JSONL runs
+        # synchronously through SDK anthropic_batch; the printed object
+        # carries both the ended envelope and the result rows.
+        with _tmpf.TemporaryDirectory() as _abd:
+            _abin = _P(_abd) / "ab.jsonl"
+            _abin.write_text(
+                '{"custom_id":"it-1","params":{"model":"local_fx1","max_tokens":8,'
+                '"messages":[{"role":"user","content":"hi"}]}}\n',
+                encoding="utf-8",
+            )
+            _abrun = runner.invoke(app, ["harness", "message-batch", str(_abin)])
+            _abj = json.loads(_abrun.stdout) if _abrun.exit_code == 0 else {}
+            out["message_batch_inprocess"] = (
+                _abrun.exit_code == 0
+                and _abj.get("batch", {}).get("processing_status") == "ended"
+                and _abj.get("batch", {}).get("type") == "message_batch"
+                and _abj.get("results", [{}])[0].get("custom_id") == "it-1"
+                and fake.batch_calls[-1].get("anthropic") is True
+            )
+            out["message_batch_missing_file_2"] = (
+                runner.invoke(
+                    app, ["harness", "message-batch", str(_P(_abd) / "nope.jsonl")]
+                ).exit_code
+                == 2
+            )
+            _abbad = _P(_abd) / _BAD_JSONL
+            _abbad.write_text("not json\n", encoding="utf-8")
+            out["message_batch_bad_jsonl_2"] = (
+                runner.invoke(app, ["harness", "message-batch", str(_abbad)]).exit_code == 2
+            )
+            _abempty = _P(_abd) / "empty.jsonl"
+            _abempty.write_text("\n", encoding="utf-8")
+            out["message_batch_empty_2"] = (
+                runner.invoke(app, ["harness", "message-batch", str(_abempty)]).exit_code == 2
+            )
 
         # /v1/evals local leg — the in-process SDK twins; bad --criteria
         # JSON fails before the SDK is touched.
@@ -1842,6 +1917,85 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def cancel_batch(self, batch_id: str) -> dict[str, Any]:
             self.last_batch_id = batch_id
             return {"id": batch_id, "object": "batch", "status": "cancelling"}
+
+        def create_message_batch(self, requests: Any, **kw: Any) -> dict[str, Any]:
+            self.last_abatch_create = {"n_requests": len(requests), **kw}
+            return {
+                "id": "msgbatch_x",
+                "type": "message_batch",
+                "processing_status": "in_progress",
+                "request_counts": {
+                    "processing": len(requests),
+                    "succeeded": 0,
+                    "errored": 0,
+                    "canceled": 0,
+                    "expired": 0,
+                },
+            }
+
+        def message_batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_abatch_id = batch_id
+            return {
+                "id": batch_id,
+                "type": "message_batch",
+                "processing_status": "ended",
+                "request_counts": {
+                    "processing": 0,
+                    "succeeded": 1,
+                    "errored": 0,
+                    "canceled": 0,
+                    "expired": 0,
+                },
+                "results_url": f"/v1/messages/batches/{batch_id}/results",
+            }
+
+        def message_batches(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"abatches": True, **kw}
+            return {
+                "data": [{"id": "msgbatch_x", "type": "message_batch"}],
+                "has_more": False,
+                "first_id": "msgbatch_x",
+                "last_id": "msgbatch_x",
+            }
+
+        def cancel_message_batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_abatch_id = batch_id
+            return {
+                "id": batch_id,
+                "type": "message_batch",
+                "processing_status": "canceling",
+            }
+
+        def delete_message_batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_abatch_id = batch_id
+            return {"id": batch_id, "type": "message_batch_deleted"}
+
+        def message_batch_results(self, batch_id: str) -> list[dict[str, Any]]:
+            self.last_abatch_id = batch_id
+            return [
+                {
+                    "custom_id": "it-1",
+                    "result": {
+                        "type": "succeeded",
+                        "message": {
+                            "id": "msg_x",
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": "hi"}],
+                        },
+                    },
+                }
+            ]
+
+        def wait_message_batch(self, batch_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_abatch_id = batch_id
+            self.last_wait_kw = dict(kw)
+            return {
+                "id": batch_id,
+                "type": "message_batch",
+                "processing_status": "ended",
+                "results_url": f"/v1/messages/batches/{batch_id}/results",
+            }
 
         def list_models(self) -> dict[str, Any]:
             return {
@@ -3128,6 +3282,156 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     ["harness", "batch-output", "batch_x", "--remote", "http://h.test"],
                 ).exit_code
                 == 2
+            )
+
+        # /v1/messages/batches remote leg — submit waits to ended, the
+        # status/list/cancel/results/delete subcommands ride the client's
+        # message-batch methods, and the fx1 routing opts forward as
+        # X-Fx1-* request headers (not body fields).
+        with tempfile.TemporaryDirectory() as _abd2:
+            _abrem = _Path(_abd2) / "ab.jsonl"
+            _abrem.write_text(
+                '{"custom_id":"it-1","params":{"model":"fx1","max_tokens":8,'
+                '"messages":[{"role":"user","content":"hi"}]}}\n',
+                encoding="utf-8",
+            )
+            rmb = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "message-batch",
+                    str(_abrem),
+                    "--remote",
+                    "http://h.test",
+                    "--callback-url",
+                    "https://hooks.test/ab",
+                    "--callback-secret",
+                    "whsec-ab",
+                    "--idem-key",
+                    "ab-idem-1",
+                ],
+            )
+            out["remote_message_batch_submit"] = (
+                rmb.exit_code == 0
+                and json.loads(rmb.stdout)["processing_status"] == "ended"
+                and remotes[-1].last_abatch_create
+                == {
+                    "n_requests": 1,
+                    "callback_url": "https://hooks.test/ab",
+                    "callback_secret": "whsec-ab",
+                    "idempotency_key": "ab-idem-1",
+                    "extra_headers": None,
+                }
+            )
+            rmb_nw = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "message-batch",
+                    str(_abrem),
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                ],
+            )
+            out["remote_message_batch_no_wait"] = (
+                rmb_nw.exit_code == 0
+                and json.loads(rmb_nw.stdout)["processing_status"] == "in_progress"
+            )
+            rmb_wait = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "message-batch-wait",
+                    "msgbatch_x",
+                    "--remote",
+                    "http://h.test",
+                    "--wait-timeout",
+                    "30",
+                ],
+            )
+            out["remote_message_batch_wait"] = (
+                rmb_wait.exit_code == 0
+                and json.loads(rmb_wait.stdout)["processing_status"] == "ended"
+                and remotes[-1].last_wait_kw == {"poll_s": 0.5, "timeout_s": 30.0}
+            )
+            out["remote_message_batches_list"] = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "message-batches",
+                    "--remote",
+                    "http://h.test",
+                    "--limit",
+                    "5",
+                    "--before-id",
+                    "msgbatch_y",
+                ],
+            ).exit_code == 0 and remotes[-1].last_ft_query == {
+                "abatches": True,
+                "limit": 5,
+                "after_id": None,
+                "before_id": "msgbatch_y",
+            }
+            out["remote_message_batch_status"] = (
+                json.loads(
+                    runner.invoke(
+                        app,
+                        [
+                            "harness",
+                            "message-batch-status",
+                            "msgbatch_x",
+                            "--remote",
+                            "http://h.test",
+                        ],
+                    ).stdout
+                )["request_counts"]["succeeded"]
+                == 1
+            )
+            out["remote_message_batch_cancel"] = (
+                json.loads(
+                    runner.invoke(
+                        app,
+                        [
+                            "harness",
+                            "message-batch-cancel",
+                            "msgbatch_x",
+                            "--remote",
+                            "http://h.test",
+                        ],
+                    ).stdout
+                )["processing_status"]
+                == "canceling"
+            )
+            rmb_res = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "message-batch-results",
+                    "msgbatch_x",
+                    "--remote",
+                    "http://h.test",
+                    "--out",
+                    str(_Path(_abd2) / _OUT_JSONL),
+                ],
+            )
+            out["remote_message_batch_results_out"] = rmb_res.exit_code == 0 and (
+                _Path(_abd2) / _OUT_JSONL
+            ).read_text().startswith('{"custom_id"')
+            out["remote_message_batch_delete"] = (
+                json.loads(
+                    runner.invoke(
+                        app,
+                        [
+                            "harness",
+                            "message-batch-delete",
+                            "msgbatch_x",
+                            "--remote",
+                            "http://h.test",
+                        ],
+                    ).stdout
+                )["type"]
+                == "message_batch_deleted"
             )
 
         out["remote_models_list"] = (

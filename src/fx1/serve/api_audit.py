@@ -9682,6 +9682,231 @@ def _probe_backend_probes(  # NOSONAR
         )
     )
 
+    # ---- /v1/messages/batches: the Anthropic async channel over the
+    # same jobs machinery — inline {custom_id, params} items, the
+    # submitter's X-Fx1-* headers route every item, per-item faults land
+    # as errored rows (data, not a crashed batch), cancel → canceling,
+    # delete + results only once ended.
+    class _AbatchBackend(_OiBackend):
+        def complete(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            if "boom" in messages[-1]["content"]:
+                raise RuntimeError("item boom")
+            return super().complete(messages, sampling=sampling)
+
+    ab_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _AbatchBackend()))
+
+    def _wait_abatch(client: Any, batch_id: str) -> dict[str, Any]:
+        b: dict[str, Any] = {}
+        for _ in range(500):
+            b = client.get(f"{_MESSAGES_PATH}/batches/{batch_id}").json()
+            if b.get("processing_status") == "ended":
+                return b
+            time.sleep(0.01)
+        return b
+
+    ab_reqs = [
+        {
+            "custom_id": "ok-1",
+            "params": {
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        },
+        {
+            "custom_id": "boom-1",
+            "params": {
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "boom"}],
+            },
+        },
+    ]
+    ab1 = ab_app.post(f"{_MESSAGES_PATH}/batches", json={"requests": ab_reqs})
+    ab1b = ab1.json()
+    abterm = _wait_abatch(ab_app, ab1b["id"])
+    abres = ab_app.get(f"{_MESSAGES_PATH}/batches/{ab1b['id']}/results")
+    abrows = {
+        row["custom_id"]: row["result"]
+        for row in (_json3.loads(ln) for ln in abres.text.splitlines() if ln.strip())
+    }
+    out["anthropic_batch_roundtrip"] = (
+        ab1.status_code == 200
+        and ab1b.get("type") == "message_batch"
+        and str(ab1b.get("id", "")).startswith("msgbatch_")
+        and ab1b.get("request_counts", {}).get("processing") == 2
+        and abterm["processing_status"] == "ended"
+        and str(abterm.get("created_at", "")).endswith("Z")
+        and str(abterm.get("expires_at", "")).endswith("Z")
+        and str(abterm.get("ended_at", "")).endswith("Z")
+        and abterm["request_counts"]
+        == {
+            "processing": 0,
+            "succeeded": 1,
+            "errored": 1,
+            "canceled": 0,
+            "expired": 0,
+        }
+        and str(abterm.get("results_url", "")).endswith(
+            f"/v1/messages/batches/{ab1b['id']}/results"
+        )
+        and abres.status_code == 200
+        and abres.headers.get("content-type", "").startswith("application/jsonl")
+        and abrows["ok-1"]["type"] == "succeeded"
+        and abrows["ok-1"]["message"]["type"] == "message"
+        and abrows["ok-1"]["message"]["content"] == [{"type": "text", "text": _PING_MSG}]
+        and abrows["boom-1"]["type"] == "errored"
+        and abrows["boom-1"]["error"]["type"] == "api_error"
+    )
+    # submit-time validation: duplicate custom_id, stream inside a batch,
+    # and an empty requests list all refuse in the Anthropic envelope
+    ab_dup = ab_app.post(
+        f"{_MESSAGES_PATH}/batches",
+        json={"requests": [ab_reqs[0], ab_reqs[0]]},
+    )
+    ab_stream = ab_app.post(
+        f"{_MESSAGES_PATH}/batches",
+        json={
+            "requests": [
+                {
+                    "custom_id": "s1",
+                    "params": {
+                        "model": "fx1",
+                        "max_tokens": 64,
+                        "stream": True,
+                        "messages": [{"role": "user", "content": "x"}],
+                    },
+                }
+            ]
+        },
+    )
+    ab_empty = ab_app.post(f"{_MESSAGES_PATH}/batches", json={"requests": []})
+    out["anthropic_batch_submit_failclosed"] = all(
+        r.status_code in (400, 422)
+        and r.json().get("type") == "error"
+        and r.json()["error"]["type"] == "invalid_request_error"
+        for r in (ab_dup, ab_stream, ab_empty)
+    )
+    # shared /v1 idempotency space: same key+body replays the submit
+    # envelope; a different body under the same key 409s
+    abk = {"Idempotency-Key": "ab-1"}
+    abi1 = ab_app.post(f"{_MESSAGES_PATH}/batches", headers=abk, json={"requests": ab_reqs})
+    abi2 = ab_app.post(f"{_MESSAGES_PATH}/batches", headers=abk, json={"requests": ab_reqs})
+    abi3 = ab_app.post(
+        f"{_MESSAGES_PATH}/batches",
+        headers=abk,
+        json={"requests": ab_reqs[:1]},
+    )
+    out["anthropic_batch_idem"] = (
+        abi1.status_code == 200
+        and abi2.status_code == 200
+        and abi1.json() == abi2.json()
+        and abi2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and abi3.status_code == 409
+        and abi3.json()["error"]["type"] == "invalid_request_error"
+    )
+    _wait_abatch(ab_app, abi1.json()["id"])
+    # listing: newest-first page + before_id/after_id cursors
+    ablist = ab_app.get(f"{_MESSAGES_PATH}/batches?limit=1").json()
+    out["anthropic_batch_list_shape"] = (
+        ablist.get("data")
+        and ablist["data"][0]["type"] == "message_batch"
+        and "first_id" in ablist
+        and "last_id" in ablist
+        and "has_more" in ablist
+    )
+    abpage2 = ab_app.get(f"{_MESSAGES_PATH}/batches?limit=50&before_id={ablist['last_id']}").json()
+    out["anthropic_batch_list_cursor"] = (
+        abpage2["has_more"] is False
+        and all(b["id"] != ablist["last_id"] for b in abpage2["data"])
+        and len(abpage2["data"]) >= 1
+    )
+    # error grammar + terminal-state rules: unknown id 404s in the
+    # Anthropic envelope; ended batches refuse cancel (400) and delete
+    # cleanly; results and the record are gone after delete
+    out["anthropic_batch_grammar"] = (
+        ab_app.get(f"{_MESSAGES_PATH}/batches/msgbatch_nope").status_code == 404
+        and ab_app.get(f"{_MESSAGES_PATH}/batches/msgbatch_nope").json()["error"]["type"]
+        == "not_found_error"
+        and ab_app.post(f"{_MESSAGES_PATH}/batches/{ab1b['id']}/cancel").status_code == 400
+        and ab_app.get(f"{_MESSAGES_PATH}/batches/{ab1b['id']}/results").status_code == 200
+    )
+    abdel = ab_app.delete(f"{_MESSAGES_PATH}/batches/{ab1b['id']}")
+    out["anthropic_batch_delete"] = (
+        abdel.status_code == 200
+        and abdel.json() == {"id": ab1b["id"], "type": "message_batch_deleted"}
+        and ab_app.get(f"{_MESSAGES_PATH}/batches/{ab1b['id']}").status_code == 404
+        and ab_app.get(f"{_MESSAGES_PATH}/batches/{ab1b['id']}/results").status_code == 404
+    )
+    # in-flight rules under a gated backend: counts stay all-processing,
+    # results/delete refuse mid-flight, cancel lands 'canceling' and the
+    # batch ends with canceled rows for the unprocessed tail
+    ab_gate_ev = threading.Event()
+
+    class _AbatchGateBackend(_OiBackend):
+        def complete(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            ab_gate_ev.wait(10)
+            return super().complete(messages, sampling=sampling)
+
+    ab_gapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _AbatchGateBackend()))
+    abg = ab_gapp.post(f"{_MESSAGES_PATH}/batches", json={"requests": ab_reqs})
+    abg_id = abg.json()["id"]
+    abg_mid = ab_gapp.get(f"{_MESSAGES_PATH}/batches/{abg_id}").json()
+    abg_results_early = ab_gapp.get(f"{_MESSAGES_PATH}/batches/{abg_id}/results")
+    abg_del_early = ab_gapp.delete(f"{_MESSAGES_PATH}/batches/{abg_id}")
+    abg_cancel = ab_gapp.post(f"{_MESSAGES_PATH}/batches/{abg_id}/cancel")
+    ab_gate_ev.set()
+    abg_term = _wait_abatch(ab_gapp, abg_id)
+    abg_rows = {
+        row["custom_id"]: row["result"]
+        for row in (
+            _json3.loads(ln)
+            for ln in ab_gapp.get(f"{_MESSAGES_PATH}/batches/{abg_id}/results").text.splitlines()
+            if ln.strip()
+        )
+    }
+    out["anthropic_batch_inflight_rules"] = (
+        abg.status_code == 200
+        and abg_mid["processing_status"] in ("in_progress", "canceling")
+        and abg_mid["request_counts"]["processing"] == 2
+        and abg_mid["request_counts"]["succeeded"] == 0
+        and abg_mid["results_url"] is None
+        and abg_results_early.status_code == 400
+        and abg_del_early.status_code == 400
+        and abg_cancel.status_code == 200
+        and abg_cancel.json()["processing_status"] == "canceling"
+        and abg_term["processing_status"] == "ended"
+        and abg_term["request_counts"]["canceled"] >= 1
+        and any(row["type"] == "canceled" for row in abg_rows.values())
+    )
+    # expiry projection: a record past expires_at ends 'expired' with
+    # unfinished items landing expired rows on read
+    ab_exp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    ab_past = api_mod._AnthropicBatchRecord(  # noqa: SLF001
+        batch_id="msgbatch_past",
+        created_at=1,
+        expires_at=2,
+        request_counts={"processing": 1, "succeeded": 0, "errored": 0, "canceled": 0, "expired": 0},
+        item_ids=["never"],
+    )
+    ab_exp_app.state.abatch_store.put(ab_past)
+    ab_rexp = _TC2(ab_exp_app).get(f"{_MESSAGES_PATH}/batches/msgbatch_past").json()
+    out["anthropic_batch_expiry_projection"] = (
+        ab_rexp["processing_status"] == "ended"
+        and ab_rexp["request_counts"]["expired"] == 1
+        and ab_rexp["ended_at"] is not None
+    )
+
     # ---- legacy /v1/completions drop-in ------------------------------------
     # the pre-chat text surface: each prompt element is one user turn
     # through the same gated pipeline (honesty gate, fail-closed

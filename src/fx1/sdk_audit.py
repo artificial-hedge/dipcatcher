@@ -907,6 +907,83 @@ def sdk_audit() -> dict[str, bool]:
         == "ValueError"
     )
 
+    # ---- /v1/messages/batches SDK surface -------------------------------
+    # anthropic_batch is the in-process twin of the wire's async channel:
+    # it runs every item synchronously through anthropic_message and
+    # returns the ended message_batch envelope plus the {custom_id,
+    # result} rows — per-item faults land errored rows, and the submit
+    # contract (unique custom_id, no stream, secret needs url) validates
+    # before the first item runs.
+    _ab_ok = [
+        {
+            "custom_id": "sdk-a1",
+            "params": {
+                "model": "fx1",
+                "max_tokens": 32,
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        }
+    ]
+    _ab_batch, _ab_rows = sdk_am.anthropic_batch(_ab_ok)
+    out["anthropic_batch_sdk"] = (
+        _ab_batch["type"] == "message_batch"
+        and _ab_batch["id"].startswith("msgbatch_")
+        and _ab_batch["processing_status"] == "ended"
+        and _ab_batch["request_counts"]
+        == {
+            "processing": 0,
+            "succeeded": 1,
+            "errored": 0,
+            "canceled": 0,
+            "expired": 0,
+        }
+        and _ab_rows
+        == [
+            {
+                "custom_id": "sdk-a1",
+                "result": {
+                    "type": "succeeded",
+                    "message": _ab_rows[0]["result"]["message"],
+                },
+            }
+        ]
+        and _ab_rows[0]["result"]["message"]["content"]
+        == [{"type": "text", "text": "clean answer"}]
+    )
+    # per-item fault → errored row with the inner {type, message} error
+    # object (the backend resolver raises, the row still lands)
+    _ab_bad_be = Fx1Harness(backend_resolver=_unconfigured)
+    _ab_ebatch, _ab_erows = _ab_bad_be.anthropic_batch(_ab_ok)
+    out["anthropic_batch_error_row_sdk"] = (
+        _ab_ebatch["request_counts"]["errored"] == 1
+        and _ab_erows[0]["result"]["type"] == "errored"
+        and _ab_erows[0]["result"]["error"]["type"] == "api_error"
+        and set(_ab_erows[0]["result"]["error"]) == {"type", "message"}
+    )
+    out["anthropic_batch_failclosed_sdk"] = (
+        _raises(lambda: sdk_am.anthropic_batch([])) == "ValidationError"
+        and _raises(lambda: sdk_am.anthropic_batch([_ab_ok[0], dict(_ab_ok[0])]))
+        == "ValidationError"
+        and _raises(
+            lambda: sdk_am.anthropic_batch(
+                [
+                    {
+                        "custom_id": "s",
+                        "params": {
+                            "model": "fx1",
+                            "max_tokens": 8,
+                            "stream": True,
+                            "messages": [{"role": "user", "content": "x"}],
+                        },
+                    }
+                ]
+            )
+        )
+        == "ValidationError"
+        and _raises(lambda: sdk_am.anthropic_batch(_ab_ok, callback_secret="x"))
+        == "ValidationError"
+    )
+
     # ---- legacy /v1/completions SDK surface ------------------------------
     # openai_completion/openai_completion_stream run the same gated
     # pipeline in-process — the answer is the text_completion envelope,

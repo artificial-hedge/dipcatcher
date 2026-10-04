@@ -14,7 +14,7 @@ integrator reference; `docs/FX1.md` has the model overview and
 | Remote client | `fx1.serve.client.HarnessClient` | Python callers on a remote harness — same result types as the SDK |
 | TS client | `clients/typescript/fx1` (`HarnessApiClient`) | TypeScript/JS callers — generated from the pinned OpenAPI spec |
 | OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/moderations`, `/v1/files`, `/v1/batches` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
-| Anthropic-compatible | `POST /v1/messages` | drop-in for Anthropic SDKs — set `base_url` to the harness; `x-api-key` authenticates unchanged |
+| Anthropic-compatible | `POST /v1/messages`, `/v1/messages/batches` | drop-in for Anthropic SDKs — set `base_url` to the harness; `x-api-key` authenticates unchanged |
 | CLI | `fx1 harness …` | shell, CI, ops scripts |
 
 The Python surfaces share one error taxonomy (`KeyError` 404 /
@@ -244,6 +244,11 @@ same digested shape the job record embeds.
 | `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
+| `POST /v1/messages/batches` | Anthropic Message Batches — `requests[]` ride inline (`{custom_id, params}` each a full `/v1/messages` body, unique `custom_id` ≤256 chars, `stream` in a params refuses the whole submit), `Idempotency-Key` dedupes; the `message_batch` envelope (`msgbatch_*`, `processing_status: in_progress|canceling|ended`, `request_counts` all-`processing` until end, `expires_at` = created+24h, `results_url` null until ended) — `HarnessClient.create_message_batch` / `client.messageBatchesCreate` / `fx1 harness message-batch` (in-process twin `Fx1Harness.anthropic_batch` runs synchronously) |
+| `GET /v1/messages/batches` / `GET /v1/messages/batches/{id}` | list (`?limit≤100`, `?after_id`/`?before_id` cursors) / poll status — a batch past `expires_at` ends on read with `expired` rows for the unfinished tail |
+| `POST /v1/messages/batches/{id}/cancel` | cooperative cancel → `canceling`; in-flight items complete, the tail lands `canceled` rows; cancel on `ended` 400s — `HarnessClient.cancel_message_batch` / `client.messageBatchesCancel` / `fx1 harness message-batch-cancel` |
+| `DELETE /v1/messages/batches/{id}` | tombstone an ended batch (`{id, type: "message_batch_deleted"}`) — refuses mid-flight with 400 — `HarnessClient.delete_message_batch` / `client.messageBatchesDelete` / `fx1 harness message-batch-delete` |
+| `GET /v1/messages/batches/{id}/results` | `application/jsonl` — one `{custom_id, result}` row per request (`result.type` = `succeeded|errored|canceled|expired`; `succeeded` carries the full `message`, `errored` carries the inner `{type, message}` error object); 400 until ended — `HarnessClient.message_batch_results` / `client.messageBatchResults` / `fx1 harness message-batch-results` (waits via `client.wait_message_batch` / `fx1 harness message-batch-wait`) |
 | `POST /v1/fine_tuning/jobs` | submit a gated fine-tuning job on a `purpose=fine-tune` corpus — synchronous validation, `Idempotency-Key` dedup; `Fx1Harness.create_finetune_job` (in-process, synchronous) / `HarnessClient.create_finetune_job` / `client.createFineTuneJob` / `fx1 harness ft-create` |
 | `GET /v1/fine_tuning/jobs` / `GET /v1/fine_tuning/jobs/{id}` | list (`?limit≤100`, `?after=`) / poll one job record |
 | `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
@@ -1066,15 +1071,17 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 - **Durability** — with `--state-dir` (`FX1_API_STATE_DIR`) every state
   transition and cancel/evict across the async surface appends to a
   hash-chained JSONL journal (fsync'd per append): `jobs.jsonl`,
-  `evals.jsonl`, `batches.jsonl`, `ft_jobs.jsonl`, `files.jsonl` +
-  `files/<id>.bin` blob files, and `idem_{runs,complete,complete_batch,
-  openai}.jsonl`. On boot each chain is verified line-by-line — a torn
+  `evals.jsonl`, `batches.jsonl`, `abatches.jsonl`, `ft_jobs.jsonl`,
+  `files.jsonl` + `files/<id>.bin` blob files, and
+  `idem_{runs,complete,complete_batch,openai}.jsonl`. On boot each chain is verified line-by-line — a torn
   tail or edited line truncates at the first bad record — and the
   stores are rebuilt: terminal records return as-was, anything still
   `queued`/`running`/`validating`/`in_progress`/`finalizing`/
   `cancelling` at the crash recovers as `failed` with a
   restart-explaining `error` (payloads are not journaled, so nothing is
-  silently re-run), and `Idempotency-Key` mappings survive — the idem
+  silently re-run) — an Anthropic `message_batch` caught mid-flight ends
+  with its unfinished items as `errored` rows carrying the restart note —
+  and `Idempotency-Key` mappings survive — the idem
   stores journal the recorded response itself, so a retried submission
   replays the recorded answer (`replayed: true`) after a restart
   instead of re-running. Upload payloads live in content blobs, not
@@ -1098,8 +1105,11 @@ batch object) once — same HMAC headers, same 3-attempt/4xx-definitive
 delivery, same `callback_status`/`callback_attempts`/`callback_error`
 fields on the record. A 4xx is a definitive rejection and never retried;
 transient faults retry up to 3 times with capped backoff. In-process,
-`Fx1Harness.create_finetune_job` and `Fx1Harness.openai_batch` take the
-same kwargs and deliver over real HTTP before returning.
+`Fx1Harness.create_finetune_job`, `Fx1Harness.openai_batch`, and
+`Fx1Harness.anthropic_batch` take the same kwargs and deliver over real
+HTTP before returning. `POST /v1/messages/batches` accepts the same pair —
+its terminal webhook posts the `message_batch` envelope and the verdict
+fields ride on it under the same names.
 
 Poll with `GET /harness/jobs/{id}`, or stream
 `/harness/jobs/{id}/events` (`HarnessClient.stream_job`,

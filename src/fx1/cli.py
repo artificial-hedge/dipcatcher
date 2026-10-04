@@ -54,6 +54,8 @@ _CALLBACK_SECRET_HELP = "HMAC key signing the webhook delivery."
 
 _POLL_HELP = "Status poll interval, seconds."
 _BATCH_ID_HELP = "batch_ id from batch-submit."
+_MODEL_ID_OPT_HELP = "Model id — backend name, fx1, or ft:name."
+_TOP_P_OPT_HELP = "Nucleus sampling mass."
 
 
 def _byok_opts(
@@ -2736,7 +2738,7 @@ def harness_model_delete(
 @harness_app.command("respond")
 def harness_respond(  # NOSONAR
     input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
-    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    model: str = typer.Option("fx1", "--model", help=_MODEL_ID_OPT_HELP),
     instructions: str | None = typer.Option(
         None, "--instructions", help="Prepended system-level instructions."
     ),
@@ -2747,7 +2749,7 @@ def harness_respond(  # NOSONAR
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
     fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
     temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature."),
-    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    top_p: float | None = typer.Option(None, "--top-p", help=_TOP_P_OPT_HELP),
     max_output_tokens: int | None = typer.Option(
         None, "--max-output-tokens", help="Output token cap."
     ),
@@ -2946,7 +2948,7 @@ def harness_message(  # NOSONAR
         ...,
         help="User-turn text, or a JSON array of Anthropic message objects.",
     ),
-    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    model: str = typer.Option("fx1", "--model", help=_MODEL_ID_OPT_HELP),
     max_tokens: int = typer.Option(
         1024, "--max-tokens", help="Output token cap (required by the contract)."
     ),
@@ -2956,7 +2958,7 @@ def harness_message(  # NOSONAR
         help="System prompt text, or a JSON array of {type:'text',text} blocks.",
     ),
     temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature 0–1."),
-    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    top_p: float | None = typer.Option(None, "--top-p", help=_TOP_P_OPT_HELP),
     stop: list[str] = typer.Option([], "--stop", help="Stop sequence (repeatable, at most 4)."),
     tools: str | None = typer.Option(
         None, "--tools", help="JSON array of Anthropic tools ({name, description, input_schema})."
@@ -3102,6 +3104,204 @@ def harness_message(  # NOSONAR
     typer.echo(json.dumps(amsg.model_dump(mode="json"), indent=2))
 
 
+@harness_app.command("message-batch")
+def harness_message_batch(
+    input_file: Path = typer.Argument(
+        ..., help="Batch input .jsonl — {custom_id, params} per line (params = /v1/messages body)."
+    ),
+    callback_url: str | None = typer.Option(
+        None, "--callback-url", help="Terminal webhook URL (POSTs the batch once)."
+    ),
+    callback_secret: str | None = typer.Option(
+        None, "--callback-secret", help=_CALLBACK_SECRET_HELP
+    ),
+    idem_key: str | None = typer.Option(
+        None, "--idem-key", help="Idempotency-Key — replays the submit envelope."
+    ),
+    no_wait: bool = typer.Option(
+        False, "--no-wait", help="Submit and return immediately (remote leg only)."
+    ),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/messages/batches`` — submit an Anthropic message batch.
+
+    Each line of ``input_file`` is ``{custom_id, params}`` — ``params`` a
+    full ``/v1/messages`` body (``stream`` inside a batch refuses at
+    validation). With ``--remote`` the submit runs async server-side and
+    polls to ``ended``; in-process it runs synchronously and prints the
+    ended batch plus its result rows. The submitter's backend choice
+    (``--backend``/BYOK/``--fallback``) applies to every item."""
+    body = input_file.read_text(encoding="utf-8") if input_file.exists() else None
+    if body is None:
+        typer.echo(f"error: {input_file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    try:
+        requests = [json.loads(line) for line in body.splitlines() if line.strip()]
+    except json.JSONDecodeError as exc:
+        typer.echo(f"error: {input_file} is not valid JSONL: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    if not requests:
+        typer.echo("error: batch input is empty", err=True)
+        raise typer.Exit(code=2)
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        headers = _fx1_headers(
+            backend, checkpoint_dir, _byok_opts(byok_base_url, byok_api_key, byok_model), fallbacks
+        )
+        sub = _or_exit(
+            lambda: client.create_message_batch(
+                requests,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
+                idempotency_key=idem_key,
+                extra_headers=headers or None,
+            )
+        )
+        if no_wait:
+            typer.echo(json.dumps(sub, indent=2))
+            return
+        fin = _or_exit(lambda: client.wait_message_batch(sub["id"]))
+        typer.echo(json.dumps(fin, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    headers = _fx1_headers(
+        backend, checkpoint_dir, _byok_opts(byok_base_url, byok_api_key, byok_model), fallbacks
+    )
+    batch, rows = _or_exit(
+        lambda: Fx1Harness().anthropic_batch(
+            requests,
+            headers=headers,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
+        )
+    )
+    typer.echo(json.dumps({"batch": batch, "results": rows}, indent=2))
+
+
+@harness_app.command("message-batches")
+def harness_message_batches(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    limit: int = typer.Option(20, "--limit", help=_LIMIT_HELP),
+    after_id: str | None = typer.Option(
+        None, "--after-id", help="Cursor — entries newer than this batch id."
+    ),
+    before_id: str | None = typer.Option(
+        None, "--before-id", help="Cursor — entries older than this batch id."
+    ),
+) -> None:
+    """List remote Anthropic message batches, newest first."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).message_batches(
+            limit=limit, after_id=after_id, before_id=before_id
+        )
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("message-batch-status")
+def harness_message_batch_status(
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print a remote message batch's record (``processing_status`` +
+    ``request_counts`` — counts stay all-processing until the batch ends)."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).message_batch(batch_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("message-batch-wait")
+def harness_message_batch_wait(
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help=_POLL_HELP),
+    wait_timeout_s: float | None = typer.Option(
+        None, "--wait-timeout", help="Give up waiting after N seconds (batch keeps running)."
+    ),
+) -> None:
+    """Re-attach to a ``--no-wait`` message batch and poll to ``ended``."""
+    _need_remote(remote)
+    rec = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).wait_message_batch(
+            batch_id, poll_s=poll_s, timeout_s=wait_timeout_s
+        )
+    )
+    typer.echo(json.dumps(rec, indent=2))
+
+
+@harness_app.command("message-batch-cancel")
+def harness_message_batch_cancel(
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cooperative cancel — flips to ``canceling``; in-flight items
+    complete and the rest land ``canceled`` result rows."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).cancel_message_batch(batch_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("message-batch-results")
+def harness_message_batch_results(
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
+    out: Path | None = typer.Option(
+        None, "--out", help="Write the results JSONL to this path instead of stdout."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(60.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Fetch an ended message batch's results — one ``{custom_id,
+    result}`` row per request (``succeeded``/``errored``/``canceled``/
+    ``expired``). Before the batch ends the wire 400s."""
+    _need_remote(remote)
+    rows = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).message_batch_results(batch_id)
+    )
+    text = "".join(json.dumps(row) + "\n" for row in rows)
+    if out is not None:
+        out.write_text(text, encoding="utf-8")
+        typer.echo(json.dumps({"batch_id": batch_id, "rows": len(rows), "out": str(out)}))
+        return
+    typer.echo(text, nl=False)
+
+
+@harness_app.command("message-batch-delete")
+def harness_message_batch_delete(
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Tombstone an ended message batch — deletes its stored rows.
+    A batch that isn't ended refuses (Anthropic's contract)."""
+    _need_remote(remote)
+    out = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).delete_message_batch(batch_id)
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
 def _emit_completion_deltas(chunks: list[dict[str, Any]]) -> None:
     """Print the legacy text deltas — the terminal frame carries no text,
     so ordering is by frame emission, not ``choices[i].index``."""
@@ -3115,16 +3315,16 @@ def _emit_completion_deltas(chunks: list[dict[str, Any]]) -> None:
 
 @harness_app.command("text-completion")
 def harness_text_completion(  # NOSONAR
-    prompt: str = typer.Argument(
+    prompt: str = typer.Argument(  # NOSONAR(S107) — sonar anchors S107 at the first param line
         ...,
         help="Prompt text, or a JSON array of prompt strings.",
     ),
-    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    model: str = typer.Option("fx1", "--model", help=_MODEL_ID_OPT_HELP),
     max_tokens: int | None = typer.Option(
         None, "--max-tokens", help="Output token cap (server default 16)."
     ),
     temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature 0–1."),
-    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    top_p: float | None = typer.Option(None, "--top-p", help=_TOP_P_OPT_HELP),
     n: int = typer.Option(1, "--n", help="Choice count per prompt element (≤8)."),
     stop: list[str] = typer.Option([], "--stop", help="Stop sequence (repeatable, at most 4)."),
     seed: int | None = typer.Option(None, "--seed", help="Deterministic decode seed."),

@@ -87,11 +87,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "ad5ca79b25036146626f1526330e53476bf689b4",
+  "git_revision": "d77a589b310da82b01d656b9d1714d501c636845",
   "interpretation": "The unmodified openai AsyncOpenAI client drives the harness end-to-end in-process: models, chat completions (sync + SSE stream + include_usage), responses (sync + event stream + cancel), files, batches, fine-tuning jobs incl. events/checkpoints/cancel, vector stores incl. expires_after, evals specs+runs, conversations incl. single-item retrieve, chunked uploads, embeddings, moderations \u2014 and every error lands as the SDK's typed exception class carrying our error envelope.",
   "kind": "oai_sdk_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "d5a05b54adcf1079ad2028f8339844dee259751ad6e5f93128d40a30728a1806",
+  "receipt_sha256": "f6fedf2821a9d508e2e2f50f9d9f8997f1540497ab02af0d1dd2fc1089c549e0",
   "research_only": true,
   "schema": "oai_sdk_audit.v1"
 }
