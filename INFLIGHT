@@ -1,3 +1,4 @@
+feat(research): wave 719 — Calabi-Yau/Gorenstein canon (calabi_yau_tri, d_calabi_yau, gorenstein_proj, frobenius_cat, stable_category, orbit_category) (4269->4275 families)
 feat(research): wave 718 — representation-theory canon (helix_theory, mutation_class, rep_finite, der_bimodule, icy_paper, higher_auslander) (4263->4269 families)
 feat(research): wave 717 — nc-motives canon (nc_motive, dg_enhancement, bondal_kapranov, enhanced_triangulated, tabuada_motive, nc_k_theory) (4257->4263 families)
 feat(research): wave 716 — triangulated-geometry canon (exceptional_coll, spherical_functor, serre_functor, sod_decomp, fourier_mukai, semi_orthogonal) (4251->4257 families)

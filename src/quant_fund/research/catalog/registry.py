@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-719 Calabi-Yau/Gorenstein canon.
+        "calabi_yau_tri",
+        "d_calabi_yau",
+        "gorenstein_proj",
+        "frobenius_cat",
+        "stable_category",
+        "orbit_category",
         # Wave-718 representation-theory canon.
         "helix_theory",
         "mutation_class",
