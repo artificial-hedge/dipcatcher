@@ -5742,6 +5742,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "osiris_qa_studies",
         "set_qa_studies",
         "shu_qa_studies",
+        # Wave-1783 norse-myth-10 canon.
+        "baldur_qa_studies",
+        "freyr_qa_studies",
+        "hermodr_qa_studies",
+        "hodr_qa_studies",
+        "njord_qa_studies",
+        "skadi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
