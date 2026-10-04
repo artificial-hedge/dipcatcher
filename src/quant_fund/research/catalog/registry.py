@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1104 political-science-2 canon.
+        "american_politics",
+        "political_behavior",
+        "public_law",
+        "political_methodology",
+        "security_studies",
+        "policy_analysis",
         # Wave-1103 meteorology-2 canon.
         "severe_weather",
         "boundary_layer_meteorology",
