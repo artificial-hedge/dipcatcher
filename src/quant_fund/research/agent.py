@@ -12495,6 +12495,14 @@ from quant_fund.research.benches_w1562 import (
     bench_pipefish_qa_studies_family,
     bench_pufferfish_qa_studies_family,
 )
+from quant_fund.research.benches_w1563 import (
+    bench_cleaner_shrimp_qa_studies_family,
+    bench_decorator_crab_qa_studies_family,
+    bench_hermit_crab_qa_studies_family,
+    bench_mantis_shrimp_qa_studies_family,
+    bench_pistol_shrimp_qa_studies_family,
+    bench_porcelain_crab_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14442,6 +14450,12 @@ def _provenance(
         "mandarinfish_qa_studies": bench_mandarinfish_qa_studies_family,
         "pipefish_qa_studies": bench_pipefish_qa_studies_family,
         "pufferfish_qa_studies": bench_pufferfish_qa_studies_family,
+        "cleaner_shrimp_qa_studies": bench_cleaner_shrimp_qa_studies_family,
+        "decorator_crab_qa_studies": bench_decorator_crab_qa_studies_family,
+        "hermit_crab_qa_studies": bench_hermit_crab_qa_studies_family,
+        "mantis_shrimp_qa_studies": bench_mantis_shrimp_qa_studies_family,
+        "pistol_shrimp_qa_studies": bench_pistol_shrimp_qa_studies_family,
+        "porcelain_crab_qa_studies": bench_porcelain_crab_qa_studies_family,
         "goby_qa_studies": bench_goby_qa_studies_family,
         "lionfish_qa_studies": bench_lionfish_qa_studies_family,
         "surgeonfish_qa_studies": bench_surgeonfish_qa_studies_family,
