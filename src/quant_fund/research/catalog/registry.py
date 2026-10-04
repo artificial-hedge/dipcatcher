@@ -4636,6 +4636,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ptarmigan_qa_studies",
         "snowshoe_qa_studies",
         "tundra_swan_qa_studies",
+        # Wave-1625 cave-2 canon.
+        "blind_salamander_qa_studies",
+        "cave_shrimp_qa_studies",
+        "cave_spider_qa_studies",
+        "cave_swiftlet_qa_studies",
+        "grotto_salamander_qa_studies",
+        "proteus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
