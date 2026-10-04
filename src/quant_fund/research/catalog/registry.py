@@ -4993,6 +4993,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tlalocan_qa_studies",
         "tzitzimitl_qa_studies",
         "xiuhcoatl_qa_studies",
+        # Wave-1676 hindu-myth-2 canon.
+        "kinnara_qa_studies",
+        "pisacha_qa_studies",
+        "uraga_qa_studies",
+        "vetala_qa_studies",
+        "vidyadhara_qa_studies",
+        "yakshini_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
