@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1201 health-informatics canon.
+        "health_informatics",
+        "medical_records",
+        "health_information",
+        "biomedical_informatics",
+        "clinical_informatics",
+        "health_data_science",
         # Wave-1200 medical-physics canon.
         "cardiovascular_technology",
         "nuclear_medicine_technology",

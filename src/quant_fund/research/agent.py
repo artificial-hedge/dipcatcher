@@ -9599,6 +9599,14 @@ from quant_fund.research.benches_w1200 import (
     bench_radiation_dosimetry_family,
     bench_radiopharmacy_family,
 )
+from quant_fund.research.benches_w1201 import (
+    bench_biomedical_informatics_family,
+    bench_clinical_informatics_family,
+    bench_health_data_science_family,
+    bench_health_informatics_family,
+    bench_health_information_family,
+    bench_medical_records_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9970,6 +9978,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "health_informatics": bench_health_informatics_family,
+        "medical_records": bench_medical_records_family,
+        "health_information": bench_health_information_family,
+        "biomedical_informatics": bench_biomedical_informatics_family,
+        "clinical_informatics": bench_clinical_informatics_family,
+        "health_data_science": bench_health_data_science_family,
         "cardiovascular_technology": bench_cardiovascular_technology_family,
         "nuclear_medicine_technology": bench_nuclear_medicine_technology_family,
         "radiation_dosimetry": bench_radiation_dosimetry_family,
