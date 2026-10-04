@@ -4741,6 +4741,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tengu_2_qa_studies",
         "yukionna_qa_studies",
         "zashiki_warashi_qa_studies",
+        # Wave-1640 guardian-beast canon.
+        "byakko_qa_studies",
+        "genbu_qa_studies",
+        "kirin_2_qa_studies",
+        "kohryu_qa_studies",
+        "seiryu_qa_studies",
+        "suzaku_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
