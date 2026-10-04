@@ -7895,6 +7895,14 @@ from quant_fund.research.benches_w987 import (
     bench_nash_ineq_family,
     bench_parabolic_harnack_family,
 )
+from quant_fund.research.benches_w988 import (
+    bench_cheeger_ineq_family,
+    bench_heat_invariants_family,
+    bench_isospectral_family,
+    bench_nodal_domain_family,
+    bench_spectral_geometry_family,
+    bench_weyl_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8266,6 +8274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_geometry": bench_spectral_geometry_family,
+        "heat_invariants": bench_heat_invariants_family,
+        "weyl_law": bench_weyl_law_family,
+        "isospectral": bench_isospectral_family,
+        "cheeger_ineq": bench_cheeger_ineq_family,
+        "nodal_domain": bench_nodal_domain_family,
         "parabolic_harnack": bench_parabolic_harnack_family,
         "gaussian_upper": bench_gaussian_upper_family,
         "li_yau": bench_li_yau_family,
