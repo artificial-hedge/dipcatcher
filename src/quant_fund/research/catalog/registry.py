@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-576 free-probability canon.
+        "free_prob",
+        "r_transform",
+        "s_transform",
+        "free_convolution",
+        "voiculescu_thm",
+        "operator_valued",
         # Wave-575 random-matrix-2 canon.
         "circular_law",
         "dyson_brownian",

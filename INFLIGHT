@@ -1,3 +1,4 @@
+feat(research): wave 576 — free-probability canon (free_prob, r_transform, s_transform, free_convolution, voiculescu_thm, operator_valued) (3411->3417 families)
 feat(research): wave 575 — random-matrix-2 canon (circular_law, dyson_brownian, sine_kernel, airy_process, tracy_widom, beta_ensemble) (3405->3411 families)
 feat(research): wave 574 — differential-topology-2 canon (exotic_sphere, kervaire_milnor, surgery_theory, smale_hcob, whitney_trick, immersion_thm) (3399->3405 families)
 feat(research): wave 573 — Hodge-2/periods canon (griffiths_transv, period_domain, mumford_tate, hodge_class, absolute_hodge, hodge_conj) (3393->3399 families)
