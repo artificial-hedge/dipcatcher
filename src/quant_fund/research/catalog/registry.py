@@ -4153,6 +4153,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tick_qa_studies",
         "vinegaroon_qa_studies",
         "whip_scorpion_qa_studies",
+        # Wave-1556 detritivore canon.
+        "bristletail_qa_studies",
+        "pillbug_qa_studies",
+        "silverfish_qa_studies",
+        "springtail_qa_studies",
+        "velvet_worm_qa_studies",
+        "woodlouse_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
