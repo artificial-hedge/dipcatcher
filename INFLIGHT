@@ -1,3 +1,4 @@
+feat(research): wave 835 — stochastic-geometry canon (poisson_voronoi, boolean_model, germ_grain, steiner_formula, miles_matheron, intrinsic_volumes) (4959->4965 families)
 feat(research): wave 834 — Markov-semigroup canon (dirichlet_form, markov_semigroup, poincare_semigroup, log_sobolev_sem, hypercontractive, spectral_gap_sem) (4953->4959 families)
 feat(research): wave 833 — functional-limit-theory canon (fclt_invariance, donsker_invariance, martingale_fclt, stable_limit, brownian_approx, strassen_flln) (4947->4953 families)
 feat(research): wave 832 — weak-convergence-2 canon (porte_manteau, continuous_map, delta_method, skorohod_embed, kmt_approx, empirical_bridge) (4941->4947 families)
