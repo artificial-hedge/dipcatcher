@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-874 reliability-analysis canon.
+        "uq_reliability",
+        "first_order_rel",
+        "sorm_method",
+        "subset_sim",
+        "line_sampling",
+        "metamodel_rel",
         # Wave-873 domain-decomposition canon.
         "dd_partition",
         "baldding_dd",
