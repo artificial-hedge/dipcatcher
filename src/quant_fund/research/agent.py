@@ -10583,6 +10583,14 @@ from quant_fund.research.benches_w1323 import (
     bench_mbpp_plus_studies_family,
     bench_swe_perf_studies_family,
 )
+from quant_fund.research.benches_w1324 import (
+    bench_alpacaeval_studies_family,
+    bench_arena_hard_studies_family,
+    bench_judge_bench_studies_family,
+    bench_mt_bench_judge_studies_family,
+    bench_prometheus_eval_studies_family,
+    bench_reward_bench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11294,6 +11302,12 @@ def _provenance(
         "zebra_logic_studies": bench_zebra_logic_studies_family,
         "bigcodebench_studies": bench_bigcodebench_studies_family,
         "ds1000_studies": bench_ds1000_studies_family,
+        "alpacaeval_studies": bench_alpacaeval_studies_family,
+        "arena_hard_studies": bench_arena_hard_studies_family,
+        "judge_bench_studies": bench_judge_bench_studies_family,
+        "mt_bench_judge_studies": bench_mt_bench_judge_studies_family,
+        "prometheus_eval_studies": bench_prometheus_eval_studies_family,
+        "reward_bench_studies": bench_reward_bench_studies_family,
         "humaneval_plus_studies": bench_humaneval_plus_studies_family,
         "livecodebench_studies": bench_livecodebench_studies_family,
         "mbpp_plus_studies": bench_mbpp_plus_studies_family,
