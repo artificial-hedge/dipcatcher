@@ -10175,6 +10175,14 @@ from quant_fund.research.benches_w1272 import (
     bench_video_llm_studies_family,
     bench_visual_grounding_studies_family,
 )
+from quant_fund.research.benches_w1273 import (
+    bench_alignment_eval_studies_family,
+    bench_guardrail_studies_family,
+    bench_hallucination_detect_studies_family,
+    bench_jailbreak_defense_studies_family,
+    bench_red_team_studies_family,
+    bench_sleeper_agent_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10630,6 +10638,12 @@ def _provenance(
         "unified_tokenizer_studies": bench_unified_tokenizer_studies_family,
         "video_llm_studies": bench_video_llm_studies_family,
         "visual_grounding_studies": bench_visual_grounding_studies_family,
+        "alignment_eval_studies": bench_alignment_eval_studies_family,
+        "guardrail_studies": bench_guardrail_studies_family,
+        "hallucination_detect_studies": bench_hallucination_detect_studies_family,
+        "jailbreak_defense_studies": bench_jailbreak_defense_studies_family,
+        "red_team_studies": bench_red_team_studies_family,
+        "sleeper_agent_studies": bench_sleeper_agent_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
