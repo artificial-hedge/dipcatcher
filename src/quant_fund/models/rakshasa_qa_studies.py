@@ -16,7 +16,7 @@ def rakshasa_qa_studies_aux(aux: bool) -> bool:
     """rakshasa_qa_studies
 
     aux:
-    rakshasa_qa_studies: rakshasas, night demons, answers, and scores
+    rakshasa_qa_studies: rakshasas, night rovers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_rakshasa_qa_studies(seed: int = 0) -> float:
     checks.append(not rakshasa_qa_studies_ok(False, True))
     checks.append(rakshasa_qa_studies_aux(True))
     checks.append(not rakshasa_qa_studies_aux(False))
-    checks.append(True)  # hindu-myth canon
+    checks.append(True)  # hindu-myth-3 canon
     return float(sum(checks) / len(checks))
 
 
