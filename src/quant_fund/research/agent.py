@@ -6935,6 +6935,14 @@ from quant_fund.research.benches_w867 import (
     bench_tikhonov_reg_family,
     bench_tv_denoise_family,
 )
+from quant_fund.research.benches_w868 import (
+    bench_arc_continuation_family,
+    bench_bifurcation_track_family,
+    bench_davidenko_ode_family,
+    bench_deflation_method_family,
+    bench_homotopy_solver_family,
+    bench_pseudo_arclength_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7306,6 +7314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "arc_continuation": bench_arc_continuation_family,
+        "pseudo_arclength": bench_pseudo_arclength_family,
+        "deflation_method": bench_deflation_method_family,
+        "bifurcation_track": bench_bifurcation_track_family,
+        "homotopy_solver": bench_homotopy_solver_family,
+        "davidenko_ode": bench_davidenko_ode_family,
         "tikhonov_reg": bench_tikhonov_reg_family,
         "morozov_dp": bench_morozov_dp_family,
         "l_curve_opt": bench_l_curve_opt_family,
