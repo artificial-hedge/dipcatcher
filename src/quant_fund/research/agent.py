@@ -12743,6 +12743,14 @@ from quant_fund.research.benches_w1593 import (
     bench_mandrill_qa_studies_family,
     bench_mangabey_qa_studies_family,
 )
+from quant_fund.research.benches_w1594 import (
+    bench_bonobo_qa_studies_family,
+    bench_chimpanzee_qa_studies_family,
+    bench_douc_qa_studies_family,
+    bench_proboscis_qa_studies_family,
+    bench_siamang_qa_studies_family,
+    bench_snub_nosed_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14804,6 +14812,12 @@ def _provenance(
         "gelada_qa_studies": bench_gelada_qa_studies_family,
         "guenon_qa_studies": bench_guenon_qa_studies_family,
         "mandrill_qa_studies": bench_mandrill_qa_studies_family,
+        "bonobo_qa_studies": bench_bonobo_qa_studies_family,
+        "chimpanzee_qa_studies": bench_chimpanzee_qa_studies_family,
+        "douc_qa_studies": bench_douc_qa_studies_family,
+        "proboscis_qa_studies": bench_proboscis_qa_studies_family,
+        "siamang_qa_studies": bench_siamang_qa_studies_family,
+        "snub_nosed_qa_studies": bench_snub_nosed_qa_studies_family,
         "mangabey_qa_studies": bench_mangabey_qa_studies_family,
         "loris_qa_studies": bench_loris_qa_studies_family,
         "potto_qa_studies": bench_potto_qa_studies_family,
