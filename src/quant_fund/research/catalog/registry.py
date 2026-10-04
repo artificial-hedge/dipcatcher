@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1231 transplant-immunology canon.
+        "transplant_medicine_studies",
+        "immunology_medicine",
+        "allergy_studies",
+        "autoimmunity_studies",
+        "hematopoietic_transplant",
+        "immunodeficiency_studies",
         # Wave-1230 emergency-medicine canon.
         "emergency_medicine_studies",
         "trauma_medicine",

@@ -9839,6 +9839,14 @@ from quant_fund.research.benches_w1230 import (
     bench_toxicology_medicine_family,
     bench_trauma_medicine_family,
 )
+from quant_fund.research.benches_w1231 import (
+    bench_allergy_studies_family,
+    bench_autoimmunity_studies_family,
+    bench_hematopoietic_transplant_family,
+    bench_immunodeficiency_studies_family,
+    bench_immunology_medicine_family,
+    bench_transplant_medicine_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10210,6 +10218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transplant_medicine_studies": bench_transplant_medicine_studies_family,
+        "immunology_medicine": bench_immunology_medicine_family,
+        "allergy_studies": bench_allergy_studies_family,
+        "autoimmunity_studies": bench_autoimmunity_studies_family,
+        "hematopoietic_transplant": bench_hematopoietic_transplant_family,
+        "immunodeficiency_studies": bench_immunodeficiency_studies_family,
         "emergency_medicine_studies": bench_emergency_medicine_studies_family,
         "trauma_medicine": bench_trauma_medicine_family,
         "toxicology_medicine": bench_toxicology_medicine_family,
