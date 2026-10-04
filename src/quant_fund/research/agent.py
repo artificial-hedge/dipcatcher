@@ -14111,6 +14111,14 @@ from quant_fund.research.benches_w1764 import (
     bench_nike_qa_studies_family,
     bench_tyche_qa_studies_family,
 )
+from quant_fund.research.benches_w1765 import (
+    bench_arianrhod_qa_studies_family,
+    bench_cerridwen_qa_studies_family,
+    bench_lugh_qa_studies_family,
+    bench_morrigan_qa_studies_family,
+    bench_nuada_qa_studies_family,
+    bench_rhiannon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

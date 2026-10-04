@@ -27,7 +27,7 @@ def _bench_nuada_qa_studies(seed: int = 0) -> float:
     checks.append(not nuada_qa_studies_ok(False, True))
     checks.append(nuada_qa_studies_aux(True))
     checks.append(not nuada_qa_studies_aux(False))
-    checks.append(True)  # irish-myth canon
+    checks.append(True)  # celtic-myth-3 canon
     return float(sum(checks) / len(checks))
 
 

@@ -16,7 +16,7 @@ def rhiannon_qa_studies_aux(aux: bool) -> bool:
     """rhiannon_qa_studies
 
     aux:
-    rhiannon_qa_studies: rhiannon, horse queens, answers, and scores
+    rhiannon_qa_studies: rhiannon, mare riders, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_rhiannon_qa_studies(seed: int = 0) -> float:
     checks.append(not rhiannon_qa_studies_ok(False, True))
     checks.append(rhiannon_qa_studies_aux(True))
     checks.append(not rhiannon_qa_studies_aux(False))
-    checks.append(True)  # welsh-myth canon
+    checks.append(True)  # celtic-myth-3 canon
     return float(sum(checks) / len(checks))
 
 

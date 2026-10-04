@@ -5616,6 +5616,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nemesis_qa_studies",
         "nike_qa_studies",
         "tyche_qa_studies",
+        # Wave-1765 celtic-myth-3 canon.
+        "arianrhod_qa_studies",
+        "cerridwen_qa_studies",
+        "lugh_qa_studies",
+        "morrigan_qa_studies",
+        "nuada_qa_studies",
+        "rhiannon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
