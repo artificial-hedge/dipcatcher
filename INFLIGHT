@@ -1,3 +1,4 @@
+feat(research): wave 951 — matrix-function canon (determinant_cofactor, permanent_matrix, matrix_exponential, frechet_derivative, vec_operator, kronecker_sum) (5655->5661 families)
 feat(research): wave 950 — tensor-algebra canon (tensor_contraction, khatri_rao, kron_product, hadamard_product, tensor_unfold, outer_product) (5649->5655 families)
 feat(research): wave 949 — matrix-pencil canon (matrix_pencil, kronecker_canonical, invariant_subspace, deflating_subspace, jordan_form, rational_canonical) (5643->5649 families)
 feat(research): wave 948 — structured-matrix canon (circulant_matrix, companion_matrix, vandermonde_matrix, krylov_matrix, hessenberg_form, hankel_matrix) (5637->5643 families)
