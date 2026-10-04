@@ -4083,6 +4083,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kakapo_qa_studies",
         "kea_qa_studies",
         "lorikeet_qa_studies",
+        # Wave-1546 rail-2 canon.
+        "corncrake_qa_studies",
+        "flufftail_qa_studies",
+        "sora_qa_studies",
+        "sungrebe_qa_studies",
+        "swamphen_qa_studies",
+        "takhe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
