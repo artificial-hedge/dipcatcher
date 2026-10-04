@@ -10407,6 +10407,14 @@ from quant_fund.research.benches_w1301 import (
     bench_spectral_signature_studies_family,
     bench_trojan_studies_family,
 )
+from quant_fund.research.benches_w1302 import (
+    bench_canary_infer_studies_family,
+    bench_deep_leak_studies_family,
+    bench_gradient_leak_studies_family,
+    bench_lira_studies_family,
+    bench_membership_infer_studies_family,
+    bench_shadow_model_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11035,6 +11043,12 @@ def _provenance(
         "data_poison_studies": bench_data_poison_studies_family,
         "neural_cleanse_studies": bench_neural_cleanse_studies_family,
         "spectral_signature_studies": bench_spectral_signature_studies_family,
+        "canary_infer_studies": bench_canary_infer_studies_family,
+        "deep_leak_studies": bench_deep_leak_studies_family,
+        "gradient_leak_studies": bench_gradient_leak_studies_family,
+        "lira_studies": bench_lira_studies_family,
+        "membership_infer_studies": bench_membership_infer_studies_family,
+        "shadow_model_studies": bench_shadow_model_studies_family,
         "trojan_studies": bench_trojan_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,

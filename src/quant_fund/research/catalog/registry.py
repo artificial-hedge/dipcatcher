@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1302 privacy-inference canon.
+        "canary_infer_studies",
+        "deep_leak_studies",
+        "gradient_leak_studies",
+        "lira_studies",
+        "membership_infer_studies",
+        "shadow_model_studies",
         # Wave-1301 backdoor-eval canon.
         "backdoor_studies",
         "clean_label_studies",
