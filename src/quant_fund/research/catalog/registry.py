@@ -4349,6 +4349,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "minke_qa_studies",
         "pilot_whale_qa_studies",
         "sperm_whale_qa_studies",
+        # Wave-1584 small-mammal canon.
+        "cottontail_qa_studies",
+        "hare_qa_studies",
+        "hedgehog_qa_studies",
+        "hyrax_qa_studies",
+        "jackrabbit_qa_studies",
+        "pika_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
