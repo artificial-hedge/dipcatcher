@@ -3831,6 +3831,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tanager_qa_studies",
         "titmouse_qa_studies",
         "vireo_qa_studies",
+        # Wave-1510 corvid canon.
+        "chough_qa_studies",
+        "crow_qa_studies",
+        "jackdaw_qa_studies",
+        "jay_qa_studies",
+        "magpie_qa_studies",
+        "rook_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
