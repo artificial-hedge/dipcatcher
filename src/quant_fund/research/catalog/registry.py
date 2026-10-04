@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1064 social-work/policy canon.
+        "social_work",
+        "public_policy",
+        "urban_studies",
+        "gender_studies",
+        "ethnic_studies",
+        "disability_studies",
         # Wave-1063 communications/media canon.
         "media_studies",
         "journalism",

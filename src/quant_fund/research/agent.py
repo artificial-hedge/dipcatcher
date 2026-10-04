@@ -8503,6 +8503,14 @@ from quant_fund.research.benches_w1063 import (
     bench_public_relations_family,
     bench_rhetoric_family,
 )
+from quant_fund.research.benches_w1064 import (
+    bench_disability_studies_family,
+    bench_ethnic_studies_family,
+    bench_gender_studies_family,
+    bench_public_policy_family,
+    bench_social_work_family,
+    bench_urban_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8874,6 +8882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "social_work": bench_social_work_family,
+        "public_policy": bench_public_policy_family,
+        "urban_studies": bench_urban_studies_family,
+        "gender_studies": bench_gender_studies_family,
+        "ethnic_studies": bench_ethnic_studies_family,
+        "disability_studies": bench_disability_studies_family,
         "media_studies": bench_media_studies_family,
         "journalism": bench_journalism_family,
         "public_relations": bench_public_relations_family,
