@@ -11287,6 +11287,14 @@ from quant_fund.research.benches_w1411 import (
     bench_offensive_qa_studies_family,
     bench_politeness_qa_studies_family,
 )
+from quant_fund.research.benches_w1412 import (
+    bench_affect_qa_studies_family,
+    bench_anger_qa_studies_family,
+    bench_comfort_qa_studies_family,
+    bench_distress_qa_studies_family,
+    bench_emotion_qa_studies_family,
+    bench_empathy_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12419,6 +12427,12 @@ def _provenance(
         "ironic_qa_studies": bench_ironic_qa_studies_family,
         "offensive_qa_studies": bench_offensive_qa_studies_family,
         "politeness_qa_studies": bench_politeness_qa_studies_family,
+        "affect_qa_studies": bench_affect_qa_studies_family,
+        "anger_qa_studies": bench_anger_qa_studies_family,
+        "comfort_qa_studies": bench_comfort_qa_studies_family,
+        "distress_qa_studies": bench_distress_qa_studies_family,
+        "emotion_qa_studies": bench_emotion_qa_studies_family,
+        "empathy_qa_studies": bench_empathy_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

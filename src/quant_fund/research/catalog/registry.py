@@ -3145,6 +3145,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ironic_qa_studies",
         "offensive_qa_studies",
         "politeness_qa_studies",
+        # Wave-1412 emotion-affect canon.
+        "affect_qa_studies",
+        "anger_qa_studies",
+        "comfort_qa_studies",
+        "distress_qa_studies",
+        "emotion_qa_studies",
+        "empathy_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
