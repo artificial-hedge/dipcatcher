@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1283 agent-memory canon.
+        "context_compression_studies",
+        "episodic_memory_studies",
+        "memory_bank_studies",
+        "retrieval_memory_studies",
+        "semantic_memory_studies",
+        "working_memory_studies",
         # Wave-1282 embodied-VLA canon.
         "affordance_map_studies",
         "embodied_agent_studies",

@@ -1,3 +1,4 @@
+w1283 agent-memory canon: context_compression_studies, episodic_memory_studies, memory_bank_studies, retrieval_memory_studies, semantic_memory_studies, working_memory_studies (7647->7653)
 w1282 embodied-VLA canon: affordance_map_studies, embodied_agent_studies, spatial_reasoning_studies, video_diffusion_studies, vla_model_studies, world_sim_studies (7641->7647)
 w1281 reasoning-prompt canon: analogical_prompting_studies, graph_of_thought_studies, least_to_most_studies, plan_and_solve_studies, step_back_studies, tree_of_thought_studies (7635->7641)
 w1280 pretraining-data canon: data_mixture_studies, data_quality_studies, dedup_pipeline_studies, domain_filtering_studies, synthetic_data_studies, token_budget_studies (7629->7635)
