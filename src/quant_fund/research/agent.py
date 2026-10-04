@@ -11119,6 +11119,14 @@ from quant_fund.research.benches_w1390 import (
     bench_summon_fce_studies_family,
     bench_wcep_lite_studies_family,
 )
+from quant_fund.research.benches_w1391 import (
+    bench_archer_qa_studies_family,
+    bench_argue_eval_studies_family,
+    bench_expert_qa_studies_family,
+    bench_mintaka_lite_studies_family,
+    bench_musique_lite_studies_family,
+    bench_wiki2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12131,6 +12139,12 @@ def _provenance(
         "sqcs_lite_studies": bench_sqcs_lite_studies_family,
         "summon_fce_studies": bench_summon_fce_studies_family,
         "wcep_lite_studies": bench_wcep_lite_studies_family,
+        "archer_qa_studies": bench_archer_qa_studies_family,
+        "argue_eval_studies": bench_argue_eval_studies_family,
+        "expert_qa_studies": bench_expert_qa_studies_family,
+        "mintaka_lite_studies": bench_mintaka_lite_studies_family,
+        "musique_lite_studies": bench_musique_lite_studies_family,
+        "wiki2_qa_studies": bench_wiki2_qa_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

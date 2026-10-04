@@ -1,3 +1,4 @@
+w1391 QA-exotics-2 canon: archer_qa_studies, argue_eval_studies, expert_qa_studies, mintaka_lite_studies, musique_lite_studies, wiki2_qa_studies (8295->8301)
 w1390 multi-doc-sum canon: episum_lite_studies, fsum_lite_studies, mds_news_studies, sqcs_lite_studies, summon_fce_studies, wcep_lite_studies (8289->8295)
 w1389 long-doc-sum canon: book_sum_studies, fanout_qa_studies, infinitesum_studies, marlense_studies, narra_sum_studies, quote_sum_studies (8283->8289)
 w1388 RAG-eval canon: corpus_qa_studies, crag_bench_studies, domain_rag_studies, freshqa_studies, ragas_lite_studies, rgb_eval_studies (8277->8283)

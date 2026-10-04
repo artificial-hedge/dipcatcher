@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1391 QA-exotics-2 canon.
+        "archer_qa_studies",
+        "argue_eval_studies",
+        "expert_qa_studies",
+        "mintaka_lite_studies",
+        "musique_lite_studies",
+        "wiki2_qa_studies",
         # Wave-1390 multi-doc-sum canon.
         "episum_lite_studies",
         "fsum_lite_studies",
