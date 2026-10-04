@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1309 hard-benchmark canon.
+        "frontier_math_studies",
+        "gpqa_studies",
+        "hle_studies",
+        "mmlu_pro_studies",
+        "tau_bench_studies",
+        "workarena_studies",
         # Wave-1308 long-context-factuality canon.
         "halu_eval_studies",
         "infinite_bench_studies",

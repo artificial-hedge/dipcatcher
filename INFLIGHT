@@ -1,3 +1,4 @@
+w1309 hard-benchmark canon: frontier_math_studies, gpqa_studies, hle_studies, mmlu_pro_studies, tau_bench_studies, workarena_studies (7803->7809)
 w1308 long-context-factuality canon: halu_eval_studies, infinite_bench_studies, longmem_studies, needle_haystack_studies, ruler_studies, truthful_qa_studies (7797->7803)
 w1307 winograd-eval canon: lambada_studies, record_studies, story_cloze_studies, winogender_studies, winograd_studies, wsc_studies (7791->7797)
 w1306 GLUE-eval canon: glue_studies, mnli_studies, qnli_studies, rte_studies, super_glue_studies, wnli_studies (7785->7791)

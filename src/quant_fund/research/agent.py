@@ -10463,6 +10463,14 @@ from quant_fund.research.benches_w1308 import (
     bench_ruler_studies_family,
     bench_truthful_qa_studies_family,
 )
+from quant_fund.research.benches_w1309 import (
+    bench_frontier_math_studies_family,
+    bench_gpqa_studies_family,
+    bench_hle_studies_family,
+    bench_mmlu_pro_studies_family,
+    bench_tau_bench_studies_family,
+    bench_workarena_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11120,6 +11128,12 @@ def _provenance(
         "lambada_studies": bench_lambada_studies_family,
         "record_studies": bench_record_studies_family,
         "halu_eval_studies": bench_halu_eval_studies_family,
+        "frontier_math_studies": bench_frontier_math_studies_family,
+        "gpqa_studies": bench_gpqa_studies_family,
+        "hle_studies": bench_hle_studies_family,
+        "mmlu_pro_studies": bench_mmlu_pro_studies_family,
+        "tau_bench_studies": bench_tau_bench_studies_family,
+        "workarena_studies": bench_workarena_studies_family,
         "infinite_bench_studies": bench_infinite_bench_studies_family,
         "longmem_studies": bench_longmem_studies_family,
         "needle_haystack_studies": bench_needle_haystack_studies_family,
