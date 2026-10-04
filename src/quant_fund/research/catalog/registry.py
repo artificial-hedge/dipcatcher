@@ -4979,6 +4979,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "naga_qa_studies",
         "rakshasa_qa_studies",
         "yaksha_qa_studies",
+        # Wave-1674 roman-myth canon.
+        "genii_qa_studies",
+        "lares_qa_studies",
+        "larvae_qa_studies",
+        "lemures_qa_studies",
+        "manes_qa_studies",
+        "penates_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
