@@ -5903,6 +5903,14 @@ from quant_fund.research.benches_w738 import (
     bench_le_gall_miermont_family,
     bench_marckert_mokkadem_family,
 )
+from quant_fund.research.benches_w739 import (
+    bench_bernardi_bijection_family,
+    bench_bonzom_combe_family,
+    bench_bouttier_guiter_family,
+    bench_caraceni_curien_family,
+    bench_mullin_bijection_family,
+    bench_schaeffer_bijection_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6282,6 +6290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "caraceni_curien": bench_caraceni_curien_family,
+        "bonzom_combe": bench_bonzom_combe_family,
+        "mullin_bijection": bench_mullin_bijection_family,
+        "bernardi_bijection": bench_bernardi_bijection_family,
+        "schaeffer_bijection": bench_schaeffer_bijection_family,
+        "bouttier_guiter": bench_bouttier_guiter_family,
         "marckert_mokkadem": bench_marckert_mokkadem_family,
         "le_gall_miermont": bench_le_gall_miermont_family,
         "curien_legall": bench_curien_legall_family,
