@@ -9335,6 +9335,14 @@ from quant_fund.research.benches_w1167 import (
     bench_performance_studies_2_family,
     bench_theater_2_family,
 )
+from quant_fund.research.benches_w1168 import (
+    bench_aviation_2_family,
+    bench_logistics_2_family,
+    bench_maritime_studies_2_family,
+    bench_supply_chain_2_family,
+    bench_transportation_2_family,
+    bench_warehousing_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9706,6 +9714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transportation_2": bench_transportation_2_family,
+        "logistics_2": bench_logistics_2_family,
+        "supply_chain_2": bench_supply_chain_2_family,
+        "warehousing_2": bench_warehousing_2_family,
+        "maritime_studies_2": bench_maritime_studies_2_family,
+        "aviation_2": bench_aviation_2_family,
         "music_2": bench_music_2_family,
         "theater_2": bench_theater_2_family,
         "dance_2": bench_dance_2_family,
