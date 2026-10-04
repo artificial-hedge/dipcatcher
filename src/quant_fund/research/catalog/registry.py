@@ -4867,6 +4867,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quinotaur_qa_studies",
         "tarascon_qa_studies",
         "tarrasque_qa_studies",
+        # Wave-1658 mesoamerican-beast canon.
+        "ahuizotl_qa_studies",
+        "alicanto_qa_studies",
+        "cadejo_qa_studies",
+        "cipactli_qa_studies",
+        "jinn_qa_studies",
+        "quetzalcoat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
