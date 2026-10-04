@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1224 obgyn canon.
+        "obstetrics_studies",
+        "gynecology_studies",
+        "maternal_fetal_medicine",
+        "reproductive_endocrinology",
+        "gynecologic_oncology",
+        "fetal_medicine",
         # Wave-1223 anesthesia canon.
         "anesthesiology_studies",
         "perioperative_medicine",

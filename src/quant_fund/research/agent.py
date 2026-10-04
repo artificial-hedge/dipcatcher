@@ -9783,6 +9783,14 @@ from quant_fund.research.benches_w1223 import (
     bench_regional_anesthesia_family,
     bench_sedation_medicine_family,
 )
+from quant_fund.research.benches_w1224 import (
+    bench_fetal_medicine_family,
+    bench_gynecologic_oncology_family,
+    bench_gynecology_studies_family,
+    bench_maternal_fetal_medicine_family,
+    bench_obstetrics_studies_family,
+    bench_reproductive_endocrinology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10154,6 +10162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "obstetrics_studies": bench_obstetrics_studies_family,
+        "gynecology_studies": bench_gynecology_studies_family,
+        "maternal_fetal_medicine": bench_maternal_fetal_medicine_family,
+        "reproductive_endocrinology": bench_reproductive_endocrinology_family,
+        "gynecologic_oncology": bench_gynecologic_oncology_family,
+        "fetal_medicine": bench_fetal_medicine_family,
         "anesthesiology_studies": bench_anesthesiology_studies_family,
         "perioperative_medicine": bench_perioperative_medicine_family,
         "pain_medicine_studies": bench_pain_medicine_studies_family,
