@@ -1,3 +1,4 @@
+w1402 science-QA-2 canon: ai2_arc_lite_studies, arc_da_lite_studies, drug_qa_lite_studies, emrqa_lite_studies, head_qa_lite_studies, medmcqa_lite_studies (8361->8367)
 w1401 math-word-2 canon: alg514_lite_studies, dolphin_lite_studies, draw_lite_studies, lila_lite_studies, math_doc_studies, math_eval_studies (8355->8361)
 w1400 KG-QA canon: cronqa_lite_studies, cwq_lite_studies, grailqa_studies, kgqa_lite_studies, pweb_qa_studies, qald_lite_studies (8349->8355)
 w1399 retrieval-eval canon: asqa_lite_studies, eli5_lite_studies, fresh_qa_studies, nq_lite_studies, trivia_lite_studies, xor_tydi_studies (8343->8349)

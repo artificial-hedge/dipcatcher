@@ -11207,6 +11207,14 @@ from quant_fund.research.benches_w1401 import (
     bench_math_doc_studies_family,
     bench_math_eval_studies_family,
 )
+from quant_fund.research.benches_w1402 import (
+    bench_ai2_arc_lite_studies_family,
+    bench_arc_da_lite_studies_family,
+    bench_drug_qa_lite_studies_family,
+    bench_emrqa_lite_studies_family,
+    bench_head_qa_lite_studies_family,
+    bench_medmcqa_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12279,6 +12287,12 @@ def _provenance(
         "lila_lite_studies": bench_lila_lite_studies_family,
         "math_doc_studies": bench_math_doc_studies_family,
         "math_eval_studies": bench_math_eval_studies_family,
+        "ai2_arc_lite_studies": bench_ai2_arc_lite_studies_family,
+        "arc_da_lite_studies": bench_arc_da_lite_studies_family,
+        "drug_qa_lite_studies": bench_drug_qa_lite_studies_family,
+        "emrqa_lite_studies": bench_emrqa_lite_studies_family,
+        "head_qa_lite_studies": bench_head_qa_lite_studies_family,
+        "medmcqa_lite_studies": bench_medmcqa_lite_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
