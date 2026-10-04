@@ -8671,6 +8671,14 @@ from quant_fund.research.benches_w1084 import (
     bench_translation_studies_family,
     bench_world_literature_family,
 )
+from quant_fund.research.benches_w1085 import (
+    bench_medieval_literature_family,
+    bench_modernism_family,
+    bench_postmodernism_family,
+    bench_renaissance_literature_family,
+    bench_romanticism_family,
+    bench_victorian_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9042,6 +9050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medieval_literature": bench_medieval_literature_family,
+        "renaissance_literature": bench_renaissance_literature_family,
+        "romanticism": bench_romanticism_family,
+        "modernism": bench_modernism_family,
+        "postmodernism": bench_postmodernism_family,
+        "victorian_studies": bench_victorian_studies_family,
         "comparative_literature": bench_comparative_literature_family,
         "literary_theory": bench_literary_theory_family,
         "postcolonial_studies": bench_postcolonial_studies_family,
