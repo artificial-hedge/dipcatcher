@@ -9655,6 +9655,14 @@ from quant_fund.research.benches_w1207 import (
     bench_psychoanalysis_studies_family,
     bench_psychotherapy_studies_family,
 )
+from quant_fund.research.benches_w1208 import (
+    bench_child_adolescent_therapy_family,
+    bench_couples_therapy_family,
+    bench_family_therapy_family,
+    bench_group_therapy_family,
+    bench_marriage_family_therapy_family,
+    bench_trauma_therapy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10026,6 +10034,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "marriage_family_therapy": bench_marriage_family_therapy_family,
+        "group_therapy": bench_group_therapy_family,
+        "couples_therapy": bench_couples_therapy_family,
+        "family_therapy": bench_family_therapy_family,
+        "child_adolescent_therapy": bench_child_adolescent_therapy_family,
+        "trauma_therapy": bench_trauma_therapy_family,
         "psychoanalysis_studies": bench_psychoanalysis_studies_family,
         "psychotherapy_studies": bench_psychotherapy_studies_family,
         "behavioral_therapy_cognitive": bench_behavioral_therapy_cognitive_family,

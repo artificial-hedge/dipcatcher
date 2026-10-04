@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1208 therapy-modalities canon.
+        "marriage_family_therapy",
+        "group_therapy",
+        "couples_therapy",
+        "family_therapy",
+        "child_adolescent_therapy",
+        "trauma_therapy",
         # Wave-1207 psychotherapy canon.
         "psychoanalysis_studies",
         "psychotherapy_studies",
