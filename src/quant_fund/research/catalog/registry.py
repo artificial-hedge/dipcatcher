@@ -4573,6 +4573,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "slender_qa_studies",
         "slow_qa_studies",
         "thin_spined_qa_studies",
+        # Wave-1616 plankton-shore canon.
+        "amphipod_qa_studies",
+        "barnacle_qa_studies",
+        "copepod_qa_studies",
+        "isopod_qa_studies",
+        "krill_qa_studies",
+        "sandhopper_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
