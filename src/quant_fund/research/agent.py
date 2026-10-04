@@ -9567,6 +9567,14 @@ from quant_fund.research.benches_w1196 import (
     bench_occupational_safety_family,
     bench_paramedic_studies_family,
 )
+from quant_fund.research.benches_w1197 import (
+    bench_addiction_counseling_family,
+    bench_genetic_screening_family,
+    bench_neonatology_studies_family,
+    bench_pediatric_therapeutics_family,
+    bench_prenatal_studies_family,
+    bench_rehabilitation_counseling_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9938,6 +9946,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "addiction_counseling": bench_addiction_counseling_family,
+        "rehabilitation_counseling": bench_rehabilitation_counseling_family,
+        "genetic_screening": bench_genetic_screening_family,
+        "prenatal_studies": bench_prenatal_studies_family,
+        "neonatology_studies": bench_neonatology_studies_family,
+        "pediatric_therapeutics": bench_pediatric_therapeutics_family,
         "emergency_medical_technician": bench_emergency_medical_technician_family,
         "fire_science_studies": bench_fire_science_studies_family,
         "paramedic_studies": bench_paramedic_studies_family,
