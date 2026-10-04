@@ -3579,6 +3579,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lemongrass_qa_studies",
         "mint_qa_studies",
         "nutmeg_qa_studies",
+        # Wave-1474 waterbird canon.
+        "bittern_qa_studies",
+        "cormorant_qa_studies",
+        "curlew_qa_studies",
+        "ibis_qa_studies",
+        "kingfisher_qa_studies",
+        "loon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
