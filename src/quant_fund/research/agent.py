@@ -5375,6 +5375,14 @@ from quant_fund.research.benches_w672 import (
     bench_super_cat_family,
     bench_tannakian_cat_family,
 )
+from quant_fund.research.benches_w673 import (
+    bench_derived_cohom_family,
+    bench_derived_fiber2_family,
+    bench_derived_intersection_family,
+    bench_relative_trace_family,
+    bench_spectral_deformation2_family,
+    bench_virtual_class2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5754,6 +5762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_cohom": bench_derived_cohom_family,
+        "spectral_deformation2": bench_spectral_deformation2_family,
+        "virtual_class2": bench_virtual_class2_family,
+        "derived_intersection": bench_derived_intersection_family,
+        "derived_fiber2": bench_derived_fiber2_family,
+        "relative_trace": bench_relative_trace_family,
         "tannakian_cat": bench_tannakian_cat_family,
         "super_cat": bench_super_cat_family,
         "perverse_cat": bench_perverse_cat_family,

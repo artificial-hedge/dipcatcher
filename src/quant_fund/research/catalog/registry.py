@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-673 derived-geometry-6 canon.
+        "derived_cohom",
+        "spectral_deformation2",
+        "virtual_class2",
+        "derived_intersection",
+        "derived_fiber2",
+        "relative_trace",
         # Wave-672 category-14 canon.
         "tannakian_cat",
         "super_cat",
