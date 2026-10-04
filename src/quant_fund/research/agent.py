@@ -8455,6 +8455,14 @@ from quant_fund.research.benches_w1057 import (
     bench_semantics_family,
     bench_syntax_theory_family,
 )
+from quant_fund.research.benches_w1058 import (
+    bench_aesthetics_family,
+    bench_epistemology_family,
+    bench_ethics_philosophy_family,
+    bench_logic_philosophy_family,
+    bench_metaphysics_family,
+    bench_philosophy_of_science_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8826,6 +8834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "metaphysics": bench_metaphysics_family,
+        "epistemology": bench_epistemology_family,
+        "ethics_philosophy": bench_ethics_philosophy_family,
+        "logic_philosophy": bench_logic_philosophy_family,
+        "philosophy_of_science": bench_philosophy_of_science_family,
+        "aesthetics": bench_aesthetics_family,
         "phonetics": bench_phonetics_family,
         "phonology": bench_phonology_family,
         "morphology": bench_morphology_family,
