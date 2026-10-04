@@ -3334,6 +3334,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shark_qa_studies",
         "turtle_qa_studies",
         "whale_qa_studies",
+        # Wave-1439 landform canon.
+        "cliff_qa_studies",
+        "crater_qa_studies",
+        "dune_qa_studies",
+        "fjord_qa_studies",
+        "gorge_qa_studies",
+        "mesa_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
