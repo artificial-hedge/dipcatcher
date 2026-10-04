@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1229 pediatrics canon.
+        "pediatrics_studies",
+        "neonatal_medicine_studies",
+        "pediatric_cardiology",
+        "pediatric_oncology",
+        "adolescent_medicine_studies",
+        "developmental_pediatrics",
         # Wave-1228 dentistry canon.
         "dental_studies",
         "oral_surgery_studies",
