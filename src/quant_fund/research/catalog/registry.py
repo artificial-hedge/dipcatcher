@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1044 mining-engineering canon.
+        "mine_design",
+        "rock_mechanics",
+        "mineral_processing",
+        "blasting_engineering",
+        "mine_ventilation",
+        "ore_reserve_estimation",
         # Wave-1043 forestry canon.
         "silviculture",
         "forest_ecology",
