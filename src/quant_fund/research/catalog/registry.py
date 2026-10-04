@@ -4650,6 +4650,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "northern_qa_studies",
         "southern_qa_studies",
         "western_qa_studies",
+        # Wave-1627 cave-3 canon.
+        "cave_crayfish_qa_studies",
+        "cave_scorpion_qa_studies",
+        "cave_springtail_qa_studies",
+        "cave_worm_qa_studies",
+        "stygobite_qa_studies",
+        "troglofish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
