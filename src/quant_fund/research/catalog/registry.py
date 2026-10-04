@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1116 psychology-3 canon.
+        "experimental_psychology",
+        "comparative_psychology",
+        "evolutionary_psychology",
+        "psychopathology",
+        "environmental_psychology",
+        "sport_psychology",
         # Wave-1115 economics-3 canon.
         "labor_economics",
         "public_economics",
