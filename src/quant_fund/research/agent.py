@@ -11423,6 +11423,14 @@ from quant_fund.research.benches_w1428 import (
     bench_government_qa_studies_family,
     bench_ministry_qa_studies_family,
 )
+from quant_fund.research.benches_w1429 import (
+    bench_atom_qa_studies_family,
+    bench_electron_qa_studies_family,
+    bench_ion_qa_studies_family,
+    bench_molecule_qa_studies_family,
+    bench_neutron_qa_studies_family,
+    bench_photon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12657,6 +12665,12 @@ def _provenance(
         "election_qa_studies": bench_election_qa_studies_family,
         "government_qa_studies": bench_government_qa_studies_family,
         "ministry_qa_studies": bench_ministry_qa_studies_family,
+        "atom_qa_studies": bench_atom_qa_studies_family,
+        "electron_qa_studies": bench_electron_qa_studies_family,
+        "ion_qa_studies": bench_ion_qa_studies_family,
+        "molecule_qa_studies": bench_molecule_qa_studies_family,
+        "neutron_qa_studies": bench_neutron_qa_studies_family,
+        "photon_qa_studies": bench_photon_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

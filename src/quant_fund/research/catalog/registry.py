@@ -3264,6 +3264,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "election_qa_studies",
         "government_qa_studies",
         "ministry_qa_studies",
+        # Wave-1429 particle canon.
+        "atom_qa_studies",
+        "electron_qa_studies",
+        "ion_qa_studies",
+        "molecule_qa_studies",
+        "neutron_qa_studies",
+        "photon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
