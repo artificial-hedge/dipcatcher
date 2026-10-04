@@ -8759,6 +8759,14 @@ from quant_fund.research.benches_w1095 import (
     bench_rural_sociology_family,
     bench_social_movements_family,
 )
+from quant_fund.research.benches_w1096 import (
+    bench_conservation_biology_family,
+    bench_environmental_toxicology_family,
+    bench_landscape_ecology_family,
+    bench_marine_conservation_family,
+    bench_pollution_science_family,
+    bench_urban_ecology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9130,6 +9138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pollution_science": bench_pollution_science_family,
+        "conservation_biology": bench_conservation_biology_family,
+        "environmental_toxicology": bench_environmental_toxicology_family,
+        "urban_ecology": bench_urban_ecology_family,
+        "landscape_ecology": bench_landscape_ecology_family,
+        "marine_conservation": bench_marine_conservation_family,
         "medical_sociology": bench_medical_sociology_family,
         "deviance_studies": bench_deviance_studies_family,
         "family_sociology": bench_family_sociology_family,
