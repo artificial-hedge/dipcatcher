@@ -7887,6 +7887,14 @@ from quant_fund.research.benches_w986 import (
     bench_good_lambda_family,
     bench_reverse_holder_family,
 )
+from quant_fund.research.benches_w987 import (
+    bench_davies_gaffney_family,
+    bench_gaussian_upper_family,
+    bench_grad_est_family,
+    bench_li_yau_family,
+    bench_nash_ineq_family,
+    bench_parabolic_harnack_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8258,6 +8266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "parabolic_harnack": bench_parabolic_harnack_family,
+        "gaussian_upper": bench_gaussian_upper_family,
+        "li_yau": bench_li_yau_family,
+        "nash_ineq": bench_nash_ineq_family,
+        "davies_gaffney": bench_davies_gaffney_family,
+        "grad_est": bench_grad_est_family,
         "calderon_zygmund": bench_calderon_zygmund_family,
         "cz_decomp": bench_cz_decomp_family,
         "cotlar_ineq": bench_cotlar_ineq_family,

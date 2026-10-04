@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-987 parabolic/Li-Yau canon.
+        "parabolic_harnack",
+        "gaussian_upper",
+        "li_yau",
+        "nash_ineq",
+        "davies_gaffney",
+        "grad_est",
         # Wave-986 Calderon-Zygmund canon.
         "calderon_zygmund",
         "cz_decomp",
