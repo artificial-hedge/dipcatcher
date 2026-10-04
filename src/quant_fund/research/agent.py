@@ -14127,6 +14127,14 @@ from quant_fund.research.benches_w1766 import (
     bench_ixmucane_qa_studies_family,
     bench_zipacna_qa_studies_family,
 )
+from quant_fund.research.benches_w1767 import (
+    bench_coniraya_qa_studies_family,
+    bench_guanare_qa_studies_family,
+    bench_inti_qa_studies_family,
+    bench_pachacamac_qa_studies_family,
+    bench_supay_qa_studies_family,
+    bench_viracocha_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
