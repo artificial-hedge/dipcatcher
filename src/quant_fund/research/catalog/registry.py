@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1135 medicine-5 canon.
+        "urology",
+        "ophthalmology",
+        "otolaryngology",
+        "palliative_medicine",
+        "sports_medicine",
+        "rehabilitation_medicine",
         # Wave-1134 computational-math canon.
         "finite_element_theory",
         "spectral_theory_numerics",
