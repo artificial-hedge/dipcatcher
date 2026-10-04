@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1066 area studies canon.
+        "latin_american_studies",
+        "asian_studies",
+        "european_studies",
+        "middle_eastern_studies",
+        "african_studies",
+        "slavic_studies",
         # Wave-1065 geography canon.
         "physical_geography",
         "human_geography",
