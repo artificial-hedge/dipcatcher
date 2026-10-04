@@ -4447,6 +4447,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ibex_qa_studies",
         "serow_qa_studies",
         "tahr_qa_studies",
+        # Wave-1598 antelope-3 canon.
+        "bontebok_qa_studies",
+        "bushbuck_qa_studies",
+        "greater_kudu_qa_studies",
+        "lesser_kudu_qa_studies",
+        "mountain_nyala_qa_studies",
+        "sitatunga_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
