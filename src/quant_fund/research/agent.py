@@ -10951,6 +10951,14 @@ from quant_fund.research.benches_w1369 import (
     bench_minerva_math_studies_family,
     bench_svamp_lite_studies_family,
 )
+from quant_fund.research.benches_w1370 import (
+    bench_bbh_lite_studies_family,
+    bench_gpqa_lite_studies_family,
+    bench_if_eval_studies_family,
+    bench_live_bench_studies_family,
+    bench_olympic_bench_studies_family,
+    bench_trivia_qa_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11837,6 +11845,12 @@ def _provenance(
         "mgsm_lite_studies": bench_mgsm_lite_studies_family,
         "minerva_math_studies": bench_minerva_math_studies_family,
         "svamp_lite_studies": bench_svamp_lite_studies_family,
+        "bbh_lite_studies": bench_bbh_lite_studies_family,
+        "gpqa_lite_studies": bench_gpqa_lite_studies_family,
+        "if_eval_studies": bench_if_eval_studies_family,
+        "live_bench_studies": bench_live_bench_studies_family,
+        "olympic_bench_studies": bench_olympic_bench_studies_family,
+        "trivia_qa_lite_studies": bench_trivia_qa_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
