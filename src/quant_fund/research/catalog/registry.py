@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1296 reward-modeling-2 canon.
+        "ensemble_rm_studies",
+        "judge_reward_studies",
+        "margin_reward_studies",
+        "reward_hacking_studies",
+        "reward_uncertainty_studies",
+        "rm_btd_studies",
         # Wave-1295 mech-anomaly/jailbreak canon.
         "activation_patch_studies",
         "circuit_tracer_studies",

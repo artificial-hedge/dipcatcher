@@ -10359,6 +10359,14 @@ from quant_fund.research.benches_w1295 import (
     bench_mech_anomaly_studies_family,
     bench_sae_linter_studies_family,
 )
+from quant_fund.research.benches_w1296 import (
+    bench_ensemble_rm_studies_family,
+    bench_judge_reward_studies_family,
+    bench_margin_reward_studies_family,
+    bench_reward_hacking_studies_family,
+    bench_reward_uncertainty_studies_family,
+    bench_rm_btd_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10952,6 +10960,12 @@ def _provenance(
         "jailbreak_detect_studies": bench_jailbreak_detect_studies_family,
         "mech_anomaly_studies": bench_mech_anomaly_studies_family,
         "sae_linter_studies": bench_sae_linter_studies_family,
+        "ensemble_rm_studies": bench_ensemble_rm_studies_family,
+        "judge_reward_studies": bench_judge_reward_studies_family,
+        "margin_reward_studies": bench_margin_reward_studies_family,
+        "reward_hacking_studies": bench_reward_hacking_studies_family,
+        "reward_uncertainty_studies": bench_reward_uncertainty_studies_family,
+        "rm_btd_studies": bench_rm_btd_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
