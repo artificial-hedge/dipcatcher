@@ -12975,6 +12975,14 @@ from quant_fund.research.benches_w1622 import (
     bench_snow_leopard_qa_studies_family,
     bench_snowcock_qa_studies_family,
 )
+from quant_fund.research.benches_w1623 import (
+    bench_altai_qa_studies_family,
+    bench_blood_pheasant_qa_studies_family,
+    bench_chukar_qa_studies_family,
+    bench_monal_qa_studies_family,
+    bench_snow_partridge_qa_studies_family,
+    bench_wallcreeper_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15135,6 +15143,12 @@ def _provenance(
         "himalayan_qa_studies": bench_himalayan_qa_studies_family,
         "nilgiri_qa_studies": bench_nilgiri_qa_studies_family,
         "snow_leopard_qa_studies": bench_snow_leopard_qa_studies_family,
+        "altai_qa_studies": bench_altai_qa_studies_family,
+        "blood_pheasant_qa_studies": bench_blood_pheasant_qa_studies_family,
+        "chukar_qa_studies": bench_chukar_qa_studies_family,
+        "monal_qa_studies": bench_monal_qa_studies_family,
+        "snow_partridge_qa_studies": bench_snow_partridge_qa_studies_family,
+        "wallcreeper_qa_studies": bench_wallcreeper_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
