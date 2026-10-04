@@ -12671,6 +12671,14 @@ from quant_fund.research.benches_w1584 import (
     bench_jackrabbit_qa_studies_family,
     bench_pika_qa_studies_family,
 )
+from quant_fund.research.benches_w1585 import (
+    bench_aardvark_qa_studies_family,
+    bench_elephant_shrew_qa_studies_family,
+    bench_golden_mole_qa_studies_family,
+    bench_gymnure_qa_studies_family,
+    bench_solenodon_qa_studies_family,
+    bench_tenrec_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14701,6 +14709,12 @@ def _provenance(
         "hare_qa_studies": bench_hare_qa_studies_family,
         "hedgehog_qa_studies": bench_hedgehog_qa_studies_family,
         "hyrax_qa_studies": bench_hyrax_qa_studies_family,
+        "aardvark_qa_studies": bench_aardvark_qa_studies_family,
+        "elephant_shrew_qa_studies": bench_elephant_shrew_qa_studies_family,
+        "golden_mole_qa_studies": bench_golden_mole_qa_studies_family,
+        "gymnure_qa_studies": bench_gymnure_qa_studies_family,
+        "solenodon_qa_studies": bench_solenodon_qa_studies_family,
+        "tenrec_qa_studies": bench_tenrec_qa_studies_family,
         "jackrabbit_qa_studies": bench_jackrabbit_qa_studies_family,
         "pika_qa_studies": bench_pika_qa_studies_family,
         "fin_whale_qa_studies": bench_fin_whale_qa_studies_family,
