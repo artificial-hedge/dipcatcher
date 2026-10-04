@@ -7231,6 +7231,14 @@ from quant_fund.research.benches_w904 import (
     bench_splay_tree_family,
     bench_treap_family,
 )
+from quant_fund.research.benches_w905 import (
+    bench_heapsort_family,
+    bench_introsort_family,
+    bench_mergesort_family,
+    bench_quicksort_family,
+    bench_radix_sort_family,
+    bench_timsort_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7602,6 +7610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quicksort": bench_quicksort_family,
+        "mergesort": bench_mergesort_family,
+        "heapsort": bench_heapsort_family,
+        "introsort": bench_introsort_family,
+        "timsort": bench_timsort_family,
+        "radix_sort": bench_radix_sort_family,
         "avl_tree": bench_avl_tree_family,
         "red_black_tree": bench_red_black_tree_family,
         "splay_tree": bench_splay_tree_family,
