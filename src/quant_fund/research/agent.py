@@ -11071,6 +11071,14 @@ from quant_fund.research.benches_w1384 import (
     bench_olmes_lite_studies_family,
     bench_plus_eval_studies_family,
 )
+from quant_fund.research.benches_w1385 import (
+    bench_airtasks_studies_family,
+    bench_browsergym_studies_family,
+    bench_maze_eval_studies_family,
+    bench_mmind2web_studies_family,
+    bench_screenqa_studies_family,
+    bench_weblinx_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12047,6 +12055,12 @@ def _provenance(
         "mbti_eval_studies": bench_mbti_eval_studies_family,
         "olmes_lite_studies": bench_olmes_lite_studies_family,
         "plus_eval_studies": bench_plus_eval_studies_family,
+        "airtasks_studies": bench_airtasks_studies_family,
+        "browsergym_studies": bench_browsergym_studies_family,
+        "maze_eval_studies": bench_maze_eval_studies_family,
+        "mmind2web_studies": bench_mmind2web_studies_family,
+        "screenqa_studies": bench_screenqa_studies_family,
+        "weblinx_studies": bench_weblinx_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
