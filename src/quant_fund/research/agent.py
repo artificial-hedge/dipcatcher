@@ -11055,6 +11055,14 @@ from quant_fund.research.benches_w1382 import (
     bench_nugget_eval_studies_family,
     bench_vicuna_bench_studies_family,
 )
+from quant_fund.research.benches_w1383 import (
+    bench_aime24_studies_family,
+    bench_gpqa_diamond_studies_family,
+    bench_hle_lite_studies_family,
+    bench_mmmlu_lite_studies_family,
+    bench_olympiadbench_studies_family,
+    bench_super_gpqa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12019,6 +12027,12 @@ def _provenance(
         "lmsys_eval_studies": bench_lmsys_eval_studies_family,
         "nugget_eval_studies": bench_nugget_eval_studies_family,
         "vicuna_bench_studies": bench_vicuna_bench_studies_family,
+        "aime24_studies": bench_aime24_studies_family,
+        "gpqa_diamond_studies": bench_gpqa_diamond_studies_family,
+        "hle_lite_studies": bench_hle_lite_studies_family,
+        "mmmlu_lite_studies": bench_mmmlu_lite_studies_family,
+        "olympiadbench_studies": bench_olympiadbench_studies_family,
+        "super_gpqa_studies": bench_super_gpqa_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

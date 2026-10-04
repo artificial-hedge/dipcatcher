@@ -1,3 +1,4 @@
+w1383 frontier-eval canon: aime24_studies, gpqa_diamond_studies, hle_lite_studies, mmmlu_lite_studies, olympiadbench_studies, super_gpqa_studies (8247->8253)
 w1382 LLM-eval-2 canon: fact_score_studies, gpt_score_studies, helm_lite_studies, lmsys_eval_studies, nugget_eval_studies, vicuna_bench_studies (8241->8247)
 w1381 dialogue-2 canon: begins_lite_studies, diamonds_lite_studies, faithful_dial_studies, multi_woz_studies, top_dialog_studies, wow_lite_studies (8235->8241)
 w1380 intent-paraphrase canon: art_nli_studies, para_paws_studies, recast_lite_studies, snips_lite_studies, social_lite_studies, subj_lite_studies (8229->8235)
