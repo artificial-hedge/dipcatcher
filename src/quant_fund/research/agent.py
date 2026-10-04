@@ -9623,6 +9623,14 @@ from quant_fund.research.benches_w1203 import (
     bench_travel_medicine_family,
     bench_tropical_medicine_family,
 )
+from quant_fund.research.benches_w1204 import (
+    bench_aging_research_family,
+    bench_geriatric_medicine_family,
+    bench_gerontology_studies_family,
+    bench_hospice_care_family,
+    bench_longevity_medicine_family,
+    bench_palliative_care_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9994,6 +10002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "geriatric_medicine": bench_geriatric_medicine_family,
+        "palliative_care": bench_palliative_care_family,
+        "hospice_care": bench_hospice_care_family,
+        "gerontology_studies": bench_gerontology_studies_family,
+        "aging_research": bench_aging_research_family,
+        "longevity_medicine": bench_longevity_medicine_family,
         "tropical_medicine": bench_tropical_medicine_family,
         "travel_medicine": bench_travel_medicine_family,
         "genomic_medicine": bench_genomic_medicine_family,
