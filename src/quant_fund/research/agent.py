@@ -12359,6 +12359,14 @@ from quant_fund.research.benches_w1545 import (
     bench_kea_qa_studies_family,
     bench_lorikeet_qa_studies_family,
 )
+from quant_fund.research.benches_w1546 import (
+    bench_corncrake_qa_studies_family,
+    bench_flufftail_qa_studies_family,
+    bench_sora_qa_studies_family,
+    bench_sungrebe_qa_studies_family,
+    bench_swamphen_qa_studies_family,
+    bench_takhe_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14239,6 +14247,12 @@ def _provenance(
         "nunlet_qa_studies": bench_nunlet_qa_studies_family,
         "puffbird_qa_studies": bench_puffbird_qa_studies_family,
         "toco_qa_studies": bench_toco_qa_studies_family,
+        "corncrake_qa_studies": bench_corncrake_qa_studies_family,
+        "flufftail_qa_studies": bench_flufftail_qa_studies_family,
+        "sora_qa_studies": bench_sora_qa_studies_family,
+        "sungrebe_qa_studies": bench_sungrebe_qa_studies_family,
+        "swamphen_qa_studies": bench_swamphen_qa_studies_family,
+        "takhe_qa_studies": bench_takhe_qa_studies_family,
         "woodhoopoe_qa_studies": bench_woodhoopoe_qa_studies_family,
         "amazon_qa_studies": bench_amazon_qa_studies_family,
         "cockatoo_qa_studies": bench_cockatoo_qa_studies_family,
