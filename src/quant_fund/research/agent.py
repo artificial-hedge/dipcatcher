@@ -8575,6 +8575,14 @@ from quant_fund.research.benches_w1072 import (
     bench_film_theory_family,
     bench_screenwriting_family,
 )
+from quant_fund.research.benches_w1073 import (
+    bench_biblical_exegesis_family,
+    bench_church_history_family,
+    bench_liturgical_studies_family,
+    bench_missiology_family,
+    bench_pastoral_theology_family,
+    bench_systematic_theology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8946,6 +8954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "systematic_theology": bench_systematic_theology_family,
+        "biblical_exegesis": bench_biblical_exegesis_family,
+        "church_history": bench_church_history_family,
+        "pastoral_theology": bench_pastoral_theology_family,
+        "liturgical_studies": bench_liturgical_studies_family,
+        "missiology": bench_missiology_family,
         "film_studies": bench_film_studies_family,
         "cinema_studies": bench_cinema_studies_family,
         "film_theory": bench_film_theory_family,
