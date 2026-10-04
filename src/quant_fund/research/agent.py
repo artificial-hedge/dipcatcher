@@ -8399,6 +8399,14 @@ from quant_fund.research.benches_w1050 import (
     bench_pharmacokinetics_2_family,
     bench_toxicology_family,
 )
+from quant_fund.research.benches_w1051 import (
+    bench_biostatistics_2_family,
+    bench_epidemiology_2_family,
+    bench_global_health_family,
+    bench_health_policy_family,
+    bench_occupational_health_family,
+    bench_preventive_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8770,6 +8778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "epidemiology_2": bench_epidemiology_2_family,
+        "biostatistics_2": bench_biostatistics_2_family,
+        "health_policy": bench_health_policy_family,
+        "global_health": bench_global_health_family,
+        "occupational_health": bench_occupational_health_family,
+        "preventive_medicine": bench_preventive_medicine_family,
         "pharmacodynamics": bench_pharmacodynamics_family,
         "pharmacokinetics_2": bench_pharmacokinetics_2_family,
         "toxicology": bench_toxicology_family,
