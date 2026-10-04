@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1233 clinical-genetics canon.
+        "medical_genetics_studies",
+        "genetic_diagnostics",
+        "lysosomal_medicine",
+        "mitochondrial_medicine",
+        "dysmorphology_studies",
+        "pharmacogenomics_studies",
         # Wave-1232 geriatrics canon.
         "geriatrics_studies",
         "frailty_medicine",

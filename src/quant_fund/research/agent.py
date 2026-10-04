@@ -9855,6 +9855,14 @@ from quant_fund.research.benches_w1232 import (
     bench_memory_clinic_studies_family,
     bench_polypharmacy_studies_family,
 )
+from quant_fund.research.benches_w1233 import (
+    bench_dysmorphology_studies_family,
+    bench_genetic_diagnostics_family,
+    bench_lysosomal_medicine_family,
+    bench_medical_genetics_studies_family,
+    bench_mitochondrial_medicine_family,
+    bench_pharmacogenomics_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10226,6 +10234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medical_genetics_studies": bench_medical_genetics_studies_family,
+        "genetic_diagnostics": bench_genetic_diagnostics_family,
+        "lysosomal_medicine": bench_lysosomal_medicine_family,
+        "mitochondrial_medicine": bench_mitochondrial_medicine_family,
+        "dysmorphology_studies": bench_dysmorphology_studies_family,
+        "pharmacogenomics_studies": bench_pharmacogenomics_studies_family,
         "geriatrics_studies": bench_geriatrics_studies_family,
         "frailty_medicine": bench_frailty_medicine_family,
         "memory_clinic_studies": bench_memory_clinic_studies_family,
