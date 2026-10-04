@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-872 preconditioner canon.
+        "jacobi_precond",
+        "ilut_precond",
+        "ssor_precond",
+        "amg_precond",
+        "ic_precond",
+        "polynomial_precond",
         # Wave-871 Krylov-solver canon.
         "cg_solver",
         "gmres_solver",
