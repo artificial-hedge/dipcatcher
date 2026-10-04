@@ -1,3 +1,4 @@
+w1298 agentic-eval canon: browse_eval_studies, os_world_studies, swe_bench_studies, terminal_bench_studies, tool_use_eval_studies, web_arena_studies (7737->7743)
 w1297 eval-science canon: benchmark_gaming_studies, benchmark_saturate_studies, contamination_studies, eval_coverage_studies, eval_reliability_studies, lm_eval_harness_studies (7731->7737)
 w1296 reward-modeling-2 canon: ensemble_rm_studies, judge_reward_studies, margin_reward_studies, reward_hacking_studies, reward_uncertainty_studies, rm_btd_studies (7725->7731)
 w1295 mech-anomaly/jailbreak canon: activation_patch_studies, circuit_tracer_studies, feature_dashboard_studies, jailbreak_detect_studies, mech_anomaly_studies, sae_linter_studies (7719->7725)

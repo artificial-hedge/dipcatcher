@@ -10375,6 +10375,14 @@ from quant_fund.research.benches_w1297 import (
     bench_eval_reliability_studies_family,
     bench_lm_eval_harness_studies_family,
 )
+from quant_fund.research.benches_w1298 import (
+    bench_browse_eval_studies_family,
+    bench_os_world_studies_family,
+    bench_swe_bench_studies_family,
+    bench_terminal_bench_studies_family,
+    bench_tool_use_eval_studies_family,
+    bench_web_arena_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10980,6 +10988,12 @@ def _provenance(
         "eval_coverage_studies": bench_eval_coverage_studies_family,
         "eval_reliability_studies": bench_eval_reliability_studies_family,
         "lm_eval_harness_studies": bench_lm_eval_harness_studies_family,
+        "browse_eval_studies": bench_browse_eval_studies_family,
+        "os_world_studies": bench_os_world_studies_family,
+        "swe_bench_studies": bench_swe_bench_studies_family,
+        "terminal_bench_studies": bench_terminal_bench_studies_family,
+        "tool_use_eval_studies": bench_tool_use_eval_studies_family,
+        "web_arena_studies": bench_web_arena_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
