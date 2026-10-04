@@ -9871,6 +9871,14 @@ from quant_fund.research.benches_w1234 import (
     bench_pelvic_health_studies_family,
     bench_urogynecology_studies_family,
 )
+from quant_fund.research.benches_w1235 import (
+    bench_connective_tissue_studies_family,
+    bench_inflammatory_arthritis_studies_family,
+    bench_myositis_studies_family,
+    bench_osteoarthritis_studies_family,
+    bench_rheumatology_medicine_family,
+    bench_spondyloarthritis_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10242,6 +10250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rheumatology_medicine": bench_rheumatology_medicine_family,
+        "spondyloarthritis_studies": bench_spondyloarthritis_studies_family,
+        "inflammatory_arthritis_studies": bench_inflammatory_arthritis_studies_family,
+        "connective_tissue_studies": bench_connective_tissue_studies_family,
+        "osteoarthritis_studies": bench_osteoarthritis_studies_family,
+        "myositis_studies": bench_myositis_studies_family,
         "menopause_medicine": bench_menopause_medicine_family,
         "urogynecology_studies": bench_urogynecology_studies_family,
         "breast_medicine": bench_breast_medicine_family,
