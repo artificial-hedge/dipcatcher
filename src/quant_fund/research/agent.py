@@ -12727,6 +12727,14 @@ from quant_fund.research.benches_w1591 import (
     bench_uakari_qa_studies_family,
     bench_woolly_qa_studies_family,
 )
+from quant_fund.research.benches_w1592 import (
+    bench_bushbaby_qa_studies_family,
+    bench_galago_qa_studies_family,
+    bench_indri_qa_studies_family,
+    bench_loris_qa_studies_family,
+    bench_potto_qa_studies_family,
+    bench_tarsier_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14780,6 +14788,12 @@ def _provenance(
         "capuchin_qa_studies": bench_capuchin_qa_studies_family,
         "saki_qa_studies": bench_saki_qa_studies_family,
         "squirrel_monkey_qa_studies": bench_squirrel_monkey_qa_studies_family,
+        "bushbaby_qa_studies": bench_bushbaby_qa_studies_family,
+        "galago_qa_studies": bench_galago_qa_studies_family,
+        "indri_qa_studies": bench_indri_qa_studies_family,
+        "loris_qa_studies": bench_loris_qa_studies_family,
+        "potto_qa_studies": bench_potto_qa_studies_family,
+        "tarsier_qa_studies": bench_tarsier_qa_studies_family,
         "titi_qa_studies": bench_titi_qa_studies_family,
         "uakari_qa_studies": bench_uakari_qa_studies_family,
         "woolly_qa_studies": bench_woolly_qa_studies_family,
