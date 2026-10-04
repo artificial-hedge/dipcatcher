@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-904 balanced-tree canon.
+        "avl_tree",
+        "red_black_tree",
+        "splay_tree",
+        "treap",
+        "scapegoat_tree",
+        "aa_tree",
         # Wave-903 hash-table canon.
         "cuckoo_hash",
         "hopscotch_hash",
