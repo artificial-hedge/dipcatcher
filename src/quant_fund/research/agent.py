@@ -11327,6 +11327,14 @@ from quant_fund.research.benches_w1416 import (
     bench_credit_qa_studies_family,
     bench_earnings_qa_studies_family,
 )
+from quant_fund.research.benches_w1417 import (
+    bench_checklist_qa_studies_family,
+    bench_flow_qa_studies_family,
+    bench_guide_qa_studies_family,
+    bench_howto_qa_studies_family,
+    bench_instruct_qa_studies_family,
+    bench_lesson_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12489,6 +12497,12 @@ def _provenance(
         "broker_qa_studies": bench_broker_qa_studies_family,
         "credit_qa_studies": bench_credit_qa_studies_family,
         "earnings_qa_studies": bench_earnings_qa_studies_family,
+        "checklist_qa_studies": bench_checklist_qa_studies_family,
+        "flow_qa_studies": bench_flow_qa_studies_family,
+        "guide_qa_studies": bench_guide_qa_studies_family,
+        "howto_qa_studies": bench_howto_qa_studies_family,
+        "instruct_qa_studies": bench_instruct_qa_studies_family,
+        "lesson_qa_studies": bench_lesson_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
