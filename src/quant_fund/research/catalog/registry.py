@@ -3229,6 +3229,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "homework_qa_studies",
         "lecture_qa_studies",
         "seminar_qa_studies",
+        # Wave-1424 design-spec canon.
+        "blueprint_qa_studies",
+        "design_qa_studies",
+        "format_qa_studies",
+        "layout_qa_studies",
+        "pattern_qa_studies",
+        "schema_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

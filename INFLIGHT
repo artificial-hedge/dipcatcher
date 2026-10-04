@@ -1,3 +1,4 @@
+w1424 design-spec canon: blueprint_qa_studies, design_qa_studies, format_qa_studies, layout_qa_studies, pattern_qa_studies, schema_qa_studies (8493->8499)
 w1423 education canon: class_qa_studies, course_qa_studies, exam_qa_studies, homework_qa_studies, lecture_qa_studies, seminar_qa_studies (8487->8493)
 w1422 temporal-era canon: calendar_qa_studies, century_qa_studies, date_qa_studies, decade_qa_studies, epoch_qa_studies, era_qa_studies (8481->8487)
 w1421 spatial-navigation canon: geospatial_qa_studies, itinerary_qa_studies, journey_qa_studies, route_qa_studies, spatial_qa_studies, terrain_qa_studies (8475->8481)
