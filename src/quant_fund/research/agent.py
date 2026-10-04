@@ -14007,6 +14007,14 @@ from quant_fund.research.benches_w1751 import (
     bench_neith_qa_studies_family,
     bench_sobek_qa_studies_family,
 )
+from quant_fund.research.benches_w1752 import (
+    bench_nereus_qa_studies_family,
+    bench_phorcys_qa_studies_family,
+    bench_pontus_qa_studies_family,
+    bench_proteus_qa_studies_family,
+    bench_thaumas_qa_studies_family,
+    bench_triton_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
