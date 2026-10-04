@@ -14207,6 +14207,14 @@ from quant_fund.research.benches_w1776 import (
     bench_samshin_qa_studies_family,
     bench_shimchong_qa_studies_family,
 )
+from quant_fund.research.benches_w1777 import (
+    bench_barong_qa_studies_family,
+    bench_garuda_qa_studies_family,
+    bench_nyai_qa_studies_family,
+    bench_raksasa_qa_studies_family,
+    bench_rangda_qa_studies_family,
+    bench_semar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

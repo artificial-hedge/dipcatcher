@@ -5700,6 +5700,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pyonggang_qa_studies",
         "samshin_qa_studies",
         "shimchong_qa_studies",
+        # Wave-1777 indonesian-myth canon.
+        "barong_qa_studies",
+        "garuda_qa_studies",
+        "nyai_qa_studies",
+        "raksasa_qa_studies",
+        "rangda_qa_studies",
+        "semar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
