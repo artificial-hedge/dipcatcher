@@ -9815,6 +9815,14 @@ from quant_fund.research.benches_w1227 import (
     bench_pediatric_imaging_family,
     bench_radiology_studies_family,
 )
+from quant_fund.research.benches_w1228 import (
+    bench_dental_studies_family,
+    bench_endodontic_studies_family,
+    bench_oral_surgery_studies_family,
+    bench_orthodontic_studies_family,
+    bench_pediatric_dentistry_family,
+    bench_periodontal_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10186,6 +10194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dental_studies": bench_dental_studies_family,
+        "oral_surgery_studies": bench_oral_surgery_studies_family,
+        "endodontic_studies": bench_endodontic_studies_family,
+        "periodontal_studies": bench_periodontal_studies_family,
+        "orthodontic_studies": bench_orthodontic_studies_family,
+        "pediatric_dentistry": bench_pediatric_dentistry_family,
         "radiology_studies": bench_radiology_studies_family,
         "diagnostic_imaging": bench_diagnostic_imaging_family,
         "interventional_neuroradiology": bench_interventional_neuroradiology_family,
