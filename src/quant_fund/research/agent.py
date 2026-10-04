@@ -11599,6 +11599,14 @@ from quant_fund.research.benches_w1450 import (
     bench_pig_qa_studies_family,
     bench_sheep_qa_studies_family,
 )
+from quant_fund.research.benches_w1451 import (
+    bench_apple_qa_studies_family,
+    bench_cherry_qa_studies_family,
+    bench_grape_qa_studies_family,
+    bench_lemon_qa_studies_family,
+    bench_mango_qa_studies_family,
+    bench_peach_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12965,6 +12973,12 @@ def _provenance(
         "horse_qa_studies": bench_horse_qa_studies_family,
         "pig_qa_studies": bench_pig_qa_studies_family,
         "sheep_qa_studies": bench_sheep_qa_studies_family,
+        "apple_qa_studies": bench_apple_qa_studies_family,
+        "cherry_qa_studies": bench_cherry_qa_studies_family,
+        "grape_qa_studies": bench_grape_qa_studies_family,
+        "lemon_qa_studies": bench_lemon_qa_studies_family,
+        "mango_qa_studies": bench_mango_qa_studies_family,
+        "peach_qa_studies": bench_peach_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

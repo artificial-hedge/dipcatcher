@@ -3418,6 +3418,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "horse_qa_studies",
         "pig_qa_studies",
         "sheep_qa_studies",
+        # Wave-1451 fruit canon.
+        "apple_qa_studies",
+        "cherry_qa_studies",
+        "grape_qa_studies",
+        "lemon_qa_studies",
+        "mango_qa_studies",
+        "peach_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
