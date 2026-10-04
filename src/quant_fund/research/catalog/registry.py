@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1245 oncology-subspecialty canon.
+        "medical_oncology_studies",
+        "immuno_oncology_studies",
+        "targeted_therapy_studies",
+        "breast_oncology_studies",
+        "thoracic_oncology_studies",
+        "gi_oncology_studies",
         # Wave-1244 imaging-modality canon.
         "neuroradiology_studies",
         "mammography_studies",
