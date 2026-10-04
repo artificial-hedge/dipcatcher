@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-837 convex-geometry canon.
+        "brunn_minkowski",
+        "alexandrov_fenchel",
+        "isoperimetric_ineq",
+        "minkowski_sum",
+        "mixed_volume",
+        "helly_theorem",
         # Wave-836 integral-geometry canon.
         "crofton_formula",
         "kinematic_measure",

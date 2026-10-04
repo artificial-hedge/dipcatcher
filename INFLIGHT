@@ -1,3 +1,4 @@
+feat(research): wave 837 — convex-geometry canon (brunn_minkowski, alexandrov_fenchel, isoperimetric_ineq, minkowski_sum, mixed_volume, helly_theorem) (4971->4977 families)
 feat(research): wave 836 — integral-geometry canon (crofton_formula, kinematic_measure, buffon_needle, santalo_measure, kubota_mean_width, hadwiger_chars) (4965->4971 families)
 feat(research): wave 835 — stochastic-geometry canon (poisson_voronoi, boolean_model, germ_grain, steiner_formula, miles_matheron, intrinsic_volumes) (4959->4965 families)
 feat(research): wave 834 — Markov-semigroup canon (dirichlet_form, markov_semigroup, poincare_semigroup, log_sobolev_sem, hypercontractive, spectral_gap_sem) (4953->4959 families)
