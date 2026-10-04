@@ -6807,6 +6807,14 @@ from quant_fund.research.benches_w851 import (
     bench_penalty_dg_family,
     bench_rkdg_step_family,
 )
+from quant_fund.research.benches_w852 import (
+    bench_bem_kernel_family,
+    bench_fast_multipole_family,
+    bench_fredholm_solve_family,
+    bench_galerkin_bem_family,
+    bench_nystrom_method_family,
+    bench_singular_integrals_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7178,6 +7186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bem_kernel": bench_bem_kernel_family,
+        "fredholm_solve": bench_fredholm_solve_family,
+        "nystrom_method": bench_nystrom_method_family,
+        "singular_integrals": bench_singular_integrals_family,
+        "fast_multipole": bench_fast_multipole_family,
+        "galerkin_bem": bench_galerkin_bem_family,
         "dg_discretization": bench_dg_discretization_family,
         "numerical_flux_dg": bench_numerical_flux_dg_family,
         "penalty_dg": bench_penalty_dg_family,
