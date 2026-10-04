@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1400 KG-QA canon.
+        "cronqa_lite_studies",
+        "cwq_lite_studies",
+        "grailqa_studies",
+        "kgqa_lite_studies",
+        "pweb_qa_studies",
+        "qald_lite_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

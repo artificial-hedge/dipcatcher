@@ -11191,6 +11191,14 @@ from quant_fund.research.benches_w1399 import (
     bench_trivia_lite_studies_family,
     bench_xor_tydi_studies_family,
 )
+from quant_fund.research.benches_w1400 import (
+    bench_cronqa_lite_studies_family,
+    bench_cwq_lite_studies_family,
+    bench_grailqa_studies_family,
+    bench_kgqa_lite_studies_family,
+    bench_pweb_qa_studies_family,
+    bench_qald_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12257,6 +12265,12 @@ def _provenance(
         "nq_lite_studies": bench_nq_lite_studies_family,
         "trivia_lite_studies": bench_trivia_lite_studies_family,
         "xor_tydi_studies": bench_xor_tydi_studies_family,
+        "cronqa_lite_studies": bench_cronqa_lite_studies_family,
+        "cwq_lite_studies": bench_cwq_lite_studies_family,
+        "grailqa_studies": bench_grailqa_studies_family,
+        "kgqa_lite_studies": bench_kgqa_lite_studies_family,
+        "pweb_qa_studies": bench_pweb_qa_studies_family,
+        "qald_lite_studies": bench_qald_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
