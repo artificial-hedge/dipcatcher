@@ -4629,6 +4629,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "monal_qa_studies",
         "snow_partridge_qa_studies",
         "wallcreeper_qa_studies",
+        # Wave-1624 tundra canon.
+        "arctic_hare_qa_studies",
+        "gyrfalcon_qa_studies",
+        "pallas_manul_qa_studies",
+        "ptarmigan_qa_studies",
+        "snowshoe_qa_studies",
+        "tundra_swan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
