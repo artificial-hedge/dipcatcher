@@ -4279,6 +4279,14 @@ from quant_fund.research.benches_w535 import (
     bench_symbol_calc_family,
     bench_wavefront_set_family,
 )
+from quant_fund.research.benches_w536 import (
+    bench_contact_geom_family,
+    bench_gromov_nonsq_family,
+    bench_hamiltonian_flow_family,
+    bench_lagrangian_mfd_family,
+    bench_poisson_bracket_family,
+    bench_symplectic_form_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4658,6 +4666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "symplectic_form": bench_symplectic_form_family,
+        "lagrangian_mfd": bench_lagrangian_mfd_family,
+        "hamiltonian_flow": bench_hamiltonian_flow_family,
+        "poisson_bracket": bench_poisson_bracket_family,
+        "contact_geom": bench_contact_geom_family,
+        "gromov_nonsq": bench_gromov_nonsq_family,
         "wavefront_set": bench_wavefront_set_family,
         "pseudodiff_op": bench_pseudodiff_op_family,
         "fourier_io": bench_fourier_io_family,
