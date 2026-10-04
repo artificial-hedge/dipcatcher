@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1347 logical-reasoning-eval canon.
+        "abductive_nli_studies",
+        "conseq_log_studies",
+        "logiqa_log_studies",
+        "lsat_log_studies",
+        "reason_mc_studies",
+        "recli_log_studies",
         # Wave-1346 KB-QA canon.
         "grail_qa_studies",
         "graph_questions_studies",
