@@ -4951,6 +4951,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lambana_qa_studies",
         "sarimanok_qa_studies",
         "tamahaling_qa_studies",
+        # Wave-1670 greek-spirit canon.
+        "alseid_qa_studies",
+        "gnome_volk_qa_studies",
+        "meliae_qa_studies",
+        "napaea_qa_studies",
+        "oread_qa_studies",
+        "sylph_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
