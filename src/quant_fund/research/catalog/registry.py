@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1040 robotics-engineering canon.
+        "robot_kinematics",
+        "robot_dynamics",
+        "motion_control",
+        "sensor_fusion",
+        "path_planning",
+        "actuator_design",
         # Wave-1039 environmental-engineering canon.
         "water_treatment",
         "air_pollution_control",
