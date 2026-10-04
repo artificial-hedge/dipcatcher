@@ -11943,6 +11943,14 @@ from quant_fund.research.benches_w1493 import (
     bench_topi_qa_studies_family,
     bench_waterbuck_qa_studies_family,
 )
+from quant_fund.research.benches_w1494 import (
+    bench_anole_qa_studies_family,
+    bench_chameleon_qa_studies_family,
+    bench_hognose_qa_studies_family,
+    bench_skink_qa_studies_family,
+    bench_terrapin_qa_studies_family,
+    bench_tuatara_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13531,6 +13539,12 @@ def _provenance(
         "quoll_qa_studies": bench_quoll_qa_studies_family,
         "thylacine_qa_studies": bench_thylacine_qa_studies_family,
         "bongo_qa_studies": bench_bongo_qa_studies_family,
+        "anole_qa_studies": bench_anole_qa_studies_family,
+        "chameleon_qa_studies": bench_chameleon_qa_studies_family,
+        "hognose_qa_studies": bench_hognose_qa_studies_family,
+        "skink_qa_studies": bench_skink_qa_studies_family,
+        "terrapin_qa_studies": bench_terrapin_qa_studies_family,
+        "tuatara_qa_studies": bench_tuatara_qa_studies_family,
         "duiker_qa_studies": bench_duiker_qa_studies_family,
         "hartebeest_qa_studies": bench_hartebeest_qa_studies_family,
         "nyala_qa_studies": bench_nyala_qa_studies_family,

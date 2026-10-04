@@ -3719,6 +3719,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nyala_qa_studies",
         "topi_qa_studies",
         "waterbuck_qa_studies",
+        # Wave-1494 reptile-2 canon.
+        "anole_qa_studies",
+        "chameleon_qa_studies",
+        "hognose_qa_studies",
+        "skink_qa_studies",
+        "terrapin_qa_studies",
+        "tuatara_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
