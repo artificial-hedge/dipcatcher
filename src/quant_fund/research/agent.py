@@ -15223,6 +15223,14 @@ from quant_fund.research.benches_w1903 import (
     bench_vodyanoy_qa_studies_family,
     bench_zmey_gorynych_qa_studies_family,
 )
+from quant_fund.research.benches_w1904 import (
+    bench_futakuchi_onna_qa_studies_family,
+    bench_ittan_momen_qa_studies_family,
+    bench_kasa_obake_qa_studies_family,
+    bench_mikoshi_nyudo_qa_studies_family,
+    bench_sunakake_babaa_qa_studies_family,
+    bench_umibozu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
