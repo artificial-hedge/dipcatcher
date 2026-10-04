@@ -8911,6 +8911,14 @@ from quant_fund.research.benches_w1114 import (
     bench_quantum_mechanics_2_family,
     bench_statistical_mechanics_2_family,
 )
+from quant_fund.research.benches_w1115 import (
+    bench_financial_economics_family,
+    bench_industrial_organization_family,
+    bench_international_economics_family,
+    bench_labor_economics_family,
+    bench_monetary_economics_family,
+    bench_public_economics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9282,6 +9290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "labor_economics": bench_labor_economics_family,
+        "public_economics": bench_public_economics_family,
+        "industrial_organization": bench_industrial_organization_family,
+        "international_economics": bench_international_economics_family,
+        "financial_economics": bench_financial_economics_family,
+        "monetary_economics": bench_monetary_economics_family,
         "classical_mechanics": bench_classical_mechanics_family,
         "quantum_mechanics_2": bench_quantum_mechanics_2_family,
         "statistical_mechanics_2": bench_statistical_mechanics_2_family,
