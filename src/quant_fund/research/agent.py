@@ -12999,6 +12999,14 @@ from quant_fund.research.benches_w1625 import (
     bench_grotto_salamander_qa_studies_family,
     bench_proteus_qa_studies_family,
 )
+from quant_fund.research.benches_w1626 import (
+    bench_bondolo_qa_studies_family,
+    bench_madame_berthe_qa_studies_family,
+    bench_mittermeier_qa_studies_family,
+    bench_northern_qa_studies_family,
+    bench_southern_qa_studies_family,
+    bench_western_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15177,6 +15185,12 @@ def _provenance(
         "cave_swiftlet_qa_studies": bench_cave_swiftlet_qa_studies_family,
         "grotto_salamander_qa_studies": bench_grotto_salamander_qa_studies_family,
         "proteus_qa_studies": bench_proteus_qa_studies_family,
+        "bondolo_qa_studies": bench_bondolo_qa_studies_family,
+        "madame_berthe_qa_studies": bench_madame_berthe_qa_studies_family,
+        "mittermeier_qa_studies": bench_mittermeier_qa_studies_family,
+        "northern_qa_studies": bench_northern_qa_studies_family,
+        "southern_qa_studies": bench_southern_qa_studies_family,
+        "western_qa_studies": bench_western_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,

@@ -4643,6 +4643,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cave_swiftlet_qa_studies",
         "grotto_salamander_qa_studies",
         "proteus_qa_studies",
+        # Wave-1626 lemur-region canon.
+        "bondolo_qa_studies",
+        "madame_berthe_qa_studies",
+        "mittermeier_qa_studies",
+        "northern_qa_studies",
+        "southern_qa_studies",
+        "western_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
