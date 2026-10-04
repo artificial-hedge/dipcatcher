@@ -1,3 +1,4 @@
+w1363 rumor-bias canon: age_bias_studies, curry_qa_studies, cw_qa2_studies, dialect_bias_studies, politi_fact_studies, rumor_twitter_studies (8127->8133)
 w1362 fake-news canon: check_that_studies, claim_buster_studies, emergent_lite_studies, fake_news_studies, snopes_lite_studies, stance_detect_studies (8121->8127)
 w1361 misinformation canon: covid_lies_studies, evidence_inf_studies, hoax_detect_studies, liar_lite_studies, rumor_eval_studies, scidtb_lite_studies (8115->8121)
 w1360 fact-check canon: bioasq_lite_studies, cite_worth_studies, climate_fever_studies, fever_lite_studies, touch_e_studies, verdict_qa_studies (8109->8115)
