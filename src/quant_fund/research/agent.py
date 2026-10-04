@@ -4151,6 +4151,14 @@ from quant_fund.research.benches_w519 import (
     bench_modular_form_family,
     bench_theta_func_family,
 )
+from quant_fund.research.benches_w520 import (
+    bench_converse_thm_family,
+    bench_gln_automorphic_family,
+    bench_godement_jacq_family,
+    bench_langlands_lfunc_family,
+    bench_rankin_selberg_family,
+    bench_whittaker_model_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4530,6 +4538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gln_automorphic": bench_gln_automorphic_family,
+        "whittaker_model": bench_whittaker_model_family,
+        "godement_jacq": bench_godement_jacq_family,
+        "rankin_selberg": bench_rankin_selberg_family,
+        "langlands_lfunc": bench_langlands_lfunc_family,
+        "converse_thm": bench_converse_thm_family,
         "modular_form": bench_modular_form_family,
         "hecke_op2": bench_hecke_op2_family,
         "eisenstein_srs2": bench_eisenstein_srs2_family,
