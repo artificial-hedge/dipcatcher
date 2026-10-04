@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-982 potential-theory-2 canon.
+        "dirichlet_problem",
+        "energy_principle",
+        "equilibrium_measure",
+        "thin_set",
+        "boundary_regular",
+        "capacitary_pot",
         # Wave-981 convex-geometry-2 canon.
         "john_ellipsoid",
         "loewner_ellipsoid",
