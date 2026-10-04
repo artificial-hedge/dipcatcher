@@ -343,7 +343,7 @@ class VSFileRec(BaseModel):
 
 class VSBatchRec(BaseModel):
     """One ``file_batch`` — members attach synchronously at create, so
-    ``status`` is always terminal (``completed`` when ≥1 file attached,
+    ``status`` is always terminal (``completed`` when ≥1 file indexed,
     ``failed`` when none did); ``files`` freezes each member's wire row
     at processing time — later detaches don't rewrite the batch's
     verdict."""
@@ -944,7 +944,7 @@ class VectorStoreStore:
         counts ``failed`` with its refusal as ``last_error`` — it never
         aborts the batch and never attaches half-validated. Status is
         terminal at return (sync attach): ``completed`` when ≥1 file
-        attached, ``failed`` when none did."""
+        indexed successfully, ``failed`` when none did."""
         if not file_ids or len(file_ids) > VS_MAX_BATCH_FILES:
             raise VectorStoreError(
                 400,
@@ -987,7 +987,7 @@ class VectorStoreStore:
                     }
                 )
             else:
-                counts["completed"] += 1
+                counts[rec["status"]] += 1
                 rows.append(rec)
         batch = VSBatchRec(
             batch_id=f"vsfb_{uuid.uuid4().hex}",
