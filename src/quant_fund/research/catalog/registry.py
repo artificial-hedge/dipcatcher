@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1369 math-word-problem canon.
+        "aime_eval_studies",
+        "asdiv_lite_studies",
+        "math500_lite_studies",
+        "mgsm_lite_studies",
+        "minerva_math_studies",
+        "svamp_lite_studies",
         # Wave-1368 translation-metric canon.
         "chr_f_studies",
         "mover_score_studies",
