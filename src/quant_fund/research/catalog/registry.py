@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1085 literary-periods canon.
+        "medieval_literature",
+        "renaissance_literature",
+        "romanticism",
+        "modernism",
+        "postmodernism",
+        "victorian_studies",
         # Wave-1084 comparative-literature canon.
         "comparative_literature",
         "literary_theory",
