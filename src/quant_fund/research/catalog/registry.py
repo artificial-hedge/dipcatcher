@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-606 algebraic-K-5 canon.
+        "connective_k",
+        "higher_k",
+        "k_spectrum",
+        "nil_k",
+        "karoubi_k",
+        "pedersen_weibel",
         # Wave-605 motivic-8 canon.
         "motivic_steenrod",
         "motivic_adem",
