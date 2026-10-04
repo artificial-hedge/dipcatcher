@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1351 ethics-eval canon.
+        "ethic_jiminy_studies",
+        "moral_exc_studies",
+        "moral_found_studies",
+        "principlism_toy_studies",
+        "scruples_lite_studies",
+        "virtue_ethics_studies",
         # Wave-1350 compositional-generalization canon.
         "dyck_lang_studies",
         "hops_add_studies",

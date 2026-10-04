@@ -1,3 +1,4 @@
+w1351 ethics-eval canon: ethic_jiminy_studies, moral_exc_studies, moral_found_studies, principlism_toy_studies, scruples_lite_studies, virtue_ethics_studies (8055->8061)
 w1350 compositional-generalization canon: dyck_lang_studies, hops_add_studies, lcmc_lite_studies, mco_lite_studies, scan_cfsp_studies, shuffle_expr_studies (8049->8055)
 w1349 GLUE-eval-2 canon: cola_lite_studies, qnli_lite_studies, qqp_lite_studies, sst2_lite_studies, stsb_lite_studies, wnli_lite_studies (8043->8049)
 w1348 NLI-eval canon: anli_r1_studies, anli_r2_studies, anli_r3_studies, mnli_match_studies, scitail_lite_studies, snli_lite_studies (8037->8043)
