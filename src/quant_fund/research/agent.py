@@ -10455,6 +10455,14 @@ from quant_fund.research.benches_w1307 import (
     bench_winograd_studies_family,
     bench_wsc_studies_family,
 )
+from quant_fund.research.benches_w1308 import (
+    bench_halu_eval_studies_family,
+    bench_infinite_bench_studies_family,
+    bench_longmem_studies_family,
+    bench_needle_haystack_studies_family,
+    bench_ruler_studies_family,
+    bench_truthful_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11111,6 +11119,12 @@ def _provenance(
         "wnli_studies": bench_wnli_studies_family,
         "lambada_studies": bench_lambada_studies_family,
         "record_studies": bench_record_studies_family,
+        "halu_eval_studies": bench_halu_eval_studies_family,
+        "infinite_bench_studies": bench_infinite_bench_studies_family,
+        "longmem_studies": bench_longmem_studies_family,
+        "needle_haystack_studies": bench_needle_haystack_studies_family,
+        "ruler_studies": bench_ruler_studies_family,
+        "truthful_qa_studies": bench_truthful_qa_studies_family,
         "story_cloze_studies": bench_story_cloze_studies_family,
         "winogender_studies": bench_winogender_studies_family,
         "winograd_studies": bench_winograd_studies_family,
