@@ -12591,6 +12591,14 @@ from quant_fund.research.benches_w1574 import (
     bench_marmoset_qa_studies_family,
     bench_tamarin_qa_studies_family,
 )
+from quant_fund.research.benches_w1575 import (
+    bench_chinchilla_qa_studies_family,
+    bench_degu_qa_studies_family,
+    bench_gerbil_qa_studies_family,
+    bench_hamster_qa_studies_family,
+    bench_lemming_qa_studies_family,
+    bench_vole_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14586,6 +14594,12 @@ def _provenance(
         "langur_qa_studies": bench_langur_qa_studies_family,
         "lemur_qa_studies": bench_lemur_qa_studies_family,
         "macaque_qa_studies": bench_macaque_qa_studies_family,
+        "chinchilla_qa_studies": bench_chinchilla_qa_studies_family,
+        "degu_qa_studies": bench_degu_qa_studies_family,
+        "gerbil_qa_studies": bench_gerbil_qa_studies_family,
+        "hamster_qa_studies": bench_hamster_qa_studies_family,
+        "lemming_qa_studies": bench_lemming_qa_studies_family,
+        "vole_qa_studies": bench_vole_qa_studies_family,
         "marmoset_qa_studies": bench_marmoset_qa_studies_family,
         "tamarin_qa_studies": bench_tamarin_qa_studies_family,
         "pangolin_qa_studies": bench_pangolin_qa_studies_family,
