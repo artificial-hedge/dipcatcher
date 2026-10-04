@@ -9903,6 +9903,14 @@ from quant_fund.research.benches_w1238 import (
     bench_vascular_lab_studies_family,
     bench_vascular_medicine_studies_family,
 )
+from quant_fund.research.benches_w1239 import (
+    bench_celiac_studies_family,
+    bench_gi_endoscopy_studies_family,
+    bench_hepatology_medicine_family,
+    bench_ibd_studies_family,
+    bench_motility_studies_family,
+    bench_pancreatic_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10274,6 +10282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gi_endoscopy_studies": bench_gi_endoscopy_studies_family,
+        "hepatology_medicine": bench_hepatology_medicine_family,
+        "pancreatic_medicine": bench_pancreatic_medicine_family,
+        "ibd_studies": bench_ibd_studies_family,
+        "celiac_studies": bench_celiac_studies_family,
+        "motility_studies": bench_motility_studies_family,
         "vascular_medicine_studies": bench_vascular_medicine_studies_family,
         "phlebology_studies": bench_phlebology_studies_family,
         "lymphatic_medicine": bench_lymphatic_medicine_family,
