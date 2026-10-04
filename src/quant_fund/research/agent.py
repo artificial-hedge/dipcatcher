@@ -9575,6 +9575,14 @@ from quant_fund.research.benches_w1197 import (
     bench_prenatal_studies_family,
     bench_rehabilitation_counseling_family,
 )
+from quant_fund.research.benches_w1198 import (
+    bench_electrodiagnostic_studies_family,
+    bench_hyperbaric_medicine_family,
+    bench_infusion_therapy_family,
+    bench_pain_management_family,
+    bench_sleep_medicine_family,
+    bench_wound_care_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9946,6 +9954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sleep_medicine": bench_sleep_medicine_family,
+        "pain_management": bench_pain_management_family,
+        "wound_care": bench_wound_care_family,
+        "infusion_therapy": bench_infusion_therapy_family,
+        "hyperbaric_medicine": bench_hyperbaric_medicine_family,
+        "electrodiagnostic_studies": bench_electrodiagnostic_studies_family,
         "addiction_counseling": bench_addiction_counseling_family,
         "rehabilitation_counseling": bench_rehabilitation_counseling_family,
         "genetic_screening": bench_genetic_screening_family,
