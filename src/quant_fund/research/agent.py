@@ -12063,6 +12063,14 @@ from quant_fund.research.benches_w1508 import (
     bench_warbler_qa_studies_family,
     bench_wren_qa_studies_family,
 )
+from quant_fund.research.benches_w1509 import (
+    bench_bunting_qa_studies_family,
+    bench_grosbeak_qa_studies_family,
+    bench_nuthatch_qa_studies_family,
+    bench_tanager_qa_studies_family,
+    bench_titmouse_qa_studies_family,
+    bench_vireo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13729,6 +13737,12 @@ def _provenance(
         "thrush_qa_studies": bench_thrush_qa_studies_family,
         "warbler_qa_studies": bench_warbler_qa_studies_family,
         "wren_qa_studies": bench_wren_qa_studies_family,
+        "bunting_qa_studies": bench_bunting_qa_studies_family,
+        "grosbeak_qa_studies": bench_grosbeak_qa_studies_family,
+        "nuthatch_qa_studies": bench_nuthatch_qa_studies_family,
+        "tanager_qa_studies": bench_tanager_qa_studies_family,
+        "titmouse_qa_studies": bench_titmouse_qa_studies_family,
+        "vireo_qa_studies": bench_vireo_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
