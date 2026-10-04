@@ -14143,6 +14143,14 @@ from quant_fund.research.benches_w1768 import (
     bench_nyambi_qa_studies_family,
     bench_oshumare_qa_studies_family,
 )
+from quant_fund.research.benches_w1769 import (
+    bench_angra_qa_studies_family,
+    bench_arash_qa_studies_family,
+    bench_haoma_qa_studies_family,
+    bench_simurgh_qa_studies_family,
+    bench_spenta_qa_studies_family,
+    bench_zal_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
