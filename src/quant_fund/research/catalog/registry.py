@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1375 scientific-summarization canon.
+        "facet_sum_studies",
+        "ms2_lite_studies",
+        "patent_sum_studies",
+        "sci_lay_studies",
+        "scitldr_lite_studies",
+        "spectrum_sum_studies",
         # Wave-1374 proof-entailment canon.
         "deduc_lite_studies",
         "entail_bank_studies",

@@ -1,3 +1,4 @@
+w1375 scientific-summarization canon: facet_sum_studies, ms2_lite_studies, patent_sum_studies, sci_lay_studies, scitldr_lite_studies, spectrum_sum_studies (8199->8205)
 w1374 proof-entailment canon: deduc_lite_studies, entail_bank_studies, folio_lite_studies, logic_nli_studies, proof_writer_studies, rule_taker_studies (8193->8199)
 w1373 commonsense-reasoning canon: commonsense_lite_studies, logi_qa_studies, mr_lite_studies, muin_lite_studies, qasc_sci2_studies, winogrande_lite_studies (8187->8193)
 w1372 long-doc-summarization canon: billsum_lite_studies, booksum_lite_studies, elm_lite_studies, govreport_lite_studies, qmsum_lite_studies, wikisum_lite_studies (8181->8187)

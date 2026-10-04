@@ -10991,6 +10991,14 @@ from quant_fund.research.benches_w1374 import (
     bench_proof_writer_studies_family,
     bench_rule_taker_studies_family,
 )
+from quant_fund.research.benches_w1375 import (
+    bench_facet_sum_studies_family,
+    bench_ms2_lite_studies_family,
+    bench_patent_sum_studies_family,
+    bench_sci_lay_studies_family,
+    bench_scitldr_lite_studies_family,
+    bench_spectrum_sum_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11907,6 +11915,12 @@ def _provenance(
         "logic_nli_studies": bench_logic_nli_studies_family,
         "proof_writer_studies": bench_proof_writer_studies_family,
         "rule_taker_studies": bench_rule_taker_studies_family,
+        "facet_sum_studies": bench_facet_sum_studies_family,
+        "ms2_lite_studies": bench_ms2_lite_studies_family,
+        "patent_sum_studies": bench_patent_sum_studies_family,
+        "sci_lay_studies": bench_sci_lay_studies_family,
+        "scitldr_lite_studies": bench_scitldr_lite_studies_family,
+        "spectrum_sum_studies": bench_spectrum_sum_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
