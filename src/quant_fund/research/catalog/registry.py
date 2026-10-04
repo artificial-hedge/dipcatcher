@@ -4202,6 +4202,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mandarinfish_qa_studies",
         "pipefish_qa_studies",
         "pufferfish_qa_studies",
+        # Wave-1563 crustacean canon.
+        "cleaner_shrimp_qa_studies",
+        "decorator_crab_qa_studies",
+        "hermit_crab_qa_studies",
+        "mantis_shrimp_qa_studies",
+        "pistol_shrimp_qa_studies",
+        "porcelain_crab_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
