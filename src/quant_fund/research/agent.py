@@ -13719,6 +13719,14 @@ from quant_fund.research.benches_w1715 import (
     bench_sabazios_qa_studies_family,
     bench_zamolxis_qa_studies_family,
 )
+from quant_fund.research.benches_w1716 import (
+    bench_heroas_qa_studies_family,
+    bench_kottiso_qa_studies_family,
+    bench_kotys_qa_studies_family,
+    bench_semele_qa_studies_family,
+    bench_theandrites_qa_studies_family,
+    bench_zibelthiurdos_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
