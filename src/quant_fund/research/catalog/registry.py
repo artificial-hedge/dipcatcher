@@ -4475,6 +4475,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fruit_bat_qa_studies",
         "mouse_eared_qa_studies",
         "tent_bat_qa_studies",
+        # Wave-1602 fossorial canon.
+        "desman_qa_studies",
+        "marsupial_mole_qa_studies",
+        "moles_lite_qa_studies",
+        "monotreme_qa_studies",
+        "moonrat_qa_studies",
+        "sengi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
