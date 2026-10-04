@@ -4727,6 +4727,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "futakuchi_qa_studies",
         "rokurokubi_qa_studies",
         "shirime_qa_studies",
+        # Wave-1638 yokai-4 canon.
+        "akaname_qa_studies",
+        "hitodama_qa_studies",
+        "ittanmomen_qa_studies",
+        "nurikabe_qa_studies",
+        "shikigami_qa_studies",
+        "ubume_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
