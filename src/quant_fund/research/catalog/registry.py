@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-809 Markov-chain canon.
+        "doeblin_coupling",
+        "harris_recurrent",
+        "ergodic_markov",
+        "mixing_time",
+        "drift_lyapunov",
+        "cutoff_phenomenon",
         # Wave-808 filtering canon.
         "zakai_eq",
         "kushner_strat",
