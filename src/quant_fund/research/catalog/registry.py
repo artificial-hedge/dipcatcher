@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1056 political-science canon.
+        "comparative_politics",
+        "international_relations",
+        "political_theory",
+        "public_administration",
+        "political_economy",
+        "electoral_systems",
         # Wave-1055 anthropology canon.
         "physical_anthropology",
         "cultural_anthropology",
