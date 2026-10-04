@@ -13951,6 +13951,14 @@ from quant_fund.research.benches_w1744 import (
     bench_tekkeitsertok_qa_studies_family,
     bench_torngarsuk_qa_studies_family,
 )
+from quant_fund.research.benches_w1745 import (
+    bench_altjira_qa_studies_family,
+    bench_bunyip_qa_studies_family,
+    bench_mimis_qa_studies_family,
+    bench_rainbow_serpent_qa_studies_family,
+    bench_wandjina_qa_studies_family,
+    bench_yowie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
