@@ -6673,6 +6673,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mazzik_qa_studies",
         "seirim_qa_studies",
         "shedim_qa_studies",
+        # Wave-1916 germanic-demon canon.
+        "alp_qa_studies",
+        "doppelganger_qa_studies",
+        "kobold_qa_studies",
+        "mahr_qa_studies",
+        "poltergeist_qa_studies",
+        "tatzelwurm_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
