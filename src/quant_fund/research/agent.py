@@ -11759,6 +11759,14 @@ from quant_fund.research.benches_w1470 import (
     bench_redwood_qa_studies_family,
     bench_sequoia_qa_studies_family,
 )
+from quant_fund.research.benches_w1471 import (
+    bench_crocus_qa_studies_family,
+    bench_daffodil_qa_studies_family,
+    bench_daisy_qa_studies_family,
+    bench_foxglove_qa_studies_family,
+    bench_iris_qa_studies_family,
+    bench_poppy_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13245,6 +13253,12 @@ def _provenance(
         "juniper_qa_studies": bench_juniper_qa_studies_family,
         "redwood_qa_studies": bench_redwood_qa_studies_family,
         "sequoia_qa_studies": bench_sequoia_qa_studies_family,
+        "crocus_qa_studies": bench_crocus_qa_studies_family,
+        "daffodil_qa_studies": bench_daffodil_qa_studies_family,
+        "daisy_qa_studies": bench_daisy_qa_studies_family,
+        "foxglove_qa_studies": bench_foxglove_qa_studies_family,
+        "iris_qa_studies": bench_iris_qa_studies_family,
+        "poppy_qa_studies": bench_poppy_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

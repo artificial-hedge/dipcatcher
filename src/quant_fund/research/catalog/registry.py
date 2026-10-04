@@ -3558,6 +3558,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "juniper_qa_studies",
         "redwood_qa_studies",
         "sequoia_qa_studies",
+        # Wave-1471 wildflower canon.
+        "crocus_qa_studies",
+        "daffodil_qa_studies",
+        "daisy_qa_studies",
+        "foxglove_qa_studies",
+        "iris_qa_studies",
+        "poppy_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
