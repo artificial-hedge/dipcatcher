@@ -12015,6 +12015,14 @@ from quant_fund.research.benches_w1502 import (
     bench_paca_qa_studies_family,
     bench_tamandua_qa_studies_family,
 )
+from quant_fund.research.benches_w1503 import (
+    bench_garter_qa_studies_family,
+    bench_keelback_qa_studies_family,
+    bench_kingsnake_qa_studies_family,
+    bench_mockviper_qa_studies_family,
+    bench_racer_qa_studies_family,
+    bench_sidewinder_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13645,6 +13653,12 @@ def _provenance(
         "opossum_qa_studies": bench_opossum_qa_studies_family,
         "paca_qa_studies": bench_paca_qa_studies_family,
         "tamandua_qa_studies": bench_tamandua_qa_studies_family,
+        "garter_qa_studies": bench_garter_qa_studies_family,
+        "keelback_qa_studies": bench_keelback_qa_studies_family,
+        "kingsnake_qa_studies": bench_kingsnake_qa_studies_family,
+        "mockviper_qa_studies": bench_mockviper_qa_studies_family,
+        "racer_qa_studies": bench_racer_qa_studies_family,
+        "sidewinder_qa_studies": bench_sidewinder_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
