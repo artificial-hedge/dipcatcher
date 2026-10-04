@@ -8415,6 +8415,14 @@ from quant_fund.research.benches_w1052 import (
     bench_nutritional_epidemiology_family,
     bench_sports_nutrition_family,
 )
+from quant_fund.research.benches_w1053 import (
+    bench_behavioral_neuroscience_family,
+    bench_clinical_psychology_family,
+    bench_cognitive_psychology_family,
+    bench_developmental_psychology_family,
+    bench_psychometrics_family,
+    bench_social_psychology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8786,6 +8794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cognitive_psychology": bench_cognitive_psychology_family,
+        "psychometrics": bench_psychometrics_family,
+        "behavioral_neuroscience": bench_behavioral_neuroscience_family,
+        "social_psychology": bench_social_psychology_family,
+        "developmental_psychology": bench_developmental_psychology_family,
+        "clinical_psychology": bench_clinical_psychology_family,
         "nutritional_biochemistry": bench_nutritional_biochemistry_family,
         "dietary_assessment": bench_dietary_assessment_family,
         "clinical_nutrition": bench_clinical_nutrition_family,
