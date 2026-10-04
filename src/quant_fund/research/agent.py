@@ -6063,6 +6063,14 @@ from quant_fund.research.benches_w758 import (
     bench_najafi_gff_family,
     bench_powell_gff_family,
 )
+from quant_fund.research.benches_w759 import (
+    bench_apu_cle_family,
+    bench_gwynne_cle_family,
+    bench_hospitsky_cle_family,
+    bench_nolin_cle_family,
+    bench_sun_cle_family,
+    bench_zhan_cle_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6442,6 +6450,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gwynne_cle": bench_gwynne_cle_family,
+        "hospitsky_cle": bench_hospitsky_cle_family,
+        "apu_cle": bench_apu_cle_family,
+        "nolin_cle": bench_nolin_cle_family,
+        "sun_cle": bench_sun_cle_family,
+        "zhan_cle": bench_zhan_cle_family,
         "powell_gff": bench_powell_gff_family,
         "aru_gff": bench_aru_gff_family,
         "ding_zeitouni": bench_ding_zeitouni_family,
