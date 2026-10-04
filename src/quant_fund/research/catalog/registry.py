@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1026 environmental-science canon.
+        "climate_model",
+        "ocean_circulation",
+        "atmospheric_chem",
+        "hydrology",
+        "carbon_cycle",
+        "ecosystem_model",
         # Wave-1025 social-science canon.
         "game_theory2",
         "behavioral_econ",

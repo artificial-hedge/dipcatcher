@@ -8199,6 +8199,14 @@ from quant_fund.research.benches_w1025 import (
     bench_political_science_family,
     bench_sociology_net_family,
 )
+from quant_fund.research.benches_w1026 import (
+    bench_atmospheric_chem_family,
+    bench_carbon_cycle_family,
+    bench_climate_model_family,
+    bench_ecosystem_model_family,
+    bench_hydrology_family,
+    bench_ocean_circulation_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8570,6 +8578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "climate_model": bench_climate_model_family,
+        "ocean_circulation": bench_ocean_circulation_family,
+        "atmospheric_chem": bench_atmospheric_chem_family,
+        "hydrology": bench_hydrology_family,
+        "carbon_cycle": bench_carbon_cycle_family,
+        "ecosystem_model": bench_ecosystem_model_family,
         "game_theory2": bench_game_theory2_family,
         "behavioral_econ": bench_behavioral_econ_family,
         "political_science": bench_political_science_family,
