@@ -8471,6 +8471,14 @@ from quant_fund.research.benches_w1059 import (
     bench_medieval_history_family,
     bench_modern_history_family,
 )
+from quant_fund.research.benches_w1060 import (
+    bench_assessment_theory_family,
+    bench_curriculum_design_family,
+    bench_educational_psychology_family,
+    bench_educational_technology_family,
+    bench_learning_sciences_family,
+    bench_pedagogy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8842,6 +8850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "curriculum_design": bench_curriculum_design_family,
+        "pedagogy": bench_pedagogy_family,
+        "educational_psychology": bench_educational_psychology_family,
+        "assessment_theory": bench_assessment_theory_family,
+        "learning_sciences": bench_learning_sciences_family,
+        "educational_technology": bench_educational_technology_family,
         "historiography": bench_historiography_family,
         "ancient_history": bench_ancient_history_family,
         "medieval_history": bench_medieval_history_family,
