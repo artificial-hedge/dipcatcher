@@ -1,3 +1,4 @@
+w1401 math-word-2 canon: alg514_lite_studies, dolphin_lite_studies, draw_lite_studies, lila_lite_studies, math_doc_studies, math_eval_studies (8355->8361)
 w1400 KG-QA canon: cronqa_lite_studies, cwq_lite_studies, grailqa_studies, kgqa_lite_studies, pweb_qa_studies, qald_lite_studies (8349->8355)
 w1399 retrieval-eval canon: asqa_lite_studies, eli5_lite_studies, fresh_qa_studies, nq_lite_studies, trivia_lite_studies, xor_tydi_studies (8343->8349)
 w1398 table-QA canon: doc2dial_studies, finqa_lite_studies, hybridqa_lite_studies, infotabs_studies, ottqa_lite_studies, tab_cwq_studies (8337->8343)
