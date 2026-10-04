@@ -13967,6 +13967,14 @@ from quant_fund.research.benches_w1746 import (
     bench_nisaba_qa_studies_family,
     bench_utu_qa_studies_family,
 )
+from quant_fund.research.benches_w1747 import (
+    bench_bragi_qa_studies_family,
+    bench_forseti_qa_studies_family,
+    bench_idun_qa_studies_family,
+    bench_sif_qa_studies_family,
+    bench_ullr_qa_studies_family,
+    bench_vidar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
