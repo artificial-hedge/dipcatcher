@@ -1,3 +1,4 @@
+feat(research): wave 1012 — nuclear/particle-physics canon (bcs_theory, nuclear_shell_model, nuclear_liquid_drop, quark_model, parton_model, cabibbo_km) (6021->6027 families)
 feat(research): wave 1011 — condensed-matter canon (bloch_theorem, tight_binding, phonon_spectrum, band_structure, hubbard_model, kondo_effect) (6015->6021 families)
 feat(research): wave 1010 — quantum-field-theory canon (klein_gordon, dirac_equation, feynman_rules, renormalization_group, path_integral_qm, canonical_quantization) (6009->6015 families)
 feat(research): wave 1009 — electrodynamics/optics canon (maxwell_equations, poynting_vector, fresnel_eq, wave_guides, dipole_radiation, lorentz_lorenz) (6003->6009 families)
