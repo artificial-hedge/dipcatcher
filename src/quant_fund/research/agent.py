@@ -12575,6 +12575,14 @@ from quant_fund.research.benches_w1572 import (
     bench_cornflower_qa_studies_family,
     bench_lupine_qa_studies_family,
 )
+from quant_fund.research.benches_w1573 import (
+    bench_addax_qa_studies_family,
+    bench_fennec_qa_studies_family,
+    bench_jerboa_qa_studies_family,
+    bench_meerkat_qa_studies_family,
+    bench_onager_qa_studies_family,
+    bench_pangolin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14561,6 +14569,12 @@ def _provenance(
         "bluebell_qa_studies": bench_bluebell_qa_studies_family,
         "buttercup_qa_studies": bench_buttercup_qa_studies_family,
         "columbine_qa_studies": bench_columbine_qa_studies_family,
+        "addax_qa_studies": bench_addax_qa_studies_family,
+        "fennec_qa_studies": bench_fennec_qa_studies_family,
+        "jerboa_qa_studies": bench_jerboa_qa_studies_family,
+        "meerkat_qa_studies": bench_meerkat_qa_studies_family,
+        "onager_qa_studies": bench_onager_qa_studies_family,
+        "pangolin_qa_studies": bench_pangolin_qa_studies_family,
         "cornflower_qa_studies": bench_cornflower_qa_studies_family,
         "lupine_qa_studies": bench_lupine_qa_studies_family,
         "mussel_qa_studies": bench_mussel_qa_studies_family,

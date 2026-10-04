@@ -4272,6 +4272,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "columbine_qa_studies",
         "cornflower_qa_studies",
         "lupine_qa_studies",
+        # Wave-1573 desert canon.
+        "addax_qa_studies",
+        "fennec_qa_studies",
+        "jerboa_qa_studies",
+        "meerkat_qa_studies",
+        "onager_qa_studies",
+        "pangolin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
