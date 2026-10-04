@@ -14047,6 +14047,14 @@ from quant_fund.research.benches_w1756 import (
     bench_rudra_qa_studies_family,
     bench_ushas_qa_studies_family,
 )
+from quant_fund.research.benches_w1757 import (
+    bench_aisling_qa_studies_family,
+    bench_brigid_qa_studies_family,
+    bench_dagda_qa_studies_family,
+    bench_danu_qa_studies_family,
+    bench_manannan_qa_studies_family,
+    bench_morgen_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
