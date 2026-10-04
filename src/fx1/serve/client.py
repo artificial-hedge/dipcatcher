@@ -1240,13 +1240,16 @@ class HarnessClient:
         *,
         rpm: int | None = None,
         ttl_s: float | None = None,
+        scopes: list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         """``POST /harness/keys`` — mint a managed API key. The raw
         ``key`` appears once in the response; it is never stored
         server-side. ``admin=True`` keys may manage keys on the wire;
         ``rpm`` bounds the key's request rate (over-limit answers 429),
-        ``ttl_s`` bakes an expiry. Requires the bootstrap credential on
-        the wire."""
+        ``ttl_s`` bakes an expiry. ``scopes`` bounds the key to
+        ``read``/``write``/``admin`` surface classes (out-of-scope calls
+        answer 403 ``insufficient_scope``). Requires the bootstrap
+        credential on the wire."""
         body: dict[str, Any] = {"admin": admin}
         if name is not None:
             body["name"] = name
@@ -1254,6 +1257,8 @@ class HarnessClient:
             body["rpm"] = rpm
         if ttl_s is not None:
             body["ttl_s"] = ttl_s
+        if scopes is not None:
+            body["scopes"] = list(scopes)
         return dict(self._json("POST", "/harness/keys", body))
 
     def keys(self) -> list[dict[str, Any]]:

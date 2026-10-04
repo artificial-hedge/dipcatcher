@@ -2550,8 +2550,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         keys_client.get("/harness/commands", headers={"X-API-Key": mkey}).status_code == 200
     )
     denied = keys_client.get("/harness/keys", headers={"X-API-Key": mkey})
+    # a default key's scopes are [read, write] — the control plane
+    # needs admin, so the scope layer refuses before the route's own
+    # admin check ever sees the request
     out["key_not_admin_403"] = (
-        denied.status_code == 403 and denied.json().get("code") == "admin_required"
+        denied.status_code == 403 and denied.json().get("code") == "insufficient_scope"
     )
     listed = keys_client.get("/harness/keys", headers=root_h)
     listed_rows = listed.json()["data"] if listed.status_code == 200 else []
@@ -2669,6 +2672,97 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and ttl_mint.json()["expires_at"] is not None
         and ttl_ok.status_code == 200
         and ttl_dead.status_code == 401
+    )
+    # --- key scopes: least-privilege read/write/admin on minted keys ----
+    # a read-only key serves safe methods and is refused on mutations and
+    # the control plane; the 403 carries ``insufficient_scope`` in the
+    # path's own error grammar.
+    ro_mint = keys_client.post("/harness/keys", json={"scopes": ["read"]}, headers=root_h)
+    ro_raw = str(ro_mint.json().get("key", ""))
+    out["key_scope_mint_201"] = (
+        ro_mint.status_code == 201
+        and ro_mint.json()["scopes"] == ["read"]
+        and ro_mint.json()["admin"] is False
+    )
+    out["key_scope_read_allows"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": ro_raw}).status_code == 200
+    )
+    ro_write = keys_client.post(
+        "/harness/complete",
+        json={"messages": [{"role": "user", "content": "x"}]},
+        headers={"X-API-Key": ro_raw},
+    )
+    ro_admin = keys_client.get("/harness/keys", headers={"X-API-Key": ro_raw})
+    out["key_scope_read_denies_write"] = (
+        ro_write.status_code == 403 and ro_write.json()["code"] == "insufficient_scope"
+    )
+    out["key_scope_read_denies_admin"] = (
+        ro_admin.status_code == 403 and ro_admin.json()["code"] == "insufficient_scope"
+    )
+    # ...in OpenAI/Anthropic wire grammar on the /v1 surface
+    ro_v1 = keys_client.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        headers={"X-API-Key": ro_raw},
+    )
+    ro_am = keys_client.post(
+        "/v1/messages",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}], "max_tokens": 8},
+        headers={"X-API-Key": ro_raw},
+    )
+    out["key_scope_v1_shape"] = (
+        ro_v1.status_code == 403
+        and ro_v1.json()["error"]["code"] == "insufficient_scope"
+        and ro_am.status_code == 403
+        and ro_am.json()["error"]["type"] == "permission_error"
+    )
+    # write-only is the mirror: mutations reach the gated pipeline (the
+    # clean backend 200s), reads refuse
+    wr_mint = keys_client.post("/harness/keys", json={"scopes": ["write"]}, headers=root_h)
+    wr_raw = str(wr_mint.json().get("key", ""))
+    wr_post = keys_client.post(
+        "/harness/gate/check", json={"text": "hi"}, headers={"X-API-Key": wr_raw}
+    )
+    out["key_scope_write_allows_write"] = wr_post.status_code == 200
+    out["key_scope_write_denies_read"] = (
+        keys_client.get("/harness/commands", headers={"X-API-Key": wr_raw}).status_code == 403
+    )
+    # an admin-scoped key (no flag) manages the control plane but cannot
+    # touch data-plane calls — scope is authoritative, not the flag
+    adm_mint = keys_client.post("/harness/keys", json={"scopes": ["admin"]}, headers=root_h)
+    adm_raw = str(adm_mint.json().get("key", ""))
+    out["key_scope_admin_scoped"] = (
+        adm_mint.status_code == 201
+        and adm_mint.json()["admin"] is True
+        and keys_client.get("/harness/keys", headers={"X-API-Key": adm_raw}).status_code == 200
+        and keys_client.post("/harness/keys", json={}, headers={"X-API-Key": adm_raw}).status_code
+        == 201
+        and keys_client.get("/harness/commands", headers={"X-API-Key": adm_raw}).status_code == 403
+    )
+    # admin=True unions its scope onto an explicit list — the flag is
+    # additive, never silently dropped by a narrower declaration
+    un_mint = keys_client.post(
+        "/harness/keys", json={"admin": True, "scopes": ["read"]}, headers=root_h
+    )
+    un_raw = str(un_mint.json().get("key", ""))
+    out["key_scope_admin_union"] = (
+        un_mint.status_code == 201
+        and un_mint.json()["scopes"] == ["read", "admin"]
+        and keys_client.get("/harness/keys", headers={"X-API-Key": un_raw}).status_code == 200
+        and keys_client.post(
+            "/harness/gate/check", json={"text": "hi"}, headers={"X-API-Key": un_raw}
+        ).status_code
+        == 403
+    )
+    out["key_scope_bad_400"] = (
+        keys_client.post("/harness/keys", json={"scopes": ["bogus"]}, headers=root_h).status_code
+        == 400
+        and keys_client.post("/harness/keys", json={"scopes": []}, headers=root_h).status_code
+        == 400
+    )
+    # a scoped refusal on drain is admin — the control plane is one scope
+    out["key_scope_drain_admin"] = (
+        keys_client.post("/harness/drain", headers={"X-API-Key": ro_raw}).status_code == 403
     )
     # no env key + empty store → loopback dev (admin); minting turns auth on
     noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))

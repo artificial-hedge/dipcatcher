@@ -1464,6 +1464,26 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "admin": False,
             "rpm": 5,
             "ttl_s": 60.0,
+            "scopes": None,
+        }
+        kc3 = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--name",
+                "svc",
+                "--scope",
+                "read",
+                "--scope",
+                "write",
+            ],
+        )
+        out["key_create_scope_forwards"] = kc3.exit_code == 0 and fake.last_key_kw == {
+            "admin": False,
+            "rpm": None,
+            "ttl_s": None,
+            "scopes": ["read", "write"],
         }
         kl = runner.invoke(app, ["harness", "keys"])
         out["key_list_json"] = (
@@ -2531,6 +2551,25 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "admin": False,
             "rpm": 5,
             "ttl_s": 60.0,
+            "scopes": None,
+        }
+        kc3 = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--remote",
+                "http://h.test",
+                "--scope",
+                "read",
+                "--admin",
+            ],
+        )
+        out["key_create_scope_remote"] = kc3.exit_code == 0 and remotes[-1].last_key_kw == {
+            "admin": True,
+            "rpm": None,
+            "ttl_s": None,
+            "scopes": ["read"],
         }
         kl = runner.invoke(app, ["harness", "keys", "--remote", "http://h.test"])
         out["key_list_remote"] = kl.exit_code == 0 and json.loads(kl.stdout)[0]["id"] == "krem"

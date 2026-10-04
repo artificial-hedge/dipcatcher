@@ -1292,6 +1292,11 @@ class ApiKeyCreateRequest(_Model):
     # mints the first admin key so an env-key-less deployment keeps a
     # control plane after provisioning turns auth on.
     admin: bool = False
+    # Least-privilege scopes: "read" (safe methods), "write" (data-plane
+    # mutations), "admin" (key management + drain). Unset keeps the
+    # pre-scope contract [read, write] (+admin for admin keys); the
+    # admin flag unions its scope onto an explicit list.
+    scopes: list[str] | None = None
     # Declared per-key policy, journaled at mint: rpm bounds the key to
     # a fixed 60 s request window (over-limit answers 429 + Retry-After);
     # ttl_s bakes an expiry — a dead credential fails closed like a
@@ -1308,6 +1313,7 @@ class ApiKeyMintResponse(_Model):
     name: str | None
     prefix: str
     admin: bool
+    scopes: list[str]
     rpm: int | None
     expires_at: float | None
     created_at: float
@@ -1323,6 +1329,7 @@ class ApiKeyRecordModel(_Model):
     name: str | None
     prefix: str
     admin: bool
+    scopes: list[str]
     rpm: int | None
     expires_at: float | None
     created_at: float
@@ -1343,6 +1350,10 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
         name=rec["name"],
         prefix=rec["prefix"],
         admin=bool(rec.get("admin")),
+        scopes=list(
+            rec.get("scopes")
+            or (["read", "write", "admin"] if rec.get("admin") else ["read", "write"])
+        ),
         rpm=rec.get("rpm"),
         expires_at=rec.get("expires_at"),
         created_at=rec["created_at"],
@@ -8062,25 +8073,55 @@ def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str,
     }
 
 
+def _required_scope(method: str, path: str) -> str:
+    """The scope a request needs: the control plane (key management,
+    drain) is ``admin`` on any method, safe methods are ``read``,
+    everything else is ``write``."""
+    if path == "/harness/keys" or path.startswith("/harness/keys/") or path == "/harness/drain":
+        return "admin"
+    if method in ("GET", "HEAD", "OPTIONS"):
+        return "read"
+    return "write"
+
+
+def _insufficient_scope(request: Request, scopes: frozenset[str] | None) -> JSONResponse | None:
+    """403 in the path's own error grammar when the resolved credential's
+    declared scopes don't cover this request — the 401 got the caller
+    authenticated; this is the authorization refusal. ``None`` scopes
+    (env key, loopback dev, public paths) are unrestricted."""
+    if scopes is None:
+        return None
+    required = _required_scope(request.method, request.url.path)
+    if required in scopes:
+        return None
+    msg = f"key lacks required scope {required!r}"
+    body: dict[str, Any] = {"detail": msg, "code": "insufficient_scope"}
+    if is_openai_path(request.url.path):
+        body = _v1_error_body(request.url.path, msg, 403, "insufficient_scope")
+    return JSONResponse(status_code=403, content=body)
+
+
 def _resolve_auth(
     request: Request,
     api_key: str | None,
     key_store: ApiKeyStore,
-) -> tuple[str | None, bool] | JSONResponse:
-    """Resolve the request's credential → ``(key_id, admin)``, or the
-    refusal response.
+) -> tuple[str | None, bool, frozenset[str] | None] | JSONResponse:
+    """Resolve the request's credential → ``(key_id, admin, scopes)``, or
+    the refusal response. ``scopes`` is the minted key's declared set;
+    ``None`` marks unrestricted credentials (env key, loopback dev,
+    public paths).
 
-    - Public paths: ``(None, False)`` — no auth consumed.
+    - Public paths: ``(None, False, None)`` — no auth consumed.
     - Auth enabled (env key set, or any managed key exists): the env key
-      resolves as ``("env", admin)``; a managed key resolves to
-      ``(key_id, admin_flag)`` — minted ``admin`` keys can manage keys
-      themselves; anything else 401s.
-    - Auth disabled: loopback resolves ``(None, admin=True)`` — the dev
+      resolves as ``("env", True, None)``; a managed key resolves to
+      ``(key_id, admin_flag, frozenset(scopes))`` — minted ``admin`` keys
+      can manage keys themselves; anything else 401s.
+    - Auth disabled: loopback resolves ``(None, True, None)`` — the dev
       surface is trusted and bootstraps key provisioning; non-loopback
       403s.
     """
     if request.url.path in _PUBLIC_PATHS:
-        return (None, False)
+        return (None, False, None)
     if api_key or key_store.has_keys:
         provided = request.headers.get("X-API-Key")
         # OpenAI-shape clients authenticate with Authorization: Bearer
@@ -8090,11 +8131,20 @@ def _resolve_auth(
             if auth_hdr.startswith("Bearer "):
                 provided = auth_hdr[len("Bearer ") :]
         if provided and api_key and hmac.compare_digest(provided, api_key):
-            return ("env", True)
+            return ("env", True, None)
         if provided:
             key_rec = key_store.authenticate(provided)
             if key_rec is not None:
-                return (key_rec["key_id"], bool(key_rec.get("admin")))
+                scopes = key_rec.get("scopes")
+                scope_set = frozenset(scopes) if isinstance(scopes, list) else None
+                scope_refusal = _insufficient_scope(request, scope_set)
+                if scope_refusal is not None:
+                    return scope_refusal
+                return (
+                    key_rec["key_id"],
+                    bool(key_rec.get("admin")),
+                    scope_set,
+                )
         content: dict[str, Any] = {
             "detail": "invalid or missing X-API-Key",
             "code": "unauthorized",
@@ -8119,7 +8169,7 @@ def _resolve_auth(
                 request.url.path, str(forbidden_body["detail"]), 403, "forbidden"
             )
         return JSONResponse(status_code=403, content=forbidden_body)
-    return (None, True)
+    return (None, True, None)
 
 
 def create_app(
@@ -8462,7 +8512,7 @@ def create_app(
         if isinstance(auth, JSONResponse):
             response = auth
         else:
-            key_id, admin = auth
+            key_id, admin, _scopes = auth
             request.state.key_id = key_id
             request.state.admin = admin
             if key_id is not None:
@@ -8568,6 +8618,7 @@ def create_app(
                 "anthropic_message_batches": True,
                 "anthropic_count_tokens": True,
                 "anthropic_models": True,
+                "key_scopes": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8727,7 +8778,9 @@ def create_app(
         bootstrap credential (``FX1_API_KEY``) or loopback dev mode."""
         _require_admin(request)
         try:
-            raw, rec = key_store.mint(body.name, admin=body.admin, rpm=body.rpm, ttl_s=body.ttl_s)
+            raw, rec = key_store.mint(
+                body.name, admin=body.admin, rpm=body.rpm, ttl_s=body.ttl_s, scopes=body.scopes
+            )
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
         return ApiKeyMintResponse(
@@ -8735,6 +8788,7 @@ def create_app(
             name=rec["name"],
             prefix=rec["prefix"],
             admin=bool(rec.get("admin")),
+            scopes=list(rec["scopes"]),
             rpm=rec.get("rpm"),
             expires_at=rec.get("expires_at"),
             created_at=rec["created_at"],

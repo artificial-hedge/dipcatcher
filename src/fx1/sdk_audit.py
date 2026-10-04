@@ -610,6 +610,22 @@ def sdk_audit() -> dict[str, bool]:
         _raises(lambda: sdk.key_create("x", rpm=0)) == "ValueError"
         and _raises(lambda: sdk.key_create("x", ttl_s=-1)) == "ValueError"
     )
+    # declared scopes ride the mint and read back on the record; unset
+    # keeps the [read, write] default and admin unions its scope
+    sco = sdk.key_create("scoped", scopes=["read"])
+    adm = sdk.key_create("rooted", admin=True, scopes=["read"])
+    out["key_scopes"] = (
+        mint["scopes"] == ["read", "write"]
+        and sco["scopes"] == ["read"]
+        and sco["admin"] is False
+        and sdk.key_get(sco["id"])["scopes"] == ["read"]
+        and adm["scopes"] == ["read", "admin"]
+        and adm["admin"] is True
+    )
+    out["key_scopes_bad_raises"] = (
+        _raises(lambda: sdk.key_create("x", scopes=["bogus"])) == "ValueError"
+        and _raises(lambda: sdk.key_create("x", scopes=[])) == "ValueError"
+    )
 
     # ---- /v1/vector_stores + file_search twin -------------------------------
     # in-process RAG: upload bytes → attach → search hits feed a

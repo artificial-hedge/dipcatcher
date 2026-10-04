@@ -1230,12 +1230,19 @@ def harness_key_create(
         "--ttl-s",
         help="Key expiry in seconds from mint — the credential dies after.",
     ),
+    scopes: list[str] = typer.Option(
+        [],
+        "--scope",
+        help="Bound the key to a surface class: read | write | admin (repeatable; unset = read+write).",
+    ),
 ) -> None:
     """Mint a managed API key — prints the mint record including the raw
     ``key``, which is shown once and never stored server-side. On
     ``--remote`` this needs the bootstrap credential (FX1_API_KEY)."""
     surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
-    out = _or_exit(lambda: surface.key_create(name, admin=admin, rpm=rpm, ttl_s=ttl_s))
+    out = _or_exit(
+        lambda: surface.key_create(name, admin=admin, rpm=rpm, ttl_s=ttl_s, scopes=scopes or None)
+    )
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
