@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-877 transport/SPn canon.
+        "transport_sn",
+        "discrete_ordinates",
+        "spherical_harmonics",
+        "spn_equations",
+        "moc_transport",
+        "pn_closure",
         # Wave-876 nonlinear-solver canon.
         "moore_penrose",
         "landweber_iter",
