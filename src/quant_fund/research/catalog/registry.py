@@ -5371,6 +5371,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "laume_qa_studies",
         "perkunas_qa_studies",
         "zemyna_qa_studies",
+        # Wave-1730 turkic-myth canon.
+        "aisit_qa_studies",
+        "bayna_qa_studies",
+        "kunkush_qa_studies",
+        "payna_qa_studies",
+        "taigan_qa_studies",
+        "yalyk_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

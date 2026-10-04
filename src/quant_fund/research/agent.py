@@ -13831,6 +13831,14 @@ from quant_fund.research.benches_w1729 import (
     bench_perkunas_qa_studies_family,
     bench_zemyna_qa_studies_family,
 )
+from quant_fund.research.benches_w1730 import (
+    bench_aisit_qa_studies_family,
+    bench_bayna_qa_studies_family,
+    bench_kunkush_qa_studies_family,
+    bench_payna_qa_studies_family,
+    bench_taigan_qa_studies_family,
+    bench_yalyk_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
