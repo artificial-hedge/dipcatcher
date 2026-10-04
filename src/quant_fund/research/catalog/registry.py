@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1096 environmental-2 canon.
+        "pollution_science",
+        "conservation_biology",
+        "environmental_toxicology",
+        "urban_ecology",
+        "landscape_ecology",
+        "marine_conservation",
         # Wave-1095 sociology-2 canon.
         "medical_sociology",
         "deviance_studies",
