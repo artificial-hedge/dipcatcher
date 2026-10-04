@@ -8423,6 +8423,14 @@ from quant_fund.research.benches_w1053 import (
     bench_psychometrics_family,
     bench_social_psychology_family,
 )
+from quant_fund.research.benches_w1054 import (
+    bench_criminology_family,
+    bench_demography_family,
+    bench_economic_sociology_family,
+    bench_social_networks_family,
+    bench_social_stratification_family,
+    bench_urban_sociology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8794,6 +8802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "social_networks": bench_social_networks_family,
+        "demography": bench_demography_family,
+        "criminology": bench_criminology_family,
+        "urban_sociology": bench_urban_sociology_family,
+        "economic_sociology": bench_economic_sociology_family,
+        "social_stratification": bench_social_stratification_family,
         "cognitive_psychology": bench_cognitive_psychology_family,
         "psychometrics": bench_psychometrics_family,
         "behavioral_neuroscience": bench_behavioral_neuroscience_family,
