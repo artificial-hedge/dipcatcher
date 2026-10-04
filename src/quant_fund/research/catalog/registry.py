@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1299 safety-eval canon.
+        "agent_harm_studies",
+        "harm_bench_studies",
+        "jailbreak_bench_studies",
+        "prompt_inject_studies",
+        "safety_bench_studies",
+        "xstest_studies",
         # Wave-1298 agentic-eval canon.
         "browse_eval_studies",
         "os_world_studies",
