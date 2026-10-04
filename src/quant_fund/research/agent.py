@@ -13439,6 +13439,14 @@ from quant_fund.research.benches_w1680 import (
     bench_tonatiuh_qa_studies_family,
     bench_xipe_qa_studies_family,
 )
+from quant_fund.research.benches_w1681 import (
+    bench_anansi_qa_studies_family,
+    bench_impundulu_qa_studies_family,
+    bench_kalulu_qa_studies_family,
+    bench_mamiwata_qa_studies_family,
+    bench_sasabonsam_qa_studies_family,
+    bench_tokoloshe_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

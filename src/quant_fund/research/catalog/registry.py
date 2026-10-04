@@ -5028,6 +5028,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tlaloc_qa_studies",
         "tonatiuh_qa_studies",
         "xipe_qa_studies",
+        # Wave-1681 african-myth canon.
+        "anansi_qa_studies",
+        "impundulu_qa_studies",
+        "kalulu_qa_studies",
+        "mamiwata_qa_studies",
+        "sasabonsam_qa_studies",
+        "tokoloshe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
