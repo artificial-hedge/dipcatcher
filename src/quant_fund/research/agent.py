@@ -4799,6 +4799,14 @@ from quant_fund.research.benches_w600 import (
     bench_operad_cobar_family,
     bench_operadic_bar_family,
 )
+from quant_fund.research.benches_w601 import (
+    bench_derived_loop_family,
+    bench_derived_tangent_family,
+    bench_dg_algebra_family,
+    bench_e_infinity_ring_family,
+    bench_structured_space_family,
+    bench_virtual_fund_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5178,6 +5186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dg_algebra": bench_dg_algebra_family,
+        "derived_loop": bench_derived_loop_family,
+        "derived_tangent": bench_derived_tangent_family,
+        "virtual_fund": bench_virtual_fund_family,
+        "structured_space": bench_structured_space_family,
+        "e_infinity_ring": bench_e_infinity_ring_family,
         "a_infty_alg": bench_a_infty_alg_family,
         "l_infty_alg": bench_l_infty_alg_family,
         "koszul_duality": bench_koszul_duality_family,
