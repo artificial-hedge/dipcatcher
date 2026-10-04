@@ -8511,6 +8511,14 @@ from quant_fund.research.benches_w1064 import (
     bench_social_work_family,
     bench_urban_studies_family,
 )
+from quant_fund.research.benches_w1065 import (
+    bench_cartography_family,
+    bench_climatology_family,
+    bench_geomorphology_family,
+    bench_human_geography_family,
+    bench_physical_geography_family,
+    bench_remote_sensing_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8882,6 +8890,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "physical_geography": bench_physical_geography_family,
+        "human_geography": bench_human_geography_family,
+        "cartography": bench_cartography_family,
+        "remote_sensing": bench_remote_sensing_family,
+        "geomorphology": bench_geomorphology_family,
+        "climatology": bench_climatology_family,
         "social_work": bench_social_work_family,
         "public_policy": bench_public_policy_family,
         "urban_studies": bench_urban_studies_family,

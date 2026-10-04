@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1065 geography canon.
+        "physical_geography",
+        "human_geography",
+        "cartography",
+        "remote_sensing",
+        "geomorphology",
+        "climatology",
         # Wave-1064 social-work/policy canon.
         "social_work",
         "public_policy",
