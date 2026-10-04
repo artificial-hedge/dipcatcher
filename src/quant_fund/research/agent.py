@@ -10503,6 +10503,14 @@ from quant_fund.research.benches_w1313 import (
     bench_strip_defense_studies_family,
     bench_watermark_studies_family,
 )
+from quant_fund.research.benches_w1314 import (
+    bench_attribute_infer_studies_family,
+    bench_extraction_studies_family,
+    bench_inversion_studies_family,
+    bench_model_stealing_studies_family,
+    bench_property_infer_studies_family,
+    bench_reconstruction_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11175,6 +11183,12 @@ def _provenance(
         "lab_bench_studies": bench_lab_bench_studies_family,
         "malicious_instruct_studies": bench_malicious_instruct_studies_family,
         "abs_scan_studies": bench_abs_scan_studies_family,
+        "attribute_infer_studies": bench_attribute_infer_studies_family,
+        "extraction_studies": bench_extraction_studies_family,
+        "inversion_studies": bench_inversion_studies_family,
+        "model_stealing_studies": bench_model_stealing_studies_family,
+        "property_infer_studies": bench_property_infer_studies_family,
+        "reconstruction_studies": bench_reconstruction_studies_family,
         "activation_cluster_studies": bench_activation_cluster_studies_family,
         "fine_pruning_studies": bench_fine_pruning_studies_family,
         "sleepless_studies": bench_sleepless_studies_family,
