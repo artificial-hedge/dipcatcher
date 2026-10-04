@@ -5203,6 +5203,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mithra_qa_studies",
         "verethragna_qa_studies",
         "yazata_qa_studies",
+        # Wave-1706 siberian-myth canon.
+        "akana_qa_studies",
+        "erlik_qa_studies",
+        "kayra_qa_studies",
+        "perysh_qa_studies",
+        "tengri_qa_studies",
+        "ulgen_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

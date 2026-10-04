@@ -13639,6 +13639,14 @@ from quant_fund.research.benches_w1705 import (
     bench_verethragna_qa_studies_family,
     bench_yazata_qa_studies_family,
 )
+from quant_fund.research.benches_w1706 import (
+    bench_akana_qa_studies_family,
+    bench_erlik_qa_studies_family,
+    bench_kayra_qa_studies_family,
+    bench_perysh_qa_studies_family,
+    bench_tengri_qa_studies_family,
+    bench_ulgen_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
