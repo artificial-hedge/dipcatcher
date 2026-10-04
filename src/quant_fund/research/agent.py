@@ -11751,6 +11751,14 @@ from quant_fund.research.benches_w1469 import (
     bench_inlet_qa_studies_family,
     bench_islet_qa_studies_family,
 )
+from quant_fund.research.benches_w1470 import (
+    bench_aspen_qa_studies_family,
+    bench_fir_qa_studies_family,
+    bench_holly_qa_studies_family,
+    bench_juniper_qa_studies_family,
+    bench_redwood_qa_studies_family,
+    bench_sequoia_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13231,6 +13239,12 @@ def _provenance(
         "headland_qa_studies": bench_headland_qa_studies_family,
         "inlet_qa_studies": bench_inlet_qa_studies_family,
         "islet_qa_studies": bench_islet_qa_studies_family,
+        "aspen_qa_studies": bench_aspen_qa_studies_family,
+        "fir_qa_studies": bench_fir_qa_studies_family,
+        "holly_qa_studies": bench_holly_qa_studies_family,
+        "juniper_qa_studies": bench_juniper_qa_studies_family,
+        "redwood_qa_studies": bench_redwood_qa_studies_family,
+        "sequoia_qa_studies": bench_sequoia_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

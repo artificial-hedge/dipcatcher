@@ -3551,6 +3551,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "headland_qa_studies",
         "inlet_qa_studies",
         "islet_qa_studies",
+        # Wave-1470 evergreen canon.
+        "aspen_qa_studies",
+        "fir_qa_studies",
+        "holly_qa_studies",
+        "juniper_qa_studies",
+        "redwood_qa_studies",
+        "sequoia_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
