@@ -12487,6 +12487,14 @@ from quant_fund.research.benches_w1561 import (
     bench_surgeonfish_qa_studies_family,
     bench_triggerfish_qa_studies_family,
 )
+from quant_fund.research.benches_w1562 import (
+    bench_boxfish_qa_studies_family,
+    bench_clownfish_qa_studies_family,
+    bench_dragonet_qa_studies_family,
+    bench_mandarinfish_qa_studies_family,
+    bench_pipefish_qa_studies_family,
+    bench_pufferfish_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14428,6 +14436,12 @@ def _provenance(
         "wrasse_qa_studies": bench_wrasse_qa_studies_family,
         "angelfish_qa_studies": bench_angelfish_qa_studies_family,
         "blenny_qa_studies": bench_blenny_qa_studies_family,
+        "boxfish_qa_studies": bench_boxfish_qa_studies_family,
+        "clownfish_qa_studies": bench_clownfish_qa_studies_family,
+        "dragonet_qa_studies": bench_dragonet_qa_studies_family,
+        "mandarinfish_qa_studies": bench_mandarinfish_qa_studies_family,
+        "pipefish_qa_studies": bench_pipefish_qa_studies_family,
+        "pufferfish_qa_studies": bench_pufferfish_qa_studies_family,
         "goby_qa_studies": bench_goby_qa_studies_family,
         "lionfish_qa_studies": bench_lionfish_qa_studies_family,
         "surgeonfish_qa_studies": bench_surgeonfish_qa_studies_family,

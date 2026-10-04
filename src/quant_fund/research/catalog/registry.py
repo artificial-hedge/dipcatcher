@@ -4195,6 +4195,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lionfish_qa_studies",
         "surgeonfish_qa_studies",
         "triggerfish_qa_studies",
+        # Wave-1562 reef-fish-3 canon.
+        "boxfish_qa_studies",
+        "clownfish_qa_studies",
+        "dragonet_qa_studies",
+        "mandarinfish_qa_studies",
+        "pipefish_qa_studies",
+        "pufferfish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
