@@ -8839,6 +8839,14 @@ from quant_fund.research.benches_w1105 import (
     bench_nudge_theory_family,
     bench_prospect_theory_family,
 )
+from quant_fund.research.benches_w1106 import (
+    bench_biomaterials_family,
+    bench_characterization_methods_family,
+    bench_composite_materials_family,
+    bench_phase_diagrams_family,
+    bench_semiconductors_materials_family,
+    bench_thin_films_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9210,6 +9218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "semiconductors_materials": bench_semiconductors_materials_family,
+        "composite_materials": bench_composite_materials_family,
+        "thin_films": bench_thin_films_family,
+        "biomaterials": bench_biomaterials_family,
+        "phase_diagrams": bench_phase_diagrams_family,
+        "characterization_methods": bench_characterization_methods_family,
         "prospect_theory": bench_prospect_theory_family,
         "bounded_rationality": bench_bounded_rationality_family,
         "nudge_theory": bench_nudge_theory_family,
