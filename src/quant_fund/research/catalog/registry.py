@@ -5364,6 +5364,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "isten_qa_studies",
         "liderc_qa_studies",
         "taltos_qa_studies",
+        # Wave-1729 baltic-myth canon.
+        "austra_qa_studies",
+        "jumis_qa_studies",
+        "laima_qa_studies",
+        "laume_qa_studies",
+        "perkunas_qa_studies",
+        "zemyna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

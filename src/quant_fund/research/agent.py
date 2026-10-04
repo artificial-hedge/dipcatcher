@@ -13823,6 +13823,14 @@ from quant_fund.research.benches_w1728 import (
     bench_liderc_qa_studies_family,
     bench_taltos_qa_studies_family,
 )
+from quant_fund.research.benches_w1729 import (
+    bench_austra_qa_studies_family,
+    bench_jumis_qa_studies_family,
+    bench_laima_qa_studies_family,
+    bench_laume_qa_studies_family,
+    bench_perkunas_qa_studies_family,
+    bench_zemyna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
