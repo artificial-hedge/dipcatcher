@@ -9359,6 +9359,14 @@ from quant_fund.research.benches_w1170 import (
     bench_security_studies_2_family,
     bench_victimology_2_family,
 )
+from quant_fund.research.benches_w1171 import (
+    bench_demography_2_family,
+    bench_geography_2_family,
+    bench_gis_science_2_family,
+    bench_land_use_family,
+    bench_regional_science_family,
+    bench_urbanization_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9730,6 +9738,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "geography_2": bench_geography_2_family,
+        "regional_science": bench_regional_science_family,
+        "demography_2": bench_demography_2_family,
+        "urbanization": bench_urbanization_family,
+        "land_use": bench_land_use_family,
+        "gis_science_2": bench_gis_science_2_family,
         "criminology_3": bench_criminology_3_family,
         "forensic_science_2": bench_forensic_science_2_family,
         "penology_2": bench_penology_2_family,

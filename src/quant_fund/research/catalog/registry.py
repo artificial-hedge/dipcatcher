@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1171 geography canon.
+        "geography_2",
+        "regional_science",
+        "demography_2",
+        "urbanization",
+        "land_use",
+        "gis_science_2",
         # Wave-1170 justice canon.
         "criminology_3",
         "forensic_science_2",
