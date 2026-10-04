@@ -3593,6 +3593,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ladybug_qa_studies",
         "mantis_qa_studies",
         "scorpion_qa_studies",
+        # Wave-1476 wildcat canon.
+        "caracal_qa_studies",
+        "jaguarundi_qa_studies",
+        "margay_qa_studies",
+        "ocelot_qa_studies",
+        "puma_qa_studies",
+        "serval_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
