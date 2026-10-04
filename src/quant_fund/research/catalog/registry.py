@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1246 surgical-subspecialty canon.
+        "bariatric_surgery_studies",
+        "pediatric_surgery_studies",
+        "plastic_surgery_studies",
+        "burn_surgery_studies",
+        "endocrine_surgery_studies",
+        "transplant_surgery_studies",
         # Wave-1245 oncology-subspecialty canon.
         "medical_oncology_studies",
         "immuno_oncology_studies",
