@@ -1444,6 +1444,108 @@
         ]
       }
     },
+    "/v1/messages/batches": {
+      "get": {
+        "params": [
+          {
+            "name": "after_id",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/messages/batches/{batch_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/messages/batches/{batch_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/messages/batches/{batch_id}/results": {
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "params": [],
@@ -1974,5 +2076,5 @@
       }
     }
   },
-  "schema_sha256": "3ec645d5d18108d28fa8f779b9bbfe35dfedfc1c746c3a25a40aca0cc852eba2"
+  "schema_sha256": "b8df6e8bbf82aeb2701c0af58e20fc82bd88fb8960cb8acff37041c9b77316c5"
 }

@@ -61,6 +61,7 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 _MESSAGES_PATH = "/v1/messages"
+_COMPLETIONS_PATH = "/v1/completions"
 _TERSE_PROMPT = "be terse"
 
 
@@ -3120,7 +3121,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         )
     out["client_batch_bad_endpoint_422"] = False
     try:
-        c_b.create_batch(up["id"], endpoint="/v1/completions")
+        c_b.create_batch(up["id"], endpoint=_COMPLETIONS_PATH)
     except ValueError:
         out["client_batch_bad_endpoint_422"] = True
 
@@ -3996,13 +3997,91 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         }
     )
 
+    # --- /v1/messages/batches parity -----------------------------------
+    # the Anthropic async channel: the wire's submit→ended→results cycle,
+    # the in-process ``anthropic_batch`` twin, and the remote client's
+    # message-batch methods must produce the same ended envelope and the
+    # same {custom_id, result} rows — one translation layer, three legs.
+    _ab_items = [
+        {
+            "custom_id": "p-ok",
+            "params": {
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "ping"}],
+                "fx1": {"backend": "byok"},
+            },
+        },
+        {
+            "custom_id": "p-bad",
+            "params": {
+                "model": "fx1",
+                "max_tokens": 0,
+                "messages": [{"role": "user", "content": "x"}],
+            },
+        },
+    ]
+    _ab_wire = client.post(
+        f"{_MESSAGES_PATH}/batches", json={"requests": _ab_items}, headers=_am_auth
+    )
+    out["anthropic_batch_submit_422_parity"] = (
+        # max_tokens=0 inside an item fails the whole submit at
+        # validation — contract violations are never per-item rows
+        _ab_wire.status_code == 422
+        and _ab_wire.json().get("type") == "error"
+        and _raises(lambda: sdk.anthropic_batch(_ab_items))[0] == "ValidationError"
+    )
+    _ab_items = _ab_items[:1]
+    _ab_wire = client.post(
+        f"{_MESSAGES_PATH}/batches", json={"requests": _ab_items}, headers=_am_auth
+    )
+    _ab_wid = _ab_wire.json()["id"]
+    _ab_wterm = _am_keyed.wait_message_batch(_ab_wid, timeout_s=30)
+    _ab_wrows = {
+        row["custom_id"]: row["result"] for row in _am_keyed.message_batch_results(_ab_wid)
+    }
+    _ab_sdk_batch, _ab_sdk_rows_list = sdk.anthropic_batch(_ab_items)
+    _ab_sdk_rows = {row["custom_id"]: row["result"] for row in _ab_sdk_rows_list}
+    out["anthropic_batch_parity"] = (
+        _ab_wire.status_code == 200
+        and _ab_wire.json()["type"] == "message_batch"
+        and _ab_wire.json()["processing_status"] in ("in_progress", "ended")
+        and _ab_wterm["processing_status"] == "ended"
+        and _ab_wterm["request_counts"]
+        == {"processing": 0, "succeeded": 1, "errored": 0, "canceled": 0, "expired": 0}
+        and str(_ab_wterm.get("results_url", "")).endswith(
+            f"/v1/messages/batches/{_ab_wid}/results"
+        )
+        and _ab_sdk_batch["type"] == "message_batch"
+        and _ab_sdk_batch["processing_status"] == "ended"
+        and _ab_sdk_batch["request_counts"] == _ab_wterm["request_counts"]
+        and _ab_wrows["p-ok"]["type"] == "succeeded"
+        and _ab_wrows["p-ok"]["message"]["content"] == _ab_sdk_rows["p-ok"]["message"]["content"]
+        and _ab_wrows["p-ok"]["message"]["content"][0]["text"] == "echo:ping"
+    )
+    # fail-closed parity on the async surface — duplicate custom_id and
+    # stream-in-batch refuse identically on wire and SDK legs
+    _ab_dup = [
+        _ab_items[0],
+        {**_ab_items[0]},
+    ]
+    out["anthropic_batch_failclosed_parity"] = (
+        client.post(
+            f"{_MESSAGES_PATH}/batches",
+            json={"requests": _ab_dup},
+            headers=_am_auth,
+        ).status_code
+        == 422
+        and _raises(lambda: sdk.anthropic_batch(_ab_dup))[0] == "ValidationError"
+    )
+
     # --- legacy /v1/completions parity ---------------------------------
     # the pre-chat text surface over the same gated pipeline — the wire
     # envelope, the in-process SDK twin, and the remote client's
     # create_completion must produce the same text_completion object,
     # and legacy-only fields refuse identically on all legs.
     _lc_wire = client.post(
-        "/v1/completions",
+        _COMPLETIONS_PATH,
         json={
             "model": "fx1",
             "prompt": "ping",
@@ -4047,7 +4126,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     # fail-closed parity — suffix/best_of/logprobs refuse on the wire
     # (422 openai-shaped) and in-process (ValueError) identically
     _lc_bad = client.post(
-        "/v1/completions",
+        _COMPLETIONS_PATH,
         json={"model": "fx1", "prompt": "x", "suffix": "s"},
         headers=_am_auth,
     )

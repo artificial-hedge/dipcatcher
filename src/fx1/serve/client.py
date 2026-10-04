@@ -1712,8 +1712,8 @@ class HarnessClient:
         chunks = _openai_sse_chunks(body)
         return chunks, _hget(headers, "X-Fx1-Completion-Id")
 
-    def create_completion(
-        self,
+    def create_completion(  # NOSONAR(S107) — mirrors the /v1/completions param surface
+        self,  # NOSONAR(S107)
         prompt: str | list[str],
         *,
         model: str = "fx1",
@@ -1787,8 +1787,8 @@ class HarnessClient:
         envelope = json.loads(body)
         return envelope, _hget(headers, "X-Fx1-Completion-Id")
 
-    def create_completion_stream(
-        self,
+    def create_completion_stream(  # NOSONAR(S107)
+        self,  # NOSONAR(S107)
         prompt: str | list[str],
         *,
         model: str = "fx1",
@@ -2018,6 +2018,108 @@ class HarnessClient:
         if not saw_stop:
             raise HarnessTransportError("stream ended without message_stop")
         return events, _hget(headers, "X-Fx1-Completion-Id")
+
+    # ---- anthropic message batches --------------------------------------------
+
+    def create_message_batch(
+        self,
+        requests: list[dict[str, Any]],
+        *,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/messages/batches`` — submit an Anthropic message
+        batch. ``requests`` ride inline: each ``{"custom_id", "params"}``
+        carries a full ``/v1/messages`` body (``stream`` inside a batch
+        refuses at validation). The batch runs under the caller's
+        ``X-Fx1-*`` headers — pass ``X-Fx1-Backend``/``X-Fx1-Byok-*``/
+        ``X-Fx1-Fallbacks`` via ``extra_headers`` exactly like
+        :meth:`create_batch`. ``Idempotency-Key`` replays the submit
+        envelope; ``callback_url``/``callback_secret`` are the fx1
+        terminal-webhook extension (fire-once on ``ended``, HMAC-signed
+        when the secret is set)."""
+        payload: dict[str, Any] = {"requests": requests}
+        if callback_url is not None:
+            payload["callback_url"] = callback_url
+        if callback_secret is not None:
+            payload["callback_secret"] = callback_secret
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, _headers, body = self._request(
+            "POST",
+            "/v1/messages/batches",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        return dict(json.loads(body))
+
+    def message_batch(self, batch_id: str) -> dict[str, Any]:
+        """``GET /v1/messages/batches/{id}`` — processing status +
+        request counts. Read-time expiry applies: a batch past
+        ``expires_at`` ends ``expired`` with unfinished items expired."""
+        return dict(self._json("GET", f"/v1/messages/batches/{batch_id}", idempotent=True))
+
+    def message_batches(
+        self,
+        *,
+        limit: int = 20,
+        after_id: str | None = None,
+        before_id: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/messages/batches`` — newest-first page. ``after_id``
+        pages to entries newer than the cursor id, ``before_id`` to
+        entries older than it (Anthropic's cursor convention)."""
+        path = f"/v1/messages/batches?limit={limit}"
+        if after_id is not None:
+            path += f"&after_id={urllib.parse.quote(after_id)}"
+        if before_id is not None:
+            path += f"&before_id={urllib.parse.quote(before_id)}"
+        return dict(self._json("GET", path, idempotent=True))
+
+    def cancel_message_batch(self, batch_id: str) -> dict[str, Any]:
+        """``POST /v1/messages/batches/{id}/cancel`` — cooperative cancel;
+        the batch flips to ``canceling`` and in-flight items complete
+        before it ends."""
+        return dict(self._json("POST", f"/v1/messages/batches/{batch_id}/cancel"))
+
+    def delete_message_batch(self, batch_id: str) -> dict[str, Any]:
+        """``DELETE /v1/messages/batches/{id}`` — tombstone an ended
+        batch; returns ``{id, type: "message_batch_deleted"}``. A batch
+        that isn't ended refuses (Anthropic's contract)."""
+        return dict(self._json("DELETE", f"/v1/messages/batches/{batch_id}"))
+
+    def message_batch_results(self, batch_id: str) -> list[dict[str, Any]]:
+        """``GET /v1/messages/batches/{id}/results`` — the results JSONL,
+        parsed into ``{custom_id, result}`` row dicts. Only served once
+        the batch has ended; before that the wire 400s."""
+        _status, _headers, body = self._request(
+            "GET", f"/v1/messages/batches/{batch_id}/results", idempotent=True
+        )
+        return [json.loads(line) for line in body.decode().splitlines() if line.strip()]
+
+    def wait_message_batch(
+        self,
+        batch_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``message_batch`` until ``processing_status`` is
+        ``ended``; returns the batch object. ``timeout_s`` None waits
+        forever (the server expires the batch at ``expires_at``)."""
+        deadline = None if timeout_s is None else time.time() + timeout_s
+        while True:
+            batch = self.message_batch(batch_id)
+            if batch.get("processing_status") == "ended":
+                return batch
+            if deadline is not None and time.time() >= deadline:
+                raise HarnessTransportError(
+                    f"message batch {batch_id} did not end within {timeout_s}s"
+                )
+            time.sleep(poll_s)
 
     def responses_create(
         self,

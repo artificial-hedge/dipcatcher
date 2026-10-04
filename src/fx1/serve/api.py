@@ -92,8 +92,13 @@ from fx1.harness import Harness, HarnessRole
 from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
 from fx1.reward import score_response
 from fx1.serve.anthropic_compat import (
+    AnthropicBatchCounts,
+    AnthropicBatchCreate,
+    AnthropicBatchItem,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
+    anthropic_batch_object,
+    anthropic_batch_result,
     anthropic_envelope,
     anthropic_error_body,
     anthropic_sse,
@@ -1862,7 +1867,7 @@ def _resume_skip(last_event_id: str | None, *, stream: bool, idempotency_key: st
 
 
 def _deliver_callback(
-    rec: JobStatusResponse | EvalRecord | FTJob | _BatchRecord,
+    rec: JobStatusResponse | EvalRecord | FTJob | _BatchRecord | _AnthropicBatchRecord,
     *,
     body: bytes | None = None,
 ) -> None:
@@ -2923,6 +2928,152 @@ class _BatchStore:
 _BATCH_TERMINAL = frozenset({"completed", "failed", "expired", "cancelled"})
 
 
+class _AnthropicBatchRecord(_Model):
+    """A running/finished Anthropic message batch (``msgbatch_*``).
+
+    ``item_ids`` — every ``custom_id`` in submit order — and
+    ``result_lines`` (the JSONL result rows) are journaled fields, not
+    private attrs: a recovered batch can still serve ``results`` (errored
+    restart rows for whatever never ran) instead of going silent."""
+
+    batch_id: str
+    status: Literal["in_progress", "canceling", "ended"] = "in_progress"
+    created_at: int
+    expires_at: int
+    ended_at: int | None = None
+    cancel_initiated_at: int | None = None
+    request_counts: AnthropicBatchCounts = Field(default_factory=AnthropicBatchCounts)
+    item_ids: builtins.list[str] = Field(default_factory=builtins.list)
+    result_lines: builtins.list[str] = Field(default_factory=builtins.list)
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_attempts: int = 0
+    callback_error: str | None = None
+    _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
+    _items: builtins.list[AnthropicBatchItem] = PrivateAttr(default_factory=builtins.list)
+    _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    _row_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+
+
+_ABATCH_TERMINAL = frozenset({"ended"})
+
+
+class _AnthropicBatchStore:
+    """Bounded LRU store of Anthropic message batches (newest-first).
+
+    Same journal contract as :class:`_BatchStore` (``abatches.jsonl`` under
+    ``--state-dir``): terminal batches return as-was; a batch still
+    mid-flight at the crash recovers ``ended`` with every unfinished
+    ``custom_id`` surfaced as an ``errored`` restart row — result rows are
+    journaled, so what did finish still serves."""
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._batches: OrderedDict[str, _AnthropicBatchRecord] = OrderedDict()
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = int(time.time())
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._batches.pop(str(evict), None)
+                if "batch" not in payload:
+                    continue
+                batch = _AnthropicBatchRecord.model_validate(payload["batch"])
+                self._batches[batch.batch_id] = batch
+                self._batches.move_to_end(batch.batch_id)
+            for batch in self._batches.values():
+                if batch.status != "ended":
+                    self._recover_unfinished(batch, now)
+            self._compact_locked()
+
+    @staticmethod
+    def _recover_unfinished(batch: _AnthropicBatchRecord, now: int) -> None:
+        """End a batch interrupted by a restart — every item without a
+        journaled result row lands an ``errored`` row explaining the
+        restart (nothing is silently re-run or silently dropped)."""
+        done_ids = {
+            json.loads(line)["custom_id"] for line in batch.result_lines if isinstance(line, str)
+        }
+        for cid in batch.item_ids:
+            if cid in done_ids:
+                continue
+            batch.result_lines.append(
+                json.dumps(
+                    anthropic_batch_result(
+                        cid,
+                        {
+                            "type": "errored",
+                            "error": anthropic_error_body(
+                                "process restarted before this request ran",
+                                500,
+                            )["error"],
+                        },
+                    ),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            )
+        batch.request_counts = AnthropicBatchCounts(
+            succeeded=sum(1 for ln in batch.result_lines if '"succeeded"' in ln),
+            errored=sum(1 for ln in batch.result_lines if '"errored"' in ln),
+        )
+        batch.status = "ended"
+        batch.ended_at = now
+
+    def _record(self, batch: _AnthropicBatchRecord) -> dict[str, Any]:
+        return {"batch": batch.model_dump(mode="json")}
+
+    def _compact_locked(self) -> None:
+        if self._journal is not None:
+            self._journal.compact([self._record(b) for b in self._batches.values()])
+
+    def mark(self, batch: _AnthropicBatchRecord) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``batch`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(batch))
+
+    def put(self, batch: _AnthropicBatchRecord) -> None:
+        with self._lock:
+            self._batches[batch.batch_id] = batch
+            self._batches.move_to_end(batch.batch_id)
+            evicted: list[str] = []
+            while len(self._batches) > self._max:
+                old_id, _ = self._batches.popitem(last=False)
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(batch)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
+
+    def get(self, batch_id: str) -> _AnthropicBatchRecord | None:
+        with self._lock:
+            return self._batches.get(batch_id)
+
+    def delete(self, batch_id: str) -> _AnthropicBatchRecord | None:
+        with self._lock:
+            batch = self._batches.pop(batch_id, None)
+            if batch is not None:
+                self._compact_locked()
+            return batch
+
+    def list(self) -> builtins.list[_AnthropicBatchRecord]:
+        """Newest-first snapshot."""
+        with self._lock:
+            out = list(self._batches.values())
+        out.reverse()
+        return out
+
+
 def _backend_configured() -> dict[str, bool]:
     """Presence-of-credentials flags only — values never leave the process."""
     checkpoint_env = os.environ.get("FX1_CHECKPOINT_DIR", "")
@@ -3240,6 +3391,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     jobs_executor: ThreadPoolExecutor,
     file_store: _FileStore,
     batch_store: _BatchStore,
+    abatch_store: _AnthropicBatchStore,
     upload_store: UploadStore,
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
@@ -4992,6 +5144,354 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 headers=headers,
             )
         return JSONResponse(anthropic_envelope(env_chat, model=body.model), headers=headers)
+
+    # ------------------------------------------------------------------
+    # Anthropic Message Batches — POST /v1/messages/batches
+    # ------------------------------------------------------------------
+    #
+    # Anthropic's async surface: requests ride inline (no input file), the
+    # batch runs on one jobs-executor slot, ``request_counts`` stays
+    # all-``processing`` until the batch ends (the Anthropic contract —
+    # tallies move only at the terminal transition), results are the
+    # unordered JSONL of ``{custom_id, result}`` rows.
+    #
+    # Errors on these routes keep the Anthropic envelope — every path
+    # under ``/v1/messages*`` projects through ``_v1_error_body``.
+
+    def _abatch_row_fault(item: AnthropicBatchItem, exc: Exception) -> dict[str, Any]:
+        """One item's fault → an ``errored`` result row — data, never a
+        crash into the batch worker."""
+        if isinstance(exc, OpenAICompatError):
+            body = anthropic_error_body(str(exc), exc.status)
+        elif isinstance(exc, ApiError):
+            body = anthropic_error_body(str(exc.detail), exc.status_code)
+        elif isinstance(exc, ValidationError):
+            body = anthropic_error_body(str(exc), 400)
+        else:
+            body = anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)
+        # the row's `error` is the inner {type, message} object, not the
+        # whole error envelope — Anthropic's results line shape
+        return anthropic_batch_result(item.custom_id, {"type": "errored", "error": body["error"]})
+
+    def _run_abatch_item(item: AnthropicBatchItem, batch: _AnthropicBatchRecord) -> dict[str, Any]:
+        """One batch request through the same translate → gated chat core →
+        anthropic envelope path the live ``/v1/messages`` route runs. The
+        batch's ``_headers`` carry the submitter's X-Fx1-* backend choice
+        into every line — never ambient env."""
+        try:
+            oai_body = OpenAIChatRequest.model_validate(anthropic_to_openai(item.params))
+            env, _cid = _openai_chat_core(oai_body, batch._headers)
+            return anthropic_batch_result(
+                item.custom_id,
+                {
+                    "type": "succeeded",
+                    "message": anthropic_envelope(env, model=item.params.model),
+                },
+            )
+        except Exception as exc:  # noqa: BLE001 — per-item faults are rows
+            return _abatch_row_fault(item, exc)
+
+    def _abatch_unfinished(batch: _AnthropicBatchRecord) -> builtins.list[str]:
+        """``custom_id``s with no result row yet (survives restart — the
+        ids are journaled even though the item bodies are not)."""
+        done: set[str] = set()
+        for ln in batch.result_lines:
+            try:
+                done.add(str(json.loads(ln)["custom_id"]))
+            except (json.JSONDecodeError, KeyError, TypeError):
+                continue
+        return [cid for cid in batch.item_ids if cid not in done]
+
+    def _abatch_tally(batch: _AnthropicBatchRecord) -> AnthropicBatchCounts:
+        """Terminal counts, re-derived from the result rows — the numbers
+        on the record can never disagree with what ``results`` serves."""
+        counts = AnthropicBatchCounts()
+        for ln in batch.result_lines:
+            try:
+                typ = str(json.loads(ln)["result"]["type"])
+            except (json.JSONDecodeError, KeyError, TypeError):
+                counts.errored += 1
+                continue
+            if typ == "succeeded":
+                counts.succeeded += 1
+            elif typ == "errored":
+                counts.errored += 1
+            elif typ == "canceled":
+                counts.canceled += 1
+            else:
+                counts.expired += 1
+        return counts
+
+    def _abatch_finish(
+        batch: _AnthropicBatchRecord, kind: Literal["canceled", "expired"] | None = None
+    ) -> None:
+        """End the batch now: every unfinished ``custom_id`` lands a
+        ``kind`` row (cancel mid-flight / expiry-on-read), counts project
+        to the terminal split, and the terminal webhook fires once."""
+        # the row lock makes the unfinished-scan + ended flip atomic vs a
+        # worker append — a row the worker lands after ``ended`` is dropped
+        # there (Anthropic semantics: results are final once ended).
+        with batch._row_lock:
+            if batch.status == "ended":
+                return
+            if kind is not None:
+                for cid in _abatch_unfinished(batch):
+                    batch.result_lines.append(
+                        json.dumps(
+                            anthropic_batch_result(cid, {"type": kind}),
+                            sort_keys=True,
+                            separators=(",", ":"),
+                        )
+                    )
+            batch.request_counts = _abatch_tally(batch)
+            batch.status = "ended"
+            batch.ended_at = int(time.time())
+        abatch_store.mark(batch)
+        _abatch_webhook(batch)
+
+    def _abatch_webhook(batch: _AnthropicBatchRecord) -> None:
+        """Fire-once terminal webhook: the projected ``message_batch``
+        envelope (the same shape GET returns) POSTs to ``callback_url``
+        once — expiry-on-read is a terminal transition too."""
+        if not batch.callback_url or batch.status != "ended":
+            return
+        with batch._callback_lock:
+            if batch._callback_fired:
+                return
+            batch._callback_fired = True
+        _deliver_callback(
+            batch,
+            body=json.dumps(anthropic_batch_object(batch.model_dump(mode="json"))).encode(),
+        )
+
+    def _exec_abatch(batch: _AnthropicBatchRecord) -> None:
+        """Worker: run every request item through the gated chat core in
+        submit order; a cancel flag between items ends the batch with
+        ``canceled`` rows for the tail. Holds ONE inflight slot for the
+        batch's lifetime (the jobs-channel contract) — released in
+        ``finally`` so a cancel or worker fault never leaks it."""
+        try:
+            for item in batch._items:
+                if batch._cancel.is_set():
+                    _abatch_finish(batch, "canceled")
+                    return
+                row = _run_abatch_item(item, batch)
+                with batch._row_lock:
+                    if batch.status == "ended":
+                        return  # expiry ended the batch mid-flight — the
+                        # computed row drops; the expired row already stands
+                    batch.result_lines.append(
+                        json.dumps(row, sort_keys=True, separators=(",", ":"))
+                    )
+            _abatch_finish(batch)
+        except Exception as exc:  # noqa: BLE001 — a worker fault ends the batch, not the process
+            for cid in _abatch_unfinished(batch):
+                batch.result_lines.append(
+                    json.dumps(
+                        anthropic_batch_result(
+                            cid,
+                            {
+                                "type": "errored",
+                                "error": anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)[
+                                    "error"
+                                ],
+                            },
+                        ),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                )
+            if batch.status != "ended":
+                _abatch_finish(batch)
+        finally:
+            metrics.release()
+            inflight.release()
+
+    def _abatch_project(batch: _AnthropicBatchRecord) -> dict[str, Any]:
+        """Expiry check + envelope projection — a batch past its
+        ``expires_at`` ends on read, unfinished rows ``expired``."""
+        if batch.status != "ended" and time.time() > batch.expires_at:
+            batch._cancel.set()  # the worker exits its loop at the next item
+            _abatch_finish(batch, "expired")
+        return anthropic_batch_object(batch.model_dump(mode="json"))
+
+    @app.post(
+        "/v1/messages/batches",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_create",
+    )
+    def anthropic_batches_create(
+        body: AnthropicBatchCreate,
+        request: Request,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JSONResponse:
+        """Submit an Anthropic message batch — ``requests`` ride inline
+        (each ``{custom_id, params}`` carrying a full ``/v1/messages``
+        body; ``stream`` inside a batch refuses at validation). One
+        worker slot runs every request through the gated chat core;
+        ``expires_at`` is +24h. ``request_counts`` stays all-processing
+        until the batch ends; results then land as one JSONL row per
+        ``custom_id`` (``succeeded``/``errored``/``canceled``/``expired``).
+        ``callback_url``/``callback_secret`` are the fx1 webhook
+        extension — the terminal ``message_batch`` envelope POSTs once,
+        HMAC-signed when the secret is set."""
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, anthropic_idem_store, body_fp)
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        if len(body.requests) > batch_line_max:
+            raise ApiError(
+                400,
+                f"{len(body.requests)} requests exceeds the {batch_line_max} cap",
+                code="batch_input_limit",
+            )
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                "harness at max_inflight — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        now = int(time.time())
+        batch = _AnthropicBatchRecord(
+            batch_id=f"msgbatch_{uuid.uuid4().hex}",
+            created_at=now,
+            expires_at=now + 86400,
+            request_counts=AnthropicBatchCounts(processing=len(body.requests)),
+            item_ids=[it.custom_id for it in body.requests],
+            callback_url=body.callback_url,
+        )
+        batch._callback_secret = body.callback_secret
+        batch._items = list(body.requests)
+        # the caller's X-Fx1-* routing headers apply to every item — the
+        # batch inherits the submitter's backend choice, never ambient env.
+        batch._headers = {
+            k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
+        }
+        try:
+            jobs_executor.submit(_exec_abatch, batch)
+        except RuntimeError as exc:
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        abatch_store.put(batch)
+        env = _abatch_project(batch)
+        if key is not None:
+            anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
+        return JSONResponse(env)
+
+    @app.get(
+        "/v1/messages/batches",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_list",
+    )
+    def anthropic_batches_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        before_id: str | None = Query(default=None),
+        after_id: str | None = Query(default=None),
+    ) -> JSONResponse:
+        """Newest-first batch listing; ``after_id`` pages to entries newer
+        than the cursor id, ``before_id`` to entries older than it."""
+        items = abatch_store.list()
+        if after_id is not None:
+            idx = next((i for i, b in enumerate(items) if b.batch_id == after_id), None)
+            items = items[:idx] if idx is not None else []
+        if before_id is not None:
+            idx = next((i for i, b in enumerate(items) if b.batch_id == before_id), None)
+            items = items[idx + 1 :] if idx is not None else []
+        page = items[:limit]
+        return JSONResponse(
+            {
+                "data": [_abatch_project(b) for b in page],
+                "first_id": page[0].batch_id if page else None,
+                "last_id": page[-1].batch_id if page else None,
+                "has_more": len(items) > limit,
+            }
+        )
+
+    @app.get(
+        "/v1/messages/batches/{batch_id}",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_get",
+    )
+    def anthropic_batches_get(batch_id: str) -> JSONResponse:
+        batch = abatch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
+        return JSONResponse(_abatch_project(batch))
+
+    @app.post(
+        "/v1/messages/batches/{batch_id}/cancel",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_cancel",
+    )
+    def anthropic_batches_cancel(batch_id: str) -> JSONResponse:
+        """Cooperative cancel — the worker checks the flag between items;
+        an in-flight item finishes, then the batch ends with ``canceled``
+        rows for the unprocessed tail."""
+        batch = abatch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
+        if batch.status == "ended":
+            raise ApiError(
+                400,
+                f"message batch {batch_id!r} has already ended",
+                code="invalid_request",
+            )
+        if batch.status == "canceling":
+            return JSONResponse(_abatch_project(batch))
+        batch._cancel.set()
+        batch.status = "canceling"
+        batch.cancel_initiated_at = int(time.time())
+        abatch_store.mark(batch)
+        return JSONResponse(_abatch_project(batch))
+
+    @app.delete(
+        "/v1/messages/batches/{batch_id}",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_delete",
+    )
+    def anthropic_batches_delete(batch_id: str) -> JSONResponse:
+        """Delete an ended batch (Anthropic refuses delete mid-flight —
+        cancel first)."""
+        batch = abatch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
+        _abatch_project(batch)  # expiry is a terminal transition too
+        if batch.status != "ended":
+            raise ApiError(
+                400,
+                f"message batch {batch_id!r} is still {batch.status} — cancel it first",
+                code="invalid_request",
+            )
+        abatch_store.delete(batch_id)
+        return JSONResponse({"id": batch_id, "type": "message_batch_deleted"})
+
+    @app.get(
+        "/v1/messages/batches/{batch_id}/results",
+        tags=["anthropic"],
+        operation_id="anthropic_batches_results",
+    )
+    def anthropic_batches_results(batch_id: str) -> Response:
+        """Stream the batch's results as ``.jsonl`` — one
+        ``{custom_id, result}`` object per request, unordered. Available
+        only once the batch has ``ended`` (``results_url`` on the batch
+        object points here)."""
+        batch = abatch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
+        _abatch_project(batch)
+        if batch.status != "ended":
+            raise ApiError(
+                400,
+                f"message batch {batch_id!r} results are available once the batch has ended",
+                code="invalid_request",
+            )
+        content = ("\n".join(batch.result_lines) + "\n") if batch.result_lines else ""
+        return Response(content=content, media_type="application/jsonl")
 
     @app.post(
         "/v1/completions",
@@ -7618,6 +8118,7 @@ def create_app(
         journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
     )
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
+    abatch_store = _AnthropicBatchStore(batch_max, journal=_journal("abatches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
     # stores; the runner defaults to the real staged Pipeline (its own
     # trainer fails honestly when no GPU backend is configured).
@@ -7717,6 +8218,7 @@ def create_app(
     app.state.eval_spec_store = eval_spec_store
     app.state.file_store = file_store
     app.state.batch_store = batch_store
+    app.state.abatch_store = abatch_store
     app.state.ft_store = ft_store
     app.state.vs_store = vs_store
     app.state.jobs_executor = jobs_executor
@@ -7947,6 +8449,7 @@ def create_app(
                 "openai_file_search": True,
                 "anthropic_messages": True,
                 "legacy_completions": True,
+                "anthropic_message_batches": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8311,6 +8814,7 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        abatch_store=abatch_store,
         upload_store=upload_store,
         ft_store=ft_store,
         ft_runner=ft_runner_eff,

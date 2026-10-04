@@ -994,6 +994,163 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/messages/batches — submit an Anthropic message batch.
+   * `requests` ride inline: each `{custom_id, params}` carries a full
+   * `/v1/messages` body (`stream` inside a batch refuses at validation).
+   * The caller's `X-Fx1-*` headers route every item — pass
+   * `X-Fx1-Backend`/`X-Fx1-Byok-*`/`X-Fx1-Fallbacks` through `headers`
+   * like `createBatch`. `idempotencyKey` replays the submit envelope;
+   * `callbackUrl`/`callbackSecret` are the fx1 terminal-webhook extension
+   * (fire-once on `ended`, signed when the secret is set).
+   */
+  async messageBatchesCreate(
+    requests: Array<Record<string, unknown>>,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+    callbackUrl?: string,
+    callbackSecret?: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/messages/batches",
+      body: {
+        requests,
+        ...(callbackUrl !== undefined ? { callback_url: callbackUrl } : {}),
+        ...(callbackSecret !== undefined
+          ? { callback_secret: callbackSecret }
+          : {}),
+      },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/messages/batches/{id} — processing status + request counts.
+   * Read-time expiry applies: a batch past `expires_at` ends `expired`
+   * with unfinished items expired.
+   */
+  async messageBatch(batchId: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/messages/batches/${encodeURIComponent(batchId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/messages/batches — newest-first page. `afterId` pages to
+   * entries newer than the cursor id, `beforeId` to entries older than
+   * it (Anthropic's cursor convention).
+   */
+  async messageBatches(filter?: {
+    limit?: number;
+    afterId?: string;
+    beforeId?: string;
+  }): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.afterId) q.set("after_id", filter.afterId);
+    if (filter?.beforeId) q.set("before_id", filter.beforeId);
+    const qs = q.toString();
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/messages/batches${qs ? `?${qs}` : ""}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/messages/batches/{id}/cancel — cooperative cancel; the
+   * batch flips to `canceling`, in-flight items complete, and the rest
+   * land `canceled` result rows.
+   */
+  async messageBatchesCancel(
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/messages/batches/${encodeURIComponent(batchId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * DELETE /v1/messages/batches/{id} — tombstone an ended batch;
+   * resolves `{id, type: "message_batch_deleted"}`. A batch that isn't
+   * ended refuses (Anthropic's contract).
+   */
+  async messageBatchesDelete(
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/messages/batches/${encodeURIComponent(batchId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/messages/batches/{id}/results — the results JSONL, parsed
+   * into `{custom_id, result}` row objects (`succeeded`/`errored`/
+   * `canceled`/`expired`). Only served once the batch has ended; before
+   * that the wire 400s.
+   */
+  async messageBatchResults(
+    batchId: string,
+  ): Promise<Array<Record<string, unknown>>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/messages/batches/${encodeURIComponent(batchId)}/results`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    const text = await res.text();
+    return text
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+  }
+
+  /**
+   * Poll `messageBatch` until `processing_status` is `ended`; resolves
+   * with the batch object. `timeoutMs` throws `HarnessTransportError`
+   * on expiry — the `waitRun` contract.
+   */
+  async waitMessageBatch(
+    batchId: string,
+    pollMs = 500,
+    timeoutMs?: number,
+  ): Promise<Record<string, unknown>> {
+    const deadline =
+      timeoutMs === undefined ? undefined : this.now() + timeoutMs;
+    for (;;) {
+      const b = await this.messageBatch(batchId);
+      if (b.processing_status === "ended") return b;
+      const remaining = deadline === undefined ? pollMs : deadline - this.now();
+      if (remaining <= 0)
+        throw new HarnessTransportError(
+          `message batch ${batchId} still ${String(b.processing_status)} after ${timeoutMs}ms`,
+        );
+      await this.sleep(Math.min(pollMs, remaining));
+    }
+  }
+
+  /**
    * POST /v1/completions — the legacy `text_completion` surface (what
    * the stock OpenAI SDK's `client.completions.create` and pre-chat
    * agents target). `request` uses the legacy wire shape: `prompt` is a

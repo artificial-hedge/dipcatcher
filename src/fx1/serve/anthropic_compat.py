@@ -26,10 +26,11 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
+from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from fx1.serve.openai_compat import (
     OpenAICompatError,
@@ -37,15 +38,21 @@ from fx1.serve.openai_compat import (
     _Model,
     _text_pieces,
 )
+from fx1.serve.webhooks import check_callback_url
 
 __all__ = [
     "ANTHROPIC_UNSUPPORTED",
+    "AnthropicBatchCounts",
+    "AnthropicBatchCreate",
+    "AnthropicBatchItem",
     "AnthropicMessage",
     "AnthropicMessageObject",
     "AnthropicMessagesRequest",
     "AnthropicMetadata",
     "AnthropicTool",
     "AnthropicToolChoice",
+    "anthropic_batch_object",
+    "anthropic_batch_result",
     "anthropic_envelope",
     "anthropic_error_body",
     "anthropic_events",
@@ -207,9 +214,9 @@ class AnthropicMessage(_Model):
     content: str | list[dict[str, Any]]
 
     @model_validator(mode="after")
-    def _blocks_valid(
+    def _blocks_valid(  # NOSONAR(S3776) — per-block shape dispatch is inherently branchy
         self,
-    ) -> AnthropicMessage:  # NOSONAR(S3776) — per-block shape dispatch is inherently branchy
+    ) -> AnthropicMessage:
         if isinstance(self.content, str):
             return self
         if not self.content:
@@ -274,9 +281,9 @@ class AnthropicMessagesRequest(_Model):
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
-    def _anthropic_valid(
+    def _anthropic_valid(  # NOSONAR(S3776) — contract validator walks every field
         self,
-    ) -> AnthropicMessagesRequest:  # NOSONAR(S3776) — contract validator walks every field
+    ) -> AnthropicMessagesRequest:
         if self.stop_sequences is not None and any(
             not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop_sequences
         ):
@@ -357,9 +364,9 @@ def _tool_result_content(block: dict[str, Any]) -> str:
     )
 
 
-def _messages_to_openai(
+def _messages_to_openai(  # NOSONAR(S3776) — one branch per Anthropic block type
     messages: list[AnthropicMessage],
-) -> list[dict[str, Any]]:  # NOSONAR(S3776) — one branch per Anthropic block type
+) -> list[dict[str, Any]]:
     """Anthropic turns → OpenAI chat messages.
 
     A ``user`` turn's ``tool_result`` blocks each become a ``role: tool``
@@ -429,9 +436,9 @@ def _messages_to_openai(
     return out
 
 
-def anthropic_to_openai(
+def anthropic_to_openai(  # NOSONAR(S3776) — field-by-field wire translation
     body: AnthropicMessagesRequest,
-) -> dict[str, Any]:  # NOSONAR(S3776) — field-by-field wire translation
+) -> dict[str, Any]:
     """Translate ``AnthropicMessagesRequest`` → ``OpenAIChatRequest``
     kwargs — the shared gated path then validates, backends, gates, and
     meters exactly as ``/v1/chat/completions``.
@@ -489,9 +496,9 @@ def anthropic_to_openai(
     return {k: v for k, v in req.items() if v is not None}
 
 
-def anthropic_envelope(
+def anthropic_envelope(  # NOSONAR(S3776) — envelope builder fans out per content block
     env: dict[str, Any], *, model: str | None = None
-) -> dict[str, Any]:  # NOSONAR(S3776) — envelope builder fans out per content block
+) -> dict[str, Any]:
     """``chat.completion`` envelope → Anthropic ``message`` object.
 
     The id is derived, not minted fresh — ``msg_<hex>`` carries the
@@ -646,3 +653,111 @@ def anthropic_sse(env: dict[str, Any], *, model: str | None = None, skip: int = 
                 f"id: {seq}\nevent: {event['event']}\n"
                 f"data: {json.dumps(event['data'], separators=(',', ':'))}\n\n"
             )
+
+
+# ---------------------------------------------------------------------------
+# Message Batches — POST /v1/messages/batches
+# ---------------------------------------------------------------------------
+
+
+class AnthropicBatchItem(_Model):
+    """One ``requests[]`` element of ``POST /v1/messages/batches`` —
+    ``custom_id`` (unique within the batch, the result-line join key) and
+    the full ``params`` a create call takes. ``stream`` refuses at
+    validation: the batch surface has no streaming leg."""
+
+    model_config = ConfigDict(extra="allow")
+
+    custom_id: str = Field(min_length=1, max_length=256)
+    params: AnthropicMessagesRequest
+
+    @model_validator(mode="after")
+    def _params_not_stream(self) -> AnthropicBatchItem:
+        if self.params.stream:
+            raise ValueError("stream is not supported inside a message batch")
+        return self
+
+
+class AnthropicBatchCreate(_Model):
+    """``POST /v1/messages/batches`` body — the requests ride inline (no
+    input-file indirection like the OpenAI batch surface).``
+
+    ``callback_url``/``callback_secret`` are the fx1 webhook extension —
+    same terminal-delivery contract as ``/v1/batches`` (the finished
+    ``message_batch`` envelope POSTs to the URL once, HMAC-signed when the
+    secret is set; the secret never serializes onto the record)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    requests: list[AnthropicBatchItem] = Field(min_length=1)
+    # fx1 extension — terminal webhook (mirrors OpenAIBatchRequest)
+    callback_url: str | None = None
+    callback_secret: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _batch_valid(self) -> AnthropicBatchCreate:
+        ids = [r.custom_id for r in self.requests]
+        if len(set(ids)) != len(ids):
+            dupes = sorted({i for i in ids if ids.count(i) > 1})
+            raise ValueError(
+                f"requests[].custom_id must be unique within the batch — duplicated: {dupes}"
+            )
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
+
+
+class AnthropicBatchCounts(_Model):
+    """``request_counts`` — Anthropic's tallies stay all-``processing``
+    until the batch ends, then the terminal split lands at once."""
+
+    processing: int = 0
+    succeeded: int = 0
+    errored: int = 0
+    canceled: int = 0
+    expired: int = 0
+
+
+def _rfc3339(ts: float | int | None) -> str | None:
+    """Unix seconds → Anthropic's RFC 3339 ``...Z`` timestamp."""
+    if ts is None:
+        return None
+    return datetime.fromtimestamp(ts, tz=UTC).isoformat().replace("+00:00", "Z")
+
+
+def anthropic_batch_object(rec: Mapping[str, Any]) -> dict[str, Any]:
+    """Internal batch record → the Anthropic ``message_batch`` object.
+
+    ``results_url`` is null until ``processing_status`` is ``ended`` (the
+    Anthropic contract — results exist only once every request has a
+    terminal row). The ``callback_*`` keys are the fx1 webhook extension —
+    the same verdict fields the OpenAI batch envelope carries."""
+    ended = rec.get("status") == "ended"
+    return {
+        "id": rec["batch_id"],
+        "type": "message_batch",
+        "processing_status": rec["status"],
+        "request_counts": dict(rec["request_counts"]),
+        "ended_at": _rfc3339(rec.get("ended_at")),
+        "created_at": _rfc3339(rec["created_at"]),
+        "expires_at": _rfc3339(rec["expires_at"]),
+        "cancel_initiated_at": _rfc3339(rec.get("cancel_initiated_at")),
+        "archived_at": None,
+        "results_url": (f"/v1/messages/batches/{rec['batch_id']}/results" if ended else None),
+        "callback_url": rec.get("callback_url"),
+        "callback_status": rec.get("callback_status"),
+        "callback_attempts": rec.get("callback_attempts", 0),
+        "callback_error": rec.get("callback_error"),
+    }
+
+
+def anthropic_batch_result(custom_id: str, result: dict[str, Any]) -> dict[str, Any]:
+    """One results-JSONL row — ``{custom_id, result}`` where ``result``
+    is ``{type: 'succeeded', message}`` / ``{type: 'errored', error}`` /
+    ``{type: 'canceled'}`` / ``{type: 'expired'}``."""
+    return {"custom_id": custom_id, "result": result}

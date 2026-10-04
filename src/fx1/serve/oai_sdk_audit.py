@@ -58,6 +58,8 @@ if TYPE_CHECKING:
 
 __all__ = ["oai_sdk_audit", "oai_sdk_audit_bench"]
 
+_STUB_HI = "stub:hi"
+
 _FT_JSONL = (
     b'{"messages":[{"role":"user","content":"q1"},{"role":"assistant","content":"a1"}]}\n'
     b'{"messages":[{"role":"user","content":"q2"},{"role":"assistant","content":"a2"}]}\n'
@@ -209,7 +211,7 @@ async def _probe_chat(cl: Any, out: dict[str, Any]) -> None:
     cc = await cl.chat.completions.create(model="fx1", messages=[{"role": "user", "content": "hi"}])
     out["sdk_chat_create"] = (
         cc.object == "chat.completion"
-        and cc.choices[0].message.content == "stub:hi"
+        and cc.choices[0].message.content == _STUB_HI
         and cc.choices[0].finish_reason == "stop"
         and cc.usage is not None
         and cc.usage.total_tokens > 0
@@ -227,7 +229,7 @@ async def _probe_chat(cl: Any, out: dict[str, Any]) -> None:
         and chunks[-1].choices[0].finish_reason == "stop"
         # the stream surface chunkifies the completed text — the SDK's
         # delta-channel compat is what the probe claims
-        and text == "stub:hi"
+        and text == _STUB_HI
     )
     uchunks = [
         c
@@ -280,7 +282,7 @@ async def _probe_completions(cl: Any, out: dict[str, Any]) -> None:
     out["sdk_completion_create"] = (
         cm.object == "text_completion"
         and cm.id.startswith("cmpl-")
-        and cm.choices[0].text == "stub:hi"
+        and cm.choices[0].text == _STUB_HI
         and cm.choices[0].finish_reason == "stop"
     )
     multi = await cl.completions.create(model="fx1", prompt=["a", "b"], n=2)
@@ -291,12 +293,12 @@ async def _probe_completions(cl: Any, out: dict[str, Any]) -> None:
         and multi.choices[2].text == "stub:b"
     )
     echoed = await cl.completions.create(model="fx1", prompt="hi", echo=True)
-    out["sdk_completion_echo"] = echoed.choices[0].text == "hi" + "stub:hi"
+    out["sdk_completion_echo"] = echoed.choices[0].text == "hi" + _STUB_HI
     schunks = [c async for c in await cl.completions.create(model="fx1", prompt="hi", stream=True)]
     out["sdk_completion_stream"] = (
         bool(schunks)
         and all(c.object == "text_completion" for c in schunks)
-        and "".join(c.choices[0].text for c in schunks if c.choices) == "stub:hi"
+        and "".join(c.choices[0].text for c in schunks if c.choices) == _STUB_HI
         and schunks[-1].choices[0].finish_reason == "stop"
     )
     # legacy-only fields refuse typed — the SDK maps our 422 to

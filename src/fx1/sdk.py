@@ -50,9 +50,14 @@ from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
 from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
 from fx1.serve.anthropic_compat import (
+    AnthropicBatchCounts,
+    AnthropicBatchCreate,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
+    anthropic_batch_object,
+    anthropic_batch_result,
     anthropic_envelope,
+    anthropic_error_body,
     anthropic_events,
     anthropic_to_openai,
 )
@@ -3646,6 +3651,123 @@ class Fx1Harness:
             batch["callback_error"] = None if ok else err
             batch["callback_attempts"] = attempts
         return batch, out_lines
+
+    def anthropic_batch(
+        self,
+        requests: list[dict[str, Any]],
+        *,
+        headers: Mapping[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """The ``/v1/messages/batches`` surface, weights-direct —
+        synchronous in process (no queue: items in, the
+        ``message_batch`` object + results lines out). ``requests`` is
+        the Anthropic-shaped ``[{custom_id, params}]`` list, validated
+        by :class:`AnthropicBatchCreate` exactly like the wire — same
+        unique-``custom_id`` rule, same ``stream`` refusal, same
+        callback checks. Each item then runs :meth:`anthropic_message`
+        — the wire's own translation + gated path, not a second
+        codepath. Per-item faults land as ``type: "errored"`` result
+        rows, never as a raised batch.
+
+        Returns ``(batch, result_lines)``: the ``message_batch`` object
+        (``processing_status: "ended"`` — in-process has no queue to
+        observe; ``results_url`` still surfaces because the batch is
+        ended) and the ``{custom_id, result}`` rows the wire's
+        ``results`` route would serve, in submission order.
+        """
+        body = AnthropicBatchCreate.model_validate(
+            {
+                "requests": requests,
+                "callback_url": callback_url,
+                "callback_secret": callback_secret,
+            }
+        )
+        out_rows: list[dict[str, Any]] = []
+        counts = AnthropicBatchCounts(processing=len(body.requests))
+        hdrs = dict(headers or {})
+        for item in body.requests:
+            try:
+                msg, _cid = self.anthropic_message(item.params, headers=hdrs)
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {"type": "succeeded", "message": msg.model_dump(mode="json")},
+                )
+                counts.succeeded += 1
+            except OpenAICompatError as exc:
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {
+                        "type": "errored",
+                        "error": anthropic_error_body(str(exc), exc.status)["error"],
+                    },
+                )
+                counts.errored += 1
+            except BackendNotConfiguredError as exc:  # 503 on the wire
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {
+                        "type": "errored",
+                        "error": anthropic_error_body(str(exc), 503)["error"],
+                    },
+                )
+                counts.errored += 1
+            except Fx1HonestyError as exc:  # gate refusal — 502 on the wire
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {
+                        "type": "errored",
+                        "error": anthropic_error_body(str(exc), 502)["error"],
+                    },
+                )
+                counts.errored += 1
+            except (ValueError, NotImplementedError) as exc:
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {
+                        "type": "errored",
+                        "error": anthropic_error_body(str(exc), 400)["error"],
+                    },
+                )
+                counts.errored += 1
+            except Exception as exc:  # noqa: BLE001 — an item fault is a row, not a crash
+                row = anthropic_batch_result(
+                    item.custom_id,
+                    {
+                        "type": "errored",
+                        "error": anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)["error"],
+                    },
+                )
+                counts.errored += 1
+            out_rows.append(row)
+        counts.processing = 0
+        now = int(time.time())
+        batch = anthropic_batch_object(
+            {
+                "batch_id": f"msgbatch_{uuid.uuid4().hex}",
+                "status": "ended",
+                "request_counts": counts.model_dump(),
+                "created_at": now,
+                "expires_at": now + 86400,
+                "ended_at": now,
+                "cancel_initiated_at": None,
+                "callback_url": callback_url,
+                "callback_status": None,
+                "callback_attempts": 0,
+                "callback_error": None,
+            }
+        )
+        if callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                callback_url, callback_secret, json.dumps(batch).encode()
+            )
+            batch["callback_status"] = "delivered" if ok else "failed"
+            batch["callback_error"] = None if ok else err
+            batch["callback_attempts"] = attempts
+        return batch, out_rows
 
     # ---- uploads (chunked files) ----------------------------------------
 

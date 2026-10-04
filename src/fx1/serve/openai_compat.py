@@ -149,6 +149,8 @@ class OpenAICompatError(ValueError):
 # Backend names an OpenAI `model` field or `X-Fx1-Backend` header may carry.
 OPENAI_BACKENDS = frozenset({"hosted_k3", "local_fx1", "byok"})
 
+_STOP_SEQ_ERR = "stop sequences must be 1–512 char strings"
+
 # response_format types the gated pipeline honors. `text` is freeform;
 # `json_object`/`json_schema` are post-validated against the returned text
 # (the harness can't constrain-decode arbitrary backends — validation is
@@ -331,9 +333,9 @@ class OpenAIChatRequest(_Model):
             if len(self.stop) > 4:
                 raise ValueError("stop accepts at most 4 sequences")
             if any(not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop):
-                raise ValueError("stop sequences must be 1–512 char strings")
+                raise ValueError(_STOP_SEQ_ERR)
         elif isinstance(self.stop, str) and not 1 <= len(self.stop) <= 512:
-            raise ValueError("stop sequences must be 1–512 char strings")
+            raise ValueError(_STOP_SEQ_ERR)
         if self.logit_bias is not None:
             for key, bias in self.logit_bias.items():
                 try:
@@ -500,7 +502,7 @@ class OpenAICompletionRequest(_Model):
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
-    def _legacy_valid(self) -> OpenAICompletionRequest:
+    def _legacy_valid(self) -> OpenAICompletionRequest:  # NOSONAR(S3776)
         prompts = [self.prompt] if isinstance(self.prompt, str) else list(self.prompt)
         if not prompts:
             raise ValueError("prompt must be a non-empty list when a list is given")
@@ -513,9 +515,9 @@ class OpenAICompletionRequest(_Model):
             if len(self.stop) > 4:
                 raise ValueError("stop accepts at most 4 sequences")
             if any(not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop):
-                raise ValueError("stop sequences must be 1–512 char strings")
+                raise ValueError(_STOP_SEQ_ERR)
         elif isinstance(self.stop, str) and not 1 <= len(self.stop) <= 512:
-            raise ValueError("stop sequences must be 1–512 char strings")
+            raise ValueError(_STOP_SEQ_ERR)
         if self.logit_bias is not None:
             for key, bias in self.logit_bias.items():
                 try:
@@ -955,7 +957,7 @@ def legacy_to_chat(body: OpenAICompletionRequest, prompt: str) -> OpenAIChatRequ
     )
 
 
-def openai_completion_envelope(
+def openai_completion_envelope(  # NOSONAR(S3776) — per-choice mapping is a flat loop by contract
     *,
     cid: str,
     envs: Sequence[dict[str, Any]],
