@@ -11911,6 +11911,14 @@ from quant_fund.research.benches_w1489 import (
     bench_marigold_qa_studies_family,
     bench_primrose_qa_studies_family,
 )
+from quant_fund.research.benches_w1490 import (
+    bench_camellia_qa_studies_family,
+    bench_dahlia_qa_studies_family,
+    bench_sage_qa_studies_family,
+    bench_thyme_qa_studies_family,
+    bench_violet_qa_studies_family,
+    bench_zinnia_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13489,6 +13497,12 @@ def _provenance(
         "lilac_qa_studies": bench_lilac_qa_studies_family,
         "marigold_qa_studies": bench_marigold_qa_studies_family,
         "primrose_qa_studies": bench_primrose_qa_studies_family,
+        "camellia_qa_studies": bench_camellia_qa_studies_family,
+        "dahlia_qa_studies": bench_dahlia_qa_studies_family,
+        "sage_qa_studies": bench_sage_qa_studies_family,
+        "thyme_qa_studies": bench_thyme_qa_studies_family,
+        "violet_qa_studies": bench_violet_qa_studies_family,
+        "zinnia_qa_studies": bench_zinnia_qa_studies_family,
         "panther_qa_studies": bench_panther_qa_studies_family,
         "tiger_qa_studies": bench_tiger_qa_studies_family,
         "kittiwake_qa_studies": bench_kittiwake_qa_studies_family,
