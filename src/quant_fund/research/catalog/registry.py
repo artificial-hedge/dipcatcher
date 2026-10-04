@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1178 interdisciplinary canon.
+        "interdisciplinary_studies",
+        "cognitive_science_2",
+        "futures_studies",
+        "complexity_science",
+        "systems_science",
+        "human_computer_interaction",
         # Wave-1177 formal-sciences canon.
         "formal_sciences",
         "mathematical_logic",
