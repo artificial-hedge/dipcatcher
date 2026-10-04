@@ -4307,6 +4307,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mongoose_qa_studies",
         "sloth_bear_qa_studies",
         "suricate_qa_studies",
+        # Wave-1578 ungulate canon.
+        "gerenuk_qa_studies",
+        "markhor_qa_studies",
+        "nilgai_qa_studies",
+        "okapi_qa_studies",
+        "saiga_qa_studies",
+        "takin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
