@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1163 business canon.
+        "accounting_2",
+        "finance_4",
+        "marketing_2",
+        "management_2",
+        "entrepreneurship_2",
+        "business_administration",
         # Wave-1162 governance canon.
         "law_5",
         "political_science_4",
