@@ -1,3 +1,4 @@
+w1400 KG-QA canon: cronqa_lite_studies, cwq_lite_studies, grailqa_studies, kgqa_lite_studies, pweb_qa_studies, qald_lite_studies (8349->8355)
 w1399 retrieval-eval canon: asqa_lite_studies, eli5_lite_studies, fresh_qa_studies, nq_lite_studies, trivia_lite_studies, xor_tydi_studies (8343->8349)
 w1398 table-QA canon: doc2dial_studies, finqa_lite_studies, hybridqa_lite_studies, infotabs_studies, ottqa_lite_studies, tab_cwq_studies (8337->8343)
 w1397 multilingual-QA canon: coma_qa_studies, gaia_lite_studies, simple_qa_studies, sqa_lite_studies, tqa_lite_studies, tydiqa_lite_studies (8331->8337)
