@@ -11927,6 +11927,14 @@ from quant_fund.research.benches_w1491 import (
     bench_magnolia_qa_studies_family,
     bench_spruce_qa_studies_family,
 )
+from quant_fund.research.benches_w1492 import (
+    bench_bilby_qa_studies_family,
+    bench_echidna_qa_studies_family,
+    bench_platypus_qa_studies_family,
+    bench_possum_qa_studies_family,
+    bench_quoll_qa_studies_family,
+    bench_thylacine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13508,6 +13516,12 @@ def _provenance(
         "camellia_qa_studies": bench_camellia_qa_studies_family,
         "cypress_qa_studies": bench_cypress_qa_studies_family,
         "eucalyptus_qa_studies": bench_eucalyptus_qa_studies_family,
+        "bilby_qa_studies": bench_bilby_qa_studies_family,
+        "echidna_qa_studies": bench_echidna_qa_studies_family,
+        "platypus_qa_studies": bench_platypus_qa_studies_family,
+        "possum_qa_studies": bench_possum_qa_studies_family,
+        "quoll_qa_studies": bench_quoll_qa_studies_family,
+        "thylacine_qa_studies": bench_thylacine_qa_studies_family,
         "hemlock_qa_studies": bench_hemlock_qa_studies_family,
         "laurel_qa_studies": bench_laurel_qa_studies_family,
         "magnolia_qa_studies": bench_magnolia_qa_studies_family,
