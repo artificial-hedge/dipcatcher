@@ -10935,6 +10935,14 @@ from quant_fund.research.benches_w1367 import (
     bench_meteor_lite_studies_family,
     bench_rouge_lite_studies_family,
 )
+from quant_fund.research.benches_w1368 import (
+    bench_chr_f_studies_family,
+    bench_mover_score_studies_family,
+    bench_nist_metric_studies_family,
+    bench_prism_mt_studies_family,
+    bench_sacrebleu_lite_studies_family,
+    bench_ter_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11809,6 +11817,12 @@ def _provenance(
         "comet_mt_studies": bench_comet_mt_studies_family,
         "meteor_lite_studies": bench_meteor_lite_studies_family,
         "rouge_lite_studies": bench_rouge_lite_studies_family,
+        "chr_f_studies": bench_chr_f_studies_family,
+        "mover_score_studies": bench_mover_score_studies_family,
+        "nist_metric_studies": bench_nist_metric_studies_family,
+        "prism_mt_studies": bench_prism_mt_studies_family,
+        "sacrebleu_lite_studies": bench_sacrebleu_lite_studies_family,
+        "ter_lite_studies": bench_ter_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

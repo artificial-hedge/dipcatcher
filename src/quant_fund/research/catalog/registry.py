@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1368 translation-metric canon.
+        "chr_f_studies",
+        "mover_score_studies",
+        "nist_metric_studies",
+        "prism_mt_studies",
+        "sacrebleu_lite_studies",
+        "ter_lite_studies",
         # Wave-1367 generation-metric canon.
         "bert_score_studies",
         "bleu_rouge_studies",
