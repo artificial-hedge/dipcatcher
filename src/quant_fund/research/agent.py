@@ -12655,6 +12655,14 @@ from quant_fund.research.benches_w1582 import (
     bench_pipistrelle_qa_studies_family,
     bench_vampire_qa_studies_family,
 )
+from quant_fund.research.benches_w1583 import (
+    bench_bowhead_qa_studies_family,
+    bench_fin_whale_qa_studies_family,
+    bench_humpback_qa_studies_family,
+    bench_minke_qa_studies_family,
+    bench_pilot_whale_qa_studies_family,
+    bench_sperm_whale_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14680,6 +14688,12 @@ def _provenance(
         "flying_fox_qa_studies": bench_flying_fox_qa_studies_family,
         "horseshoe_bat_qa_studies": bench_horseshoe_bat_qa_studies_family,
         "leaf_nosed_qa_studies": bench_leaf_nosed_qa_studies_family,
+        "bowhead_qa_studies": bench_bowhead_qa_studies_family,
+        "fin_whale_qa_studies": bench_fin_whale_qa_studies_family,
+        "humpback_qa_studies": bench_humpback_qa_studies_family,
+        "minke_qa_studies": bench_minke_qa_studies_family,
+        "pilot_whale_qa_studies": bench_pilot_whale_qa_studies_family,
+        "sperm_whale_qa_studies": bench_sperm_whale_qa_studies_family,
         "noctule_qa_studies": bench_noctule_qa_studies_family,
         "pipistrelle_qa_studies": bench_pipistrelle_qa_studies_family,
         "vampire_qa_studies": bench_vampire_qa_studies_family,
