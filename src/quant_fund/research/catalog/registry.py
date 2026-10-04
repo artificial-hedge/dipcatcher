@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-587 birational-2 canon.
+        "terminal_sing",
+        "canonical_sing2",
+        "klt_mmp",
+        "mmp_flip",
+        "abundance_conj",
+        "bdd_fano",
         # Wave-586 duality-theory canon.
         "groth_duality",
         "dualizing_cmplx",
