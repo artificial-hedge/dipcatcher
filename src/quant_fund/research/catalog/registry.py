@@ -4167,6 +4167,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oscar_qa_studies",
         "pacu_qa_studies",
         "tetra_qa_studies",
+        # Wave-1558 salmonid canon.
+        "char_qa_studies",
+        "dolly_varden_qa_studies",
+        "grayling_qa_studies",
+        "sockeye_qa_studies",
+        "steelhead_qa_studies",
+        "whitefish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
