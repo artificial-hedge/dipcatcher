@@ -5431,6 +5431,14 @@ from quant_fund.research.benches_w679 import (
     bench_motivic_thh_family,
     bench_relative_motive_family,
 )
+from quant_fund.research.benches_w680 import (
+    bench_spectral_abelian_family,
+    bench_spectral_crystal_family,
+    bench_spectral_etale2_family,
+    bench_spectral_perfect_family,
+    bench_spectral_proper_family,
+    bench_spectral_smooth2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5810,6 +5818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_perfect": bench_spectral_perfect_family,
+        "spectral_smooth2": bench_spectral_smooth2_family,
+        "spectral_etale2": bench_spectral_etale2_family,
+        "spectral_abelian": bench_spectral_abelian_family,
+        "spectral_crystal": bench_spectral_crystal_family,
+        "spectral_proper": bench_spectral_proper_family,
         "motivic_thh": bench_motivic_thh_family,
         "motivic_realization": bench_motivic_realization_family,
         "etale_motive": bench_etale_motive_family,
