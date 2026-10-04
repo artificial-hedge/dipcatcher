@@ -6001,6 +6001,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "norna2_qa_studies",
         "ve2_qa_studies",
         "vili2_qa_studies",
+        # Wave-1820 chinese-myth-7 canon.
+        "changyi2_qa_studies",
+        "gun2_qa_studies",
+        "shennong2_qa_studies",
+        "xihe2_qa_studies",
+        "yandi2_qa_studies",
+        "yaoji2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
