@@ -8879,6 +8879,14 @@ from quant_fund.research.benches_w1110 import (
     bench_philosophy_of_religion_family,
     bench_process_philosophy_family,
 )
+from quant_fund.research.benches_w1111 import (
+    bench_medicinal_chemistry_family,
+    bench_photochemistry_family,
+    bench_quantum_chemistry_family,
+    bench_spectroscopy_family,
+    bench_stereochemistry_family,
+    bench_supramolecular_chemistry_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9250,6 +9258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quantum_chemistry": bench_quantum_chemistry_family,
+        "spectroscopy": bench_spectroscopy_family,
+        "photochemistry": bench_photochemistry_family,
+        "stereochemistry": bench_stereochemistry_family,
+        "supramolecular_chemistry": bench_supramolecular_chemistry_family,
+        "medicinal_chemistry": bench_medicinal_chemistry_family,
         "philosophy_of_biology": bench_philosophy_of_biology_family,
         "philosophy_of_mathematics": bench_philosophy_of_mathematics_family,
         "philosophy_of_religion": bench_philosophy_of_religion_family,

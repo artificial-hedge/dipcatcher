@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1111 chemistry-2 canon.
+        "quantum_chemistry",
+        "spectroscopy",
+        "photochemistry",
+        "stereochemistry",
+        "supramolecular_chemistry",
+        "medicinal_chemistry",
         # Wave-1110 philosophy-4 canon.
         "philosophy_of_biology",
         "philosophy_of_mathematics",
