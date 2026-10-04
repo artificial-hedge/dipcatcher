@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1364 sentence-pair canon.
+        "anli_lite_studies",
+        "mnli_lite_studies",
+        "mrpc_lite_studies",
+        "paws_lite_studies",
+        "quora_dup_studies",
+        "rte_lite_studies",
         # Wave-1363 rumor-bias canon.
         "age_bias_studies",
         "curry_qa_studies",
