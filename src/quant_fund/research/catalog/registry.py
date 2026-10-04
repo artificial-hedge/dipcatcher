@@ -4356,6 +4356,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hyrax_qa_studies",
         "jackrabbit_qa_studies",
         "pika_qa_studies",
+        # Wave-1585 insectivore canon.
+        "aardvark_qa_studies",
+        "elephant_shrew_qa_studies",
+        "golden_mole_qa_studies",
+        "gymnure_qa_studies",
+        "solenodon_qa_studies",
+        "tenrec_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
