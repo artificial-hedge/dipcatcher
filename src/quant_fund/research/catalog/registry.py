@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-734 SLE canon.
+        "osgood_schramm",
+        "lawler_werner",
+        "werner_wilson",
+        "smirnov_parafermion",
+        "garmadon_sle",
+        "miller_sheffield",
         # Wave-733 Hall-algebra-2 canon.
         "green_hall",
         "bridgeland_hall",

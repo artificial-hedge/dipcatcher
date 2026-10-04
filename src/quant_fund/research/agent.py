@@ -5863,6 +5863,14 @@ from quant_fund.research.benches_w733 import (
     bench_morita_hall_family,
     bench_mozgovoy_hall_family,
 )
+from quant_fund.research.benches_w734 import (
+    bench_garmadon_sle_family,
+    bench_lawler_werner_family,
+    bench_miller_sheffield_family,
+    bench_osgood_schramm_family,
+    bench_smirnov_parafermion_family,
+    bench_werner_wilson_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6242,6 +6250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "osgood_schramm": bench_osgood_schramm_family,
+        "lawler_werner": bench_lawler_werner_family,
+        "werner_wilson": bench_werner_wilson_family,
+        "smirnov_parafermion": bench_smirnov_parafermion_family,
+        "garmadon_sle": bench_garmadon_sle_family,
+        "miller_sheffield": bench_miller_sheffield_family,
         "green_hall": bench_green_hall_family,
         "bridgeland_hall": bench_bridgeland_hall_family,
         "kontsevich_soibelman": bench_kontsevich_soibelman_family,
