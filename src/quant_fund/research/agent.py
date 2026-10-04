@@ -11111,6 +11111,14 @@ from quant_fund.research.benches_w1389 import (
     bench_narra_sum_studies_family,
     bench_quote_sum_studies_family,
 )
+from quant_fund.research.benches_w1390 import (
+    bench_episum_lite_studies_family,
+    bench_fsum_lite_studies_family,
+    bench_mds_news_studies_family,
+    bench_sqcs_lite_studies_family,
+    bench_summon_fce_studies_family,
+    bench_wcep_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12117,6 +12125,12 @@ def _provenance(
         "marlense_studies": bench_marlense_studies_family,
         "narra_sum_studies": bench_narra_sum_studies_family,
         "quote_sum_studies": bench_quote_sum_studies_family,
+        "episum_lite_studies": bench_episum_lite_studies_family,
+        "fsum_lite_studies": bench_fsum_lite_studies_family,
+        "mds_news_studies": bench_mds_news_studies_family,
+        "sqcs_lite_studies": bench_sqcs_lite_studies_family,
+        "summon_fce_studies": bench_summon_fce_studies_family,
+        "wcep_lite_studies": bench_wcep_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
