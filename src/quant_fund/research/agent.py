@@ -13367,6 +13367,14 @@ from quant_fund.research.benches_w1671 import (
     bench_nisse_qa_studies_family,
     bench_sigrun_qa_studies_family,
 )
+from quant_fund.research.benches_w1672 import (
+    bench_domovoi_qa_studies_family,
+    bench_kikimora_qa_studies_family,
+    bench_leshy_qa_studies_family,
+    bench_polevik_qa_studies_family,
+    bench_rusalka_qa_studies_family,
+    bench_vodianoi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

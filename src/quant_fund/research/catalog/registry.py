@@ -4965,6 +4965,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mare_qa_studies",
         "nisse_qa_studies",
         "sigrun_qa_studies",
+        # Wave-1672 slavic-domestic canon.
+        "domovoi_qa_studies",
+        "kikimora_qa_studies",
+        "leshy_qa_studies",
+        "polevik_qa_studies",
+        "rusalka_qa_studies",
+        "vodianoi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
