@@ -8439,6 +8439,14 @@ from quant_fund.research.benches_w1055 import (
     bench_physical_anthropology_family,
     bench_primatology_family,
 )
+from quant_fund.research.benches_w1056 import (
+    bench_comparative_politics_family,
+    bench_electoral_systems_family,
+    bench_international_relations_family,
+    bench_political_economy_family,
+    bench_political_theory_family,
+    bench_public_administration_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8810,6 +8818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "comparative_politics": bench_comparative_politics_family,
+        "international_relations": bench_international_relations_family,
+        "political_theory": bench_political_theory_family,
+        "public_administration": bench_public_administration_family,
+        "political_economy": bench_political_economy_family,
+        "electoral_systems": bench_electoral_systems_family,
         "physical_anthropology": bench_physical_anthropology_family,
         "cultural_anthropology": bench_cultural_anthropology_family,
         "archaeology": bench_archaeology_family,
