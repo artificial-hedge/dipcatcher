@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-776 point-process canon.
+        "cox_process",
+        "hawkes_point",
+        "self_excite",
+        "marked_point",
+        "campbell_thm",
+        "palm_dist",
         # Wave-775 martingale-theory canon.
         "doleans_meas",
         "predictable_proc",
