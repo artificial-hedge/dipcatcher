@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1217 endocrinology canon.
+        "endocrinology_studies",
+        "diabetes_medicine",
+        "thyroid_medicine",
+        "metabolic_medicine",
+        "bone_metabolism",
+        "adrenal_medicine",
         # Wave-1216 internal-medicine canon.
         "internal_medicine",
         "hospital_medicine",
