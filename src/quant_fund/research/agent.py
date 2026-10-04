@@ -8287,6 +8287,14 @@ from quant_fund.research.benches_w1036 import (
     bench_reservoir_engineering_family,
     bench_well_testing_family,
 )
+from quant_fund.research.benches_w1037 import (
+    bench_agronomy_family,
+    bench_animal_science_family,
+    bench_crop_science_family,
+    bench_horticulture_family,
+    bench_pest_management_family,
+    bench_soil_science_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8658,6 +8666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "crop_science": bench_crop_science_family,
+        "soil_science": bench_soil_science_family,
+        "agronomy": bench_agronomy_family,
+        "animal_science": bench_animal_science_family,
+        "horticulture": bench_horticulture_family,
+        "pest_management": bench_pest_management_family,
         "reservoir_engineering": bench_reservoir_engineering_family,
         "drilling_engineering": bench_drilling_engineering_family,
         "production_engineering": bench_production_engineering_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1037 agriculture canon.
+        "crop_science",
+        "soil_science",
+        "agronomy",
+        "animal_science",
+        "horticulture",
+        "pest_management",
         # Wave-1036 petroleum-engineering canon.
         "reservoir_engineering",
         "drilling_engineering",
