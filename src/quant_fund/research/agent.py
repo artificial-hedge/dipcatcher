@@ -8495,6 +8495,14 @@ from quant_fund.research.benches_w1062 import (
     bench_religious_ethics_family,
     bench_theology_family,
 )
+from quant_fund.research.benches_w1063 import (
+    bench_communication_theory_family,
+    bench_digital_media_family,
+    bench_journalism_family,
+    bench_media_studies_family,
+    bench_public_relations_family,
+    bench_rhetoric_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8866,6 +8874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "media_studies": bench_media_studies_family,
+        "journalism": bench_journalism_family,
+        "public_relations": bench_public_relations_family,
+        "rhetoric": bench_rhetoric_family,
+        "communication_theory": bench_communication_theory_family,
+        "digital_media": bench_digital_media_family,
         "theology": bench_theology_family,
         "comparative_religion": bench_comparative_religion_family,
         "biblical_studies": bench_biblical_studies_family,
