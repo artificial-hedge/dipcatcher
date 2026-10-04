@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1337 agentic-eval-3 canon.
+        "android_env_studies",
+        "api_bank_studies",
+        "gaia_level_studies",
+        "video_game_studies",
+        "voyager_minecraft_studies",
+        "web_shopping_studies",
         # Wave-1336 agentic-eval-2 canon.
         "assistantbench_studies",
         "mind2web_studies",
