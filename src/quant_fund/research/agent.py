@@ -8007,6 +8007,14 @@ from quant_fund.research.benches_w1001 import (
     bench_navier_stokes_family,
     bench_vorticity_form_family,
 )
+from quant_fund.research.benches_w1002 import (
+    bench_energy_spectrum_family,
+    bench_intermittency_models_family,
+    bench_kolmogorov_theory_family,
+    bench_reynolds_decomp_family,
+    bench_taylor_series_hyp_family,
+    bench_wall_turbulence_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8378,6 +8386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kolmogorov_theory": bench_kolmogorov_theory_family,
+        "reynolds_decomp": bench_reynolds_decomp_family,
+        "energy_spectrum": bench_energy_spectrum_family,
+        "intermittency_models": bench_intermittency_models_family,
+        "wall_turbulence": bench_wall_turbulence_family,
+        "taylor_series_hyp": bench_taylor_series_hyp_family,
         "euler_equations": bench_euler_equations_family,
         "navier_stokes": bench_navier_stokes_family,
         "vorticity_form": bench_vorticity_form_family,

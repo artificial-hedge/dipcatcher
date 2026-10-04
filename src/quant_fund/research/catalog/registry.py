@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1002 turbulence canon.
+        "kolmogorov_theory",
+        "reynolds_decomp",
+        "energy_spectrum",
+        "intermittency_models",
+        "wall_turbulence",
+        "taylor_series_hyp",
         # Wave-1001 fluid-dynamics canon.
         "euler_equations",
         "navier_stokes",
