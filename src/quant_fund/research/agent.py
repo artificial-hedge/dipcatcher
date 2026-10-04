@@ -8903,6 +8903,14 @@ from quant_fund.research.benches_w1113 import (
     bench_pediatrics_family,
     bench_surgery_family,
 )
+from quant_fund.research.benches_w1114 import (
+    bench_classical_mechanics_family,
+    bench_condensed_matter_2_family,
+    bench_nuclear_physics_family,
+    bench_plasma_physics_family,
+    bench_quantum_mechanics_2_family,
+    bench_statistical_mechanics_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9274,6 +9282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "classical_mechanics": bench_classical_mechanics_family,
+        "quantum_mechanics_2": bench_quantum_mechanics_2_family,
+        "statistical_mechanics_2": bench_statistical_mechanics_2_family,
+        "nuclear_physics": bench_nuclear_physics_family,
+        "plasma_physics": bench_plasma_physics_family,
+        "condensed_matter_2": bench_condensed_matter_2_family,
         "surgery": bench_surgery_family,
         "anesthesiology": bench_anesthesiology_family,
         "obstetrics_gynecology": bench_obstetrics_gynecology_family,
