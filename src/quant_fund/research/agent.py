@@ -4719,6 +4719,14 @@ from quant_fund.research.benches_w590 import (
     bench_suslin_k_family,
     bench_volodin_k_family,
 )
+from quant_fund.research.benches_w591 import (
+    bench_friedlander_voev_family,
+    bench_motivic_descent_family,
+    bench_motivic_eilenberg_family,
+    bench_motivic_invert_family,
+    bench_motivic_purity_family,
+    bench_motivic_zeta_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5098,6 +5106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "friedlander_voev": bench_friedlander_voev_family,
+        "motivic_eilenberg": bench_motivic_eilenberg_family,
+        "motivic_zeta": bench_motivic_zeta_family,
+        "motivic_purity": bench_motivic_purity_family,
+        "motivic_descent": bench_motivic_descent_family,
+        "motivic_invert": bench_motivic_invert_family,
         "quillen_plus": bench_quillen_plus_family,
         "gersten_ss": bench_gersten_ss_family,
         "loday_k": bench_loday_k_family,

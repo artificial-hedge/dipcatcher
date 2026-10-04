@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-591 motivic-7 canon.
+        "friedlander_voev",
+        "motivic_eilenberg",
+        "motivic_zeta",
+        "motivic_purity",
+        "motivic_descent",
+        "motivic_invert",
         # Wave-590 algebraic-K-3 canon.
         "quillen_plus",
         "gersten_ss",
