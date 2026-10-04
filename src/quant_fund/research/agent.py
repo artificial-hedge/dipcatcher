@@ -8631,6 +8631,14 @@ from quant_fund.research.benches_w1079 import (
     bench_papyrology_family,
     bench_philology_family,
 )
+from quant_fund.research.benches_w1080 import (
+    bench_byzantine_studies_family,
+    bench_codicology_family,
+    bench_hagiography_family,
+    bench_medieval_studies_family,
+    bench_numismatics_family,
+    bench_paleography_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9002,6 +9010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medieval_studies": bench_medieval_studies_family,
+        "paleography": bench_paleography_family,
+        "codicology": bench_codicology_family,
+        "hagiography": bench_hagiography_family,
+        "byzantine_studies": bench_byzantine_studies_family,
+        "numismatics": bench_numismatics_family,
         "classical_studies": bench_classical_studies_family,
         "latin_language": bench_latin_language_family,
         "ancient_greek": bench_ancient_greek_family,
