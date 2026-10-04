@@ -10919,6 +10919,14 @@ from quant_fund.research.benches_w1365 import (
     bench_pubmed_sum_studies_family,
     bench_samsum_lite_studies_family,
 )
+from quant_fund.research.benches_w1366 import (
+    bench_align_score_studies_family,
+    bench_dice_eval_studies_family,
+    bench_factcc_lite_studies_family,
+    bench_faith_eval_studies_family,
+    bench_quest_eval_studies_family,
+    bench_summa_eval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11781,6 +11789,12 @@ def _provenance(
         "multi_news_studies": bench_multi_news_studies_family,
         "pubmed_sum_studies": bench_pubmed_sum_studies_family,
         "samsum_lite_studies": bench_samsum_lite_studies_family,
+        "align_score_studies": bench_align_score_studies_family,
+        "dice_eval_studies": bench_dice_eval_studies_family,
+        "factcc_lite_studies": bench_factcc_lite_studies_family,
+        "faith_eval_studies": bench_faith_eval_studies_family,
+        "quest_eval_studies": bench_quest_eval_studies_family,
+        "summa_eval_studies": bench_summa_eval_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
