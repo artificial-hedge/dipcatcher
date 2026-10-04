@@ -1,3 +1,4 @@
+feat(research): wave 954 — matrix-approximation canon (low_rank_approx, nuclear_norm, spectral_threshold, matrix_truncate, rank_estimate, condition_number) (5673->5679 families)
 feat(research): wave 953 — operator-theory canon (bounded_operator, operator_norm, operator_adjoint, projection_operator, positive_operator, isometry_operator) (5667->5673 families)
 feat(research): wave 952 — spectral-decomposition canon (qr_iteration, power_deflation, schur_decomp, eigval_bounds, spectral_radius, spectral_gap) (5661->5667 families)
 feat(research): wave 951 — matrix-function canon (determinant_cofactor, permanent_matrix, matrix_exponential, frechet_derivative, vec_operator, kronecker_sum) (5655->5661 families)
