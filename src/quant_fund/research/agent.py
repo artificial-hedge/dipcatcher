@@ -9343,6 +9343,14 @@ from quant_fund.research.benches_w1168 import (
     bench_transportation_2_family,
     bench_warehousing_2_family,
 )
+from quant_fund.research.benches_w1169 import (
+    bench_disability_studies_2_family,
+    bench_ethnic_studies_2_family,
+    bench_gender_studies_2_family,
+    bench_public_policy_2_family,
+    bench_social_work_2_family,
+    bench_urban_studies_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9714,6 +9722,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "social_work_2": bench_social_work_2_family,
+        "public_policy_2": bench_public_policy_2_family,
+        "urban_studies_2": bench_urban_studies_2_family,
+        "gender_studies_2": bench_gender_studies_2_family,
+        "ethnic_studies_2": bench_ethnic_studies_2_family,
+        "disability_studies_2": bench_disability_studies_2_family,
         "transportation_2": bench_transportation_2_family,
         "logistics_2": bench_logistics_2_family,
         "supply_chain_2": bench_supply_chain_2_family,
