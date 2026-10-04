@@ -7319,6 +7319,14 @@ from quant_fund.research.benches_w915 import (
     bench_robbins_bvp_family,
     bench_superposition_bvp_family,
 )
+from quant_fund.research.benches_w916 import (
+    bench_da_trie_family,
+    bench_fst_index_family,
+    bench_hollow_dsu_family,
+    bench_hollow_heap_family,
+    bench_rank_pairing_family,
+    bench_soft_heap_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7690,6 +7698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "soft_heap": bench_soft_heap_family,
+        "hollow_heap": bench_hollow_heap_family,
+        "rank_pairing": bench_rank_pairing_family,
+        "hollow_dsu": bench_hollow_dsu_family,
+        "da_trie": bench_da_trie_family,
+        "fst_index": bench_fst_index_family,
         "superposition_bvp": bench_superposition_bvp_family,
         "continuation_bvp": bench_continuation_bvp_family,
         "robbins_bvp": bench_robbins_bvp_family,
