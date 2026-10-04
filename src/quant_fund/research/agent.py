@@ -9271,6 +9271,14 @@ from quant_fund.research.benches_w1159 import (
     bench_electrical_engineering_2_family,
     bench_mechanical_engineering_2_family,
 )
+from quant_fund.research.benches_w1160 import (
+    bench_area_studies_2_family,
+    bench_classics_2_family,
+    bench_history_5_family,
+    bench_humanities_2_family,
+    bench_philosophy_6_family,
+    bench_religious_studies_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9642,6 +9650,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "philosophy_6": bench_philosophy_6_family,
+        "history_5": bench_history_5_family,
+        "religious_studies_2": bench_religious_studies_2_family,
+        "classics_2": bench_classics_2_family,
+        "area_studies_2": bench_area_studies_2_family,
+        "humanities_2": bench_humanities_2_family,
         "biomedical_engineering_2": bench_biomedical_engineering_2_family,
         "chemical_engineering_2": bench_chemical_engineering_2_family,
         "mechanical_engineering_2": bench_mechanical_engineering_2_family,
