@@ -4769,6 +4769,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hippogryph_qa_studies",
         "minotaur_2_qa_studies",
         "satyr_2_qa_studies",
+        # Wave-1644 gorgon canon.
+        "charybdis_qa_studies",
+        "cyclops_2_qa_studies",
+        "hydra_3_qa_studies",
+        "medusa_2_qa_studies",
+        "scylla_qa_studies",
+        "siren_2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
