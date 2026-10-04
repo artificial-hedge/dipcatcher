@@ -3124,6 +3124,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "entailment_qa_studies",
         "fusion_qa_studies",
         "proof_qa_studies",
+        # Wave-1409 multi-hop-QA-2 canon.
+        "bamboogle_lite_studies",
+        "beerqa_lite_studies",
+        "cider_qa_studies",
+        "ensem_qa_studies",
+        "fanqa_lite_studies",
+        "hops_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
