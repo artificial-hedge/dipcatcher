@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1100 chemistry canon.
+        "organic_chemistry",
+        "inorganic_chemistry",
+        "physical_chemistry",
+        "analytical_chemistry",
+        "biochemistry",
+        "electrochemistry",
         # Wave-1099 psychology-2 canon.
         "personality_psychology",
         "abnormal_psychology",

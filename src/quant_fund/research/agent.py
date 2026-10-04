@@ -8791,6 +8791,14 @@ from quant_fund.research.benches_w1099 import (
     bench_organizational_psychology_family,
     bench_personality_psychology_family,
 )
+from quant_fund.research.benches_w1100 import (
+    bench_analytical_chemistry_family,
+    bench_biochemistry_family,
+    bench_electrochemistry_family,
+    bench_inorganic_chemistry_family,
+    bench_organic_chemistry_family,
+    bench_physical_chemistry_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9162,6 +9170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "organic_chemistry": bench_organic_chemistry_family,
+        "inorganic_chemistry": bench_inorganic_chemistry_family,
+        "physical_chemistry": bench_physical_chemistry_family,
+        "analytical_chemistry": bench_analytical_chemistry_family,
+        "biochemistry": bench_biochemistry_family,
+        "electrochemistry": bench_electrochemistry_family,
         "personality_psychology": bench_personality_psychology_family,
         "abnormal_psychology": bench_abnormal_psychology_family,
         "health_psychology": bench_health_psychology_family,
