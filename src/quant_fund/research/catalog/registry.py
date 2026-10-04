@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1126 psychology-4 canon.
+        "social_cognition",
+        "positive_psychology",
+        "cross_cultural_psychology",
+        "consumer_psychology",
+        "political_psychology",
+        "community_psychology",
         # Wave-1125 economics-4 canon.
         "development_economics",
         "environmental_economics",
