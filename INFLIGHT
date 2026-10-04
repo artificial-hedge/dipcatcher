@@ -1,3 +1,4 @@
+feat(research): wave 535 — microlocal-analysis canon (wavefront_set, pseudodiff_op, fourier_io, symbol_calc, propagation_sing, elliptic_est) (3165->3171 families)
 feat(research): wave 534 — potential-theory canon (harmonic_fn, potential_thy, capacity_theory, balayage, green_fn, fine_topology) (3159->3165 families)
 feat(research): wave 533 — geometric-measure-theory canon (rectifiability, tangent_measure, density_thm, marstrand, besicovitch, preiss_rect) (3153->3159 families)
 feat(research): wave 532 — fractal-geometry canon (hausdorff_dim, box_counting, self_similar, iterated_function, frostman, multifractal_formal) (3147->3153 families)
