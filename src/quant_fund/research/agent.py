@@ -8719,6 +8719,14 @@ from quant_fund.research.benches_w1090 import (
     bench_sts_studies_family,
     bench_technology_studies_family,
 )
+from quant_fund.research.benches_w1091 import (
+    bench_comparative_education_family,
+    bench_distance_learning_family,
+    bench_higher_education_family,
+    bench_literacy_studies_family,
+    bench_special_education_family,
+    bench_vocational_education_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9090,6 +9098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "higher_education": bench_higher_education_family,
+        "vocational_education": bench_vocational_education_family,
+        "special_education": bench_special_education_family,
+        "comparative_education": bench_comparative_education_family,
+        "literacy_studies": bench_literacy_studies_family,
+        "distance_learning": bench_distance_learning_family,
         "history_of_science": bench_history_of_science_family,
         "sts_studies": bench_sts_studies_family,
         "philosophy_of_technology": bench_philosophy_of_technology_family,
