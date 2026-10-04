@@ -8407,6 +8407,14 @@ from quant_fund.research.benches_w1051 import (
     bench_occupational_health_family,
     bench_preventive_medicine_family,
 )
+from quant_fund.research.benches_w1052 import (
+    bench_clinical_nutrition_family,
+    bench_dietary_assessment_family,
+    bench_metabolic_health_family,
+    bench_nutritional_biochemistry_family,
+    bench_nutritional_epidemiology_family,
+    bench_sports_nutrition_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8778,6 +8786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nutritional_biochemistry": bench_nutritional_biochemistry_family,
+        "dietary_assessment": bench_dietary_assessment_family,
+        "clinical_nutrition": bench_clinical_nutrition_family,
+        "sports_nutrition": bench_sports_nutrition_family,
+        "nutritional_epidemiology": bench_nutritional_epidemiology_family,
+        "metabolic_health": bench_metabolic_health_family,
         "epidemiology_2": bench_epidemiology_2_family,
         "biostatistics_2": bench_biostatistics_2_family,
         "health_policy": bench_health_policy_family,
