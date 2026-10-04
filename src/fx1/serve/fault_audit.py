@@ -148,27 +148,29 @@ def _raw_http(
     return resp
 
 
-def _corrupt_tail(path: Path) -> None:
-    """Chop the last journal line mid-record (torn-write shape)."""
-    data = path.read_bytes()
+def _corrupt_tail(data: bytes) -> bytes:
+    """Chop the last journal line mid-record (torn-write shape).
+
+    Pure byte transform — callers write the result to the journal path
+    they built locally (keeps file writes out of parameterized helpers)."""
     cut = data.rindex(b"\n", 0, len(data) - 1)
-    path.write_bytes(data[: cut + 20])
+    return data[: cut + 20]
 
 
-def _corrupt_line(path: Path, idx: int) -> None:
+def _corrupt_line(data: bytes, idx: int) -> bytes:
     """Flip one byte inside line ``idx`` — invalidates its sha256."""
-    lines = path.read_bytes().splitlines(keepends=True)
+    lines = data.splitlines(keepends=True)
     line = bytearray(lines[idx])
     mark = line.find(b'"')
     line[mark + 3] = ord("X") if line[mark + 3] != ord("X") else ord("Y")
     lines[idx] = bytes(line)
-    path.write_bytes(b"".join(lines))
+    return b"".join(lines)
 
 
-def _swap_lines(path: Path, i: int, j: int) -> None:
-    lines = path.read_bytes().splitlines(keepends=True)
+def _swap_lines(data: bytes, i: int, j: int) -> bytes:
+    lines = data.splitlines(keepends=True)
     lines[i], lines[j] = lines[j], lines[i]
-    path.write_bytes(b"".join(lines))
+    return b"".join(lines)
 
 
 def _probe_journal_recovery() -> dict[str, bool]:
@@ -182,7 +184,7 @@ def _probe_journal_recovery() -> dict[str, bool]:
         store = ApiKeyStore(journal=JobJournal(p))
         raw_a, rec_a = store.mint(name="a")
         _, rec_b = store.mint(name="b")
-        _corrupt_tail(p)
+        p.write_bytes(_corrupt_tail(p.read_bytes()))
         res = JobJournal(p).replay()
         out["journal_corrupt_tail_reports_dropped"] = res.dropped >= 1
         reloaded = ApiKeyStore(journal=JobJournal(p))
@@ -200,7 +202,7 @@ def _probe_journal_recovery() -> dict[str, bool]:
         raw_v, rec_v = s2.mint(name="victim")
         s2.revoke(rec_v["key_id"])
         s2.mint(name="other")
-        _corrupt_line(p2, 1)
+        p2.write_bytes(_corrupt_line(p2.read_bytes(), 1))
         s3 = ApiKeyStore(journal=JobJournal(p2))
         rec_v2 = s3.get(rec_v["key_id"])
         out["revoked_key_stays_dead_through_corruption"] = (
@@ -219,7 +221,7 @@ def _probe_journal_recovery() -> dict[str, bool]:
         s5 = ApiKeyStore(journal=JobJournal(p3))
         s5.mint(name="x")
         s5.mint(name="y")
-        _swap_lines(p3, 0, 1)
+        p3.write_bytes(_swap_lines(p3.read_bytes(), 0, 1))
         res3 = JobJournal(p3).replay()
         out["journal_reordered_lines_detected"] = res3.dropped >= 1
     return out
