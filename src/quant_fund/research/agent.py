@@ -13847,6 +13847,14 @@ from quant_fund.research.benches_w1731 import (
     bench_karacarol_qa_studies_family,
     bench_yucahu_qa_studies_family,
 )
+from quant_fund.research.benches_w1732 import (
+    bench_dziewanna_qa_studies_family,
+    bench_marzanna_qa_studies_family,
+    bench_mokosz_qa_studies_family,
+    bench_nija_qa_studies_family,
+    bench_swarozyc_qa_studies_family,
+    bench_zywie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
