@@ -5308,6 +5308,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "radien_qa_studies",
         "sarakka_qa_studies",
         "ukso_qa_studies",
+        # Wave-1721 tatar-myth canon.
+        "albasti_qa_studies",
+        "erlik_qa_studies",
+        "shurale_qa_studies",
+        "suana_qa_studies",
+        "tengri_qa_studies",
+        "umai_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
