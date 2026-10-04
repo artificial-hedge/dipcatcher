@@ -12303,6 +12303,14 @@ from quant_fund.research.benches_w1538 import (
     bench_trumpeter_qa_studies_family,
     bench_whooping_qa_studies_family,
 )
+from quant_fund.research.benches_w1539 import (
+    bench_goliath_heron_qa_studies_family,
+    bench_green_heron_qa_studies_family,
+    bench_grey_heron_qa_studies_family,
+    bench_night_heron_qa_studies_family,
+    bench_purple_heron_qa_studies_family,
+    bench_tiger_heron_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14148,6 +14156,12 @@ def _provenance(
         "limpkin_qa_studies": bench_limpkin_qa_studies_family,
         "trumpeter_qa_studies": bench_trumpeter_qa_studies_family,
         "whooping_qa_studies": bench_whooping_qa_studies_family,
+        "goliath_heron_qa_studies": bench_goliath_heron_qa_studies_family,
+        "green_heron_qa_studies": bench_green_heron_qa_studies_family,
+        "grey_heron_qa_studies": bench_grey_heron_qa_studies_family,
+        "night_heron_qa_studies": bench_night_heron_qa_studies_family,
+        "purple_heron_qa_studies": bench_purple_heron_qa_studies_family,
+        "tiger_heron_qa_studies": bench_tiger_heron_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,

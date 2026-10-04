@@ -4034,6 +4034,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "limpkin_qa_studies",
         "trumpeter_qa_studies",
         "whooping_qa_studies",
+        # Wave-1539 heron canon.
+        "goliath_heron_qa_studies",
+        "green_heron_qa_studies",
+        "grey_heron_qa_studies",
+        "night_heron_qa_studies",
+        "purple_heron_qa_studies",
+        "tiger_heron_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
