@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1243 infectious-medicine canon.
+        "sepsis_studies",
+        "tuberculosis_studies",
+        "mycosis_studies",
+        "sexually_transmitted_studies",
+        "healthcare_infection_studies",
+        "opportunistic_studies",
         # Wave-1242 rehab-medicine canon.
         "rehabilitation_studies",
         "physical_therapy_studies",
