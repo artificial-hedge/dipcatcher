@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1113 medicine-4 canon.
+        "surgery",
+        "anesthesiology",
+        "obstetrics_gynecology",
+        "pediatrics",
+        "emergency_medicine",
+        "family_medicine",
         # Wave-1112 biology-2 canon.
         "biophysics",
         "evolutionary_biology",
