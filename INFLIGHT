@@ -1,3 +1,4 @@
+w1297 eval-science canon: benchmark_gaming_studies, benchmark_saturate_studies, contamination_studies, eval_coverage_studies, eval_reliability_studies, lm_eval_harness_studies (7731->7737)
 w1296 reward-modeling-2 canon: ensemble_rm_studies, judge_reward_studies, margin_reward_studies, reward_hacking_studies, reward_uncertainty_studies, rm_btd_studies (7725->7731)
 w1295 mech-anomaly/jailbreak canon: activation_patch_studies, circuit_tracer_studies, feature_dashboard_studies, jailbreak_detect_studies, mech_anomaly_studies, sae_linter_studies (7719->7725)
 w1294 representation-engineering canon: activation_oracle_studies, concept_vector_studies, feature_ablation_studies, honesty_vector_studies, reading_vector_studies, refusal_vector_studies (7713->7719)

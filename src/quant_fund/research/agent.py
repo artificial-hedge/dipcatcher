@@ -10367,6 +10367,14 @@ from quant_fund.research.benches_w1296 import (
     bench_reward_uncertainty_studies_family,
     bench_rm_btd_studies_family,
 )
+from quant_fund.research.benches_w1297 import (
+    bench_benchmark_gaming_studies_family,
+    bench_benchmark_saturate_studies_family,
+    bench_contamination_studies_family,
+    bench_eval_coverage_studies_family,
+    bench_eval_reliability_studies_family,
+    bench_lm_eval_harness_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10966,6 +10974,12 @@ def _provenance(
         "reward_hacking_studies": bench_reward_hacking_studies_family,
         "reward_uncertainty_studies": bench_reward_uncertainty_studies_family,
         "rm_btd_studies": bench_rm_btd_studies_family,
+        "benchmark_gaming_studies": bench_benchmark_gaming_studies_family,
+        "benchmark_saturate_studies": bench_benchmark_saturate_studies_family,
+        "contamination_studies": bench_contamination_studies_family,
+        "eval_coverage_studies": bench_eval_coverage_studies_family,
+        "eval_reliability_studies": bench_eval_reliability_studies_family,
+        "lm_eval_harness_studies": bench_lm_eval_harness_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
