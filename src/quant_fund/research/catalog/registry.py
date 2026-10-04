@@ -6638,6 +6638,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "druj_spirit_qa_studies",
         "nasu_demon_qa_studies",
         "yalburz_qa_studies",
+        # Wave-1911 persian-spirit canon.
+        "divsalar_qa_studies",
+        "khrafstra_qa_studies",
+        "leshenka_qa_studies",
+        "pari_vatra_qa_studies",
+        "srosh_demon_qa_studies",
+        "urvan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
