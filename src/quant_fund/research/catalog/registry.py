@@ -4006,6 +4006,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nighthawk_qa_studies",
         "nightjar_qa_studies",
         "roadrunner_qa_studies",
+        # Wave-1535 aerialist canon.
+        "martin_qa_studies",
+        "needletail_qa_studies",
+        "swallow_qa_studies",
+        "swift_qa_studies",
+        "swiftlet_qa_studies",
+        "treeswift_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

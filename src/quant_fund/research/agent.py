@@ -12271,6 +12271,14 @@ from quant_fund.research.benches_w1534 import (
     bench_nightjar_qa_studies_family,
     bench_roadrunner_qa_studies_family,
 )
+from quant_fund.research.benches_w1535 import (
+    bench_martin_qa_studies_family,
+    bench_needletail_qa_studies_family,
+    bench_swallow_qa_studies_family,
+    bench_swift_qa_studies_family,
+    bench_swiftlet_qa_studies_family,
+    bench_treeswift_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14092,6 +14100,12 @@ def _provenance(
         "nighthawk_qa_studies": bench_nighthawk_qa_studies_family,
         "nightjar_qa_studies": bench_nightjar_qa_studies_family,
         "roadrunner_qa_studies": bench_roadrunner_qa_studies_family,
+        "martin_qa_studies": bench_martin_qa_studies_family,
+        "needletail_qa_studies": bench_needletail_qa_studies_family,
+        "swallow_qa_studies": bench_swallow_qa_studies_family,
+        "swift_qa_studies": bench_swift_qa_studies_family,
+        "swiftlet_qa_studies": bench_swiftlet_qa_studies_family,
+        "treeswift_qa_studies": bench_treeswift_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
