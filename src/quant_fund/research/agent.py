@@ -10543,6 +10543,14 @@ from quant_fund.research.benches_w1318 import (
     bench_sst2_studies_family,
     bench_wic_studies_family,
 )
+from quant_fund.research.benches_w1319 import (
+    bench_math_bench_studies_family,
+    bench_multirc_studies_family,
+    bench_ninco_studies_family,
+    bench_objectnet_studies_family,
+    bench_ood_bench_studies_family,
+    bench_wild_bench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11235,6 +11243,12 @@ def _provenance(
         "squad_v2_studies": bench_squad_v2_studies_family,
         "sst2_studies": bench_sst2_studies_family,
         "wic_studies": bench_wic_studies_family,
+        "math_bench_studies": bench_math_bench_studies_family,
+        "multirc_studies": bench_multirc_studies_family,
+        "ninco_studies": bench_ninco_studies_family,
+        "objectnet_studies": bench_objectnet_studies_family,
+        "ood_bench_studies": bench_ood_bench_studies_family,
+        "wild_bench_studies": bench_wild_bench_studies_family,
         "do_anything_studies": bench_do_anything_studies_family,
         "step_eval_studies": bench_step_eval_studies_family,
         "strong_reject_studies": bench_strong_reject_studies_family,
