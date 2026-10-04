@@ -13335,6 +13335,14 @@ from quant_fund.research.benches_w1667 import (
     bench_nereid_qa_studies_family,
     bench_nymph_qa_studies_family,
 )
+from quant_fund.research.benches_w1668 import (
+    bench_berserkr_qa_studies_family,
+    bench_fafnir_qa_studies_family,
+    bench_jotun_qa_studies_family,
+    bench_regin_qa_studies_family,
+    bench_ulfhednar_qa_studies_family,
+    bench_vargr_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
