@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1088 philosophy-2 canon.
+        "ancient_philosophy",
+        "medieval_philosophy",
+        "continental_philosophy",
+        "analytic_philosophy",
+        "pragmatism",
+        "existentialism",
         # Wave-1087 documentary-sciences canon.
         "epigraphy",
         "diplomatics",
