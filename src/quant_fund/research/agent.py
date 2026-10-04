@@ -10471,6 +10471,14 @@ from quant_fund.research.benches_w1309 import (
     bench_tau_bench_studies_family,
     bench_workarena_studies_family,
 )
+from quant_fund.research.benches_w1310 import (
+    bench_alpaca_eval_studies_family,
+    bench_attribution_eval_studies_family,
+    bench_citation_eval_studies_family,
+    bench_diversity_eval_studies_family,
+    bench_factscore_studies_family,
+    bench_self_bleu_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11133,6 +11141,12 @@ def _provenance(
         "hle_studies": bench_hle_studies_family,
         "mmlu_pro_studies": bench_mmlu_pro_studies_family,
         "tau_bench_studies": bench_tau_bench_studies_family,
+        "alpaca_eval_studies": bench_alpaca_eval_studies_family,
+        "attribution_eval_studies": bench_attribution_eval_studies_family,
+        "citation_eval_studies": bench_citation_eval_studies_family,
+        "diversity_eval_studies": bench_diversity_eval_studies_family,
+        "factscore_studies": bench_factscore_studies_family,
+        "self_bleu_studies": bench_self_bleu_studies_family,
         "workarena_studies": bench_workarena_studies_family,
         "infinite_bench_studies": bench_infinite_bench_studies_family,
         "longmem_studies": bench_longmem_studies_family,
