@@ -1,3 +1,4 @@
+feat(research): wave 595 — crystalline-cohomology canon (crys_cohom, syntomic, divided_power, pd_envelope, nygaard_filt, conjugate_fil) (3525->3531 families)
 feat(research): wave 594 — etale-cohomology canon (etale_homotopy, pro_etale, etale_fund, galois_cat, artin_neighborhood, shapiro_lemma) (3519->3525 families)
 feat(research): wave 593 — nonabelian-Hodge canon (higgs_bundle2, hitchin_section, simpson_corr, nonabelian_hodge, harmonic_bdl, hodge_moduli) (3513->3519 families)
 feat(research): wave 592 — tensor-category canon (tensor_cat, braided_cat, rigid_cat, fusion_cat, spherical_cat, premodular) (3507->3513 families)
