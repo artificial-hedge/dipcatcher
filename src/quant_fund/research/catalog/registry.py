@@ -3922,6 +3922,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "haworthia_qa_studies",
         "lithops_qa_studies",
         "sedum_qa_studies",
+        # Wave-1523 grass canon.
+        "bluegrass_qa_studies",
+        "fescue_qa_studies",
+        "miscanthus_qa_studies",
+        "pampas_qa_studies",
+        "ryegrass_qa_studies",
+        "switchgrass_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
