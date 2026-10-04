@@ -9231,6 +9231,14 @@ from quant_fund.research.benches_w1154 import (
     bench_quantum_physics_family,
     bench_relativity_3_family,
 )
+from quant_fund.research.benches_w1155 import (
+    bench_atmospheric_science_family,
+    bench_earth_system_science_family,
+    bench_environmental_science_2_family,
+    bench_hydrology_3_family,
+    bench_oceanography_2_family,
+    bench_soil_science_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9602,6 +9610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "earth_system_science": bench_earth_system_science_family,
+        "oceanography_2": bench_oceanography_2_family,
+        "atmospheric_science": bench_atmospheric_science_family,
+        "environmental_science_2": bench_environmental_science_2_family,
+        "soil_science_2": bench_soil_science_2_family,
+        "hydrology_3": bench_hydrology_3_family,
         "electromagnetism": bench_electromagnetism_family,
         "optics_4": bench_optics_4_family,
         "nuclear_physics_2": bench_nuclear_physics_2_family,
