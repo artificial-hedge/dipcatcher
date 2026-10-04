@@ -11703,6 +11703,14 @@ from quant_fund.research.benches_w1463 import (
     bench_sprout_qa_studies_family,
     bench_truffle_qa_studies_family,
 )
+from quant_fund.research.benches_w1464 import (
+    bench_abyss_qa_studies_family,
+    bench_beacon_qa_studies_family,
+    bench_blizzard_qa_studies_family,
+    bench_monolith_qa_studies_family,
+    bench_spire_qa_studies_family,
+    bench_tempest_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13147,6 +13155,12 @@ def _provenance(
         "firefly_qa_studies": bench_firefly_qa_studies_family,
         "sprout_qa_studies": bench_sprout_qa_studies_family,
         "truffle_qa_studies": bench_truffle_qa_studies_family,
+        "abyss_qa_studies": bench_abyss_qa_studies_family,
+        "beacon_qa_studies": bench_beacon_qa_studies_family,
+        "blizzard_qa_studies": bench_blizzard_qa_studies_family,
+        "monolith_qa_studies": bench_monolith_qa_studies_family,
+        "spire_qa_studies": bench_spire_qa_studies_family,
+        "tempest_qa_studies": bench_tempest_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
