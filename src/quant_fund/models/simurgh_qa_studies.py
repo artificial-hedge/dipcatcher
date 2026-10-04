@@ -16,7 +16,7 @@ def simurgh_qa_studies_aux(aux: bool) -> bool:
     """simurgh_qa_studies
 
     aux:
-    simurgh_qa_studies: simurghs, wisdom birds, answers, and scores
+    simurgh_qa_studies: simurgh, wise birds, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_simurgh_qa_studies(seed: int = 0) -> float:
     checks.append(not simurgh_qa_studies_ok(False, True))
     checks.append(simurgh_qa_studies_aux(True))
     checks.append(not simurgh_qa_studies_aux(False))
-    checks.append(True)  # mythic-menagerie canon
+    checks.append(True)  # persian-3 canon
     return float(sum(checks) / len(checks))
 
 

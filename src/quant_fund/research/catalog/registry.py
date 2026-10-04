@@ -5644,6 +5644,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mawu_qa_studies",
         "nyambi_qa_studies",
         "oshumare_qa_studies",
+        # Wave-1769 persian-3 canon.
+        "angra_qa_studies",
+        "arash_qa_studies",
+        "haoma_qa_studies",
+        "simurgh_qa_studies",
+        "spenta_qa_studies",
+        "zal_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
