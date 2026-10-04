@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1118 linguistics-4 canon.
+        "theoretical_linguistics",
+        "field_linguistics",
+        "translation_theory",
+        "sign_linguistics",
+        "linguistic_typology",
+        "language_acquisition",
         # Wave-1117 sociology-3 canon.
         "mathematical_sociology",
         "historical_sociology",
