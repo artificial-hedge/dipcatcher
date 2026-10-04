@@ -8543,6 +8543,14 @@ from quant_fund.research.benches_w1068 import (
     bench_peace_studies_family,
     bench_strategic_studies_family,
 )
+from quant_fund.research.benches_w1069 import (
+    bench_criminal_justice_family,
+    bench_criminal_procedure_family,
+    bench_forensic_science_family,
+    bench_penology_family,
+    bench_policing_studies_family,
+    bench_victimology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8914,6 +8922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "criminal_justice": bench_criminal_justice_family,
+        "forensic_science": bench_forensic_science_family,
+        "penology": bench_penology_family,
+        "policing_studies": bench_policing_studies_family,
+        "victimology": bench_victimology_family,
+        "criminal_procedure": bench_criminal_procedure_family,
         "military_science": bench_military_science_family,
         "defense_studies": bench_defense_studies_family,
         "strategic_studies": bench_strategic_studies_family,
