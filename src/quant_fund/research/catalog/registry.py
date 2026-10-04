@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-753 O(N)-model canon.
+        "fernandez_frohlich",
+        "aizenman_irf",
+        "fradkin_sokal",
+        "nienhuis_on",
+        "cardy_on",
+        "pelissetto_vicari",
         # Wave-752 UST/LERW canon.
         "wilson_ust",
         "lawler_lerw",
