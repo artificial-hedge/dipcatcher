@@ -14287,6 +14287,14 @@ from quant_fund.research.benches_w1786 import (
     bench_semiramis_qa_studies_family,
     bench_utnapishtim_qa_studies_family,
 )
+from quant_fund.research.benches_w1787 import (
+    bench_eir_qa_studies_family,
+    bench_heimdal_qa_studies_family,
+    bench_norns_qa_studies_family,
+    bench_odin_qa_studies_family,
+    bench_thor_qa_studies_family,
+    bench_valkyrie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

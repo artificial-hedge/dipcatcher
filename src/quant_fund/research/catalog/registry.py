@@ -5770,6 +5770,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sargon_qa_studies",
         "semiramis_qa_studies",
         "utnapishtim_qa_studies",
+        # Wave-1787 norse-myth-11 canon.
+        "eir_qa_studies",
+        "heimdal_qa_studies",
+        "norns_qa_studies",
+        "odin_qa_studies",
+        "thor_qa_studies",
+        "valkyrie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
