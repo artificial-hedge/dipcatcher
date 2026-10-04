@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-534 potential-theory canon.
+        "harmonic_fn",
+        "potential_thy",
+        "capacity_theory",
+        "balayage",
+        "green_fn",
+        "fine_topology",
         # Wave-533 geometric-measure-theory canon.
         "rectifiability",
         "tangent_measure",
