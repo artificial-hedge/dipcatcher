@@ -12895,6 +12895,14 @@ from quant_fund.research.benches_w1612 import (
     bench_mouflon_qa_studies_family,
     bench_urial_qa_studies_family,
 )
+from quant_fund.research.benches_w1613 import (
+    bench_aurochs_qa_studies_family,
+    bench_banteng_qa_studies_family,
+    bench_gaur_qa_studies_family,
+    bench_saola_qa_studies_family,
+    bench_tamaraw_qa_studies_family,
+    bench_yak_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15027,6 +15035,12 @@ def _provenance(
         "bighorn_qa_studies": bench_bighorn_qa_studies_family,
         "dall_qa_studies": bench_dall_qa_studies_family,
         "llama_qa_studies": bench_llama_qa_studies_family,
+        "aurochs_qa_studies": bench_aurochs_qa_studies_family,
+        "banteng_qa_studies": bench_banteng_qa_studies_family,
+        "gaur_qa_studies": bench_gaur_qa_studies_family,
+        "saola_qa_studies": bench_saola_qa_studies_family,
+        "tamaraw_qa_studies": bench_tamaraw_qa_studies_family,
+        "yak_qa_studies": bench_yak_qa_studies_family,
         "mouflon_qa_studies": bench_mouflon_qa_studies_family,
         "urial_qa_studies": bench_urial_qa_studies_family,
         "fork_marked_qa_studies": bench_fork_marked_qa_studies_family,
