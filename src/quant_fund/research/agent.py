@@ -9743,6 +9743,14 @@ from quant_fund.research.benches_w1218 import (
     bench_renal_transplant_family,
     bench_urology_studies_family,
 )
+from quant_fund.research.benches_w1219 import (
+    bench_hematologic_malignancies_family,
+    bench_hematology_studies_family,
+    bench_oncology_studies_family,
+    bench_radiation_oncology_family,
+    bench_solid_tumor_oncology_family,
+    bench_transfusion_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10114,6 +10122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hematology_studies": bench_hematology_studies_family,
+        "oncology_studies": bench_oncology_studies_family,
+        "hematologic_malignancies": bench_hematologic_malignancies_family,
+        "solid_tumor_oncology": bench_solid_tumor_oncology_family,
+        "transfusion_medicine": bench_transfusion_medicine_family,
+        "radiation_oncology": bench_radiation_oncology_family,
         "nephrology_studies": bench_nephrology_studies_family,
         "dialysis_medicine": bench_dialysis_medicine_family,
         "renal_transplant": bench_renal_transplant_family,
