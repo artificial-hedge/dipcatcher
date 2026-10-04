@@ -11719,6 +11719,14 @@ from quant_fund.research.benches_w1465 import (
     bench_quarry_qa_studies_family,
     bench_vault_qa_studies_family,
 )
+from quant_fund.research.benches_w1466 import (
+    bench_basalt_qa_studies_family,
+    bench_cathedral_qa_studies_family,
+    bench_chasm_qa_studies_family,
+    bench_crag_qa_studies_family,
+    bench_plateau_qa_studies_family,
+    bench_ravine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13175,6 +13183,12 @@ def _provenance(
         "lighthouse_qa_studies": bench_lighthouse_qa_studies_family,
         "quarry_qa_studies": bench_quarry_qa_studies_family,
         "vault_qa_studies": bench_vault_qa_studies_family,
+        "basalt_qa_studies": bench_basalt_qa_studies_family,
+        "cathedral_qa_studies": bench_cathedral_qa_studies_family,
+        "chasm_qa_studies": bench_chasm_qa_studies_family,
+        "crag_qa_studies": bench_crag_qa_studies_family,
+        "plateau_qa_studies": bench_plateau_qa_studies_family,
+        "ravine_qa_studies": bench_ravine_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

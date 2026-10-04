@@ -3523,6 +3523,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lighthouse_qa_studies",
         "quarry_qa_studies",
         "vault_qa_studies",
+        # Wave-1466 bedrock canon.
+        "basalt_qa_studies",
+        "cathedral_qa_studies",
+        "chasm_qa_studies",
+        "crag_qa_studies",
+        "plateau_qa_studies",
+        "ravine_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
