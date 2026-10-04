@@ -5217,6 +5217,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "louhi_qa_studies",
         "tapio_qa_studies",
         "ukko_qa_studies",
+        # Wave-1708 nenets-myth canon.
+        "metsik_qa_studies",
+        "naveluz_qa_studies",
+        "numishi_qa_studies",
+        "numit_qa_studies",
+        "piryani_qa_studies",
+        "yejmun_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
