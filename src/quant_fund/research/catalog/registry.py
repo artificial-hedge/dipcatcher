@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-936 nonsmooth-analysis canon.
+        "subdiff_compute",
+        "epigraph_proj",
+        "gauge_fn",
+        "gauge_duality",
+        "bundle_level",
+        "clarke_subdiff",
         # Wave-935 convex-optimization canon.
         "kkt_solve",
         "cvx_reform",
