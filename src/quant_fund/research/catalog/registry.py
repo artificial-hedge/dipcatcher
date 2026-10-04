@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1045 geology canon.
+        "stratigraphy",
+        "structural_geology",
+        "petrology",
+        "geochemistry",
+        "geochronology",
+        "paleontology",
         # Wave-1044 mining-engineering canon.
         "mine_design",
         "rock_mechanics",

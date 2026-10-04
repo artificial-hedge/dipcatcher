@@ -8351,6 +8351,14 @@ from quant_fund.research.benches_w1044 import (
     bench_ore_reserve_estimation_family,
     bench_rock_mechanics_family,
 )
+from quant_fund.research.benches_w1045 import (
+    bench_geochemistry_family,
+    bench_geochronology_family,
+    bench_paleontology_family,
+    bench_petrology_family,
+    bench_stratigraphy_family,
+    bench_structural_geology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8722,6 +8730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stratigraphy": bench_stratigraphy_family,
+        "structural_geology": bench_structural_geology_family,
+        "petrology": bench_petrology_family,
+        "geochemistry": bench_geochemistry_family,
+        "geochronology": bench_geochronology_family,
+        "paleontology": bench_paleontology_family,
         "mine_design": bench_mine_design_family,
         "rock_mechanics": bench_rock_mechanics_family,
         "mineral_processing": bench_mineral_processing_family,
