@@ -9711,6 +9711,14 @@ from quant_fund.research.benches_w1214 import (
     bench_interventional_cardiology_family,
     bench_preventive_cardiology_family,
 )
+from quant_fund.research.benches_w1215 import (
+    bench_adult_congenital_family,
+    bench_cardiac_surgery_family,
+    bench_structural_heart_family,
+    bench_thoracic_surgery_family,
+    bench_transplant_cardiology_family,
+    bench_vascular_surgery_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10082,6 +10090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "vascular_surgery": bench_vascular_surgery_family,
+        "cardiac_surgery": bench_cardiac_surgery_family,
+        "thoracic_surgery": bench_thoracic_surgery_family,
+        "transplant_cardiology": bench_transplant_cardiology_family,
+        "structural_heart": bench_structural_heart_family,
+        "adult_congenital": bench_adult_congenital_family,
         "cardiology_studies": bench_cardiology_studies_family,
         "interventional_cardiology": bench_interventional_cardiology_family,
         "electrophysiology_studies": bench_electrophysiology_studies_family,

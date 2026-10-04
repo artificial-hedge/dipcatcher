@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1215 cardio-surgery canon.
+        "vascular_surgery",
+        "cardiac_surgery",
+        "thoracic_surgery",
+        "transplant_cardiology",
+        "structural_heart",
+        "adult_congenital",
         # Wave-1214 cardiology canon.
         "cardiology_studies",
         "interventional_cardiology",
