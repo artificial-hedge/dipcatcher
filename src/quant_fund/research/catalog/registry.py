@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-662 higher-algebra-4 canon.
+        "bar_resolution2",
+        "hochschild_hom2",
+        "factor_homology2",
+        "deligne_conj2",
+        "braces_higher",
+        "little_cubes",
         # Wave-661 chromatic-6 canon.
         "ambidexterity",
         "higher_semiadditivity",

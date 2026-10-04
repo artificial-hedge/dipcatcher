@@ -5287,6 +5287,14 @@ from quant_fund.research.benches_w661 import (
     bench_raynaud_height_family,
     bench_tate_height_family,
 )
+from quant_fund.research.benches_w662 import (
+    bench_bar_resolution2_family,
+    bench_braces_higher_family,
+    bench_deligne_conj2_family,
+    bench_factor_homology2_family,
+    bench_hochschild_hom2_family,
+    bench_little_cubes_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5666,6 +5674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bar_resolution2": bench_bar_resolution2_family,
+        "hochschild_hom2": bench_hochschild_hom2_family,
+        "factor_homology2": bench_factor_homology2_family,
+        "deligne_conj2": bench_deligne_conj2_family,
+        "braces_higher": bench_braces_higher_family,
+        "little_cubes": bench_little_cubes_family,
         "ambidexterity": bench_ambidexterity_family,
         "higher_semiadditivity": bench_higher_semiadditivity_family,
         "tate_height": bench_tate_height_family,
