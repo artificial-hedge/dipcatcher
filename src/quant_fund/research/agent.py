@@ -10415,6 +10415,14 @@ from quant_fund.research.benches_w1302 import (
     bench_membership_infer_studies_family,
     bench_shadow_model_studies_family,
 )
+from quant_fund.research.benches_w1303 import (
+    bench_bbh_studies_family,
+    bench_gsm8k_studies_family,
+    bench_humaneval_studies_family,
+    bench_ifeval_studies_family,
+    bench_mmlu_studies_family,
+    bench_mt_bench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11045,6 +11053,12 @@ def _provenance(
         "spectral_signature_studies": bench_spectral_signature_studies_family,
         "canary_infer_studies": bench_canary_infer_studies_family,
         "deep_leak_studies": bench_deep_leak_studies_family,
+        "bbh_studies": bench_bbh_studies_family,
+        "gsm8k_studies": bench_gsm8k_studies_family,
+        "humaneval_studies": bench_humaneval_studies_family,
+        "ifeval_studies": bench_ifeval_studies_family,
+        "mmlu_studies": bench_mmlu_studies_family,
+        "mt_bench_studies": bench_mt_bench_studies_family,
         "gradient_leak_studies": bench_gradient_leak_studies_family,
         "lira_studies": bench_lira_studies_family,
         "membership_infer_studies": bench_membership_infer_studies_family,
