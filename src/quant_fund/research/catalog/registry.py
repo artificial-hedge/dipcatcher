@@ -3999,6 +3999,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hornbill_qa_studies",
         "quetzal_qa_studies",
         "trogon_qa_studies",
+        # Wave-1534 nightbird canon.
+        "cuckoo_qa_studies",
+        "frogmouth_qa_studies",
+        "koel_qa_studies",
+        "nighthawk_qa_studies",
+        "nightjar_qa_studies",
+        "roadrunner_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
