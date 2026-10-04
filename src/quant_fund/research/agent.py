@@ -11383,6 +11383,14 @@ from quant_fund.research.benches_w1423 import (
     bench_lecture_qa_studies_family,
     bench_seminar_qa_studies_family,
 )
+from quant_fund.research.benches_w1424 import (
+    bench_blueprint_qa_studies_family,
+    bench_design_qa_studies_family,
+    bench_format_qa_studies_family,
+    bench_layout_qa_studies_family,
+    bench_pattern_qa_studies_family,
+    bench_schema_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12587,6 +12595,12 @@ def _provenance(
         "homework_qa_studies": bench_homework_qa_studies_family,
         "lecture_qa_studies": bench_lecture_qa_studies_family,
         "seminar_qa_studies": bench_seminar_qa_studies_family,
+        "blueprint_qa_studies": bench_blueprint_qa_studies_family,
+        "design_qa_studies": bench_design_qa_studies_family,
+        "format_qa_studies": bench_format_qa_studies_family,
+        "layout_qa_studies": bench_layout_qa_studies_family,
+        "pattern_qa_studies": bench_pattern_qa_studies_family,
+        "schema_qa_studies": bench_schema_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
