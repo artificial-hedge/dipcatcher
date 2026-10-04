@@ -8271,6 +8271,14 @@ from quant_fund.research.benches_w1034 import (
     bench_quality_control_family,
     bench_supply_chain_family,
 )
+from quant_fund.research.benches_w1035 import (
+    bench_isotope_production_family,
+    bench_nuclear_fuel_cycle_family,
+    bench_nuclear_safety_family,
+    bench_radiation_protection_family,
+    bench_reactor_physics_family,
+    bench_thermal_hydraulics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8642,6 +8650,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "reactor_physics": bench_reactor_physics_family,
+        "radiation_protection": bench_radiation_protection_family,
+        "nuclear_fuel_cycle": bench_nuclear_fuel_cycle_family,
+        "thermal_hydraulics": bench_thermal_hydraulics_family,
+        "nuclear_safety": bench_nuclear_safety_family,
+        "isotope_production": bench_isotope_production_family,
         "operations_research": bench_operations_research_family,
         "supply_chain": bench_supply_chain_family,
         "manufacturing_sys": bench_manufacturing_sys_family,
