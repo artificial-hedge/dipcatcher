@@ -12351,6 +12351,14 @@ from quant_fund.research.benches_w1544 import (
     bench_toco_qa_studies_family,
     bench_woodhoopoe_qa_studies_family,
 )
+from quant_fund.research.benches_w1545 import (
+    bench_amazon_qa_studies_family,
+    bench_cockatoo_qa_studies_family,
+    bench_conure_qa_studies_family,
+    bench_kakapo_qa_studies_family,
+    bench_kea_qa_studies_family,
+    bench_lorikeet_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14232,6 +14240,12 @@ def _provenance(
         "puffbird_qa_studies": bench_puffbird_qa_studies_family,
         "toco_qa_studies": bench_toco_qa_studies_family,
         "woodhoopoe_qa_studies": bench_woodhoopoe_qa_studies_family,
+        "amazon_qa_studies": bench_amazon_qa_studies_family,
+        "cockatoo_qa_studies": bench_cockatoo_qa_studies_family,
+        "conure_qa_studies": bench_conure_qa_studies_family,
+        "kakapo_qa_studies": bench_kakapo_qa_studies_family,
+        "kea_qa_studies": bench_kea_qa_studies_family,
+        "lorikeet_qa_studies": bench_lorikeet_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,

@@ -4076,6 +4076,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "puffbird_qa_studies",
         "toco_qa_studies",
         "woodhoopoe_qa_studies",
+        # Wave-1545 parrot canon.
+        "amazon_qa_studies",
+        "cockatoo_qa_studies",
+        "conure_qa_studies",
+        "kakapo_qa_studies",
+        "kea_qa_studies",
+        "lorikeet_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
