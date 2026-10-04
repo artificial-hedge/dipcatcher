@@ -4804,6 +4804,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kudlak_qa_studies",
         "viy_qa_studies",
         "zilant_qa_studies",
+        # Wave-1649 filipino-beast canon.
+        "aswang_qa_studies",
+        "bakunawa_qa_studies",
+        "berbalang_qa_studies",
+        "kapre_qa_studies",
+        "sigbin_qa_studies",
+        "tikbalang_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
