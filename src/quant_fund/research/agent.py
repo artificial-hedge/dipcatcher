@@ -9415,6 +9415,14 @@ from quant_fund.research.benches_w1177 import (
     bench_model_checking_2_family,
     bench_proof_calculus_family,
 )
+from quant_fund.research.benches_w1178 import (
+    bench_cognitive_science_2_family,
+    bench_complexity_science_family,
+    bench_futures_studies_family,
+    bench_human_computer_interaction_family,
+    bench_interdisciplinary_studies_family,
+    bench_systems_science_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9786,6 +9794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "interdisciplinary_studies": bench_interdisciplinary_studies_family,
+        "cognitive_science_2": bench_cognitive_science_2_family,
+        "futures_studies": bench_futures_studies_family,
+        "complexity_science": bench_complexity_science_family,
+        "systems_science": bench_systems_science_family,
+        "human_computer_interaction": bench_human_computer_interaction_family,
         "formal_sciences": bench_formal_sciences_family,
         "mathematical_logic": bench_mathematical_logic_family,
         "axiomatic_systems": bench_axiomatic_systems_family,
