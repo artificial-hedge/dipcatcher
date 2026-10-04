@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1053 psychology canon.
+        "cognitive_psychology",
+        "psychometrics",
+        "behavioral_neuroscience",
+        "social_psychology",
+        "developmental_psychology",
+        "clinical_psychology",
         # Wave-1052 nutrition canon.
         "nutritional_biochemistry",
         "dietary_assessment",
