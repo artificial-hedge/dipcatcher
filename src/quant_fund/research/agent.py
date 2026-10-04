@@ -8751,6 +8751,14 @@ from quant_fund.research.benches_w1094 import (
     bench_psychiatry_family,
     bench_radiology_family,
 )
+from quant_fund.research.benches_w1095 import (
+    bench_deviance_studies_family,
+    bench_family_sociology_family,
+    bench_medical_sociology_family,
+    bench_organization_theory_family,
+    bench_rural_sociology_family,
+    bench_social_movements_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9122,6 +9130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medical_sociology": bench_medical_sociology_family,
+        "deviance_studies": bench_deviance_studies_family,
+        "family_sociology": bench_family_sociology_family,
+        "organization_theory": bench_organization_theory_family,
+        "social_movements": bench_social_movements_family,
+        "rural_sociology": bench_rural_sociology_family,
         "oncology": bench_oncology_family,
         "neurology": bench_neurology_family,
         "dermatology": bench_dermatology_family,

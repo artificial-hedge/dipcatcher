@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1095 sociology-2 canon.
+        "medical_sociology",
+        "deviance_studies",
+        "family_sociology",
+        "organization_theory",
+        "social_movements",
+        "rural_sociology",
         # Wave-1094 medicine-2 canon.
         "oncology",
         "neurology",
