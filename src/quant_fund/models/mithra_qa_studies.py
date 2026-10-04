@@ -16,7 +16,7 @@ def mithra_qa_studies_aux(aux: bool) -> bool:
     """mithra_qa_studies
 
     aux:
-    mithra_qa_studies: mithra, covenant gods, answers, and scores
+    mithra_qa_studies: mithra, covenant lights, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_mithra_qa_studies(seed: int = 0) -> float:
     checks.append(not mithra_qa_studies_ok(False, True))
     checks.append(mithra_qa_studies_aux(True))
     checks.append(not mithra_qa_studies_aux(False))
-    checks.append(True)  # persian-myth canon
+    checks.append(True)  # persian-2 canon
     return float(sum(checks) / len(checks))
 
 

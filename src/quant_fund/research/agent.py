@@ -13903,6 +13903,14 @@ from quant_fund.research.benches_w1738 import (
     bench_ninhursag_qa_studies_family,
     bench_utu_qa_studies_family,
 )
+from quant_fund.research.benches_w1739 import (
+    bench_ahura_mazda_qa_studies_family,
+    bench_anahita_qa_studies_family,
+    bench_angra_mainyu_qa_studies_family,
+    bench_mithra_qa_studies_family,
+    bench_verethragna_qa_studies_family,
+    bench_zahhak_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
