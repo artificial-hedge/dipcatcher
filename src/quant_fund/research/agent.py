@@ -5327,6 +5327,14 @@ from quant_fund.research.benches_w666 import (
     bench_derived_hecke_family,
     bench_simplicial_comm_family,
 )
+from quant_fund.research.benches_w667 import (
+    bench_ab_cat_family,
+    bench_coniveau_fil_family,
+    bench_exact_cat2_family,
+    bench_grothendieck_cat_family,
+    bench_special_cat_family,
+    bench_stable_cat2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5706,6 +5714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stable_cat2": bench_stable_cat2_family,
+        "exact_cat2": bench_exact_cat2_family,
+        "ab_cat": bench_ab_cat_family,
+        "grothendieck_cat": bench_grothendieck_cat_family,
+        "coniveau_fil": bench_coniveau_fil_family,
+        "special_cat": bench_special_cat_family,
         "derived_abelian": bench_derived_abelian_family,
         "simplicial_comm": bench_simplicial_comm_family,
         "derived_bezout": bench_derived_bezout_family,
