@@ -14559,6 +14559,14 @@ from quant_fund.research.benches_w1820 import (
     bench_yandi2_qa_studies_family,
     bench_yaoji2_qa_studies_family,
 )
+from quant_fund.research.benches_w1821 import (
+    bench_benzaiten2_qa_studies_family,
+    bench_daikoku2_qa_studies_family,
+    bench_ebisu2_qa_studies_family,
+    bench_fukurokuju2_qa_studies_family,
+    bench_hotei2_qa_studies_family,
+    bench_juroujin2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
