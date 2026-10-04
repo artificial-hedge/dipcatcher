@@ -10311,6 +10311,14 @@ from quant_fund.research.benches_w1289 import (
     bench_self_consistency_studies_family,
     bench_stepwise_verify_studies_family,
 )
+from quant_fund.research.benches_w1290 import (
+    bench_awq_studies_family,
+    bench_entropy_code_quant_studies_family,
+    bench_gptq_studies_family,
+    bench_kv_cache_quant_studies_family,
+    bench_smoothquant_studies_family,
+    bench_weight_share_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10868,6 +10876,12 @@ def _provenance(
         "scratchpad_studies": bench_scratchpad_studies_family,
         "self_consistency_studies": bench_self_consistency_studies_family,
         "stepwise_verify_studies": bench_stepwise_verify_studies_family,
+        "awq_studies": bench_awq_studies_family,
+        "entropy_code_quant_studies": bench_entropy_code_quant_studies_family,
+        "gptq_studies": bench_gptq_studies_family,
+        "kv_cache_quant_studies": bench_kv_cache_quant_studies_family,
+        "smoothquant_studies": bench_smoothquant_studies_family,
+        "weight_share_studies": bench_weight_share_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
