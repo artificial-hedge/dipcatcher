@@ -10039,6 +10039,14 @@ from quant_fund.research.benches_w1255 import (
     bench_ms_studies_family,
     bench_parkinson_studies_family,
 )
+from quant_fund.research.benches_w1256 import (
+    bench_community_health_studies_family,
+    bench_health_disparities_studies_family,
+    bench_outbreak_studies_family,
+    bench_screening_studies_family,
+    bench_surveillance_studies_family,
+    bench_vaccination_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10410,6 +10418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "screening_studies": bench_screening_studies_family,
+        "vaccination_studies": bench_vaccination_studies_family,
+        "outbreak_studies": bench_outbreak_studies_family,
+        "surveillance_studies": bench_surveillance_studies_family,
+        "health_disparities_studies": bench_health_disparities_studies_family,
+        "community_health_studies": bench_community_health_studies_family,
         "parkinson_studies": bench_parkinson_studies_family,
         "alzheimer_studies": bench_alzheimer_studies_family,
         "ms_studies": bench_ms_studies_family,
