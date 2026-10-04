@@ -3964,6 +3964,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gypsum_qa_studies",
         "olivine_qa_studies",
         "quartz_qa_studies",
+        # Wave-1529 gemstone canon.
+        "aquamarine_qa_studies",
+        "garnet_qa_studies",
+        "opal_qa_studies",
+        "ruby_qa_studies",
+        "tanzanite_qa_studies",
+        "tourmaline_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
