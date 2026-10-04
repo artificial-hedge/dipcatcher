@@ -8943,6 +8943,14 @@ from quant_fund.research.benches_w1118 import (
     bench_theoretical_linguistics_family,
     bench_translation_theory_family,
 )
+from quant_fund.research.benches_w1119 import (
+    bench_cultural_history_family,
+    bench_diplomatic_history_family,
+    bench_history_of_medicine_family,
+    bench_history_of_technology_family,
+    bench_military_history_family,
+    bench_social_history_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9314,6 +9322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "social_history": bench_social_history_family,
+        "cultural_history": bench_cultural_history_family,
+        "military_history": bench_military_history_family,
+        "diplomatic_history": bench_diplomatic_history_family,
+        "history_of_technology": bench_history_of_technology_family,
+        "history_of_medicine": bench_history_of_medicine_family,
         "theoretical_linguistics": bench_theoretical_linguistics_family,
         "field_linguistics": bench_field_linguistics_family,
         "translation_theory": bench_translation_theory_family,
