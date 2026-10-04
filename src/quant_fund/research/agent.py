@@ -8375,6 +8375,14 @@ from quant_fund.research.benches_w1047 import (
     bench_marine_ecology_family,
     bench_plankton_dynamics_family,
 )
+from quant_fund.research.benches_w1048 import (
+    bench_animal_surgery_family,
+    bench_equine_medicine_family,
+    bench_veterinary_anatomy_family,
+    bench_veterinary_epidemiology_family,
+    bench_veterinary_pathology_family,
+    bench_veterinary_pharmacology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8746,6 +8754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "veterinary_anatomy": bench_veterinary_anatomy_family,
+        "veterinary_pathology": bench_veterinary_pathology_family,
+        "veterinary_pharmacology": bench_veterinary_pharmacology_family,
+        "animal_surgery": bench_animal_surgery_family,
+        "veterinary_epidemiology": bench_veterinary_epidemiology_family,
+        "equine_medicine": bench_equine_medicine_family,
         "plankton_dynamics": bench_plankton_dynamics_family,
         "marine_ecology": bench_marine_ecology_family,
         "fisheries_science": bench_fisheries_science_family,
