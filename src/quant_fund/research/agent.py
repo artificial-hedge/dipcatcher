@@ -9295,6 +9295,14 @@ from quant_fund.research.benches_w1162 import (
     bench_political_science_4_family,
     bench_public_administration_2_family,
 )
+from quant_fund.research.benches_w1163 import (
+    bench_accounting_2_family,
+    bench_business_administration_family,
+    bench_entrepreneurship_2_family,
+    bench_finance_4_family,
+    bench_management_2_family,
+    bench_marketing_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9666,6 +9674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "accounting_2": bench_accounting_2_family,
+        "finance_4": bench_finance_4_family,
+        "marketing_2": bench_marketing_2_family,
+        "management_2": bench_management_2_family,
+        "entrepreneurship_2": bench_entrepreneurship_2_family,
+        "business_administration": bench_business_administration_family,
         "law_5": bench_law_5_family,
         "political_science_4": bench_political_science_4_family,
         "public_administration_2": bench_public_administration_2_family,

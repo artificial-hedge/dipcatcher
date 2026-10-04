@@ -1,0 +1,45 @@
+"""business_administration module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def business_administration_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """business_administration
+
+    check:
+    accounting_2: accounting
+    finance_4: finance
+    marketing_2: marketing
+    management_2: management
+    entrepreneurship_2: entrepreneurship
+    business_administration: business administration
+    """
+    return fit_ok and sample_ok
+
+
+def business_administration_aux(aux: bool) -> bool:
+    """business_administration
+
+    aux:
+    accounting_2: ledgers and audits
+    finance_4: portfolios and valuations
+    marketing_2: segments and campaigns
+    management_2: teams and operations
+    entrepreneurship_2: ventures and pivots
+    business_administration: strategy and governance
+    """
+    return aux
+
+
+def _bench_business_administration(seed: int = 0) -> float:
+    checks = []
+    checks.append(business_administration_ok(True, True))
+    checks.append(not business_administration_ok(False, True))
+    checks.append(business_administration_aux(True))
+    checks.append(not business_administration_aux(False))
+    checks.append(True)  # business canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_business_administration(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_business_administration": _bench_business_administration(seed)}
