@@ -6505,6 +6505,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "peri_qa_studies",
         "umm_sibyan_qa_studies",
         "ymir_hrimthurs_qa_studies",
+        # Wave-1892 folk-spirit lore-2 canon.
+        "al_basti_qa_studies",
+        "ananke_libya_qa_studies",
+        "encantado_qa_studies",
+        "mithra_iran_qa_studies",
+        "mitra_persian_qa_studies",
+        "perangal_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

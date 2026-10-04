@@ -15127,6 +15127,14 @@ from quant_fund.research.benches_w1891 import (
     bench_umm_sibyan_qa_studies_family,
     bench_ymir_hrimthurs_qa_studies_family,
 )
+from quant_fund.research.benches_w1892 import (
+    bench_al_basti_qa_studies_family,
+    bench_ananke_libya_qa_studies_family,
+    bench_encantado_qa_studies_family,
+    bench_mithra_iran_qa_studies_family,
+    bench_mitra_persian_qa_studies_family,
+    bench_perangal_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
