@@ -12415,6 +12415,14 @@ from quant_fund.research.benches_w1552 import (
     bench_snapping_turtle_qa_studies_family,
     bench_tortoise_qa_studies_family,
 )
+from quant_fund.research.benches_w1553 import (
+    bench_dart_frog_qa_studies_family,
+    bench_horned_frog_qa_studies_family,
+    bench_leopard_frog_qa_studies_family,
+    bench_spring_peeper_qa_studies_family,
+    bench_treefrog_qa_studies_family,
+    bench_wood_frog_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14326,6 +14334,12 @@ def _provenance(
         "map_turtle_qa_studies": bench_map_turtle_qa_studies_family,
         "painted_turtle_qa_studies": bench_painted_turtle_qa_studies_family,
         "slider_qa_studies": bench_slider_qa_studies_family,
+        "dart_frog_qa_studies": bench_dart_frog_qa_studies_family,
+        "horned_frog_qa_studies": bench_horned_frog_qa_studies_family,
+        "leopard_frog_qa_studies": bench_leopard_frog_qa_studies_family,
+        "spring_peeper_qa_studies": bench_spring_peeper_qa_studies_family,
+        "treefrog_qa_studies": bench_treefrog_qa_studies_family,
+        "wood_frog_qa_studies": bench_wood_frog_qa_studies_family,
         "snapping_turtle_qa_studies": bench_snapping_turtle_qa_studies_family,
         "tortoise_qa_studies": bench_tortoise_qa_studies_family,
         "copperhead_qa_studies": bench_copperhead_qa_studies_family,
