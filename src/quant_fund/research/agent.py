@@ -10151,6 +10151,14 @@ from quant_fund.research.benches_w1269 import (
     bench_simpo_studies_family,
     bench_sppo_studies_family,
 )
+from quant_fund.research.benches_w1270 import (
+    bench_attribution_graph_studies_family,
+    bench_causal_tracing_studies_family,
+    bench_circuit_discovery_studies_family,
+    bench_feature_geometry_studies_family,
+    bench_gated_sae_studies_family,
+    bench_transcoder_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10588,6 +10596,12 @@ def _provenance(
         "orpo_studies": bench_orpo_studies_family,
         "simpo_studies": bench_simpo_studies_family,
         "sppo_studies": bench_sppo_studies_family,
+        "attribution_graph_studies": bench_attribution_graph_studies_family,
+        "causal_tracing_studies": bench_causal_tracing_studies_family,
+        "circuit_discovery_studies": bench_circuit_discovery_studies_family,
+        "feature_geometry_studies": bench_feature_geometry_studies_family,
+        "gated_sae_studies": bench_gated_sae_studies_family,
+        "transcoder_studies": bench_transcoder_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
