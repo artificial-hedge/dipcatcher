@@ -5095,6 +5095,14 @@ from quant_fund.research.benches_w637 import (
     bench_fargues_scholze2_family,
     bench_scholze_bc_family,
 )
+from quant_fund.research.benches_w638 import (
+    bench_fundamental_cat_family,
+    bench_grayson_s_family,
+    bench_karoubi_v2_family,
+    bench_quillen_ldev_family,
+    bench_seg_street_family,
+    bench_vorst_descent_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5474,6 +5482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "grayson_s": bench_grayson_s_family,
+        "karoubi_v2": bench_karoubi_v2_family,
+        "vorst_descent": bench_vorst_descent_family,
+        "quillen_ldev": bench_quillen_ldev_family,
+        "fundamental_cat": bench_fundamental_cat_family,
+        "seg_street": bench_seg_street_family,
         "fargues_scholze2": bench_fargues_scholze2_family,
         "curve_padic": bench_curve_padic_family,
         "diamond_mod": bench_diamond_mod_family,
