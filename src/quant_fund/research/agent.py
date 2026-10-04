@@ -11471,6 +11471,14 @@ from quant_fund.research.benches_w1434 import (
     bench_steel_qa_studies_family,
     bench_wood_qa_studies_family,
 )
+from quant_fund.research.benches_w1435 import (
+    bench_blood_qa_studies_family,
+    bench_bone_qa_studies_family,
+    bench_brain_qa_studies_family,
+    bench_heart_qa_studies_family,
+    bench_muscle_qa_studies_family,
+    bench_nerve_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12741,6 +12749,12 @@ def _provenance(
         "iron_qa_studies": bench_iron_qa_studies_family,
         "steel_qa_studies": bench_steel_qa_studies_family,
         "wood_qa_studies": bench_wood_qa_studies_family,
+        "blood_qa_studies": bench_blood_qa_studies_family,
+        "bone_qa_studies": bench_bone_qa_studies_family,
+        "brain_qa_studies": bench_brain_qa_studies_family,
+        "heart_qa_studies": bench_heart_qa_studies_family,
+        "muscle_qa_studies": bench_muscle_qa_studies_family,
+        "nerve_qa_studies": bench_nerve_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

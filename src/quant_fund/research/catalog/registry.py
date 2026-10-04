@@ -3306,6 +3306,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "iron_qa_studies",
         "steel_qa_studies",
         "wood_qa_studies",
+        # Wave-1435 anatomy canon.
+        "blood_qa_studies",
+        "bone_qa_studies",
+        "brain_qa_studies",
+        "heart_qa_studies",
+        "muscle_qa_studies",
+        "nerve_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
