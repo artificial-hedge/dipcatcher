@@ -4815,6 +4815,14 @@ from quant_fund.research.benches_w602 import (
     bench_tc_spec_family,
     bench_tr_structure_family,
 )
+from quant_fund.research.benches_w603 import (
+    bench_atomic_topos_family,
+    bench_classifying_topos_family,
+    bench_essential_morph_family,
+    bench_giraud_axiom_family,
+    bench_logical_morph_family,
+    bench_slice_topos_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5194,6 +5202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "slice_topos": bench_slice_topos_family,
+        "logical_morph": bench_logical_morph_family,
+        "classifying_topos": bench_classifying_topos_family,
+        "atomic_topos": bench_atomic_topos_family,
+        "essential_morph": bench_essential_morph_family,
+        "giraud_axiom": bench_giraud_axiom_family,
         "cyclotomic_spec": bench_cyclotomic_spec_family,
         "tr_structure": bench_tr_structure_family,
         "tc_spec": bench_tc_spec_family,
