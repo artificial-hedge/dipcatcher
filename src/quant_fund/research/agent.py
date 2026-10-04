@@ -11575,6 +11575,14 @@ from quant_fund.research.benches_w1447 import (
     bench_lion_qa_studies_family,
     bench_wolf_qa_studies_family,
 )
+from quant_fund.research.benches_w1448 import (
+    bench_cobra_qa_studies_family,
+    bench_frog_qa_studies_family,
+    bench_gecko_qa_studies_family,
+    bench_iguana_qa_studies_family,
+    bench_python_qa_studies_family,
+    bench_viper_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12923,6 +12931,12 @@ def _provenance(
         "leopard_qa_studies": bench_leopard_qa_studies_family,
         "lion_qa_studies": bench_lion_qa_studies_family,
         "wolf_qa_studies": bench_wolf_qa_studies_family,
+        "cobra_qa_studies": bench_cobra_qa_studies_family,
+        "frog_qa_studies": bench_frog_qa_studies_family,
+        "gecko_qa_studies": bench_gecko_qa_studies_family,
+        "iguana_qa_studies": bench_iguana_qa_studies_family,
+        "python_qa_studies": bench_python_qa_studies_family,
+        "viper_qa_studies": bench_viper_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
