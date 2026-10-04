@@ -16,7 +16,7 @@ def bragi_qa_studies_aux(aux: bool) -> bool:
     """bragi_qa_studies
 
     aux:
-    bragi_qa_studies: bragi, mead poets, answers, and scores
+    bragi_qa_studies: bragi, rune singers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_bragi_qa_studies(seed: int = 0) -> float:
     checks.append(not bragi_qa_studies_ok(False, True))
     checks.append(bragi_qa_studies_aux(True))
     checks.append(not bragi_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-6 canon
+    checks.append(True)  # norse-myth-8 canon
     return float(sum(checks) / len(checks))
 
 
