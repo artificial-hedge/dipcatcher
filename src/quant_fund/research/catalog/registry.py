@@ -4503,6 +4503,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sea_snake_qa_studies",
         "skate_qa_studies",
         "wobbegong_qa_studies",
+        # Wave-1606 camelid-steppe canon.
+        "alpaca_qa_studies",
+        "aoudad_qa_studies",
+        "dromedary_qa_studies",
+        "guanaco_qa_studies",
+        "salt_qa_studies",
+        "vicuna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
