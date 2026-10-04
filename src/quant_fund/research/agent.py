@@ -5671,6 +5671,14 @@ from quant_fund.research.benches_w709 import (
     bench_cat_pro_object2_family,
     bench_cat_univariant2_family,
 )
+from quant_fund.research.benches_w710 import (
+    bench_floyd_farey_family,
+    bench_higher_algebra8_family,
+    bench_little_discs3_family,
+    bench_operad_infty4_family,
+    bench_operad_swiss3_family,
+    bench_operad_twisted_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6050,6 +6058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "higher_algebra8": bench_higher_algebra8_family,
+        "operad_infty4": bench_operad_infty4_family,
+        "floyd_farey": bench_floyd_farey_family,
+        "operad_swiss3": bench_operad_swiss3_family,
+        "little_discs3": bench_little_discs3_family,
+        "operad_twisted": bench_operad_twisted_family,
         "cat_univariant2": bench_cat_univariant2_family,
         "cat_ab2": bench_cat_ab2_family,
         "cat_exact3": bench_cat_exact3_family,

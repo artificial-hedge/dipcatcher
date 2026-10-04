@@ -1,3 +1,4 @@
+feat(research): wave 710 — higher-algebra-11 canon (higher_algebra8, operad_infty4, floyd_farey, operad_swiss3, little_discs3, operad_twisted) (4215->4221 families)
 feat(research): wave 709 — category-22 canon (cat_univariant2, cat_ab2, cat_exact3, cat_freyd, cat_ab_loc, cat_pro_object2) (4209->4215 families)
 feat(research): wave 708 — category-21 canon (cat_pseudo_limit, cat_weak_eq, cat_reedy_cat, cat_dold_kan, cat_hoc, cat_enriched_lim) (4203->4209 families)
 feat(research): wave 707 — spectral-AG-9 canon (spectral_prime, spectral_residue, spectral_level, spectral_polynomial2, spectral_coord, spectral_ext_field) (4197->4203 families)
