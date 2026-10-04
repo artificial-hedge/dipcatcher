@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-747 ASEP-2 canon.
+        "bertini_giacomin",
+        "gardina_asym",
+        "schutz_tasep",
+        "balazs_seppalainen",
+        "quastel_valko",
+        "timar_tasep",
         # Wave-746 ASEP canon.
         "liggett_exclusion",
         "spitzer_exclusion",
