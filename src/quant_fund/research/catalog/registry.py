@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1322 reasoning-eval canon.
+        "logic_bench_studies",
+        "minif2f_studies",
+        "olympiad_bench_studies",
+        "putnam_studies",
+        "truthfulqa_studies",
+        "zebra_logic_studies",
         # Wave-1321 multimodal-eval canon.
         "chart_gqa_studies",
         "mathvista_studies",
