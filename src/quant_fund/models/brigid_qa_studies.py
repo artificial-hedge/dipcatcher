@@ -16,7 +16,7 @@ def brigid_qa_studies_aux(aux: bool) -> bool:
     """brigid_qa_studies
 
     aux:
-    brigid_qa_studies: brigid, fire goddesses, answers, and scores
+    brigid_qa_studies: brigid, hearth flames, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_brigid_qa_studies(seed: int = 0) -> float:
     checks.append(not brigid_qa_studies_ok(False, True))
     checks.append(brigid_qa_studies_aux(True))
     checks.append(not brigid_qa_studies_aux(False))
-    checks.append(True)  # celtic-myth canon
+    checks.append(True)  # irish-myth canon
     return float(sum(checks) / len(checks))
 
 

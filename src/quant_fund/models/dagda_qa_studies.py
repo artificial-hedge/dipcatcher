@@ -16,7 +16,7 @@ def dagda_qa_studies_aux(aux: bool) -> bool:
     """dagda_qa_studies
 
     aux:
-    dagda_qa_studies: dagda, father gods, answers, and scores
+    dagda_qa_studies: dagda, good fathers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_dagda_qa_studies(seed: int = 0) -> float:
     checks.append(not dagda_qa_studies_ok(False, True))
     checks.append(dagda_qa_studies_aux(True))
     checks.append(not dagda_qa_studies_aux(False))
-    checks.append(True)  # celtic-myth canon
+    checks.append(True)  # irish-myth canon
     return float(sum(checks) / len(checks))
 
 
