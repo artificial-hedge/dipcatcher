@@ -12887,6 +12887,14 @@ from quant_fund.research.benches_w1611 import (
     bench_ringtail_qa_studies_family,
     bench_sifaka_qa_studies_family,
 )
+from quant_fund.research.benches_w1612 import (
+    bench_argali_qa_studies_family,
+    bench_bighorn_qa_studies_family,
+    bench_dall_qa_studies_family,
+    bench_llama_qa_studies_family,
+    bench_mouflon_qa_studies_family,
+    bench_urial_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15015,6 +15023,12 @@ def _provenance(
         "porcupine_qa_studies": bench_porcupine_qa_studies_family,
         "crowned_lemur_qa_studies": bench_crowned_lemur_qa_studies_family,
         "fat_tailed_qa_studies": bench_fat_tailed_qa_studies_family,
+        "argali_qa_studies": bench_argali_qa_studies_family,
+        "bighorn_qa_studies": bench_bighorn_qa_studies_family,
+        "dall_qa_studies": bench_dall_qa_studies_family,
+        "llama_qa_studies": bench_llama_qa_studies_family,
+        "mouflon_qa_studies": bench_mouflon_qa_studies_family,
+        "urial_qa_studies": bench_urial_qa_studies_family,
         "fork_marked_qa_studies": bench_fork_marked_qa_studies_family,
         "needle_clawed_qa_studies": bench_needle_clawed_qa_studies_family,
         "ringtail_qa_studies": bench_ringtail_qa_studies_family,
