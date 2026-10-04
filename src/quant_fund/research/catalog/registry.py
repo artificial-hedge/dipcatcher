@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1015 acoustics canon.
+        "acoustic_wave_eq",
+        "helmholtz_eq",
+        "sound_absorption",
+        "room_acoustics",
+        "rayleigh_scattering",
+        "doppler_effect",
         # Wave-1014 astrophysics/cosmology canon.
         "jeans_instability",
         "stellar_structure",
