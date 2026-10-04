@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-801 rough-volatility canon.
+        "fractional_heston",
+        "rough_bergomi",
+        "rough_sabr",
+        "rough_variance",
+        "volterra_sde",
+        "multifactor_rough",
         # Wave-800 stochastic-vol canon.
         "heston_model",
         "bates_model",
