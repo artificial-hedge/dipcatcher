@@ -1,3 +1,4 @@
+w1371 social-reasoning canon: ethos_lite_studies, moral_stories_studies, mutual_lite_studies, prosocial_lite_studies, scruples_studies, siqa_lite_studies (8175->8181)
 w1370 challenge-benchmark canon: bbh_lite_studies, gpqa_lite_studies, if_eval_studies, live_bench_studies, olympic_bench_studies, trivia_qa_lite_studies (8169->8175)
 w1369 math-word-problem canon: aime_eval_studies, asdiv_lite_studies, math500_lite_studies, mgsm_lite_studies, minerva_math_studies, svamp_lite_studies (8163->8169)
 w1368 translation-metric canon: chr_f_studies, mover_score_studies, nist_metric_studies, prism_mt_studies, sacrebleu_lite_studies, ter_lite_studies (8157->8163)
