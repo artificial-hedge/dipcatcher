@@ -12159,6 +12159,14 @@ from quant_fund.research.benches_w1520 import (
     bench_morel_qa_studies_family,
     bench_puffball_qa_studies_family,
 )
+from quant_fund.research.benches_w1521 import (
+    bench_cattleya_qa_studies_family,
+    bench_cymbidium_qa_studies_family,
+    bench_dendrobium_qa_studies_family,
+    bench_oncidium_qa_studies_family,
+    bench_paphiopedilum_qa_studies_family,
+    bench_phalaenopsis_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13897,6 +13905,12 @@ def _provenance(
         "inkcap_qa_studies": bench_inkcap_qa_studies_family,
         "morel_qa_studies": bench_morel_qa_studies_family,
         "puffball_qa_studies": bench_puffball_qa_studies_family,
+        "cattleya_qa_studies": bench_cattleya_qa_studies_family,
+        "cymbidium_qa_studies": bench_cymbidium_qa_studies_family,
+        "dendrobium_qa_studies": bench_dendrobium_qa_studies_family,
+        "oncidium_qa_studies": bench_oncidium_qa_studies_family,
+        "paphiopedilum_qa_studies": bench_paphiopedilum_qa_studies_family,
+        "phalaenopsis_qa_studies": bench_phalaenopsis_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
