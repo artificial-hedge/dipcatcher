@@ -1,3 +1,4 @@
+feat(research): wave 766 — empirical-process-2 canon (dudley_theorem, varadarajan_thm, dvoretzky_thm, vc_class, bracketing_ent, bounded_lip) (4551->4557 families)
 feat(research): wave 765 — LIL/LLN canon (strassen_lil, chung_lil, kolmogorov_3series, khintchine_lln, levy_convergence, glivenko_cantelli) (4545->4551 families)
 feat(research): wave 764 — empirical-process canon (wiener_measure, dz_invariance, donsker_thm, empirical_process, donsker_class, osj_metric) (4539->4545 families)
 feat(research): wave 763 — mixing/urn canon (polya_urn, hopf_chain, boneschi_boal, bradley_mixing, rosenthal_mom, ibagimov_mixing) (4533->4539 families)
