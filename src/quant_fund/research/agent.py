@@ -13623,6 +13623,14 @@ from quant_fund.research.benches_w1703 import (
     bench_nergal_qa_studies_family,
     bench_ninhursag_qa_studies_family,
 )
+from quant_fund.research.benches_w1704 import (
+    bench_adad_qa_studies_family,
+    bench_ashur_qa_studies_family,
+    bench_ishtar_qa_studies_family,
+    bench_nabu_qa_studies_family,
+    bench_shamash_qa_studies_family,
+    bench_sin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
