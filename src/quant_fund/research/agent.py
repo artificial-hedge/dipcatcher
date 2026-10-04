@@ -11255,6 +11255,14 @@ from quant_fund.research.benches_w1407 import (
     bench_orchid_qa_studies_family,
     bench_qrecc_lite_studies_family,
 )
+from quant_fund.research.benches_w1408 import (
+    bench_abduct_qa_studies_family,
+    bench_analogy_qa_studies_family,
+    bench_arct_lite_studies_family,
+    bench_entailment_qa_studies_family,
+    bench_fusion_qa_studies_family,
+    bench_proof_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12363,6 +12371,12 @@ def _provenance(
         "duread_qa_studies": bench_duread_qa_studies_family,
         "orchid_qa_studies": bench_orchid_qa_studies_family,
         "qrecc_lite_studies": bench_qrecc_lite_studies_family,
+        "abduct_qa_studies": bench_abduct_qa_studies_family,
+        "analogy_qa_studies": bench_analogy_qa_studies_family,
+        "arct_lite_studies": bench_arct_lite_studies_family,
+        "entailment_qa_studies": bench_entailment_qa_studies_family,
+        "fusion_qa_studies": bench_fusion_qa_studies_family,
+        "proof_qa_studies": bench_proof_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
