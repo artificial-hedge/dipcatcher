@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1345 open-domain-QA canon.
+        "complex_qa_studies",
+        "entity_quests_studies",
+        "freebase_qa_studies",
+        "nq_open_studies",
+        "trivia_qa_studies",
+        "web_qa_studies",
         # Wave-1344 reading-comprehension-3 canon.
         "boolq_qa_studies",
         "dream_qa_studies",

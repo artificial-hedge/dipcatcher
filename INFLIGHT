@@ -1,3 +1,4 @@
+w1345 open-domain-QA canon: complex_qa_studies, entity_quests_studies, freebase_qa_studies, nq_open_studies, trivia_qa_studies, web_qa_studies (8019->8025)
 w1344 reading-comprehension-3 canon: boolq_qa_studies, dream_qa_studies, duorc_qa_studies, mctest_qa_studies, qasper_qa_studies, race_qa_studies (8013->8019)
 w1343 reading-comprehension-2 canon: coqa_qa_studies, drop_qa_studies, news_qa_studies, quac_qa_studies, quail_qa_studies, quoref_qa_studies (8007->8013)
 w1342 bias-eval-2 canon: fairness_eval_studies, gender_bias_studies, jigsaw_tox_studies, nlp_bias_studies, pronoun_bias_studies, regard_metric_studies (8001->8007)
