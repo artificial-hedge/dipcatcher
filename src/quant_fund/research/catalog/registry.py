@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1366 faithfulness-eval canon.
+        "align_score_studies",
+        "dice_eval_studies",
+        "factcc_lite_studies",
+        "faith_eval_studies",
+        "quest_eval_studies",
+        "summa_eval_studies",
         # Wave-1365 summarization canon.
         "arxiv_sum_studies",
         "cnn_dailymail_studies",
