@@ -1,3 +1,4 @@
+w1358 reading-comp-4 canon: adver_qa_studies, coqa_lite_studies, drop_lite_studies, duo_rc_studies, quac_lite_studies, trivia_web_studies (8097->8103)
 w1357 reading-comp-3 canon: hendrycks_test_studies, hotpot_lite_studies, multirc_lite_studies, quoref_lite_studies, record_lite_studies, squad_lite2_studies (8091->8097)
 w1356 knowledge-QA canon: bigbench_lite_studies, entity_qa_studies, mmlu_lite_studies, natural_qa_studies, pop_qa_studies, triviaqa_lite_studies (8085->8091)
 w1355 commonsense-eval canon: arc_hard2_studies, csqa_lite_studies, hellaswag_lite_studies, piqa_lite_studies, prost_lite_studies, swag_lite_studies (8079->8085)
