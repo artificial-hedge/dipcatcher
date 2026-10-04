@@ -11527,6 +11527,14 @@ from quant_fund.research.benches_w1441 import (
     bench_raven_qa_studies_family,
     bench_swan_qa_studies_family,
 )
+from quant_fund.research.benches_w1442 import (
+    bench_ant_qa_studies_family,
+    bench_bee_qa_studies_family,
+    bench_beetle_qa_studies_family,
+    bench_butterfly_qa_studies_family,
+    bench_cricket_qa_studies_family,
+    bench_moth_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12839,6 +12847,12 @@ def _provenance(
         "owl_qa_studies": bench_owl_qa_studies_family,
         "raven_qa_studies": bench_raven_qa_studies_family,
         "swan_qa_studies": bench_swan_qa_studies_family,
+        "ant_qa_studies": bench_ant_qa_studies_family,
+        "bee_qa_studies": bench_bee_qa_studies_family,
+        "beetle_qa_studies": bench_beetle_qa_studies_family,
+        "butterfly_qa_studies": bench_butterfly_qa_studies_family,
+        "cricket_qa_studies": bench_cricket_qa_studies_family,
+        "moth_qa_studies": bench_moth_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
