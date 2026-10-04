@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1141 astronomy-4 canon.
+        "cosmology_2",
+        "astrobiology",
+        "astrochemistry",
+        "helio_seismology",
+        "exoplanet_science",
+        "galactic_dynamics",
         # Wave-1140 earth-science canon.
         "oceanography",
         "hydrology_2",
