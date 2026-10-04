@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1255 neurodegeneration canon.
+        "parkinson_studies",
+        "alzheimer_studies",
+        "ms_studies",
+        "als_studies",
+        "huntington_studies",
+        "dementia_studies",
         # Wave-1254 molecular-genetics-2 canon.
         "allele_studies",
         "snp_studies",
