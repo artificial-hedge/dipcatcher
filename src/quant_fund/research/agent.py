@@ -13927,6 +13927,14 @@ from quant_fund.research.benches_w1741 import (
     bench_lono_qa_studies_family,
     bench_pele_qa_studies_family,
 )
+from quant_fund.research.benches_w1742 import (
+    bench_haumia_qa_studies_family,
+    bench_rongo_qa_studies_family,
+    bench_tane_qa_studies_family,
+    bench_tangaroa_qa_studies_family,
+    bench_tawhirimatea_qa_studies_family,
+    bench_tumatauenga_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
