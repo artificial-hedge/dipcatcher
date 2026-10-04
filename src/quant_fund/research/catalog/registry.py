@@ -3341,6 +3341,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fjord_qa_studies",
         "gorge_qa_studies",
         "mesa_qa_studies",
+        # Wave-1440 flora canon.
+        "bamboo_qa_studies",
+        "cactus_qa_studies",
+        "fern_qa_studies",
+        "moss_qa_studies",
+        "pine_qa_studies",
+        "vine_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
