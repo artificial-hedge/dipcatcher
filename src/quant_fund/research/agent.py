@@ -12807,6 +12807,14 @@ from quant_fund.research.benches_w1601 import (
     bench_mouse_eared_qa_studies_family,
     bench_tent_bat_qa_studies_family,
 )
+from quant_fund.research.benches_w1602 import (
+    bench_desman_qa_studies_family,
+    bench_marsupial_mole_qa_studies_family,
+    bench_moles_lite_qa_studies_family,
+    bench_monotreme_qa_studies_family,
+    bench_moonrat_qa_studies_family,
+    bench_sengi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14898,6 +14906,12 @@ def _provenance(
         "periwinkle_qa_studies": bench_periwinkle_qa_studies_family,
         "blossom_bat_qa_studies": bench_blossom_bat_qa_studies_family,
         "bulldog_bat_qa_studies": bench_bulldog_bat_qa_studies_family,
+        "desman_qa_studies": bench_desman_qa_studies_family,
+        "marsupial_mole_qa_studies": bench_marsupial_mole_qa_studies_family,
+        "moles_lite_qa_studies": bench_moles_lite_qa_studies_family,
+        "monotreme_qa_studies": bench_monotreme_qa_studies_family,
+        "moonrat_qa_studies": bench_moonrat_qa_studies_family,
+        "sengi_qa_studies": bench_sengi_qa_studies_family,
         "free_tailed_qa_studies": bench_free_tailed_qa_studies_family,
         "fruit_bat_qa_studies": bench_fruit_bat_qa_studies_family,
         "mouse_eared_qa_studies": bench_mouse_eared_qa_studies_family,
