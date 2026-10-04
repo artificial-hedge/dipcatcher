@@ -9439,6 +9439,14 @@ from quant_fund.research.benches_w1180 import (
     bench_paramedicine_family,
     bench_speech_pathology_family,
 )
+from quant_fund.research.benches_w1181 import (
+    bench_acting_studies_family,
+    bench_directing_studies_family,
+    bench_performing_arts_2_family,
+    bench_playwriting_family,
+    bench_scenography_family,
+    bench_theater_arts_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9810,6 +9818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "performing_arts_2": bench_performing_arts_2_family,
+        "theater_arts": bench_theater_arts_family,
+        "acting_studies": bench_acting_studies_family,
+        "directing_studies": bench_directing_studies_family,
+        "playwriting": bench_playwriting_family,
+        "scenography": bench_scenography_family,
         "nursing_studies": bench_nursing_studies_family,
         "allied_health": bench_allied_health_family,
         "midwifery": bench_midwifery_family,
