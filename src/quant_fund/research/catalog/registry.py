@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1397 multilingual-QA canon.
+        "coma_qa_studies",
+        "gaia_lite_studies",
+        "simple_qa_studies",
+        "sqa_lite_studies",
+        "tqa_lite_studies",
+        "tydiqa_lite_studies",
         # Wave-1396 summarization-2 canon.
         "agnews_lite_studies",
         "dialsum_lite_studies",
