@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-842 spectral-methods canon.
+        "chebyshev_grid",
+        "fourier_galerkin",
+        "legendre_tau",
+        "chebyshev_collocation",
+        "spectral_deriv",
+        "dealiasing",
         # Wave-841 orthogonal-polynomial canon.
         "legendre_poly",
         "chebyshev_t",

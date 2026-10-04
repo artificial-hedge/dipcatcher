@@ -6727,6 +6727,14 @@ from quant_fund.research.benches_w841 import (
     bench_laguerre_poly_family,
     bench_legendre_poly_family,
 )
+from quant_fund.research.benches_w842 import (
+    bench_chebyshev_collocation_family,
+    bench_chebyshev_grid_family,
+    bench_dealiasing_family,
+    bench_fourier_galerkin_family,
+    bench_legendre_tau_family,
+    bench_spectral_deriv_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7098,6 +7106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chebyshev_grid": bench_chebyshev_grid_family,
+        "fourier_galerkin": bench_fourier_galerkin_family,
+        "legendre_tau": bench_legendre_tau_family,
+        "chebyshev_collocation": bench_chebyshev_collocation_family,
+        "spectral_deriv": bench_spectral_deriv_family,
+        "dealiasing": bench_dealiasing_family,
         "legendre_poly": bench_legendre_poly_family,
         "chebyshev_t": bench_chebyshev_t_family,
         "hermite_poly": bench_hermite_poly_family,
