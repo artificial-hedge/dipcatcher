@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1379 metric-exotics canon.
+        "bary_score_studies",
+        "cider_lite_studies",
+        "gleu_lite_studies",
+        "kl_div_eval_studies",
+        "rouge_we_studies",
+        "wmt_metric_studies",
         # Wave-1378 numerical-reasoning canon.
         "aqua_lite_studies",
         "fin_qa_studies",

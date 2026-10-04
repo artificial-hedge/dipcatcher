@@ -11023,6 +11023,14 @@ from quant_fund.research.benches_w1378 import (
     bench_tab_fact_studies_family,
     bench_tat_qa_studies_family,
 )
+from quant_fund.research.benches_w1379 import (
+    bench_bary_score_studies_family,
+    bench_cider_lite_studies_family,
+    bench_gleu_lite_studies_family,
+    bench_kl_div_eval_studies_family,
+    bench_rouge_we_studies_family,
+    bench_wmt_metric_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11963,6 +11971,12 @@ def _provenance(
         "num_glue_studies": bench_num_glue_studies_family,
         "tab_fact_studies": bench_tab_fact_studies_family,
         "tat_qa_studies": bench_tat_qa_studies_family,
+        "bary_score_studies": bench_bary_score_studies_family,
+        "cider_lite_studies": bench_cider_lite_studies_family,
+        "gleu_lite_studies": bench_gleu_lite_studies_family,
+        "kl_div_eval_studies": bench_kl_div_eval_studies_family,
+        "rouge_we_studies": bench_rouge_we_studies_family,
+        "wmt_metric_studies": bench_wmt_metric_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
