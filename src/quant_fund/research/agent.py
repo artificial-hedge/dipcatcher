@@ -12639,6 +12639,14 @@ from quant_fund.research.benches_w1580 import (
     bench_roe_qa_studies_family,
     bench_sika_qa_studies_family,
 )
+from quant_fund.research.benches_w1581 import (
+    bench_elephant_seal_qa_studies_family,
+    bench_fur_seal_qa_studies_family,
+    bench_harp_seal_qa_studies_family,
+    bench_leopard_seal_qa_studies_family,
+    bench_monk_seal_qa_studies_family,
+    bench_weddell_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14655,6 +14663,12 @@ def _provenance(
         "steenbok_qa_studies": bench_steenbok_qa_studies_family,
         "suni_qa_studies": bench_suni_qa_studies_family,
         "chital_qa_studies": bench_chital_qa_studies_family,
+        "elephant_seal_qa_studies": bench_elephant_seal_qa_studies_family,
+        "fur_seal_qa_studies": bench_fur_seal_qa_studies_family,
+        "harp_seal_qa_studies": bench_harp_seal_qa_studies_family,
+        "leopard_seal_qa_studies": bench_leopard_seal_qa_studies_family,
+        "monk_seal_qa_studies": bench_monk_seal_qa_studies_family,
+        "weddell_qa_studies": bench_weddell_qa_studies_family,
         "fallow_qa_studies": bench_fallow_qa_studies_family,
         "muntjac_qa_studies": bench_muntjac_qa_studies_family,
         "pudu_qa_studies": bench_pudu_qa_studies_family,
