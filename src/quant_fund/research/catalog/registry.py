@@ -4174,6 +4174,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sockeye_qa_studies",
         "steelhead_qa_studies",
         "whitefish_qa_studies",
+        # Wave-1559 pelagic-fish canon.
+        "anchovy_qa_studies",
+        "bonito_qa_studies",
+        "herring_qa_studies",
+        "kingfish_qa_studies",
+        "mackerel_qa_studies",
+        "sardine_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -12463,6 +12463,14 @@ from quant_fund.research.benches_w1558 import (
     bench_steelhead_qa_studies_family,
     bench_whitefish_qa_studies_family,
 )
+from quant_fund.research.benches_w1559 import (
+    bench_anchovy_qa_studies_family,
+    bench_bonito_qa_studies_family,
+    bench_herring_qa_studies_family,
+    bench_kingfish_qa_studies_family,
+    bench_mackerel_qa_studies_family,
+    bench_sardine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14394,6 +14402,12 @@ def _provenance(
         "oscar_qa_studies": bench_oscar_qa_studies_family,
         "pacu_qa_studies": bench_pacu_qa_studies_family,
         "char_qa_studies": bench_char_qa_studies_family,
+        "anchovy_qa_studies": bench_anchovy_qa_studies_family,
+        "bonito_qa_studies": bench_bonito_qa_studies_family,
+        "herring_qa_studies": bench_herring_qa_studies_family,
+        "kingfish_qa_studies": bench_kingfish_qa_studies_family,
+        "mackerel_qa_studies": bench_mackerel_qa_studies_family,
+        "sardine_qa_studies": bench_sardine_qa_studies_family,
         "dolly_varden_qa_studies": bench_dolly_varden_qa_studies_family,
         "grayling_qa_studies": bench_grayling_qa_studies_family,
         "sockeye_qa_studies": bench_sockeye_qa_studies_family,
