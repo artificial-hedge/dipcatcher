@@ -7463,6 +7463,14 @@ from quant_fund.research.benches_w933 import (
     bench_proximal_map_family,
     bench_subgradient_proj_family,
 )
+from quant_fund.research.benches_w934 import (
+    bench_inf_convolution_family,
+    bench_legendre_transform_family,
+    bench_normal_cone_family,
+    bench_perspective_fn_family,
+    bench_polar_cone_family,
+    bench_support_fn_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7834,6 +7842,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "inf_convolution": bench_inf_convolution_family,
+        "legendre_transform": bench_legendre_transform_family,
+        "support_fn": bench_support_fn_family,
+        "perspective_fn": bench_perspective_fn_family,
+        "polar_cone": bench_polar_cone_family,
+        "normal_cone": bench_normal_cone_family,
         "subgradient_proj": bench_subgradient_proj_family,
         "proximal_map": bench_proximal_map_family,
         "fenchel_dual": bench_fenchel_dual_family,
