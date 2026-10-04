@@ -1,3 +1,4 @@
+w1367 generation-metric canon: bert_score_studies, bleu_rouge_studies, bleurt_lite_studies, comet_mt_studies, meteor_lite_studies, rouge_lite_studies (8151->8157)
 w1366 faithfulness-eval canon: align_score_studies, dice_eval_studies, factcc_lite_studies, faith_eval_studies, quest_eval_studies, summa_eval_studies (8145->8151)
 w1365 summarization canon: arxiv_sum_studies, cnn_dailymail_studies, dialogsum_lite_studies, multi_news_studies, pubmed_sum_studies, samsum_lite_studies (8139->8145)
 w1364 sentence-pair canon: anli_lite_studies, mnli_lite_studies, mrpc_lite_studies, paws_lite_studies, quora_dup_studies, rte_lite_studies (8133->8139)
