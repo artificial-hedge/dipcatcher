@@ -31,12 +31,15 @@ double and no subprocess or network is touched.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import os
+import tempfile
 import threading
 import time
 import urllib.parse
 import uuid
+from collections import OrderedDict
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -56,37 +59,79 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
-from fx1.serve.evals import EvalRecord, EvalStore
+from fx1.serve.evals import (
+    EvalDiff,
+    EvalRecord,
+    EvalSpecStore,
+    EvalStore,
+    diff_eval_records,
+)
+from fx1.serve.finetune import (
+    TRAINABLE_MODELS,
+    FTHyperparameters,
+    FTJob,
+    FTJobCheckpointList,
+    FTJobError,
+    FTJobRunner,
+    FTJobSpec,
+    FTJobStore,
+    default_ft_runner,
+    validate_chat_jsonl,
+)
+from fx1.serve.journal import JobJournal
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
+    OPENAI_FILE_BYTES_MAX,
+    OPENAI_FILE_PURPOSE_ACCEPT,
+    OPENAI_MODEL_IDS,
+    OPENAI_RESPONSE_TERMINAL,
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
     OpenAIEmbeddingRequest,
     OpenAIEnvelopeStore,
     OpenAIModel,
+    OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
+    OpenAIVectorStoreFileBatchCreate,
+    OpenAIVectorStoreSearch,
     batch_line_body,
     batch_line_shape,
     batch_output_line,
+    chained_response_input,
+    chat_messages_for_store,
+    conversation_id_of,
     embeddings_to_kwargs,
+    file_search_call_item,
     openai_chunks,
+    openai_conversation_object,
     openai_embedding_envelope,
     openai_envelope,
     openai_error_body,
     openai_model,
     openai_models,
-    openai_response_call_items,
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
+    paged_item_list,
+    response_cap_call_items,
+    response_input_items_for_store,
+    response_query_text,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
     validate_response_format,
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
+from fx1.serve.uploads import (
+    UploadStore,
+    UploadStoreError,
+    upload_object,
+    validate_upload_intent,
+)
+from fx1.serve.usage_report import UsageReport
+from fx1.serve.vectorstores import VectorStoreError, VectorStoreStore
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
@@ -166,6 +211,9 @@ class CompletionRecord:
     # ``metadata`` evidence fields.
     user: str | None = None
     metadata: dict[str, str] | None = None
+    # Credential fingerprint on the wire (``env`` / managed-key id);
+    # in-process calls are unauthenticated so this stays None.
+    key_id: str | None = None
 
 
 class _CompletionLog:
@@ -176,12 +224,27 @@ class _CompletionLog:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, CompletionRecord] = {}
+        self._dropped = 0
 
     def append(self, rec: CompletionRecord) -> None:
         with self._lock:
             self._items[rec.completion_id] = rec
             while len(self._items) > self._cap:
                 self._items.pop(next(iter(self._items)))
+                self._dropped += 1
+
+    @property
+    def cap(self) -> int:
+        return self._cap
+
+    @property
+    def dropped(self) -> int:
+        with self._lock:
+            return self._dropped
+
+    def all(self, backend: str | None = None) -> list[CompletionRecord]:
+        """Every retained record — the aggregation view (no limit)."""
+        return self.latest(self._cap, backend)
 
     def get(self, completion_id: str) -> CompletionRecord | None:
         with self._lock:
@@ -229,7 +292,7 @@ def _messages_sha256(messages: list[dict[str, Any]]) -> str:
     ).hexdigest()
 
 
-def _sampling_params(
+def _sampling_params(  # NOSONAR(S107)
     *,
     temperature: float | None = None,
     top_p: float | None = None,
@@ -242,6 +305,8 @@ def _sampling_params(
     reasoning_effort: str | None = None,
     service_tier: str | None = None,
     prompt_cache_key: str | None = None,
+    prompt_cache_retention: str | None = None,
+    verbosity: str | None = None,
     user: str | None = None,
 ) -> SamplingParams:
     """Build the declared-params dataclass — the SDK twin of the wire's
@@ -287,6 +352,13 @@ def _sampling_params(
         "scale",
     ):
         raise ValueError("service_tier must be auto|default|flex|priority|scale")
+    if prompt_cache_retention is not None and prompt_cache_retention not in (
+        "in-memory",
+        "24h",
+    ):
+        raise ValueError("prompt_cache_retention must be in-memory|24h")
+    if verbosity is not None and verbosity not in ("low", "medium", "high"):
+        raise ValueError("verbosity must be low|medium|high")
     return SamplingParams(
         temperature=temperature,
         top_p=top_p,
@@ -299,6 +371,8 @@ def _sampling_params(
         reasoning_effort=reasoning_effort,
         service_tier=service_tier,
         prompt_cache_key=prompt_cache_key,
+        prompt_cache_retention=prompt_cache_retention,
+        verbosity=verbosity,
         user=user,
     )
 
@@ -397,15 +471,83 @@ class Fx1Harness:
         harness: Harness | None = None,
         backend_resolver: BackendResolver | None = None,
         receipts_dir: str | Path = "receipts",
+        ft_runner: FTJobRunner | None = None,
+        ft_dir: str | Path | None = None,
+        state_dir: str | Path | None = None,
     ) -> None:
         self._harness = harness or Harness()
         self._resolve_backend = backend_resolver or get_backend
         self._receipts = ReceiptIndex(Path(receipts_dir))
         self._log = _CompletionLog()
-        self._eval_store = EvalStore(256)
+        # state_dir (or FX1_SDK_STATE_DIR) binds the eval/ft stores to
+        # the same hash-chained journals the server uses — an SDK
+        # process restart recovers records, idem keys, events, and the
+        # ft: model registry exactly like the wire.
+        state_path = Path(state_dir) if state_dir is not None else None
+        if state_path is None:
+            env_dir = os.environ.get("FX1_SDK_STATE_DIR")
+            state_path = Path(env_dir) if env_dir else None
+        self._eval_store = EvalStore(
+            256,
+            journal=JobJournal(state_path / "evals.jsonl") if state_path is not None else None,
+        )
+        # The /v1/evals spec containers — journaled alongside the records.
+        self._eval_spec_store = EvalSpecStore(
+            256,
+            journal=JobJournal(state_path / "eval_specs.jsonl") if state_path is not None else None,
+        )
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
+        # Named conversation containers — the wire's conv_store twin.
+        self._conv_store = OpenAIEnvelopeStore(256)
+        # Cancel flags for background responses — a set event means the
+        # stored envelope was flipped to ``cancelled`` and the worker must
+        # not overwrite it with a terminal result.
+        self._bg_cancel: dict[str, threading.Event] = {}
+        # The /v1/fine_tuning twin — synchronous in process (no queue),
+        # same store/runner contract as the wire.
+        self._ft_store = FTJobStore(
+            256,
+            journal=JobJournal(state_path / "ft_jobs.jsonl") if state_path is not None else None,
+        )
+        self._ft_dir = Path(ft_dir or tempfile.gettempdir()) / "fx1_ft_sdk"
+        self._ft_runner = ft_runner or default_ft_runner(self._resolve_backend)
+        # The /v1/uploads twin — chunked assembly into process-local file
+        # records; journaled under state_dir like every other store.
+        self._upload_store = UploadStore(64, OPENAI_FILE_BYTES_MAX, state_dir=state_path)
+        # File records minted by upload_complete — the wire's _FileStore
+        # twin in miniature (process-local; the upload journal is the
+        # durable half).
+        self._files: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._files_lock = threading.Lock()
+        # Managed API keys — the wire's ApiKeyStore twin. Bound to
+        # ``state_dir/keys.jsonl`` when durable, so provisioning keys
+        # from the SDK writes the same journal the server replays.
+        from fx1.serve.keys import ApiKeyStore  # noqa: PLC0415
+
+        self._key_store = ApiKeyStore(
+            journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
+        )
+        # The /v1/vector_stores twin — borrows file content through a
+        # reader over ``self._files`` (the upload_complete records);
+        # journaled under state_dir like every other store. A file that
+        # isn't on disk fails the attach honestly.
+
+        def _sdk_file_reader(file_id: str) -> tuple[bytes, str] | None:
+            rec = self._files.get(file_id)
+            if rec is None:
+                return None
+            content = rec.get("_content")
+            if isinstance(content, (bytes, bytearray)):
+                data = bytes(content)
+            elif isinstance(content, str):
+                data = content.encode()
+            else:
+                return None
+            return data, str(rec.get("filename") or file_id)
+
+        self._vs_store = VectorStoreStore(512, state_dir=state_path, file_reader=_sdk_file_reader)
 
     def _record_call(
         self,
@@ -458,6 +600,105 @@ class Fx1Harness:
         if rec is None:
             raise KeyError(completion_id)
         return rec
+
+    def usage(
+        self,
+        *,
+        backend: str | None = None,
+        model: str | None = None,
+        key_id: str | None = None,
+        since: float | None = None,
+        until: float | None = None,
+    ) -> UsageReport:
+        """Token/request accounting over the in-process completion log —
+        the in-process twin of ``GET /harness/usage``. `since`/`until`
+        are unix-second bounds; since>until is a fail-closed ValueError."""
+        from fx1.serve.usage_report import aggregate_usage  # noqa: PLC0415
+
+        if since is not None and until is not None and since > until:
+            raise ValueError("since must be <= until")
+        if backend is not None and backend not in _BACKEND_NAMES:
+            raise ValueError(f"unknown backend {backend!r}")
+        return aggregate_usage(
+            self._log.all(backend),
+            cap=self._log.cap,
+            dropped=self._log.dropped,
+            backend=backend,
+            model=model,
+            key_id=key_id,
+            since=since,
+            until=until,
+        )
+
+    # Managed API keys — the in-process twins of ``/harness/keys``.
+    # Bound to ``state_dir``'s keys.jsonl when durable, so an SDK
+    # process can provision the keys a server deployment replays.
+
+    def key_create(
+        self,
+        name: str | None = None,
+        admin: bool = False,
+        *,
+        rpm: int | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Mint a managed key — returns the wire mint shape including the
+        raw ``key`` (shown once, never stored). ``admin=True`` keys may
+        manage keys on the wire surface; ``rpm`` bounds the key to a
+        fixed-window request rate and ``ttl_s`` bakes an expiry into the
+        journaled record."""
+        raw, rec = self._key_store.mint(name, admin=admin, rpm=rpm, ttl_s=ttl_s)
+        return {
+            "id": rec["key_id"],
+            "object": "key",
+            "name": rec["name"],
+            "prefix": rec["prefix"],
+            "admin": admin,
+            "rpm": rec.get("rpm"),
+            "expires_at": rec.get("expires_at"),
+            "created_at": rec["created_at"],
+            "key": raw,
+        }
+
+    def keys(self) -> list[dict[str, Any]]:
+        """Every minted key's fingerprint + metadata — never secrets."""
+        return [self._key_wire(rec) for rec in self._key_store.list()]
+
+    def key_get(self, key_id: str) -> dict[str, Any]:
+        """One key's record by fingerprint id; KeyError when unknown."""
+        rec = self._key_store.get(key_id)
+        if rec is None:
+            raise KeyError(key_id)
+        return self._key_wire(rec)
+
+    def key_revoke(self, key_id: str) -> dict[str, Any]:
+        """Tombstone a key; KeyError unknown, ValueError already revoked."""
+        from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
+
+        try:
+            rec = self._key_store.revoke(key_id)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return self._key_wire(rec)
+
+    @staticmethod
+    def _key_wire(rec: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "id": rec["key_id"],
+            "object": "key",
+            "name": rec["name"],
+            "prefix": rec["prefix"],
+            "admin": bool(rec.get("admin")),
+            "rpm": rec.get("rpm"),
+            "expires_at": rec.get("expires_at"),
+            "created_at": rec["created_at"],
+            "enabled": rec["enabled"],
+            "revoked_at": rec["revoked_at"],
+            "uses": rec["uses"],
+            "last_used_at": rec["last_used_at"],
+        }
 
     def completion_receipt(self, completion_id: str) -> dict[str, Any]:
         """Export one logged call as a sealed ``fx1_completion_record.v1``
@@ -531,6 +772,9 @@ class Fx1Harness:
             created_at=time.time(),
             sampling=EVAL_SAMPLING.body_fields(),
         )
+        # Journal the in-flight record before the suite runs — a process
+        # crash mid-eval recovers it as failed, matching the wire.
+        self._eval_store.put(record, None, None)
         try:
             if model_fn is not None:
                 metric_key = f"eval:{suite}:model_fn"
@@ -698,7 +942,7 @@ class Fx1Harness:
             record.error = f"{type(exc).__name__}: {exc}"
             record.status = "failed"
             record.finished_at = time.time()
-        self._eval_store.put(record, None, None)
+        self._eval_store.mark(record)
         return record
 
     def evals(
@@ -735,6 +979,410 @@ class Fx1Harness:
                 f"eval {eval_id} is {rec.status} — receipts export on terminal records only"
             )
         return eval_record_receipt(rec.model_dump(mode="json"))
+
+    def eval_diff(self, base_id: str, candidate_id: str) -> EvalDiff:
+        """Diff two stored eval records — the wire twin is
+        ``GET /harness/evals/{base}/diff/{candidate}``. Unknown ids raise
+        ``KeyError``; non-terminal records or missing reports raise
+        ``RuntimeError`` (the wire's 404/409)."""
+        base = self._eval_store.get(base_id)
+        if base is None:
+            raise KeyError(base_id)
+        cand = self._eval_store.get(candidate_id)
+        if cand is None:
+            raise KeyError(candidate_id)
+        for rec in (base, cand):
+            if rec.status in ("queued", "running") or rec.report is None:
+                raise RuntimeError(
+                    f"eval {rec.eval_id} is {rec.status} — diffs need terminal records with reports"
+                )
+        return diff_eval_records(base, cand)
+
+    # ---- /v1/evals — named spec containers + bound runs ----------------
+
+    def eval_spec_create(
+        self,
+        name: str,
+        *,
+        suite: str,
+        seed: int = 0,
+        backend: str | None = None,
+        fallbacks: list[str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        judge_backend: str | None = None,
+        timeout_s: float | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """The ``POST /v1/evals`` twin — declare a named eval container.
+        The item_schema pins the suite knobs (validated fail-closed);
+        credentials never live on a spec."""
+        from fx1.serve.evals import EvalSpec, EvalSpecItemSchema, spec_wire  # noqa: PLC0415
+
+        item_schema = EvalSpecItemSchema.model_validate(
+            {
+                "suite": suite,
+                "seed": seed,
+                "backend": backend,
+                "fallbacks": fallbacks or [],
+                "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir is not None else None,
+                "judge_backend": judge_backend,
+                "timeout_s": timeout_s,
+            }
+        )
+        spec = EvalSpec(
+            spec_id=f"eval_{uuid.uuid4().hex[:24]}",
+            name=name,
+            data_source_config={
+                "type": "custom",
+                "item_schema": item_schema.model_dump(exclude_none=True),
+            },
+            testing_criteria=list(testing_criteria or []),
+            metadata=dict(metadata or {}),
+            created_at=time.time(),
+        )
+        self._eval_spec_store.put(spec)
+        return spec_wire(spec)
+
+    def eval_spec_get(self, spec_id: str) -> dict[str, Any]:
+        """``GET /v1/evals/{id}`` twin — KeyError on unknown ids."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        return spec_wire(spec)
+
+    def eval_specs(self, *, limit: int = 20, after: str | None = None) -> list[dict[str, Any]]:
+        """``GET /v1/evals`` twin — newest-first page."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        page, _more = self._eval_spec_store.list_specs(limit=limit, after=after)
+        return [spec_wire(s) for s in page]
+
+    def eval_spec_update(
+        self,
+        spec_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/evals/{id}`` twin — name/metadata edits only; the
+        datasource is frozen once runs bind to it."""
+        from fx1.serve.evals import spec_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        if name is None and metadata is None:
+            raise ValueError("update must carry name or metadata")
+        if name is not None:
+            spec.name = name
+        if metadata is not None:
+            spec.metadata = dict(metadata)
+        self._eval_spec_store.update(spec)
+        return spec_wire(spec)
+
+    def eval_spec_delete(self, spec_id: str) -> None:
+        """``DELETE /v1/evals/{id}`` twin — journaled tombstone; runs
+        under it stay readable (evidence is never spec-cascaded)."""
+        if self._eval_spec_store.delete(spec_id) is None:
+            raise KeyError(spec_id)
+
+    def eval_run_create(
+        self,
+        spec_id: str,
+        *,
+        model: str,
+        model_fn: Callable[[list[dict[str, str]]], str] | None = None,
+        byok: dict[str, str] | None = None,
+        judge_byok: dict[str, str] | None = None,
+        data_source_overrides: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """The ``POST /v1/evals/{id}/runs`` twin — synchronous in process
+        (returns the terminal run object). ``model`` maps to the backend
+        chain head: a link name, ``fx1``, or a registered ``ft:`` name;
+        ``model_fn`` is the weights-direct leg."""
+        from fx1.serve.evals import EvalSpecItemSchema, run_wire  # noqa: PLC0415
+
+        spec = self._eval_spec_store.get(spec_id)
+        if spec is None:
+            raise KeyError(spec_id)
+        schema = EvalSpecItemSchema.model_validate(spec.data_source_config["item_schema"])
+        if data_source_overrides:
+            schema = EvalSpecItemSchema.model_validate(
+                {**schema.model_dump(), **data_source_overrides}
+            )
+        backend, ckpt = self._eval_model_backend(model)
+        record = self.run_eval(
+            schema.suite,
+            model_fn=model_fn,
+            backend=backend,
+            checkpoint_dir=ckpt or schema.checkpoint_dir,
+            byok=byok,
+            timeout_s=schema.timeout_s,
+            fallbacks=list(schema.fallbacks),
+            judge_backend=schema.judge_backend,
+            judge_byok=judge_byok,
+            seed=schema.seed,
+        )
+        record.eval_spec = spec.spec_id
+        record.eval_model = model
+        self._eval_store.mark(record)
+        return run_wire(record)
+
+    def _eval_model_backend(self, model: str) -> tuple[str, str | None]:
+        """The wire's ``model``→backend mapping: link names pass through,
+        ``fx1`` is the base checkpoint, ``ft:`` resolves via the card
+        registry (unregistered → KeyError, the wire's 404)."""
+        if model in ("hosted_k3", "local_fx1", "byok"):
+            return model, None
+        if model == "fx1":
+            return "local_fx1", None
+        if model.startswith("ft:"):
+            ckpt = self._ft_store.checkpoint_for(model)
+            if ckpt is None:
+                raise KeyError(model)
+            return "local_fx1", ckpt
+        raise ValueError(f"unknown eval model {model!r}")
+
+    def eval_runs(self, spec_id: str, *, limit: int = 20) -> list[dict[str, Any]]:
+        """``GET /v1/evals/{id}/runs`` twin — newest-first."""
+        from fx1.serve.evals import run_wire  # noqa: PLC0415
+
+        if self._eval_spec_store.get(spec_id) is None:
+            raise KeyError(spec_id)
+        page, _total = self._eval_store.list_records(spec=spec_id, limit=limit)
+        return [run_wire(r) for r in page]
+
+    def eval_run_get(self, spec_id: str, run_id: str) -> dict[str, Any]:
+        """``GET /v1/evals/{id}/runs/{run_id}`` twin."""
+        from fx1.serve.evals import run_wire  # noqa: PLC0415
+
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        return run_wire(rec)
+
+    def eval_run_items(
+        self, spec_id: str, run_id: str, *, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """``.../output_items`` twin — per-task verdict rows verbatim."""
+        from fx1.serve.evals import report_task_items  # noqa: PLC0415
+
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        tasks = (
+            report_task_items(rec.report)
+            if rec.status == "succeeded" and isinstance(rec.report, dict)
+            else []
+        )
+        return [
+            {
+                "id": f"evalrun_{rec.eval_id}-{i}",
+                "object": "eval.run.output_item",
+                "run_id": f"evalrun_{rec.eval_id}",
+                "eval_id": spec_id,
+                "created_at": int(rec.finished_at or rec.created_at),
+                "status": "pass" if t["passed"] else "fail",
+                "datasource_item_id": t["name"],
+                "datasource_item": t["row"],
+                "results": [{"name": rec.suite, "passed": t["passed"]}],
+            }
+            for i, t in enumerate(tasks[:limit])
+        ]
+
+    def eval_run_delete(self, spec_id: str, run_id: str) -> None:
+        """``DELETE .../runs/{run_id}`` twin — terminal records only."""
+        rec = self._eval_store.get(run_id.removeprefix("evalrun_"))
+        if rec is None or rec.eval_spec != spec_id:
+            raise KeyError(run_id)
+        if rec.status in ("queued", "running"):
+            raise RuntimeError(f"eval {rec.eval_id} is {rec.status} — only terminal runs delete")
+        self._eval_store.delete(rec.eval_id)
+
+    # ---- fine-tuning (the /v1/fine_tuning twin) ------------------------
+
+    def create_finetune_job(
+        self,
+        *,
+        model: str,
+        training_jsonl: bytes | str,
+        validation_jsonl: bytes | str | None = None,
+        hyperparameters: FTHyperparameters | None = None,
+        suffix: str | None = None,
+        seed: int | None = None,
+        metadata: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+    ) -> FTJob:
+        """The ``POST /v1/fine_tuning/jobs`` surface, weights-direct —
+        synchronous in process (there is no queue to observe): the corpus
+        is raw JSONL content here (the wire's file-upload step is an HTTP
+        artifact), the runner runs inline, and the returned job is
+        terminal. The record lands in the in-process store — the same
+        FTJobStore the wire serves — for ``finetune_job``/events reads.
+
+        ``callback_url``/``callback_secret`` are honored the same as the
+        wire: the terminal record POSTs to the URL, HMAC-signed via the
+        X-Fx1-Webhook-* headers when the secret is set (still real HTTP —
+        in-process doesn't mean silent).
+
+        ``ValueError`` is the wire's 400; a runner exception yields a
+        ``failed`` job record (never a raise — the job's own verdict is
+        the honest outcome).
+        """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
+        if model not in TRAINABLE_MODELS:
+            raise ValueError(
+                f"model {model!r} is not trainable through the harness "
+                f"(trainable: {list(TRAINABLE_MODELS)})"
+            )
+        corpus = (
+            training_jsonl.encode() if isinstance(training_jsonl, str) else bytes(training_jsonl)
+        )
+        n = validate_chat_jsonl(corpus, file_id="<in-process>")
+        hp = hyperparameters or FTHyperparameters()
+        job = FTJob(
+            id=f"ftjob-{uuid.uuid4().hex}",
+            model=model,
+            created_at=int(time.time()),
+            status="running",
+            hyperparameters=hp,
+            seed=seed,
+            metadata=metadata,
+            user_provided_suffix=suffix,
+            callback_url=callback_url,
+            # The wire echoes training_file=the file id; in-process carries
+            # the corpus content-length as the honest handle.
+            training_file=f"inline:{len(corpus)}B",
+        )
+        job._callback_secret = callback_secret
+        ft_name = f"ft:{model}:{suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
+        work_dir = self._ft_dir / job.id
+        work_dir.mkdir(parents=True, exist_ok=True)
+        corpus_path = work_dir / "corpus.jsonl"
+        corpus_path.write_bytes(corpus)
+        val_path = None
+        if validation_jsonl is not None:
+            vbytes = (
+                validation_jsonl.encode()
+                if isinstance(validation_jsonl, str)
+                else bytes(validation_jsonl)
+            )
+            validate_chat_jsonl(vbytes, file_id="<validation>")
+            val_path = work_dir / "validation.jsonl"
+            val_path.write_bytes(vbytes)
+        entry = self._ft_store.put(job, None, "")
+        self._ft_store.add_event(job.id, "info", f"training corpus validated: {n} examples")
+        spec = FTJobSpec(
+            job_id=job.id,
+            model=model,
+            corpus_path=corpus_path,
+            val_path=val_path,
+            hyperparameters=hp.model_dump(mode="json"),
+            seed=seed if seed is not None else 17,
+            work_dir=work_dir,
+            ft_model_name=ft_name,
+        )
+        self._ft_store.add_event(job.id, "info", "job started")
+        try:
+            # pause_gate is opt-in on the runner contract — the in-process
+            # twin is synchronous so there is no pause window, but the
+            # gate still reports a pre-dispatch cancel to gate-aware
+            # runners; older runners without the kwarg keep working
+            _extra: dict[str, Any] = {}
+            try:
+                if "pause_gate" in inspect.signature(self._ft_runner).parameters:
+                    _extra["pause_gate"] = entry.cancel.is_set
+            except (TypeError, ValueError):  # pragma: no cover - C callables
+                _extra["pause_gate"] = entry.cancel.is_set
+            outcome = self._ft_runner(
+                spec,
+                emit=lambda level, message, data=None: self._ft_store.add_event(
+                    job.id, level, message, data
+                ),
+                should_cancel=entry.cancel.is_set,
+                **_extra,
+            )
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.fine_tuned_model = outcome.fine_tuned_model
+                job.trained_tokens = outcome.trained_tokens
+                job.status = "succeeded"
+                if outcome.fine_tuned_model is not None and outcome.checkpoint:
+                    self._ft_store.register_model(
+                        outcome.fine_tuned_model,
+                        job_id=job.id,
+                        checkpoint=outcome.checkpoint,
+                        created=int(time.time()),
+                    )
+        except Exception as exc:
+            if entry.cancel.is_set():
+                job.status = "cancelled"
+            else:
+                job.status = "failed"
+                job.error = FTJobError(code="job_failed", message=f"{type(exc).__name__}: {exc}")
+        job.finished_at = int(time.time())
+        self._ft_store.add_event(
+            job.id, "info" if job.status == "succeeded" else "error", f"job {job.status}"
+        )
+        if job.callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                job.callback_url, callback_secret, job.model_dump_json().encode()
+            )
+            job.callback_status = "delivered" if ok else "failed"
+            job.callback_error = None if ok else err
+            job.callback_attempts = attempts
+        # Terminal state + callback verdicts ride the journal — same
+        # ordering as the wire worker (deliver, then mark).
+        self._ft_store.mark(entry)
+        return job
+
+    def finetune_jobs(self, *, limit: int | None = None) -> list[FTJob]:
+        """In-process fine-tune records, newest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs``."""
+        jobs, _has_more = self._ft_store.list_jobs(limit=limit or 100, after=None)
+        return jobs
+
+    def finetune_job(self, job_id: str) -> FTJob:
+        """One job record — ``KeyError`` on unknown ids (the wire's 404)."""
+        entry = self._ft_store.get(job_id)
+        if entry is None:
+            raise KeyError(job_id)
+        return entry.job
+
+    def finetune_job_events(self, job_id: str, *, limit: int | None = None) -> list[dict[str, Any]]:
+        """The job's event feed, oldest-first — the wire twin is
+        ``GET /v1/fine_tuning/jobs/{id}/events``."""
+        events, _has_more = self._ft_store.list_events(job_id, limit=limit or 100, after=None)
+        return [e.model_dump(mode="json") for e in events]
+
+    def finetune_job_checkpoints(
+        self, job_id: str, *, limit: int | None = None
+    ) -> FTJobCheckpointList:
+        """The job's registered checkpoint artifacts, oldest-first — the
+        wire twin is ``GET /v1/fine_tuning/jobs/{id}/checkpoints``.
+        ``KeyError`` on unknown ids; a deleted ``ft:`` name drops off
+        (the tombstone is real)."""
+        if self._ft_store.get(job_id) is None:
+            raise KeyError(job_id)
+        items, has_more = self._ft_store.checkpoints_for(job_id, limit=limit or 100, after=None)
+        return FTJobCheckpointList(
+            data=items,
+            first_id=items[0].id if items else None,
+            last_id=items[-1].id if items else None,
+            has_more=has_more,
+        )
 
     # ---- registry ------------------------------------------------------
 
@@ -905,6 +1553,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -968,6 +1618,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()
@@ -1193,6 +1845,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
     ) -> list[CompletionResult]:
@@ -1232,6 +1886,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()
@@ -1324,6 +1980,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
     ) -> list[str]:
@@ -1354,6 +2012,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()
@@ -1421,13 +2081,31 @@ class Fx1Harness:
     def openai_models(self) -> OpenAIModelList:
         """The ``GET /v1/models`` inventory in-process — `fx1` plus the
         backend names an OpenAI ``model`` field may carry."""
-        return openai_models()
+        return openai_models(extra_ids=[m["id"] for m in self._ft_store.models()])
 
     def openai_model(self, model_id: str) -> OpenAIModel:
         """``GET /v1/models/{id}`` in-process — one card for a listed id;
         unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
         the SDK's request-error class."""
-        return openai_model(model_id)
+        return openai_model(model_id, extra_ids=[m["id"] for m in self._ft_store.models()])
+
+    def openai_delete_model(self, model_id: str) -> OpenAIModelDelete:
+        """``DELETE /v1/models/{id}`` in-process — unregister an ``ft:``
+        name. Built-in link ids and unregistered names raise
+        :class:`OpenAICompatError` carrying the wire's status/code; a
+        deleted registration never resolves again."""
+        if model_id in OPENAI_MODEL_IDS:
+            raise OpenAICompatError(
+                f"the built-in link '{model_id}' is not deletable",
+                code="invalid_request",
+            )
+        if self._ft_store.unregister_model(model_id) is None:
+            raise OpenAICompatError(
+                f"The model '{model_id}' does not exist",
+                status=404,
+                code="model_not_found",
+            )
+        return OpenAIModelDelete(id=model_id)
 
     def openai_chat(
         self,
@@ -1457,7 +2135,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         # n>1 fans out into n gated calls — each choice gets its own
         # honesty-gate pass, format check, and completion-log record.
         results = [self.complete(**kwargs) for _ in range(body.n)]
@@ -1489,9 +2169,17 @@ class Fx1Harness:
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
             logprobs=choice_lps,
+            metadata=body.metadata,
         )
         if body.store is not False:
-            self._openai_store.put(envelope)
+            self._openai_store.put(
+                envelope,
+                items={
+                    "messages": chat_messages_for_store(
+                        body.messages, envelope_id=str(envelope["id"])
+                    )
+                },
+            )
         return OpenAIChatResponse.model_validate(envelope), first.completion_id
 
     def openai_chat_stream(
@@ -1527,7 +2215,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIChatRequest)
             else OpenAIChatRequest.model_validate(request)
         )
-        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        kwargs = openai_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         results = [self.complete(**kwargs) for _ in range(body.n)]
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
@@ -1549,17 +2239,22 @@ class Fx1Harness:
         first = results[0]
         cid = first.completion_id or uuid.uuid4().hex
         if body.store is not False:
+            env = openai_envelope(
+                cid=cid,
+                content=contents if body.n > 1 else contents[0],
+                backend="+".join(dict.fromkeys(r.backend for r in results)),
+                model=first.model,
+                usage=usage_sum if usage_seen else None,
+                tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+                finish_reasons=choice_reasons,
+                logprobs=choice_lps,
+                metadata=body.metadata,
+            )
             self._openai_store.put(
-                openai_envelope(
-                    cid=cid,
-                    content=contents if body.n > 1 else contents[0],
-                    backend="+".join(dict.fromkeys(r.backend for r in results)),
-                    model=first.model,
-                    usage=usage_sum if usage_seen else None,
-                    tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
-                    finish_reasons=choice_reasons,
-                    logprobs=choice_lps,
-                )
+                env,
+                items={
+                    "messages": chat_messages_for_store(body.messages, envelope_id=str(env["id"]))
+                },
             )
         chunks = list(
             openai_chunks(
@@ -1589,7 +2284,10 @@ class Fx1Harness:
         ``request`` is the same body ``POST /v1/responses`` takes — a dict
         or a parsed :class:`OpenAIResponseRequest`. Same fail-closed
         translation as the wire (``response_to_kwargs``), same honesty
-        gate, same metering and completion log. Returns the ``response``
+        gate, same metering and completion log. ``previous_response_id``
+        chains the turn onto a stored response — the parent must sit in
+        the retrieval index (a ``store=false`` or evicted parent fails
+        closed). Returns the ``response``
         object (``id`` mints the ``resp_`` handle; ``output[0]`` is the
         message item) plus the completion-log id for receipt lookup.
         """
@@ -1598,26 +2296,305 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        # chaining resolves (and fails closed) at call time, on both the
+        # sync and the background path — a bad parent never queues
+        eff_body, conv_cid = self._chain_response_input(body)
+        if body.background and not body.stream:
+            if body.store is False:
+                raise OpenAICompatError(
+                    "background=true needs store=true — a background response is "
+                    "only reachable through the retrieval index",
+                    status=400,
+                    code="background_requires_store",
+                )
+            rid = f"resp_{uuid.uuid4().hex}"
+            queued = openai_response_object(
+                rid=rid,
+                item_id="",
+                content="",
+                body=body,
+                model=body.model,
+                usage=None,
+                status="queued",
+            )
+            self._openai_store.put(
+                queued,
+                items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
+            )
+            cancel_ev = threading.Event()
+            self._bg_cancel[rid] = cancel_ev
+
+            def _bg() -> None:
+                try:
+                    if cancel_ev.is_set():
+                        return
+                    try:
+                        self._openai_response_finish(
+                            body,
+                            eff_body,
+                            headers,
+                            rid=rid,
+                            created=int(queued["created_at"]),
+                            conv_cid=conv_cid,
+                        )
+                    except Exception as exc:  # noqa: BLE001 — worker faults land on the record
+                        if cancel_ev.is_set():
+                            return
+                        cur = self._openai_store.get(rid)
+                        if cur is not None:
+                            cur["status"] = "failed"
+                            cur["error"] = {
+                                "message": (
+                                    str(exc)
+                                    if isinstance(exc, OpenAICompatError)
+                                    else f"{type(exc).__name__}: {exc}"
+                                ),
+                                "code": (
+                                    exc.code
+                                    if isinstance(exc, OpenAICompatError)
+                                    else "internal_error"
+                                ),
+                            }
+                            self._openai_store.put(cur)
+                    else:
+                        if cancel_ev.is_set():
+                            done = self._openai_store.get(rid)
+                            if done is not None:
+                                done["status"] = "cancelled"
+                                self._openai_store.put(done)
+                finally:
+                    self._bg_cancel.pop(rid, None)
+
+            threading.Thread(target=_bg, daemon=True).start()
+            return queued, None
+        return self._openai_response_finish(body, eff_body, headers, conv_cid=conv_cid)
+
+    _RETRIEVAL_INJECT_BUDGET = 32768
+
+    def _file_search_turn(
+        self,
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+    ) -> tuple[list[dict[str, Any]], OpenAIResponseRequest]:
+        """The wire's ``_file_search_turn`` twin — runs the advertised
+        ``file_search`` tool specs against ``self._vs_store`` before the
+        backend call; hits inject as a developer context item on the
+        effective input (stored in input_items = the honest transcript)
+        and one ``file_search_call`` output item records the run."""
+        fs_specs = [t for t in (body.tools or []) if t.type == "file_search"]
+        if not fs_specs:
+            return [], eff_body
+        query = response_query_text(eff_body.input)
+        if not query.strip():
+            raise OpenAICompatError(
+                "file_search needs a non-empty user message to query",
+                status=400,
+                code="empty_query",
+            )
+        include_results = bool(body.include and "file_search_call.results" in body.include)
+        search_items: list[dict[str, Any]] = []
+        inject_parts: list[str] = []
+        budget = self._RETRIEVAL_INJECT_BUDGET
+        for spec in fs_specs:
+            if spec.type != "file_search":
+                continue
+            ro = spec.ranking_options or {}
+            threshold = ro.get("score_threshold")
+            try:
+                hits = self._vs_store.search(
+                    list(spec.vector_store_ids),
+                    query,
+                    max_results=spec.max_num_results or 10,
+                    filters=spec.filters,
+                    score_threshold=(float(threshold) if threshold is not None else None),
+                )
+            except VectorStoreError as exc:
+                raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+            search_items.append(
+                file_search_call_item(
+                    queries=[query],
+                    results=[
+                        {
+                            "file_id": h["file_id"],
+                            "filename": h["filename"],
+                            "vector_store_id": h["vector_store_id"],
+                            "score": h["score"],
+                            "text": h["text"],
+                            "attributes": h["attributes"],
+                        }
+                        for h in hits
+                    ]
+                    if include_results
+                    else None,
+                )
+            )
+            for h in hits:
+                piece = f"[{h['file_id']} {h['filename']} score {h['score']:.3f}] {h['text']}"
+                if len(piece) <= budget:
+                    inject_parts.append(piece)
+                    budget -= len(piece)
+        if inject_parts:
+            ctx = "[file_search results — retrieved context]\n" + "\n\n".join(inject_parts)
+            prior: list[Any] = (
+                list(eff_body.input)
+                if isinstance(eff_body.input, list)
+                else [
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": str(eff_body.input)}],
+                    }
+                ]
+            )
+            eff_body = eff_body.model_copy(
+                update={
+                    "input": [
+                        {
+                            "type": "message",
+                            "role": "developer",
+                            "content": [{"type": "input_text", "text": ctx}],
+                        },
+                        *prior,
+                    ]
+                }
+            )
+        return search_items, eff_body
+
+    def _openai_response_finish(
+        self,
+        body: OpenAIResponseRequest,
+        eff_body: OpenAIResponseRequest,
+        headers: Mapping[str, str] | None,
+        *,
+        rid: str | None = None,
+        created: int | None = None,
+        conv_cid: str | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """The synchronous tail of ``openai_response`` — shared by the
+        direct call and the background worker (which pins ``rid``/
+        ``created`` so the completed record lands on the queued
+        envelope's id).``conv_cid`` carries the resolved conversation
+        anchor — the turn's items append onto the conv when it
+        completes."""
+        search_items, eff_body = self._file_search_turn(body, eff_body)
+        kwargs = response_to_kwargs(
+            eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         # a tool-call turn carries no text — nothing to post-validate
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
-        call_items = openai_response_call_items(result.tool_calls or [])
+        call_items, inc_details = response_cap_call_items(body, result.tool_calls or [])
         lp_arr = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         envelope = openai_response_object(
-            rid=f"resp_{uuid.uuid4().hex}",
+            rid=rid or f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
             content=result.content,
             body=body,
             model=result.model,
             usage=result.usage,
-            call_items=call_items or None,
+            status=("incomplete" if inc_details else "completed"),
+            created=created,
+            call_items=call_items,
+            search_items=search_items or None,
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
+            incomplete_details=inc_details,
         )
         if body.store is not False:
-            self._openai_store.put(envelope)
+            self._openai_store.put(
+                envelope,
+                items={
+                    "input_items": response_input_items_for_store(
+                        eff_body.input, rid=str(envelope["id"])
+                    )
+                },
+            )
+        self._conv_append(conv_cid, body, envelope)
         return envelope, result.completion_id
+
+    def _conv_append(
+        self,
+        conv_cid: str | None,
+        body: OpenAIResponseRequest,
+        envelope: dict[str, Any],
+    ) -> None:
+        """Append the turn's items onto the conversation — the request's
+        input items + the response's output items, ids minted off the
+        response rid. The conv container is its own store: the turn lands
+        on it even when the response itself carried ``store=false``."""
+        if conv_cid is None:
+            return
+        conv = self._conv_store.get(conv_cid)
+        if conv is None:
+            return  # deleted mid-flight — the response record stands alone
+        appended = [
+            *response_input_items_for_store(body.input, rid=str(envelope["id"])),
+            *[it for it in envelope["output"] if isinstance(it, dict)],
+        ]
+        self._conv_store.put(
+            conv,
+            items={
+                "items": [
+                    *(self._conv_store.get_items(conv_cid, "items") or []),
+                    *appended,
+                ]
+            },
+        )
+
+    def _chain_response_input(
+        self, body: OpenAIResponseRequest
+    ) -> tuple[OpenAIResponseRequest, str | None]:
+        """``previous_response_id``/``conversation`` → the effective input
+        item list plus the resolved conv id (``None`` when unanchored or
+        chain-anchored). The chain parent must be a stored ``response`` —
+        a ``store=false`` or evicted parent fails closed — and the conv
+        anchor must be a live ``conv_*`` container in the conv store.
+        The two anchors are mutually exclusive at validation."""
+        if body.previous_response_id is not None:
+            prev = self._openai_store.get(body.previous_response_id)
+            if prev is None or prev.get("object") != "response":
+                raise OpenAICompatError(
+                    f"previous_response_id {body.previous_response_id!r} not found — "
+                    "the chain parent must be a stored response (store=true)",
+                    status=400,
+                    code="previous_response_not_found",
+                )
+            return (
+                body.model_copy(
+                    update={
+                        "input": chained_response_input(
+                            prev,
+                            self._openai_store.get_items(body.previous_response_id, "input_items")
+                            or [],
+                            body.input,
+                        )
+                    }
+                ),
+                None,
+            )
+        conv_cid = conversation_id_of(body.conversation)
+        if conv_cid is None:
+            return body, None
+        conv = self._conv_store.get(conv_cid)
+        if conv is None or conv.get("object") != "conversation":
+            raise OpenAICompatError(
+                f"conversation {conv_cid!r} not found — create it with "
+                "openai_conversation_create first",
+                status=400,
+                code="conversation_not_found",
+            )
+        return (
+            body.model_copy(
+                update={
+                    "input": chained_response_input(
+                        {"output": []},
+                        self._conv_store.get_items(conv_cid, "items") or [],
+                        body.input,
+                    )
+                }
+            ),
+            conv_cid,
+        )
 
     def openai_response_stream(
         self,
@@ -1637,27 +2614,37 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        kwargs = response_to_kwargs(body, dict(headers or {}))
+        eff_body, conv_cid = self._chain_response_input(body)
+        search_items_s, eff_body = self._file_search_turn(body, eff_body)
+        kwargs = response_to_kwargs(
+            eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         result = self.complete(**kwargs)
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
         rid = f"resp_{uuid.uuid4().hex}"
         item_id = f"msg_{uuid.uuid4().hex}"
-        call_items = openai_response_call_items(result.tool_calls or [])
+        call_items, inc_details_s = response_cap_call_items(body, result.tool_calls or [])
         lp_arr_s = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
+        env_s = openai_response_object(
+            rid=rid,
+            item_id=item_id,
+            content=result.content,
+            body=body,
+            model=result.model,
+            usage=result.usage,
+            status=("incomplete" if inc_details_s else "completed"),
+            call_items=call_items,
+            search_items=search_items_s or None,
+            logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+            incomplete_details=inc_details_s,
+        )
         if body.store is not False:
             self._openai_store.put(
-                openai_response_object(
-                    rid=rid,
-                    item_id=item_id,
-                    content=result.content,
-                    body=body,
-                    model=result.model,
-                    usage=result.usage,
-                    call_items=call_items or None,
-                    logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
-                )
+                env_s,
+                items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
             )
+        self._conv_append(conv_cid, body, env_s)
         events = list(
             openai_response_events(
                 text=result.content,
@@ -1666,8 +2653,11 @@ class Fx1Harness:
                 body=body,
                 model=result.model,
                 usage=result.usage,
-                call_items=call_items or None,
+                call_items=call_items,
+                search_items=search_items_s or None,
                 logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+                final_status=("incomplete" if inc_details_s else "completed"),
+                incomplete_details=inc_details_s,
             )
         )
         if last_event_id is not None:
@@ -1697,7 +2687,9 @@ class Fx1Harness:
             if isinstance(request, OpenAIEmbeddingRequest)
             else OpenAIEmbeddingRequest.model_validate(request)
         )
-        kwargs = embeddings_to_kwargs(body, dict(headers or {}))
+        kwargs = embeddings_to_kwargs(
+            body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
+        )
         prompt_sha256 = hashlib.sha256(
             json.dumps(
                 {"model": kwargs["model"], "input": kwargs["input"]},
@@ -1856,7 +2848,31 @@ class Fx1Harness:
         env = self._openai_store.get(completion_id)
         if env is None or env.get("object") != "chat.completion":
             raise KeyError(f"completion {completion_id!r} not in the retrieval index")
-        return env
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_chat_list(
+        self,
+        *,
+        model: str | None = None,
+        metadata: Mapping[str, str] | None = None,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions`` in-process — stored completions,
+        optionally filtered by ``model`` and an exact ``metadata`` subset."""
+        envs = self._openai_store.list_envelopes("chat.completion")
+        if model is not None:
+            envs = [e for e in envs if e.get("model") == model]
+        if metadata:
+            envs = [
+                e
+                for e in envs
+                if isinstance(e.get("metadata"), dict)
+                and all(e["metadata"].get(k) == v for k, v in metadata.items())
+            ]
+        return paged_item_list(envs, limit=limit, after=after, before=before, order=order)
 
     def openai_chat_delete(self, completion_id: str) -> dict[str, Any]:
         """``DELETE /v1/chat/completions/{id}`` in-process."""
@@ -1864,13 +2880,30 @@ class Fx1Harness:
             raise KeyError(f"completion {completion_id!r} not in the retrieval index")
         return {"id": completion_id, "object": "chat.completion.deleted", "deleted": True}
 
+    def openai_chat_update(
+        self, completion_id: str, *, metadata: Mapping[str, str] | None = None
+    ) -> dict[str, Any]:
+        """``POST /v1/chat/completions/{id}`` in-process — ``metadata``
+        replaces the stored completion's wholesale (the only mutable
+        field); ``KeyError`` when the id isn't a live stored completion."""
+        env = self._openai_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        md = dict(metadata) if metadata is not None else {}
+        if len(md) > 16 or any(len(k) > 64 or len(v) > 512 for k, v in md.items()):
+            raise ValueError("metadata accepts ≤16 pairs, keys ≤64 chars, values ≤512")
+        updated = self._openai_store.update_metadata(completion_id, md)
+        if updated is None:
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return {k: v for k, v in updated.items() if not k.startswith("_fx1_")}
+
     def openai_response_get(self, response_id: str) -> dict[str, Any]:
         """``GET /v1/responses/{id}`` in-process — the stored ``response``
         envelope, or ``KeyError``."""
         env = self._openai_store.get(response_id)
         if env is None or env.get("object") != "response":
             raise KeyError(f"response {response_id!r} not in the retrieval index")
-        return env
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
 
     def openai_response_delete(self, response_id: str) -> dict[str, Any]:
         """``DELETE /v1/responses/{id}`` in-process."""
@@ -1878,12 +2911,446 @@ class Fx1Harness:
             raise KeyError(f"response {response_id!r} not in the retrieval index")
         return {"id": response_id, "object": "response.deleted", "deleted": True}
 
+    def openai_response_cancel(self, response_id: str) -> dict[str, Any]:
+        """``POST /v1/responses/{id}/cancel`` in-process — flips a queued
+        or in-progress background response to ``cancelled`` and tells the
+        worker to discard its result. Terminal responses raise
+        ``OpenAICompatError(cancel_terminal)``; unknown ids ``KeyError``."""
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        if env["status"] in OPENAI_RESPONSE_TERMINAL:
+            raise OpenAICompatError(
+                f"{response_id!r} is already {env['status']} — only queued or "
+                "in_progress responses cancel",
+                status=409,
+                code="cancel_terminal",
+            )
+        ev = self._bg_cancel.get(response_id)
+        if ev is not None:
+            ev.set()
+        env["status"] = "cancelled"
+        self._openai_store.put(env)
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_chat_messages(
+        self,
+        completion_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}/messages`` in-process — the
+        stored request messages, paged."""
+        env = self._openai_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return paged_item_list(
+            self._openai_store.get_items(completion_id, "messages") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    def openai_response_input_items(
+        self,
+        response_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/responses/{id}/input_items`` in-process — the stored
+        ``input`` items, paged."""
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        return paged_item_list(
+            self._openai_store.get_items(response_id, "input_items") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    # --- conversations (the /v1/conversations twin) --------------------------
+
+    def _conversation_get(self, conversation_id: str) -> dict[str, Any]:
+        conv = self._conv_store.get(conversation_id)
+        if conv is None or conv.get("object") != "conversation":
+            raise KeyError(f"conversation {conversation_id!r} not found")
+        return conv
+
+    def openai_conversation_create(
+        self,
+        *,
+        items: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations`` in-process — mints a ``conv_*``
+        container; ``items`` seeds it, ``metadata`` stamps it."""
+        cid = f"conv_{uuid.uuid4().hex}"
+        env = openai_conversation_object(cid=cid, metadata=metadata)
+        self._conv_store.put(
+            env,
+            items={"items": (response_input_items_for_store(items, rid=cid) if items else [])},
+        )
+        return env
+
+    def openai_conversation_get(self, conversation_id: str) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}`` in-process."""
+        return self._conversation_get(conversation_id)
+
+    def openai_conversation_update(
+        self,
+        conversation_id: str,
+        *,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}`` in-process — metadata replaces
+        wholesale."""
+        conv = self._conversation_get(conversation_id)
+        conv["metadata"] = dict(metadata) if metadata is not None else {}
+        self._conv_store.put(conv)
+        return conv
+
+    def openai_conversation_delete(self, conversation_id: str) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}`` in-process — the conv and its
+        items drop; member responses stay in the index."""
+        self._conversation_get(conversation_id)
+        self._conv_store.delete(conversation_id)
+        return {"id": conversation_id, "object": "conversation.deleted", "deleted": True}
+
+    def openai_conversation_items(
+        self,
+        conversation_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items`` in-process — the conv's
+        accumulated items, paged."""
+        self._conversation_get(conversation_id)
+        return paged_item_list(
+            self._conv_store.get_items(conversation_id, "items") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    def openai_conversation_items_add(
+        self,
+        conversation_id: str,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}/items`` in-process — appends the
+        dicts (minted per append), returns the minted list."""
+        conv = self._conversation_get(conversation_id)
+        minted = response_input_items_for_store(items, rid=conversation_id)
+        self._conv_store.put(
+            conv,
+            items={
+                "items": [
+                    *(self._conv_store.get_items(conversation_id, "items") or []),
+                    *minted,
+                ]
+            },
+        )
+        return {
+            "object": "list",
+            "data": minted,
+            "first_id": minted[0].get("id") if minted else None,
+            "last_id": minted[-1].get("id") if minted else None,
+            "has_more": False,
+        }
+
+    def openai_conversation_item(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items/{item_id}`` in-process —
+        one item by id; a miss raises ``KeyError``."""
+        self._conversation_get(conversation_id)
+        items = self._conv_store.get_items(conversation_id, "items") or []
+        for it in items:
+            if it.get("id") == item_id:
+                return it
+        raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
+
+    def openai_conversation_item_delete(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}/items/{item_id}`` in-process —
+        drops one item; a missing id raises ``KeyError``."""
+        conv = self._conversation_get(conversation_id)
+        items = self._conv_store.get_items(conversation_id, "items") or []
+        kept = [it for it in items if it.get("id") != item_id]
+        if len(kept) == len(items):
+            raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
+        self._conv_store.put(conv, items={"items": kept})
+        return conv
+
+    # --- vector stores (the /v1/vector_stores twin) --------------------------
+    # A journaled lexical retrieval corpus over the SDK's upload records —
+    # the file_search tool on openai_response searches it in-process.
+    # VectorStoreError surfaces as ValueError-class request faults with
+    # the same status/code the wire maps.
+
+    def vector_store_create(
+        self,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        file_ids: list[str] | None = None,
+        expires_after: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores`` in-process — mints a ``vs_*`` store;
+        ``file_ids`` attach at create (an unresolvable id fails closed);
+        ``expires_after`` sets the OpenAI anchor policy
+        ``{"anchor": "last_active_at", "days": 1..365}``."""
+        return self._vs_store.create(
+            name=name,
+            metadata=metadata,
+            file_ids=tuple(file_ids or ()),
+            expires_after=expires_after,
+        )
+
+    def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}`` in-process."""
+        return self._vs_store.get(vector_store_id)
+
+    def vector_store_update(
+        self,
+        vector_store_id: str,
+        *,
+        name: str | None = None,
+        metadata: dict[str, str] | None = None,
+        expires_after: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}`` in-process — name/metadata
+        replace wholesale when given; ``expires_after`` re-anchors the
+        expiry window (revives an expired store)."""
+        return self._vs_store.update(
+            vector_store_id,
+            name=name,
+            metadata=metadata,
+            expires_after=expires_after,
+        )
+
+    def vector_store_delete(self, vector_store_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}`` in-process — the store and
+        its index drop; the file records survive."""
+        return self._vs_store.delete(vector_store_id)
+
+    def vector_store_list(
+        self,
+        *,
+        limit: int = 20,
+        order: str = "desc",
+        after: str | None = None,
+        before: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores`` in-process — cursor-paged like the
+        wire."""
+        return self._vs_store.list_stores(limit=limit, order=order, after=after, before=before)
+
+    def vector_store_file_create(
+        self,
+        vector_store_id: str,
+        file_id: str,
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/files`` in-process — indexes the
+        upload record's bytes; empty text lands ``status: failed``."""
+        return self._vs_store.attach(
+            vector_store_id,
+            file_id,
+            attributes=attributes,
+            chunking_strategy=chunking_strategy,
+        )
+
+    def vector_store_file_list(
+        self,
+        vector_store_id: str,
+        *,
+        limit: int = 20,
+        order: str = "asc",
+        after: str | None = None,
+        before: str | None = None,
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files`` in-process — ``filter``
+        is an OpenAI status word (completed|failed|…)."""
+        return self._vs_store.list_files(
+            vector_store_id,
+            limit=limit,
+            order=order,
+            after=after,
+            before=before,
+            filter=filter,
+        )
+
+    def vector_store_file_get(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}`` in-process."""
+        return self._vs_store.get_file(vector_store_id, file_id)
+
+    def vector_store_file_delete(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/vector_stores/{id}/files/{file_id}`` in-process —
+        the attachment's chunks leave the index; the file record
+        survives."""
+        return self._vs_store.detach(vector_store_id, file_id)
+
+    def vector_store_file_content(self, vector_store_id: str, file_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/files/{file_id}/content``
+        in-process — the stored decoded text as text parts."""
+        return self._vs_store.file_content(vector_store_id, file_id)
+
+    def vector_store_search(
+        self,
+        vector_store_id: str,
+        query: str | list[str],
+        *,
+        max_num_results: int | None = None,
+        filters: dict[str, Any] | None = None,
+        ranking_options: dict[str, Any] | None = None,
+        rewrite_query: bool | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/search`` in-process — the
+        ranked hits without a model call, as a
+        ``vector_store.search_results.page`` dict. Same fail-closed
+        contract as the wire: ``rewrite_query`` refused, ``ranker``
+        accepts only ``"auto"``, ``score_threshold`` bounds the cosine
+        floor."""
+        body = OpenAIVectorStoreSearch.model_validate(
+            {
+                "query": query,
+                "max_num_results": max_num_results,
+                "filters": filters,
+                "ranking_options": ranking_options,
+                "rewrite_query": rewrite_query,
+            }
+        )
+        q = body.query if isinstance(body.query, str) else " ".join(str(x) for x in body.query)
+        ro = body.ranking_options or {}
+        try:
+            hits = self._vs_store.search(
+                [vector_store_id],
+                q,
+                max_results=body.max_num_results or 10,
+                filters=body.filters,
+                score_threshold=ro.get("score_threshold"),
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+        return {
+            "object": "vector_store.search_results.page",
+            "search_query": q,
+            "data": [
+                {
+                    "file_id": h["file_id"],
+                    "filename": h["filename"],
+                    "score": h["score"],
+                    "attributes": h["attributes"],
+                    "content": [{"type": "text", "text": h["text"]}],
+                }
+                for h in hits
+            ],
+            "has_more": False,
+            "next_page": None,
+        }
+
+    def vector_store_file_batch_create(
+        self,
+        vector_store_id: str,
+        file_ids: list[str],
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/file_batches`` in-process —
+        attach many ``file-*`` records in one call. Members attach
+        synchronously through the same code path the wire calls;
+        per-file refusals count ``failed`` with ``last_error``, never
+        abort. Status is terminal at return."""
+        body = OpenAIVectorStoreFileBatchCreate.model_validate(
+            {
+                "file_ids": file_ids,
+                "attributes": attributes,
+                "chunking_strategy": chunking_strategy,
+            }
+        )
+        try:
+            return self._vs_store.file_batch_create(
+                vector_store_id,
+                body.file_ids,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_get(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/file_batches/{batch_id}`` —
+        standing status + file_counts."""
+        try:
+            return self._vs_store.file_batch_get(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_cancel(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``POST .../file_batches/{id}/cancel`` — batches are terminal
+        at create; raises ``OpenAICompatError`` 409 ``file_batch_terminal``."""
+        try:
+            return self._vs_store.file_batch_cancel(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_files(
+        self,
+        vector_store_id: str,
+        batch_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET .../file_batches/{id}/files`` — the frozen per-file
+        verdicts in request order."""
+        try:
+            return self._vs_store.file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
     def openai_batch(
         self,
         lines: list[dict[str, Any]],
         *,
         endpoint: str = "/v1/chat/completions",
         headers: Mapping[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """The ``/v1/batches`` surface, weights-direct — synchronous in
         process (no upload/poll machinery: lines in, the batch object +
@@ -1897,7 +3364,18 @@ class Fx1Harness:
         ``completed`` — in-process has no queue to observe) and the
         OpenAI batch-result lines the wire would write into the output
         file.
+
+        ``callback_url``/``callback_secret`` behave as on the wire: the
+        finished batch envelope POSTs to the URL once, HMAC-signed when
+        the secret is set, and ``callback_status``/``callback_attempts``/
+        ``callback_error`` land on the returned envelope.
         """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
         if endpoint not in OPENAI_BATCH_ENDPOINTS:
             raise OpenAICompatError(
                 f"endpoint must be one of {sorted(OPENAI_BATCH_ENDPOINTS)}, got {endpoint!r}"
@@ -1918,6 +3396,18 @@ class Fx1Harness:
                 if getattr(obj, "stream", False):
                     raise OpenAICompatError(
                         "stream requests are not valid inside a batch",
+                        code="invalid_request",
+                    )
+                if getattr(obj, "background", False):
+                    raise OpenAICompatError(
+                        "background requests are not valid inside a batch — the "
+                        "batch itself is the async surface",
+                        code="invalid_request",
+                    )
+                if getattr(obj, "conversation", None) is not None:
+                    raise OpenAICompatError(
+                        "conversation requests are not valid inside a batch — "
+                        "a shared conv container would race across lines",
                         code="invalid_request",
                     )
                 if isinstance(obj, OpenAIChatRequest):
@@ -1980,8 +3470,139 @@ class Fx1Harness:
                 "failed": failed,
             },
             "metadata": None,
+            "callback_url": callback_url,
+            "callback_status": None,
+            "callback_attempts": 0,
+            "callback_error": None,
         }
+        if callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                callback_url, callback_secret, json.dumps(batch).encode()
+            )
+            batch["callback_status"] = "delivered" if ok else "failed"
+            batch["callback_error"] = None if ok else err
+            batch["callback_attempts"] = attempts
         return batch, out_lines
+
+    # ---- uploads (chunked files) ----------------------------------------
+
+    def upload_create(
+        self,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+        bytes: int,
+        mime_type: str = "application/jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads``, in-process — open a chunked-upload
+        intent. ``bytes`` is the DECLARED total the parts must sum to
+        (fail-closed both ways, same as the wire)."""
+        validate_upload_intent(purpose, filename, OPENAI_FILE_PURPOSE_ACCEPT)
+        return upload_object(
+            self._upload_store.create(
+                purpose=purpose, filename=filename, nbytes=bytes, mime_type=mime_type
+            )
+        )
+
+    def upload_part(self, upload_id: str, data: bytes) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/parts`` — one chunk, journaled under
+        ``state_dir`` exactly like the wire."""
+        return self._upload_store.add_part(upload_id, data)
+
+    def upload_complete(
+        self,
+        upload_id: str,
+        part_ids: list[str],
+        *,
+        md5: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/complete`` — assemble the parts into a
+        process-local ``file-`` record (fetch bytes back with
+        :meth:`file_content`). The md5 check runs before the mint, same
+        as the wire."""
+        content = self._upload_store.assemble(upload_id, part_ids)
+        meta = self._upload_store.get(upload_id)
+        assert meta is not None  # assemble() already raised otherwise
+        if md5 is not None and (
+            hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
+        ):
+            raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
+        if len(content) != meta.nbytes:
+            raise UploadStoreError(
+                400,
+                f"assembled bytes {len(content)} != declared {meta.nbytes}",
+                "upload_incomplete",
+            )
+        file_id = f"file-{uuid.uuid4().hex}"
+        fobj = {
+            "id": file_id,
+            "object": "file",
+            "purpose": meta.purpose,
+            "filename": meta.filename,
+            "bytes": len(content),
+            "created_at": int(time.time()),
+            "status": "processed",
+        }
+        with self._files_lock:
+            self._files[file_id] = {**fobj, "_content": content}
+            while len(self._files) > 256:
+                self._files.popitem(last=False)
+        done = self._upload_store.complete(upload_id, part_ids, content=content, file_id=file_id)
+        return upload_object(done, file_obj=fobj)
+
+    def upload_cancel(self, upload_id: str) -> dict[str, Any]:
+        """``POST /v1/uploads/{id}/cancel``."""
+        return upload_object(self._upload_store.cancel(upload_id))
+
+    def openai_file_create(
+        self,
+        content: bytes,
+        *,
+        purpose: str = "batch",
+        filename: str = "input.jsonl",
+    ) -> dict[str, Any]:
+        """``POST /v1/files`` in-process twin — a one-shot upload
+        landing the same ``file-*`` record chunked uploads mint.
+        Same fail-closed rules as the wire: purposes in
+        ``OPENAI_FILE_PURPOSE_ACCEPT``, non-empty ``.jsonl`` bytes under
+        the 8 MiB cap."""
+        validate_upload_intent(purpose, filename, OPENAI_FILE_PURPOSE_ACCEPT)
+        if not content:
+            raise UploadStoreError(400, "file is empty", "invalid_request")
+        if len(content) > 8 << 20:
+            raise UploadStoreError(413, "file exceeds the 8 MiB cap", "file_too_large")
+        file_id = f"file-{uuid.uuid4().hex}"
+        fobj = {
+            "id": file_id,
+            "object": "file",
+            "purpose": purpose,
+            "filename": filename,
+            "bytes": len(content),
+            "created_at": int(time.time()),
+            "status": "processed",
+        }
+        with self._files_lock:
+            self._files[file_id] = {**fobj, "_content": bytes(content)}
+            while len(self._files) > 256:
+                self._files.popitem(last=False)
+        return fobj
+
+    def file_content(self, file_id: str) -> bytes:
+        """``GET /v1/files/{id}/content`` twin — raw bytes of an
+        upload-minted file."""
+        rec = self._files.get(file_id)
+        if rec is None:
+            raise KeyError(file_id)
+        return bytes(rec["_content"])
+
+    def file_card(self, file_id: str) -> dict[str, Any]:
+        """``GET /v1/files/{id}`` twin — the file object (no content)."""
+        rec = self._files.get(file_id)
+        if rec is None:
+            raise KeyError(file_id)
+        return {k: v for k, v in rec.items() if k != "_content"}
 
     def _resolve_chain(
         self,
