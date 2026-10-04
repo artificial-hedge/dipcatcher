@@ -1041,6 +1041,21 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "served": {"calls": 0},
             }
 
+        def key_rotate(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("rotate", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "object": "key_rotation",
+                "rotated_from": key_id,
+                "revoked_previous": bool(_kw.get("revoke_old", True)),
+                "key": {
+                    "id": "kfake2",
+                    "object": "key",
+                    "rotated_from": key_id,
+                    "key": "fx1k_raw2",
+                },
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "env", "metered": False}
@@ -1552,6 +1567,23 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             ss.exit_code == 0
             and json.loads(ss.stdout)["credential"] == "env"
             and fake.last_key_call == ("self", None)
+        )
+        rj = runner.invoke(app, ["harness", "key-rotate", "kfake"])
+        out["key_rotate_json"] = (
+            rj.exit_code == 0
+            and json.loads(rj.stdout)["object"] == "key_rotation"
+            and json.loads(rj.stdout)["rotated_from"] == "kfake"
+            and fake.last_key_call == ("rotate", "kfake")
+            and fake.last_key_kw == {"revoke_old": True, "name": None, "ttl_s": None}
+        )
+        rk = runner.invoke(
+            app,
+            ["harness", "key-rotate", "kfake", "--keep-old", "--name", "n2", "--ttl-s", "30"],
+        )
+        out["key_rotate_flags_forward"] = (
+            rk.exit_code == 0
+            and json.loads(rk.stdout)["revoked_previous"] is False
+            and fake.last_key_kw == {"revoke_old": False, "name": "n2", "ttl_s": 30.0}
         )
 
     # --remote routes the same commands through HarnessClient --------------
@@ -2512,6 +2544,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_call = ("usage", key_id)
             return {"id": key_id, "object": "key_usage", "uses": 3}
 
+        def key_rotate(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("rotate", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "object": "key_rotation",
+                "rotated_from": key_id,
+                "revoked_previous": bool(_kw.get("revoke_old", True)),
+                "key": {"id": "kremote2", "key": "fx1k_rraw"},
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "managed"}
@@ -2674,6 +2716,31 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(ss.stdout)["credential"] == "managed"
             and remotes[-1].last_key_call == ("self", None)
         )
+        rjr = runner.invoke(app, ["harness", "key-rotate", "krem", "--remote", "http://h.test"])
+        out["key_rotate_remote"] = (
+            rjr.exit_code == 0
+            and json.loads(rjr.stdout)["object"] == "key_rotation"
+            and remotes[-1].last_key_call == ("rotate", "krem")
+            and remotes[-1].last_key_kw == {"revoke_old": True, "name": None, "ttl_s": None}
+        )
+        rkr = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-rotate",
+                "krem",
+                "--keep-old",
+                "--name",
+                "rn",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["key_rotate_remote_flags"] = rkr.exit_code == 0 and remotes[-1].last_key_kw == {
+            "revoke_old": False,
+            "name": "rn",
+            "ttl_s": None,
+        }
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
             == "cmd-a"

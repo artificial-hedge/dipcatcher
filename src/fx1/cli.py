@@ -1320,6 +1320,40 @@ def harness_key_usage(
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
+@harness_app.command("key-rotate")
+def harness_key_rotate(
+    key_id: str,
+    revoke_old: bool = typer.Option(
+        True,
+        "--revoke-old/--keep-old",
+        help="Tombstone the predecessor atomically with the mint (default). "
+        "--keep-old leaves both secrets live until the old key is revoked or expires.",
+    ),
+    name: str | None = typer.Option(
+        None, "--name", help="Successor display name — defaults to the predecessor's."
+    ),
+    ttl_s: float | None = typer.Option(
+        None,
+        "--ttl-s",
+        min=1e-9,
+        help="Fresh lifetime for the successor (seconds). Omitted: inherits the "
+        "predecessor's absolute expires_at — rotation never extends a credential.",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Rotate a managed key — mints a successor under the predecessor's
+    declared policy and, by default, tombstones the old secret in the
+    same transaction. The response's ``key.key`` is the only place the
+    new secret appears."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(
+        lambda: surface.key_rotate(key_id, revoke_old=revoke_old, name=name, ttl_s=ttl_s)
+    )
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
 @harness_app.command("self")
 def harness_self(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
