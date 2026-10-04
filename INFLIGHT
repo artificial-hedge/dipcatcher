@@ -1,3 +1,4 @@
+w1281 reasoning-prompt canon: analogical_prompting_studies, graph_of_thought_studies, least_to_most_studies, plan_and_solve_studies, step_back_studies, tree_of_thought_studies (7635->7641)
 w1280 pretraining-data canon: data_mixture_studies, data_quality_studies, dedup_pipeline_studies, domain_filtering_studies, synthetic_data_studies, token_budget_studies (7629->7635)
 w1279 distributed-training canon: activation_checkpoint_studies, fsdp_sharding_studies, hybrid_parallel_studies, pipeline_schedule_studies, sequence_parallel_studies, zero_optimizer_studies (7623->7629)
 w1278 LLM-serving canon: chunked_prefill_studies, continuous_batching_studies, disaggregated_serving_studies, early_exit_studies, prefix_caching_studies, tensor_parallel_studies (7617->7623)

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1281 reasoning-prompt canon.
+        "analogical_prompting_studies",
+        "graph_of_thought_studies",
+        "least_to_most_studies",
+        "plan_and_solve_studies",
+        "step_back_studies",
+        "tree_of_thought_studies",
         # Wave-1280 pretraining-data canon.
         "data_mixture_studies",
         "data_quality_studies",

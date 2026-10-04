@@ -10239,6 +10239,14 @@ from quant_fund.research.benches_w1280 import (
     bench_synthetic_data_studies_family,
     bench_token_budget_studies_family,
 )
+from quant_fund.research.benches_w1281 import (
+    bench_analogical_prompting_studies_family,
+    bench_graph_of_thought_studies_family,
+    bench_least_to_most_studies_family,
+    bench_plan_and_solve_studies_family,
+    bench_step_back_studies_family,
+    bench_tree_of_thought_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10742,6 +10750,12 @@ def _provenance(
         "domain_filtering_studies": bench_domain_filtering_studies_family,
         "synthetic_data_studies": bench_synthetic_data_studies_family,
         "token_budget_studies": bench_token_budget_studies_family,
+        "analogical_prompting_studies": bench_analogical_prompting_studies_family,
+        "graph_of_thought_studies": bench_graph_of_thought_studies_family,
+        "least_to_most_studies": bench_least_to_most_studies_family,
+        "plan_and_solve_studies": bench_plan_and_solve_studies_family,
+        "step_back_studies": bench_step_back_studies_family,
+        "tree_of_thought_studies": bench_tree_of_thought_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
