@@ -1,3 +1,4 @@
+w1408 abductive-reasoning canon: abduct_qa_studies, analogy_qa_studies, arct_lite_studies, entailment_qa_studies, fusion_qa_studies, proof_qa_studies (8397->8403)
 w1407 conversational-QA canon: canard_lite_studies, clarq_lite_studies, doqa_lite_studies, duread_qa_studies, orchid_qa_studies, qrecc_lite_studies (8391->8397)
 w1406 temporal-QA canon: menat_qa_studies, syndq_lite_studies, teas_qa_studies, time_qa_studies, timedial_qa_studies, timetravel_lite_studies (8385->8391)
 w1405 audio-QA canon: ambi_qa_studies, audio_qa_lite_studies, avsd_lite_studies, clotho_qa_studies, esc_qa_studies, music_avqa_studies (8379->8385)

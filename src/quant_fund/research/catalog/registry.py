@@ -3117,6 +3117,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "duread_qa_studies",
         "orchid_qa_studies",
         "qrecc_lite_studies",
+        # Wave-1408 abductive-reasoning canon.
+        "abduct_qa_studies",
+        "analogy_qa_studies",
+        "arct_lite_studies",
+        "entailment_qa_studies",
+        "fusion_qa_studies",
+        "proof_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
