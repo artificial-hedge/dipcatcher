@@ -12663,6 +12663,14 @@ from quant_fund.research.benches_w1583 import (
     bench_pilot_whale_qa_studies_family,
     bench_sperm_whale_qa_studies_family,
 )
+from quant_fund.research.benches_w1584 import (
+    bench_cottontail_qa_studies_family,
+    bench_hare_qa_studies_family,
+    bench_hedgehog_qa_studies_family,
+    bench_hyrax_qa_studies_family,
+    bench_jackrabbit_qa_studies_family,
+    bench_pika_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14689,6 +14697,12 @@ def _provenance(
         "horseshoe_bat_qa_studies": bench_horseshoe_bat_qa_studies_family,
         "leaf_nosed_qa_studies": bench_leaf_nosed_qa_studies_family,
         "bowhead_qa_studies": bench_bowhead_qa_studies_family,
+        "cottontail_qa_studies": bench_cottontail_qa_studies_family,
+        "hare_qa_studies": bench_hare_qa_studies_family,
+        "hedgehog_qa_studies": bench_hedgehog_qa_studies_family,
+        "hyrax_qa_studies": bench_hyrax_qa_studies_family,
+        "jackrabbit_qa_studies": bench_jackrabbit_qa_studies_family,
+        "pika_qa_studies": bench_pika_qa_studies_family,
         "fin_whale_qa_studies": bench_fin_whale_qa_studies_family,
         "humpback_qa_studies": bench_humpback_qa_studies_family,
         "minke_qa_studies": bench_minke_qa_studies_family,
