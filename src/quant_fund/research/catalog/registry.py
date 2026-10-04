@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1153 physical-sciences canon.
+        "physics_6",
+        "astrophysics_3",
+        "cosmology_3",
+        "geophysics_3",
+        "mechanics",
+        "thermodynamics_3",
         # Wave-1152 molecular-life-sciences canon.
         "biochemistry_2",
         "molecular_biology_2",
