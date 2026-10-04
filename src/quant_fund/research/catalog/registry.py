@@ -3544,6 +3544,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "heath_qa_studies",
         "knoll_qa_studies",
         "moor_qa_studies",
+        # Wave-1469 coastal canon.
+        "atoll_qa_studies",
+        "bluff_qa_studies",
+        "cove_qa_studies",
+        "headland_qa_studies",
+        "inlet_qa_studies",
+        "islet_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
