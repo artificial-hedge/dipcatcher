@@ -7551,6 +7551,14 @@ from quant_fund.research.benches_w944 import (
     bench_schur_complement_family,
     bench_weyl_ineq_family,
 )
+from quant_fund.research.benches_w945 import (
+    bench_hankel_op_family,
+    bench_kyfan_norm_family,
+    bench_matrix_det_family,
+    bench_numerical_radius_family,
+    bench_pfaffian_poly_family,
+    bench_schatten_norm_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7922,6 +7930,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kyfan_norm": bench_kyfan_norm_family,
+        "schatten_norm": bench_schatten_norm_family,
+        "numerical_radius": bench_numerical_radius_family,
+        "matrix_det": bench_matrix_det_family,
+        "pfaffian_poly": bench_pfaffian_poly_family,
+        "hankel_op": bench_hankel_op_family,
         "fan_inequality": bench_fan_inequality_family,
         "horn_inequality": bench_horn_inequality_family,
         "weyl_ineq": bench_weyl_ineq_family,
