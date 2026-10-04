@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-846 special-functions canon.
+        "gamma_fn",
+        "beta_fn",
+        "bessel_fn",
+        "airy_fn",
+        "error_fn",
+        "hypergeometric_fn",
         # Wave-845 integral-transforms canon.
         "laplace_transform",
         "mellin_transform",
