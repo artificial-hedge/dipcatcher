@@ -16,7 +16,7 @@ def khonsu_qa_studies_aux(aux: bool) -> bool:
     """khonsu_qa_studies
 
     aux:
-    khonsu_qa_studies: khonsu, moon god, answers, and scores
+    khonsu_qa_studies: khonsu, moon travelers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_khonsu_qa_studies(seed: int = 0) -> float:
     checks.append(not khonsu_qa_studies_ok(False, True))
     checks.append(khonsu_qa_studies_aux(True))
     checks.append(not khonsu_qa_studies_aux(False))
-    checks.append(True)  # egyptian-myth canon
+    checks.append(True)  # egyptian-2 canon
     return float(sum(checks) / len(checks))
 
 

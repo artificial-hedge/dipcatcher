@@ -16,7 +16,7 @@ def sobek_qa_studies_aux(aux: bool) -> bool:
     """sobek_qa_studies
 
     aux:
-    sobek_qa_studies: sobek, crocodile god, answers, and scores
+    sobek_qa_studies: sobek, crocodile kings, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_sobek_qa_studies(seed: int = 0) -> float:
     checks.append(not sobek_qa_studies_ok(False, True))
     checks.append(sobek_qa_studies_aux(True))
     checks.append(not sobek_qa_studies_aux(False))
-    checks.append(True)  # egyptian-myth canon
+    checks.append(True)  # egyptian-2 canon
     return float(sum(checks) / len(checks))
 
 
