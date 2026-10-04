@@ -4207,6 +4207,14 @@ from quant_fund.research.benches_w526 import (
     bench_parabolic_impl_family,
     bench_sullivan_no_wander_family,
 )
+from quant_fund.research.benches_w527 import (
+    bench_anosov_family,
+    bench_bowen_spec_family,
+    bench_horseshoe_family,
+    bench_markov_partition_family,
+    bench_srb_measure_family,
+    bench_stable_mfld_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4586,6 +4594,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "anosov": bench_anosov_family,
+        "srb_measure": bench_srb_measure_family,
+        "horseshoe": bench_horseshoe_family,
+        "stable_mfld": bench_stable_mfld_family,
+        "bowen_spec": bench_bowen_spec_family,
+        "markov_partition": bench_markov_partition_family,
         "julia_set": bench_julia_set_family,
         "mandelbrot_set": bench_mandelbrot_set_family,
         "fatou_set": bench_fatou_set_family,
