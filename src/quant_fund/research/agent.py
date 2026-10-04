@@ -10391,6 +10391,14 @@ from quant_fund.research.benches_w1299 import (
     bench_safety_bench_studies_family,
     bench_xstest_studies_family,
 )
+from quant_fund.research.benches_w1300 import (
+    bench_adversarial_eval_studies_family,
+    bench_autoattack_studies_family,
+    bench_corruption_studies_family,
+    bench_imagenet_c_studies_family,
+    bench_imagenet_r_studies_family,
+    bench_robust_bench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11008,6 +11016,12 @@ def _provenance(
         "prompt_inject_studies": bench_prompt_inject_studies_family,
         "safety_bench_studies": bench_safety_bench_studies_family,
         "xstest_studies": bench_xstest_studies_family,
+        "adversarial_eval_studies": bench_adversarial_eval_studies_family,
+        "autoattack_studies": bench_autoattack_studies_family,
+        "corruption_studies": bench_corruption_studies_family,
+        "imagenet_c_studies": bench_imagenet_c_studies_family,
+        "imagenet_r_studies": bench_imagenet_r_studies_family,
+        "robust_bench_studies": bench_robust_bench_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

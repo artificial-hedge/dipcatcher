@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1300 robustness-eval canon.
+        "adversarial_eval_studies",
+        "autoattack_studies",
+        "corruption_studies",
+        "imagenet_c_studies",
+        "imagenet_r_studies",
+        "robust_bench_studies",
         # Wave-1299 safety-eval canon.
         "agent_harm_studies",
         "harm_bench_studies",
