@@ -9095,6 +9095,14 @@ from quant_fund.research.benches_w1137 import (
     bench_gifted_education_family,
     bench_instructional_design_family,
 )
+from quant_fund.research.benches_w1138 import (
+    bench_behavioral_economics_family,
+    bench_econ_neuroscience_family,
+    bench_evolutionary_economics_family,
+    bench_experimental_economics_2_family,
+    bench_institutional_economics_family,
+    bench_political_economy_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9466,6 +9474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "behavioral_economics": bench_behavioral_economics_family,
+        "econ_neuroscience": bench_econ_neuroscience_family,
+        "experimental_economics_2": bench_experimental_economics_2_family,
+        "institutional_economics": bench_institutional_economics_family,
+        "evolutionary_economics": bench_evolutionary_economics_family,
+        "political_economy_2": bench_political_economy_2_family,
         "early_childhood_education": bench_early_childhood_education_family,
         "bilingual_education": bench_bilingual_education_family,
         "gifted_education": bench_gifted_education_family,
