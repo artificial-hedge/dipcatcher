@@ -12215,6 +12215,14 @@ from quant_fund.research.benches_w1527 import (
     bench_usnea_qa_studies_family,
     bench_xanthoria_qa_studies_family,
 )
+from quant_fund.research.benches_w1528 import (
+    bench_calcite_qa_studies_family,
+    bench_feldspar_qa_studies_family,
+    bench_fluorite_qa_studies_family,
+    bench_gypsum_qa_studies_family,
+    bench_olivine_qa_studies_family,
+    bench_quartz_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13995,6 +14003,12 @@ def _provenance(
         "oakmoss_qa_studies": bench_oakmoss_qa_studies_family,
         "usnea_qa_studies": bench_usnea_qa_studies_family,
         "xanthoria_qa_studies": bench_xanthoria_qa_studies_family,
+        "calcite_qa_studies": bench_calcite_qa_studies_family,
+        "feldspar_qa_studies": bench_feldspar_qa_studies_family,
+        "fluorite_qa_studies": bench_fluorite_qa_studies_family,
+        "gypsum_qa_studies": bench_gypsum_qa_studies_family,
+        "olivine_qa_studies": bench_olivine_qa_studies_family,
+        "quartz_qa_studies": bench_quartz_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
