@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1079 classics canon.
+        "classical_studies",
+        "latin_language",
+        "ancient_greek",
+        "classical_archaeology",
+        "philology",
+        "papyrology",
         # Wave-1078 performing arts canon.
         "theater_studies",
         "dance_studies",
