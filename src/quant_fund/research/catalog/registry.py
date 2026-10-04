@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1157 computing-sciences canon.
+        "computer_science_2",
+        "software_engineering",
+        "machine_learning_2",
+        "artificial_intelligence",
+        "data_engineering",
+        "information_theory_2",
         # Wave-1156 mathematical-sciences canon.
         "applied_mathematics",
         "statistics_2",

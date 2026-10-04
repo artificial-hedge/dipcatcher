@@ -9247,6 +9247,14 @@ from quant_fund.research.benches_w1156 import (
     bench_probability_4_family,
     bench_statistics_2_family,
 )
+from quant_fund.research.benches_w1157 import (
+    bench_artificial_intelligence_family,
+    bench_computer_science_2_family,
+    bench_data_engineering_family,
+    bench_information_theory_2_family,
+    bench_machine_learning_2_family,
+    bench_software_engineering_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9618,6 +9626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "computer_science_2": bench_computer_science_2_family,
+        "software_engineering": bench_software_engineering_family,
+        "machine_learning_2": bench_machine_learning_2_family,
+        "artificial_intelligence": bench_artificial_intelligence_family,
+        "data_engineering": bench_data_engineering_family,
+        "information_theory_2": bench_information_theory_2_family,
         "applied_mathematics": bench_applied_mathematics_family,
         "statistics_2": bench_statistics_2_family,
         "probability_4": bench_probability_4_family,
