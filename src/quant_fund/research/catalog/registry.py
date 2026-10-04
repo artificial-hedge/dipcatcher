@@ -4055,6 +4055,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gadfly_qa_studies",
         "manx_qa_studies",
         "mollymawk_qa_studies",
+        # Wave-1542 raptor-3 canon.
+        "accipiter_qa_studies",
+        "bateleur_qa_studies",
+        "falconet_qa_studies",
+        "harpy_qa_studies",
+        "lammergeier_qa_studies",
+        "seriema_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

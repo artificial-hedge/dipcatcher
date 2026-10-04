@@ -12327,6 +12327,14 @@ from quant_fund.research.benches_w1541 import (
     bench_manx_qa_studies_family,
     bench_mollymawk_qa_studies_family,
 )
+from quant_fund.research.benches_w1542 import (
+    bench_accipiter_qa_studies_family,
+    bench_bateleur_qa_studies_family,
+    bench_falconet_qa_studies_family,
+    bench_harpy_qa_studies_family,
+    bench_lammergeier_qa_studies_family,
+    bench_seriema_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14190,6 +14198,12 @@ def _provenance(
         "gadfly_qa_studies": bench_gadfly_qa_studies_family,
         "manx_qa_studies": bench_manx_qa_studies_family,
         "mollymawk_qa_studies": bench_mollymawk_qa_studies_family,
+        "accipiter_qa_studies": bench_accipiter_qa_studies_family,
+        "bateleur_qa_studies": bench_bateleur_qa_studies_family,
+        "falconet_qa_studies": bench_falconet_qa_studies_family,
+        "harpy_qa_studies": bench_harpy_qa_studies_family,
+        "lammergeier_qa_studies": bench_lammergeier_qa_studies_family,
+        "seriema_qa_studies": bench_seriema_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
