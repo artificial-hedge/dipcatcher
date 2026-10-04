@@ -12207,6 +12207,14 @@ from quant_fund.research.benches_w1526 import (
     bench_swordfern_qa_studies_family,
     bench_treefern_qa_studies_family,
 )
+from quant_fund.research.benches_w1527 import (
+    bench_crustose_qa_studies_family,
+    bench_foliose_qa_studies_family,
+    bench_fruticose_qa_studies_family,
+    bench_oakmoss_qa_studies_family,
+    bench_usnea_qa_studies_family,
+    bench_xanthoria_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13981,6 +13989,12 @@ def _provenance(
         "staghorn_qa_studies": bench_staghorn_qa_studies_family,
         "swordfern_qa_studies": bench_swordfern_qa_studies_family,
         "treefern_qa_studies": bench_treefern_qa_studies_family,
+        "crustose_qa_studies": bench_crustose_qa_studies_family,
+        "foliose_qa_studies": bench_foliose_qa_studies_family,
+        "fruticose_qa_studies": bench_fruticose_qa_studies_family,
+        "oakmoss_qa_studies": bench_oakmoss_qa_studies_family,
+        "usnea_qa_studies": bench_usnea_qa_studies_family,
+        "xanthoria_qa_studies": bench_xanthoria_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

@@ -3950,6 +3950,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "staghorn_qa_studies",
         "swordfern_qa_studies",
         "treefern_qa_studies",
+        # Wave-1527 lichen canon.
+        "crustose_qa_studies",
+        "foliose_qa_studies",
+        "fruticose_qa_studies",
+        "oakmoss_qa_studies",
+        "usnea_qa_studies",
+        "xanthoria_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
