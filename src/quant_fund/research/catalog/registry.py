@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-880 quadrature/cubature canon.
+        "gq_adaptive",
+        "adaptive_quad2",
+        "pod_deim",
+        "empirical_interp",
+        "cubature_rule",
+        "tensor_interp",
         # Wave-879 exponential-time-integrator canon.
         "expm_int",
         "expokit",
