@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1298 agentic-eval canon.
+        "browse_eval_studies",
+        "os_world_studies",
+        "swe_bench_studies",
+        "terminal_bench_studies",
+        "tool_use_eval_studies",
+        "web_arena_studies",
         # Wave-1297 eval-science canon.
         "benchmark_gaming_studies",
         "benchmark_saturate_studies",
