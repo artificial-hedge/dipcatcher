@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1293 constitutional-AI canon.
+        "cai_critique_studies",
+        "constitutional_studies",
+        "harmlessness_rl_studies",
+        "principle_eval_studies",
+        "rlaif_studies",
+        "sleeper_eval_studies",
         # Wave-1292 RLVR/verifiable-rewards canon.
         "grpo_studies",
         "math_reward_studies",
