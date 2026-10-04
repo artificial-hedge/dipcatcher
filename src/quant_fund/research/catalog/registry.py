@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-938 fixed-point canon.
+        "fejer_monotone",
+        "firmly_nonexpansive",
+        "averaged_operator",
+        "cocoercive",
+        "quasinonexpansive",
+        "monotone_inclusion",
         # Wave-937 operator-splitting canon.
         "douglas_rachford",
         "peaceman_rachford",

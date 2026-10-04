@@ -1,3 +1,4 @@
+feat(research): wave 938 — fixed-point canon (fejer_monotone, firmly_nonexpansive, averaged_operator, cocoercive, quasinonexpansive, monotone_inclusion) (5577->5583 families)
 feat(research): wave 937 — operator-splitting canon (douglas_rachford, peaceman_rachford, tseng_split, forward_backward, chambolle_pock, davis_yin) (5571->5577 families)
 feat(research): wave 936 — nonsmooth-analysis canon (subdiff_compute, epigraph_proj, gauge_fn, gauge_duality, bundle_level, clarke_subdiff) (5565->5571 families)
 feat(research): wave 935 — convex-optimization canon (kkt_solve, cvx_reform, self_concordant, logbarrier_fn, analytic_center, dik_ellipsoid) (5559->5565 families)
