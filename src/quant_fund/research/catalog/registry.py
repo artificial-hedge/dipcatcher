@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1189 hospitality canon.
+        "hospitality_studies",
+        "event_management",
+        "hotel_management",
+        "tourism_studies",
+        "recreation_management",
+        "leisure_science",
         # Wave-1188 culinary canon.
         "culinary_science",
         "pastry_arts",

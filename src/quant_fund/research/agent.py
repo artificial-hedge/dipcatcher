@@ -9503,6 +9503,14 @@ from quant_fund.research.benches_w1188 import (
     bench_gastronomy_2_family,
     bench_pastry_arts_family,
 )
+from quant_fund.research.benches_w1189 import (
+    bench_event_management_family,
+    bench_hospitality_studies_family,
+    bench_hotel_management_family,
+    bench_leisure_science_family,
+    bench_recreation_management_family,
+    bench_tourism_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9874,6 +9882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hospitality_studies": bench_hospitality_studies_family,
+        "event_management": bench_event_management_family,
+        "hotel_management": bench_hotel_management_family,
+        "tourism_studies": bench_tourism_studies_family,
+        "recreation_management": bench_recreation_management_family,
+        "leisure_science": bench_leisure_science_family,
         "culinary_science": bench_culinary_science_family,
         "pastry_arts": bench_pastry_arts_family,
         "brewing_science": bench_brewing_science_family,
