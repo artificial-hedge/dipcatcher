@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1205 extreme-environment canon.
+        "aerospace_medicine",
+        "diving_medicine",
+        "wilderness_medicine",
+        "space_physiology",
+        "hyperbaric_oxygen",
+        "high_altitude_medicine",
         # Wave-1204 geriatric-care canon.
         "geriatric_medicine",
         "palliative_care",
