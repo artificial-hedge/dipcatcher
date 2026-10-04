@@ -5735,6 +5735,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "demeter_qa_studies",
         "hera_qa_studies",
         "persephone_qa_studies",
+        # Wave-1782 egyptian-5 canon.
+        "geb_qa_studies",
+        "horus_qa_studies",
+        "isis_qa_studies",
+        "osiris_qa_studies",
+        "set_qa_studies",
+        "shu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
