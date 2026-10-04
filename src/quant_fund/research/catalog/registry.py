@@ -4664,6 +4664,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "moray_eel_qa_studies",
         "pangolin_2_qa_studies",
         "satyr_qa_studies",
+        # Wave-1629 cryptid canon.
+        "chupacabra_qa_studies",
+        "jersey_devil_qa_studies",
+        "kraken_2_qa_studies",
+        "mothman_qa_studies",
+        "thunderbird_qa_studies",
+        "yeti_2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
