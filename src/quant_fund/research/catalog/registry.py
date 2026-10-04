@@ -3467,6 +3467,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cougar_qa_studies",
         "elk_qa_studies",
         "lynx_qa_studies",
+        # Wave-1458 desert-2 canon.
+        "arroyo_qa_studies",
+        "butte_qa_studies",
+        "camel_qa_studies",
+        "caravan_qa_studies",
+        "mirage_qa_studies",
+        "oasis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
