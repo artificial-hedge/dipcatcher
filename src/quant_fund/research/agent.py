@@ -9511,6 +9511,14 @@ from quant_fund.research.benches_w1189 import (
     bench_recreation_management_family,
     bench_tourism_studies_family,
 )
+from quant_fund.research.benches_w1190 import (
+    bench_graphic_design_family,
+    bench_motion_graphics_family,
+    bench_photography_studies_family,
+    bench_print_media_family,
+    bench_typography_studies_family,
+    bench_web_design_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9882,6 +9890,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "graphic_design": bench_graphic_design_family,
+        "typography_studies": bench_typography_studies_family,
+        "photography_studies": bench_photography_studies_family,
+        "print_media": bench_print_media_family,
+        "web_design": bench_web_design_family,
+        "motion_graphics": bench_motion_graphics_family,
         "hospitality_studies": bench_hospitality_studies_family,
         "event_management": bench_event_management_family,
         "hotel_management": bench_hotel_management_family,

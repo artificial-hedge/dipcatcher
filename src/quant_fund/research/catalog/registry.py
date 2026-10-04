@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1190 visual-design canon.
+        "graphic_design",
+        "typography_studies",
+        "photography_studies",
+        "print_media",
+        "web_design",
+        "motion_graphics",
         # Wave-1189 hospitality canon.
         "hospitality_studies",
         "event_management",
