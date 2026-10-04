@@ -8567,6 +8567,14 @@ from quant_fund.research.benches_w1071 import (
     bench_musicology_family,
     bench_organology_family,
 )
+from quant_fund.research.benches_w1072 import (
+    bench_cinema_studies_family,
+    bench_documentary_studies_family,
+    bench_film_history_family,
+    bench_film_studies_family,
+    bench_film_theory_family,
+    bench_screenwriting_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8938,6 +8946,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "film_studies": bench_film_studies_family,
+        "cinema_studies": bench_cinema_studies_family,
+        "film_theory": bench_film_theory_family,
+        "film_history": bench_film_history_family,
+        "documentary_studies": bench_documentary_studies_family,
+        "screenwriting": bench_screenwriting_family,
         "musicology": bench_musicology_family,
         "ethnomusicology": bench_ethnomusicology_family,
         "music_theory": bench_music_theory_family,
