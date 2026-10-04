@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1356 knowledge-QA canon.
+        "bigbench_lite_studies",
+        "entity_qa_studies",
+        "mmlu_lite_studies",
+        "natural_qa_studies",
+        "pop_qa_studies",
+        "triviaqa_lite_studies",
         # Wave-1355 commonsense-eval canon.
         "arc_hard2_studies",
         "csqa_lite_studies",
