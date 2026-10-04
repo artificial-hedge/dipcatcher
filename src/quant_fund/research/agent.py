@@ -4975,6 +4975,14 @@ from quant_fund.research.benches_w622 import (
     bench_prismatic_crystal_family,
     bench_prismatic_site_family,
 )
+from quant_fund.research.benches_w623 import (
+    bench_a_infinity2_family,
+    bench_cyclic_operad_family,
+    bench_dendroidal2_family,
+    bench_e_infinity3_family,
+    bench_infty_operad2_family,
+    bench_operadic_nerve_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5354,6 +5362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dendroidal2": bench_dendroidal2_family,
+        "operadic_nerve": bench_operadic_nerve_family,
+        "infty_operad2": bench_infty_operad2_family,
+        "a_infinity2": bench_a_infinity2_family,
+        "e_infinity3": bench_e_infinity3_family,
+        "cyclic_operad": bench_cyclic_operad_family,
         "prism2": bench_prism2_family,
         "prismatic_site": bench_prismatic_site_family,
         "delta_ring": bench_delta_ring_family,
