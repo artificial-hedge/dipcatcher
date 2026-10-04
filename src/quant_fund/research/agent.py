@@ -8119,6 +8119,14 @@ from quant_fund.research.benches_w1015 import (
     bench_room_acoustics_family,
     bench_sound_absorption_family,
 )
+from quant_fund.research.benches_w1016 import (
+    bench_coherence_theory_family,
+    bench_diffraction_grating_family,
+    bench_fourier_optics_family,
+    bench_holography_family,
+    bench_interference_fringes_family,
+    bench_polarization_states_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8490,6 +8498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "diffraction_grating": bench_diffraction_grating_family,
+        "fourier_optics": bench_fourier_optics_family,
+        "interference_fringes": bench_interference_fringes_family,
+        "polarization_states": bench_polarization_states_family,
+        "coherence_theory": bench_coherence_theory_family,
+        "holography": bench_holography_family,
         "acoustic_wave_eq": bench_acoustic_wave_eq_family,
         "helmholtz_eq": bench_helmholtz_eq_family,
         "sound_absorption": bench_sound_absorption_family,
