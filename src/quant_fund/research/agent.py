@@ -13415,6 +13415,14 @@ from quant_fund.research.benches_w1677 import (
     bench_limoniad_qa_studies_family,
     bench_numina_qa_studies_family,
 )
+from quant_fund.research.benches_w1678 import (
+    bench_bannik_qa_studies_family,
+    bench_dvorovoi_qa_studies_family,
+    bench_mora_qa_studies_family,
+    bench_ovinnik_qa_studies_family,
+    bench_poludnica_qa_studies_family,
+    bench_vila_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

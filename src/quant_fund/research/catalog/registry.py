@@ -5007,6 +5007,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fauns_qa_studies",
         "limoniad_qa_studies",
         "numina_qa_studies",
+        # Wave-1678 slavic-folk-2 canon.
+        "bannik_qa_studies",
+        "dvorovoi_qa_studies",
+        "mora_qa_studies",
+        "ovinnik_qa_studies",
+        "poludnica_qa_studies",
+        "vila_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
