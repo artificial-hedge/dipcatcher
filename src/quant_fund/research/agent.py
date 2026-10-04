@@ -4887,6 +4887,14 @@ from quant_fund.research.benches_w611 import (
     bench_two_adjoint_family,
     bench_whisker_comp_family,
 )
+from quant_fund.research.benches_w612 import (
+    bench_discrete_valuation_family,
+    bench_factorial_ring_family,
+    bench_gorenstein_ring_family,
+    bench_jacobson_ring_family,
+    bench_normal_ring_family,
+    bench_regular_ring_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5266,6 +5274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "regular_ring": bench_regular_ring_family,
+        "gorenstein_ring": bench_gorenstein_ring_family,
+        "normal_ring": bench_normal_ring_family,
+        "factorial_ring": bench_factorial_ring_family,
+        "jacobson_ring": bench_jacobson_ring_family,
+        "discrete_valuation": bench_discrete_valuation_family,
         "pasting_diag": bench_pasting_diag_family,
         "mate_dual": bench_mate_dual_family,
         "whisker_comp": bench_whisker_comp_family,
