@@ -15031,6 +15031,14 @@ from quant_fund.research.benches_w1879 import (
     bench_tanit_lok_qa_studies_family,
     bench_tin_hinan_qa_studies_family,
 )
+from quant_fund.research.benches_w1880 import (
+    bench_achimi_qa_studies_family,
+    bench_iyezid_qa_studies_family,
+    bench_mazer_qa_studies_family,
+    bench_milkart_qa_studies_family,
+    bench_tamgak_qa_studies_family,
+    bench_tesfit_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
