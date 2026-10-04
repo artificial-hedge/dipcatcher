@@ -12239,6 +12239,14 @@ from quant_fund.research.benches_w1530 import (
     bench_pewter_qa_studies_family,
     bench_solder_qa_studies_family,
 )
+from quant_fund.research.benches_w1531 import (
+    bench_downy_qa_studies_family,
+    bench_flicker_qa_studies_family,
+    bench_pileated_qa_studies_family,
+    bench_sapsucker_qa_studies_family,
+    bench_woodpecker_qa_studies_family,
+    bench_wryneck_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14036,6 +14044,12 @@ def _provenance(
         "nichrome_qa_studies": bench_nichrome_qa_studies_family,
         "pewter_qa_studies": bench_pewter_qa_studies_family,
         "solder_qa_studies": bench_solder_qa_studies_family,
+        "downy_qa_studies": bench_downy_qa_studies_family,
+        "flicker_qa_studies": bench_flicker_qa_studies_family,
+        "pileated_qa_studies": bench_pileated_qa_studies_family,
+        "sapsucker_qa_studies": bench_sapsucker_qa_studies_family,
+        "woodpecker_qa_studies": bench_woodpecker_qa_studies_family,
+        "wryneck_qa_studies": bench_wryneck_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,

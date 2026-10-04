@@ -3978,6 +3978,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nichrome_qa_studies",
         "pewter_qa_studies",
         "solder_qa_studies",
+        # Wave-1531 woodpecker canon.
+        "downy_qa_studies",
+        "flicker_qa_studies",
+        "pileated_qa_studies",
+        "sapsucker_qa_studies",
+        "woodpecker_qa_studies",
+        "wryneck_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

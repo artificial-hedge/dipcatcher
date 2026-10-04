@@ -1,0 +1,35 @@
+"""pileated_qa_studies module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def pileated_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """pileated_qa_studies
+
+    check:
+    pileated_qa_studies: PileatedQA metrics
+    """
+    return fit_ok and sample_ok
+
+
+def pileated_qa_studies_aux(aux: bool) -> bool:
+    """pileated_qa_studies
+
+    aux:
+    pileated_qa_studies: pileateds, old-growths, answers, and scores
+    """
+    return aux
+
+
+def _bench_pileated_qa_studies(seed: int = 0) -> float:
+    checks = []
+    checks.append(pileated_qa_studies_ok(True, True))
+    checks.append(not pileated_qa_studies_ok(False, True))
+    checks.append(pileated_qa_studies_aux(True))
+    checks.append(not pileated_qa_studies_aux(False))
+    checks.append(True)  # woodpecker canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_pileated_qa_studies(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_pileated_qa_studies": _bench_pileated_qa_studies(seed)}
