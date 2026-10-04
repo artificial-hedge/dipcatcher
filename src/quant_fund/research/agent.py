@@ -13743,6 +13743,14 @@ from quant_fund.research.benches_w1718 import (
     bench_veltha_qa_studies_family,
     bench_voltumna_qa_studies_family,
 )
+from quant_fund.research.benches_w1719 import (
+    bench_basajaun_qa_studies_family,
+    bench_eguzki_qa_studies_family,
+    bench_lamiak_qa_studies_family,
+    bench_mairu_qa_studies_family,
+    bench_mari_qa_studies_family,
+    bench_sugaar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

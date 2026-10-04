@@ -5294,6 +5294,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "turan_qa_studies",
         "veltha_qa_studies",
         "voltumna_qa_studies",
+        # Wave-1719 basque-myth canon.
+        "basajaun_qa_studies",
+        "eguzki_qa_studies",
+        "lamiak_qa_studies",
+        "mairu_qa_studies",
+        "mari_qa_studies",
+        "sugaar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
