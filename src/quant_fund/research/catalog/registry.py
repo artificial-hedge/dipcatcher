@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1013 atomic/molecular-physics canon.
+        "hartree_fock",
+        "born_oppenheimer",
+        "molecular_orbitals",
+        "rotational_spectra",
+        "vibrational_spectra",
+        "zeeman_effect",
         # Wave-1012 nuclear/particle-physics canon.
         "bcs_theory",
         "nuclear_shell_model",
