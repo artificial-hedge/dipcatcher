@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-805 stochastic-calculus canon.
+        "ito_isometry",
+        "stratonovich_conv",
+        "tanaka_meyer",
+        "follmer_strat",
+        "skorohod_lemma",
+        "doss_sussmann",
         # Wave-804 Malliavin canon.
         "nualart_zakai",
         "watanabe_map",
