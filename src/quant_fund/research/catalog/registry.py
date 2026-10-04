@@ -5686,6 +5686,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sekhmet_qa_studies",
         "sobek_qa_studies",
         "thoth_qa_studies",
+        # Wave-1775 japanese-myth-5 canon.
+        "inari_qa_studies",
+        "kaguya_qa_studies",
+        "momotaro_qa_studies",
+        "shichifukujin_qa_studies",
+        "takemikazuchi_qa_studies",
+        "urashima_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
