@@ -10087,6 +10087,14 @@ from quant_fund.research.benches_w1261 import (
     bench_survival_trial_studies_family,
     bench_translational_studies_family,
 )
+from quant_fund.research.benches_w1262 import (
+    bench_dynamic_borrowing_studies_family,
+    bench_e_value_studies_family,
+    bench_master_protocol_studies_family,
+    bench_stepped_wedge_studies_family,
+    bench_target_trial_emulation_studies_family,
+    bench_win_ratio_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10476,6 +10484,12 @@ def _provenance(
         "regulatory_science_studies": bench_regulatory_science_studies_family,
         "survival_trial_studies": bench_survival_trial_studies_family,
         "translational_studies": bench_translational_studies_family,
+        "dynamic_borrowing_studies": bench_dynamic_borrowing_studies_family,
+        "e_value_studies": bench_e_value_studies_family,
+        "master_protocol_studies": bench_master_protocol_studies_family,
+        "stepped_wedge_studies": bench_stepped_wedge_studies_family,
+        "target_trial_emulation_studies": bench_target_trial_emulation_studies_family,
+        "win_ratio_studies": bench_win_ratio_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
