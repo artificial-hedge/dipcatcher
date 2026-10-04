@@ -11439,6 +11439,14 @@ from quant_fund.research.benches_w1430 import (
     bench_habitat_qa_studies_family,
     bench_insect_qa_studies_family,
 )
+from quant_fund.research.benches_w1431 import (
+    bench_aircraft_qa_studies_family,
+    bench_bike_qa_studies_family,
+    bench_bus_qa_studies_family,
+    bench_car_qa_studies_family,
+    bench_engine_qa_studies_family,
+    bench_plane_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12685,6 +12693,12 @@ def _provenance(
         "fish_qa_studies": bench_fish_qa_studies_family,
         "habitat_qa_studies": bench_habitat_qa_studies_family,
         "insect_qa_studies": bench_insect_qa_studies_family,
+        "aircraft_qa_studies": bench_aircraft_qa_studies_family,
+        "bike_qa_studies": bench_bike_qa_studies_family,
+        "bus_qa_studies": bench_bus_qa_studies_family,
+        "car_qa_studies": bench_car_qa_studies_family,
+        "engine_qa_studies": bench_engine_qa_studies_family,
+        "plane_qa_studies": bench_plane_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
