@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1054 sociology canon.
+        "social_networks",
+        "demography",
+        "criminology",
+        "urban_sociology",
+        "economic_sociology",
+        "social_stratification",
         # Wave-1053 psychology canon.
         "cognitive_psychology",
         "psychometrics",
