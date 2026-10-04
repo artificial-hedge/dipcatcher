@@ -15111,6 +15111,14 @@ from quant_fund.research.benches_w1889 import (
     bench_hyndluljod_qa_studies_family,
     bench_rigsthula_qa_studies_family,
 )
+from quant_fund.research.benches_w1890 import (
+    bench_daeva_qa_studies_family,
+    bench_div_qa_studies_family,
+    bench_fravashi_qa_studies_family,
+    bench_khshathra_qa_studies_family,
+    bench_pairika_qa_studies_family,
+    bench_spenta_mainyu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

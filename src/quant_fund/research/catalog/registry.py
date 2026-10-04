@@ -6491,6 +6491,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "haddingjar_qa_studies",
         "hyndluljod_qa_studies",
         "rigsthula_qa_studies",
+        # Wave-1890 zoroastrian-myth canon.
+        "daeva_qa_studies",
+        "div_qa_studies",
+        "fravashi_qa_studies",
+        "khshathra_qa_studies",
+        "pairika_qa_studies",
+        "spenta_mainyu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
