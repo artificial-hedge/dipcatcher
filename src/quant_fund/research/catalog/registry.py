@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1211 neurology canon.
+        "pediatric_neurology",
+        "neurodevelopmental_disorders",
+        "neuropsychiatry_studies",
+        "headache_medicine",
+        "epilepsy_studies",
+        "movement_disorders",
         # Wave-1210 psychiatry canon.
         "forensic_psychiatry",
         "geriatric_psychiatry",
