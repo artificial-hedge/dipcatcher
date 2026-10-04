@@ -12143,6 +12143,14 @@ from quant_fund.research.benches_w1518 import (
     bench_sabrewing_qa_studies_family,
     bench_sheartail_qa_studies_family,
 )
+from quant_fund.research.benches_w1519 import (
+    bench_empusa_qa_studies_family,
+    bench_ghost_mantis_qa_studies_family,
+    bench_mantidfly_qa_studies_family,
+    bench_orchid_mantis_qa_studies_family,
+    bench_praying_mantis_qa_studies_family,
+    bench_shield_mantis_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13869,6 +13877,12 @@ def _provenance(
         "lancebill_qa_studies": bench_lancebill_qa_studies_family,
         "sabrewing_qa_studies": bench_sabrewing_qa_studies_family,
         "sheartail_qa_studies": bench_sheartail_qa_studies_family,
+        "empusa_qa_studies": bench_empusa_qa_studies_family,
+        "ghost_mantis_qa_studies": bench_ghost_mantis_qa_studies_family,
+        "mantidfly_qa_studies": bench_mantidfly_qa_studies_family,
+        "orchid_mantis_qa_studies": bench_orchid_mantis_qa_studies_family,
+        "praying_mantis_qa_studies": bench_praying_mantis_qa_studies_family,
+        "shield_mantis_qa_studies": bench_shield_mantis_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
