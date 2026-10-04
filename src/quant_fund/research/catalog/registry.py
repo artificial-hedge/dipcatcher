@@ -5406,6 +5406,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "llew_qa_studies",
         "rhiannon_qa_studies",
         "taliesin_qa_studies",
+        # Wave-1735 lithuanian-myth canon.
+        "dievas_qa_studies",
+        "gabija_qa_studies",
+        "medeina_qa_studies",
+        "ragana_qa_studies",
+        "saulute_qa_studies",
+        "velnias_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
