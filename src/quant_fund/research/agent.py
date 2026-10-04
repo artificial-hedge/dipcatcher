@@ -9607,6 +9607,14 @@ from quant_fund.research.benches_w1201 import (
     bench_health_information_family,
     bench_medical_records_family,
 )
+from quant_fund.research.benches_w1202 import (
+    bench_entomology_medical_family,
+    bench_medical_microbiology_family,
+    bench_mycology_studies_family,
+    bench_parasitology_studies_family,
+    bench_public_health_microbiology_family,
+    bench_vector_borne_diseases_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9978,6 +9986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "public_health_microbiology": bench_public_health_microbiology_family,
+        "medical_microbiology": bench_medical_microbiology_family,
+        "parasitology_studies": bench_parasitology_studies_family,
+        "mycology_studies": bench_mycology_studies_family,
+        "entomology_medical": bench_entomology_medical_family,
+        "vector_borne_diseases": bench_vector_borne_diseases_family,
         "health_informatics": bench_health_informatics_family,
         "medical_records": bench_medical_records_family,
         "health_information": bench_health_information_family,
