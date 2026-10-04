@@ -1,3 +1,4 @@
+feat(research): wave 969 — operator K-theory canon (k0_algebra, k1_algebra, bott_periodicity_k, six_term_exact, pimsner_voicul, elliott_invariant) (5763->5769 families)
 feat(research): wave 968 — KK-theory canon (kk_theory, kasparov_prod, ext_functor, baaj_julg, cuntz_picture, kk_duality) (5757->5763 families)
 feat(research): wave 967 — C*-dynamics canon (cstar_dynamics, crossed_product, rokhlin_action, kirchberg_absorb, taf_dim, z_stability) (5751->5757 families)
 feat(research): wave 966 — operator-space canon (operator_space, cb_map, complete_contraction, injective_space, noncommutative_lp, oh_emb) (5745->5751 families)
