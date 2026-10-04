@@ -6991,6 +6991,14 @@ from quant_fund.research.benches_w874 import (
     bench_subset_sim_family,
     bench_uq_reliability_family,
 )
+from quant_fund.research.benches_w875 import (
+    bench_adaptive_finite_family,
+    bench_adaptive_marking_family,
+    bench_convergence_theory_family,
+    bench_dorfler_marking_family,
+    bench_goal_adaptive_family,
+    bench_hierarchical_est_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7362,6 +7370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "adaptive_marking": bench_adaptive_marking_family,
+        "hierarchical_est": bench_hierarchical_est_family,
+        "dorfler_marking": bench_dorfler_marking_family,
+        "convergence_theory": bench_convergence_theory_family,
+        "adaptive_finite": bench_adaptive_finite_family,
+        "goal_adaptive": bench_goal_adaptive_family,
         "uq_reliability": bench_uq_reliability_family,
         "first_order_rel": bench_first_order_rel_family,
         "sorm_method": bench_sorm_method_family,

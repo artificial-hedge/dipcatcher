@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-875 adaptive-marking canon.
+        "adaptive_marking",
+        "hierarchical_est",
+        "dorfler_marking",
+        "convergence_theory",
+        "adaptive_finite",
+        "goal_adaptive",
         # Wave-874 reliability-analysis canon.
         "uq_reliability",
         "first_order_rel",
