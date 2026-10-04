@@ -2343,6 +2343,4134 @@ from quant_fund.research.benches_w293 import (
     bench_sdf_raymarch_family,
     bench_shadow_pcf_family,
 )
+from quant_fund.research.benches_w294 import (
+    bench_bb_reorder_family,
+    bench_cfg_simplify_family,
+    bench_jump_thread_family,
+    bench_modulo_sched_family,
+    bench_tail_dup_family,
+    bench_tree_cover_family,
+)
+from quant_fund.research.benches_w295 import (
+    bench_gauss_iod_family,
+    bench_kepler_solve_family,
+    bench_lambert_problem_family,
+    bench_orbit_maneuver_family,
+    bench_orbital_elements_family,
+    bench_tle_propagate_family,
+)
+from quant_fund.research.benches_w296 import (
+    bench_chomp_family,
+    bench_gjk_epa_family,
+    bench_ilqr_family,
+    bench_lqr_funnel_family,
+    bench_rts_smoother_family,
+    bench_se3_spline_family,
+)
+from quant_fund.research.benches_w297 import (
+    bench_dilithium_sig_family,
+    bench_frodokem_family,
+    bench_kyber_kem_family,
+    bench_ntt_ring_family,
+    bench_sphincs_sig_family,
+    bench_xmss_sig_family,
+)
+from quant_fund.research.benches_w298 import (
+    bench_art_sirt_family,
+    bench_chan_vese_family,
+    bench_cs_mri_family,
+    bench_hu_moments_family,
+    bench_mi_register_family,
+    bench_radon_fbp_family,
+)
+from quant_fund.research.benches_w299 import (
+    bench_expectimax_family,
+    bench_isomcts_family,
+    bench_mast_playout_family,
+    bench_rave_mc_family,
+    bench_retrograde_wdl_family,
+    bench_tablebase_dtm_family,
+)
+from quant_fund.research.benches_w300 import (
+    bench_delta_t_family,
+    bench_eclipse_circ_family,
+    bench_equinox_prec_family,
+    bench_nutation_lite_family,
+    bench_planet_vsop_family,
+    bench_rise_set_family,
+)
+from quant_fund.research.benches_w301 import (
+    bench_avo_shuey_family,
+    bench_eikonal_fmm_family,
+    bench_kirchhoff_mig_family,
+    bench_nmo_dix_family,
+    bench_taup_transform_family,
+    bench_vibroseis_sweep_family,
+)
+from quant_fund.research.benches_w302 import (
+    bench_card_table_gc_family,
+    bench_escape_analysis_family,
+    bench_gvn_pre_family,
+    bench_osr_deopt_family,
+    bench_ssa_repair_family,
+    bench_trace_tree_family,
+)
+from quant_fund.research.benches_w303 import (
+    bench_adpcm_ima_family,
+    bench_celp_encode_family,
+    bench_lpc_analysis_family,
+    bench_mel_cepstrum_family,
+    bench_mulaw_compand_family,
+    bench_viterbi_vad_family,
+)
+from quant_fund.research.benches_w304 import (
+    bench_grabcut_lite_family,
+    bench_harris_corner_family,
+    bench_hough_lines_family,
+    bench_integral_image_family,
+    bench_meanshift_track_family,
+    bench_seam_carving_family,
+)
+from quant_fund.research.benches_w305 import (
+    bench_booth_rotation_family,
+    bench_lyndon_factor_family,
+    bench_palindromic_tree_family,
+    bench_suffix_array_lcp_family,
+    bench_suffix_tree_lex_family,
+    bench_z_function_family,
+)
+from quant_fund.research.benches_w306 import (
+    bench_batch_od_family,
+    bench_cowell_j2_family,
+    bench_cr3bp_dynamics_family,
+    bench_davenport_q_family,
+    bench_laplace_iod_family,
+    bench_porkchop_grid_family,
+)
+from quant_fund.research.benches_w307 import (
+    bench_bitap_fuzzy_family,
+    bench_glushkov_nfa_family,
+    bench_lazy_dfa_family,
+    bench_literal_prefilter_family,
+    bench_pike_vm_family,
+    bench_regex_simplify_family,
+)
+from quant_fund.research.benches_w308 import (
+    bench_gardner_relation_family,
+    bench_gassmann_sub_family,
+    bench_reflectivity_synth_family,
+    bench_semblance_scan_family,
+    bench_spectral_decomp_family,
+    bench_vz_raytrace_family,
+)
+from quant_fund.research.benches_w309 import (
+    bench_bike_lite_family,
+    bench_hqc_lite_family,
+    bench_mceliece_lite_family,
+    bench_rainbow_sig_family,
+    bench_sidh_lite_family,
+    bench_uov_sig_family,
+)
+from quant_fund.research.benches_w310 import (
+    bench_gottesman_knill_family,
+    bench_repetition_qec_family,
+    bench_shor_code_family,
+    bench_steane_code_family,
+    bench_surface_code_family,
+    bench_syndrome_circuit_family,
+)
+from quant_fund.research.benches_w311 import (
+    bench_aig_rewrite_family,
+    bench_clock_tree_family,
+    bench_floorplan_sa_family,
+    bench_fm_partition_family,
+    bench_lee_router_family,
+    bench_power_est_family,
+)
+from quant_fund.research.benches_w312 import (
+    bench_abd_register_family,
+    bench_bracha_bcast_family,
+    bench_delta_crdt_family,
+    bench_hlc_clock_family,
+    bench_quorum_weighted_family,
+    bench_raft_log_family,
+    bench_tot_order_family,
+)
+from quant_fund.research.benches_w313 import (
+    bench_amg_lite_family,
+    bench_bicgstab_family,
+    bench_chebyshev_iter_family,
+    bench_ilu_precond_family,
+    bench_minres_family,
+    bench_v_cycle_family,
+)
+from quant_fund.research.benches_w314 import (
+    bench_catmull_clark_family,
+    bench_half_edge_family,
+    bench_laplacian_smooth_family,
+    bench_loop_subdiv_family,
+    bench_marching_cubes_family,
+    bench_nurbs_eval_family,
+)
+from quant_fund.research.benches_w315 import (
+    bench_dmp_control_family,
+    bench_ds_motion_family,
+    bench_grasp_epsilon_family,
+    bench_rmpflow_family,
+    bench_rrt_connect_family,
+    bench_wbc_qp_family,
+)
+from quant_fund.research.benches_w316 import (
+    bench_adapt_vqe_family,
+    bench_hhl_lite_family,
+    bench_qdrift_family,
+    bench_shadow_tomography_family,
+    bench_trotter_suzuki_family,
+    bench_vqd_states_family,
+)
+from quant_fund.research.benches_w317 import (
+    bench_canny_edge_family,
+    bench_distance_transform_family,
+    bench_nlm_denoise_family,
+    bench_otsu_threshold_family,
+    bench_slic_superpixels_family,
+    bench_watershed_seg_family,
+)
+from quant_fund.research.benches_w318 import (
+    bench_bidirectional_tc_family,
+    bench_dep_types_family,
+    bench_nbe_eval_family,
+    bench_proof_kernel_family,
+    bench_tactic_engine_family,
+    bench_unify_meta_family,
+)
+from quant_fund.research.benches_w319 import (
+    bench_congruence_closure_family,
+    bench_nelson_oppen_family,
+    bench_omega_lia_family,
+    bench_ring_normalize_family,
+    bench_term_rewrite_family,
+    bench_tseitin_cnf_family,
+)
+from quant_fund.research.benches_w320 import (
+    bench_affine_karr_family,
+    bench_andersen_pta_family,
+    bench_chaotic_widen_family,
+    bench_interval_analysis_family,
+    bench_sign_domain_family,
+    bench_zone_dbm_family,
+)
+from quant_fund.research.benches_w321 import (
+    bench_context_pta_family,
+    bench_interproc_summary_family,
+    bench_recency_abstraction_family,
+    bench_separation_logic_family,
+    bench_shape_graph_family,
+    bench_three_valued_logic_family,
+)
+from quant_fund.research.benches_w322 import (
+    bench_cegis_loop_family,
+    bench_horn_clauses_family,
+    bench_interpolant_mc_family,
+    bench_predicate_abs_family,
+    bench_sygus_synth_family,
+    bench_weakest_precond_family,
+)
+from quant_fund.research.benches_w323 import (
+    bench_alg_effects_family,
+    bench_free_monad_family,
+    bench_gradual_types_family,
+    bench_row_types_family,
+    bench_session_types_family,
+    bench_shift_reset_family,
+)
+from quant_fund.research.benches_w324 import (
+    bench_banerjee_dep_family,
+    bench_fourier_motzkin_family,
+    bench_omega_test_family,
+    bench_pluto_schedule_family,
+    bench_tiling_legality_family,
+    bench_vec_legality_family,
+)
+from quant_fund.research.benches_w325 import (
+    bench_borrow_check_family,
+    bench_capability_perm_family,
+    bench_escape_region_family,
+    bench_lifetime_outlives_family,
+    bench_linear_use_family,
+    bench_refinement_liquid_family,
+)
+from quant_fund.research.benches_w326 import (
+    bench_bisim_refine_family,
+    bench_ctl_mc_family,
+    bench_nba_emptiness_family,
+    bench_parity_game_family,
+    bench_timed_automata_family,
+    bench_wsts_cover_family,
+)
+from quant_fund.research.benches_w327 import (
+    bench_bulletproof_ip_family,
+    bench_kzg_commit_family,
+    bench_plonkish_gate_family,
+    bench_qap_encode_family,
+    bench_r1cs_check_family,
+    bench_snark_circuit_family,
+)
+from quant_fund.research.benches_w328 import (
+    bench_funext_toy_family,
+    bench_hit_quotient_family,
+    bench_hlevel_check_family,
+    bench_kan_hcomp_family,
+    bench_path_types_family,
+    bench_univalence_toy_family,
+)
+from quant_fund.research.benches_w329 import (
+    bench_cut_elim_family,
+    bench_intuit_class_family,
+    bench_linear_logic_family,
+    bench_nd_check_family,
+    bench_resolution_fol_family,
+    bench_sequent_prove_family,
+)
+from quant_fund.research.benches_w330 import (
+    bench_array_theory_family,
+    bench_bv_ops_family,
+    bench_diff_logic_family,
+    bench_dpllt_family,
+    bench_lia_branch_family,
+    bench_mcsat_lite_family,
+)
+from quant_fund.research.benches_w331 import (
+    bench_circuit_lb_family,
+    bench_fpras_dnf_family,
+    bench_np_reduce_family,
+    bench_param_fpt_family,
+    bench_pcp_verify_family,
+    bench_sumcheck_family,
+)
+from quant_fund.research.benches_w332 import (
+    bench_bell_ineq_family,
+    bench_density_matrix_family,
+    bench_entanglement_family,
+    bench_povm_measure_family,
+    bench_qchannel_family,
+    bench_state_tomo_family,
+)
+from quant_fund.research.benches_w333 import (
+    bench_hensel_lift_family,
+    bench_poly_crt_family,
+    bench_poly_eval_interp_family,
+    bench_poly_factor_fp_family,
+    bench_sparse_interp_family,
+    bench_subresultant_family,
+)
+from quant_fund.research.benches_w334 import (
+    bench_beaver_triple_family,
+    bench_bgw_mpc_family,
+    bench_garbled_circuit_family,
+    bench_ot_extension_family,
+    bench_psi_intersect_family,
+    bench_spdz_mac_family,
+)
+from quant_fund.research.benches_w335 import (
+    bench_adjoint_check_family,
+    bench_cat_colimit_family,
+    bench_exponential_obj_family,
+    bench_fin_limit_family,
+    bench_subobject_classifier_family,
+    bench_yoneda_embed_family,
+)
+from quant_fund.research.benches_w336 import (
+    bench_busy_beaver_family,
+    bench_compactness_lite_family,
+    bench_pr_functions_family,
+    bench_ramsey_theory_family,
+    bench_turing_degrees_family,
+    bench_ultraproduct_family,
+)
+from quant_fund.research.benches_w337 import (
+    bench_church_encoding_family,
+    bench_de_bruijn_family,
+    bench_knuth_bendix_family,
+    bench_lambda_typing_family,
+    bench_ski_combinator_family,
+    bench_unification_family,
+)
+from quant_fund.research.benches_w338 import (
+    bench_ac_choice_family,
+    bench_cardinal_arith_family,
+    bench_ordinal_arith_family,
+    bench_transfinite_induct_family,
+    bench_v_omega_family,
+    bench_well_founded_family,
+)
+from quant_fund.research.benches_w339 import (
+    bench_field_ext_family,
+    bench_galois_group_family,
+    bench_lie_bracket_family,
+    bench_rep_theory_family,
+    bench_root_system_family,
+    bench_splitting_field_family,
+)
+from quant_fund.research.benches_w340 import (
+    bench_chain_complex_family,
+    bench_hilbert_series_family,
+    bench_sheaf_check_family,
+    bench_snake_lemma_family,
+    bench_tor_ext_family,
+    bench_variety_morph_family,
+)
+from quant_fund.research.benches_w341 import (
+    bench_bisimulation_family,
+    bench_covering_space_family,
+    bench_ef_game_family,
+    bench_fundamental_group_family,
+    bench_kripke_semantics_family,
+    bench_topo_separation_family,
+)
+from quant_fund.research.benches_w342 import (
+    bench_analytic_sets_family,
+    bench_arith_hierarchy_family,
+    bench_borel_hierarchy_family,
+    bench_forcing_lite_family,
+    bench_jump_operator_family,
+    bench_rice_theorem_family,
+)
+from quant_fund.research.benches_w343 import (
+    bench_boolean_algebra_family,
+    bench_congruence_lattice_family,
+    bench_galois_connection_family,
+    bench_lattice_check_family,
+    bench_tarski_fixed_family,
+    bench_term_algebra_family,
+)
+from quant_fund.research.benches_w344 import (
+    bench_burnside_lemma_family,
+    bench_cayley_graph_family,
+    bench_conjugacy_classes_family,
+    bench_free_group_family,
+    bench_group_presentation_family,
+    bench_sylow_theorems_family,
+)
+from quant_fund.research.benches_w345 import (
+    bench_minimal_poly_family,
+    bench_norm_trace_family,
+    bench_pid_check_family,
+    bench_quotient_ring_family,
+    bench_ring_ideals_family,
+    bench_spec_ring_family,
+)
+from quant_fund.research.benches_w346 import (
+    bench_cohomology_cup_family,
+    bench_elliptic_curve_family,
+    bench_koszul_complex_family,
+    bench_mayer_vietoris_family,
+    bench_p_adic_val_family,
+    bench_quadratic_recip_family,
+)
+from quant_fund.research.benches_w347 import (
+    bench_compact_space_family,
+    bench_connected_space_family,
+    bench_convergence_space_family,
+    bench_product_topology_family,
+    bench_quotient_topology_family,
+    bench_tietze_urysohn_family,
+)
+from quant_fund.research.benches_w348 import (
+    bench_euler_trail_family,
+    bench_graph_coloring_family,
+    bench_matroid_greedy_family,
+    bench_planar_check_family,
+    bench_poset_dimension_family,
+    bench_ramsey_r33_family,
+)
+from quant_fund.research.benches_w349 import (
+    bench_bezout_bezout_family,
+    bench_hilbert_poly_family,
+    bench_monomial_ideal_family,
+    bench_projective_plane_family,
+    bench_variety_dim_family,
+    bench_zariski_topo_family,
+)
+from quant_fund.research.benches_w350 import (
+    bench_character_table_s3_family,
+    bench_fourier_sn_family,
+    bench_induced_rep_family,
+    bench_perm_rep_family,
+    bench_regular_rep_family,
+    bench_schur_ortho_family,
+)
+from quant_fund.research.benches_w351 import (
+    bench_banach_fixed_family,
+    bench_compact_operator_family,
+    bench_fourier_finite_family,
+    bench_gram_schmidt_family,
+    bench_lp_duality_family,
+    bench_spectral_theorem_family,
+)
+from quant_fund.research.benches_w352 import (
+    bench_cartan_matrix_family,
+    bench_killing_form_family,
+    bench_root_lattice_a2_family,
+    bench_sl2_structure_family,
+    bench_su2_algebra_family,
+    bench_weyl_group_a2_family,
+)
+from quant_fund.research.benches_w353 import (
+    bench_gronwall_lemma_family,
+    bench_lyapunov_stability_family,
+    bench_phase_plane_family,
+    bench_picard_lindelof_family,
+    bench_sturm_liouville_family,
+    bench_variation_params_family,
+)
+from quant_fund.research.benches_w354 import (
+    bench_dedekind_check_family,
+    bench_divisor_group_family,
+    bench_genus_riemann_family,
+    bench_local_ring_zn_family,
+    bench_moduli_naive_family,
+    bench_sheaf_gluing_family,
+)
+from quant_fund.research.benches_w355 import (
+    bench_conditional_expect_family,
+    bench_conv_sum_family,
+    bench_kolmogorov_axioms_family,
+    bench_markov_ineq_family,
+    bench_moment_generating_family,
+    bench_stochastic_order_family,
+)
+from quant_fund.research.benches_w356 import (
+    bench_gambler_ruin_family,
+    bench_markov_chain_family,
+    bench_markov_hitting_family,
+    bench_martingale_check_family,
+    bench_poisson_process_family,
+    bench_stopping_time_family,
+)
+from quant_fund.research.benches_w357 import (
+    bench_connection_form_family,
+    bench_gauss_bonnet_family,
+    bench_geodesic_eq_family,
+    bench_holonomy_family,
+    bench_parallel_transport_family,
+    bench_sectional_curv_family,
+)
+from quant_fund.research.benches_w358 import (
+    bench_banach_alaoglu_family,
+    bench_closed_graph_family,
+    bench_open_mapping_family,
+    bench_reflexive_space_family,
+    bench_uniform_bounded_family,
+    bench_weak_convergence_family,
+)
+from quant_fund.research.benches_w359 import (
+    bench_fejer_kernel_family,
+    bench_fourier_multiplier_family,
+    bench_plancherel_family,
+    bench_poisson_summation_family,
+    bench_sobolev_embed_family,
+    bench_uncertainty_family,
+)
+from quant_fund.research.benches_w360 import (
+    bench_energy_method_family,
+    bench_fundamental_laplace_family,
+    bench_heat_kernel_family,
+    bench_maximum_principle_family,
+    bench_wave_dalembert_family,
+    bench_weak_solution_family,
+)
+from quant_fund.research.benches_w361 import (
+    bench_chain_homotopy_family,
+    bench_covering_lift_family,
+    bench_degree_map_family,
+    bench_euler_homology_family,
+    bench_homotopy_pi1_family,
+    bench_simplicial_homology_family,
+)
+from quant_fund.research.benches_w362 import (
+    bench_argument_principle_family,
+    bench_cauchy_integral_family,
+    bench_conformal_map_family,
+    bench_laurent_series_family,
+    bench_liouville_family,
+    bench_residue_calc_family,
+)
+from quant_fund.research.benches_w363 import (
+    bench_baire_category_family,
+    bench_cantor_set_family,
+    bench_egorov_thm_family,
+    bench_fatou_lemma_family,
+    bench_monotone_conv_family,
+    bench_vitali_set_family,
+)
+from quant_fund.research.benches_w364 import (
+    bench_adjoint_op_family,
+    bench_compact_resolvent_family,
+    bench_hahn_banach_family,
+    bench_projection_thm_family,
+    bench_riesz_repr_family,
+    bench_selfadjoint_spectrum_family,
+)
+from quant_fund.research.benches_w365 import (
+    bench_azuma_family,
+    bench_coupling_arg_family,
+    bench_doob_decomp_family,
+    bench_ergodic_thm_family,
+    bench_martingale_clt_family,
+    bench_optional_stopping_family,
+)
+from quant_fund.research.benches_w366 import (
+    bench_cw_complex_family,
+    bench_excision_family,
+    bench_homotopy_group_family,
+    bench_poincare_dual_family,
+    bench_singular_homology_family,
+    bench_spectral_seq_toy_family,
+)
+from quant_fund.research.benches_w367 import (
+    bench_cyclotomic_poly_family,
+    bench_finite_field_family,
+    bench_galois_corresp_family,
+    bench_normality_check_family,
+    bench_primitive_elem_family,
+    bench_separable_check_family,
+)
+from quant_fund.research.benches_w368 import (
+    bench_herbrand_model_family,
+    bench_los_theorem_family,
+    bench_presburger_family,
+    bench_skolem_normal_family,
+    bench_unification_fol_family,
+)
+from quant_fund.research.benches_w369 import (
+    bench_aitken_delta_family,
+    bench_brent_root_family,
+    bench_broyden_family,
+    bench_cheb_approx_family,
+    bench_collocation_ode_family,
+    bench_romberg_family,
+)
+from quant_fund.research.benches_w370 import (
+    bench_dirac_ore_family,
+    bench_graph_minor_family,
+    bench_planar_five_family,
+    bench_ramsey_num_family,
+    bench_turan_theorem_family,
+    bench_tutte_berge_family,
+)
+from quant_fund.research.benches_w371 import (
+    bench_degree_mod2_family,
+    bench_handle_decomp_family,
+    bench_morse_theory_family,
+    bench_poincare_hopf_family,
+    bench_regular_value_family,
+    bench_transversality_family,
+)
+from quant_fund.research.benches_w372 import (
+    bench_girsanov_family,
+    bench_ito_lemma_family,
+    bench_local_time_family,
+    bench_malliavin_family,
+    bench_quadratic_var_family,
+    bench_sde_strong_family,
+)
+from quant_fund.research.benches_w373 import (
+    bench_bfgs_wolfe_family,
+    bench_bundle_method_family,
+    bench_frank_wolfe2_family,
+    bench_ip_qp_family,
+    bench_sqp_family,
+    bench_trust_region_family,
+)
+from quant_fund.research.benches_w374 import (
+    bench_acl_closure_family,
+    bench_morley_rank_family,
+    bench_omega_categoricity_family,
+    bench_quantifier_elim_family,
+    bench_realize_types_family,
+    bench_vocab_interp_family,
+)
+from quant_fund.research.benches_w375 import (
+    bench_blowup_family,
+    bench_elliptic_group_family,
+    bench_moduli_stable_family,
+    bench_riemann_roch_family,
+    bench_scheme_local_family,
+    bench_sheaf_cohomology_family,
+)
+from quant_fund.research.benches_w376 import (
+    bench_cofibration_family,
+    bench_fibration_family,
+    bench_serre_ss_family,
+    bench_spectra_family,
+    bench_suspension_family,
+    bench_whitehead_family,
+)
+from quant_fund.research.benches_w377 import (
+    bench_endomorphism_op_family,
+    bench_little_discs_family,
+    bench_may_recognition_family,
+    bench_operad_assoc_family,
+    bench_operad_comm_family,
+    bench_operad_tree_family,
+)
+from quant_fund.research.benches_w378 import (
+    bench_cohen_adds_family,
+    bench_dense_filter_family,
+    bench_forcing_poset_family,
+    bench_large_cardinal_family,
+    bench_ma_toy_family,
+    bench_names_eval_family,
+)
+from quant_fund.research.benches_w379 import (
+    bench_dual_matroid_family,
+    bench_greedy_matroid_family,
+    bench_matroid_axioms_family,
+    bench_matroid_intersect_family,
+    bench_matroid_union_family,
+    bench_represented_matroid_family,
+)
+from quant_fund.research.benches_w380 import (
+    bench_baire_space_family,
+    bench_borel_functions_family,
+    bench_determinacy_toy_family,
+    bench_perfect_set_prop_family,
+    bench_polish_topology_family,
+    bench_souslin_op_family,
+)
+from quant_fund.research.benches_w381 import (
+    bench_ample_test_family,
+    bench_chow_ring_family,
+    bench_grothendieck_grp_family,
+    bench_gysin_family,
+    bench_proj_morph_family,
+    bench_toric_variety_family,
+)
+from quant_fund.research.benches_w382 import (
+    bench_back_forth_family,
+    bench_indiscernibles_family,
+    bench_omitting_types_family,
+    bench_saturation_test_family,
+    bench_stability_spec_family,
+    bench_stone_duality_family,
+)
+from quant_fund.research.benches_w383 import (
+    bench_co_homology_family,
+    bench_em_space_family,
+    bench_loop_space_family,
+    bench_mapping_cone_family,
+    bench_stiefel_whitney_family,
+    bench_transfer_family,
+)
+from quant_fund.research.benches_w384 import (
+    bench_aut_group_family,
+    bench_composition_series_family,
+    bench_hall_subgroup_family,
+    bench_permutation_poly_family,
+    bench_schur_multiplier_family,
+    bench_transfer_hom_family,
+)
+from quant_fund.research.benches_w385 import (
+    bench_completion_ring_family,
+    bench_dimension_fiber_family,
+    bench_hilbert_samuel_family,
+    bench_krull_dim_family,
+    bench_noether_normal_family,
+    bench_primary_decomp_family,
+)
+from quant_fund.research.benches_w386 import (
+    bench_godel_incomp_family,
+    bench_interp_proof_family,
+    bench_modal_completeness_family,
+    bench_natural_ded_family,
+    bench_proof_complexity_family,
+    bench_sequent_calculus_family,
+)
+from quant_fund.research.benches_w387 import (
+    bench_concentration_ineq_family,
+    bench_kolmogorov_01_family,
+    bench_ldp_theory_family,
+    bench_prokhorov_metric_family,
+    bench_uniform_integrability_family,
+    bench_vitali_conv_family,
+)
+from quant_fund.research.benches_w388 import (
+    bench_derived_functor_family,
+    bench_ext_compute_family,
+    bench_koszul_homology_family,
+    bench_mapping_degree_family,
+    bench_spectral_seq_family,
+    bench_tor_compute_family,
+)
+from quant_fund.research.benches_w389 import (
+    bench_artin_symbol_family,
+    bench_class_group_toy_family,
+    bench_decomposition_group_family,
+    bench_discriminant_field_family,
+    bench_norm_subring_family,
+    bench_ramification_family,
+)
+from quant_fund.research.benches_w390 import (
+    bench_finite_difference_family,
+    bench_hadamard_matrix_family,
+    bench_inc_structure_family,
+    bench_latin_trade_family,
+    bench_orthogonal_array_family,
+    bench_steiner_system_family,
+)
+from quant_fund.research.benches_w391 import (
+    bench_closed_cat_family,
+    bench_distributor_family,
+    bench_equivalence_cat_family,
+    bench_kan_extension_family,
+    bench_monoidal_cat_family,
+    bench_presheaf_family,
+)
+from quant_fund.research.benches_w392 import (
+    bench_arithmetization_family,
+    bench_diagonal_lemma_family,
+    bench_fixed_point_combinator_family,
+    bench_kleene_normal_family,
+    bench_mu_recursion_family,
+    bench_primitive_recursion_family,
+)
+from quant_fund.research.benches_w393 import (
+    bench_cap_product_family,
+    bench_eilenberg_steenrod_family,
+    bench_k_theory_family,
+    bench_obstruction_toy_family,
+    bench_serre_class_family,
+    bench_thom_isom_family,
+)
+from quant_fund.research.benches_w394 import (
+    bench_birkhoff_rep_family,
+    bench_dilworth_partition_family,
+    bench_downset_lattice_family,
+    bench_linear_extension_family,
+    bench_sperner_bound_family,
+    bench_zeta_mobius_family,
+)
+from quant_fund.research.benches_w395 import (
+    bench_bell_triangle_family,
+    bench_catalan_dp_family,
+    bench_eulerian_num_family,
+    bench_inclusion_excl_family,
+    bench_partition_count_family,
+    bench_stirling_cycle_family,
+)
+from quant_fund.research.benches_w396 import (
+    bench_cm_points_family,
+    bench_cyclotomic_field_family,
+    bench_hensel_field_family,
+    bench_idele_class_family,
+    bench_kronecker_weber_family,
+    bench_local_field_family,
+)
+from quant_fund.research.benches_w397 import (
+    bench_bessel3_family,
+    bench_h_transform_family,
+    bench_occupation_bm_family,
+    bench_ost_calcul_family,
+    bench_reflect_bm_family,
+    bench_tanaka_family,
+)
+from quant_fund.research.benches_w398 import (
+    bench_artins_theorem_family,
+    bench_clifford_toy_family,
+    bench_frobenius_group_family,
+    bench_induced_char_family,
+    bench_schur_index_family,
+    bench_tensor_char_family,
+)
+from quant_fund.research.benches_w399 import (
+    bench_boolean_prime_family,
+    bench_ef_game_toy_family,
+    bench_fraisse_limit_family,
+    bench_qe_dense_order_family,
+    bench_real_closed_family,
+    bench_vaught_test_family,
+)
+from quant_fund.research.benches_w400 import (
+    bench_dual_ab_var_family,
+    bench_etale_cover_family,
+    bench_hom_stack_toy_family,
+    bench_jacobian_toy_family,
+    bench_picard_variety_family,
+    bench_seesaw_theorem_family,
+)
+from quant_fund.research.benches_w401 import (
+    bench_cut_elim_seq_family,
+    bench_finitary_induct_family,
+    bench_herbrand_thm_family,
+    bench_hilbert_system_family,
+    bench_interp_equality_family,
+    bench_reverse_math_family,
+)
+from quant_fund.research.benches_w402 import (
+    bench_etale_space_family,
+    bench_geometric_morph_family,
+    bench_groth_topo_family,
+    bench_logic_topos_family,
+    bench_sheaf_cond_family,
+    bench_topos_subobj_family,
+)
+from quant_fund.research.benches_w403 import (
+    bench_hopf_invariant_family,
+    bench_j_hom_toy_family,
+    bench_pi_stems_family,
+    bench_spectral_atiyah_family,
+    bench_thom_spectrum_family,
+    bench_toda_bracket_family,
+)
+from quant_fund.research.benches_w404 import (
+    bench_brace_operad_family,
+    bench_little_intervals_family,
+    bench_operad_algt_family,
+    bench_operad_homology_family,
+    bench_props_toy_family,
+    bench_swiss_cheese_family,
+)
+from quant_fund.research.benches_w405 import (
+    bench_bounded_complex_family,
+    bench_derived_functor2_family,
+    bench_koszul_dual_family,
+    bench_mapping_cone_tri_family,
+    bench_t_structure_family,
+    bench_triangulated_family,
+)
+from quant_fund.research.benches_w406 import (
+    bench_functor_derived_family,
+    bench_hopf_algebra2_family,
+    bench_kunneth_family,
+    bench_leray_hirsch_family,
+    bench_poincare_duality2_family,
+    bench_universal_coeff_family,
+)
+from quant_fund.research.benches_w407 import (
+    bench_adjunction2_family,
+    bench_cech_cohom_family,
+    bench_flattening_family,
+    bench_hilbert_scheme_family,
+    bench_scheme_fiber_family,
+    bench_serre_duality_family,
+)
+from quant_fund.research.benches_w408 import (
+    bench_brauer_alg_family,
+    bench_bz_category_family,
+    bench_casimir_op_family,
+    bench_hecke_alg_family,
+    bench_schur_functor_family,
+    bench_weight_space_family,
+)
+from quant_fund.research.benches_w409 import (
+    bench_cohend_family,
+    bench_dold_kan_family,
+    bench_eilenberg_zilber_family,
+    bench_postnikov_family,
+    bench_spectral_seq2_family,
+    bench_stable_range_family,
+)
+from quant_fund.research.benches_w410 import (
+    bench_descriptive3_family,
+    bench_forcing2_family,
+    bench_inner_model_family,
+    bench_ordinal_notation_family,
+    bench_proof_mining_family,
+    bench_recursion3_family,
+)
+from quant_fund.research.benches_w411 import (
+    bench_blow_up_family,
+    bench_divisor_class_family,
+    bench_dualizing_family,
+    bench_intersection_mult_family,
+    bench_normalization_family,
+    bench_tangent_cone_family,
+)
+from quant_fund.research.benches_w412 import (
+    bench_bicat_comp_family,
+    bench_cat_enriched_family,
+    bench_double_cat_family,
+    bench_lax_functor_family,
+    bench_mate_calc_family,
+    bench_two_cat_family,
+)
+from quant_fund.research.benches_w413 import (
+    bench_abelian_ext_family,
+    bench_artin_lemma_family,
+    bench_frobenius_el_family,
+    bench_inseparable_family,
+    bench_kummer_ext_family,
+    bench_normal_basis_family,
+)
+from quant_fund.research.benches_w414 import (
+    bench_adams_ss_family,
+    bench_cofiber_family,
+    bench_exact_couple_family,
+    bench_obstruction_family,
+    bench_stable_homotopy_family,
+    bench_whitehead_thm_family,
+)
+from quant_fund.research.benches_w415 import (
+    bench_homeo_top_family,
+    bench_locally_compact_family,
+    bench_open_cover_family,
+    bench_paracompact_family,
+    bench_partition_unity_family,
+    bench_quotient_map_family,
+)
+from quant_fund.research.benches_w416 import (
+    bench_decidable_theory_family,
+    bench_definable_set_family,
+    bench_indiscernible_seq_family,
+    bench_interpol_thm_family,
+    bench_omitting_prime_family,
+    bench_saturated_model_family,
+)
+from quant_fund.research.benches_w417 import (
+    bench_cohen_mac_family,
+    bench_depth_ring_family,
+    bench_free_resolution_family,
+    bench_groebner_syz_family,
+    bench_hilbert_syzygy_family,
+    bench_regular_seq_family,
+)
+from quant_fund.research.benches_w418 import (
+    bench_borel_cantelli_family,
+    bench_clt_classic_family,
+    bench_dominated_conv_family,
+    bench_strong_lln_family,
+    bench_uniform_lln_family,
+    bench_weak_law_family,
+)
+from quant_fund.research.benches_w419 import (
+    bench_bundle_section_family,
+    bench_classify_space_family,
+    bench_path_fibration_family,
+    bench_serre_fibration_family,
+    bench_thom_space_family,
+    bench_vector_bundle_family,
+)
+from quant_fund.research.benches_w420 import (
+    bench_dedekind_zeta_family,
+    bench_dirichlet_unit_family,
+    bench_ideal_class_family,
+    bench_minkowski_bound_family,
+    bench_regulator_family,
+    bench_splitting_prime_family,
+)
+from quant_fund.research.benches_w421 import (
+    bench_endo_coend_family,
+    bench_frobenius_alg_family,
+    bench_profunctor_toy_family,
+    bench_span_compose_family,
+    bench_star_autonomous_family,
+    bench_traced_monoidal_family,
+)
+from quant_fund.research.benches_w422 import (
+    bench_borel_subalgebra_family,
+    bench_levi_factor_family,
+    bench_nilpotent_orbit_family,
+    bench_root_height_family,
+    bench_verma_module_family,
+    bench_weyl_chamber_family,
+)
+from quant_fund.research.benches_w423 import (
+    bench_adams_diff_family,
+    bench_cartan_eilenberg_family,
+    bench_deriv_hom_family,
+    bench_groth_spectral_family,
+    bench_hypercohom_family,
+    bench_serre_ss2_family,
+)
+from quant_fund.research.benches_w424 import (
+    bench_closed_unbounded_family,
+    bench_club_set_family,
+    bench_mahlo_cardinal_family,
+    bench_partition_calc_family,
+    bench_stationary_set_family,
+    bench_ultrafilter_toy_family,
+)
+from quant_fund.research.benches_w425 import (
+    bench_coarse_space_family,
+    bench_gerbe_toy_family,
+    bench_moduli_stack_family,
+    bench_quotient_stack_family,
+    bench_stack_morph_family,
+    bench_stacky_curve_family,
+)
+from quant_fund.research.benches_w426 import (
+    bench_derived_alg_family,
+    bench_infinity_cat_family,
+    bench_model_category_family,
+    bench_quillen_adj_family,
+    bench_simplicial_set_family,
+    bench_stable_cat_family,
+)
+from quant_fund.research.benches_w427 import (
+    bench_bsd_toy_family,
+    bench_elliptic_height_family,
+    bench_lseries_toy_family,
+    bench_modularity_toy_family,
+    bench_mordell_weil_family,
+    bench_padic_integral_family,
+)
+from quant_fund.research.benches_w428 import (
+    bench_deformation_functor_family,
+    bench_maurer_cartan_family,
+    bench_obstruction_theory_family,
+    bench_schlessinger_family,
+    bench_tangent_space_def_family,
+    bench_versal_deformation_family,
+)
+from quant_fund.research.benches_w429 import (
+    bench_bass_heller_swan_family,
+    bench_k0_group_family,
+    bench_k1_group_family,
+    bench_k_theory_spec_family,
+    bench_milnor_k2_family,
+    bench_quillen_q_family,
+)
+from quant_fund.research.benches_w430 import (
+    bench_brane_tensor_family,
+    bench_delooping_family,
+    bench_e_n_algebra_family,
+    bench_module_cat_family,
+    bench_monoidal_infty_family,
+    bench_operad_infty_family,
+)
+from quant_fund.research.benches_w431 import (
+    bench_a1_homotopy_family,
+    bench_milnor_operations_family,
+    bench_morel_degree_family,
+    bench_motivic_sphere_family,
+    bench_slice_filtration_family,
+    bench_voevodsky_motive_family,
+)
+from quant_fund.research.benches_w432 import (
+    bench_atiyah_hirzebruch_family,
+    bench_descent_ss_family,
+    bench_leary_ss_family,
+    bench_motivic_ss_family,
+    bench_serre_ss3_family,
+    bench_vanishing_ss_family,
+)
+from quant_fund.research.benches_w433 import (
+    bench_adic_space_family,
+    bench_berkovich_space_family,
+    bench_diamond_toy_family,
+    bench_etale_ph2_family,
+    bench_perfectoid_space_family,
+    bench_rigid_analytic_family,
+)
+from quant_fund.research.benches_w434 import (
+    bench_automorphic_rep_family,
+    bench_eisenstein_srs_family,
+    bench_fourier_coeff_family,
+    bench_hecke_operator_family,
+    bench_langlands_dual_family,
+    bench_satake_iso_family,
+)
+from quant_fund.research.benches_w435 import (
+    bench_derived_fiber_family,
+    bench_derived_scheme_family,
+    bench_quasi_coherent_family,
+    bench_shifted_symplectic_family,
+    bench_spectral_scheme_family,
+    bench_virtual_class_family,
+)
+from quant_fund.research.benches_w436 import (
+    bench_adjoint_functor_family,
+    bench_bousfield_loc_family,
+    bench_cartesian_fib_family,
+    bench_complete_seg_family,
+    bench_presentable_cat_family,
+    bench_straightening_family,
+)
+from quant_fund.research.benches_w437 import (
+    bench_comparison_iso_family,
+    bench_crystalline_coh_family,
+    bench_derham_coh_family,
+    bench_etale_coh_family,
+    bench_frobenius_coh_family,
+    bench_prismatic_coh_family,
+)
+from quant_fund.research.benches_w438 import (
+    bench_analytic_ring_family,
+    bench_condensed_set_family,
+    bench_light_condensed_family,
+    bench_liquid_group_family,
+    bench_proetale_site_family,
+    bench_solid_group_family,
+)
+from quant_fund.research.benches_w439 import (
+    bench_formal_group_family,
+    bench_formal_module_family,
+    bench_height_strata_family,
+    bench_lazard_ring_family,
+    bench_lubin_tate_family,
+    bench_morava_k_family,
+)
+from quant_fund.research.benches_w440 import (
+    bench_bott_period_family,
+    bench_hopf_map_family,
+    bench_postnikov_twr_family,
+    bench_stable_stem_family,
+    bench_thom_iso_family,
+    bench_whitehead_twr_family,
+)
+from quant_fund.research.benches_w441 import (
+    bench_filtered_module_family,
+    bench_fontaine_ring_family,
+    bench_gal_rep_family,
+    bench_hecke_eigensys_family,
+    bench_ribet_toy_family,
+    bench_weil_deligne_family,
+)
+from quant_fund.research.benches_w442 import (
+    bench_cofibrant_rep_family,
+    bench_enriched_model_family,
+    bench_localization_mc_family,
+    bench_monoidal_model_family,
+    bench_quillen_equiv_family,
+    bench_reedy_model_family,
+)
+from quant_fund.research.benches_w443 import (
+    bench_brauer_grp_family,
+    bench_chow_group_family,
+    bench_milnor_conj_family,
+    bench_motivic_coh_family,
+    bench_motivic_stem_family,
+    bench_voevodsky_dm_family,
+)
+from quant_fund.research.benches_w444 import (
+    bench_cotangent_cx_family,
+    bench_derived_stack_family,
+    bench_geometric_stk_family,
+    bench_perf_stack_family,
+    bench_quasi_smooth_family,
+    bench_tannaka_rec_family,
+)
+from quant_fund.research.benches_w445 import (
+    bench_base_change_family,
+    bench_constructible_family,
+    bench_perverse_sh_family,
+    bench_projection_frm_family,
+    bench_six_functors_family,
+    bench_verdier_dual_family,
+)
+from quant_fund.research.benches_w446 import (
+    bench_calc_converge_family,
+    bench_deriv_layer_family,
+    bench_excisive_fn_family,
+    bench_goodwillie_tower_family,
+    bench_linearization_family,
+    bench_orth_calc_family,
+)
+from quant_fund.research.benches_w447 import (
+    bench_bord_cat_family,
+    bench_chern_simons_family,
+    bench_dw_theory_family,
+    bench_extended_tqft_family,
+    bench_frobenius_2d_family,
+    bench_tqft_axiom_family,
+)
+from quant_fund.research.benches_w448 import (
+    bench_cohesive_top_family,
+    bench_hypercomplete_family,
+    bench_infty_topos_family,
+    bench_object_classif_family,
+    bench_trunc_modal_family,
+    bench_univ_colimit_family,
+)
+from quant_fund.research.benches_w449 import (
+    bench_adic_generic_family,
+    bench_dagger_space_family,
+    bench_fargues_curve_family,
+    bench_huber_ring_family,
+    bench_prism_site_family,
+    bench_witt_perfect_family,
+)
+from quant_fund.research.benches_w450 import (
+    bench_exact_seq_family,
+    bench_smash_monoidal_family,
+    bench_spectra_cat_family,
+    bench_stable_infty_family,
+    bench_stable_tstruct_family,
+    bench_thh_tc_family,
+)
+from quant_fund.research.benches_w451 import (
+    bench_g_spectrum_family,
+    bench_mackey_functor_family,
+    bench_norm_map_family,
+    bench_ro_grading_family,
+    bench_tom_dieck_family,
+    bench_wirthmuller_family,
+)
+from quant_fund.research.benches_w452 import (
+    bench_d_module_family,
+    bench_geometric_langlands_family,
+    bench_hecke_eig_family,
+    bench_kernel_fun_family,
+    bench_opers_g_family,
+    bench_ramified_l_family,
+)
+from quant_fund.research.benches_w453 import (
+    bench_bar_cobar_family,
+    bench_deligne_conj_family,
+    bench_factor_homology_family,
+    bench_hochschild_hom_family,
+    bench_operad_koszul_family,
+    bench_primitive_elts_family,
+)
+from quant_fund.research.benches_w454 import (
+    bench_decomp_thm_family,
+    bench_fourier_sato_family,
+    bench_ic_stalk_family,
+    bench_middle_ext_family,
+    bench_riemann_hilbert_family,
+    bench_vanishing_cycles_family,
+)
+from quant_fund.research.benches_w455 import (
+    bench_cubical_path_family,
+    bench_glue_types_family,
+    bench_hcomp_fill_family,
+    bench_interval_obj_family,
+    bench_kan_op_family,
+    bench_transport_coe_family,
+)
+from quant_fund.research.benches_w456 import (
+    bench_chow_motive_family,
+    bench_nori_motive_family,
+    bench_num_equiv_family,
+    bench_standard_conj_family,
+    bench_tate_motive_family,
+    bench_voev_motive_family,
+)
+from quant_fund.research.benches_w457 import (
+    bench_companion_conj_family,
+    bench_fibrant_double_family,
+    bench_framed_bicat_family,
+    bench_proarrow_family,
+    bench_tabulation_family,
+    bench_virtual_equip_family,
+)
+from quant_fund.research.benches_w458 import (
+    bench_delta_matroid_family,
+    bench_matroid_minor_family,
+    bench_matroid_rep_family,
+    bench_regular_mat_family,
+    bench_transversal_mat_family,
+    bench_tutte_poly_family,
+)
+from quant_fund.research.benches_w459 import (
+    bench_chain_cond_family,
+    bench_denotational_family,
+    bench_fixed_points_ord_family,
+    bench_galois_insertion_family,
+    bench_scott_cpo_family,
+    bench_way_below_family,
+)
+from quant_fund.research.benches_w460 import (
+    bench_analytic_ring2_family,
+    bench_clausen_scholze_family,
+    bench_pyknotic_family,
+    bench_solid_derived_family,
+    bench_solid_tensor_family,
+    bench_trace_class_family,
+)
+from quant_fund.research.benches_w461 import (
+    bench_derived_critical_family,
+    bench_lagrangian_int_family,
+    bench_lie_algebroid_family,
+    bench_moment_map_family,
+    bench_quant_dag_family,
+    bench_shifted_sympl_family,
+)
+from quant_fund.research.benches_w462 import (
+    bench_cartesian_fib2_family,
+    bench_cohesive_struct_family,
+    bench_descent_cond_family,
+    bench_lex_reflect_family,
+    bench_n_localic_family,
+    bench_shape_theory_family,
+)
+from quant_fund.research.benches_w463 import (
+    bench_arithmetic_dm_family,
+    bench_frobenius_dm_family,
+    bench_holonomic_dm_family,
+    bench_isocrystal_family,
+    bench_overconv_dm_family,
+    bench_rigid_dm_family,
+)
+from quant_fund.research.benches_w464 import (
+    bench_chromatic_conv_family,
+    bench_k_n_local_family,
+    bench_morava_e_family,
+    bench_nilpotence_dev_family,
+    bench_telescopic_family,
+    bench_tmf_spectrum_family,
+)
+from quant_fund.research.benches_w465 import (
+    bench_affinoid_alg_family,
+    bench_dagger_groth_family,
+    bench_gauss_point_family,
+    bench_kedlaya_renorm_family,
+    bench_raynaud_gen_family,
+    bench_weierstrass_prep_family,
+)
+from quant_fund.research.benches_w466 import (
+    bench_kashiwara_schapira_family,
+    bench_loc_system_family,
+    bench_micro_supp_family,
+    bench_perverse_2_family,
+    bench_sheaf_homotopy_family,
+    bench_stacky_sheaf_family,
+)
+from quant_fund.research.benches_w467 import (
+    bench_constructible_l_family,
+    bench_core_model_family,
+    bench_large_card_family,
+    bench_pcf_theory_family,
+    bench_proper_forcing_family,
+    bench_square_princ_family,
+)
+from quant_fund.research.benches_w468 import (
+    bench_abstract_erc_family,
+    bench_nip_theory_family,
+    bench_nonforking_family,
+    bench_o_minimal_family,
+    bench_simple_theory_family,
+    bench_tame_metric_family,
+)
+from quant_fund.research.benches_w469 import (
+    bench_accessible_cat_family,
+    bench_day_conv_family,
+    bench_derivator2_family,
+    bench_enriched_cat_family,
+    bench_fibered_cat_family,
+    bench_weight_lim_family,
+)
+from quant_fund.research.benches_w470 import (
+    bench_e_infty2_family,
+    bench_h_space_family,
+    bench_james_constr_family,
+    bench_obstruction_th_family,
+    bench_power_op_family,
+    bench_rational_htpy_family,
+)
+from quant_fund.research.benches_w471 import (
+    bench_banach_colmez_family,
+    bench_breuil_kisin_family,
+    bench_diamond_geo_family,
+    bench_drinfeld_tower_family,
+    bench_integral_padic_family,
+    bench_perfectoid2_family,
+)
+from quant_fund.research.benches_w472 import (
+    bench_alg_cobordism_family,
+    bench_hermitian_k_family,
+    bench_motivic_stem2_family,
+    bench_oriented_coh_family,
+    bench_rostmotive_family,
+    bench_slice_spec_family,
+)
+from quant_fund.research.benches_w473 import (
+    bench_cartier_mod_family,
+    bench_crystalline_stack_family,
+    bench_cyclotomic2_family,
+    bench_thh_2_family,
+    bench_trt_functor_family,
+    bench_witt_vec2_family,
+)
+from quant_fund.research.benches_w474 import (
+    bench_cobordism_hyp_family,
+    bench_heegaard_floer_family,
+    bench_khovanov_family,
+    bench_modular_cat_family,
+    bench_reshet_turaev_family,
+    bench_topological_order_family,
+)
+from quant_fund.research.benches_w475 import (
+    bench_chiral_alg_family,
+    bench_cyclic_hk_family,
+    bench_dendroidal_family,
+    bench_infty_operad_family,
+    bench_seq_spectra_family,
+    bench_sifted_cat_family,
+)
+from quant_fund.research.benches_w476 import (
+    bench_adams_novikov_family,
+    bench_bp_spectrum_family,
+    bench_greek_letter_family,
+    bench_landweber_exact_family,
+    bench_picard_grp_family,
+    bench_smith_toda_family,
+)
+from quant_fund.research.benches_w477 import (
+    bench_arithmetic_ht_family,
+    bench_berthelo_crys_family,
+    bench_berthelot_rigid_family,
+    bench_caro_dm_family,
+    bench_dagger_dm_family,
+    bench_spencer_dm_family,
+)
+from quant_fund.research.benches_w478 import (
+    bench_beilinson_con_family,
+    bench_cellular_motive_family,
+    bench_levine_morel_family,
+    bench_mgl_spec_family,
+    bench_motivic_pi0_family,
+    bench_quadratic_k_family,
+)
+from quant_fund.research.benches_w479 import (
+    bench_ahb_ring_family,
+    bench_drinfeld_sym_family,
+    bench_fargues_diam_family,
+    bench_prism_2_family,
+    bench_scholze_diamond_family,
+    bench_tilting_equiv_family,
+)
+from quant_fund.research.benches_w480 import (
+    bench_classify_obj_family,
+    bench_etale_geom_family,
+    bench_exponentiable_family,
+    bench_gros_topos_family,
+    bench_local_homeo_family,
+    bench_pi_infty_family,
+)
+from quant_fund.research.benches_w481 import (
+    bench_fqmotive_family,
+    bench_higher_chow2_family,
+    bench_motivic_chern_family,
+    bench_motivic_landin_family,
+    bench_mtc_motive_family,
+    bench_triang_motive_family,
+)
+from quant_fund.research.benches_w482 import (
+    bench_blue_shift_family,
+    bench_chromatic_fracture_family,
+    bench_fgsl_group_family,
+    bench_morava_stabilizer_family,
+    bench_red_shift_family,
+    bench_tate_spec_family,
+)
+from quant_fund.research.benches_w483 import (
+    bench_bar_spec_family,
+    bench_dyer_lashof_family,
+    bench_free_loop_family,
+    bench_loop_functor_family,
+    bench_steenrod_ops_family,
+    bench_sullivan_min_family,
+)
+from quant_fund.research.benches_w484 import (
+    bench_formal_model_family,
+    bench_internal_univ_family,
+    bench_stein_space_family,
+    bench_synth_stable_family,
+    bench_univalent_found_family,
+    bench_virtual_hodge_family,
+)
+from quant_fund.research.benches_w485 import (
+    bench_banach_colmez2_family,
+    bench_bc_space_family,
+    bench_fargues_curve2_family,
+    bench_local_shimura_family,
+    bench_lubin_tate2_family,
+    bench_scholze_weinstein_family,
+)
+from quant_fund.research.benches_w486 import (
+    bench_karoubi_v_family,
+    bench_kv_theory_family,
+    bench_nk_theory_family,
+    bench_plus_k_family,
+    bench_vorst_stab_family,
+    bench_waldhausen_k_family,
+)
+from quant_fund.research.benches_w487 import (
+    bench_comma_cat_family,
+    bench_compact_obj_family,
+    bench_dualizable_cat_family,
+    bench_endo_prof_family,
+    bench_exact_cat_family,
+    bench_prestack_family,
+)
+from quant_fund.research.benches_w488 import (
+    bench_d_critical_family,
+    bench_derived_quot_family,
+    bench_intrinsic_be_family,
+    bench_perfect_obstruction_family,
+    bench_shifted_tangent_family,
+    bench_virtual_pull_family,
+)
+from quant_fund.research.benches_w489 import (
+    bench_bn_pair_family,
+    bench_braid_grp_family,
+    bench_building_toy_family,
+    bench_coxeter_grp_family,
+    bench_hecke_bm_family,
+    bench_parabolic_grp_family,
+)
+from quant_fund.research.benches_w490 import (
+    bench_adelic_curve_family,
+    bench_arakelov_deg_family,
+    bench_arith_rr_family,
+    bench_arithmetic_chow_family,
+    bench_faltings_metric_family,
+    bench_height_arakelov_family,
+)
+from quant_fund.research.benches_w491 import (
+    bench_arthur_param_family,
+    bench_hecke_alg2_family,
+    bench_l_function_family,
+    bench_satake_param_family,
+    bench_shimura_var_family,
+    bench_theta_lift_family,
+)
+from quant_fund.research.benches_w492 import (
+    bench_kato_fontaine_family,
+    bench_log_crystalline_family,
+    bench_log_derham_family,
+    bench_log_etale_family,
+    bench_log_smooth_family,
+    bench_log_structure_family,
+)
+from quant_fund.research.benches_w493 import (
+    bench_berkovich_an_family,
+    bench_mikhalkin_family,
+    bench_skeleton_trop_family,
+    bench_tropical_curve_family,
+    bench_tropical_cycle_family,
+    bench_tropical_poly_family,
+)
+from quant_fund.research.benches_w494 import (
+    bench_calabi_yau_alg_family,
+    bench_connes_nc_family,
+    bench_cyclic_coh_family,
+    bench_ginzburg_dga_family,
+    bench_hochschild_coh_family,
+    bench_nc_scheme_family,
+)
+from quant_fund.research.benches_w495 import (
+    bench_complicial_family,
+    bench_globular_model_family,
+    bench_opetopic_family,
+    bench_theta_space_family,
+    bench_verity_gray_family,
+    bench_weak_infty_family,
+)
+from quant_fund.research.benches_w496 import (
+    bench_dag_representation_family,
+    bench_derived_deformation_family,
+    bench_derived_moduli_family,
+    bench_formal_deformation_family,
+    bench_obstruction_2_family,
+    bench_tangent_coh_family,
+)
+from quant_fund.research.benches_w497 import (
+    bench_fano_mori_family,
+    bench_flip_cone_family,
+    bench_klt_pair_family,
+    bench_minimal_model_family,
+    bench_mmp_algorithm_family,
+    bench_toric_flip_family,
+)
+from quant_fund.research.benches_w498 import (
+    bench_gromov_witten_family,
+    bench_hilbert_scheme2_family,
+    bench_kuranishi_family,
+    bench_m_bar_gn_family,
+    bench_quot_scheme_family,
+    bench_stable_map_family,
+)
+from quant_fund.research.benches_w499 import (
+    bench_hodge_decomp_family,
+    bench_l2_hodge_family,
+    bench_limit_mhs_family,
+    bench_mixed_hodge_family,
+    bench_period_map_family,
+    bench_vhs_polarized_family,
+)
+from quant_fund.research.benches_w500 import (
+    bench_epsilon_factor_family,
+    bench_harris_taylor_family,
+    bench_l_packet_family,
+    bench_langlands_functoriality_family,
+    bench_local_langlands_family,
+    bench_weil_group_family,
+)
+from quant_fund.research.benches_w501 import (
+    bench_f_pure_family,
+    bench_f_rational_family,
+    bench_f_regular_family,
+    bench_f_threshold_family,
+    bench_test_ideal_family,
+    bench_tight_closure_family,
+)
+from quant_fund.research.benches_w502 import (
+    bench_dg_cat2_family,
+    bench_dg_morita_family,
+    bench_dg_nerve_family,
+    bench_dg_quotient_family,
+    bench_drinfeld_quotient_family,
+    bench_keller_dg_family,
+)
+from quant_fund.research.benches_w503 import (
+    bench_elliptic_surface_family,
+    bench_kodaira_fiber_family,
+    bench_mordell_weil2_family,
+    bench_neron_model_family,
+    bench_tate_algorithm_family,
+    bench_weierstrass_eq_family,
+)
+from quant_fund.research.benches_w504 import (
+    bench_adem_relations_family,
+    bench_bar_resolution_family,
+    bench_lambda_algebra_family,
+    bench_serre_cartan_family,
+    bench_steenrod_algebra_family,
+    bench_unstable_modules_family,
+)
+from quant_fund.research.benches_w505 import (
+    bench_cobordism_grp_family,
+    bench_complex_cob_family,
+    bench_framed_cob_family,
+    bench_oriented_cob_family,
+    bench_thom_cob_family,
+    bench_unoriented_cob_family,
+)
+from quant_fund.research.benches_w506 import (
+    bench_distality_family,
+    bench_dp_rank_family,
+    bench_forking_seq_family,
+    bench_honest_def_family,
+    bench_nip_formula_family,
+    bench_uniform_def_family,
+)
+from quant_fund.research.benches_w507 import (
+    bench_homotopy_coherent_family,
+    bench_htc_colimit_family,
+    bench_joyal_model_family,
+    bench_marking_qcat_family,
+    bench_nerve_quasi_family,
+    bench_quasi_cat_family,
+)
+from quant_fund.research.benches_w508 import (
+    bench_anabelian_geo_family,
+    bench_etale_pi1_family,
+    bench_fundamental_grp_family,
+    bench_groth_tei_family,
+    bench_section_conj_family,
+    bench_tamagawa_mochi_family,
+)
+from quant_fund.research.benches_w509 import (
+    bench_deligne_weil2_family,
+    bench_etale_site2_family,
+    bench_frobenius_action_family,
+    bench_groth_lefschetz_family,
+    bench_l_adic_sheaf_family,
+    bench_purity_thm_family,
+)
+from quant_fund.research.benches_w510 import (
+    bench_connective_e_ring_family,
+    bench_elliptic_cohor_family,
+    bench_spectral_alg_family,
+    bench_spectral_scheme2_family,
+    bench_spectral_stack_family,
+    bench_taf_lurie_family,
+)
+from quant_fund.research.benches_w511 import (
+    bench_bun_g_family,
+    bench_fs_diamond_family,
+    bench_geometric_satake_family,
+    bench_hecke_stack_family,
+    bench_v_sheaf_family,
+    bench_y_diamond_family,
+)
+from quant_fund.research.benches_w512 import (
+    bench_berezin_int_family,
+    bench_odd_variables_family,
+    bench_super_lie_family,
+    bench_super_manifold_family,
+    bench_super_scheme_family,
+    bench_super_space_family,
+)
+from quant_fund.research.benches_w513 import (
+    bench_categorify_family,
+    bench_hecke_cat_family,
+    bench_khovanov_hom_family,
+    bench_rasmussen_inv_family,
+    bench_soergel_bim_family,
+    bench_uq_sl2_family,
+)
+from quant_fund.research.benches_w514 import (
+    bench_beilinson_reg_family,
+    bench_cheeger_simons_family,
+    bench_deligne_cohom_family,
+    bench_diff_cohom_family,
+    bench_flat_bundle_family,
+    bench_secondary_inv_family,
+)
+from quant_fund.research.benches_w515 import (
+    bench_auslander_buchs_family,
+    bench_betti_series_family,
+    bench_green_koszul_family,
+    bench_minimal_free_family,
+    bench_quillen_suslin_family,
+    bench_serre_conj_family,
+)
+from quant_fund.research.benches_w516 import (
+    bench_affine_lie_family,
+    bench_kac_moody_family,
+    bench_moonshine_module_family,
+    bench_vertex_alg_family,
+    bench_weyl_kac_family,
+    bench_zhu_algebra_family,
+)
+from quant_fund.research.benches_w517 import (
+    bench_crystal_base_family,
+    bench_jimbo_drin_family,
+    bench_lusztig_can_family,
+    bench_quantum_group_family,
+    bench_quantum_rmatrix_family,
+    bench_quantum_schur_family,
+)
+from quant_fund.research.benches_w518 import (
+    bench_braid_rep_family,
+    bench_quantum_double_family,
+    bench_ribbon_cat_family,
+    bench_rtt_formalism_family,
+    bench_yang_baxter_family,
+    bench_yangian_family,
+)
+from quant_fund.research.benches_w519 import (
+    bench_cusp_form_family,
+    bench_dedekind_eta_family,
+    bench_eisenstein_srs2_family,
+    bench_hecke_op2_family,
+    bench_modular_form_family,
+    bench_theta_func_family,
+)
+from quant_fund.research.benches_w520 import (
+    bench_converse_thm_family,
+    bench_gln_automorphic_family,
+    bench_godement_jacq_family,
+    bench_langlands_lfunc_family,
+    bench_rankin_selberg_family,
+    bench_whittaker_model_family,
+)
+from quant_fund.research.benches_w521 import (
+    bench_chebyshev_bias_family,
+    bench_dirichlet_l_family,
+    bench_explicit_formula_family,
+    bench_linnik_thm_family,
+    bench_riemann_zeta_family,
+    bench_zero_density_family,
+)
+from quant_fund.research.benches_w522 import (
+    bench_freiman_thm_family,
+    bench_gowers_norm_family,
+    bench_green_tao_family,
+    bench_plunnecke_family,
+    bench_roth_thm_family,
+    bench_szemeredi_family,
+)
+from quant_fund.research.benches_w523 import (
+    bench_erdos_distinct_family,
+    bench_ff_kakeya_family,
+    bench_guth_katz_family,
+    bench_joints_thm_family,
+    bench_kakeya_family,
+    bench_sz_trotter_family,
+)
+from quant_fund.research.benches_w524 import (
+    bench_furstenberg_family,
+    bench_gallai_thm_family,
+    bench_hales_jewett_family,
+    bench_hindman_family,
+    bench_rado_thm_family,
+    bench_schur_thm_family,
+)
+from quant_fund.research.benches_w525 import (
+    bench_bernoulli_shift_family,
+    bench_birkhoff_family,
+    bench_entropy_ks_family,
+    bench_mean_ergodic_family,
+    bench_mixing_weak_family,
+    bench_osceledets_family,
+)
+from quant_fund.research.benches_w526 import (
+    bench_douady_hubbard_family,
+    bench_fatou_set_family,
+    bench_julia_set_family,
+    bench_mandelbrot_set_family,
+    bench_parabolic_impl_family,
+    bench_sullivan_no_wander_family,
+)
+from quant_fund.research.benches_w527 import (
+    bench_anosov_family,
+    bench_bowen_spec_family,
+    bench_horseshoe_family,
+    bench_markov_partition_family,
+    bench_srb_measure_family,
+    bench_stable_mfld_family,
+)
+from quant_fund.research.benches_w528 import (
+    bench_equilibrium_state_family,
+    bench_lasota_yorke_family,
+    bench_pressure_thm_family,
+    bench_ruelle_zeta_family,
+    bench_thermo_formal_family,
+    bench_transfer_op_family,
+)
+from quant_fund.research.benches_w529 import (
+    bench_arnold_diff_family,
+    bench_aubry_mather_family,
+    bench_cantorus_family,
+    bench_greene_crit_family,
+    bench_kam_theorem_family,
+    bench_twist_map_family,
+)
+from quant_fund.research.benches_w530 import (
+    bench_dominated_split_family,
+    bench_katok_horseshoe_family,
+    bench_lyapunov_chart_family,
+    bench_nonuniform_hyp_family,
+    bench_osceledets_reg_family,
+    bench_pesin_theory_family,
+)
+from quant_fund.research.benches_w531 import (
+    bench_bogdanov_takens_family,
+    bench_homoclinic_bif_family,
+    bench_hopf_bif_family,
+    bench_neimark_sacker_family,
+    bench_period_doubling_family,
+    bench_saddle_node_family,
+)
+from quant_fund.research.benches_w532 import (
+    bench_box_counting_family,
+    bench_frostman_family,
+    bench_hausdorff_dim_family,
+    bench_iterated_function_family,
+    bench_multifractal_formal_family,
+    bench_self_similar_family,
+)
+from quant_fund.research.benches_w533 import (
+    bench_besicovitch_family,
+    bench_density_thm_family,
+    bench_marstrand_family,
+    bench_preiss_rect_family,
+    bench_rectifiability_family,
+    bench_tangent_measure_family,
+)
+from quant_fund.research.benches_w534 import (
+    bench_balayage_family,
+    bench_capacity_theory_family,
+    bench_fine_topology_family,
+    bench_green_fn_family,
+    bench_harmonic_fn_family,
+    bench_potential_thy_family,
+)
+from quant_fund.research.benches_w535 import (
+    bench_elliptic_est_family,
+    bench_fourier_io_family,
+    bench_propagation_sing_family,
+    bench_pseudodiff_op_family,
+    bench_symbol_calc_family,
+    bench_wavefront_set_family,
+)
+from quant_fund.research.benches_w536 import (
+    bench_contact_geom_family,
+    bench_gromov_nonsq_family,
+    bench_hamiltonian_flow_family,
+    bench_lagrangian_mfd_family,
+    bench_poisson_bracket_family,
+    bench_symplectic_form_family,
+)
+from quant_fund.research.benches_w537 import (
+    bench_comparison_thm_family,
+    bench_jacobi_field_family,
+    bench_levi_civita_family,
+    bench_ricci_scalar_family,
+    bench_riemann_curvature_family,
+    bench_riemann_metric_family,
+)
+from quant_fund.research.benches_w538 import (
+    bench_degiorgi_nash_family,
+    bench_harnack_thm_family,
+    bench_poincare_ineq_family,
+    bench_schauder_est_family,
+    bench_sobolev_space_family,
+    bench_trace_thm_family,
+)
+from quant_fund.research.benches_w539 import (
+    bench_continued_frac2_family,
+    bench_dirichlet_approx_family,
+    bench_kronecker_thm_family,
+    bench_liouville_number_family,
+    bench_roth_thm2_family,
+    bench_subspace_thm_family,
+)
+from quant_fund.research.benches_w540 import (
+    bench_baker_thm_family,
+    bench_gelfond_schneider_family,
+    bench_hermite_lindemann_family,
+    bench_lindemann_weier_family,
+    bench_schanuel_conj_family,
+    bench_siegel_shidlovskii_family,
+)
+from quant_fund.research.benches_w541 import (
+    bench_jensen_formula_family,
+    bench_montel_normal_family,
+    bench_picard_thm_family,
+    bench_riemann_mapping_family,
+    bench_runge_approx_family,
+    bench_schwarz_lemma_family,
+)
+from quant_fund.research.benches_w542 import (
+    bench_d_bar_neumann_family,
+    bench_domain_holo_family,
+    bench_hartogs_thm_family,
+    bench_levi_problem_family,
+    bench_oka_coherence_family,
+    bench_pseudoconvex_family,
+)
+from quant_fund.research.benches_w543 import (
+    bench_abel_jacobi_family,
+    bench_branched_cover_family,
+    bench_fuchsian_group_family,
+    bench_riemann_hurwitz_family,
+    bench_riemann_surface_family,
+    bench_teichmuller_space_family,
+)
+from quant_fund.research.benches_w544 import (
+    bench_hyperbolic_3mfd_family,
+    bench_jorgensen_thurston_family,
+    bench_kleinian_group_family,
+    bench_limit_set_family,
+    bench_mostow_rigidity_family,
+    bench_tameness_thm_family,
+)
+from quant_fund.research.benches_w545 import (
+    bench_eight_geometries_family,
+    bench_haken_mfd_family,
+    bench_jsj_decomp_family,
+    bench_ricci_flow_family,
+    bench_seifert_fibered_family,
+    bench_thurston_geometrization_family,
+)
+from quant_fund.research.benches_w546 import (
+    bench_alexander_poly_family,
+    bench_jones_poly_family,
+    bench_knot_group_family,
+    bench_knot_invariant_family,
+    bench_knot_signature_family,
+    bench_vassiliev_inv_family,
+)
+from quant_fund.research.benches_w547 import (
+    bench_donaldson_thm_family,
+    bench_exotic_r4_family,
+    bench_four_mfd_family,
+    bench_freedman_thm_family,
+    bench_intersection_form_family,
+    bench_seiberg_witten_family,
+)
+from quant_fund.research.benches_w548 import (
+    bench_floer_homology_family,
+    bench_fukaya_cat_family,
+    bench_instanton_floer_family,
+    bench_knot_floer_family,
+    bench_lagrangian_floer_family,
+    bench_monopole_floer_family,
+)
+from quant_fund.research.benches_w549 import (
+    bench_analytic_torsion_family,
+    bench_atiyah_singer_family,
+    bench_dirac_op_family,
+    bench_eta_invariant_family,
+    bench_heat_kernel2_family,
+    bench_signature_op_family,
+)
+from quant_fund.research.benches_w550 import (
+    bench_chern_character_family,
+    bench_chern_class_family,
+    bench_euler_class_family,
+    bench_hirzebruch_sig_family,
+    bench_pontryagin_class_family,
+    bench_todd_genus_family,
+)
+from quant_fund.research.benches_w551 import (
+    bench_foliation_family,
+    bench_godbillon_vey_family,
+    bench_haefliger_struct_family,
+    bench_holonomy_grp_family,
+    bench_novikov_thm_family,
+    bench_thurston_fol_family,
+)
+from quant_fund.research.benches_w552 import (
+    bench_contact_form_family,
+    bench_convex_surface_family,
+    bench_giroux_corr_family,
+    bench_legendrian_knot_family,
+    bench_overtwisted_family,
+    bench_tight_contact_family,
+)
+from quant_fund.research.benches_w553 import (
+    bench_frobenius_mfd_family,
+    bench_givental_j_family,
+    bench_mirror_symmetry_family,
+    bench_quantum_cohomology_family,
+    bench_quintic_invariants_family,
+    bench_toric_mirror_family,
+)
+from quant_fund.research.benches_w554 import (
+    bench_donaldson_thomas_family,
+    bench_gopakumar_vafa_family,
+    bench_gw_descendant_family,
+    bench_kontsevich_mgn_family,
+    bench_mnop_conj_family,
+    bench_pandharipande_thomas_family,
+)
+from quant_fund.research.benches_w555 import (
+    bench_hms_conjecture_family,
+    bench_landau_ginzburg_family,
+    bench_mirror_functor_family,
+    bench_syz_mirror_family,
+    bench_torus_fibration_family,
+    bench_wrapped_fukaya_family,
+)
+from quant_fund.research.benches_w556 import (
+    bench_earthquake_map_family,
+    bench_extremal_length_family,
+    bench_mapping_class_family,
+    bench_pseudo_anosov_family,
+    bench_quadratic_diff_family,
+    bench_weil_petersson_family,
+)
+from quant_fund.research.benches_w557 import (
+    bench_dehn_surgery_family,
+    bench_heegaard_splitting_family,
+    bench_normal_surface_family,
+    bench_sutured_mfd_family,
+    bench_taut_foliation_family,
+    bench_thin_position_family,
+)
+from quant_fund.research.benches_w558 import (
+    bench_anti_self_dual_family,
+    bench_higgs_bundle_family,
+    bench_instanton_moduli_family,
+    bench_kapustin_witten_family,
+    bench_nahm_transform_family,
+    bench_yang_mills_family,
+)
+from quant_fund.research.benches_w559 import (
+    bench_calabi_conjecture_family,
+    bench_calabi_yau_mfd_family,
+    bench_csck_metric_family,
+    bench_futaki_invariant_family,
+    bench_k_stability_family,
+    bench_kahler_einstein_family,
+)
+from quant_fund.research.benches_w560 import (
+    bench_ancient_solution_family,
+    bench_hamilton_ricci_family,
+    bench_kahler_ricci_flow_family,
+    bench_mean_curvature_flow_family,
+    bench_perelman_entropy_family,
+    bench_ricci_soliton_family,
+)
+from quant_fund.research.benches_w561 import (
+    bench_almgren_pitts_family,
+    bench_brakke_flow_family,
+    bench_minimal_surface_family,
+    bench_plateau_problem_family,
+    bench_simon_regularity_family,
+    bench_stable_minimal_family,
+)
+from quant_fund.research.benches_w562 import (
+    bench_ekeland_hofer_family,
+    bench_gromov_width_family,
+    bench_hofer_metric_family,
+    bench_mcduff_polterovich_family,
+    bench_symplectic_capacity_family,
+    bench_symplectic_packing_family,
+)
+from quant_fund.research.benches_w563 import (
+    bench_bubbling_hm_family,
+    bench_eells_sampson_family,
+    bench_harmonic_map_family,
+    bench_heat_flow_hm_family,
+    bench_sacks_uhlenbeck_family,
+    bench_schoen_uhlenbeck_family,
+)
+from quant_fund.research.benches_w564 import (
+    bench_asymptotic_cone_family,
+    bench_baumslag_solitar_family,
+    bench_gromov_hyperbolic_family,
+    bench_quasi_isometry_family,
+    bench_thin_triangle_family,
+    bench_word_problem_family,
+)
+from quant_fund.research.benches_w565 import (
+    bench_bhargava_lic_family,
+    bench_cohen_lenstra_family,
+    bench_elliptic_rank_family,
+    bench_malle_conj_family,
+    bench_prime_gaps_family,
+    bench_zhang_maynard_family,
+)
+from quant_fund.research.benches_w566 import (
+    bench_gue_statistics_family,
+    bench_keating_snaith_family,
+    bench_montgomery_pair_family,
+    bench_rudnick_sarnak_family,
+    bench_selberg_trace2_family,
+    bench_zero_spacing_family,
+)
+from quant_fund.research.benches_w567 import (
+    bench_berenstein_zelevinsky_family,
+    bench_honeycomb_tiling_family,
+    bench_knuth_rsk_family,
+    bench_littlewood_richardson_family,
+    bench_macdonald_poly_family,
+    bench_schubert_calc_family,
+)
+from quant_fund.research.benches_w568 import (
+    bench_contact_homology3_family,
+    bench_eliashberg_givental_family,
+    bench_floer_homol_family,
+    bench_reeb_orbit_family,
+    bench_sft_algebra_family,
+    bench_symplectic_field_family,
+)
+from quant_fund.research.benches_w569 import (
+    bench_aubin_thm_family,
+    bench_kazdan_warner_family,
+    bench_nirenberg_problem_family,
+    bench_prescribed_curvature_family,
+    bench_trudinger_thm_family,
+    bench_yamabe_problem_family,
+)
+from quant_fund.research.benches_w570 import (
+    bench_bogomolov_ineq_family,
+    bench_boundedness_moduli_family,
+    bench_hodge_index_family,
+    bench_kodaira_vanishing_family,
+    bench_kollar_mori_family,
+    bench_stability_sheaf_family,
+)
+from quant_fund.research.benches_w571 import (
+    bench_bernstein_sato_family,
+    bench_du_val_sing_family,
+    bench_log_canonical_family,
+    bench_milnor_fiber_family,
+    bench_multiplier_ideal_family,
+    bench_rational_sing_family,
+)
+from quant_fund.research.benches_w572 import (
+    bench_abelian_variety_family,
+    bench_faltings_thm_family,
+    bench_isogeny_av_family,
+    bench_mordell_weil_av_family,
+    bench_shafarevich_conj_family,
+    bench_tate_module_family,
+)
+from quant_fund.research.benches_w573 import (
+    bench_absolute_hodge_family,
+    bench_griffiths_transv_family,
+    bench_hodge_class_family,
+    bench_hodge_conj_family,
+    bench_mumford_tate_family,
+    bench_period_domain_family,
+)
+from quant_fund.research.benches_w574 import (
+    bench_exotic_sphere_family,
+    bench_immersion_thm_family,
+    bench_kervaire_milnor_family,
+    bench_smale_hcob_family,
+    bench_surgery_theory_family,
+    bench_whitney_trick_family,
+)
+from quant_fund.research.benches_w575 import (
+    bench_airy_process_family,
+    bench_beta_ensemble_family,
+    bench_circular_law_family,
+    bench_dyson_brownian_family,
+    bench_sine_kernel_family,
+    bench_tracy_widom_family,
+)
+from quant_fund.research.benches_w576 import (
+    bench_free_convolution_family,
+    bench_free_prob_family,
+    bench_operator_valued_family,
+    bench_r_transform_family,
+    bench_s_transform_family,
+    bench_voiculescu_thm_family,
+)
+from quant_fund.research.benches_w577 import (
+    bench_char_cycle_family,
+    bench_d_module2_family,
+    bench_intersection_homology_family,
+    bench_middle_perversity_family,
+    bench_nearby_cycles_family,
+    bench_perverse_sheaf_family,
+)
+from quant_fund.research.benches_w578 import (
+    bench_bogomolov_conj_family,
+    bench_canonical_height_family,
+    bench_equidistribution_thm_family,
+    bench_global_height_family,
+    bench_nevanlinna_th_family,
+    bench_vojta_conj_family,
+)
+from quant_fund.research.benches_w579 import (
+    bench_git_quotient_family,
+    bench_hilbert_mumford_family,
+    bench_kirwan_strat_family,
+    bench_luna_slice_family,
+    bench_moment_polytope_family,
+    bench_symplectic_quot_family,
+)
+from quant_fund.research.benches_w580 import (
+    bench_cycle_index_family,
+    bench_exponential_gf_family,
+    bench_lagrange_inversion_family,
+    bench_matrix_tree_family,
+    bench_species_theory_family,
+    bench_transfer_matrix_family,
+)
+from quant_fund.research.benches_w581 import (
+    bench_bockstein_ss_family,
+    bench_bousfield_ss_family,
+    bench_cartan_ss_family,
+    bench_eilenberg_moore_family,
+    bench_lyndon_ss_family,
+    bench_serre_ss4_family,
+)
+from quant_fund.research.benches_w582 import (
+    bench_arinkin_gaitsgory_family,
+    bench_derived_satake_family,
+    bench_fusion_product_family,
+    bench_geometric_satake2_family,
+    bench_nilp_cone_family,
+    bench_spectral_bung_family,
+)
+from quant_fund.research.benches_w583 import (
+    bench_fulton_mclarty_family,
+    bench_motivic_base_change_family,
+    bench_motivic_homotopy2_family,
+    bench_motivic_proper_family,
+    bench_motivic_smooth_family,
+    bench_six_op_motivic_family,
+)
+from quant_fund.research.benches_w584 import (
+    bench_analytic_sheaf_family,
+    bench_clausen_scholze2_family,
+    bench_nuclear_space_family,
+    bench_proetale_site2_family,
+    bench_solid_cohom_family,
+    bench_solid_tensor2_family,
+)
+from quant_fund.research.benches_w585 import (
+    bench_canonical_bundle_family,
+    bench_intersection_theory_family,
+    bench_line_bundle_family,
+    bench_macpherson_chern_family,
+    bench_picard_group_family,
+    bench_weil_divisor_family,
+)
+from quant_fund.research.benches_w586 import (
+    bench_dualizing_cmplx_family,
+    bench_dualizing_sheaf_family,
+    bench_groth_duality_family,
+    bench_relative_duality_family,
+    bench_residue_thm_family,
+    bench_verdier_duality_family,
+)
+from quant_fund.research.benches_w587 import (
+    bench_abundance_conj_family,
+    bench_bdd_fano_family,
+    bench_canonical_sing2_family,
+    bench_klt_mmp_family,
+    bench_mmp_flip_family,
+    bench_terminal_sing_family,
+)
+from quant_fund.research.benches_w588 import (
+    bench_ehp_sequence_family,
+    bench_freudenthal_susp_family,
+    bench_james_period_family,
+    bench_moore_space_family,
+    bench_unstable_adams_family,
+    bench_whitehead_prod_family,
+)
+from quant_fund.research.benches_w589 import (
+    bench_cartesian_closed_family,
+    bench_coherent_topos_family,
+    bench_internal_logic_family,
+    bench_power_object_family,
+    bench_pretopos_family,
+    bench_subobject_lattice_family,
+)
+from quant_fund.research.benches_w590 import (
+    bench_bloch_k_family,
+    bench_gersten_ss_family,
+    bench_loday_k_family,
+    bench_quillen_plus_family,
+    bench_suslin_k_family,
+    bench_volodin_k_family,
+)
+from quant_fund.research.benches_w591 import (
+    bench_friedlander_voev_family,
+    bench_motivic_descent_family,
+    bench_motivic_eilenberg_family,
+    bench_motivic_invert_family,
+    bench_motivic_purity_family,
+    bench_motivic_zeta_family,
+)
+from quant_fund.research.benches_w592 import (
+    bench_braided_cat_family,
+    bench_fusion_cat_family,
+    bench_premodular_family,
+    bench_rigid_cat_family,
+    bench_spherical_cat_family,
+    bench_tensor_cat_family,
+)
+from quant_fund.research.benches_w593 import (
+    bench_harmonic_bdl_family,
+    bench_higgs_bundle2_family,
+    bench_hitchin_section_family,
+    bench_hodge_moduli_family,
+    bench_nonabelian_hodge_family,
+    bench_simpson_corr_family,
+)
+from quant_fund.research.benches_w594 import (
+    bench_artin_neighborhood_family,
+    bench_etale_fund_family,
+    bench_etale_homotopy_family,
+    bench_galois_cat_family,
+    bench_pro_etale_family,
+    bench_shapiro_lemma_family,
+)
+from quant_fund.research.benches_w595 import (
+    bench_conjugate_fil_family,
+    bench_crys_cohom_family,
+    bench_divided_power_family,
+    bench_nygaard_filt_family,
+    bench_pd_envelope_family,
+    bench_syntomic_family,
+)
+from quant_fund.research.benches_w596 import (
+    bench_breuil_mod_family,
+    bench_etale_phi_family,
+    bench_finite_height_family,
+    bench_galois_lattice_family,
+    bench_kisin_mod_family,
+    bench_padic_hodge_family,
+)
+from quant_fund.research.benches_w597 import (
+    bench_bousfield_kan_family,
+    bench_curtis_lower_family,
+    bench_dror_smith_family,
+    bench_lannes_t_family,
+    bench_periodicity_thm_family,
+    bench_telescope_conj_family,
+)
+from quant_fund.research.benches_w598 import (
+    bench_bloch_beilinson_family,
+    bench_borel_regulator_family,
+    bench_etale_ktheory_family,
+    bench_lichtenbaum_k_family,
+    bench_soul_elem_family,
+    bench_thh_trace_family,
+)
+from quant_fund.research.benches_w599 import (
+    bench_algebra_cat_family,
+    bench_codensity_monad_family,
+    bench_distributive_law_family,
+    bench_klesli_cat_family,
+    bench_monad_theorem_family,
+    bench_monadicity_family,
+)
+from quant_fund.research.benches_w600 import (
+    bench_a_infty_alg_family,
+    bench_koszul_duality_family,
+    bench_l_infty_alg_family,
+    bench_minimal_model_op_family,
+    bench_operad_cobar_family,
+    bench_operadic_bar_family,
+)
+from quant_fund.research.benches_w601 import (
+    bench_derived_loop_family,
+    bench_derived_tangent_family,
+    bench_dg_algebra_family,
+    bench_e_infinity_ring_family,
+    bench_structured_space_family,
+    bench_virtual_fund_family,
+)
+from quant_fund.research.benches_w602 import (
+    bench_cyclotomic_spec_family,
+    bench_negative_cyclic_family,
+    bench_periodic_cyclic_family,
+    bench_tate_construction_family,
+    bench_tc_spec_family,
+    bench_tr_structure_family,
+)
+from quant_fund.research.benches_w603 import (
+    bench_atomic_topos_family,
+    bench_classifying_topos_family,
+    bench_essential_morph_family,
+    bench_giraud_axiom_family,
+    bench_logical_morph_family,
+    bench_slice_topos_family,
+)
+from quant_fund.research.benches_w604 import (
+    bench_bokstedt_periodicity_family,
+    bench_elliptic_k_family,
+    bench_equivariant_cohomology2_family,
+    bench_may_ss_family,
+    bench_topo_k_theory_family,
+    bench_unstable_cohomology_family,
+)
+from quant_fund.research.benches_w605 import (
+    bench_dk_motive_family,
+    bench_motivic_adem_family,
+    bench_motivic_steenrod_family,
+    bench_motivic_transfer_family,
+    bench_power_operations_family,
+    bench_simplicial_motive_family,
+)
+from quant_fund.research.benches_w606 import (
+    bench_connective_k_family,
+    bench_higher_k_family,
+    bench_k_spectrum_family,
+    bench_karoubi_k_family,
+    bench_nil_k_family,
+    bench_pedersen_weibel_family,
+)
+from quant_fund.research.benches_w607 import (
+    bench_cocartesian_family,
+    bench_homotopy_cat_family,
+    bench_horn_filler_family,
+    bench_kan_complex_family,
+    bench_mapping_space_family,
+    bench_nerve_cat_family,
+)
+from quant_fund.research.benches_w608 import (
+    bench_etale_descent_family,
+    bench_etale_morphism_family,
+    bench_fppf_site_family,
+    bench_fpqc_site_family,
+    bench_ladic_sheaf_family,
+    bench_lisse_sheaf_family,
+)
+from quant_fund.research.benches_w609 import (
+    bench_brave_new_ring_family,
+    bench_e_infty_space_family,
+    bench_formal_moduli_family,
+    bench_log_ring_family,
+    bench_orient_cohom_family,
+    bench_thom_constr_family,
+)
+from quant_fund.research.benches_w610 import (
+    bench_first_order_family,
+    bench_obstruction_def_family,
+    bench_prorepresent_family,
+    bench_schlessinger2_family,
+    bench_semiuniversal_family,
+    bench_versal_def_family,
+)
+from quant_fund.research.benches_w611 import (
+    bench_mate_dual_family,
+    bench_modification_family,
+    bench_pasting_diag_family,
+    bench_pseudo_naturality_family,
+    bench_two_adjoint_family,
+    bench_whisker_comp_family,
+)
+from quant_fund.research.benches_w612 import (
+    bench_discrete_valuation_family,
+    bench_factorial_ring_family,
+    bench_gorenstein_ring_family,
+    bench_jacobson_ring_family,
+    bench_normal_ring_family,
+    bench_regular_ring_family,
+)
+from quant_fund.research.benches_w613 import (
+    bench_neron_smooth_family,
+    bench_perfect_witt_family,
+    bench_semistable_reduction_family,
+    bench_verschiebung_witt_family,
+    bench_witt_teich_family,
+    bench_witt_vector_family,
+)
+from quant_fund.research.benches_w614 import (
+    bench_finite_spectra_family,
+    bench_moore_spec_family,
+    bench_peterson_stein_family,
+    bench_primary_op_family,
+    bench_secondary_op_family,
+    bench_steenrod_sq_family,
+)
+from quant_fund.research.benches_w615 import (
+    bench_extremal_ray_family,
+    bench_mori_bir_family,
+    bench_motivic_adams_family,
+    bench_motivic_classifying_family,
+    bench_motivic_dg_family,
+    bench_tate_object_family,
+)
+from quant_fund.research.benches_w616 import (
+    bench_braided_functor_family,
+    bench_center_cat_family,
+    bench_ds_category_family,
+    bench_fusion_ring_family,
+    bench_multifusion_family,
+    bench_premodular2_family,
+)
+from quant_fund.research.benches_w617 import (
+    bench_berrick_k_family,
+    bench_gersen_suslin_family,
+    bench_gillet_thomason_family,
+    bench_hermitian_quillen_family,
+    bench_k_theory4_family,
+    bench_khomo_k_family,
+)
+from quant_fund.research.benches_w618 import (
+    bench_ad_period_family,
+    bench_b_drb_family,
+    bench_fontaine_curve_family,
+    bench_perfectoid_c_family,
+    bench_phi_mod_family,
+    bench_untilt_family,
+)
+from quant_fund.research.benches_w619 import (
+    bench_andersen_lannes_family,
+    bench_chromatic_hopkins_family,
+    bench_devissage_ss_family,
+    bench_tame_htpy_family,
+    bench_thick_spectrum_family,
+    bench_unstable_htpy_family,
+)
+from quant_fund.research.benches_w620 import (
+    bench_band_gerbe_family,
+    bench_dm_stack2_family,
+    bench_gerbe2_family,
+    bench_inertia_stack_family,
+    bench_rigid_stack_family,
+    bench_root_stack_family,
+)
+from quant_fund.research.benches_w621 import (
+    bench_motivic_borel_family,
+    bench_motivic_chow_family,
+    bench_motivic_class_family,
+    bench_motivic_height_family,
+    bench_motivic_homology_family,
+    bench_motivic_k_family,
+)
+from quant_fund.research.benches_w622 import (
+    bench_delta_ring_family,
+    bench_hodge_tate_family,
+    bench_nygaard2_family,
+    bench_prism2_family,
+    bench_prismatic_crystal_family,
+    bench_prismatic_site_family,
+)
+from quant_fund.research.benches_w623 import (
+    bench_a_infinity2_family,
+    bench_cyclic_operad_family,
+    bench_dendroidal2_family,
+    bench_e_infinity3_family,
+    bench_infty_operad2_family,
+    bench_operadic_nerve_family,
+)
+from quant_fund.research.benches_w624 import (
+    bench_adic_formal_family,
+    bench_algebraization_family,
+    bench_formal_completion_family,
+    bench_formal_neighborhood_family,
+    bench_groth_existence_family,
+    bench_raynaud_formal_family,
+)
+from quant_fund.research.benches_w625 import (
+    bench_complexity_spectrum_family,
+    bench_simplicial_htpy_family,
+    bench_small_spec_family,
+    bench_spectrum_type_family,
+    bench_stable_cohomology2_family,
+    bench_woodward_op_family,
+)
+from quant_fund.research.benches_w626 import (
+    bench_algebraic_stack2_family,
+    bench_artin_stack_family,
+    bench_gerbe_cohomology_family,
+    bench_orbifold_stack_family,
+    bench_quotient_stack2_family,
+    bench_stacky_point_family,
+)
+from quant_fund.research.benches_w627 import (
+    bench_condensed_coh_family,
+    bench_condensed_ring_family,
+    bench_discrete_liquid_family,
+    bench_liquid_ring_family,
+    bench_scholze_trace_family,
+    bench_smith_project_family,
+)
+from quant_fund.research.benches_w628 import (
+    bench_dendroidal_seg_family,
+    bench_higher_operad_family,
+    bench_moerdijk_weiss_family,
+    bench_operad_cat2_family,
+    bench_operad_infty3_family,
+    bench_operad_module_family,
+)
+from quant_fund.research.benches_w629 import (
+    bench_artinian_alg_family,
+    bench_deform_functor2_family,
+    bench_hull_deform_family,
+    bench_rim_deform_family,
+    bench_small_ext_family,
+    bench_tangent_def_family,
+)
+from quant_fund.research.benches_w630 import (
+    bench_cartesian_morphism_family,
+    bench_fib_infty_family,
+    bench_infty_functor_family,
+    bench_inner_horn_family,
+    bench_joyal_horn_family,
+    bench_quasi_cat2_family,
+)
+from quant_fund.research.benches_w631 import (
+    bench_constructible_sh_family,
+    bench_etale_cover3_family,
+    bench_etale_site3_family,
+    bench_ql_sheaf_family,
+    bench_torsion_sheaf_family,
+    bench_weil_sheaf_family,
+)
+from quant_fund.research.benches_w632 import (
+    bench_big_witt_family,
+    bench_good_reduction_family,
+    bench_odeur_zarba_family,
+    bench_potential_reduction_family,
+    bench_tate_curve_family,
+    bench_witt_len2_family,
+)
+from quant_fund.research.benches_w633 import (
+    bench_cone_theorem_family,
+    bench_contr_rational_family,
+    bench_motivic_abelian_family,
+    bench_motivic_coho2_family,
+    bench_motivic_compact_family,
+    bench_motivic_landweber_family,
+)
+from quant_fund.research.benches_w634 import (
+    bench_bicat2_family,
+    bench_cat_3cell_family,
+    bench_double_lim_family,
+    bench_icon_cat_family,
+    bench_two_transform_family,
+    bench_vert_cat_family,
+)
+from quant_fund.research.benches_w635 import (
+    bench_excellent_ring_family,
+    bench_going_up_family,
+    bench_integral_closure2_family,
+    bench_lying_over_family,
+    bench_weil_divisor2_family,
+    bench_zariski_main_family,
+)
+from quant_fund.research.benches_w636 import (
+    bench_ek_subfactor_family,
+    bench_gyro_cat_family,
+    bench_haagerup_sub_family,
+    bench_sovereign_cat_family,
+    bench_sylleptic_family,
+    bench_yang_lee_cat_family,
+)
+from quant_fund.research.benches_w637 import (
+    bench_cocartesian_diamond_family,
+    bench_curve_padic_family,
+    bench_diamond_mod_family,
+    bench_etale_phiphi_family,
+    bench_fargues_scholze2_family,
+    bench_scholze_bc_family,
+)
+from quant_fund.research.benches_w638 import (
+    bench_fundamental_cat_family,
+    bench_grayson_s_family,
+    bench_karoubi_v2_family,
+    bench_quillen_ldev_family,
+    bench_seg_street_family,
+    bench_vorst_descent_family,
+)
+from quant_fund.research.benches_w639 import (
+    bench_finite_chromatic_family,
+    bench_finite_htpy_family,
+    bench_homotopy_fiber2_family,
+    bench_periodic_htpy_family,
+    bench_rational_spec_family,
+    bench_stable_htpy2_family,
+)
+from quant_fund.research.benches_w640 import (
+    bench_azure_space_family,
+    bench_elliptic_cohom2_family,
+    bench_spectral_etale_family,
+    bench_spectral_group_family,
+    bench_spectral_scheme3_family,
+    bench_spectral_smooth_family,
+)
+from quant_fund.research.benches_w641 import (
+    bench_chromatic_htpy_family,
+    bench_homotopy_colim_family,
+    bench_periodic_fam_family,
+    bench_smash_prod_family,
+    bench_stable_stem2_family,
+    bench_unstable_tower_family,
+)
+from quant_fund.research.benches_w642 import (
+    bench_bhatt_scholze_family,
+    bench_derived_prism_family,
+    bench_prismatic_dieudonne_family,
+    bench_prismatic_f_family,
+    bench_q_crystal_family,
+    bench_q_prism_family,
+)
+from quant_fund.research.benches_w643 import (
+    bench_calc_tower_family,
+    bench_goodwillie_deriv_family,
+    bench_kervaire_inv_family,
+    bench_mahowald_inv_family,
+    bench_snaith_split_family,
+    bench_toda_smith_family,
+)
+from quant_fund.research.benches_w644 import (
+    bench_allday_k_family,
+    bench_hall_alg_family,
+    bench_residue_k_family,
+    bench_s_multicat_family,
+    bench_suslin_wagoner_family,
+    bench_weibel_nil_family,
+)
+from quant_fund.research.benches_w645 import (
+    bench_balmer_k_family,
+    bench_hermitian_k3_family,
+    bench_schlichting_k_family,
+    bench_thomason_les_family,
+    bench_vishik_k_family,
+    bench_witt_k_family,
+)
+from quant_fund.research.benches_w646 import (
+    bench_bdr_plus_family,
+    bench_diamond_sheaf_family,
+    bench_fargues_cat_family,
+    bench_spatial_diamond_family,
+    bench_untilt2_family,
+    bench_v_stack_family,
+)
+from quant_fund.research.benches_w647 import (
+    bench_arkowitz_htpy_family,
+    bench_bochner_htpy_family,
+    bench_kahn_priddy_family,
+    bench_lin_htpy_family,
+    bench_selick_htpy_family,
+    bench_tits_building_family,
+)
+from quant_fund.research.benches_w648 import (
+    bench_dupont_k_family,
+    bench_guin_k_family,
+    bench_kodaira_k_family,
+    bench_lindenstrauss_k_family,
+    bench_suslin_k2_family,
+    bench_tsukada_k_family,
+)
+from quant_fund.research.benches_w649 import (
+    bench_breuil_prism_family,
+    bench_cartier_prism_family,
+    bench_filtered_prism_family,
+    bench_frobenius_prism_family,
+    bench_prism_site2_family,
+    bench_stacky_prism_family,
+)
+from quant_fund.research.benches_w650 import (
+    bench_anick_htpy_family,
+    bench_bousfield_htpy_family,
+    bench_dror_htpy_family,
+    bench_kane_htpy_family,
+    bench_moore_htpy_family,
+    bench_neisendorfer_htpy_family,
+)
+from quant_fund.research.benches_w651 import (
+    bench_abelian_cat_family,
+    bench_filtered_cat_family,
+    bench_flat_functor_family,
+    bench_malcev_cat_family,
+    bench_regular_cat_family,
+    bench_sifted_cat2_family,
+)
+from quant_fund.research.benches_w652 import (
+    bench_asymptotic_motive_family,
+    bench_exponential_motive_family,
+    bench_log_motive_family,
+    bench_numerical_motive_family,
+    bench_sheaf_motive_family,
+    bench_strict_motive_family,
+)
+from quant_fund.research.benches_w653 import (
+    bench_ainf_cohom_family,
+    bench_fargues_scholze3_family,
+    bench_galois_padic_family,
+    bench_hodge_tate_padic_family,
+    bench_integral_padic2_family,
+    bench_period_ring_family,
+)
+from quant_fund.research.benches_w654 import (
+    bench_accessible_cat2_family,
+    bench_compactly_generated_family,
+    bench_flat_monad_family,
+    bench_locally_presentable_family,
+    bench_presentable_cat2_family,
+    bench_regular_cat2_family,
+)
+from quant_fund.research.benches_w655 import (
+    bench_bo_htpy_family,
+    bench_chromatic_square_family,
+    bench_devinatz_htpy_family,
+    bench_hopkins_smith_family,
+    bench_morava_stab_family,
+    bench_telescope_tower_family,
+)
+from quant_fund.research.benches_w656 import (
+    bench_admissible_cat_family,
+    bench_cartesian_cat2_family,
+    bench_cocomplete_cat_family,
+    bench_definable_cat_family,
+    bench_essentially_small_family,
+    bench_finitely_accessible_family,
+)
+from quant_fund.research.benches_w657 import (
+    bench_bousfield_period_family,
+    bench_completion_htpy_family,
+    bench_homotopy_cartesian_family,
+    bench_p_local_htpy_family,
+    bench_ravenel_htpy_family,
+    bench_snake_constr_family,
+)
+from quant_fund.research.benches_w658 import (
+    bench_beilinson_regulator_family,
+    bench_f_motive_family,
+    bench_hodge_motive_family,
+    bench_motivic_galois_family,
+    bench_period_realization_family,
+    bench_tannakian_motive_family,
+)
+from quant_fund.research.benches_w659 import (
+    bench_absolute_cohom_family,
+    bench_motivic_pairing_family,
+    bench_motivic_tate2_family,
+    bench_motivic_weight_family,
+    bench_norimotive2_family,
+    bench_tate_triple_family,
+)
+from quant_fund.research.benches_w660 import (
+    bench_chromatic_completion_family,
+    bench_chromatic_l2_family,
+    bench_morava_k2_family,
+    bench_periodicity_height_family,
+    bench_picard_spec_family,
+    bench_telescope_tower2_family,
+)
+from quant_fund.research.benches_w661 import (
+    bench_ambidexterity_family,
+    bench_dieudonne_module_family,
+    bench_higher_semiadditivity_family,
+    bench_honda_formal_family,
+    bench_raynaud_height_family,
+    bench_tate_height_family,
+)
+from quant_fund.research.benches_w662 import (
+    bench_bar_resolution2_family,
+    bench_braces_higher_family,
+    bench_deligne_conj2_family,
+    bench_factor_homology2_family,
+    bench_hochschild_hom2_family,
+    bench_little_cubes_family,
+)
+from quant_fund.research.benches_w663 import (
+    bench_dunn_additivity_family,
+    bench_e2_algebra_family,
+    bench_khovanov_2_family,
+    bench_mckay_correspond_family,
+    bench_swiss_cheese2_family,
+    bench_tensor_factorization_family,
+)
+from quant_fund.research.benches_w664 import (
+    bench_e_ring_moduli_family,
+    bench_elliptic_spec2_family,
+    bench_spectral_artstack_family,
+    bench_spectral_moduli_family,
+    bench_structured_spec_family,
+    bench_tmf_stack_family,
+)
+from quant_fund.research.benches_w665 import (
+    bench_cohen_moore2_family,
+    bench_homotopy_decomp_family,
+    bench_kervaire_inv2_family,
+    bench_moore_space2_family,
+    bench_unstable_vn_family,
+    bench_whitehead_product_family,
+)
+from quant_fund.research.benches_w666 import (
+    bench_cotangent_stack_family,
+    bench_derived_abelian_family,
+    bench_derived_bezout_family,
+    bench_derived_bun_family,
+    bench_derived_hecke_family,
+    bench_simplicial_comm_family,
+)
+from quant_fund.research.benches_w667 import (
+    bench_ab_cat_family,
+    bench_coniveau_fil_family,
+    bench_exact_cat2_family,
+    bench_grothendieck_cat_family,
+    bench_special_cat_family,
+    bench_stable_cat2_family,
+)
+from quant_fund.research.benches_w668 import (
+    bench_beilinson_regulator2_family,
+    bench_hodge_motive2_family,
+    bench_motivic_galois2_family,
+    bench_norimotive3_family,
+    bench_period_realization2_family,
+    bench_tannakian_motive2_family,
+)
+from quant_fund.research.benches_w669 import (
+    bench_f_motive2_family,
+    bench_milnor_operations2_family,
+    bench_motivic_bordism_family,
+    bench_motivic_eilenberg2_family,
+    bench_motivic_ss2_family,
+    bench_slice_filtration2_family,
+)
+from quant_fund.research.benches_w670 import (
+    bench_chromatic_l3_family,
+    bench_morava_e2_family,
+    bench_morava_k3_family,
+    bench_picard_spec2_family,
+    bench_red_shift2_family,
+    bench_telescope_tower3_family,
+)
+from quant_fund.research.benches_w671 import (
+    bench_adams_edge_family,
+    bench_gray_periodic_family,
+    bench_homotopy_exponent_family,
+    bench_periodic_family_family,
+    bench_stunted_proj_family,
+    bench_unstable_adams2_family,
+)
+from quant_fund.research.benches_w672 import (
+    bench_compact_cat_family,
+    bench_monoidal_derived_family,
+    bench_perverse_cat_family,
+    bench_smashing_cat_family,
+    bench_super_cat_family,
+    bench_tannakian_cat_family,
+)
+from quant_fund.research.benches_w673 import (
+    bench_derived_cohom_family,
+    bench_derived_fiber2_family,
+    bench_derived_intersection_family,
+    bench_relative_trace_family,
+    bench_spectral_deformation2_family,
+    bench_virtual_class2_family,
+)
+from quant_fund.research.benches_w674 import (
+    bench_analytic_spec_family,
+    bench_derived_k3_family,
+    bench_equivariant_spec_family,
+    bench_graded_spec_family,
+    bench_spectral_curve_family,
+    bench_spectral_gm_family,
+)
+from quant_fund.research.benches_w675 import (
+    bench_boards_operad_family,
+    bench_cyclotomic_e_n_family,
+    bench_e3_algebra_family,
+    bench_getzler_jones_family,
+    bench_surfaces_operad_family,
+    bench_tadv_hochschild_family,
+)
+from quant_fund.research.benches_w676 import (
+    bench_center_hochschild_family,
+    bench_en_algebra2_family,
+    bench_higher_brace2_family,
+    bench_koszul_operad2_family,
+    bench_operad_lie_family,
+    bench_thom_transpose_family,
+)
+from quant_fund.research.benches_w677 import (
+    bench_cat_dg_family,
+    bench_cat_structure_family,
+    bench_combinatorial_mc_family,
+    bench_derivator_cat_family,
+    bench_quillen_cat_family,
+    bench_univalent_cat_family,
+)
+from quant_fund.research.benches_w678 import (
+    bench_equipment_cat_family,
+    bench_fibrant_cat_family,
+    bench_homotopical_cat_family,
+    bench_pointed_cat_family,
+    bench_relative_cat_family,
+    bench_simplicial_cat_family,
+)
+from quant_fund.research.benches_w679 import (
+    bench_absolute_motive_family,
+    bench_etale_motive_family,
+    bench_motivic_heart_family,
+    bench_motivic_realization_family,
+    bench_motivic_thh_family,
+    bench_relative_motive_family,
+)
+from quant_fund.research.benches_w680 import (
+    bench_spectral_abelian_family,
+    bench_spectral_crystal_family,
+    bench_spectral_etale2_family,
+    bench_spectral_perfect_family,
+    bench_spectral_proper_family,
+    bench_spectral_smooth2_family,
+)
+from quant_fund.research.benches_w681 import (
+    bench_homotopy_factor_family,
+    bench_homotopy_fixed_family,
+    bench_homotopy_lift_family,
+    bench_homotopy_orbit_family,
+    bench_stable_operad_family,
+    bench_stable_sheaf_family,
+)
+from quant_fund.research.benches_w682 import (
+    bench_motivic_crystal_family,
+    bench_motivic_cycle_family,
+    bench_motivic_etale_family,
+    bench_motivic_prism_family,
+    bench_motivic_sphere3_family,
+    bench_motivic_tower_family,
+)
+from quant_fund.research.benches_w683 import (
+    bench_blue_shift2_family,
+    bench_chromatic_fracture2_family,
+    bench_fgsl_group2_family,
+    bench_k_n_local2_family,
+    bench_morava_stabilizer2_family,
+    bench_tate_spec2_family,
+)
+from quant_fund.research.benches_w684 import (
+    bench_motivic_base2_family,
+    bench_motivic_frequency_family,
+    bench_motivic_infinite_family,
+    bench_motivic_suslin_family,
+    bench_motivic_weight2_family,
+    bench_motivic_wit_family,
+)
+from quant_fund.research.benches_w685 import (
+    bench_homotopy_class2_family,
+    bench_homotopy_limit_family,
+    bench_homotopy_tower_family,
+    bench_spectral_sequence5_family,
+    bench_stable_bousfield_family,
+    bench_stable_mapping_family,
+)
+from quant_fund.research.benches_w686 import (
+    bench_braces_e4_family,
+    bench_centralizer_alg_family,
+    bench_delooping2_family,
+    bench_e4_algebra_family,
+    bench_factorization_hom2_family,
+    bench_koszul_duality2_family,
+)
+from quant_fund.research.benches_w687 import (
+    bench_cat_bicomplete_family,
+    bench_cat_cofibrant_family,
+    bench_cat_descent_family,
+    bench_cat_fibrant_obj_family,
+    bench_cat_glueable_family,
+    bench_cat_univariant_family,
+)
+from quant_fund.research.benches_w688 import (
+    bench_spectral_cellular_family,
+    bench_spectral_cohomological_family,
+    bench_spectral_field_family,
+    bench_spectral_filtration_family,
+    bench_spectral_finite_family,
+    bench_spectral_lattice_family,
+)
+from quant_fund.research.benches_w689 import (
+    bench_motivic_euler_family,
+    bench_motivic_ext_family,
+    bench_motivic_infinite2_family,
+    bench_motivic_jouanolou_family,
+    bench_motivic_norm_family,
+    bench_motivic_ramified_family,
+)
+from quant_fund.research.benches_w690 import (
+    bench_homotopy_model_family,
+    bench_homotopy_sheaf_family,
+    bench_stable_algebra_family,
+    bench_stable_group_family,
+    bench_stable_module_family,
+    bench_stable_monoid_family,
+)
+from quant_fund.research.benches_w691 import (
+    bench_cat_fusion_family,
+    bench_cat_pretopos_family,
+    bench_cat_ribbon_family,
+    bench_cat_semiadd_family,
+    bench_cat_semisimple_family,
+    bench_cat_tannakian2_family,
+)
+from quant_fund.research.benches_w692 import (
+    bench_centralizer_alg2_family,
+    bench_e5_algebra_family,
+    bench_factorization_hom3_family,
+    bench_framed_discs_family,
+    bench_little_cubes2_family,
+    bench_swiss_cheese3_family,
+)
+from quant_fund.research.benches_w693 import (
+    bench_derived_cartesian_family,
+    bench_derived_etale_family,
+    bench_derived_flat_family,
+    bench_derived_quasi_coherent_family,
+    bench_derived_represent_family,
+    bench_derived_smooth2_family,
+)
+from quant_fund.research.benches_w694 import (
+    bench_motivic_atiyah_family,
+    bench_motivic_coniveau_family,
+    bench_motivic_deligne_family,
+    bench_motivic_residue_family,
+    bench_motivic_trace_family,
+    bench_motivic_transfer2_family,
+)
+from quant_fund.research.benches_w695 import (
+    bench_homotopy_abelian_family,
+    bench_homotopy_extended_family,
+    bench_homotopy_finite_family,
+    bench_homotopy_infinite_family,
+    bench_stable_compact_family,
+    bench_stable_synthetic_family,
+)
+from quant_fund.research.benches_w696 import (
+    bench_cat_image_family,
+    bench_cat_index_family,
+    bench_cat_kernel_family,
+    bench_cat_monotone_family,
+    bench_cat_pullback_family,
+    bench_cat_rank_family,
+)
+from quant_fund.research.benches_w697 import (
+    bench_spectral_dedekind_family,
+    bench_spectral_dvr_family,
+    bench_spectral_excellent_family,
+    bench_spectral_jacobson_family,
+    bench_spectral_noether_family,
+    bench_spectral_regular_family,
+)
+from quant_fund.research.benches_w698 import (
+    bench_motivic_cartier_family,
+    bench_motivic_frobenius_family,
+    bench_motivic_hodge_family,
+    bench_motivic_lax_family,
+    bench_motivic_span_family,
+    bench_motivic_street_family,
+)
+from quant_fund.research.benches_w699 import (
+    bench_homotopy_general_family,
+    bench_homotopy_rational_family,
+    bench_stable_dual_family,
+    bench_stable_lie_family,
+    bench_stable_motivic_family,
+    bench_stable_perf_family,
+)
+from quant_fund.research.benches_w700 import (
+    bench_cat_lax_family,
+    bench_cat_pushout_family,
+    bench_cat_size_family,
+    bench_cat_span_family,
+    bench_cat_street_family,
+    bench_cat_total_family,
+)
+from quant_fund.research.benches_w701 import (
+    bench_derived_conn_family,
+    bench_derived_integral_family,
+    bench_derived_local_family,
+    bench_derived_noether_family,
+    bench_derived_normal_family,
+    bench_derived_reduced_family,
+)
+from quant_fund.research.benches_w702 import (
+    bench_motivic_degree_family,
+    bench_motivic_diagonal_family,
+    bench_motivic_field_family,
+    bench_motivic_fundamental_family,
+    bench_motivic_hochschild_family,
+    bench_motivic_spark_family,
+)
+from quant_fund.research.benches_w703 import (
+    bench_homotopy_fiber3_family,
+    bench_homotopy_spectrum2_family,
+    bench_homotopy_suspension2_family,
+    bench_homotopy_vn_family,
+    bench_stable_derivator_family,
+    bench_stable_excisive_family,
+)
+from quant_fund.research.benches_w704 import (
+    bench_braces_e5_family,
+    bench_delooping3_family,
+    bench_higher_algebra9_family,
+    bench_koszul_duality3_family,
+    bench_operad_infty5_family,
+    bench_operad_swiss4_family,
+)
+from quant_fund.research.benches_w705 import (
+    bench_derived_abelian2_family,
+    bench_derived_cover_family,
+    bench_derived_geometry7_family,
+    bench_derived_morph_family,
+    bench_derived_stack3_family,
+    bench_derived_topos_family,
+)
+from quant_fund.research.benches_w706 import (
+    bench_chromatic_base_family,
+    bench_chromatic_layer_family,
+    bench_chromatic_square2_family,
+    bench_elliptic_morava_family,
+    bench_lubin_tate3_family,
+    bench_morava_maven_family,
+)
+from quant_fund.research.benches_w707 import (
+    bench_spectral_coord_family,
+    bench_spectral_ext_field_family,
+    bench_spectral_level_family,
+    bench_spectral_polynomial2_family,
+    bench_spectral_prime_family,
+    bench_spectral_residue_family,
+)
+from quant_fund.research.benches_w708 import (
+    bench_cat_dold_kan_family,
+    bench_cat_enriched_lim_family,
+    bench_cat_hoc_family,
+    bench_cat_pseudo_limit_family,
+    bench_cat_reedy_cat_family,
+    bench_cat_weak_eq_family,
+)
+from quant_fund.research.benches_w709 import (
+    bench_cat_ab2_family,
+    bench_cat_ab_loc_family,
+    bench_cat_exact3_family,
+    bench_cat_freyd_family,
+    bench_cat_pro_object2_family,
+    bench_cat_univariant2_family,
+)
+from quant_fund.research.benches_w710 import (
+    bench_floyd_farey_family,
+    bench_higher_algebra8_family,
+    bench_little_discs3_family,
+    bench_operad_infty4_family,
+    bench_operad_swiss3_family,
+    bench_operad_twisted_family,
+)
+from quant_fund.research.benches_w711 import (
+    bench_homotopy_local_family,
+    bench_homotopy_sheaf2_family,
+    bench_homotopy_stable4_family,
+    bench_stable_coalgebra_family,
+    bench_stable_inf_cat_family,
+    bench_stable_sheaf2_family,
+)
+from quant_fund.research.benches_w712 import (
+    bench_motivic_additive_cat_family,
+    bench_motivic_additive_family,
+    bench_motivic_chern2_family,
+    bench_motivic_cover_family,
+    bench_motivic_filtration2_family,
+    bench_motivic_gysin2_family,
+)
+from quant_fund.research.benches_w713 import (
+    bench_derived_affine_family,
+    bench_derived_projective_family,
+    bench_spectral_artin_family,
+    bench_spectral_dirac_family,
+    bench_spectral_gal_family,
+    bench_spectral_semi_family,
+)
+from quant_fund.research.benches_w714 import (
+    bench_derived_proper2_family,
+    bench_derived_separated2_family,
+    bench_motivic_functor_family,
+    bench_motivic_nerve_family,
+    bench_motivic_partial_family,
+    bench_motivic_total_family,
+)
+from quant_fund.research.benches_w715 import (
+    bench_auslander_reiten_family,
+    bench_cluster_algebra_family,
+    bench_cluster_category_family,
+    bench_quiver_mutation_family,
+    bench_silting_object_family,
+    bench_tilting_object_family,
+)
+from quant_fund.research.benches_w716 import (
+    bench_exceptional_coll_family,
+    bench_fourier_mukai_family,
+    bench_semi_orthogonal_family,
+    bench_serre_functor_family,
+    bench_sod_decomp_family,
+    bench_spherical_functor_family,
+)
+from quant_fund.research.benches_w717 import (
+    bench_bondal_kapranov_family,
+    bench_dg_enhancement_family,
+    bench_enhanced_triangulated_family,
+    bench_nc_k_theory_family,
+    bench_nc_motive_family,
+    bench_tabuada_motive_family,
+)
+from quant_fund.research.benches_w718 import (
+    bench_der_bimodule_family,
+    bench_helix_theory_family,
+    bench_higher_auslander_family,
+    bench_icy_paper_family,
+    bench_mutation_class_family,
+    bench_rep_finite_family,
+)
+from quant_fund.research.benches_w719 import (
+    bench_calabi_yau_tri_family,
+    bench_d_calabi_yau_family,
+    bench_frobenius_cat_family,
+    bench_gorenstein_proj_family,
+    bench_orbit_category_family,
+    bench_stable_category_family,
+)
+from quant_fund.research.benches_w720 import (
+    bench_categorical_entropy_family,
+    bench_cluster_tilting_family,
+    bench_derived_morita_family,
+    bench_preprojective_alg_family,
+    bench_rouquier_dim_family,
+    bench_serre_dim_family,
+)
+from quant_fund.research.benches_w721 import (
+    bench_beilinson_height_family,
+    bench_brown_motives_family,
+    bench_mixed_elliptic_family,
+    bench_motivic_pi_family,
+    bench_mzc_motive_family,
+    bench_zeta_element_family,
+)
+from quant_fund.research.benches_w722 import (
+    bench_borel_motivic_family,
+    bench_deligne_period_family,
+    bench_motivic_multiple_zeta_family,
+    bench_period_poly_family,
+    bench_specialization_motive_family,
+    bench_zagier_polylog_family,
+)
+from quant_fund.research.benches_w723 import (
+    bench_euler_system_family,
+    bench_gross_zagier_family,
+    bench_iwasawa_motive_family,
+    bench_kolyvagin_sys_family,
+    bench_perrin_riou_family,
+    bench_rubin_main_conj_family,
+)
+from quant_fund.research.benches_w724 import (
+    bench_coates_wiles_family,
+    bench_gan_gross_prasad_family,
+    bench_greenberg_selmer_family,
+    bench_heegner_cycle_family,
+    bench_iwasawa_lfunc_family,
+    bench_kurihara_iwasawa_family,
+)
+from quant_fund.research.benches_w725 import (
+    bench_arithmetic_arnold_family,
+    bench_bertolini_darmon_family,
+    bench_darmon_point_family,
+    bench_howard_main_family,
+    bench_p_group_iwasawa_family,
+    bench_shimura_period_family,
+)
+from quant_fund.research.benches_w726 import (
+    bench_diamond_taylor_wiles_family,
+    bench_jetchev_skinner_family,
+    bench_kisin_crystalline_family,
+    bench_mazur_deform_family,
+    bench_wan_sss_family,
+    bench_wiles_taylor_family,
+)
+from quant_fund.research.benches_w727 import (
+    bench_breuil_meizard_family,
+    bench_caruso_lebaron_family,
+    bench_galdef_ring_family,
+    bench_gee_kisin_family,
+    bench_patching_arg_family,
+    bench_taylor_wiles_family,
+)
+from quant_fund.research.benches_w728 import (
+    bench_a1_degrees_family,
+    bench_emerton_glass_family,
+    bench_luan_yao_family,
+    bench_morel_voev_family,
+    bench_totaro_cycle_family,
+    bench_voev_homotopy_family,
+)
+from quant_fund.research.benches_w729 import (
+    bench_hauwas_nori_family,
+    bench_jogiad_motive_family,
+    bench_motivic_pipe_family,
+    bench_roald_suslin_family,
+    bench_thom_mgl2_family,
+    bench_voev_suslin_family,
+)
+from quant_fund.research.benches_w730 import (
+    bench_groth_tame_family,
+    bench_grothendieck_muw_family,
+    bench_kato_swan_family,
+    bench_raynaud_pencil_family,
+    bench_saito_epsilon_family,
+    bench_swan_conductor_family,
+)
+from quant_fund.research.benches_w731 import (
+    bench_brylinski_kato_family,
+    bench_higher_ramif_family,
+    bench_log_ramification_family,
+    bench_neron_raynaud_family,
+    bench_semi_stable_model_family,
+    bench_temkin_alter_family,
+)
+from quant_fund.research.benches_w732 import (
+    bench_hall_algebra_family,
+    bench_joyce_hall_family,
+    bench_lusztig_hall_family,
+    bench_ringel_hall_family,
+    bench_schiffmann_hall_family,
+    bench_toen_hall_family,
+)
+from quant_fund.research.benches_w733 import (
+    bench_bridgeland_hall_family,
+    bench_calaque_hall_family,
+    bench_green_hall_family,
+    bench_kontsevich_soibelman_family,
+    bench_morita_hall_family,
+    bench_mozgovoy_hall_family,
+)
+from quant_fund.research.benches_w734 import (
+    bench_garmadon_sle_family,
+    bench_lawler_werner_family,
+    bench_miller_sheffield_family,
+    bench_osgood_schramm_family,
+    bench_smirnov_parafermion_family,
+    bench_werner_wilson_family,
+)
+from quant_fund.research.benches_w735 import (
+    bench_beffara_sle_family,
+    bench_benoist_sle_family,
+    bench_holden_sle_family,
+    bench_kemppainen_sle_family,
+    bench_viklund_sle_family,
+    bench_zykin_sle_family,
+)
+from quant_fund.research.benches_w736 import (
+    bench_aru_powell_family,
+    bench_berestycki_sheffield_family,
+    bench_bisbisot_sheffield_family,
+    bench_dhms_lqg_family,
+    bench_huang_rhodes_family,
+    bench_sheffield_gff_family,
+)
+from quant_fund.research.benches_w737 import (
+    bench_ding_dupias_family,
+    bench_gaines_sle_family,
+    bench_gwynne_miller_family,
+    bench_miller_wu_family,
+    bench_rhoade_vargas_family,
+    bench_sheffield_quantum_family,
+)
+from quant_fund.research.benches_w738 import (
+    bench_abraham_bipartite_family,
+    bench_bettinelli_jacob_family,
+    bench_chapuy_dolega_family,
+    bench_curien_legall_family,
+    bench_le_gall_miermont_family,
+    bench_marckert_mokkadem_family,
+)
+from quant_fund.research.benches_w739 import (
+    bench_bernardi_bijection_family,
+    bench_bonzom_combe_family,
+    bench_bouttier_guiter_family,
+    bench_caraceni_curien_family,
+    bench_mullin_bijection_family,
+    bench_schaeffer_bijection_family,
+)
+from quant_fund.research.benches_w740 import (
+    bench_cardy_formula_family,
+    bench_duminil_copin_family,
+    bench_grimmett_percolation_family,
+    bench_kesten_percolation_family,
+    bench_russo_seymour_family,
+    bench_smirnov_percolation_family,
+)
+from quant_fund.research.benches_w741 import (
+    bench_aiten_chayes_family,
+    bench_beffara_nolin_family,
+    bench_gandre_liggett_family,
+    bench_hara_slade_family,
+    bench_heyman_redner_family,
+    bench_newman_percolation_family,
+)
+from quant_fund.research.benches_w742 import (
+    bench_deift_rmt_family,
+    bench_erdos_yau_family,
+    bench_forrester_rmt_family,
+    bench_johansson_rmt_family,
+    bench_mehta_rmt_family,
+    bench_soshnikov_rmt_family,
+)
+from quant_fund.research.benches_w743 import (
+    bench_baik_rmt_family,
+    bench_borodin_olshanski_family,
+    bench_bourgade_rmt_family,
+    bench_chafai_rmt_family,
+    bench_cipolloni_erdos_family,
+    bench_tao_vu_family,
+)
+from quant_fund.research.benches_w744 import (
+    bench_amir_corwin_family,
+    bench_borodin_corwin_family,
+    bench_calabrese_kpz_family,
+    bench_corwin_kpz_family,
+    bench_kardar_parisi_family,
+    bench_quastel_spohn_family,
+)
+from quant_fund.research.benches_w745 import (
+    bench_bernard_nicola_family,
+    bench_dotsenko_kpz_family,
+    bench_hairer_kpz_family,
+    bench_imamura_sasamoto_family,
+    bench_spohn_kpz_family,
+    bench_tracy_widom_kpz_family,
+)
+from quant_fund.research.benches_w746 import (
+    bench_derrida_tasep_family,
+    bench_ferrari_tasep_family,
+    bench_liggett_exclusion_family,
+    bench_sasamoto_tasep_family,
+    bench_spitzer_exclusion_family,
+    bench_tracy_widom_tasep_family,
+)
+from quant_fund.research.benches_w747 import (
+    bench_balazs_seppalainen_family,
+    bench_bertini_giacomin_family,
+    bench_gardina_asym_family,
+    bench_quastel_valko_family,
+    bench_schutz_tasep_family,
+    bench_timar_tasep_family,
+)
+from quant_fund.research.benches_w748 import (
+    bench_aggarwal_sixv_family,
+    bench_baxter_vertex_family,
+    bench_borodin_sixv_family,
+    bench_corwin_petrov_family,
+    bench_gowers_knot_family,
+    bench_reshetikhin_vertex_family,
+)
+from quant_fund.research.benches_w749 import (
+    bench_borodin_bufetov_family,
+    bench_borodin_wheeler_family,
+    bench_bufetov_sixv_family,
+    bench_dimitrov_sixv_family,
+    bench_kuan_sixv_family,
+    bench_wheeler_zinn_family,
+)
+from quant_fund.research.benches_w750 import (
+    bench_chelkak_ising_family,
+    bench_duminil_copin2_family,
+    bench_hongler_ising_family,
+    bench_kenyon_dimers_family,
+    bench_smirnov_ising_family,
+    bench_thurston_tiling_family,
+)
+from quant_fund.research.benches_w751 import (
+    bench_ciucu_dimers_family,
+    bench_cohn_elkies_family,
+    bench_durfee_arctic_family,
+    bench_karl_dimers_family,
+    bench_kassel_kenyon_family,
+    bench_petrov_dimer_family,
+)
+from quant_fund.research.benches_w752 import (
+    bench_benjamini_ust_family,
+    bench_kirchhoff_matrix_family,
+    bench_lawler_lerw_family,
+    bench_pemantle_ust_family,
+    bench_schramm_lerw_family,
+    bench_wilson_ust_family,
+)
+from quant_fund.research.benches_w753 import (
+    bench_aizenman_irf_family,
+    bench_cardy_on_family,
+    bench_fernandez_frohlich_family,
+    bench_fradkin_sokal_family,
+    bench_nienhuis_on_family,
+    bench_pelissetto_vicari_family,
+)
+from quant_fund.research.benches_w754 import (
+    bench_brydges_spencer_family,
+    bench_caracciolo_pelissetto_family,
+    bench_glasner_aizenman_family,
+    bench_grimmett_rc_family,
+    bench_hara_hara_family,
+    bench_sokal_bcc_family,
+)
+from quant_fund.research.benches_w755 import (
+    bench_barlow_ust_family,
+    bench_kassel_wu_family,
+    bench_kenyon_wilson_family,
+    bench_lejan_loop_family,
+    bench_lupu_loop_family,
+    bench_lyons_peres_family,
+)
+from quant_fund.research.benches_w756 import (
+    bench_berestycki_gff_family,
+    bench_duplantier_sheffield_family,
+    bench_houchmandzadeh_gff_family,
+    bench_nick_gff_family,
+    bench_sheffield_miller_family,
+    bench_wiegmann_zabrodin_family,
+)
+from quant_fund.research.benches_w757 import (
+    bench_camia_newman_family,
+    bench_dubedat_cle_family,
+    bench_kemppainen_werner_family,
+    bench_miller_watson_cle_family,
+    bench_rivera_cle_family,
+    bench_sheffield_werner_cle_family,
+)
+from quant_fund.research.benches_w758 import (
+    bench_aru_gff_family,
+    bench_bolthausen_gff_family,
+    bench_chatterjee_gff_family,
+    bench_ding_zeitouni_family,
+    bench_najafi_gff_family,
+    bench_powell_gff_family,
+)
+from quant_fund.research.benches_w759 import (
+    bench_apu_cle_family,
+    bench_gwynne_cle_family,
+    bench_hospitsky_cle_family,
+    bench_nolin_cle_family,
+    bench_sun_cle_family,
+    bench_zhan_cle_family,
+)
+from quant_fund.research.benches_w760 import (
+    bench_cameron_martin_family,
+    bench_doob_bm_family,
+    bench_gikhman_skorokhod_family,
+    bench_ito_bm_family,
+    bench_levy_bm_family,
+    bench_wiener_bm_family,
+)
+from quant_fund.research.benches_w761 import (
+    bench_alternating_renewal_family,
+    bench_blackwell_renewal_family,
+    bench_delayed_renewal_family,
+    bench_excess_renewal_family,
+    bench_key_renewal_family,
+    bench_renewal_reward2_family,
+)
+from quant_fund.research.benches_w762 import (
+    bench_cadlag_space_family,
+    bench_doob_meyer_family,
+    bench_martin_boundary_family,
+    bench_prohorov_thm2_family,
+    bench_skohorod_metric_family,
+    bench_tightness_check_family,
+)
+from quant_fund.research.benches_w763 import (
+    bench_boneschi_boal_family,
+    bench_bradley_mixing_family,
+    bench_hopf_chain_family,
+    bench_ibagimov_mixing_family,
+    bench_polya_urn_family,
+    bench_rosenthal_mom_family,
+)
+from quant_fund.research.benches_w764 import (
+    bench_donsker_class_family,
+    bench_donsker_thm_family,
+    bench_dz_invariance_family,
+    bench_empirical_process_family,
+    bench_osj_metric_family,
+    bench_wiener_measure_family,
+)
+from quant_fund.research.benches_w765 import (
+    bench_chung_lil_family,
+    bench_glivenko_cantelli_family,
+    bench_khintchine_lln_family,
+    bench_kolmogorov_3series_family,
+    bench_levy_convergence_family,
+    bench_strassen_lil_family,
+)
+from quant_fund.research.benches_w766 import (
+    bench_bounded_lip_family,
+    bench_bracketing_ent_family,
+    bench_dudley_theorem_family,
+    bench_dvoretzky_thm_family,
+    bench_varadarajan_thm_family,
+    bench_vc_class_family,
+)
+from quant_fund.research.benches_w767 import (
+    bench_borell_tis_family,
+    bench_fernique_thm_family,
+    bench_gordon_thm_family,
+    bench_slepian_lemma_family,
+    bench_sudakov_min_family,
+    bench_talagrand_conc_family,
+)
+from quant_fund.research.benches_w768 import (
+    bench_dw_ldp_family,
+    bench_freidlin_wentzell_family,
+    bench_mogulskii_thm_family,
+    bench_sanov_thm_family,
+    bench_schider_thm_family,
+    bench_varadhan_ldp_family,
+)
+from quant_fund.research.benches_w769 import (
+    bench_barbour_stein_family,
+    bench_chatt_stein_family,
+    bench_chen_stein_family,
+    bench_ross_stein_family,
+    bench_stein_equation_family,
+    bench_stein_method_family,
+)
+from quant_fund.research.benches_w770 import (
+    bench_frechet_domain_family,
+    bench_gumbel_domain_family,
+    bench_hill_est_family,
+    bench_peak_over_family,
+    bench_pickands_est_family,
+    bench_weibull_domain_family,
+)
+from quant_fund.research.benches_w771 import (
+    bench_clayton_copula_family,
+    bench_copula_gauss_family,
+    bench_copula_t_family,
+    bench_frank_copula_family,
+    bench_gumbel_copula_family,
+    bench_joe_copula_family,
+)
+from quant_fund.research.benches_w772 import (
+    bench_branching_imm_family,
+    bench_crump_mode_family,
+    bench_galton_watson_family,
+    bench_kimmel_branch_family,
+    bench_multi_type_branch_family,
+    bench_sevastyanov_family,
+)
+from quant_fund.research.benches_w773 import (
+    bench_bulk_queue_family,
+    bench_gm_queue_family,
+    bench_mg1_queue_family,
+    bench_mm1_queue_family,
+    bench_priority_queue_family,
+    bench_retrial_queue_family,
+)
+from quant_fund.research.benches_w774 import (
+    bench_fluctuation_rw_family,
+    bench_ladder_epoch_family,
+    bench_maxwell_rw_family,
+    bench_sparc_rw_family,
+    bench_spitzer_rw_family,
+    bench_wiener_hopf_rw_family,
+)
+from quant_fund.research.benches_w775 import (
+    bench_burkholder_davis_family,
+    bench_doleans_meas_family,
+    bench_gundy_mart_family,
+    bench_local_mart_family,
+    bench_predictable_proc_family,
+    bench_square_bracket_family,
+)
+from quant_fund.research.benches_w776 import (
+    bench_campbell_thm_family,
+    bench_cox_process_family,
+    bench_hawkes_point_family,
+    bench_marked_point_family,
+    bench_palm_dist_family,
+    bench_self_excite_family,
+)
+from quant_fund.research.benches_w777 import (
+    bench_diffusion_approx_family,
+    bench_fluid_limit_family,
+    bench_halfin_whitt_family,
+    bench_heavy_traffic_family,
+    bench_kingman_bound_family,
+    bench_qed_regime_family,
+)
+from quant_fund.research.benches_w778 import (
+    bench_borel_tanner_family,
+    bench_engset_family,
+    bench_erlang_b_family,
+    bench_erlang_c_family,
+    bench_pollaczek_khinchine_family,
+    bench_takacs_vacation_family,
+)
+from quant_fund.research.benches_w779 import (
+    bench_logarithmic_red_family,
+    bench_matrix_geom_family,
+    bench_neuts_map_family,
+    bench_phase_type_family,
+    bench_quasi_birth_family,
+    bench_ramaswami_family,
+)
+from quant_fund.research.benches_w780 import (
+    bench_bcmp_net_family,
+    bench_convoy_net_family,
+    bench_insensitive_thm_family,
+    bench_kaufman_roberts_family,
+    bench_mean_value_family,
+    bench_orku_loss_family,
+)
+from quant_fund.research.benches_w781 import (
+    bench_karlin_mcg_family,
+    bench_keilson_stieltjes_family,
+    bench_korolyuk_family,
+    bench_palm_khinchin_family,
+    bench_regen_proc_family,
+    bench_wold_proc_family,
+)
+from quant_fund.research.benches_w782 import (
+    bench_ffusion_lims_family,
+    bench_filt_proc_family,
+    bench_jacod_shiryaev_family,
+    bench_kunita_watanabe_family,
+    bench_pinsky_proc_family,
+    bench_slivnyak_family,
+)
+from quant_fund.research.benches_w783 import (
+    bench_cramer_wold_family,
+    bench_hazard_order_family,
+    bench_likelihood_order_family,
+    bench_predictable_bracket_family,
+    bench_semi_mart_family,
+    bench_stricker_thm_family,
+)
+from quant_fund.research.benches_w784 import (
+    bench_girsanov_thm2_family,
+    bench_levy_khinchine_family,
+    bench_levy_measure_family,
+    bench_self_decomp_family,
+    bench_stable_levy_family,
+    bench_subordinator_family,
+)
+from quant_fund.research.benches_w785 import (
+    bench_dolean_mart_family,
+    bench_follmer_mart_family,
+    bench_local_mart2_family,
+    bench_protter_ito_family,
+    bench_strong_sol_family,
+    bench_usual_cond_family,
+)
+from quant_fund.research.benches_w786 import (
+    bench_area_mart_family,
+    bench_controlled_path_family,
+    bench_hairspring_map_family,
+    bench_lyons_lift_family,
+    bench_rough_path_family,
+    bench_signature_transform2_family,
+)
+from quant_fund.research.benches_w787 import (
+    bench_gubinelli_sewing_family,
+    bench_ito_signature_family,
+    bench_lyons_extension_family,
+    bench_step_signature_family,
+    bench_tame_map_family,
+    bench_young_integral_family,
+)
+from quant_fund.research.benches_w788 import (
+    bench_clark_ocone_family,
+    bench_divergence_op_family,
+    bench_nourdin_peccati_family,
+    bench_nualart_pardoux_family,
+    bench_skorohod_int_family,
+    bench_wiener_chaos_family,
+)
+from quant_fund.research.benches_w789 import (
+    bench_benamou_brenier_family,
+    bench_entropy_regular_family,
+    bench_fokker_planck2_family,
+    bench_gradient_flow_family,
+    bench_jko_step_family,
+    bench_wasserstein_grad_family,
+)
+from quant_fund.research.benches_w790 import (
+    bench_kac_theorem_family,
+    bench_mckean_vlasov_family,
+    bench_mean_field_game2_family,
+    bench_nonlinear_markov_family,
+    bench_propagation_chaos_family,
+    bench_self_stabilizing_family,
+)
+from quant_fund.research.benches_w791 import (
+    bench_doering_mueller_family,
+    bench_kpz_equation_family,
+    bench_paracontrolled_spde_family,
+    bench_quasilinear_spde_family,
+    bench_spde_heat_family,
+    bench_stochastic_burgers_family,
+)
+from quant_fund.research.benches_w792 import (
+    bench_backward_sde_family,
+    bench_bsde_solver_family,
+    bench_fbsde_markov_family,
+    bench_pardoux_peng_family,
+    bench_reflected_bsde_family,
+    bench_second_order_bsde_family,
+)
+from quant_fund.research.benches_w793 import (
+    bench_cubature_wiener_family,
+    bench_milstein_scheme_family,
+    bench_rough_vol2_family,
+    bench_stochastic_taylor_family,
+    bench_wagner_platen_family,
+    bench_wong_zakai_family,
+)
+from quant_fund.research.benches_w794 import (
+    bench_dynamic_programming_family,
+    bench_hamilton_jacobi_family,
+    bench_impulsive_control_family,
+    bench_quasi_variational_family,
+    bench_verification_thm_family,
+    bench_viscosity_solution_family,
+)
+from quant_fund.research.benches_w795 import (
+    bench_differential_game_family,
+    bench_dynkin_game_family,
+    bench_isaacs_equation_family,
+    bench_nonzero_sum_game_family,
+    bench_stochastic_game2_family,
+    bench_zero_sum_game_family,
+)
+from quant_fund.research.benches_w796 import (
+    bench_coupled_fbsde_family,
+    bench_decoupling_field2_family,
+    bench_four_step_scheme_family,
+    bench_quasi_bsde_family,
+    bench_random_bsde_family,
+    bench_time_bsde_family,
+)
+from quant_fund.research.benches_w797 import (
+    bench_doubly_bsde_family,
+    bench_obstacle_bsde_family,
+    bench_quadratic_bsde_family,
+    bench_reflected_bsde2_family,
+    bench_second_bsde_family,
+    bench_super_linear_family,
+)
+from quant_fund.research.benches_w798 import (
+    bench_anticipating_sde_family,
+    bench_delayed_sde_family,
+    bench_forward_sde_family,
+    bench_functional_sde_family,
+    bench_neutral_sde_family,
+    bench_random_sde_family,
+)
+from quant_fund.research.benches_w799 import (
+    bench_dupire_functional_family,
+    bench_functional_ito_family,
+    bench_kolmogorov_path_family,
+    bench_path_dependent_pde_family,
+    bench_path_sobolev_family,
+    bench_viscosity_path_family,
+)
+from quant_fund.research.benches_w800 import (
+    bench_bates_model_family,
+    bench_heston_model_family,
+    bench_rough_heston_family,
+    bench_sabr_model_family,
+    bench_scott_vol_family,
+    bench_three_two_vol_family,
+)
+from quant_fund.research.benches_w801 import (
+    bench_fractional_heston_family,
+    bench_multifactor_rough_family,
+    bench_rough_bergomi_family,
+    bench_rough_sabr_family,
+    bench_rough_variance_family,
+    bench_volterra_sde_family,
+)
+from quant_fund.research.benches_w802 import (
+    bench_latent_sde_family,
+    bench_logsig_rde_family,
+    bench_neural_cde_family,
+    bench_neural_rde_family,
+    bench_sde_gan_family,
+    bench_sde_matching_family,
+)
+from quant_fund.research.benches_w803 import (
+    bench_expected_sig_family,
+    bench_pde_signature_family,
+    bench_sig_inversion_family,
+    bench_signature_gan2_family,
+    bench_signature_kernel_family,
+    bench_truncated_sig_family,
+)
+from quant_fund.research.benches_w804 import (
+    bench_absolute_cont_family,
+    bench_density_bound_family,
+    bench_malliavin_cov_family,
+    bench_nualart_zakai_family,
+    bench_smoothness_h_family,
+    bench_watanabe_map_family,
+)
+from quant_fund.research.benches_w805 import (
+    bench_doss_sussmann_family,
+    bench_follmer_strat_family,
+    bench_ito_isometry_family,
+    bench_skorohod_lemma_family,
+    bench_stratonovich_conv_family,
+    bench_tanaka_meyer_family,
+)
+from quant_fund.research.benches_w806 import (
+    bench_compound_poisson_family,
+    bench_excursion_theory_family,
+    bench_jump_diffusion_family,
+    bench_kou_model_family,
+    bench_marked_hawkes_family,
+    bench_merton_jump_family,
+)
+from quant_fund.research.benches_w807 import (
+    bench_cayley_moser_family,
+    bench_chow_robbins_family,
+    bench_free_boundary_family,
+    bench_markov_stopping_family,
+    bench_secretary_dp_family,
+    bench_snell_envelope_family,
+)
+from quant_fund.research.benches_w808 import (
+    bench_bene_filter_family,
+    bench_hidden_markov_filter_family,
+    bench_kalman_bucy_family,
+    bench_kushner_strat_family,
+    bench_particle_filter2_family,
+    bench_zakai_eq_family,
+)
+from quant_fund.research.benches_w809 import (
+    bench_cutoff_phenomenon_family,
+    bench_doeblin_coupling_family,
+    bench_drift_lyapunov_family,
+    bench_ergodic_markov_family,
+    bench_harris_recurrent_family,
+    bench_mixing_time_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2350,6 +6478,7222 @@ from quant_fund.research.benches_w810 import (
     bench_leakage_redteam,
     bench_regime_eval,
     bench_ts_conformal,
+)
+from quant_fund.research.benches_w811 import (
+    bench_cambrian_pp_family,
+    bench_ergodic_pp_family,
+    bench_gneding_metric_family,
+    bench_j_function_family,
+    bench_papangelou_family,
+    bench_void_prob_family,
+)
+from quant_fund.research.benches_w812 import (
+    bench_epsilon_coupling_family,
+    bench_nummelin_family,
+    bench_petite_set_family,
+    bench_regenerative_family,
+    bench_small_set_family,
+    bench_split_chain_family,
+)
+from quant_fund.research.benches_w813 import (
+    bench_diffusion_semigroup_family,
+    bench_feller_boundary_family,
+    bench_kreyn_resolvent_family,
+    bench_scale_measure_family,
+    bench_speed_measure_family,
+    bench_yosida_op_family,
+)
+from quant_fund.research.benches_w814 import (
+    bench_karal_flow_family,
+    bench_kunita_flow_family,
+    bench_liouville_flow_family,
+    bench_meyers_process_family,
+    bench_stochastic_damping_family,
+    bench_stochastic_flow_family,
+)
+from quant_fund.research.benches_w815 import (
+    bench_excursion_proc_family,
+    bench_inverse_local_family,
+    bench_knight_theorem_family,
+    bench_mazza_yor_family,
+    bench_pitman_thm_family,
+    bench_ray_knight_family,
+)
+from quant_fund.research.benches_w816 import (
+    bench_cadlag_markov_family,
+    bench_characteristic_markov_family,
+    bench_generator_markov_family,
+    bench_hunt_process_family,
+    bench_resolvent_markov_family,
+    bench_transition_semigroup_family,
+)
+from quant_fund.research.benches_w817 import (
+    bench_ladder_height_family,
+    bench_levy_fluct_family,
+    bench_overshoot_levy_family,
+    bench_renewal_measure_family,
+    bench_spitzer_levy_family,
+    bench_wiener_hopf_f_family,
+)
+from quant_fund.research.benches_w818 import (
+    bench_bounded_var_family,
+    bench_covariation_family,
+    bench_ito_integral_family,
+    bench_mart_meas_family,
+    bench_stochastic_int2_family,
+    bench_vector_mart_family,
+)
+from quant_fund.research.benches_w819 import (
+    bench_accessible_time_family,
+    bench_debuts_theorem_family,
+    bench_first_hitting_family,
+    bench_last_exit_family,
+    bench_progressive_set_family,
+    bench_stopping_sigma_family,
+)
+from quant_fund.research.benches_w820 import (
+    bench_canonical_decomp_family,
+    bench_doom_decomp_family,
+    bench_pcdt_family,
+    bench_sem_loc_char_family,
+    bench_special_sem_family,
+    bench_triplet_char_family,
+)
+from quant_fund.research.benches_w821 import (
+    bench_compensator_rm_family,
+    bench_integer_measure_family,
+    bench_jump_measure_family,
+    bench_poisson_rm_family,
+    bench_random_measure_family,
+    bench_sato_measure_family,
+)
+from quant_fund.research.benches_w822 import (
+    bench_enlargement_f_family,
+    bench_initial_enlarg_family,
+    bench_natural_filtration_family,
+    bench_progressive_enlarg_family,
+    bench_right_continuous_f_family,
+    bench_usual_aug_family,
+)
+from quant_fund.research.benches_w823 import (
+    bench_cylindrical_law_family,
+    bench_finite_dim_family,
+    bench_law_convergence_family,
+    bench_polish_law_family,
+    bench_support_law_family,
+    bench_tight_law_family,
+)
+from quant_fund.research.benches_w824 import (
+    bench_convex_order_family,
+    bench_first_order_dom_family,
+    bench_hazard_rate_order_family,
+    bench_second_order_dom_family,
+    bench_supermodular_order_family,
+    bench_usual_stoch_order_family,
+)
+from quant_fund.research.benches_w825 import (
+    bench_castaing_rep_family,
+    bench_integrand_map_family,
+    bench_kura_ryll_family,
+    bench_measur_select_family,
+    bench_measurable_graph_family,
+    bench_stoch_open_family,
+)
+from quant_fund.research.benches_w826 import (
+    bench_bj_ineq_family,
+    bench_doob_ineq_family,
+    bench_etemadi_ineq_family,
+    bench_kolmogorov_ineq_family,
+    bench_levy_ineq_family,
+    bench_max_ineq_family,
+)
+from quant_fund.research.benches_w827 import (
+    bench_chung_series_family,
+    bench_ito_nisio_family,
+    bench_kolmogorov_two_family,
+    bench_ortega_series_family,
+    bench_salem_zygmund_family,
+    bench_three_series_family,
+)
+from quant_fund.research.benches_w828 import (
+    bench_cross_section_family,
+    bench_dellacherie_section_family,
+    bench_maharam_lift_family,
+    bench_projection_theorem_family,
+    bench_uniform_section_family,
+    bench_von_neumann_sel_family,
+)
+from quant_fund.research.benches_w829 import (
+    bench_bounded_mart_family,
+    bench_cadlag_mart_family,
+    bench_decomp_mart_family,
+    bench_fv_mart_family,
+    bench_local_time_process_family,
+    bench_locator_proc_family,
+)
+from quant_fund.research.benches_w830 import (
+    bench_azuma_ineq_family,
+    bench_bounded_diff_family,
+    bench_efron_stein_family,
+    bench_hoeffding_ineq_family,
+    bench_mcdiarmid_ineq_family,
+    bench_talagrand_ineq_family,
+)
+from quant_fund.research.benches_w831 import (
+    bench_covering_number_family,
+    bench_entropy_integral_family,
+    bench_metric_entropy_family,
+    bench_rademacher_cplx_family,
+    bench_symmetrization_family,
+    bench_uniform_clt_family,
+)
+from quant_fund.research.benches_w832 import (
+    bench_continuous_map_family,
+    bench_delta_method_family,
+    bench_empirical_bridge_family,
+    bench_kmt_approx_family,
+    bench_porte_manteau_family,
+    bench_skorohod_embed_family,
+)
+from quant_fund.research.benches_w833 import (
+    bench_brownian_approx_family,
+    bench_donsker_invariance_family,
+    bench_fclt_invariance_family,
+    bench_martingale_fclt_family,
+    bench_stable_limit_family,
+    bench_strassen_flln_family,
+)
+from quant_fund.research.benches_w834 import (
+    bench_dirichlet_form_family,
+    bench_hypercontractive_family,
+    bench_log_sobolev_sem_family,
+    bench_markov_semigroup_family,
+    bench_poincare_semigroup_family,
+    bench_spectral_gap_sem_family,
+)
+from quant_fund.research.benches_w835 import (
+    bench_boolean_model_family,
+    bench_germ_grain_family,
+    bench_intrinsic_volumes_family,
+    bench_miles_matheron_family,
+    bench_poisson_voronoi_family,
+    bench_steiner_formula_family,
+)
+from quant_fund.research.benches_w836 import (
+    bench_buffon_needle_family,
+    bench_crofton_formula_family,
+    bench_hadwiger_chars_family,
+    bench_kinematic_measure_family,
+    bench_kubota_mean_width_family,
+    bench_santalo_measure_family,
+)
+from quant_fund.research.benches_w837 import (
+    bench_alexandrov_fenchel_family,
+    bench_brunn_minkowski_family,
+    bench_helly_theorem_family,
+    bench_isoperimetric_ineq_family,
+    bench_minkowski_sum_family,
+    bench_mixed_volume_family,
+)
+from quant_fund.research.benches_w838 import (
+    bench_caratheodory_thm_family,
+    bench_farkas_lemma_family,
+    bench_lattice_point_family,
+    bench_radon_theorem_family,
+    bench_separation_thm_family,
+    bench_tverberg_thm_family,
+)
+from quant_fund.research.benches_w839 import (
+    bench_bernstein_poly_family,
+    bench_chebyshev_alternation_family,
+    bench_fourier_decay_family,
+    bench_jackson_direct_family,
+    bench_kolmogorov_nwidth_family,
+    bench_markov_brothers_family,
+)
+from quant_fund.research.benches_w840 import (
+    bench_loewner_interp_family,
+    bench_nevanlinna_pick_family,
+    bench_pade_approx_family,
+    bench_rational_chebyshev_family,
+    bench_schur_continued_family,
+    bench_stieltjes_fraction_family,
+)
+from quant_fund.research.benches_w841 import (
+    bench_chebyshev_t_family,
+    bench_gegenbauer_poly_family,
+    bench_hermite_poly_family,
+    bench_jacobi_poly_family,
+    bench_laguerre_poly_family,
+    bench_legendre_poly_family,
+)
+from quant_fund.research.benches_w842 import (
+    bench_chebyshev_collocation_family,
+    bench_chebyshev_grid_family,
+    bench_dealiasing_family,
+    bench_fourier_galerkin_family,
+    bench_legendre_tau_family,
+    bench_spectral_deriv_family,
+)
+from quant_fund.research.benches_w843 import (
+    bench_b_spline_family,
+    bench_blossoming_family,
+    bench_box_spline_family,
+    bench_cardinal_spline_family,
+    bench_de_boor_family,
+    bench_knot_insertion_family,
+)
+from quant_fund.research.benches_w844 import (
+    bench_asymptotic_series_family,
+    bench_borel_resum_family,
+    bench_poincare_expansion_family,
+    bench_stationary_phase_family,
+    bench_steepest_descent_family,
+    bench_wkb_approx_family,
+)
+from quant_fund.research.benches_w845 import (
+    bench_abel_transform_family,
+    bench_hankel_transform_family,
+    bench_hilbert_transform_family,
+    bench_laplace_transform_family,
+    bench_mellin_transform_family,
+    bench_z_transform_family,
+)
+from quant_fund.research.benches_w846 import (
+    bench_airy_fn_family,
+    bench_bessel_fn_family,
+    bench_beta_fn_family,
+    bench_error_fn_family,
+    bench_gamma_fn_family,
+    bench_hypergeometric_fn_family,
+)
+from quant_fund.research.benches_w847 import (
+    bench_boundary_layer_family,
+    bench_lindstedt_poincare_family,
+    bench_matched_asymptotic_family,
+    bench_multiple_scales_family,
+    bench_regular_perturbation_family,
+    bench_singular_perturbation_family,
+)
+from quant_fund.research.benches_w848 import (
+    bench_dof_management_family,
+    bench_edge_elements_family,
+    bench_fem_assembly_family,
+    bench_isoparametric_map_family,
+    bench_quadrature_rules_family,
+    bench_triangular_basis_family,
+)
+from quant_fund.research.benches_w849 import (
+    bench_compact_scheme_family,
+    bench_crank_nicholson2_family,
+    bench_fdm_grid_family,
+    bench_flux_splitting_family,
+    bench_muscl_reconstruct_family,
+    bench_upwind_scheme_family,
+)
+from quant_fund.research.benches_w850 import (
+    bench_ausm_flux_family,
+    bench_godunov_exact_family,
+    bench_hllc_solver_family,
+    bench_lax_friedrichs_family,
+    bench_osher_solver_family,
+    bench_roe_solver_family,
+)
+from quant_fund.research.benches_w851 import (
+    bench_dg_discretization_family,
+    bench_limiter_tvb_family,
+    bench_modal_basis_family,
+    bench_numerical_flux_dg_family,
+    bench_penalty_dg_family,
+    bench_rkdg_step_family,
+)
+from quant_fund.research.benches_w852 import (
+    bench_bem_kernel_family,
+    bench_fast_multipole_family,
+    bench_fredholm_solve_family,
+    bench_galerkin_bem_family,
+    bench_nystrom_method_family,
+    bench_singular_integrals_family,
+)
+from quant_fund.research.benches_w853 import (
+    bench_gll_nodes_family,
+    bench_hp_refinement_family,
+    bench_mortar_method_family,
+    bench_sem_grid_family,
+    bench_spectral_element_family,
+    bench_tensor_product_sem_family,
+)
+from quant_fund.research.benches_w854 import (
+    bench_gaussian_rbf_family,
+    bench_kansa_collocation_family,
+    bench_multiquadric_rbf_family,
+    bench_rbf_finite_diff_family,
+    bench_rbf_interp_family,
+    bench_wendland_rbf_family,
+)
+from quant_fund.research.benches_w855 import (
+    bench_adapt_wavelet_family,
+    bench_coiflet_basis_family,
+    bench_daubechies_basis_family,
+    bench_spline_wavelet_family,
+    bench_wavelet_collocation_family,
+    bench_wavelet_galerkin_family,
+)
+from quant_fund.research.benches_w856 import (
+    bench_halton_seq_family,
+    bench_latin_hypercube_family,
+    bench_monte_carlo_quad_family,
+    bench_quasi_mc_family,
+    bench_sobol_seq_family,
+    bench_stratified_mc_family,
+)
+from quant_fund.research.benches_w857 import (
+    bench_clenshaw_curtis_family,
+    bench_fejer_quad_family,
+    bench_gauss_chebyshev_family,
+    bench_gauss_kronrod_family,
+    bench_gauss_legendre_family,
+    bench_newton_cotes_family,
+)
+from quant_fund.research.benches_w858 import (
+    bench_adaptive_simpsons_family,
+    bench_double_exp_quad_family,
+    bench_filon_quad_family,
+    bench_levin_quad_family,
+    bench_osc_singular_family,
+    bench_tanh_sinh_family,
+)
+from quant_fund.research.benches_w859 import (
+    bench_diffuse_element_family,
+    bench_hp_clouds_family,
+    bench_meshless_local_family,
+    bench_mls_shape_family,
+    bench_moving_least_sq_family,
+    bench_point_cloud_interp_family,
+)
+from quant_fund.research.benches_w860 import (
+    bench_cut_cell_family,
+    bench_fictitious_domain_family,
+    bench_immersed_boundary_family,
+    bench_iso_geom_family,
+    bench_nurbs_elem_family,
+    bench_xfem_family,
+)
+from quant_fund.research.benches_w861 import (
+    bench_ars_imex_family,
+    bench_dirk_scheme_family,
+    bench_exponential_euler_family,
+    bench_imex_rk_family,
+    bench_rosenbrock_w_family,
+    bench_ssp_rk_family,
+)
+from quant_fund.research.benches_w862 import (
+    bench_anisotropic_quad_family,
+    bench_combination_technique_family,
+    bench_dimension_adaptive_family,
+    bench_gerstner_griebel_family,
+    bench_smolyak_grid_family,
+    bench_sparse_tensor_family,
+)
+from quant_fund.research.benches_w863 import (
+    bench_bddc_lite_family,
+    bench_coarse_correction_family,
+    bench_feti_lite_family,
+    bench_mortar_dd_family,
+    bench_schwarz_add_family,
+    bench_schwarz_mult_family,
+)
+from quant_fund.research.benches_w864 import (
+    bench_intrusive_pce_family,
+    bench_nonintrusive_pce_family,
+    bench_poly_chaos_uq_family,
+    bench_stochastic_colloc_family,
+    bench_stochastic_fem_family,
+    bench_stochastic_galerkin_family,
+)
+from quant_fund.research.benches_w865 import (
+    bench_dual_weighted_res_family,
+    bench_equilibrated_flux_family,
+    bench_goal_oriented_family,
+    bench_recovery_error_family,
+    bench_residual_estimator_family,
+    bench_zienkiewicz_zhu_family,
+)
+from quant_fund.research.benches_w866 import (
+    bench_deim_point_family,
+    bench_eim_interp_family,
+    bench_greedy_rb_family,
+    bench_pod_galerkin_family,
+    bench_proper_gen_family,
+    bench_reduced_basis_family,
+)
+from quant_fund.research.benches_w867 import (
+    bench_bayes_inverse_family,
+    bench_iter_regularize_family,
+    bench_l_curve_opt_family,
+    bench_morozov_dp_family,
+    bench_tikhonov_reg_family,
+    bench_tv_denoise_family,
+)
+from quant_fund.research.benches_w868 import (
+    bench_arc_continuation_family,
+    bench_bifurcation_track_family,
+    bench_davidenko_ode_family,
+    bench_deflation_method_family,
+    bench_homotopy_solver_family,
+    bench_pseudo_arclength_family,
+)
+from quant_fund.research.benches_w869 import (
+    bench_antithetic_var_family,
+    bench_common_random_family,
+    bench_conditional_mc_family,
+    bench_control_variate_family,
+    bench_importance_sampling_family,
+    bench_stratified_var_family,
+)
+from quant_fund.research.benches_w870 import (
+    bench_augmented_lagrangian_family,
+    bench_conjugate_opt_family,
+    bench_grad_descent_nest_family,
+    bench_interior_point2_family,
+    bench_newton_method_family,
+    bench_quasi_newton_lbfgs_family,
+)
+from quant_fund.research.benches_w871 import (
+    bench_arnoldi_eig_family,
+    bench_bicg_solver_family,
+    bench_cg_solver_family,
+    bench_gmres_solver_family,
+    bench_lanczos_eig_family,
+    bench_lsqr_solver_family,
+)
+from quant_fund.research.benches_w872 import (
+    bench_amg_precond_family,
+    bench_ic_precond_family,
+    bench_ilut_precond_family,
+    bench_jacobi_precond_family,
+    bench_polynomial_precond_family,
+    bench_ssor_precond_family,
+)
+from quant_fund.research.benches_w873 import (
+    bench_asm_precond_family,
+    bench_baldding_dd_family,
+    bench_dd_partition_family,
+    bench_feti_dp_family,
+    bench_neumann_dd_family,
+    bench_subspace_dd_family,
+)
+from quant_fund.research.benches_w874 import (
+    bench_first_order_rel_family,
+    bench_line_sampling_family,
+    bench_metamodel_rel_family,
+    bench_sorm_method_family,
+    bench_subset_sim_family,
+    bench_uq_reliability_family,
+)
+from quant_fund.research.benches_w875 import (
+    bench_adaptive_finite_family,
+    bench_adaptive_marking_family,
+    bench_convergence_theory_family,
+    bench_dorfler_marking_family,
+    bench_goal_adaptive_family,
+    bench_hierarchical_est_family,
+)
+from quant_fund.research.benches_w876 import (
+    bench_anderson_mixing_family,
+    bench_conjugate_grad_ls_family,
+    bench_gauss_newton_family,
+    bench_landweber_iter_family,
+    bench_levenberg_marq_family,
+    bench_moore_penrose_family,
+)
+from quant_fund.research.benches_w877 import (
+    bench_discrete_ordinates_family,
+    bench_moc_transport_family,
+    bench_pn_closure_family,
+    bench_spherical_harmonics_family,
+    bench_spn_equations_family,
+    bench_transport_sn_family,
+)
+from quant_fund.research.benches_w878 import (
+    bench_block_low_rank_family,
+    bench_h_matrix_family,
+    bench_hss_matrix_family,
+    bench_kronecker_approx_family,
+    bench_low_rank_svd_family,
+    bench_randomized_nystrom_family,
+)
+from quant_fund.research.benches_w879 import (
+    bench_etd_rk4_classic_family,
+    bench_expm_int_family,
+    bench_expokit_family,
+    bench_krylov_subspace_time_family,
+    bench_leja_point_family,
+    bench_phi_function_family,
+)
+from quant_fund.research.benches_w880 import (
+    bench_adaptive_quad2_family,
+    bench_cubature_rule_family,
+    bench_empirical_interp_family,
+    bench_gq_adaptive_family,
+    bench_pod_deim_family,
+    bench_tensor_interp_family,
+)
+from quant_fund.research.benches_w881 import (
+    bench_bicgstab2_family,
+    bench_block_cg_family,
+    bench_cgs_solver_family,
+    bench_minres_solver_family,
+    bench_qmr_solver_family,
+    bench_tfqmr_family,
+)
+from quant_fund.research.benches_w882 import (
+    bench_balanced_dd_family,
+    bench_diagonal_scale_family,
+    bench_nonoverlap_dd_family,
+    bench_overlap_dd_family,
+    bench_restrictive_dd_family,
+    bench_spai_precond_family,
+)
+from quant_fund.research.benches_w883 import (
+    bench_cv_optimal_family,
+    bench_is_drift_family,
+    bench_min_var_closure_family,
+    bench_nest_accel_family,
+    bench_subgradient_descent_family,
+    bench_tangent_predictor_family,
+)
+from quant_fund.research.benches_w884 import (
+    bench_boundary_element_family,
+    bench_marquina_flux_family,
+    bench_multidomain_sem_family,
+    bench_nodal_dg_family,
+    bench_second_gen_wavelet_family,
+    bench_wavelet_matrix_family,
+)
+from quant_fund.research.benches_w885 import (
+    bench_averaging_method_family,
+    bench_entropy_stable_dg_family,
+    bench_hyperasymptotic_family,
+    bench_laplace_method_family,
+    bench_ldg_flux_family,
+    bench_wkb_turning_family,
+)
+from quant_fund.research.benches_w886 import (
+    bench_faure_seq_family,
+    bench_gauss_hermite_family,
+    bench_gauss_laguerre_family,
+    bench_hiot_decomp_family,
+    bench_importance_mc_family,
+    bench_tensor_train_family,
+)
+from quant_fund.research.benches_w887 import (
+    bench_adjoint_sparse_family,
+    bench_diffusion_approx_sp_family,
+    bench_element_free_family,
+    bench_epi_rk_family,
+    bench_gauss_rk_family,
+    bench_importance_rel_family,
+)
+from quant_fund.research.benches_w888 import (
+    bench_galerkin_projection_family,
+    bench_periodic_spline_family,
+    bench_polyharmonic_rbf_family,
+    bench_thin_plate_spline_family,
+    bench_trefethen_diff_family,
+    bench_zernike_poly_family,
+)
+from quant_fund.research.benches_w889 import (
+    bench_chebyshev_u_family,
+    bench_epsilon_algo_family,
+    bench_hexahedral_basis_family,
+    bench_quadrilateral_basis_family,
+    bench_spline_theory_family,
+    bench_walsh_table_family,
+)
+from quant_fund.research.benches_w890 import (
+    bench_clenshaw_quad_family,
+    bench_elliptic_fn_family,
+    bench_fejer_nested_family,
+    bench_hartley_transform_family,
+    bench_radon_transform_family,
+    bench_zeta_fn_family,
+)
+from quant_fund.research.benches_w891 import (
+    bench_bfgs_update_family,
+    bench_iga_colloc_family,
+    bench_lebesgue_const_family,
+    bench_newton_armijo_family,
+    bench_trimmed_cad_family,
+    bench_trust_region_dogleg_family,
+)
+from quant_fund.research.benches_w892 import (
+    bench_form_analysis_family,
+    bench_greedy_marking_family,
+    bench_hp_adaptive_family,
+    bench_residual_marking_family,
+    bench_space_time_adapt_family,
+    bench_wavelet_adapt_family,
+)
+from quant_fund.research.benches_w893 import (
+    bench_coarsening_mark_family,
+    bench_covello_est_family,
+    bench_dual_goal_est_family,
+    bench_galerkin_least_sq_family,
+    bench_pseudospectral_coll_family,
+    bench_tau_method_family,
+)
+from quant_fund.research.benches_w894 import (
+    bench_barycentric_wts_family,
+    bench_divid_diff_table_family,
+    bench_floater_hormann_family,
+    bench_hermite_interp_family,
+    bench_lagrange_interp_family,
+    bench_neville_interp_family,
+)
+from quant_fund.research.benches_w895 import (
+    bench_aitken_steffensen_family,
+    bench_bulirsch_stoer_family,
+    bench_muller_root_family,
+    bench_regula_falsi_family,
+    bench_richardson_limit_family,
+    bench_secant_root_family,
+)
+from quant_fund.research.benches_w896 import (
+    bench_backward_euler_family,
+    bench_bogacki_shampine_family,
+    bench_cash_karp_family,
+    bench_dormand_prince_family,
+    bench_fehlberg_rk_family,
+    bench_predictor_corrector_family,
+)
+from quant_fund.research.benches_w897 import (
+    bench_dahlquist_test_family,
+    bench_explicit_midpoint_family,
+    bench_heun_method_family,
+    bench_linear_multistep_family,
+    bench_order_barrier_family,
+    bench_trapezoid_rule_family,
+)
+from quant_fund.research.benches_w898 import (
+    bench_collocation_bvp_family,
+    bench_finite_diff_bvp_family,
+    bench_multiple_shooting_family,
+    bench_relaxation_bvp_family,
+    bench_riccati_bvp_family,
+    bench_shooting_bvp_family,
+)
+from quant_fund.research.benches_w899 import (
+    bench_bernstein_form_family,
+    bench_cardinal_interp_family,
+    bench_chebyshev_interp_family,
+    bench_osculating_interp_family,
+    bench_rational_interp_family,
+    bench_shanks_trans_family,
+)
+from quant_fund.research.benches_w900 import (
+    bench_ball_tree_family,
+    bench_cover_tree_family,
+    bench_kd_tree_family,
+    bench_quad_tree_family,
+    bench_r_tree_family,
+    bench_vp_tree_family,
+)
+from quant_fund.research.benches_w901 import (
+    bench_binary_heap_family,
+    bench_binomial_heap_family,
+    bench_fibonacci_heap_family,
+    bench_leftist_heap_family,
+    bench_pairing_heap_family,
+    bench_skew_heap_family,
+)
+from quant_fund.research.benches_w902 import (
+    bench_crit_bit_tree_family,
+    bench_patricia_trie_family,
+    bench_radix_trie_family,
+    bench_suffix_trie_family,
+    bench_ternary_trie_family,
+    bench_trie_family,
+)
+from quant_fund.research.benches_w903 import (
+    bench_cuckoo_hash_family,
+    bench_hopscotch_hash_family,
+    bench_open_addr_hash_family,
+    bench_perfect_hash_family,
+    bench_robin_hood_hash_family,
+    bench_swiss_table_family,
+)
+from quant_fund.research.benches_w904 import (
+    bench_aa_tree_family,
+    bench_avl_tree_family,
+    bench_red_black_tree_family,
+    bench_scapegoat_tree_family,
+    bench_splay_tree_family,
+    bench_treap_family,
+)
+from quant_fund.research.benches_w905 import (
+    bench_heapsort_family,
+    bench_introsort_family,
+    bench_mergesort_family,
+    bench_quicksort_family,
+    bench_radix_sort_family,
+    bench_timsort_family,
+)
+from quant_fund.research.benches_w906 import (
+    bench_finger_tree_family,
+    bench_persistent_array_family,
+    bench_pure_queue_family,
+    bench_rope_string_family,
+    bench_skip_list_family,
+    bench_vlist_family,
+)
+from quant_fund.research.benches_w907 import (
+    bench_dsu_rollback_family,
+    bench_interval_heap_family,
+    bench_potential_dsu_family,
+    bench_union_find_family,
+    bench_van_emde_boas_family,
+    bench_weak_heap_family,
+)
+from quant_fund.research.benches_w908 import (
+    bench_fenwick_tree_family,
+    bench_merge_sort_tree_family,
+    bench_segment_tree_family,
+    bench_sparse_table_family,
+    bench_sqrt_decomp_family,
+    bench_wavelet_tree_family,
+)
+from quant_fund.research.benches_w909 import (
+    bench_deque_array_family,
+    bench_doubly_linked_list_family,
+    bench_gap_buffer_family,
+    bench_piece_table_family,
+    bench_unrolled_list_family,
+    bench_xor_linked_list_family,
+)
+from quant_fund.research.benches_w910 import (
+    bench_b_plus_tree_family,
+    bench_b_star_tree_family,
+    bench_b_tree_family,
+    bench_tango_tree_family,
+    bench_wavl_tree_family,
+    bench_weight_balanced_tree_family,
+)
+from quant_fund.research.benches_w911 import (
+    bench_bezier_eval_family,
+    bench_chan_hull_family,
+    bench_cohen_sutherland_family,
+    bench_gift_wrap_family,
+    bench_liang_barsky_family,
+    bench_monotone_chain_family,
+)
+from quant_fund.research.benches_w912 import (
+    bench_hilbert_curve_family,
+    bench_morton_order_family,
+    bench_octree_index_family,
+    bench_range_tree_family,
+    bench_rstar_tree_family,
+    bench_z_curve_family,
+)
+from quant_fund.research.benches_w913 import (
+    bench_akima_interp_family,
+    bench_makima_interp_family,
+    bench_monotone_interp_family,
+    bench_pchip_interp_family,
+    bench_scattered_interp_family,
+    bench_spline_interp_family,
+)
+from quant_fund.research.benches_w914 import (
+    bench_green_function_bvp_family,
+    bench_invariant_imbedding_family,
+    bench_ralston_rk_family,
+    bench_ralston_second_family,
+    bench_runge_kutta4_family,
+    bench_verner_rk_family,
+)
+from quant_fund.research.benches_w915 import (
+    bench_bvp_eigen_family,
+    bench_continuation_bvp_family,
+    bench_fusion_tree_family,
+    bench_loser_tree_family,
+    bench_robbins_bvp_family,
+    bench_superposition_bvp_family,
+)
+from quant_fund.research.benches_w916 import (
+    bench_da_trie_family,
+    bench_fst_index_family,
+    bench_hollow_dsu_family,
+    bench_hollow_heap_family,
+    bench_rank_pairing_family,
+    bench_soft_heap_family,
+)
+from quant_fund.research.benches_w917 import (
+    bench_bucket_sort_family,
+    bench_chained_hash_family,
+    bench_linear_probe_family,
+    bench_rand_access_list_family,
+    bench_shell_sort_family,
+    bench_skew_list_family,
+)
+from quant_fund.research.benches_w918 import (
+    bench_fractional_cascade_family,
+    bench_free_list_family,
+    bench_halfplane_isect_family,
+    bench_object_pool_family,
+    bench_range_min_query_family,
+    bench_welzl_circle_family,
+)
+from quant_fund.research.benches_w919 import (
+    bench_convex_layers_family,
+    bench_delaunay_flip_family,
+    bench_polygon_offset_family,
+    bench_rotating_sweep_family,
+    bench_visibility_graph_family,
+    bench_voronoi_lite_family,
+)
+from quant_fund.research.benches_w920 import (
+    bench_alpha_shape_family,
+    bench_diameter_pair_family,
+    bench_min_area_rect_family,
+    bench_minkowski_sum_poly_family,
+    bench_monotone_partition_family,
+    bench_polygon_triangulate_family,
+)
+from quant_fund.research.benches_w921 import (
+    bench_atomic_bcast_family,
+    bench_avalanche_consensus_family,
+    bench_honey_badger_family,
+    bench_isis_bcast_family,
+    bench_snowball_consensus_family,
+    bench_virtual_synchrony_family,
+)
+from quant_fund.research.benches_w922 import (
+    bench_abcast_lite_family,
+    bench_cap_theorem_family,
+    bench_cbc_bcast_family,
+    bench_lake_wisc_family,
+    bench_slush_consensus_family,
+    bench_snowflake_consensus_family,
+)
+from quant_fund.research.benches_w923 import (
+    bench_chinese_restaurant_family,
+    bench_dirichlet_process_family,
+    bench_hierarchical_dp_family,
+    bench_indian_buffet_family,
+    bench_pitman_yor_family,
+    bench_stick_breaking_family,
+)
+from quant_fund.research.benches_w924 import (
+    bench_beta_bernoulli_family,
+    bench_crp_table_family,
+    bench_dp_mm_family,
+    bench_gem_distribution_family,
+    bench_gibbs_type_family,
+    bench_neutral_process_family,
+)
+from quant_fund.research.benches_w925 import (
+    bench_bondesson_shot_family,
+    bench_exchangeable_pf_family,
+    bench_kingman_paintbox_family,
+    bench_nggp_process_family,
+    bench_normalized_rm_family,
+    bench_sigma_stable_family,
+)
+from quant_fund.research.benches_w926 import (
+    bench_alpha_divergence_family,
+    bench_amari_connection_family,
+    bench_csiszar_div_family,
+    bench_dual_connection_family,
+    bench_f_divergence_family,
+    bench_tsallis_entropy_family,
+)
+from quant_fund.research.benches_w927 import (
+    bench_ebanch_diverge_family,
+    bench_expectation_param_family,
+    bench_fisher_metric2_family,
+    bench_potential_fn_family,
+    bench_renyi_div_family,
+    bench_shannon_gibbs_family,
+)
+from quant_fund.research.benches_w928 import (
+    bench_beta_skeleton_family,
+    bench_convex_hull_3d_family,
+    bench_medial_axis_family,
+    bench_polygon_boolean_family,
+    bench_polygon_centroid_family,
+    bench_shape_context_family,
+)
+from quant_fund.research.benches_w929 import (
+    bench_bhat_distance_family,
+    bench_chi_square_div_family,
+    bench_d_total_var_family,
+    bench_hellinger_dist_family,
+    bench_jeffreys_div_family,
+    bench_mahalanobis_div_family,
+)
+from quant_fund.research.benches_w930 import (
+    bench_grasp_meta_family,
+    bench_iterated_local_family,
+    bench_lin_kernighan_family,
+    bench_tabu_search_family,
+    bench_three_opt_move_family,
+    bench_two_opt_move_family,
+)
+from quant_fund.research.benches_w931 import (
+    bench_ant_colony_family,
+    bench_diff_evolution_family,
+    bench_firefly_algo_family,
+    bench_genetic_tsp_family,
+    bench_harmony_search_family,
+    bench_pso_swarm_family,
+)
+from quant_fund.research.benches_w932 import (
+    bench_guided_local_family,
+    bench_large_neighborhood_family,
+    bench_path_relinking_family,
+    bench_ruin_recreate_family,
+    bench_simulated_annealing_family,
+    bench_vns_search_family,
+)
+from quant_fund.research.benches_w933 import (
+    bench_bregman_proj_family,
+    bench_conjugate_fn_family,
+    bench_fenchel_dual_family,
+    bench_moreau_env_family,
+    bench_proximal_map_family,
+    bench_subgradient_proj_family,
+)
+from quant_fund.research.benches_w934 import (
+    bench_inf_convolution_family,
+    bench_legendre_transform_family,
+    bench_normal_cone_family,
+    bench_perspective_fn_family,
+    bench_polar_cone_family,
+    bench_support_fn_family,
+)
+from quant_fund.research.benches_w935 import (
+    bench_analytic_center_family,
+    bench_cvx_reform_family,
+    bench_dik_ellipsoid_family,
+    bench_kkt_solve_family,
+    bench_logbarrier_fn_family,
+    bench_self_concordant_family,
+)
+from quant_fund.research.benches_w936 import (
+    bench_bundle_level_family,
+    bench_clarke_subdiff_family,
+    bench_epigraph_proj_family,
+    bench_gauge_duality_family,
+    bench_gauge_fn_family,
+    bench_subdiff_compute_family,
+)
+from quant_fund.research.benches_w937 import (
+    bench_chambolle_pock_family,
+    bench_davis_yin_family,
+    bench_douglas_rachford_family,
+    bench_forward_backward_family,
+    bench_peaceman_rachford_family,
+    bench_tseng_split_family,
+)
+from quant_fund.research.benches_w938 import (
+    bench_averaged_operator_family,
+    bench_cocoercive_family,
+    bench_fejer_monotone_family,
+    bench_firmly_nonexpansive_family,
+    bench_monotone_inclusion_family,
+    bench_quasinonexpansive_family,
+)
+from quant_fund.research.benches_w939 import (
+    bench_cq_algorithm_family,
+    bench_dykstra_proj_family,
+    bench_halpern_iter_family,
+    bench_haugazeau_proj_family,
+    bench_parallel_prox_family,
+    bench_split_feasibility_family,
+)
+from quant_fund.research.benches_w940 import (
+    bench_forward_reflected_family,
+    bench_korpelevich_eg_family,
+    bench_popov_alg_family,
+    bench_reflected_golden_family,
+    bench_subgradient_extragradient_family,
+    bench_tseng_fb_family,
+)
+from quant_fund.research.benches_w941 import (
+    bench_augmented_lagr_family,
+    bench_ekeland_var_family,
+    bench_limiting_subdiff_family,
+    bench_monteiro_semismooth_family,
+    bench_proximal_subdiff_family,
+    bench_semismooth_newton_family,
+)
+from quant_fund.research.benches_w942 import (
+    bench_backward_forward_family,
+    bench_ishikawa_iter_family,
+    bench_malitsky_golden_family,
+    bench_mann_iter_family,
+    bench_primal_dual_hybrid_family,
+    bench_vu_condat_family,
+)
+from quant_fund.research.benches_w943 import (
+    bench_gershgorin_disc_family,
+    bench_kadison_ineq_family,
+    bench_loewner_matrix_family,
+    bench_operator_convex_family,
+    bench_ostrowski_bound_family,
+    bench_wielandt_ineq_family,
+)
+from quant_fund.research.benches_w944 import (
+    bench_cauchy_binet_family,
+    bench_fan_inequality_family,
+    bench_horn_inequality_family,
+    bench_majorization_vec_family,
+    bench_schur_complement_family,
+    bench_weyl_ineq_family,
+)
+from quant_fund.research.benches_w945 import (
+    bench_hankel_op_family,
+    bench_kyfan_norm_family,
+    bench_matrix_det_family,
+    bench_numerical_radius_family,
+    bench_pfaffian_poly_family,
+    bench_schatten_norm_family,
+)
+from quant_fund.research.benches_w946 import (
+    bench_cholesky_piv_family,
+    bench_douglas_factor_family,
+    bench_matrix_square_root_family,
+    bench_perron_frobenius_family,
+    bench_polar_decomp_family,
+    bench_sylvester_matrix_family,
+)
+from quant_fund.research.benches_w947 import (
+    bench_bezout_matrix_family,
+    bench_cauchy_interlace_family,
+    bench_haynsworth_inertia_family,
+    bench_min_max_eig_family,
+    bench_sturm_sequence_family,
+    bench_sylvester_law_family,
+)
+from quant_fund.research.benches_w948 import (
+    bench_circulant_matrix_family,
+    bench_companion_matrix_family,
+    bench_hankel_matrix_family,
+    bench_hessenberg_form_family,
+    bench_krylov_matrix_family,
+    bench_vandermonde_matrix_family,
+)
+from quant_fund.research.benches_w949 import (
+    bench_deflating_subspace_family,
+    bench_invariant_subspace_family,
+    bench_jordan_form_family,
+    bench_kronecker_canonical_family,
+    bench_matrix_pencil_family,
+    bench_rational_canonical_family,
+)
+from quant_fund.research.benches_w950 import (
+    bench_hadamard_product_family,
+    bench_khatri_rao_family,
+    bench_kron_product_family,
+    bench_outer_product_family,
+    bench_tensor_contraction_family,
+    bench_tensor_unfold_family,
+)
+from quant_fund.research.benches_w951 import (
+    bench_determinant_cofactor_family,
+    bench_frechet_derivative_family,
+    bench_kronecker_sum_family,
+    bench_matrix_exponential_family,
+    bench_permanent_matrix_family,
+    bench_vec_operator_family,
+)
+from quant_fund.research.benches_w952 import (
+    bench_eigval_bounds_family,
+    bench_power_deflation_family,
+    bench_qr_iteration_family,
+    bench_schur_decomp_family,
+    bench_spectral_gap_family,
+    bench_spectral_radius_family,
+)
+from quant_fund.research.benches_w953 import (
+    bench_bounded_operator_family,
+    bench_isometry_operator_family,
+    bench_operator_adjoint_family,
+    bench_operator_norm_family,
+    bench_positive_operator_family,
+    bench_projection_operator_family,
+)
+from quant_fund.research.benches_w954 import (
+    bench_condition_number_family,
+    bench_low_rank_approx_family,
+    bench_matrix_truncate_family,
+    bench_nuclear_norm_family,
+    bench_rank_estimate_family,
+    bench_spectral_threshold_family,
+)
+from quant_fund.research.benches_w955 import (
+    bench_back_substitution_family,
+    bench_forward_substitution_family,
+    bench_givens_rotation_family,
+    bench_gram_determinant_family,
+    bench_gram_matrix_family,
+    bench_householder_reflect_family,
+)
+from quant_fund.research.benches_w956 import (
+    bench_cp_rank_family,
+    bench_mode_n_product_family,
+    bench_tensor_norm_family,
+    bench_tensor_symmetry_family,
+    bench_tensor_trace_family,
+    bench_tucker_rank_family,
+)
+from quant_fund.research.benches_w957 import (
+    bench_fredholm_op_family,
+    bench_multiplication_op_family,
+    bench_normal_operator_family,
+    bench_selfadjoint_op_family,
+    bench_shift_operator_family,
+    bench_unitary_operator_family,
+)
+from quant_fund.research.benches_w958 import (
+    bench_araki_lieb_thirring_family,
+    bench_hadamard_fischer_family,
+    bench_ky_fan_family,
+    bench_lidskii_thm_family,
+    bench_pinching_ineq_family,
+    bench_von_neumann_trace_family,
+)
+from quant_fund.research.benches_w959 import (
+    bench_accretive_op_family,
+    bench_contraction_op_family,
+    bench_differential_op_family,
+    bench_integral_op_family,
+    bench_sectorial_op_family,
+    bench_toeplitz_op_family,
+)
+from quant_fund.research.benches_w960 import (
+    bench_banach_algebra_family,
+    bench_c_star_algebra_family,
+    bench_gelfand_transform_family,
+    bench_holomorphic_calculus_family,
+    bench_positive_functional_family,
+    bench_spectrum_algebra_family,
+)
+from quant_fund.research.benches_w961 import (
+    bench_analytic_semigroup_family,
+    bench_c0_semigroup_family,
+    bench_cosine_family_family,
+    bench_hille_yosida_family,
+    bench_lumer_phillips_family,
+    bench_trotter_kato_family,
+)
+from quant_fund.research.benches_w962 import (
+    bench_double_commutant_family,
+    bench_jones_index_family,
+    bench_normal_state_family,
+    bench_predual_space_family,
+    bench_tomita_takesaki_family,
+    bench_von_neumann_alg_family,
+)
+from quant_fund.research.benches_w963 import (
+    bench_atkinson_thm_family,
+    bench_browder_operator_family,
+    bench_essential_spectrum_family,
+    bench_fredholm_index_family,
+    bench_riesz_schauder_family,
+    bench_weyl_theorem_family,
+)
+from quant_fund.research.benches_w964 import (
+    bench_adjoint_unbounded_family,
+    bench_closed_operator_family,
+    bench_domain_dense_family,
+    bench_resolvent_op_family,
+    bench_spectral_measure_family,
+    bench_unbounded_operator_family,
+)
+from quant_fund.research.benches_w965 import (
+    bench_compact_normal_family,
+    bench_hilbert_schmidt_op_family,
+    bench_polar_operator_family,
+    bench_schmidt_decomp_family,
+    bench_singular_value_op_family,
+    bench_trace_class_op_family,
+)
+from quant_fund.research.benches_w966 import (
+    bench_cb_map_family,
+    bench_complete_contraction_family,
+    bench_injective_space_family,
+    bench_noncommutative_lp_family,
+    bench_oh_emb_family,
+    bench_operator_space_family,
+)
+from quant_fund.research.benches_w967 import (
+    bench_crossed_product_family,
+    bench_cstar_dynamics_family,
+    bench_kirchberg_absorb_family,
+    bench_rokhlin_action_family,
+    bench_taf_dim_family,
+    bench_z_stability_family,
+)
+from quant_fund.research.benches_w968 import (
+    bench_baaj_julg_family,
+    bench_cuntz_picture_family,
+    bench_ext_functor_family,
+    bench_kasparov_prod_family,
+    bench_kk_duality_family,
+    bench_kk_theory_family,
+)
+from quant_fund.research.benches_w969 import (
+    bench_bott_periodicity_k_family,
+    bench_elliott_invariant_family,
+    bench_k0_algebra_family,
+    bench_k1_algebra_family,
+    bench_pimsner_voicul_family,
+    bench_six_term_exact_family,
+)
+from quant_fund.research.benches_w970 import (
+    bench_fusion_algebra_family,
+    bench_paragroup_family,
+    bench_planar_algebra_family,
+    bench_principal_graph_family,
+    bench_standard_invariant_family,
+    bench_subfactor_family,
+)
+from quant_fund.research.benches_w971 import (
+    bench_connes_metric_family,
+    bench_differential_form_nc_family,
+    bench_geodesic_nc_family,
+    bench_hochschild_cycle_family,
+    bench_index_pairing_family,
+    bench_spectral_triple_family,
+)
+from quant_fund.research.benches_w972 import (
+    bench_free_berg_family,
+    bench_free_cumulant_family,
+    bench_free_entropy_family,
+    bench_free_fisher_info_family,
+    bench_freeness_check_family,
+    bench_matrix_model_free_family,
+)
+from quant_fund.research.benches_w973 import (
+    bench_banach_mazur_family,
+    bench_djt_space_family,
+    bench_gl_property_family,
+    bench_kalton_loc_family,
+    bench_schauder_basis_family,
+    bench_type_cotype_family,
+)
+from quant_fund.research.benches_w974 import (
+    bench_complex_interp_family,
+    bench_lorentz_space_family,
+    bench_marcinkiewicz_interp_family,
+    bench_peetre_kfunctor_family,
+    bench_real_interp_k_family,
+    bench_reiteration_thm_family,
+)
+from quant_fund.research.benches_w975 import (
+    bench_dist_convolution_family,
+    bench_paley_wiener_family,
+    bench_schwartz_dist_family,
+    bench_sing_support_family,
+    bench_sobolev_trace_family,
+    bench_temper_dist_family,
+)
+from quant_fund.research.benches_w976 import (
+    bench_diam_dim_family,
+    bench_frechet_nuclear_family,
+    bench_gelfand_triple_family,
+    bench_hilbert_schmidt_emb_family,
+    bench_nuclear_map_family,
+    bench_trace_duality_family,
+)
+from quant_fund.research.benches_w977 import (
+    bench_bochner_integral_family,
+    bench_bochner_meas_family,
+    bench_lusin_rep_family,
+    bench_norm_integrable_family,
+    bench_pettis_weak_family,
+    bench_radon_nikodym_prop_family,
+)
+from quant_fund.research.benches_w978 import (
+    bench_bochner_riesz_family,
+    bench_hausdorff_young_family,
+    bench_lp_multiplier_family,
+    bench_oscillatory_int_family,
+    bench_restriction_est_family,
+    bench_strichartz_est_family,
+)
+from quant_fund.research.benches_w979 import (
+    bench_disjointness_dyn_family,
+    bench_horocycle_flow_family,
+    bench_ratner_thm_family,
+    bench_unipotent_ergodic_family,
+    bench_van_der_corput_family,
+    bench_weyl_equidist_family,
+)
+from quant_fund.research.benches_w980 import (
+    bench_de_boor_stable_family,
+    bench_faber_schauder_family,
+    bench_haar_system_family,
+    bench_korovkin_thm_family,
+    bench_walsh_series_family,
+    bench_whitney_ext_family,
+)
+from quant_fund.research.benches_w981 import (
+    bench_grothendieck_const_family,
+    bench_john_ellipsoid_family,
+    bench_kadison_singer_family,
+    bench_loewner_ellipsoid_family,
+    bench_milman_isotropic_family,
+    bench_milman_rev_thm_family,
+)
+from quant_fund.research.benches_w982 import (
+    bench_boundary_regular_family,
+    bench_capacitary_pot_family,
+    bench_dirichlet_problem_family,
+    bench_energy_principle_family,
+    bench_equilibrium_measure_family,
+    bench_thin_set_family,
+)
+from quant_fund.research.benches_w983 import (
+    bench_atoms_decomp_family,
+    bench_besov_embed_family,
+    bench_besov_space_family,
+    bench_hardy_littlewood_max_family,
+    bench_triebel_lizorkin_family,
+    bench_wavelet_char_family,
+)
+from quant_fund.research.benches_w984 import (
+    bench_ambiguity_fn_family,
+    bench_feichtinger_alg_family,
+    bench_gabor_frame_family,
+    bench_modulation_space_family,
+    bench_short_time_ft_family,
+    bench_wigner_dist_family,
+)
+from quant_fund.research.benches_w985 import (
+    bench_atomic_h1_family,
+    bench_bmo_space_family,
+    bench_carleson_measure_family,
+    bench_fefferman_stein_family,
+    bench_hardy_h1_family,
+    bench_john_nirenberg_family,
+)
+from quant_fund.research.benches_w986 import (
+    bench_ap_weight_family,
+    bench_calderon_zygmund_family,
+    bench_cotlar_ineq_family,
+    bench_cz_decomp_family,
+    bench_good_lambda_family,
+    bench_reverse_holder_family,
+)
+from quant_fund.research.benches_w987 import (
+    bench_davies_gaffney_family,
+    bench_gaussian_upper_family,
+    bench_grad_est_family,
+    bench_li_yau_family,
+    bench_nash_ineq_family,
+    bench_parabolic_harnack_family,
+)
+from quant_fund.research.benches_w988 import (
+    bench_cheeger_ineq_family,
+    bench_heat_invariants_family,
+    bench_isospectral_family,
+    bench_nodal_domain_family,
+    bench_spectral_geometry_family,
+    bench_weyl_law_family,
+)
+from quant_fund.research.benches_w989 import (
+    bench_fbi_transform_family,
+    bench_melrose_bdy_family,
+    bench_parametrix_family,
+    bench_propagation_thm_family,
+    bench_sg_calculus_family,
+    bench_wave_eq_group_family,
+)
+from quant_fund.research.benches_w990 import (
+    bench_euler_lagrange_family,
+    bench_geodesic_var_family,
+    bench_isoperimetric_var_family,
+    bench_jacobi_eq_family,
+    bench_legendre_cond_family,
+    bench_soap_film_family,
+)
+from quant_fund.research.benches_w991 import (
+    bench_bloch_decomp_family,
+    bench_gamma_convergence_family,
+    bench_h_convergence_family,
+    bench_homogenization_family,
+    bench_mosco_conv_family,
+    bench_two_scale_conv_family,
+)
+from quant_fund.research.benches_w992 import (
+    bench_limiting_absorption_family,
+    bench_radiation_cond_family,
+    bench_resonances_thy_family,
+    bench_scattering_matrix_family,
+    bench_trace_class_scatt_family,
+    bench_wave_operators_family,
+)
+from quant_fund.research.benches_w993 import (
+    bench_degree_theory_family,
+    bench_krein_rutman_family,
+    bench_maximal_monotone_family,
+    bench_minty_browder_family,
+    bench_monotone_op_family,
+    bench_schauder_fixed_family,
+)
+from quant_fund.research.benches_w994 import (
+    bench_borg_levinson_family,
+    bench_gelfand_levitan_family,
+    bench_inverse_scattering_family,
+    bench_kdv_isospectral_family,
+    bench_marchenko_eq_family,
+    bench_trace_formulas_family,
+)
+from quant_fund.research.benches_w995 import (
+    bench_calogero_moser_family,
+    bench_kp_hierarchy_family,
+    bench_nls_soliton_family,
+    bench_painleve_eq_family,
+    bench_sine_gordon_family,
+    bench_toda_lattice_family,
+)
+from quant_fund.research.benches_w996 import (
+    bench_dbar_method_family,
+    bench_deift_zhou_family,
+    bench_fokas_unified_family,
+    bench_isomonodromy_family,
+    bench_orthogonal_poly_rh_family,
+    bench_small_norm_rh_family,
+)
+from quant_fund.research.benches_w997 import (
+    bench_bilinear_estimates_family,
+    bench_i_method_family,
+    bench_kdv_dispersion_family,
+    bench_local_smoothing_family,
+    bench_nls_dispersion_family,
+    bench_strichartz_estimates_family,
+)
+from quant_fund.research.benches_w998 import (
+    bench_fujita_exponent_family,
+    bench_matched_asymptotic_pde_family,
+    bench_regularity_critical_family,
+    bench_self_similar_blowup_family,
+    bench_semilinear_heat_family,
+    bench_singularity_formation_family,
+)
+from quant_fund.research.benches_w999 import (
+    bench_brakke_varifolds_family,
+    bench_currents_theory_family,
+    bench_flat_chains_family,
+    bench_integral_currents_family,
+    bench_rectifiable_measures_family,
+    bench_varifold_theory_family,
+)
+from quant_fund.research.benches_w1000 import (
+    bench_contact_mechanics_family,
+    bench_fracture_mechanics_family,
+    bench_homogenized_elasticity_family,
+    bench_kirchhoff_plate_family,
+    bench_mindlin_reissner_family,
+    bench_navier_elasticity_family,
+)
+from quant_fund.research.benches_w1001 import (
+    bench_beale_kato_majda_family,
+    bench_euler_equations_family,
+    bench_ladyzhenskaya_weak_family,
+    bench_leray_theory_family,
+    bench_navier_stokes_family,
+    bench_vorticity_form_family,
+)
+from quant_fund.research.benches_w1002 import (
+    bench_energy_spectrum_family,
+    bench_intermittency_models_family,
+    bench_kolmogorov_theory_family,
+    bench_reynolds_decomp_family,
+    bench_taylor_series_hyp_family,
+    bench_wall_turbulence_family,
+)
+from quant_fund.research.benches_w1003 import (
+    bench_alfven_waves_family,
+    bench_elsaesser_vars_family,
+    bench_frozen_flux_family,
+    bench_magnetic_reconnection_family,
+    bench_mhd_equations_family,
+    bench_parker_solar_wind_family,
+)
+from quant_fund.research.benches_w1004 import (
+    bench_bgk_model_family,
+    bench_boltzmann_eq_family,
+    bench_chapman_enskog_family,
+    bench_h_theorem_family,
+    bench_landau_damping_family,
+    bench_vlasov_eq_family,
+)
+from quant_fund.research.benches_w1005 import (
+    bench_einstein_equations_family,
+    bench_friedmann_eq_family,
+    bench_gr_birkhoff_family,
+    bench_kerr_metric_family,
+    bench_penrose_diagrams_family,
+    bench_schwarzschild_metric_family,
+)
+from quant_fund.research.benches_w1006 import (
+    bench_fock_space_family,
+    bench_harmonic_oscillator_family,
+    bench_hydrogen_atom_family,
+    bench_schrodinger_eq_family,
+    bench_spin_half_family,
+    bench_wigner_wick_family,
+)
+from quant_fund.research.benches_w1007 import (
+    bench_bose_einstein_family,
+    bench_fermi_dirac_family,
+    bench_free_energy_family,
+    bench_gibbs_measure_family,
+    bench_ising_model_family,
+    bench_partition_function_family,
+)
+from quant_fund.research.benches_w1008 import (
+    bench_carnot_cycle_family,
+    bench_critical_phenomena_family,
+    bench_entropy_production_family,
+    bench_fluctuation_dissipation_family,
+    bench_maxwell_relations_family,
+    bench_phase_transitions_family,
+)
+from quant_fund.research.benches_w1009 import (
+    bench_dipole_radiation_family,
+    bench_fresnel_eq_family,
+    bench_lorentz_lorenz_family,
+    bench_maxwell_equations_family,
+    bench_poynting_vector_family,
+    bench_wave_guides_family,
+)
+from quant_fund.research.benches_w1010 import (
+    bench_canonical_quantization_family,
+    bench_dirac_equation_family,
+    bench_feynman_rules_family,
+    bench_klein_gordon_family,
+    bench_path_integral_qm_family,
+    bench_renormalization_group_family,
+)
+from quant_fund.research.benches_w1011 import (
+    bench_band_structure_family,
+    bench_bloch_theorem_family,
+    bench_hubbard_model_family,
+    bench_kondo_effect_family,
+    bench_phonon_spectrum_family,
+    bench_tight_binding_family,
+)
+from quant_fund.research.benches_w1012 import (
+    bench_bcs_theory_family,
+    bench_cabibbo_km_family,
+    bench_nuclear_liquid_drop_family,
+    bench_nuclear_shell_model_family,
+    bench_parton_model_family,
+    bench_quark_model_family,
+)
+from quant_fund.research.benches_w1013 import (
+    bench_born_oppenheimer_family,
+    bench_hartree_fock_family,
+    bench_molecular_orbitals_family,
+    bench_rotational_spectra_family,
+    bench_vibrational_spectra_family,
+    bench_zeeman_effect_family,
+)
+from quant_fund.research.benches_w1014 import (
+    bench_cmb_anisotropy_family,
+    bench_dark_matter_family,
+    bench_hubble_law_family,
+    bench_jeans_instability_family,
+    bench_stellar_evolution_family,
+    bench_stellar_structure_family,
+)
+from quant_fund.research.benches_w1015 import (
+    bench_acoustic_wave_eq_family,
+    bench_doppler_effect_family,
+    bench_helmholtz_eq_family,
+    bench_rayleigh_scattering_family,
+    bench_room_acoustics_family,
+    bench_sound_absorption_family,
+)
+from quant_fund.research.benches_w1016 import (
+    bench_coherence_theory_family,
+    bench_diffraction_grating_family,
+    bench_fourier_optics_family,
+    bench_holography_family,
+    bench_interference_fringes_family,
+    bench_polarization_states_family,
+)
+from quant_fund.research.benches_w1017 import (
+    bench_navier_cauchy_family,
+    bench_plasticity_family,
+    bench_poroelasticity_family,
+    bench_rheology_family,
+    bench_stress_tensor_family,
+    bench_viscoelasticity_family,
+)
+from quant_fund.research.benches_w1018 import (
+    bench_four_vectors_family,
+    bench_geodesic_motion_family,
+    bench_gravitational_lensing_family,
+    bench_gravitational_waves_family,
+    bench_lorentz_transformation_family,
+    bench_spacetime_interval_family,
+)
+from quant_fund.research.benches_w1019 import (
+    bench_earthquake_magnitude_family,
+    bench_geomagnetism_family,
+    bench_gravity_anomaly_family,
+    bench_heat_flow_geo_family,
+    bench_plate_tectonics_family,
+    bench_seismic_waves_family,
+)
+from quant_fund.research.benches_w1020 import (
+    bench_food_web_family,
+    bench_island_biogeography_family,
+    bench_logistic_growth_family,
+    bench_lotka_volterra_family,
+    bench_neutral_theory_family,
+    bench_predator_prey_family,
+)
+from quant_fund.research.benches_w1021 import (
+    bench_branching_epidemic_family,
+    bench_herd_immunity_family,
+    bench_r0_estimation_family,
+    bench_seir_epidemic_family,
+    bench_sir_epidemic_family,
+    bench_sis_epidemic_family,
+)
+from quant_fund.research.benches_w1022 import (
+    bench_auction_theory2_family,
+    bench_growth_theory_family,
+    bench_mechanism_design_family,
+    bench_overlapping_gens_family,
+    bench_real_business_family,
+    bench_search_matching_family,
+)
+from quant_fund.research.benches_w1023 import (
+    bench_arbitrage_pricing_family,
+    bench_black_scholes_family,
+    bench_capm_model_family,
+    bench_corporate_finance_family,
+    bench_default_risk_family,
+    bench_yield_curve_family,
+)
+from quant_fund.research.benches_w1024 import (
+    bench_dna_sequencing_family,
+    bench_gene_expression_family,
+    bench_metabolomics_family,
+    bench_phylogenetics_family,
+    bench_protein_folding_family,
+    bench_systems_biology_family,
+)
+from quant_fund.research.benches_w1025 import (
+    bench_behavioral_econ_family,
+    bench_cognitive_science_family,
+    bench_game_theory2_family,
+    bench_linguistics_family,
+    bench_political_science_family,
+    bench_sociology_net_family,
+)
+from quant_fund.research.benches_w1026 import (
+    bench_atmospheric_chem_family,
+    bench_carbon_cycle_family,
+    bench_climate_model_family,
+    bench_ecosystem_model_family,
+    bench_hydrology_family,
+    bench_ocean_circulation_family,
+)
+from quant_fund.research.benches_w1027 import (
+    bench_ceramics_family,
+    bench_crystal_structure_family,
+    bench_metallurgy_family,
+    bench_nanomaterials_family,
+    bench_polymer_physics_family,
+    bench_superconductivity_family,
+)
+from quant_fund.research.benches_w1028 import (
+    bench_fluid_dynamics2_family,
+    bench_heat_exchanger_family,
+    bench_process_control_family,
+    bench_reaction_kinetics_family,
+    bench_separation_proc_family,
+    bench_thermo_props_family,
+)
+from quant_fund.research.benches_w1029 import (
+    bench_fatigue_life_family,
+    bench_kinematics_family,
+    bench_machine_design_family,
+    bench_solid_mechanics_family,
+    bench_tribology_family,
+    bench_vibration_analysis_family,
+)
+from quant_fund.research.benches_w1030 import (
+    bench_circuit_analysis_family,
+    bench_control_systems_family,
+    bench_electromagnetics_family,
+    bench_power_systems_family,
+    bench_semiconductor_family,
+    bench_signal_processing2_family,
+)
+from quant_fund.research.benches_w1031 import (
+    bench_construction_mgmt_family,
+    bench_geotechnics_family,
+    bench_structural_analysis_family,
+    bench_surveying_family,
+    bench_transportation_eng_family,
+    bench_water_resources_family,
+)
+from quant_fund.research.benches_w1032 import (
+    bench_aerodynamics_family,
+    bench_airfoil_theory_family,
+    bench_flight_dynamics_family,
+    bench_orbital_mechanics2_family,
+    bench_propulsion_family,
+    bench_spacecraft_design_family,
+)
+from quant_fund.research.benches_w1033 import (
+    bench_bioinstrumentation_family,
+    bench_biomechanics_family,
+    bench_biomedical_imaging2_family,
+    bench_medical_devices_family,
+    bench_physiological_modeling_family,
+    bench_tissue_engineering_family,
+)
+from quant_fund.research.benches_w1034 import (
+    bench_ergonomics_family,
+    bench_facility_layout_family,
+    bench_manufacturing_sys_family,
+    bench_operations_research_family,
+    bench_quality_control_family,
+    bench_supply_chain_family,
+)
+from quant_fund.research.benches_w1035 import (
+    bench_isotope_production_family,
+    bench_nuclear_fuel_cycle_family,
+    bench_nuclear_safety_family,
+    bench_radiation_protection_family,
+    bench_reactor_physics_family,
+    bench_thermal_hydraulics_family,
+)
+from quant_fund.research.benches_w1036 import (
+    bench_drilling_engineering_family,
+    bench_enhanced_recovery_family,
+    bench_formation_evaluation_family,
+    bench_production_engineering_family,
+    bench_reservoir_engineering_family,
+    bench_well_testing_family,
+)
+from quant_fund.research.benches_w1037 import (
+    bench_agronomy_family,
+    bench_animal_science_family,
+    bench_crop_science_family,
+    bench_horticulture_family,
+    bench_pest_management_family,
+    bench_soil_science_family,
+)
+from quant_fund.research.benches_w1038 import (
+    bench_cardiology_family,
+    bench_human_physiology_family,
+    bench_immunology_family,
+    bench_neuroscience_med_family,
+    bench_pathology_family,
+    bench_pharmacokinetics_family,
+)
+from quant_fund.research.benches_w1039 import (
+    bench_air_pollution_control_family,
+    bench_environmental_remediation_family,
+    bench_noise_control_family,
+    bench_waste_management_family,
+    bench_wastewater_engineering_family,
+    bench_water_treatment_family,
+)
+from quant_fund.research.benches_w1040 import (
+    bench_actuator_design_family,
+    bench_motion_control_family,
+    bench_path_planning_family,
+    bench_robot_dynamics_family,
+    bench_robot_kinematics_family,
+    bench_sensor_fusion_family,
+)
+from quant_fund.research.benches_w1041 import (
+    bench_coastal_engineering_family,
+    bench_marine_propulsion_family,
+    bench_naval_architecture_family,
+    bench_ocean_waves_family,
+    bench_offshore_engineering_family,
+    bench_submarine_systems_family,
+)
+from quant_fund.research.benches_w1042 import (
+    bench_food_chemistry_family,
+    bench_food_microbiology_family,
+    bench_food_processing_family,
+    bench_food_safety_family,
+    bench_nutrition_science_family,
+    bench_sensory_evaluation_family,
+)
+from quant_fund.research.benches_w1043 import (
+    bench_dendrology_family,
+    bench_forest_ecology_family,
+    bench_forest_economics_family,
+    bench_silviculture_family,
+    bench_timber_harvesting_family,
+    bench_wildfire_management_family,
+)
+from quant_fund.research.benches_w1044 import (
+    bench_blasting_engineering_family,
+    bench_mine_design_family,
+    bench_mine_ventilation_family,
+    bench_mineral_processing_family,
+    bench_ore_reserve_estimation_family,
+    bench_rock_mechanics_family,
+)
+from quant_fund.research.benches_w1045 import (
+    bench_geochemistry_family,
+    bench_geochronology_family,
+    bench_paleontology_family,
+    bench_petrology_family,
+    bench_stratigraphy_family,
+    bench_structural_geology_family,
+)
+from quant_fund.research.benches_w1046 import (
+    bench_atmospheric_dynamics_family,
+    bench_climate_dynamics_family,
+    bench_cloud_physics_family,
+    bench_mesoscale_meteorology_family,
+    bench_numerical_weather_family,
+    bench_synoptic_meteorology_family,
+)
+from quant_fund.research.benches_w1047 import (
+    bench_aquaculture_family,
+    bench_benthic_biology_family,
+    bench_coral_reef_ecology_family,
+    bench_fisheries_science_family,
+    bench_marine_ecology_family,
+    bench_plankton_dynamics_family,
+)
+from quant_fund.research.benches_w1048 import (
+    bench_animal_surgery_family,
+    bench_equine_medicine_family,
+    bench_veterinary_anatomy_family,
+    bench_veterinary_epidemiology_family,
+    bench_veterinary_pathology_family,
+    bench_veterinary_pharmacology_family,
+)
+from quant_fund.research.benches_w1049 import (
+    bench_dental_anatomy_family,
+    bench_endodontics_family,
+    bench_oral_pathology_family,
+    bench_orthodontics_family,
+    bench_periodontology_family,
+    bench_prosthodontics_family,
+)
+from quant_fund.research.benches_w1050 import (
+    bench_clinical_pharmacology_family,
+    bench_drug_metabolism_family,
+    bench_neuropharmacology_family,
+    bench_pharmacodynamics_family,
+    bench_pharmacokinetics_2_family,
+    bench_toxicology_family,
+)
+from quant_fund.research.benches_w1051 import (
+    bench_biostatistics_2_family,
+    bench_epidemiology_2_family,
+    bench_global_health_family,
+    bench_health_policy_family,
+    bench_occupational_health_family,
+    bench_preventive_medicine_family,
+)
+from quant_fund.research.benches_w1052 import (
+    bench_clinical_nutrition_family,
+    bench_dietary_assessment_family,
+    bench_metabolic_health_family,
+    bench_nutritional_biochemistry_family,
+    bench_nutritional_epidemiology_family,
+    bench_sports_nutrition_family,
+)
+from quant_fund.research.benches_w1053 import (
+    bench_behavioral_neuroscience_family,
+    bench_clinical_psychology_family,
+    bench_cognitive_psychology_family,
+    bench_developmental_psychology_family,
+    bench_psychometrics_family,
+    bench_social_psychology_family,
+)
+from quant_fund.research.benches_w1054 import (
+    bench_criminology_family,
+    bench_demography_family,
+    bench_economic_sociology_family,
+    bench_social_networks_family,
+    bench_social_stratification_family,
+    bench_urban_sociology_family,
+)
+from quant_fund.research.benches_w1055 import (
+    bench_archaeology_family,
+    bench_cultural_anthropology_family,
+    bench_ethnography_family,
+    bench_linguistic_anthropology_family,
+    bench_physical_anthropology_family,
+    bench_primatology_family,
+)
+from quant_fund.research.benches_w1056 import (
+    bench_comparative_politics_family,
+    bench_electoral_systems_family,
+    bench_international_relations_family,
+    bench_political_economy_family,
+    bench_political_theory_family,
+    bench_public_administration_family,
+)
+from quant_fund.research.benches_w1057 import (
+    bench_morphology_family,
+    bench_phonetics_family,
+    bench_phonology_family,
+    bench_pragmatics_family,
+    bench_semantics_family,
+    bench_syntax_theory_family,
+)
+from quant_fund.research.benches_w1058 import (
+    bench_aesthetics_family,
+    bench_epistemology_family,
+    bench_ethics_philosophy_family,
+    bench_logic_philosophy_family,
+    bench_metaphysics_family,
+    bench_philosophy_of_science_family,
+)
+from quant_fund.research.benches_w1059 import (
+    bench_ancient_history_family,
+    bench_economic_history_family,
+    bench_historiography_family,
+    bench_intellectual_history_family,
+    bench_medieval_history_family,
+    bench_modern_history_family,
+)
+from quant_fund.research.benches_w1060 import (
+    bench_assessment_theory_family,
+    bench_curriculum_design_family,
+    bench_educational_psychology_family,
+    bench_educational_technology_family,
+    bench_learning_sciences_family,
+    bench_pedagogy_family,
+)
+from quant_fund.research.benches_w1061 import (
+    bench_administrative_law_family,
+    bench_constitutional_law_family,
+    bench_contract_law_family,
+    bench_criminal_law_family,
+    bench_international_law_family,
+    bench_tort_law_family,
+)
+from quant_fund.research.benches_w1062 import (
+    bench_biblical_studies_family,
+    bench_buddhist_studies_family,
+    bench_comparative_religion_family,
+    bench_islamic_studies_family,
+    bench_religious_ethics_family,
+    bench_theology_family,
+)
+from quant_fund.research.benches_w1063 import (
+    bench_communication_theory_family,
+    bench_digital_media_family,
+    bench_journalism_family,
+    bench_media_studies_family,
+    bench_public_relations_family,
+    bench_rhetoric_family,
+)
+from quant_fund.research.benches_w1064 import (
+    bench_disability_studies_family,
+    bench_ethnic_studies_family,
+    bench_gender_studies_family,
+    bench_public_policy_family,
+    bench_social_work_family,
+    bench_urban_studies_family,
+)
+from quant_fund.research.benches_w1065 import (
+    bench_cartography_family,
+    bench_climatology_family,
+    bench_geomorphology_family,
+    bench_human_geography_family,
+    bench_physical_geography_family,
+    bench_remote_sensing_family,
+)
+from quant_fund.research.benches_w1066 import (
+    bench_african_studies_family,
+    bench_asian_studies_family,
+    bench_european_studies_family,
+    bench_latin_american_studies_family,
+    bench_middle_eastern_studies_family,
+    bench_slavic_studies_family,
+)
+from quant_fund.research.benches_w1067 import (
+    bench_archival_studies_family,
+    bench_digital_humanities_family,
+    bench_information_science_family,
+    bench_knowledge_organization_family,
+    bench_library_science_family,
+    bench_museum_studies_family,
+)
+from quant_fund.research.benches_w1068 import (
+    bench_conflict_resolution_family,
+    bench_defense_studies_family,
+    bench_intelligence_studies_family,
+    bench_military_science_family,
+    bench_peace_studies_family,
+    bench_strategic_studies_family,
+)
+from quant_fund.research.benches_w1069 import (
+    bench_criminal_justice_family,
+    bench_criminal_procedure_family,
+    bench_forensic_science_family,
+    bench_penology_family,
+    bench_policing_studies_family,
+    bench_victimology_family,
+)
+from quant_fund.research.benches_w1070 import (
+    bench_athletic_training_family,
+    bench_exercise_physiology_family,
+    bench_sports_analytics_family,
+    bench_sports_biomechanics_family,
+    bench_sports_psychology_family,
+    bench_sports_science_family,
+)
+from quant_fund.research.benches_w1071 import (
+    bench_ethnomusicology_family,
+    bench_music_cognition_family,
+    bench_music_history_family,
+    bench_music_theory_family,
+    bench_musicology_family,
+    bench_organology_family,
+)
+from quant_fund.research.benches_w1072 import (
+    bench_cinema_studies_family,
+    bench_documentary_studies_family,
+    bench_film_history_family,
+    bench_film_studies_family,
+    bench_film_theory_family,
+    bench_screenwriting_family,
+)
+from quant_fund.research.benches_w1073 import (
+    bench_biblical_exegesis_family,
+    bench_church_history_family,
+    bench_liturgical_studies_family,
+    bench_missiology_family,
+    bench_pastoral_theology_family,
+    bench_systematic_theology_family,
+)
+from quant_fund.research.benches_w1074 import (
+    bench_baking_science_family,
+    bench_culinary_arts_family,
+    bench_fermentation_science_family,
+    bench_flavor_science_family,
+    bench_food_studies_family,
+    bench_gastronomy_family,
+)
+from quant_fund.research.benches_w1075 import (
+    bench_architecture_theory_family,
+    bench_building_science_family,
+    bench_industrial_design_family,
+    bench_interior_design_family,
+    bench_landscape_architecture_family,
+    bench_urban_design_family,
+)
+from quant_fund.research.benches_w1076 import (
+    bench_archaeometry_family,
+    bench_bioarchaeology_family,
+    bench_experimental_archaeology_family,
+    bench_field_archaeology_family,
+    bench_landscape_archaeology_family,
+    bench_underwater_archaeology_family,
+)
+from quant_fund.research.benches_w1077 import (
+    bench_art_conservation_family,
+    bench_art_history_family,
+    bench_painting_techniques_family,
+    bench_printmaking_family,
+    bench_sculpture_methods_family,
+    bench_visual_culture_family,
+)
+from quant_fund.research.benches_w1078 import (
+    bench_choreography_family,
+    bench_dance_studies_family,
+    bench_dramaturgy_family,
+    bench_performance_theory_family,
+    bench_stage_design_family,
+    bench_theater_studies_family,
+)
+from quant_fund.research.benches_w1079 import (
+    bench_ancient_greek_family,
+    bench_classical_archaeology_family,
+    bench_classical_studies_family,
+    bench_latin_language_family,
+    bench_papyrology_family,
+    bench_philology_family,
+)
+from quant_fund.research.benches_w1080 import (
+    bench_byzantine_studies_family,
+    bench_codicology_family,
+    bench_hagiography_family,
+    bench_medieval_studies_family,
+    bench_numismatics_family,
+    bench_paleography_family,
+)
+from quant_fund.research.benches_w1081 import (
+    bench_baroque_studies_family,
+    bench_early_modern_family,
+    bench_enlightenment_studies_family,
+    bench_humanism_family,
+    bench_reformation_studies_family,
+    bench_renaissance_studies_family,
+)
+from quant_fund.research.benches_w1082 import (
+    bench_hebrew_language_family,
+    bench_jewish_philosophy_family,
+    bench_jewish_studies_family,
+    bench_kabbalah_family,
+    bench_rabbinics_family,
+    bench_talmudic_studies_family,
+)
+from quant_fund.research.benches_w1083 import (
+    bench_hermeneutics_family,
+    bench_narratology_family,
+    bench_phenomenology_family,
+    bench_poststructuralism_family,
+    bench_semiotics_family,
+    bench_structuralism_family,
+)
+from quant_fund.research.benches_w1084 import (
+    bench_comparative_literature_family,
+    bench_critical_theory_family,
+    bench_literary_theory_family,
+    bench_postcolonial_studies_family,
+    bench_translation_studies_family,
+    bench_world_literature_family,
+)
+from quant_fund.research.benches_w1085 import (
+    bench_medieval_literature_family,
+    bench_modernism_family,
+    bench_postmodernism_family,
+    bench_renaissance_literature_family,
+    bench_romanticism_family,
+    bench_victorian_studies_family,
+)
+from quant_fund.research.benches_w1086 import (
+    bench_assyriology_family,
+    bench_egyptology_family,
+    bench_indology_family,
+    bench_iranian_studies_family,
+    bench_ottoman_studies_family,
+    bench_sinology_family,
+)
+from quant_fund.research.benches_w1087 import (
+    bench_diplomatics_family,
+    bench_epigraphy_family,
+    bench_genealogy_studies_family,
+    bench_heraldry_family,
+    bench_onomastics_family,
+    bench_sigillography_family,
+)
+from quant_fund.research.benches_w1088 import (
+    bench_analytic_philosophy_family,
+    bench_ancient_philosophy_family,
+    bench_continental_philosophy_family,
+    bench_existentialism_family,
+    bench_medieval_philosophy_family,
+    bench_pragmatism_family,
+)
+from quant_fund.research.benches_w1089 import (
+    bench_computational_linguistics_family,
+    bench_corpus_linguistics_family,
+    bench_dialectology_family,
+    bench_historical_linguistics_family,
+    bench_psycholinguistics_family,
+    bench_sociolinguistics_family,
+)
+from quant_fund.research.benches_w1090 import (
+    bench_history_of_science_family,
+    bench_information_history_family,
+    bench_media_archaeology_family,
+    bench_philosophy_of_technology_family,
+    bench_sts_studies_family,
+    bench_technology_studies_family,
+)
+from quant_fund.research.benches_w1091 import (
+    bench_comparative_education_family,
+    bench_distance_learning_family,
+    bench_higher_education_family,
+    bench_literacy_studies_family,
+    bench_special_education_family,
+    bench_vocational_education_family,
+)
+from quant_fund.research.benches_w1092 import (
+    bench_connoisseurship_family,
+    bench_curation_practice_family,
+    bench_formal_analysis_family,
+    bench_iconography_family,
+    bench_iconology_family,
+    bench_provenance_studies_family,
+)
+from quant_fund.research.benches_w1093 import (
+    bench_canon_law_family,
+    bench_civil_law_family,
+    bench_common_law_family,
+    bench_maritime_law_family,
+    bench_procedural_law_family,
+    bench_property_law_family,
+)
+from quant_fund.research.benches_w1094 import (
+    bench_dermatology_family,
+    bench_neurology_family,
+    bench_oncology_family,
+    bench_orthopedics_family,
+    bench_psychiatry_family,
+    bench_radiology_family,
+)
+from quant_fund.research.benches_w1095 import (
+    bench_deviance_studies_family,
+    bench_family_sociology_family,
+    bench_medical_sociology_family,
+    bench_organization_theory_family,
+    bench_rural_sociology_family,
+    bench_social_movements_family,
+)
+from quant_fund.research.benches_w1096 import (
+    bench_conservation_biology_family,
+    bench_environmental_toxicology_family,
+    bench_landscape_ecology_family,
+    bench_marine_conservation_family,
+    bench_pollution_science_family,
+    bench_urban_ecology_family,
+)
+from quant_fund.research.benches_w1097 import (
+    bench_eastern_philosophy_family,
+    bench_moral_philosophy_family,
+    bench_philosophy_of_language_family,
+    bench_philosophy_of_law_family,
+    bench_philosophy_of_mind_family,
+    bench_political_philosophy_family,
+)
+from quant_fund.research.benches_w1098 import (
+    bench_biological_anthropology_family,
+    bench_economic_anthropology_family,
+    bench_medical_anthropology_family,
+    bench_paleoanthropology_family,
+    bench_political_anthropology_family,
+    bench_urban_anthropology_family,
+)
+from quant_fund.research.benches_w1099 import (
+    bench_abnormal_psychology_family,
+    bench_forensic_psychology_family,
+    bench_health_psychology_family,
+    bench_neuropsychology_family,
+    bench_organizational_psychology_family,
+    bench_personality_psychology_family,
+)
+from quant_fund.research.benches_w1100 import (
+    bench_analytical_chemistry_family,
+    bench_biochemistry_family,
+    bench_electrochemistry_family,
+    bench_inorganic_chemistry_family,
+    bench_organic_chemistry_family,
+    bench_physical_chemistry_family,
+)
+from quant_fund.research.benches_w1101 import (
+    bench_botany_family,
+    bench_cell_biology_family,
+    bench_genetics_family,
+    bench_microbiology_family,
+    bench_molecular_biology_family,
+    bench_zoology_family,
+)
+from quant_fund.research.benches_w1102 import (
+    bench_geophysics_applied_family,
+    bench_hydrogeology_family,
+    bench_mineralogy_family,
+    bench_sedimentology_family,
+    bench_tectonics_family,
+    bench_volcanology_family,
+)
+from quant_fund.research.benches_w1103 import (
+    bench_boundary_layer_meteorology_family,
+    bench_micrometeorology_family,
+    bench_polar_meteorology_family,
+    bench_radar_meteorology_family,
+    bench_severe_weather_family,
+    bench_tropical_meteorology_family,
+)
+from quant_fund.research.benches_w1104 import (
+    bench_american_politics_family,
+    bench_policy_analysis_family,
+    bench_political_behavior_family,
+    bench_political_methodology_family,
+    bench_public_law_family,
+    bench_security_studies_family,
+)
+from quant_fund.research.benches_w1105 import (
+    bench_bounded_rationality_family,
+    bench_experimental_economics_family,
+    bench_financial_behavior_family,
+    bench_neuroeconomics_family,
+    bench_nudge_theory_family,
+    bench_prospect_theory_family,
+)
+from quant_fund.research.benches_w1106 import (
+    bench_biomaterials_family,
+    bench_characterization_methods_family,
+    bench_composite_materials_family,
+    bench_phase_diagrams_family,
+    bench_semiconductors_materials_family,
+    bench_thin_films_family,
+)
+from quant_fund.research.benches_w1107 import (
+    bench_endocrinology_family,
+    bench_gastroenterology_family,
+    bench_hematology_family,
+    bench_infectious_diseases_family,
+    bench_nephrology_family,
+    bench_pulmonology_family,
+)
+from quant_fund.research.benches_w1108 import (
+    bench_cultural_sociology_family,
+    bench_environmental_sociology_family,
+    bench_industrial_sociology_family,
+    bench_political_sociology_family,
+    bench_sociology_of_education_family,
+    bench_sociology_of_religion_family,
+)
+from quant_fund.research.benches_w1109 import (
+    bench_anthropological_linguistics_family,
+    bench_applied_linguistics_family,
+    bench_discourse_analysis_family,
+    bench_evolutionary_linguistics_family,
+    bench_forensic_linguistics_family,
+    bench_neurolinguistics_family,
+)
+from quant_fund.research.benches_w1110 import (
+    bench_phenomenology_2_family,
+    bench_philosophy_of_biology_family,
+    bench_philosophy_of_history_family,
+    bench_philosophy_of_mathematics_family,
+    bench_philosophy_of_religion_family,
+    bench_process_philosophy_family,
+)
+from quant_fund.research.benches_w1111 import (
+    bench_medicinal_chemistry_family,
+    bench_photochemistry_family,
+    bench_quantum_chemistry_family,
+    bench_spectroscopy_family,
+    bench_stereochemistry_family,
+    bench_supramolecular_chemistry_family,
+)
+from quant_fund.research.benches_w1112 import (
+    bench_biophysics_family,
+    bench_comparative_anatomy_family,
+    bench_developmental_biology_family,
+    bench_ethology_family,
+    bench_evolutionary_biology_family,
+    bench_neurobiology_family,
+)
+from quant_fund.research.benches_w1113 import (
+    bench_anesthesiology_family,
+    bench_emergency_medicine_family,
+    bench_family_medicine_family,
+    bench_obstetrics_gynecology_family,
+    bench_pediatrics_family,
+    bench_surgery_family,
+)
+from quant_fund.research.benches_w1114 import (
+    bench_classical_mechanics_family,
+    bench_condensed_matter_2_family,
+    bench_nuclear_physics_family,
+    bench_plasma_physics_family,
+    bench_quantum_mechanics_2_family,
+    bench_statistical_mechanics_2_family,
+)
+from quant_fund.research.benches_w1115 import (
+    bench_financial_economics_family,
+    bench_industrial_organization_family,
+    bench_international_economics_family,
+    bench_labor_economics_family,
+    bench_monetary_economics_family,
+    bench_public_economics_family,
+)
+from quant_fund.research.benches_w1116 import (
+    bench_comparative_psychology_family,
+    bench_environmental_psychology_family,
+    bench_evolutionary_psychology_family,
+    bench_experimental_psychology_family,
+    bench_psychopathology_family,
+    bench_sport_psychology_family,
+)
+from quant_fund.research.benches_w1117 import (
+    bench_historical_sociology_family,
+    bench_legal_sociology_family,
+    bench_mathematical_sociology_family,
+    bench_military_sociology_family,
+    bench_science_studies_family,
+    bench_sociology_of_knowledge_family,
+)
+from quant_fund.research.benches_w1118 import (
+    bench_field_linguistics_family,
+    bench_language_acquisition_family,
+    bench_linguistic_typology_family,
+    bench_sign_linguistics_family,
+    bench_theoretical_linguistics_family,
+    bench_translation_theory_family,
+)
+from quant_fund.research.benches_w1119 import (
+    bench_cultural_history_family,
+    bench_diplomatic_history_family,
+    bench_history_of_medicine_family,
+    bench_history_of_technology_family,
+    bench_military_history_family,
+    bench_social_history_family,
+)
+from quant_fund.research.benches_w1120 import (
+    bench_applied_anthropology_family,
+    bench_digital_anthropology_family,
+    bench_environmental_anthropology_family,
+    bench_forensic_anthropology_family,
+    bench_psychological_anthropology_family,
+    bench_visual_anthropology_family,
+)
+from quant_fund.research.benches_w1121 import (
+    bench_economic_geography_family,
+    bench_gis_science_family,
+    bench_health_geography_family,
+    bench_political_geography_family,
+    bench_population_geography_family,
+    bench_regional_geography_family,
+)
+from quant_fund.research.benches_w1122 import (
+    bench_archaeogenetics_family,
+    bench_ceramic_analysis_family,
+    bench_geoarchaeology_family,
+    bench_lithic_analysis_family,
+    bench_paleoethnobotany_family,
+    bench_zooarchaeology_family,
+)
+from quant_fund.research.benches_w1123 import (
+    bench_contact_linguistics_family,
+    bench_descriptive_linguistics_family,
+    bench_dialectometry_family,
+    bench_etymology_family,
+    bench_lexicography_family,
+    bench_philological_studies_family,
+)
+from quant_fund.research.benches_w1124 import (
+    bench_sociology_of_aging_family,
+    bench_sociology_of_emotions_family,
+    bench_sociology_of_food_family,
+    bench_sociology_of_media_family,
+    bench_sociology_of_sport_family,
+    bench_sociology_of_work_family,
+)
+from quant_fund.research.benches_w1125 import (
+    bench_agricultural_economics_family,
+    bench_development_economics_family,
+    bench_energy_economics_family,
+    bench_environmental_economics_family,
+    bench_health_economics_family,
+    bench_urban_economics_family,
+)
+from quant_fund.research.benches_w1126 import (
+    bench_community_psychology_family,
+    bench_consumer_psychology_family,
+    bench_cross_cultural_psychology_family,
+    bench_political_psychology_family,
+    bench_positive_psychology_family,
+    bench_social_cognition_family,
+)
+from quant_fund.research.benches_w1127 import (
+    bench_digital_history_family,
+    bench_environmental_history_family,
+    bench_global_history_family,
+    bench_maritime_history_family,
+    bench_oral_history_family,
+    bench_public_history_family,
+)
+from quant_fund.research.benches_w1128 import (
+    bench_computational_stylistics_family,
+    bench_corpus_phonology_family,
+    bench_language_documentation_family,
+    bench_lexical_semantics_family,
+    bench_stylistics_family,
+    bench_translation_technology_family,
+)
+from quant_fund.research.benches_w1129 import (
+    bench_african_philosophy_family,
+    bench_bioethics_family,
+    bench_environmental_philosophy_family,
+    bench_feminist_philosophy_family,
+    bench_philosophy_of_education_family,
+    bench_philosophy_of_medicine_family,
+)
+from quant_fund.research.benches_w1130 import (
+    bench_anthropology_of_religion_family,
+    bench_cognitive_anthropology_family,
+    bench_kinship_studies_family,
+    bench_material_culture_family,
+    bench_museum_anthropology_family,
+    bench_social_anthropology_family,
+)
+from quant_fund.research.benches_w1131 import (
+    bench_digital_sociology_family,
+    bench_sociology_of_disaster_family,
+    bench_sociology_of_housing_family,
+    bench_sociology_of_migration_family,
+    bench_sociology_of_risk_family,
+    bench_sociology_of_the_body_family,
+)
+from quant_fund.research.benches_w1132 import (
+    bench_history_of_capitalism_family,
+    bench_history_of_emotions_family,
+    bench_history_of_religions_family,
+    bench_history_of_sexuality_family,
+    bench_history_of_the_book_family,
+    bench_microhistory_family,
+)
+from quant_fund.research.benches_w1133 import (
+    bench_conformal_field_theory_family,
+    bench_holography_ads_family,
+    bench_lattice_field_theory_family,
+    bench_loop_quantum_gravity_family,
+    bench_statistical_field_theory_family,
+    bench_string_theory_math_family,
+)
+from quant_fund.research.benches_w1134 import (
+    bench_adaptive_method_theory_family,
+    bench_finite_element_theory_family,
+    bench_high_performance_numerics_family,
+    bench_reduced_order_modeling_family,
+    bench_spectral_theory_numerics_family,
+    bench_uncertainty_quantification_2_family,
+)
+from quant_fund.research.benches_w1135 import (
+    bench_ophthalmology_family,
+    bench_otolaryngology_family,
+    bench_palliative_medicine_family,
+    bench_rehabilitation_medicine_family,
+    bench_sports_medicine_family,
+    bench_urology_family,
+)
+from quant_fund.research.benches_w1136 import (
+    bench_environmental_law_family,
+    bench_evidence_law_family,
+    bench_family_law_family,
+    bench_immigration_law_family,
+    bench_labor_law_family,
+    bench_tax_law_family,
+)
+from quant_fund.research.benches_w1137 import (
+    bench_adult_education_family,
+    bench_bilingual_education_family,
+    bench_early_childhood_education_family,
+    bench_educational_leadership_family,
+    bench_gifted_education_family,
+    bench_instructional_design_family,
+)
+from quant_fund.research.benches_w1138 import (
+    bench_behavioral_economics_family,
+    bench_econ_neuroscience_family,
+    bench_evolutionary_economics_family,
+    bench_experimental_economics_2_family,
+    bench_institutional_economics_family,
+    bench_political_economy_2_family,
+)
+from quant_fund.research.benches_w1139 import (
+    bench_dentistry_2_family,
+    bench_dietetics_family,
+    bench_occupational_therapy_family,
+    bench_optometry_family,
+    bench_physiotherapy_family,
+    bench_podiatry_family,
+)
+from quant_fund.research.benches_w1140 import (
+    bench_glaciology_family,
+    bench_hydrology_2_family,
+    bench_oceanography_family,
+    bench_paleoclimatology_family,
+    bench_seismology_family,
+    bench_volcanology_2_family,
+)
+from quant_fund.research.benches_w1141 import (
+    bench_astrobiology_family,
+    bench_astrochemistry_family,
+    bench_cosmology_2_family,
+    bench_exoplanet_science_family,
+    bench_galactic_dynamics_family,
+    bench_helio_seismology_family,
+)
+from quant_fund.research.benches_w1142 import (
+    bench_quantum_chemistry_2_family,
+    bench_quantum_computing_family,
+    bench_quantum_error_2_family,
+    bench_quantum_information_2_family,
+    bench_quantum_optics_family,
+    bench_quantum_sensing_family,
+)
+from quant_fund.research.benches_w1143 import (
+    bench_acoustics_2_family,
+    bench_biophysics_2_family,
+    bench_condensed_matter_3_family,
+    bench_nanotechnology_family,
+    bench_optics_3_family,
+    bench_thermodynamics_2_family,
+)
+from quant_fund.research.benches_w1144 import (
+    bench_asteroid_science_family,
+    bench_astrophotonics_family,
+    bench_comet_science_family,
+    bench_grav_waves_2_family,
+    bench_planetology_family,
+    bench_space_weather_family,
+)
+from quant_fund.research.benches_w1145 import (
+    bench_bioinformatics_4_family,
+    bench_epidemiology_3_family,
+    bench_genomicsciences_family,
+    bench_proteomics_family,
+    bench_synthetic_biology_family,
+    bench_systems_biology_2_family,
+)
+from quant_fund.research.benches_w1146 import (
+    bench_entomology_2_family,
+    bench_limnology_family,
+    bench_mycology_family,
+    bench_parasitology_family,
+    bench_virology_family,
+    bench_wildlife_biology_family,
+)
+from quant_fund.research.benches_w1147 import (
+    bench_anatomy_family,
+    bench_cardiology_2_family,
+    bench_endocrinology_2_family,
+    bench_immunology_2_family,
+    bench_neuroscience_2_family,
+    bench_physiology_2_family,
+)
+from quant_fund.research.benches_w1148 import (
+    bench_geochronology_2_family,
+    bench_geology_3_family,
+    bench_geomorphology_2_family,
+    bench_mineralogy_2_family,
+    bench_petrology_2_family,
+    bench_stratigraphy_2_family,
+)
+from quant_fund.research.benches_w1149 import (
+    bench_dermatology_2_family,
+    bench_hematology_2_family,
+    bench_hepatology_2_family,
+    bench_nephrology_2_family,
+    bench_pulmonology_2_family,
+    bench_toxicology_2_family,
+)
+from quant_fund.research.benches_w1150 import (
+    bench_bacteriology_family,
+    bench_epigenetics_family,
+    bench_immunogenetics_family,
+    bench_microbiology_2_family,
+    bench_molecular_genetics_family,
+    bench_virology_2_family,
+)
+from quant_fund.research.benches_w1151 import (
+    bench_analytical_chemistry_2_family,
+    bench_chemistry_3_family,
+    bench_electrochemistry_2_family,
+    bench_inorganic_chemistry_2_family,
+    bench_organic_chemistry_2_family,
+    bench_physical_chemistry_2_family,
+)
+from quant_fund.research.benches_w1152 import (
+    bench_biochemistry_2_family,
+    bench_cell_biology_2_family,
+    bench_genetics_2_family,
+    bench_molecular_biology_2_family,
+    bench_pharmacology_2_family,
+    bench_toxicology_3_family,
+)
+from quant_fund.research.benches_w1153 import (
+    bench_astrophysics_3_family,
+    bench_cosmology_3_family,
+    bench_geophysics_3_family,
+    bench_mechanics_family,
+    bench_physics_6_family,
+    bench_thermodynamics_3_family,
+)
+from quant_fund.research.benches_w1154 import (
+    bench_electromagnetism_family,
+    bench_nuclear_physics_2_family,
+    bench_optics_4_family,
+    bench_particle_physics_family,
+    bench_quantum_physics_family,
+    bench_relativity_3_family,
+)
+from quant_fund.research.benches_w1155 import (
+    bench_atmospheric_science_family,
+    bench_earth_system_science_family,
+    bench_environmental_science_2_family,
+    bench_hydrology_3_family,
+    bench_oceanography_2_family,
+    bench_soil_science_2_family,
+)
+from quant_fund.research.benches_w1156 import (
+    bench_applied_mathematics_family,
+    bench_bioinformatics_5_family,
+    bench_computational_science_family,
+    bench_data_science_family,
+    bench_probability_4_family,
+    bench_statistics_2_family,
+)
+from quant_fund.research.benches_w1157 import (
+    bench_artificial_intelligence_family,
+    bench_computer_science_2_family,
+    bench_data_engineering_family,
+    bench_information_theory_2_family,
+    bench_machine_learning_2_family,
+    bench_software_engineering_family,
+)
+from quant_fund.research.benches_w1158 import (
+    bench_anthropology_6_family,
+    bench_economics_6_family,
+    bench_linguistics_7_family,
+    bench_political_science_3_family,
+    bench_psychology_5_family,
+    bench_sociology_6_family,
+)
+from quant_fund.research.benches_w1159 import (
+    bench_aerospace_engineering_2_family,
+    bench_biomedical_engineering_2_family,
+    bench_chemical_engineering_2_family,
+    bench_civil_engineering_2_family,
+    bench_electrical_engineering_2_family,
+    bench_mechanical_engineering_2_family,
+)
+from quant_fund.research.benches_w1160 import (
+    bench_area_studies_2_family,
+    bench_classics_2_family,
+    bench_history_5_family,
+    bench_humanities_2_family,
+    bench_philosophy_6_family,
+    bench_religious_studies_2_family,
+)
+from quant_fund.research.benches_w1161 import (
+    bench_dentistry_3_family,
+    bench_medicine_7_family,
+    bench_nursing_2_family,
+    bench_pharmacy_2_family,
+    bench_public_health_2_family,
+    bench_veterinary_medicine_2_family,
+)
+from quant_fund.research.benches_w1162 import (
+    bench_criminology_2_family,
+    bench_international_relations_2_family,
+    bench_law_5_family,
+    bench_military_science_2_family,
+    bench_political_science_4_family,
+    bench_public_administration_2_family,
+)
+from quant_fund.research.benches_w1163 import (
+    bench_accounting_2_family,
+    bench_business_administration_family,
+    bench_entrepreneurship_2_family,
+    bench_finance_4_family,
+    bench_management_2_family,
+    bench_marketing_2_family,
+)
+from quant_fund.research.benches_w1164 import (
+    bench_communication_studies_2_family,
+    bench_education_5_family,
+    bench_information_science_2_family,
+    bench_journalism_2_family,
+    bench_library_science_2_family,
+    bench_media_studies_2_family,
+)
+from quant_fund.research.benches_w1165 import (
+    bench_agriculture_2_family,
+    bench_fisheries_2_family,
+    bench_food_science_2_family,
+    bench_forestry_2_family,
+    bench_horticulture_2_family,
+    bench_veterinary_science_2_family,
+)
+from quant_fund.research.benches_w1166 import (
+    bench_architecture_2_family,
+    bench_graphic_design_2_family,
+    bench_industrial_design_2_family,
+    bench_interior_design_2_family,
+    bench_landscape_architecture_2_family,
+    bench_urban_planning_2_family,
+)
+from quant_fund.research.benches_w1167 import (
+    bench_art_history_2_family,
+    bench_dance_2_family,
+    bench_film_studies_3_family,
+    bench_music_2_family,
+    bench_performance_studies_2_family,
+    bench_theater_2_family,
+)
+from quant_fund.research.benches_w1168 import (
+    bench_aviation_2_family,
+    bench_logistics_2_family,
+    bench_maritime_studies_2_family,
+    bench_supply_chain_2_family,
+    bench_transportation_2_family,
+    bench_warehousing_2_family,
+)
+from quant_fund.research.benches_w1169 import (
+    bench_disability_studies_2_family,
+    bench_ethnic_studies_2_family,
+    bench_gender_studies_2_family,
+    bench_public_policy_2_family,
+    bench_social_work_2_family,
+    bench_urban_studies_2_family,
+)
+from quant_fund.research.benches_w1170 import (
+    bench_criminology_3_family,
+    bench_forensic_science_2_family,
+    bench_intelligence_studies_2_family,
+    bench_penology_2_family,
+    bench_security_studies_2_family,
+    bench_victimology_2_family,
+)
+from quant_fund.research.benches_w1171 import (
+    bench_demography_2_family,
+    bench_geography_2_family,
+    bench_gis_science_2_family,
+    bench_land_use_family,
+    bench_regional_science_family,
+    bench_urbanization_family,
+)
+from quant_fund.research.benches_w1172 import (
+    bench_accounting_3_family,
+    bench_entrepreneurship_3_family,
+    bench_finance_5_family,
+    bench_management_3_family,
+    bench_marketing_3_family,
+    bench_organizational_behavior_family,
+)
+from quant_fund.research.benches_w1173 import (
+    bench_communication_3_family,
+    bench_digital_media_2_family,
+    bench_information_science_3_family,
+    bench_journalism_3_family,
+    bench_media_studies_3_family,
+    bench_rhetoric_2_family,
+)
+from quant_fund.research.benches_w1174 import (
+    bench_hospitality_family,
+    bench_leisure_studies_family,
+    bench_recreation_family,
+    bench_recreation_therapy_family,
+    bench_sports_management_family,
+    bench_tourism_family,
+)
+from quant_fund.research.benches_w1175 import (
+    bench_automotive_technology_family,
+    bench_carpentry_trades_family,
+    bench_electrical_trades_family,
+    bench_plumbing_hvac_family,
+    bench_refrigeration_technology_family,
+    bench_welding_technology_family,
+)
+from quant_fund.research.benches_w1176 import (
+    bench_biblical_studies_2_family,
+    bench_buddhist_studies_2_family,
+    bench_comparative_religion_2_family,
+    bench_islamic_studies_2_family,
+    bench_religious_studies_3_family,
+    bench_theology_3_family,
+)
+from quant_fund.research.benches_w1177 import (
+    bench_axiomatic_systems_family,
+    bench_formal_ontology_family,
+    bench_formal_sciences_family,
+    bench_mathematical_logic_family,
+    bench_model_checking_2_family,
+    bench_proof_calculus_family,
+)
+from quant_fund.research.benches_w1178 import (
+    bench_cognitive_science_2_family,
+    bench_complexity_science_family,
+    bench_futures_studies_family,
+    bench_human_computer_interaction_family,
+    bench_interdisciplinary_studies_family,
+    bench_systems_science_family,
+)
+from quant_fund.research.benches_w1179 import (
+    bench_conflict_studies_family,
+    bench_intelligence_analysis_family,
+    bench_military_history_2_family,
+    bench_peace_research_family,
+    bench_strategic_analysis_family,
+    bench_war_studies_family,
+)
+from quant_fund.research.benches_w1180 import (
+    bench_allied_health_family,
+    bench_midwifery_family,
+    bench_nursing_studies_family,
+    bench_occupational_science_family,
+    bench_paramedicine_family,
+    bench_speech_pathology_family,
+)
+from quant_fund.research.benches_w1181 import (
+    bench_acting_studies_family,
+    bench_directing_studies_family,
+    bench_performing_arts_2_family,
+    bench_playwriting_family,
+    bench_scenography_family,
+    bench_theater_arts_family,
+)
+from quant_fund.research.benches_w1182 import (
+    bench_ballet_studies_family,
+    bench_choreography_2_family,
+    bench_dance_pedagogy_family,
+    bench_dance_science_family,
+    bench_movement_studies_family,
+    bench_somatic_practices_family,
+)
+from quant_fund.research.benches_w1183 import (
+    bench_composition_studies_family,
+    bench_ethnomusicology_2_family,
+    bench_music_cognition_2_family,
+    bench_music_theory_2_family,
+    bench_musicology_2_family,
+    bench_organology_2_family,
+)
+from quant_fund.research.benches_w1184 import (
+    bench_animation_studies_family,
+    bench_cinematography_studies_family,
+    bench_documentary_production_family,
+    bench_film_editing_family,
+    bench_film_production_family,
+    bench_sound_design_family,
+)
+from quant_fund.research.benches_w1185 import (
+    bench_esports_studies_family,
+    bench_game_design_family,
+    bench_game_development_family,
+    bench_game_studies_family,
+    bench_interactive_media_family,
+    bench_ludology_family,
+)
+from quant_fund.research.benches_w1186 import (
+    bench_accessibility_studies_family,
+    bench_hci_studies_family,
+    bench_information_architecture_family,
+    bench_interaction_design_family,
+    bench_service_design_family,
+    bench_ux_design_family,
+)
+from quant_fund.research.benches_w1187 import (
+    bench_apparel_studies_family,
+    bench_costume_design_family,
+    bench_fashion_studies_family,
+    bench_footwear_design_family,
+    bench_jewelry_design_family,
+    bench_textile_studies_family,
+)
+from quant_fund.research.benches_w1188 import (
+    bench_brewing_science_family,
+    bench_culinary_science_family,
+    bench_enology_family,
+    bench_fermentation_studies_family,
+    bench_gastronomy_2_family,
+    bench_pastry_arts_family,
+)
+from quant_fund.research.benches_w1189 import (
+    bench_event_management_family,
+    bench_hospitality_studies_family,
+    bench_hotel_management_family,
+    bench_leisure_science_family,
+    bench_recreation_management_family,
+    bench_tourism_studies_family,
+)
+from quant_fund.research.benches_w1190 import (
+    bench_graphic_design_family,
+    bench_motion_graphics_family,
+    bench_photography_studies_family,
+    bench_print_media_family,
+    bench_typography_studies_family,
+    bench_web_design_family,
+)
+from quant_fund.research.benches_w1191 import (
+    bench_advertising_studies_family,
+    bench_broadcasting_studies_family,
+    bench_journalism_studies_family,
+    bench_news_media_family,
+    bench_public_relations_studies_family,
+    bench_publishing_studies_family,
+)
+from quant_fund.research.benches_w1192 import (
+    bench_acupuncture_studies_family,
+    bench_chiropractic_studies_family,
+    bench_herbal_medicine_family,
+    bench_homeopathy_family,
+    bench_naturopathy_family,
+    bench_osteopathy_studies_family,
+)
+from quant_fund.research.benches_w1193 import (
+    bench_audiology_studies_family,
+    bench_clinical_psychology_2_family,
+    bench_midwifery_studies_family,
+    bench_opticianry_family,
+    bench_orthoptics_family,
+    bench_prosthetics_orthotics_family,
+)
+from quant_fund.research.benches_w1194 import (
+    bench_genetic_counseling_family,
+    bench_lactation_consulting_family,
+    bench_perfusion_technology_family,
+    bench_podiatric_medicine_family,
+    bench_radiation_therapy_family,
+    bench_respiratory_therapy_family,
+)
+from quant_fund.research.benches_w1195 import (
+    bench_clinical_laboratory_family,
+    bench_medical_imaging_studies_family,
+    bench_mortuary_science_family,
+    bench_phlebotomy_studies_family,
+    bench_sterile_processing_family,
+    bench_surgical_technology_family,
+)
+from quant_fund.research.benches_w1196 import (
+    bench_disaster_management_family,
+    bench_emergency_medical_technician_family,
+    bench_fire_science_studies_family,
+    bench_industrial_hygiene_family,
+    bench_occupational_safety_family,
+    bench_paramedic_studies_family,
+)
+from quant_fund.research.benches_w1197 import (
+    bench_addiction_counseling_family,
+    bench_genetic_screening_family,
+    bench_neonatology_studies_family,
+    bench_pediatric_therapeutics_family,
+    bench_prenatal_studies_family,
+    bench_rehabilitation_counseling_family,
+)
+from quant_fund.research.benches_w1198 import (
+    bench_electrodiagnostic_studies_family,
+    bench_hyperbaric_medicine_family,
+    bench_infusion_therapy_family,
+    bench_pain_management_family,
+    bench_sleep_medicine_family,
+    bench_wound_care_family,
+)
+from quant_fund.research.benches_w1199 import (
+    bench_cardiac_electrophysiology_family,
+    bench_dialysis_technology_family,
+    bench_hepatobiliary_studies_family,
+    bench_interventional_radiology_family,
+    bench_nuclear_cardiology_family,
+    bench_transplant_studies_family,
+)
+from quant_fund.research.benches_w1200 import (
+    bench_cardiovascular_technology_family,
+    bench_dosimetry_studies_family,
+    bench_medical_physics_studies_family,
+    bench_nuclear_medicine_technology_family,
+    bench_radiation_dosimetry_family,
+    bench_radiopharmacy_family,
+)
+from quant_fund.research.benches_w1201 import (
+    bench_biomedical_informatics_family,
+    bench_clinical_informatics_family,
+    bench_health_data_science_family,
+    bench_health_informatics_family,
+    bench_health_information_family,
+    bench_medical_records_family,
+)
+from quant_fund.research.benches_w1202 import (
+    bench_entomology_medical_family,
+    bench_medical_microbiology_family,
+    bench_mycology_studies_family,
+    bench_parasitology_studies_family,
+    bench_public_health_microbiology_family,
+    bench_vector_borne_diseases_family,
+)
+from quant_fund.research.benches_w1203 import (
+    bench_genomic_medicine_family,
+    bench_laboratory_medicine_family,
+    bench_molecular_diagnostics_family,
+    bench_precision_medicine_family,
+    bench_travel_medicine_family,
+    bench_tropical_medicine_family,
+)
+from quant_fund.research.benches_w1204 import (
+    bench_aging_research_family,
+    bench_geriatric_medicine_family,
+    bench_gerontology_studies_family,
+    bench_hospice_care_family,
+    bench_longevity_medicine_family,
+    bench_palliative_care_family,
+)
+from quant_fund.research.benches_w1205 import (
+    bench_aerospace_medicine_family,
+    bench_diving_medicine_family,
+    bench_high_altitude_medicine_family,
+    bench_hyperbaric_oxygen_family,
+    bench_space_physiology_family,
+    bench_wilderness_medicine_family,
+)
+from quant_fund.research.benches_w1206 import (
+    bench_immunosuppression_family,
+    bench_organ_donation_family,
+    bench_regenerative_medicine_family,
+    bench_stem_cell_therapy_family,
+    bench_transplantation_medicine_family,
+    bench_xenotransplantation_family,
+)
+from quant_fund.research.benches_w1207 import (
+    bench_art_therapy_family,
+    bench_behavioral_therapy_cognitive_family,
+    bench_music_therapy_family,
+    bench_play_therapy_family,
+    bench_psychoanalysis_studies_family,
+    bench_psychotherapy_studies_family,
+)
+from quant_fund.research.benches_w1208 import (
+    bench_child_adolescent_therapy_family,
+    bench_couples_therapy_family,
+    bench_family_therapy_family,
+    bench_group_therapy_family,
+    bench_marriage_family_therapy_family,
+    bench_trauma_therapy_family,
+)
+from quant_fund.research.benches_w1209 import (
+    bench_addiction_medicine_family,
+    bench_community_psychiatry_family,
+    bench_consultation_liaison_family,
+    bench_eating_disorders_family,
+    bench_psychosomatic_medicine_family,
+    bench_sleep_disorders_family,
+)
+from quant_fund.research.benches_w1210 import (
+    bench_anxiety_disorders_family,
+    bench_forensic_psychiatry_family,
+    bench_geriatric_psychiatry_family,
+    bench_mood_disorders_family,
+    bench_personality_disorders_family,
+    bench_psychotic_disorders_family,
+)
+from quant_fund.research.benches_w1211 import (
+    bench_epilepsy_studies_family,
+    bench_headache_medicine_family,
+    bench_movement_disorders_family,
+    bench_neurodevelopmental_disorders_family,
+    bench_neuropsychiatry_studies_family,
+    bench_pediatric_neurology_family,
+)
+from quant_fund.research.benches_w1212 import (
+    bench_neuro_ophthalmology_family,
+    bench_neurocritical_care_family,
+    bench_neurogenetics_family,
+    bench_neuroimmunology_family,
+    bench_neuromuscular_medicine_family,
+    bench_neurovascular_studies_family,
+)
+from quant_fund.research.benches_w1213 import (
+    bench_neurorehabilitation_family,
+    bench_neurosurgery_studies_family,
+    bench_neurotoxicology_family,
+    bench_neurotrauma_family,
+    bench_neurovascular_surgery_family,
+    bench_spinal_cord_medicine_family,
+)
+from quant_fund.research.benches_w1214 import (
+    bench_cardiology_studies_family,
+    bench_cardiovascular_imaging_family,
+    bench_electrophysiology_studies_family,
+    bench_heart_failure_medicine_family,
+    bench_interventional_cardiology_family,
+    bench_preventive_cardiology_family,
+)
+from quant_fund.research.benches_w1215 import (
+    bench_adult_congenital_family,
+    bench_cardiac_surgery_family,
+    bench_structural_heart_family,
+    bench_thoracic_surgery_family,
+    bench_transplant_cardiology_family,
+    bench_vascular_surgery_family,
+)
+from quant_fund.research.benches_w1216 import (
+    bench_critical_care_medicine_family,
+    bench_gastroenterology_studies_family,
+    bench_hepatology_studies_family,
+    bench_hospital_medicine_family,
+    bench_internal_medicine_family,
+    bench_pulmonary_medicine_family,
+)
+from quant_fund.research.benches_w1217 import (
+    bench_adrenal_medicine_family,
+    bench_bone_metabolism_family,
+    bench_diabetes_medicine_family,
+    bench_endocrinology_studies_family,
+    bench_metabolic_medicine_family,
+    bench_thyroid_medicine_family,
+)
+from quant_fund.research.benches_w1218 import (
+    bench_acid_base_medicine_family,
+    bench_dialysis_medicine_family,
+    bench_hypertension_medicine_family,
+    bench_nephrology_studies_family,
+    bench_renal_transplant_family,
+    bench_urology_studies_family,
+)
+from quant_fund.research.benches_w1219 import (
+    bench_hematologic_malignancies_family,
+    bench_hematology_studies_family,
+    bench_oncology_studies_family,
+    bench_radiation_oncology_family,
+    bench_solid_tumor_oncology_family,
+    bench_transfusion_medicine_family,
+)
+from quant_fund.research.benches_w1220 import (
+    bench_allergy_immunology_family,
+    bench_antimicrobial_stewardship_family,
+    bench_hiv_medicine_family,
+    bench_immunology_studies_family,
+    bench_infectious_disease_medicine_family,
+    bench_rheumatology_studies_family,
+)
+from quant_fund.research.benches_w1221 import (
+    bench_audiology_medicine_family,
+    bench_dermatology_studies_family,
+    bench_dermatopathology_family,
+    bench_ophthalmology_studies_family,
+    bench_optometry_studies_family,
+    bench_otolaryngology_studies_family,
+)
+from quant_fund.research.benches_w1222 import (
+    bench_hand_surgery_family,
+    bench_joint_replacement_family,
+    bench_musculoskeletal_medicine_family,
+    bench_orthopedics_studies_family,
+    bench_spine_surgery_family,
+    bench_sports_medicine_orthopedics_family,
+)
+from quant_fund.research.benches_w1223 import (
+    bench_airway_management_family,
+    bench_anesthesiology_studies_family,
+    bench_pain_medicine_studies_family,
+    bench_perioperative_medicine_family,
+    bench_regional_anesthesia_family,
+    bench_sedation_medicine_family,
+)
+from quant_fund.research.benches_w1224 import (
+    bench_fetal_medicine_family,
+    bench_gynecologic_oncology_family,
+    bench_gynecology_studies_family,
+    bench_maternal_fetal_medicine_family,
+    bench_obstetrics_studies_family,
+    bench_reproductive_endocrinology_family,
+)
+from quant_fund.research.benches_w1225 import (
+    bench_colorectal_surgery_family,
+    bench_general_surgery_studies_family,
+    bench_hepatobiliary_surgery_family,
+    bench_minimally_invasive_surgery_family,
+    bench_surgical_oncology_studies_family,
+    bench_trauma_surgery_family,
+)
+from quant_fund.research.benches_w1226 import (
+    bench_anatomical_pathology_family,
+    bench_clinical_pathology_family,
+    bench_cytopathology_family,
+    bench_histopathology_studies_family,
+    bench_molecular_pathology_family,
+    bench_pathology_studies_family,
+)
+from quant_fund.research.benches_w1227 import (
+    bench_body_imaging_family,
+    bench_diagnostic_imaging_family,
+    bench_interventional_neuroradiology_family,
+    bench_musculoskeletal_imaging_family,
+    bench_pediatric_imaging_family,
+    bench_radiology_studies_family,
+)
+from quant_fund.research.benches_w1228 import (
+    bench_dental_studies_family,
+    bench_endodontic_studies_family,
+    bench_oral_surgery_studies_family,
+    bench_orthodontic_studies_family,
+    bench_pediatric_dentistry_family,
+    bench_periodontal_studies_family,
+)
+from quant_fund.research.benches_w1229 import (
+    bench_adolescent_medicine_studies_family,
+    bench_developmental_pediatrics_family,
+    bench_neonatal_medicine_studies_family,
+    bench_pediatric_cardiology_family,
+    bench_pediatric_oncology_family,
+    bench_pediatrics_studies_family,
+)
+from quant_fund.research.benches_w1230 import (
+    bench_acute_care_studies_family,
+    bench_disaster_medicine_family,
+    bench_emergency_medicine_studies_family,
+    bench_resuscitation_medicine_family,
+    bench_toxicology_medicine_family,
+    bench_trauma_medicine_family,
+)
+from quant_fund.research.benches_w1231 import (
+    bench_allergy_studies_family,
+    bench_autoimmunity_studies_family,
+    bench_hematopoietic_transplant_family,
+    bench_immunodeficiency_studies_family,
+    bench_immunology_medicine_family,
+    bench_transplant_medicine_studies_family,
+)
+from quant_fund.research.benches_w1232 import (
+    bench_caregiver_medicine_family,
+    bench_falls_prevention_studies_family,
+    bench_frailty_medicine_family,
+    bench_geriatrics_studies_family,
+    bench_memory_clinic_studies_family,
+    bench_polypharmacy_studies_family,
+)
+from quant_fund.research.benches_w1233 import (
+    bench_dysmorphology_studies_family,
+    bench_genetic_diagnostics_family,
+    bench_lysosomal_medicine_family,
+    bench_medical_genetics_studies_family,
+    bench_mitochondrial_medicine_family,
+    bench_pharmacogenomics_studies_family,
+)
+from quant_fund.research.benches_w1234 import (
+    bench_breast_medicine_family,
+    bench_contraception_studies_family,
+    bench_infertility_studies_family,
+    bench_menopause_medicine_family,
+    bench_pelvic_health_studies_family,
+    bench_urogynecology_studies_family,
+)
+from quant_fund.research.benches_w1235 import (
+    bench_connective_tissue_studies_family,
+    bench_inflammatory_arthritis_studies_family,
+    bench_myositis_studies_family,
+    bench_osteoarthritis_studies_family,
+    bench_rheumatology_medicine_family,
+    bench_spondyloarthritis_studies_family,
+)
+from quant_fund.research.benches_w1236 import (
+    bench_chronic_pain_studies_family,
+    bench_fibromyalgia_studies_family,
+    bench_headache_studies_family,
+    bench_interventional_pain_studies_family,
+    bench_neuropathic_pain_studies_family,
+    bench_opioid_stewardship_studies_family,
+)
+from quant_fund.research.benches_w1237 import (
+    bench_clinical_pharmacy_studies_family,
+    bench_compounding_pharmacy_family,
+    bench_hospital_pharmacy_studies_family,
+    bench_medication_therapy_mgmt_family,
+    bench_pharmacovigilance_studies_family,
+    bench_pharmacy_practice_studies_family,
+)
+from quant_fund.research.benches_w1238 import (
+    bench_aortic_medicine_studies_family,
+    bench_lymphatic_medicine_family,
+    bench_peripheral_artery_studies_family,
+    bench_phlebology_studies_family,
+    bench_vascular_lab_studies_family,
+    bench_vascular_medicine_studies_family,
+)
+from quant_fund.research.benches_w1239 import (
+    bench_celiac_studies_family,
+    bench_gi_endoscopy_studies_family,
+    bench_hepatology_medicine_family,
+    bench_ibd_studies_family,
+    bench_motility_studies_family,
+    bench_pancreatic_medicine_family,
+)
+from quant_fund.research.benches_w1240 import (
+    bench_asthma_studies_family,
+    bench_bronchiectasis_studies_family,
+    bench_copd_studies_family,
+    bench_interstitial_lung_studies_family,
+    bench_respiratory_studies_family,
+    bench_sleep_breathing_studies_family,
+)
+from quant_fund.research.benches_w1241 import (
+    bench_anemia_studies_family,
+    bench_bleeding_disorders_family,
+    bench_coagulation_studies_family,
+    bench_hemoglobin_studies_family,
+    bench_marrow_studies_family,
+    bench_thrombosis_medicine_family,
+)
+from quant_fund.research.benches_w1242 import (
+    bench_fracture_studies_family,
+    bench_osteoporosis_studies_family,
+    bench_physiatry_studies_family,
+    bench_physical_therapy_studies_family,
+    bench_rehabilitation_studies_family,
+    bench_sports_injury_studies_family,
+)
+from quant_fund.research.benches_w1243 import (
+    bench_healthcare_infection_studies_family,
+    bench_mycosis_studies_family,
+    bench_opportunistic_studies_family,
+    bench_sepsis_studies_family,
+    bench_sexually_transmitted_studies_family,
+    bench_tuberculosis_studies_family,
+)
+from quant_fund.research.benches_w1244 import (
+    bench_ct_imaging_studies_family,
+    bench_mammography_studies_family,
+    bench_mri_studies_family,
+    bench_neuroradiology_studies_family,
+    bench_pet_imaging_studies_family,
+    bench_ultrasound_studies_family,
+)
+from quant_fund.research.benches_w1245 import (
+    bench_breast_oncology_studies_family,
+    bench_gi_oncology_studies_family,
+    bench_immuno_oncology_studies_family,
+    bench_medical_oncology_studies_family,
+    bench_targeted_therapy_studies_family,
+    bench_thoracic_oncology_studies_family,
+)
+from quant_fund.research.benches_w1246 import (
+    bench_bariatric_surgery_studies_family,
+    bench_burn_surgery_studies_family,
+    bench_endocrine_surgery_studies_family,
+    bench_pediatric_surgery_studies_family,
+    bench_plastic_surgery_studies_family,
+    bench_transplant_surgery_studies_family,
+)
+from quant_fund.research.benches_w1247 import (
+    bench_aki_studies_family,
+    bench_ckd_studies_family,
+    bench_electrolyte_studies_family,
+    bench_glomerular_studies_family,
+    bench_stones_studies_family,
+    bench_tubulointerstitial_studies_family,
+)
+from quant_fund.research.benches_w1248 import (
+    bench_cataract_studies_family,
+    bench_corneal_studies_family,
+    bench_glaucoma_studies_family,
+    bench_macular_studies_family,
+    bench_refractive_studies_family,
+    bench_retinal_studies_family,
+)
+from quant_fund.research.benches_w1249 import (
+    bench_acne_studies_family,
+    bench_alopecia_studies_family,
+    bench_eczema_studies_family,
+    bench_psoriasis_studies_family,
+    bench_skin_cancer_studies_family,
+    bench_vitiligo_studies_family,
+)
+from quant_fund.research.benches_w1250 import (
+    bench_cochlear_studies_family,
+    bench_head_neck_surgery_studies_family,
+    bench_laryngology_studies_family,
+    bench_otology_studies_family,
+    bench_rhinology_studies_family,
+    bench_sinus_studies_family,
+)
+from quant_fund.research.benches_w1251 import (
+    bench_andrology_studies_family,
+    bench_bladder_studies_family,
+    bench_bph_studies_family,
+    bench_erectile_studies_family,
+    bench_incontinence_studies_family,
+    bench_prostate_studies_family,
+)
+from quant_fund.research.benches_w1252 import (
+    bench_hypothalamic_studies_family,
+    bench_lipid_studies_family,
+    bench_metabolic_syndrome_studies_family,
+    bench_obesity_studies_family,
+    bench_parathyroid_studies_family,
+    bench_pituitary_studies_family,
+)
+from quant_fund.research.benches_w1253 import (
+    bench_antibody_studies_family,
+    bench_chemokine_studies_family,
+    bench_complement_studies_family,
+    bench_cytokine_studies_family,
+    bench_interferon_studies_family,
+    bench_lymphocyte_studies_family,
+)
+from quant_fund.research.benches_w1254 import (
+    bench_allele_studies_family,
+    bench_cnv_studies_family,
+    bench_haplotype_studies_family,
+    bench_pedigree_studies_family,
+    bench_penetrance_studies_family,
+    bench_snp_studies_family,
+)
+from quant_fund.research.benches_w1255 import (
+    bench_als_studies_family,
+    bench_alzheimer_studies_family,
+    bench_dementia_studies_family,
+    bench_huntington_studies_family,
+    bench_ms_studies_family,
+    bench_parkinson_studies_family,
+)
+from quant_fund.research.benches_w1256 import (
+    bench_community_health_studies_family,
+    bench_health_disparities_studies_family,
+    bench_outbreak_studies_family,
+    bench_screening_studies_family,
+    bench_surveillance_studies_family,
+    bench_vaccination_studies_family,
+)
+from quant_fund.research.benches_w1257 import (
+    bench_culture_studies_family,
+    bench_flow_cytometry_studies_family,
+    bench_immunoassay_studies_family,
+    bench_microscopy_studies_family,
+    bench_pcr_studies_family,
+    bench_serology_studies_family,
+)
+from quant_fund.research.benches_w1258 import (
+    bench_interactome_studies_family,
+    bench_metabolome_studies_family,
+    bench_methylome_studies_family,
+    bench_microbiome_studies_family,
+    bench_proteome_studies_family,
+    bench_transcriptome_studies_family,
+)
+from quant_fund.research.benches_w1259 import (
+    bench_admet_studies_family,
+    bench_de_novo_design_studies_family,
+    bench_docking_studies_family,
+    bench_lead_optimization_studies_family,
+    bench_qsar_studies_family,
+    bench_virtual_screening_studies_family,
+)
+from quant_fund.research.benches_w1260 import (
+    bench_adaptive_trial_studies_family,
+    bench_clinical_trial_studies_family,
+    bench_comparative_effectiveness_studies_family,
+    bench_meta_analysis_studies_family,
+    bench_outcomes_research_studies_family,
+    bench_rwe_studies_family,
+)
+from quant_fund.research.benches_w1261 import (
+    bench_biostatistics_methods_studies_family,
+    bench_epidemiology_methods_studies_family,
+    bench_heor_studies_family,
+    bench_regulatory_science_studies_family,
+    bench_survival_trial_studies_family,
+    bench_translational_studies_family,
+)
+from quant_fund.research.benches_w1262 import (
+    bench_dynamic_borrowing_studies_family,
+    bench_e_value_studies_family,
+    bench_master_protocol_studies_family,
+    bench_stepped_wedge_studies_family,
+    bench_target_trial_emulation_studies_family,
+    bench_win_ratio_studies_family,
+)
+from quant_fund.research.benches_w1263 import (
+    bench_diagnostic_meta_studies_family,
+    bench_fragility_index_studies_family,
+    bench_individual_patient_meta_studies_family,
+    bench_network_meta_studies_family,
+    bench_trial_sequential_studies_family,
+    bench_umbrella_review_studies_family,
+)
+from quant_fund.research.benches_w1264 import (
+    bench_external_control_studies_family,
+    bench_negative_control_studies_family,
+    bench_probabilistic_bias_studies_family,
+    bench_self_controlled_studies_family,
+    bench_structural_nested_studies_family,
+    bench_transportability_studies_family,
+)
+from quant_fund.research.benches_w1265 import (
+    bench_colocalization_studies_family,
+    bench_genetic_correlation_studies_family,
+    bench_heritability_ldscore_studies_family,
+    bench_mendelian_randomization_studies_family,
+    bench_pleiotropy_robust_studies_family,
+    bench_polygenic_score_studies_family,
+)
+from quant_fund.research.benches_w1266 import (
+    bench_diffusion_lm_studies_family,
+    bench_kv_compression_studies_family,
+    bench_medusa_speculation_studies_family,
+    bench_moe_shared_expert_studies_family,
+    bench_rope_scaling_studies_family,
+    bench_sparse_attention_studies_family,
+)
+from quant_fund.research.benches_w1267 import (
+    bench_alpha_tensor_studies_family,
+    bench_differentiable_sat_studies_family,
+    bench_neural_theorem_studies_family,
+    bench_program_synthesis_studies_family,
+    bench_sketch_programming_studies_family,
+    bench_symbolic_regression_dl_studies_family,
+)
+from quant_fund.research.benches_w1268 import (
+    bench_curiosity_diversity_studies_family,
+    bench_hindsight_relabel_studies_family,
+    bench_occupancy_measure_studies_family,
+    bench_option_discovery_studies_family,
+    bench_skill_chain_studies_family,
+    bench_successor_feature_studies_family,
+)
+from quant_fund.research.benches_w1269 import (
+    bench_best_of_n_studies_family,
+    bench_cdpo_studies_family,
+    bench_constitutional_ai_studies_family,
+    bench_orpo_studies_family,
+    bench_simpo_studies_family,
+    bench_sppo_studies_family,
+)
+from quant_fund.research.benches_w1270 import (
+    bench_attribution_graph_studies_family,
+    bench_causal_tracing_studies_family,
+    bench_circuit_discovery_studies_family,
+    bench_feature_geometry_studies_family,
+    bench_gated_sae_studies_family,
+    bench_transcoder_studies_family,
+)
+from quant_fund.research.benches_w1271 import (
+    bench_arena_battle_studies_family,
+    bench_bigbench_studies_family,
+    bench_capability_elicitation_studies_family,
+    bench_contamination_detect_studies_family,
+    bench_helm_eval_studies_family,
+    bench_llm_judge_studies_family,
+)
+from quant_fund.research.benches_w1272 import (
+    bench_audio_encoder_studies_family,
+    bench_document_ai_studies_family,
+    bench_omni_modal_studies_family,
+    bench_unified_tokenizer_studies_family,
+    bench_video_llm_studies_family,
+    bench_visual_grounding_studies_family,
+)
+from quant_fund.research.benches_w1273 import (
+    bench_alignment_eval_studies_family,
+    bench_guardrail_studies_family,
+    bench_hallucination_detect_studies_family,
+    bench_jailbreak_defense_studies_family,
+    bench_red_team_studies_family,
+    bench_sleeper_agent_studies_family,
+)
+from quant_fund.research.benches_w1274 import (
+    bench_agent_memory_studies_family,
+    bench_code_agent_studies_family,
+    bench_computer_use_studies_family,
+    bench_mcp_protocol_studies_family,
+    bench_skill_library_studies_family,
+    bench_web_agent_studies_family,
+)
+from quant_fund.research.benches_w1275 import (
+    bench_deliberate_search_studies_family,
+    bench_latent_reasoning_studies_family,
+    bench_self_improvement_studies_family,
+    bench_test_time_scaling_studies_family,
+    bench_tree_thought_studies_family,
+    bench_verifier_gated_studies_family,
+)
+from quant_fund.research.benches_w1276 import (
+    bench_attribution_patching_studies_family,
+    bench_causal_scrubbing_studies_family,
+    bench_function_vector_studies_family,
+    bench_induction_head_studies_family,
+    bench_monosemantic_studies_family,
+    bench_superposition_studies_family,
+)
+from quant_fund.research.benches_w1277 import (
+    bench_debate_alignment_studies_family,
+    bench_deliberative_alignment_studies_family,
+    bench_iterated_amplification_studies_family,
+    bench_recursive_reward_studies_family,
+    bench_scalable_oversight_studies_family,
+    bench_weak_to_strong_studies_family,
+)
+from quant_fund.research.benches_w1278 import (
+    bench_chunked_prefill_studies_family,
+    bench_continuous_batching_studies_family,
+    bench_disaggregated_serving_studies_family,
+    bench_early_exit_studies_family,
+    bench_prefix_caching_studies_family,
+    bench_tensor_parallel_studies_family,
+)
+from quant_fund.research.benches_w1279 import (
+    bench_activation_checkpoint_studies_family,
+    bench_fsdp_sharding_studies_family,
+    bench_hybrid_parallel_studies_family,
+    bench_pipeline_schedule_studies_family,
+    bench_sequence_parallel_studies_family,
+    bench_zero_optimizer_studies_family,
+)
+from quant_fund.research.benches_w1280 import (
+    bench_data_mixture_studies_family,
+    bench_data_quality_studies_family,
+    bench_dedup_pipeline_studies_family,
+    bench_domain_filtering_studies_family,
+    bench_synthetic_data_studies_family,
+    bench_token_budget_studies_family,
+)
+from quant_fund.research.benches_w1281 import (
+    bench_analogical_prompting_studies_family,
+    bench_graph_of_thought_studies_family,
+    bench_least_to_most_studies_family,
+    bench_plan_and_solve_studies_family,
+    bench_step_back_studies_family,
+    bench_tree_of_thought_studies_family,
+)
+from quant_fund.research.benches_w1282 import (
+    bench_affordance_map_studies_family,
+    bench_embodied_agent_studies_family,
+    bench_spatial_reasoning_studies_family,
+    bench_video_diffusion_studies_family,
+    bench_vla_model_studies_family,
+    bench_world_sim_studies_family,
+)
+from quant_fund.research.benches_w1283 import (
+    bench_context_compression_studies_family,
+    bench_episodic_memory_studies_family,
+    bench_memory_bank_studies_family,
+    bench_retrieval_memory_studies_family,
+    bench_semantic_memory_studies_family,
+    bench_working_memory_studies_family,
+)
+from quant_fund.research.benches_w1284 import (
+    bench_citation_check_studies_family,
+    bench_claim_verifier_studies_family,
+    bench_entailment_studies_family,
+    bench_factuality_score_studies_family,
+    bench_grounding_verify_studies_family,
+    bench_self_reflect_studies_family,
+)
+from quant_fund.research.benches_w1285 import (
+    bench_audio_lm_studies_family,
+    bench_chart_reasoning_studies_family,
+    bench_doc_vqa_studies_family,
+    bench_gui_agent_studies_family,
+    bench_video_understanding_studies_family,
+    bench_vision_pretraining_studies_family,
+)
+from quant_fund.research.benches_w1286 import (
+    bench_beacon_context_studies_family,
+    bench_hierarchical_context_studies_family,
+    bench_infini_attention_studies_family,
+    bench_landmark_attention_studies_family,
+    bench_ntk_scaling_studies_family,
+    bench_yarn_scaling_studies_family,
+)
+from quant_fund.research.benches_w1287 import (
+    bench_capability_eval_studies_family,
+    bench_control_eval_studies_family,
+    bench_deception_eval_studies_family,
+    bench_prompt_injection_studies_family,
+    bench_sandbox_escape_studies_family,
+    bench_tool_call_verify_studies_family,
+)
+from quant_fund.research.benches_w1288 import (
+    bench_adversarial_irl_studies_family,
+    bench_behavior_cloning_studies_family,
+    bench_dagger_studies_family,
+    bench_offline_distill_studies_family,
+    bench_preference_irl_studies_family,
+    bench_skill_extraction_studies_family,
+)
+from quant_fund.research.benches_w1289 import (
+    bench_analogical_prompt_studies_family,
+    bench_cot_studies_family,
+    bench_reflexion_studies_family,
+    bench_scratchpad_studies_family,
+    bench_self_consistency_studies_family,
+    bench_stepwise_verify_studies_family,
+)
+from quant_fund.research.benches_w1290 import (
+    bench_awq_studies_family,
+    bench_entropy_code_quant_studies_family,
+    bench_gptq_studies_family,
+    bench_kv_cache_quant_studies_family,
+    bench_smoothquant_studies_family,
+    bench_weight_share_studies_family,
+)
+from quant_fund.research.benches_w1291 import (
+    bench_data_mix_studies_family,
+    bench_dedup_minhash_studies_family,
+    bench_dedup_studies_family,
+    bench_domain_classifier_studies_family,
+    bench_perplexity_filter_studies_family,
+    bench_quality_filter_studies_family,
+)
+from quant_fund.research.benches_w1292 import (
+    bench_grpo_studies_family,
+    bench_math_reward_studies_family,
+    bench_outcome_reward_studies_family,
+    bench_process_reward_studies_family,
+    bench_rlvr_studies_family,
+    bench_verifiable_reward_studies_family,
+)
+from quant_fund.research.benches_w1293 import (
+    bench_cai_critique_studies_family,
+    bench_constitutional_studies_family,
+    bench_harmlessness_rl_studies_family,
+    bench_principle_eval_studies_family,
+    bench_rlaif_studies_family,
+    bench_sleeper_eval_studies_family,
+)
+from quant_fund.research.benches_w1294 import (
+    bench_activation_oracle_studies_family,
+    bench_concept_vector_studies_family,
+    bench_feature_ablation_studies_family,
+    bench_honesty_vector_studies_family,
+    bench_reading_vector_studies_family,
+    bench_refusal_vector_studies_family,
+)
+from quant_fund.research.benches_w1295 import (
+    bench_activation_patch_studies_family,
+    bench_circuit_tracer_studies_family,
+    bench_feature_dashboard_studies_family,
+    bench_jailbreak_detect_studies_family,
+    bench_mech_anomaly_studies_family,
+    bench_sae_linter_studies_family,
+)
+from quant_fund.research.benches_w1296 import (
+    bench_ensemble_rm_studies_family,
+    bench_judge_reward_studies_family,
+    bench_margin_reward_studies_family,
+    bench_reward_hacking_studies_family,
+    bench_reward_uncertainty_studies_family,
+    bench_rm_btd_studies_family,
+)
+from quant_fund.research.benches_w1297 import (
+    bench_benchmark_gaming_studies_family,
+    bench_benchmark_saturate_studies_family,
+    bench_contamination_studies_family,
+    bench_eval_coverage_studies_family,
+    bench_eval_reliability_studies_family,
+    bench_lm_eval_harness_studies_family,
+)
+from quant_fund.research.benches_w1298 import (
+    bench_browse_eval_studies_family,
+    bench_os_world_studies_family,
+    bench_swe_bench_studies_family,
+    bench_terminal_bench_studies_family,
+    bench_tool_use_eval_studies_family,
+    bench_web_arena_studies_family,
+)
+from quant_fund.research.benches_w1299 import (
+    bench_agent_harm_studies_family,
+    bench_harm_bench_studies_family,
+    bench_jailbreak_bench_studies_family,
+    bench_prompt_inject_studies_family,
+    bench_safety_bench_studies_family,
+    bench_xstest_studies_family,
+)
+from quant_fund.research.benches_w1300 import (
+    bench_adversarial_eval_studies_family,
+    bench_autoattack_studies_family,
+    bench_corruption_studies_family,
+    bench_imagenet_c_studies_family,
+    bench_imagenet_r_studies_family,
+    bench_robust_bench_studies_family,
+)
+from quant_fund.research.benches_w1301 import (
+    bench_backdoor_studies_family,
+    bench_clean_label_studies_family,
+    bench_data_poison_studies_family,
+    bench_neural_cleanse_studies_family,
+    bench_spectral_signature_studies_family,
+    bench_trojan_studies_family,
+)
+from quant_fund.research.benches_w1302 import (
+    bench_canary_infer_studies_family,
+    bench_deep_leak_studies_family,
+    bench_gradient_leak_studies_family,
+    bench_lira_studies_family,
+    bench_membership_infer_studies_family,
+    bench_shadow_model_studies_family,
+)
+from quant_fund.research.benches_w1303 import (
+    bench_bbh_studies_family,
+    bench_gsm8k_studies_family,
+    bench_humaneval_studies_family,
+    bench_ifeval_studies_family,
+    bench_mmlu_studies_family,
+    bench_mt_bench_studies_family,
+)
+from quant_fund.research.benches_w1304 import (
+    bench_boolq_studies_family,
+    bench_copa_studies_family,
+    bench_hellaswag_studies_family,
+    bench_openbookqa_studies_family,
+    bench_piqa_studies_family,
+    bench_siqa_studies_family,
+)
+from quant_fund.research.benches_w1305 import (
+    bench_coqa_studies_family,
+    bench_drop_studies_family,
+    bench_hotpotqa_studies_family,
+    bench_nq_studies_family,
+    bench_squad_studies_family,
+    bench_triviaqa_studies_family,
+)
+from quant_fund.research.benches_w1306 import (
+    bench_glue_studies_family,
+    bench_mnli_studies_family,
+    bench_qnli_studies_family,
+    bench_rte_studies_family,
+    bench_super_glue_studies_family,
+    bench_wnli_studies_family,
+)
+from quant_fund.research.benches_w1307 import (
+    bench_lambada_studies_family,
+    bench_record_studies_family,
+    bench_story_cloze_studies_family,
+    bench_winogender_studies_family,
+    bench_winograd_studies_family,
+    bench_wsc_studies_family,
+)
+from quant_fund.research.benches_w1308 import (
+    bench_halu_eval_studies_family,
+    bench_infinite_bench_studies_family,
+    bench_longmem_studies_family,
+    bench_needle_haystack_studies_family,
+    bench_ruler_studies_family,
+    bench_truthful_qa_studies_family,
+)
+from quant_fund.research.benches_w1309 import (
+    bench_frontier_math_studies_family,
+    bench_gpqa_studies_family,
+    bench_hle_studies_family,
+    bench_mmlu_pro_studies_family,
+    bench_tau_bench_studies_family,
+    bench_workarena_studies_family,
+)
+from quant_fund.research.benches_w1310 import (
+    bench_alpaca_eval_studies_family,
+    bench_attribution_eval_studies_family,
+    bench_citation_eval_studies_family,
+    bench_diversity_eval_studies_family,
+    bench_factscore_studies_family,
+    bench_self_bleu_studies_family,
+)
+from quant_fund.research.benches_w1311 import (
+    bench_aegis_studies_family,
+    bench_air_bench_studies_family,
+    bench_overkill_studies_family,
+    bench_salad_bench_studies_family,
+    bench_sorry_bench_studies_family,
+    bench_wildguard_studies_family,
+)
+from quant_fund.research.benches_w1312 import (
+    bench_bio_risk_eval_studies_family,
+    bench_chem_risk_eval_studies_family,
+    bench_cyber_sec_eval_studies_family,
+    bench_lab_bench_studies_family,
+    bench_malicious_instruct_studies_family,
+    bench_wmdp_studies_family,
+)
+from quant_fund.research.benches_w1313 import (
+    bench_abs_scan_studies_family,
+    bench_activation_cluster_studies_family,
+    bench_fine_pruning_studies_family,
+    bench_sleepless_studies_family,
+    bench_strip_defense_studies_family,
+    bench_watermark_studies_family,
+)
+from quant_fund.research.benches_w1314 import (
+    bench_attribute_infer_studies_family,
+    bench_extraction_studies_family,
+    bench_inversion_studies_family,
+    bench_model_stealing_studies_family,
+    bench_property_infer_studies_family,
+    bench_reconstruction_studies_family,
+)
+from quant_fund.research.benches_w1315 import (
+    bench_imagenet_a_studies_family,
+    bench_imagenet_e_studies_family,
+    bench_imagenet_o_studies_family,
+    bench_imagenet_sketch_studies_family,
+    bench_imagenet_v2_studies_family,
+    bench_stylized_studies_family,
+)
+from quant_fund.research.benches_w1316 import (
+    bench_backgrounds_studies_family,
+    bench_cue_conflict_studies_family,
+    bench_geirhos_studies_family,
+    bench_imagenet_bg_studies_family,
+    bench_shape_bias_studies_family,
+    bench_texture_bias_studies_family,
+)
+from quant_fund.research.benches_w1317 import (
+    bench_arc_eval_studies_family,
+    bench_do_anything_studies_family,
+    bench_step_eval_studies_family,
+    bench_strong_reject_studies_family,
+    bench_verifier_reward_studies_family,
+    bench_winogrande_studies_family,
+)
+from quant_fund.research.benches_w1318 import (
+    bench_cb_studies_family,
+    bench_cola_studies_family,
+    bench_qqp_studies_family,
+    bench_squad_v2_studies_family,
+    bench_sst2_studies_family,
+    bench_wic_studies_family,
+)
+from quant_fund.research.benches_w1319 import (
+    bench_math_bench_studies_family,
+    bench_multirc_studies_family,
+    bench_ninco_studies_family,
+    bench_objectnet_studies_family,
+    bench_ood_bench_studies_family,
+    bench_wild_bench_studies_family,
+)
+from quant_fund.research.benches_w1320 import (
+    bench_gaia_bench_studies_family,
+    bench_mmbench_agent_studies_family,
+    bench_osworld_studies_family,
+    bench_screen_eval_studies_family,
+    bench_vsi_bench_studies_family,
+    bench_webvoyager_studies_family,
+)
+from quant_fund.research.benches_w1321 import (
+    bench_chart_gqa_studies_family,
+    bench_mathvista_studies_family,
+    bench_mkqa_studies_family,
+    bench_mmmlu_studies_family,
+    bench_mmmu_studies_family,
+    bench_videomme_studies_family,
+)
+from quant_fund.research.benches_w1322 import (
+    bench_logic_bench_studies_family,
+    bench_minif2f_studies_family,
+    bench_olympiad_bench_studies_family,
+    bench_putnam_studies_family,
+    bench_truthfulqa_studies_family,
+    bench_zebra_logic_studies_family,
+)
+from quant_fund.research.benches_w1323 import (
+    bench_bigcodebench_studies_family,
+    bench_ds1000_studies_family,
+    bench_humaneval_plus_studies_family,
+    bench_livecodebench_studies_family,
+    bench_mbpp_plus_studies_family,
+    bench_swe_perf_studies_family,
+)
+from quant_fund.research.benches_w1324 import (
+    bench_alpacaeval_studies_family,
+    bench_arena_hard_studies_family,
+    bench_judge_bench_studies_family,
+    bench_mt_bench_judge_studies_family,
+    bench_prometheus_eval_studies_family,
+    bench_reward_bench_studies_family,
+)
+from quant_fund.research.benches_w1325 import (
+    bench_babilong_studies_family,
+    bench_infinitebench_studies_family,
+    bench_longbench_studies_family,
+    bench_lv_eval_studies_family,
+    bench_ruler_bench_studies_family,
+    bench_zero_scrolls_studies_family,
+)
+from quant_fund.research.benches_w1326 import (
+    bench_attribute_inference_studies_family,
+    bench_canary_memorization_studies_family,
+    bench_extraction_attack_studies_family,
+    bench_membership_inference_studies_family,
+    bench_model_inversion_studies_family,
+    bench_privacy_meter_studies_family,
+)
+from quant_fund.research.benches_w1327 import (
+    bench_bbq_bias_studies_family,
+    bench_bold_bias_studies_family,
+    bench_crowspairs_studies_family,
+    bench_holist_bias_studies_family,
+    bench_realtoxicity_studies_family,
+    bench_toxigen_eval_studies_family,
+)
+from quant_fund.research.benches_w1328 import (
+    bench_apps_bench_studies_family,
+    bench_class_eval_studies_family,
+    bench_code_contests_studies_family,
+    bench_multipl_e_studies_family,
+    bench_polyglot_bench_studies_family,
+    bench_repobench_studies_family,
+)
+from quant_fund.research.benches_w1329 import (
+    bench_gov_report_studies_family,
+    bench_looogle_studies_family,
+    bench_lost_middle_studies_family,
+    bench_marathon_eval_studies_family,
+    bench_niah_v2_studies_family,
+    bench_passkey_retrieval_studies_family,
+)
+from quant_fund.research.benches_w1330 import (
+    bench_beaver_safe_studies_family,
+    bench_do_not_answer_studies_family,
+    bench_hh_rlhf_studies_family,
+    bench_honest_eval_studies_family,
+    bench_safe_rlhf_studies_family,
+    bench_sos_bench_studies_family,
+)
+from quant_fund.research.benches_w1331 import (
+    bench_codescope_studies_family,
+    bench_concode_eval_studies_family,
+    bench_crosscodeeval_studies_family,
+    bench_mer_bench_studies_family,
+    bench_project_eval_studies_family,
+    bench_swe_bench_verified_studies_family,
+)
+from quant_fund.research.benches_w1332 import (
+    bench_decontaminate_studies_family,
+    bench_eval_bias_studies_family,
+    bench_fair_eval_studies_family,
+    bench_g_eval_studies_family,
+    bench_ngram_overlap_studies_family,
+    bench_pandalm_studies_family,
+)
+from quant_fund.research.benches_w1333 import (
+    bench_fava_studies_family,
+    bench_polyglo_tox_studies_family,
+    bench_regard_eval_studies_family,
+    bench_unqover_studies_family,
+    bench_vlur_studies_family,
+    bench_xlsum_studies_family,
+)
+from quant_fund.research.benches_w1334 import (
+    bench_books_qa_studies_family,
+    bench_lcc_codebase_studies_family,
+    bench_multi_news_eval_studies_family,
+    bench_narrative_qa_studies_family,
+    bench_needle_multi_studies_family,
+    bench_qmsum_eval_studies_family,
+)
+from quant_fund.research.benches_w1335 import (
+    bench_code_rag_studies_family,
+    bench_codegen_universal_studies_family,
+    bench_long_code_bench_studies_family,
+    bench_odex_eval_studies_family,
+    bench_swe_dev_studies_family,
+    bench_swe_multimodal_studies_family,
+)
+from quant_fund.research.benches_w1336 import (
+    bench_assistantbench_studies_family,
+    bench_mind2web_studies_family,
+    bench_miniwob_studies_family,
+    bench_visual_web_studies_family,
+    bench_web_nav_studies_family,
+    bench_webarena_studies_family,
+)
+from quant_fund.research.benches_w1337 import (
+    bench_android_env_studies_family,
+    bench_api_bank_studies_family,
+    bench_gaia_level_studies_family,
+    bench_video_game_studies_family,
+    bench_voyager_minecraft_studies_family,
+    bench_web_shopping_studies_family,
+)
+from quant_fund.research.benches_w1338 import (
+    bench_arith_qa_studies_family,
+    bench_gsm_hard_studies_family,
+    bench_math_reason_studies_family,
+    bench_mini_f2f_studies_family,
+    bench_proof_pile_studies_family,
+    bench_theorem_qa_studies_family,
+)
+from quant_fund.research.benches_w1339 import (
+    bench_aqua_rat_studies_family,
+    bench_geo_qa_studies_family,
+    bench_hol_step_studies_family,
+    bench_math_odyssey_studies_family,
+    bench_tab_math_studies_family,
+    bench_uni_math_studies_family,
+)
+from quant_fund.research.benches_w1340 import (
+    bench_arc_challenge_studies_family,
+    bench_bio_qa_studies_family,
+    bench_med_qa_studies_family,
+    bench_openbook_qa_studies_family,
+    bench_pubmed_qa_studies_family,
+    bench_sci_q_studies_family,
+)
+from quant_fund.research.benches_w1341 import (
+    bench_bold_eval_studies_family,
+    bench_crow_s_pairs_studies_family,
+    bench_hate_speech_eval_studies_family,
+    bench_holo_bias_studies_family,
+    bench_real_toxicity_studies_family,
+    bench_stereo_set_studies_family,
+)
+from quant_fund.research.benches_w1342 import (
+    bench_fairness_eval_studies_family,
+    bench_gender_bias_studies_family,
+    bench_jigsaw_tox_studies_family,
+    bench_nlp_bias_studies_family,
+    bench_pronoun_bias_studies_family,
+    bench_regard_metric_studies_family,
+)
+from quant_fund.research.benches_w1343 import (
+    bench_coqa_qa_studies_family,
+    bench_drop_qa_studies_family,
+    bench_news_qa_studies_family,
+    bench_quac_qa_studies_family,
+    bench_quail_qa_studies_family,
+    bench_quoref_qa_studies_family,
+)
+from quant_fund.research.benches_w1344 import (
+    bench_boolq_qa_studies_family,
+    bench_dream_qa_studies_family,
+    bench_duorc_qa_studies_family,
+    bench_mctest_qa_studies_family,
+    bench_qasper_qa_studies_family,
+    bench_race_qa_studies_family,
+)
+from quant_fund.research.benches_w1345 import (
+    bench_complex_qa_studies_family,
+    bench_entity_quests_studies_family,
+    bench_freebase_qa_studies_family,
+    bench_nq_open_studies_family,
+    bench_trivia_qa_studies_family,
+    bench_web_qa_studies_family,
+)
+from quant_fund.research.benches_w1346 import (
+    bench_grail_qa_studies_family,
+    bench_graph_questions_studies_family,
+    bench_kqa_pro_studies_family,
+    bench_lc_quad_studies_family,
+    bench_mintaka_qa_studies_family,
+    bench_spinach_qa_studies_family,
+)
+from quant_fund.research.benches_w1347 import (
+    bench_abductive_nli_studies_family,
+    bench_conseq_log_studies_family,
+    bench_logiqa_log_studies_family,
+    bench_lsat_log_studies_family,
+    bench_reason_mc_studies_family,
+    bench_recli_log_studies_family,
+)
+from quant_fund.research.benches_w1348 import (
+    bench_anli_r1_studies_family,
+    bench_anli_r2_studies_family,
+    bench_anli_r3_studies_family,
+    bench_mnli_match_studies_family,
+    bench_scitail_lite_studies_family,
+    bench_snli_lite_studies_family,
+)
+from quant_fund.research.benches_w1349 import (
+    bench_cola_lite_studies_family,
+    bench_qnli_lite_studies_family,
+    bench_qqp_lite_studies_family,
+    bench_sst2_lite_studies_family,
+    bench_stsb_lite_studies_family,
+    bench_wnli_lite_studies_family,
+)
+from quant_fund.research.benches_w1350 import (
+    bench_dyck_lang_studies_family,
+    bench_hops_add_studies_family,
+    bench_lcmc_lite_studies_family,
+    bench_mco_lite_studies_family,
+    bench_scan_cfsp_studies_family,
+    bench_shuffle_expr_studies_family,
+)
+from quant_fund.research.benches_w1351 import (
+    bench_ethic_jiminy_studies_family,
+    bench_moral_exc_studies_family,
+    bench_moral_found_studies_family,
+    bench_principlism_toy_studies_family,
+    bench_scruples_lite_studies_family,
+    bench_virtue_ethics_studies_family,
+)
+from quant_fund.research.benches_w1352 import (
+    bench_bias_bench_studies_family,
+    bench_crowsp_lite_studies_family,
+    bench_honesty_lie_studies_family,
+    bench_social_iqa2_studies_family,
+    bench_stereo_lite_studies_family,
+    bench_wino_bias_studies_family,
+)
+from quant_fund.research.benches_w1353 import (
+    bench_creak_lite_studies_family,
+    bench_entailment_bn_studies_family,
+    bench_hans_lite_studies_family,
+    bench_prove_it_studies_family,
+    bench_strategy_qa_studies_family,
+    bench_sup_nli_studies_family,
+)
+from quant_fund.research.benches_w1354 import (
+    bench_arc_easy2_studies_family,
+    bench_boolq_lite_studies_family,
+    bench_cosmos_qa_studies_family,
+    bench_race_lite_studies_family,
+    bench_sciq_lite_studies_family,
+    bench_social_qa_studies_family,
+)
+from quant_fund.research.benches_w1355 import (
+    bench_arc_hard2_studies_family,
+    bench_csqa_lite_studies_family,
+    bench_hellaswag_lite_studies_family,
+    bench_piqa_lite_studies_family,
+    bench_prost_lite_studies_family,
+    bench_swag_lite_studies_family,
+)
+from quant_fund.research.benches_w1356 import (
+    bench_bigbench_lite_studies_family,
+    bench_entity_qa_studies_family,
+    bench_mmlu_lite_studies_family,
+    bench_natural_qa_studies_family,
+    bench_pop_qa_studies_family,
+    bench_triviaqa_lite_studies_family,
+)
+from quant_fund.research.benches_w1357 import (
+    bench_hendrycks_test_studies_family,
+    bench_hotpot_lite_studies_family,
+    bench_multirc_lite_studies_family,
+    bench_quoref_lite_studies_family,
+    bench_record_lite_studies_family,
+    bench_squad_lite2_studies_family,
+)
+from quant_fund.research.benches_w1358 import (
+    bench_adver_qa_studies_family,
+    bench_coqa_lite_studies_family,
+    bench_drop_lite_studies_family,
+    bench_duo_rc_studies_family,
+    bench_quac_lite_studies_family,
+    bench_trivia_web_studies_family,
+)
+from quant_fund.research.benches_w1359 import (
+    bench_argu_ana_studies_family,
+    bench_babi_lite_studies_family,
+    bench_curious_qa_studies_family,
+    bench_qasper_lite_studies_family,
+    bench_scifact_lite_studies_family,
+    bench_web_questions_studies_family,
+)
+from quant_fund.research.benches_w1360 import (
+    bench_bioasq_lite_studies_family,
+    bench_cite_worth_studies_family,
+    bench_climate_fever_studies_family,
+    bench_fever_lite_studies_family,
+    bench_touch_e_studies_family,
+    bench_verdict_qa_studies_family,
+)
+from quant_fund.research.benches_w1361 import (
+    bench_covid_lies_studies_family,
+    bench_evidence_inf_studies_family,
+    bench_hoax_detect_studies_family,
+    bench_liar_lite_studies_family,
+    bench_rumor_eval_studies_family,
+    bench_scidtb_lite_studies_family,
+)
+from quant_fund.research.benches_w1362 import (
+    bench_check_that_studies_family,
+    bench_claim_buster_studies_family,
+    bench_emergent_lite_studies_family,
+    bench_fake_news_studies_family,
+    bench_snopes_lite_studies_family,
+    bench_stance_detect_studies_family,
+)
+from quant_fund.research.benches_w1363 import (
+    bench_age_bias_studies_family,
+    bench_curry_qa_studies_family,
+    bench_cw_qa2_studies_family,
+    bench_dialect_bias_studies_family,
+    bench_politi_fact_studies_family,
+    bench_rumor_twitter_studies_family,
+)
+from quant_fund.research.benches_w1364 import (
+    bench_anli_lite_studies_family,
+    bench_mnli_lite_studies_family,
+    bench_mrpc_lite_studies_family,
+    bench_paws_lite_studies_family,
+    bench_quora_dup_studies_family,
+    bench_rte_lite_studies_family,
+)
+from quant_fund.research.benches_w1365 import (
+    bench_arxiv_sum_studies_family,
+    bench_cnn_dailymail_studies_family,
+    bench_dialogsum_lite_studies_family,
+    bench_multi_news_studies_family,
+    bench_pubmed_sum_studies_family,
+    bench_samsum_lite_studies_family,
+)
+from quant_fund.research.benches_w1366 import (
+    bench_align_score_studies_family,
+    bench_dice_eval_studies_family,
+    bench_factcc_lite_studies_family,
+    bench_faith_eval_studies_family,
+    bench_quest_eval_studies_family,
+    bench_summa_eval_studies_family,
+)
+from quant_fund.research.benches_w1367 import (
+    bench_bert_score_studies_family,
+    bench_bleu_rouge_studies_family,
+    bench_bleurt_lite_studies_family,
+    bench_comet_mt_studies_family,
+    bench_meteor_lite_studies_family,
+    bench_rouge_lite_studies_family,
+)
+from quant_fund.research.benches_w1368 import (
+    bench_chr_f_studies_family,
+    bench_mover_score_studies_family,
+    bench_nist_metric_studies_family,
+    bench_prism_mt_studies_family,
+    bench_sacrebleu_lite_studies_family,
+    bench_ter_lite_studies_family,
+)
+from quant_fund.research.benches_w1369 import (
+    bench_aime_eval_studies_family,
+    bench_asdiv_lite_studies_family,
+    bench_math500_lite_studies_family,
+    bench_mgsm_lite_studies_family,
+    bench_minerva_math_studies_family,
+    bench_svamp_lite_studies_family,
+)
+from quant_fund.research.benches_w1370 import (
+    bench_bbh_lite_studies_family,
+    bench_gpqa_lite_studies_family,
+    bench_if_eval_studies_family,
+    bench_live_bench_studies_family,
+    bench_olympic_bench_studies_family,
+    bench_trivia_qa_lite_studies_family,
+)
+from quant_fund.research.benches_w1371 import (
+    bench_ethos_lite_studies_family,
+    bench_moral_stories_studies_family,
+    bench_mutual_lite_studies_family,
+    bench_prosocial_lite_studies_family,
+    bench_scruples_studies_family,
+    bench_siqa_lite_studies_family,
+)
+from quant_fund.research.benches_w1372 import (
+    bench_billsum_lite_studies_family,
+    bench_booksum_lite_studies_family,
+    bench_elm_lite_studies_family,
+    bench_govreport_lite_studies_family,
+    bench_qmsum_lite_studies_family,
+    bench_wikisum_lite_studies_family,
+)
+from quant_fund.research.benches_w1373 import (
+    bench_commonsense_lite_studies_family,
+    bench_logi_qa_studies_family,
+    bench_mr_lite_studies_family,
+    bench_muin_lite_studies_family,
+    bench_qasc_sci2_studies_family,
+    bench_winogrande_lite_studies_family,
+)
+from quant_fund.research.benches_w1374 import (
+    bench_deduc_lite_studies_family,
+    bench_entail_bank_studies_family,
+    bench_folio_lite_studies_family,
+    bench_logic_nli_studies_family,
+    bench_proof_writer_studies_family,
+    bench_rule_taker_studies_family,
+)
+from quant_fund.research.benches_w1375 import (
+    bench_facet_sum_studies_family,
+    bench_ms2_lite_studies_family,
+    bench_patent_sum_studies_family,
+    bench_sci_lay_studies_family,
+    bench_scitldr_lite_studies_family,
+    bench_spectrum_sum_studies_family,
+)
+from quant_fund.research.benches_w1376 import (
+    bench_blender_bot_studies_family,
+    bench_conv_ai2_studies_family,
+    bench_daily_dialog_studies_family,
+    bench_dstc_lite_studies_family,
+    bench_empathy_dialog_studies_family,
+    bench_persona_chat_studies_family,
+)
+from quant_fund.research.benches_w1377 import (
+    bench_abduction_lite_studies_family,
+    bench_board_game_qa_studies_family,
+    bench_conv_finqa_studies_family,
+    bench_dream_lite_studies_family,
+    bench_equiv_lite_studies_family,
+    bench_wsc_lite_studies_family,
+)
+from quant_fund.research.benches_w1378 import (
+    bench_aqua_lite_studies_family,
+    bench_fin_qa_studies_family,
+    bench_math_qa_studies_family,
+    bench_num_glue_studies_family,
+    bench_tab_fact_studies_family,
+    bench_tat_qa_studies_family,
+)
+from quant_fund.research.benches_w1379 import (
+    bench_bary_score_studies_family,
+    bench_cider_lite_studies_family,
+    bench_gleu_lite_studies_family,
+    bench_kl_div_eval_studies_family,
+    bench_rouge_we_studies_family,
+    bench_wmt_metric_studies_family,
+)
+from quant_fund.research.benches_w1380 import (
+    bench_art_nli_studies_family,
+    bench_para_paws_studies_family,
+    bench_recast_lite_studies_family,
+    bench_snips_lite_studies_family,
+    bench_social_lite_studies_family,
+    bench_subj_lite_studies_family,
+)
+from quant_fund.research.benches_w1381 import (
+    bench_begins_lite_studies_family,
+    bench_diamonds_lite_studies_family,
+    bench_faithful_dial_studies_family,
+    bench_multi_woz_studies_family,
+    bench_top_dialog_studies_family,
+    bench_wow_lite_studies_family,
+)
+from quant_fund.research.benches_w1382 import (
+    bench_fact_score_studies_family,
+    bench_gpt_score_studies_family,
+    bench_helm_lite_studies_family,
+    bench_lmsys_eval_studies_family,
+    bench_nugget_eval_studies_family,
+    bench_vicuna_bench_studies_family,
+)
+from quant_fund.research.benches_w1383 import (
+    bench_aime24_studies_family,
+    bench_gpqa_diamond_studies_family,
+    bench_hle_lite_studies_family,
+    bench_mmmlu_lite_studies_family,
+    bench_olympiadbench_studies_family,
+    bench_super_gpqa_studies_family,
+)
+from quant_fund.research.benches_w1384 import (
+    bench_aider_polyglot_studies_family,
+    bench_hum_eval_studies_family,
+    bench_livebench_arena_studies_family,
+    bench_mbti_eval_studies_family,
+    bench_olmes_lite_studies_family,
+    bench_plus_eval_studies_family,
+)
+from quant_fund.research.benches_w1385 import (
+    bench_airtasks_studies_family,
+    bench_browsergym_studies_family,
+    bench_maze_eval_studies_family,
+    bench_mmind2web_studies_family,
+    bench_screenqa_studies_family,
+    bench_weblinx_studies_family,
+)
+from quant_fund.research.benches_w1386 import (
+    bench_alfworld_lite_studies_family,
+    bench_babyai_lite_studies_family,
+    bench_crafter_lite_studies_family,
+    bench_jericho_lite_studies_family,
+    bench_scienceworld_studies_family,
+    bench_textworld_lite_studies_family,
+)
+from quant_fund.research.benches_w1387 import (
+    bench_api_blend_studies_family,
+    bench_bfcl_v3_studies_family,
+    bench_gorilla_eval_studies_family,
+    bench_gta_bench_studies_family,
+    bench_seal_tools_studies_family,
+    bench_stabletoolbench_studies_family,
+)
+from quant_fund.research.benches_w1388 import (
+    bench_corpus_qa_studies_family,
+    bench_crag_bench_studies_family,
+    bench_domain_rag_studies_family,
+    bench_freshqa_studies_family,
+    bench_ragas_lite_studies_family,
+    bench_rgb_eval_studies_family,
+)
+from quant_fund.research.benches_w1389 import (
+    bench_book_sum_studies_family,
+    bench_fanout_qa_studies_family,
+    bench_infinitesum_studies_family,
+    bench_marlense_studies_family,
+    bench_narra_sum_studies_family,
+    bench_quote_sum_studies_family,
+)
+from quant_fund.research.benches_w1390 import (
+    bench_episum_lite_studies_family,
+    bench_fsum_lite_studies_family,
+    bench_mds_news_studies_family,
+    bench_sqcs_lite_studies_family,
+    bench_summon_fce_studies_family,
+    bench_wcep_lite_studies_family,
+)
+from quant_fund.research.benches_w1391 import (
+    bench_archer_qa_studies_family,
+    bench_argue_eval_studies_family,
+    bench_expert_qa_studies_family,
+    bench_mintaka_lite_studies_family,
+    bench_musique_lite_studies_family,
+    bench_wiki2_qa_studies_family,
+)
+from quant_fund.research.benches_w1392 import (
+    bench_meta_tool_studies_family,
+    bench_nest_tools_studies_family,
+    bench_toolbench2_studies_family,
+    bench_toolqa_lite_studies_family,
+    bench_ultra_tool_studies_family,
+    bench_work_plus_studies_family,
+)
+from quant_fund.research.benches_w1393 import (
+    bench_hamming_mcp_studies_family,
+    bench_mcp_bench_studies_family,
+    bench_net_hack_studies_family,
+    bench_tool_sandbox_studies_family,
+    bench_videoweb_studies_family,
+    bench_webshop_lite_studies_family,
+)
+from quant_fund.research.benches_w1394 import (
+    bench_api_eval_studies_family,
+    bench_apps_lite_studies_family,
+    bench_livecode_studies_family,
+    bench_mbpp_lite_studies_family,
+    bench_restbench_studies_family,
+    bench_swe_gym_studies_family,
+)
+from quant_fund.research.benches_w1395 import (
+    bench_bamboogle_studies_family,
+    bench_fine_qa_studies_family,
+    bench_hotpot2_studies_family,
+    bench_kwik_qa_studies_family,
+    bench_quest_qa_studies_family,
+    bench_tatqa2_studies_family,
+)
+from quant_fund.research.benches_w1396 import (
+    bench_agnews_lite_studies_family,
+    bench_dialsum_lite_studies_family,
+    bench_facet_lite_studies_family,
+    bench_medsum_lite_studies_family,
+    bench_oposum_lite_studies_family,
+    bench_qsum_lite_studies_family,
+)
+from quant_fund.research.benches_w1397 import (
+    bench_coma_qa_studies_family,
+    bench_gaia_lite_studies_family,
+    bench_simple_qa_studies_family,
+    bench_sqa_lite_studies_family,
+    bench_tqa_lite_studies_family,
+    bench_tydiqa_lite_studies_family,
+)
+from quant_fund.research.benches_w1398 import (
+    bench_doc2dial_studies_family,
+    bench_finqa_lite_studies_family,
+    bench_hybridqa_lite_studies_family,
+    bench_infotabs_studies_family,
+    bench_ottqa_lite_studies_family,
+    bench_tab_cwq_studies_family,
+)
+from quant_fund.research.benches_w1399 import (
+    bench_asqa_lite_studies_family,
+    bench_eli5_lite_studies_family,
+    bench_fresh_qa_studies_family,
+    bench_nq_lite_studies_family,
+    bench_trivia_lite_studies_family,
+    bench_xor_tydi_studies_family,
+)
+from quant_fund.research.benches_w1400 import (
+    bench_cronqa_lite_studies_family,
+    bench_cwq_lite_studies_family,
+    bench_grailqa_studies_family,
+    bench_kgqa_lite_studies_family,
+    bench_pweb_qa_studies_family,
+    bench_qald_lite_studies_family,
+)
+from quant_fund.research.benches_w1401 import (
+    bench_alg514_lite_studies_family,
+    bench_dolphin_lite_studies_family,
+    bench_draw_lite_studies_family,
+    bench_lila_lite_studies_family,
+    bench_math_doc_studies_family,
+    bench_math_eval_studies_family,
+)
+from quant_fund.research.benches_w1402 import (
+    bench_ai2_arc_lite_studies_family,
+    bench_arc_da_lite_studies_family,
+    bench_drug_qa_lite_studies_family,
+    bench_emrqa_lite_studies_family,
+    bench_head_qa_lite_studies_family,
+    bench_medmcqa_lite_studies_family,
+)
+from quant_fund.research.benches_w1403 import (
+    bench_ai2d_lite_studies_family,
+    bench_chart_qa_lite_studies_family,
+    bench_docvqa_lite_studies_family,
+    bench_infovqa_lite_studies_family,
+    bench_mmqa_lite_studies_family,
+    bench_ocrvqa_lite_studies_family,
+)
+from quant_fund.research.benches_w1404 import (
+    bench_activitynet_qa_studies_family,
+    bench_how2qa_lite_studies_family,
+    bench_movie_qa_lite_studies_family,
+    bench_msrvtt_qa_studies_family,
+    bench_nextqa_lite_studies_family,
+    bench_star_qa_lite_studies_family,
+)
+from quant_fund.research.benches_w1405 import (
+    bench_ambi_qa_studies_family,
+    bench_audio_qa_lite_studies_family,
+    bench_avsd_lite_studies_family,
+    bench_clotho_qa_studies_family,
+    bench_esc_qa_studies_family,
+    bench_music_avqa_studies_family,
+)
+from quant_fund.research.benches_w1406 import (
+    bench_menat_qa_studies_family,
+    bench_syndq_lite_studies_family,
+    bench_teas_qa_studies_family,
+    bench_time_qa_studies_family,
+    bench_timedial_qa_studies_family,
+    bench_timetravel_lite_studies_family,
+)
+from quant_fund.research.benches_w1407 import (
+    bench_canard_lite_studies_family,
+    bench_clarq_lite_studies_family,
+    bench_doqa_lite_studies_family,
+    bench_duread_qa_studies_family,
+    bench_orchid_qa_studies_family,
+    bench_qrecc_lite_studies_family,
+)
+from quant_fund.research.benches_w1408 import (
+    bench_abduct_qa_studies_family,
+    bench_analogy_qa_studies_family,
+    bench_arct_lite_studies_family,
+    bench_entailment_qa_studies_family,
+    bench_fusion_qa_studies_family,
+    bench_proof_qa_studies_family,
+)
+from quant_fund.research.benches_w1409 import (
+    bench_bamboogle_lite_studies_family,
+    bench_beerqa_lite_studies_family,
+    bench_cider_qa_studies_family,
+    bench_ensem_qa_studies_family,
+    bench_fanqa_lite_studies_family,
+    bench_hops_qa_studies_family,
+)
+from quant_fund.research.benches_w1410 import (
+    bench_causal_qa_studies_family,
+    bench_ecare_lite_studies_family,
+    bench_event2mind_lite_studies_family,
+    bench_event_qa_studies_family,
+    bench_hippo_qa_studies_family,
+    bench_intent_qa_studies_family,
+)
+from quant_fund.research.benches_w1411 import (
+    bench_fakeqa_lite_studies_family,
+    bench_flame_qa_studies_family,
+    bench_hate_qa_studies_family,
+    bench_ironic_qa_studies_family,
+    bench_offensive_qa_studies_family,
+    bench_politeness_qa_studies_family,
+)
+from quant_fund.research.benches_w1412 import (
+    bench_affect_qa_studies_family,
+    bench_anger_qa_studies_family,
+    bench_comfort_qa_studies_family,
+    bench_distress_qa_studies_family,
+    bench_emotion_qa_studies_family,
+    bench_empathy_qa_studies_family,
+)
+from quant_fund.research.benches_w1413 import (
+    bench_anaphora_qa_studies_family,
+    bench_coherence_qa_studies_family,
+    bench_dialogue_act_studies_family,
+    bench_discourse_qa_studies_family,
+    bench_hedge_qa_studies_family,
+    bench_implicit_qa_studies_family,
+)
+from quant_fund.research.benches_w1414 import (
+    bench_afford_qa_studies_family,
+    bench_counter_qa_studies_family,
+    bench_custom_qa_studies_family,
+    bench_everyday_qa_studies_family,
+    bench_folk_qa_studies_family,
+    bench_moral_qa_studies_family,
+)
+from quant_fund.research.benches_w1415 import (
+    bench_case_qa_studies_family,
+    bench_clause_qa_studies_family,
+    bench_contract_qa_studies_family,
+    bench_lawqa_lite_studies_family,
+    bench_legal_qa_studies_family,
+    bench_statute_qa_studies_family,
+)
+from quant_fund.research.benches_w1416 import (
+    bench_analyst_qa_studies_family,
+    bench_audit_qa_studies_family,
+    bench_bank_qa_studies_family,
+    bench_broker_qa_studies_family,
+    bench_credit_qa_studies_family,
+    bench_earnings_qa_studies_family,
+)
+from quant_fund.research.benches_w1417 import (
+    bench_checklist_qa_studies_family,
+    bench_flow_qa_studies_family,
+    bench_guide_qa_studies_family,
+    bench_howto_qa_studies_family,
+    bench_instruct_qa_studies_family,
+    bench_lesson_qa_studies_family,
+)
+from quant_fund.research.benches_w1418 import (
+    bench_almanac_qa_studies_family,
+    bench_atlas_qa_studies_family,
+    bench_idiom_qa_studies_family,
+    bench_jeopardy_qa_studies_family,
+    bench_misc_qa_studies_family,
+    bench_myth_qa_studies_family,
+)
+from quant_fund.research.benches_w1419 import (
+    bench_anecdote_qa_studies_family,
+    bench_ballad_qa_studies_family,
+    bench_biography_qa_studies_family,
+    bench_chronicle_qa_studies_family,
+    bench_epic_qa_studies_family,
+    bench_fable_qa_studies_family,
+)
+from quant_fund.research.benches_w1420 import (
+    bench_cause_qa_studies_family,
+    bench_claim_qa_studies_family,
+    bench_conclusion_qa_studies_family,
+    bench_deduction_qa_studies_family,
+    bench_effect_qa_studies_family,
+    bench_fallacy_qa_studies_family,
+)
+from quant_fund.research.benches_w1421 import (
+    bench_geospatial_qa_studies_family,
+    bench_itinerary_qa_studies_family,
+    bench_journey_qa_studies_family,
+    bench_route_qa_studies_family,
+    bench_spatial_qa_studies_family,
+    bench_terrain_qa_studies_family,
+)
+from quant_fund.research.benches_w1422 import (
+    bench_calendar_qa_studies_family,
+    bench_century_qa_studies_family,
+    bench_date_qa_studies_family,
+    bench_decade_qa_studies_family,
+    bench_epoch_qa_studies_family,
+    bench_era_qa_studies_family,
+)
+from quant_fund.research.benches_w1423 import (
+    bench_class_qa_studies_family,
+    bench_course_qa_studies_family,
+    bench_exam_qa_studies_family,
+    bench_homework_qa_studies_family,
+    bench_lecture_qa_studies_family,
+    bench_seminar_qa_studies_family,
+)
+from quant_fund.research.benches_w1424 import (
+    bench_blueprint_qa_studies_family,
+    bench_design_qa_studies_family,
+    bench_format_qa_studies_family,
+    bench_layout_qa_studies_family,
+    bench_pattern_qa_studies_family,
+    bench_schema_qa_studies_family,
+)
+from quant_fund.research.benches_w1425 import (
+    bench_article_qa_studies_family,
+    bench_broadcast_qa_studies_family,
+    bench_column_qa_studies_family,
+    bench_debate_qa_studies_family,
+    bench_editorial_qa_studies_family,
+    bench_headline_qa_studies_family,
+)
+from quant_fund.research.benches_w1426 import (
+    bench_challenge_qa_studies_family,
+    bench_contest_qa_studies_family,
+    bench_game_qa_studies_family,
+    bench_hobby_qa_studies_family,
+    bench_leisure_qa_studies_family,
+    bench_match_qa_studies_family,
+)
+from quant_fund.research.benches_w1427 import (
+    bench_canyon_qa_studies_family,
+    bench_coast_qa_studies_family,
+    bench_desert_qa_studies_family,
+    bench_field_qa_studies_family,
+    bench_forest_qa_studies_family,
+    bench_glacier_qa_studies_family,
+)
+from quant_fund.research.benches_w1428 import (
+    bench_agency_qa_studies_family,
+    bench_bureau_qa_studies_family,
+    bench_cabinet_qa_studies_family,
+    bench_election_qa_studies_family,
+    bench_government_qa_studies_family,
+    bench_ministry_qa_studies_family,
+)
+from quant_fund.research.benches_w1429 import (
+    bench_atom_qa_studies_family,
+    bench_electron_qa_studies_family,
+    bench_ion_qa_studies_family,
+    bench_molecule_qa_studies_family,
+    bench_neutron_qa_studies_family,
+    bench_photon_qa_studies_family,
+)
+from quant_fund.research.benches_w1430 import (
+    bench_animal_qa_studies_family,
+    bench_bird_qa_studies_family,
+    bench_ecosystem_qa_studies_family,
+    bench_fish_qa_studies_family,
+    bench_habitat_qa_studies_family,
+    bench_insect_qa_studies_family,
+)
+from quant_fund.research.benches_w1431 import (
+    bench_aircraft_qa_studies_family,
+    bench_bike_qa_studies_family,
+    bench_bus_qa_studies_family,
+    bench_car_qa_studies_family,
+    bench_engine_qa_studies_family,
+    bench_plane_qa_studies_family,
+)
+from quant_fund.research.benches_w1432 import (
+    bench_beverage_qa_studies_family,
+    bench_cuisine_qa_studies_family,
+    bench_dessert_qa_studies_family,
+    bench_dish_qa_studies_family,
+    bench_fruit_qa_studies_family,
+    bench_ingredient_qa_studies_family,
+)
+from quant_fund.research.benches_w1433 import (
+    bench_cloud_qa_studies_family,
+    bench_frost_qa_studies_family,
+    bench_hurricane_qa_studies_family,
+    bench_rain_qa_studies_family,
+    bench_storm_qa_studies_family,
+    bench_wind_qa_studies_family,
+)
+from quant_fund.research.benches_w1434 import (
+    bench_alloy_qa_studies_family,
+    bench_ceramic_qa_studies_family,
+    bench_glass_qa_studies_family,
+    bench_iron_qa_studies_family,
+    bench_steel_qa_studies_family,
+    bench_wood_qa_studies_family,
+)
+from quant_fund.research.benches_w1435 import (
+    bench_blood_qa_studies_family,
+    bench_bone_qa_studies_family,
+    bench_brain_qa_studies_family,
+    bench_heart_qa_studies_family,
+    bench_muscle_qa_studies_family,
+    bench_nerve_qa_studies_family,
+)
+from quant_fund.research.benches_w1436 import (
+    bench_comet_qa_studies_family,
+    bench_galaxy_qa_studies_family,
+    bench_moon_qa_studies_family,
+    bench_nebula_qa_studies_family,
+    bench_planet_qa_studies_family,
+    bench_star_qa_studies_family,
+)
+from quant_fund.research.benches_w1437 import (
+    bench_deity_qa_studies_family,
+    bench_dragon_qa_studies_family,
+    bench_hero_qa_studies_family,
+    bench_olympus_qa_studies_family,
+    bench_phoenix_qa_studies_family,
+    bench_titan_qa_studies_family,
+)
+from quant_fund.research.benches_w1438 import (
+    bench_coral_qa_studies_family,
+    bench_dolphin_qa_studies_family,
+    bench_reef_qa_studies_family,
+    bench_shark_qa_studies_family,
+    bench_turtle_qa_studies_family,
+    bench_whale_qa_studies_family,
+)
+from quant_fund.research.benches_w1439 import (
+    bench_cliff_qa_studies_family,
+    bench_crater_qa_studies_family,
+    bench_dune_qa_studies_family,
+    bench_fjord_qa_studies_family,
+    bench_gorge_qa_studies_family,
+    bench_mesa_qa_studies_family,
+)
+from quant_fund.research.benches_w1440 import (
+    bench_bamboo_qa_studies_family,
+    bench_cactus_qa_studies_family,
+    bench_fern_qa_studies_family,
+    bench_moss_qa_studies_family,
+    bench_pine_qa_studies_family,
+    bench_vine_qa_studies_family,
+)
+from quant_fund.research.benches_w1441 import (
+    bench_crane_qa_studies_family,
+    bench_eagle_qa_studies_family,
+    bench_falcon_qa_studies_family,
+    bench_owl_qa_studies_family,
+    bench_raven_qa_studies_family,
+    bench_swan_qa_studies_family,
+)
+from quant_fund.research.benches_w1442 import (
+    bench_ant_qa_studies_family,
+    bench_bee_qa_studies_family,
+    bench_beetle_qa_studies_family,
+    bench_butterfly_qa_studies_family,
+    bench_cricket_qa_studies_family,
+    bench_moth_qa_studies_family,
+)
+from quant_fund.research.benches_w1443 import (
+    bench_amber_qa_studies_family,
+    bench_amethyst_qa_studies_family,
+    bench_crystal_qa_studies_family,
+    bench_diamond_qa_studies_family,
+    bench_emerald_qa_studies_family,
+    bench_jade_qa_studies_family,
+)
+from quant_fund.research.benches_w1444 import (
+    bench_brook_qa_studies_family,
+    bench_creek_qa_studies_family,
+    bench_delta_qa_studies_family,
+    bench_estuary_qa_studies_family,
+    bench_marsh_qa_studies_family,
+    bench_pond_qa_studies_family,
+)
+from quant_fund.research.benches_w1445 import (
+    bench_birch_qa_studies_family,
+    bench_cedar_qa_studies_family,
+    bench_elm_qa_studies_family,
+    bench_maple_qa_studies_family,
+    bench_oak_qa_studies_family,
+    bench_willow_qa_studies_family,
+)
+from quant_fund.research.benches_w1446 import (
+    bench_cello_qa_studies_family,
+    bench_drum_qa_studies_family,
+    bench_flute_qa_studies_family,
+    bench_guitar_qa_studies_family,
+    bench_piano_qa_studies_family,
+    bench_violin_qa_studies_family,
+)
+from quant_fund.research.benches_w1447 import (
+    bench_bear_qa_studies_family,
+    bench_cheetah_qa_studies_family,
+    bench_fox_qa_studies_family,
+    bench_leopard_qa_studies_family,
+    bench_lion_qa_studies_family,
+    bench_wolf_qa_studies_family,
+)
+from quant_fund.research.benches_w1448 import (
+    bench_cobra_qa_studies_family,
+    bench_frog_qa_studies_family,
+    bench_gecko_qa_studies_family,
+    bench_iguana_qa_studies_family,
+    bench_python_qa_studies_family,
+    bench_viper_qa_studies_family,
+)
+from quant_fund.research.benches_w1449 import (
+    bench_beluga_qa_studies_family,
+    bench_manatee_qa_studies_family,
+    bench_narwhal_qa_studies_family,
+    bench_orca_qa_studies_family,
+    bench_otter_qa_studies_family,
+    bench_walrus_qa_studies_family,
+)
+from quant_fund.research.benches_w1450 import (
+    bench_barn_qa_studies_family,
+    bench_cow_qa_studies_family,
+    bench_goat_qa_studies_family,
+    bench_horse_qa_studies_family,
+    bench_pig_qa_studies_family,
+    bench_sheep_qa_studies_family,
+)
+from quant_fund.research.benches_w1451 import (
+    bench_apple_qa_studies_family,
+    bench_cherry_qa_studies_family,
+    bench_grape_qa_studies_family,
+    bench_lemon_qa_studies_family,
+    bench_mango_qa_studies_family,
+    bench_peach_qa_studies_family,
+)
+from quant_fund.research.benches_w1452 import (
+    bench_carrot_qa_studies_family,
+    bench_cucumber_qa_studies_family,
+    bench_garlic_qa_studies_family,
+    bench_onion_qa_studies_family,
+    bench_potato_qa_studies_family,
+    bench_tomato_qa_studies_family,
+)
+from quant_fund.research.benches_w1453 import (
+    bench_condor_qa_studies_family,
+    bench_harrier_qa_studies_family,
+    bench_kestrel_qa_studies_family,
+    bench_kite_qa_studies_family,
+    bench_osprey_qa_studies_family,
+    bench_vulture_qa_studies_family,
+)
+from quant_fund.research.benches_w1454 import (
+    bench_aphid_qa_studies_family,
+    bench_hornet_qa_studies_family,
+    bench_locust_qa_studies_family,
+    bench_mosquito_qa_studies_family,
+    bench_scarab_qa_studies_family,
+    bench_termite_qa_studies_family,
+)
+from quant_fund.research.benches_w1455 import (
+    bench_axolotl_qa_studies_family,
+    bench_bullfrog_qa_studies_family,
+    bench_newt_qa_studies_family,
+    bench_salamander_qa_studies_family,
+    bench_toad_qa_studies_family,
+    bench_tree_frog_qa_studies_family,
+)
+from quant_fund.research.benches_w1456 import (
+    bench_barracuda_qa_studies_family,
+    bench_catfish_qa_studies_family,
+    bench_cod_qa_studies_family,
+    bench_piranha_qa_studies_family,
+    bench_salmon_qa_studies_family,
+    bench_tuna_qa_studies_family,
+)
+from quant_fund.research.benches_w1457 import (
+    bench_badger_qa_studies_family,
+    bench_beaver_qa_studies_family,
+    bench_bison_qa_studies_family,
+    bench_cougar_qa_studies_family,
+    bench_elk_qa_studies_family,
+    bench_lynx_qa_studies_family,
+)
+from quant_fund.research.benches_w1458 import (
+    bench_arroyo_qa_studies_family,
+    bench_butte_qa_studies_family,
+    bench_camel_qa_studies_family,
+    bench_caravan_qa_studies_family,
+    bench_mirage_qa_studies_family,
+    bench_oasis_qa_studies_family,
+)
+from quant_fund.research.benches_w1459 import (
+    bench_arctic_fox_qa_studies_family,
+    bench_caribou_qa_studies_family,
+    bench_musk_ox_qa_studies_family,
+    bench_penguin_qa_studies_family,
+    bench_polar_bear_qa_studies_family,
+    bench_reindeer_qa_studies_family,
+)
+from quant_fund.research.benches_w1460 import (
+    bench_baboon_qa_studies_family,
+    bench_elephant_qa_studies_family,
+    bench_gazelle_qa_studies_family,
+    bench_giraffe_qa_studies_family,
+    bench_wildebeest_qa_studies_family,
+    bench_zebra_qa_studies_family,
+)
+from quant_fund.research.benches_w1461 import (
+    bench_gorilla_qa_studies_family,
+    bench_jaguar_qa_studies_family,
+    bench_macaw_qa_studies_family,
+    bench_orangutan_qa_studies_family,
+    bench_sloth_qa_studies_family,
+    bench_toucan_qa_studies_family,
+)
+from quant_fund.research.benches_w1462 import (
+    bench_crab_qa_studies_family,
+    bench_jellyfish_qa_studies_family,
+    bench_octopus_qa_studies_family,
+    bench_seahorse_qa_studies_family,
+    bench_squid_qa_studies_family,
+    bench_stingray_qa_studies_family,
+)
+from quant_fund.research.benches_w1463 import (
+    bench_acorn_qa_studies_family,
+    bench_blossom_qa_studies_family,
+    bench_canopy_qa_studies_family,
+    bench_firefly_qa_studies_family,
+    bench_sprout_qa_studies_family,
+    bench_truffle_qa_studies_family,
+)
+from quant_fund.research.benches_w1464 import (
+    bench_abyss_qa_studies_family,
+    bench_beacon_qa_studies_family,
+    bench_blizzard_qa_studies_family,
+    bench_monolith_qa_studies_family,
+    bench_spire_qa_studies_family,
+    bench_tempest_qa_studies_family,
+)
+from quant_fund.research.benches_w1465 import (
+    bench_citadel_qa_studies_family,
+    bench_forge_qa_studies_family,
+    bench_grotto_qa_studies_family,
+    bench_lighthouse_qa_studies_family,
+    bench_quarry_qa_studies_family,
+    bench_vault_qa_studies_family,
+)
+from quant_fund.research.benches_w1466 import (
+    bench_basalt_qa_studies_family,
+    bench_cathedral_qa_studies_family,
+    bench_chasm_qa_studies_family,
+    bench_crag_qa_studies_family,
+    bench_plateau_qa_studies_family,
+    bench_ravine_qa_studies_family,
+)
+from quant_fund.research.benches_w1467 import (
+    bench_arch_qa_studies_family,
+    bench_steppe_qa_studies_family,
+    bench_summit_qa_studies_family,
+    bench_tundra_qa_studies_family,
+    bench_valley_qa_studies_family,
+    bench_volcano_qa_studies_family,
+)
+from quant_fund.research.benches_w1468 import (
+    bench_dale_qa_studies_family,
+    bench_fen_qa_studies_family,
+    bench_glen_qa_studies_family,
+    bench_heath_qa_studies_family,
+    bench_knoll_qa_studies_family,
+    bench_moor_qa_studies_family,
+)
+from quant_fund.research.benches_w1469 import (
+    bench_atoll_qa_studies_family,
+    bench_bluff_qa_studies_family,
+    bench_cove_qa_studies_family,
+    bench_headland_qa_studies_family,
+    bench_inlet_qa_studies_family,
+    bench_islet_qa_studies_family,
+)
+from quant_fund.research.benches_w1470 import (
+    bench_aspen_qa_studies_family,
+    bench_fir_qa_studies_family,
+    bench_holly_qa_studies_family,
+    bench_juniper_qa_studies_family,
+    bench_redwood_qa_studies_family,
+    bench_sequoia_qa_studies_family,
+)
+from quant_fund.research.benches_w1471 import (
+    bench_crocus_qa_studies_family,
+    bench_daffodil_qa_studies_family,
+    bench_daisy_qa_studies_family,
+    bench_foxglove_qa_studies_family,
+    bench_iris_qa_studies_family,
+    bench_poppy_qa_studies_family,
+)
+from quant_fund.research.benches_w1472 import (
+    bench_basil_qa_studies_family,
+    bench_cardamom_qa_studies_family,
+    bench_chervil_qa_studies_family,
+    bench_cinnamon_qa_studies_family,
+    bench_coriander_qa_studies_family,
+    bench_cumin_qa_studies_family,
+)
+from quant_fund.research.benches_w1473 import (
+    bench_clove_qa_studies_family,
+    bench_dill_qa_studies_family,
+    bench_fennel_qa_studies_family,
+    bench_lemongrass_qa_studies_family,
+    bench_mint_qa_studies_family,
+    bench_nutmeg_qa_studies_family,
+)
+from quant_fund.research.benches_w1474 import (
+    bench_bittern_qa_studies_family,
+    bench_cormorant_qa_studies_family,
+    bench_curlew_qa_studies_family,
+    bench_ibis_qa_studies_family,
+    bench_kingfisher_qa_studies_family,
+    bench_loon_qa_studies_family,
+)
+from quant_fund.research.benches_w1475 import (
+    bench_cicada_qa_studies_family,
+    bench_dragonfly_qa_studies_family,
+    bench_grasshopper_qa_studies_family,
+    bench_ladybug_qa_studies_family,
+    bench_mantis_qa_studies_family,
+    bench_scorpion_qa_studies_family,
+)
+from quant_fund.research.benches_w1476 import (
+    bench_caracal_qa_studies_family,
+    bench_jaguarundi_qa_studies_family,
+    bench_margay_qa_studies_family,
+    bench_ocelot_qa_studies_family,
+    bench_puma_qa_studies_family,
+    bench_serval_qa_studies_family,
+)
+from quant_fund.research.benches_w1477 import (
+    bench_albatross_qa_studies_family,
+    bench_gannet_qa_studies_family,
+    bench_petrel_qa_studies_family,
+    bench_puffin_qa_studies_family,
+    bench_shearwater_qa_studies_family,
+    bench_skua_qa_studies_family,
+)
+from quant_fund.research.benches_w1478 import (
+    bench_antelope_qa_studies_family,
+    bench_eland_qa_studies_family,
+    bench_impala_qa_studies_family,
+    bench_kudu_qa_studies_family,
+    bench_oryx_qa_studies_family,
+    bench_springbok_qa_studies_family,
+)
+from quant_fund.research.benches_w1479 import (
+    bench_agouti_qa_studies_family,
+    bench_armadillo_qa_studies_family,
+    bench_capybara_qa_studies_family,
+    bench_coati_qa_studies_family,
+    bench_peccary_qa_studies_family,
+    bench_tapir_qa_studies_family,
+)
+from quant_fund.research.benches_w1480 import (
+    bench_adder_qa_studies_family,
+    bench_boa_qa_studies_family,
+    bench_krait_qa_studies_family,
+    bench_mamba_qa_studies_family,
+    bench_monitor_qa_studies_family,
+    bench_taipan_qa_studies_family,
+)
+from quant_fund.research.benches_w1481 import (
+    bench_earwig_qa_studies_family,
+    bench_katydid_qa_studies_family,
+    bench_mayfly_qa_studies_family,
+    bench_stonefly_qa_studies_family,
+    bench_wasp_qa_studies_family,
+    bench_weevil_qa_studies_family,
+)
+from quant_fund.research.benches_w1482 import (
+    bench_ermine_qa_studies_family,
+    bench_fisher_qa_studies_family,
+    bench_marten_qa_studies_family,
+    bench_mink_qa_studies_family,
+    bench_polecat_qa_studies_family,
+    bench_wolverine_qa_studies_family,
+)
+from quant_fund.research.benches_w1483 import (
+    bench_coyote_qa_studies_family,
+    bench_ferret_qa_studies_family,
+    bench_jackal_qa_studies_family,
+    bench_marmot_qa_studies_family,
+    bench_moose_qa_studies_family,
+    bench_raccoon_qa_studies_family,
+)
+from quant_fund.research.benches_w1484 import (
+    bench_bandicoot_qa_studies_family,
+    bench_koala_qa_studies_family,
+    bench_numbat_qa_studies_family,
+    bench_quokka_qa_studies_family,
+    bench_wallaby_qa_studies_family,
+    bench_wombat_qa_studies_family,
+)
+from quant_fund.research.benches_w1485 import (
+    bench_avocet_qa_studies_family,
+    bench_egret_qa_studies_family,
+    bench_heron_qa_studies_family,
+    bench_plover_qa_studies_family,
+    bench_sandpiper_qa_studies_family,
+    bench_tern_qa_studies_family,
+)
+from quant_fund.research.benches_w1486 import (
+    bench_flamingo_qa_studies_family,
+    bench_godwit_qa_studies_family,
+    bench_grebe_qa_studies_family,
+    bench_pelican_qa_studies_family,
+    bench_spoonbill_qa_studies_family,
+    bench_stork_qa_studies_family,
+)
+from quant_fund.research.benches_w1487 import (
+    bench_auk_qa_studies_family,
+    bench_fulmar_qa_studies_family,
+    bench_gull_qa_studies_family,
+    bench_jaeger_qa_studies_family,
+    bench_kittiwake_qa_studies_family,
+    bench_tropicbird_qa_studies_family,
+)
+from quant_fund.research.benches_w1488 import (
+    bench_bobcat_qa_studies_family,
+    bench_dingo_qa_studies_family,
+    bench_kodkod_qa_studies_family,
+    bench_oncilla_qa_studies_family,
+    bench_panther_qa_studies_family,
+    bench_tiger_qa_studies_family,
+)
+from quant_fund.research.benches_w1489 import (
+    bench_clover_qa_studies_family,
+    bench_heather_qa_studies_family,
+    bench_lavender_qa_studies_family,
+    bench_lilac_qa_studies_family,
+    bench_marigold_qa_studies_family,
+    bench_primrose_qa_studies_family,
+)
+from quant_fund.research.benches_w1490 import (
+    bench_camellia_qa_studies_family,
+    bench_dahlia_qa_studies_family,
+    bench_sage_qa_studies_family,
+    bench_thyme_qa_studies_family,
+    bench_violet_qa_studies_family,
+    bench_zinnia_qa_studies_family,
+)
+from quant_fund.research.benches_w1491 import (
+    bench_cypress_qa_studies_family,
+    bench_eucalyptus_qa_studies_family,
+    bench_hemlock_qa_studies_family,
+    bench_laurel_qa_studies_family,
+    bench_magnolia_qa_studies_family,
+    bench_spruce_qa_studies_family,
+)
+from quant_fund.research.benches_w1492 import (
+    bench_bilby_qa_studies_family,
+    bench_echidna_qa_studies_family,
+    bench_platypus_qa_studies_family,
+    bench_possum_qa_studies_family,
+    bench_quoll_qa_studies_family,
+    bench_thylacine_qa_studies_family,
+)
+from quant_fund.research.benches_w1493 import (
+    bench_bongo_qa_studies_family,
+    bench_duiker_qa_studies_family,
+    bench_hartebeest_qa_studies_family,
+    bench_nyala_qa_studies_family,
+    bench_topi_qa_studies_family,
+    bench_waterbuck_qa_studies_family,
+)
+from quant_fund.research.benches_w1494 import (
+    bench_anole_qa_studies_family,
+    bench_chameleon_qa_studies_family,
+    bench_hognose_qa_studies_family,
+    bench_skink_qa_studies_family,
+    bench_terrapin_qa_studies_family,
+    bench_tuatara_qa_studies_family,
+)
+from quant_fund.research.benches_w1495 import (
+    bench_grison_qa_studies_family,
+    bench_sable_qa_studies_family,
+    bench_stoat_qa_studies_family,
+    bench_tayra_qa_studies_family,
+    bench_weasel_qa_studies_family,
+    bench_zorilla_qa_studies_family,
+)
+from quant_fund.research.benches_w1496 import (
+    bench_jacana_qa_studies_family,
+    bench_lapwing_qa_studies_family,
+    bench_moorhen_qa_studies_family,
+    bench_railbird_qa_studies_family,
+    bench_snipe_qa_studies_family,
+    bench_turnstone_qa_studies_family,
+)
+from quant_fund.research.benches_w1497 import (
+    bench_bettong_qa_studies_family,
+    bench_cuscus_qa_studies_family,
+    bench_numbat2_qa_studies_family,
+    bench_pademelon_qa_studies_family,
+    bench_potoroo_qa_studies_family,
+    bench_woylie_qa_studies_family,
+)
+from quant_fund.research.benches_w1498 import (
+    bench_auklet_qa_studies_family,
+    bench_booby_qa_studies_family,
+    bench_frigatebird_qa_studies_family,
+    bench_guillemot_qa_studies_family,
+    bench_murrelet_qa_studies_family,
+    bench_razorbill_qa_studies_family,
+)
+from quant_fund.research.benches_w1499 import (
+    bench_oregano_qa_studies_family,
+    bench_parsley_qa_studies_family,
+    bench_rosemary_qa_studies_family,
+    bench_saffron_qa_studies_family,
+    bench_tarragon_qa_studies_family,
+    bench_turmeric_qa_studies_family,
+)
+from quant_fund.research.benches_w1500 import (
+    bench_caddisfly_qa_studies_family,
+    bench_centipede_qa_studies_family,
+    bench_horntail_qa_studies_family,
+    bench_lacewing_qa_studies_family,
+    bench_millipede_qa_studies_family,
+    bench_spider_qa_studies_family,
+)
+from quant_fund.research.benches_w1501 import (
+    bench_acacia_qa_studies_family,
+    bench_alder_qa_studies_family,
+    bench_baobab_qa_studies_family,
+    bench_olive_qa_studies_family,
+    bench_palm_qa_studies_family,
+    bench_sycamore_qa_studies_family,
+)
+from quant_fund.research.benches_w1502 import (
+    bench_anteater_qa_studies_family,
+    bench_coatimundi_qa_studies_family,
+    bench_kinkajou_qa_studies_family,
+    bench_opossum_qa_studies_family,
+    bench_paca_qa_studies_family,
+    bench_tamandua_qa_studies_family,
+)
+from quant_fund.research.benches_w1503 import (
+    bench_garter_qa_studies_family,
+    bench_keelback_qa_studies_family,
+    bench_kingsnake_qa_studies_family,
+    bench_mockviper_qa_studies_family,
+    bench_racer_qa_studies_family,
+    bench_sidewinder_qa_studies_family,
+)
+from quant_fund.research.benches_w1504 import (
+    bench_murre_qa_studies_family,
+    bench_noddie_qa_studies_family,
+    bench_prion_qa_studies_family,
+    bench_shag_qa_studies_family,
+    bench_skimmer_qa_studies_family,
+    bench_storm_petrel_qa_studies_family,
+)
+from quant_fund.research.benches_w1505 import (
+    bench_gadwall_qa_studies_family,
+    bench_pintail_qa_studies_family,
+    bench_pochard_qa_studies_family,
+    bench_shoveler_qa_studies_family,
+    bench_teal_qa_studies_family,
+    bench_wigeon_qa_studies_family,
+)
+from quant_fund.research.benches_w1506 import (
+    bench_bufflehead_qa_studies_family,
+    bench_canvasback_qa_studies_family,
+    bench_eider_qa_studies_family,
+    bench_mallard_qa_studies_family,
+    bench_merganser_qa_studies_family,
+    bench_scoter_qa_studies_family,
+)
+from quant_fund.research.benches_w1507 import (
+    bench_buzzard_qa_studies_family,
+    bench_caracara_qa_studies_family,
+    bench_goshawk_qa_studies_family,
+    bench_merlin_qa_studies_family,
+    bench_peregrine_qa_studies_family,
+    bench_sparrowhawk_qa_studies_family,
+)
+from quant_fund.research.benches_w1508 import (
+    bench_chickadee_qa_studies_family,
+    bench_finch_qa_studies_family,
+    bench_sparrow_qa_studies_family,
+    bench_thrush_qa_studies_family,
+    bench_warbler_qa_studies_family,
+    bench_wren_qa_studies_family,
+)
+from quant_fund.research.benches_w1509 import (
+    bench_bunting_qa_studies_family,
+    bench_grosbeak_qa_studies_family,
+    bench_nuthatch_qa_studies_family,
+    bench_tanager_qa_studies_family,
+    bench_titmouse_qa_studies_family,
+    bench_vireo_qa_studies_family,
+)
+from quant_fund.research.benches_w1510 import (
+    bench_chough_qa_studies_family,
+    bench_crow_qa_studies_family,
+    bench_jackdaw_qa_studies_family,
+    bench_jay_qa_studies_family,
+    bench_magpie_qa_studies_family,
+    bench_rook_qa_studies_family,
+)
+from quant_fund.research.benches_w1511 import (
+    bench_brilliant_qa_studies_family,
+    bench_hermit_qa_studies_family,
+    bench_hummingbird_qa_studies_family,
+    bench_sapphire_qa_studies_family,
+    bench_topaz_qa_studies_family,
+    bench_woodstar_qa_studies_family,
+)
+from quant_fund.research.benches_w1512 import (
+    bench_dunlin_qa_studies_family,
+    bench_knot_qa_studies_family,
+    bench_oystercatcher_qa_studies_family,
+    bench_phalarope_qa_studies_family,
+    bench_stilt_qa_studies_family,
+    bench_whimbrel_qa_studies_family,
+)
+from quant_fund.research.benches_w1513 import (
+    bench_barnowl_qa_studies_family,
+    bench_barred_owl_qa_studies_family,
+    bench_eagle_owl_qa_studies_family,
+    bench_screech_owl_qa_studies_family,
+    bench_snowy_owl_qa_studies_family,
+    bench_tawny_owl_qa_studies_family,
+)
+from quant_fund.research.benches_w1514 import (
+    bench_blue_morpho_qa_studies_family,
+    bench_cabbage_white_qa_studies_family,
+    bench_fritillary_qa_studies_family,
+    bench_monarch_qa_studies_family,
+    bench_painted_lady_qa_studies_family,
+    bench_swallowtail_qa_studies_family,
+)
+from quant_fund.research.benches_w1515 import (
+    bench_click_beetle_qa_studies_family,
+    bench_dung_beetle_qa_studies_family,
+    bench_ground_beetle_qa_studies_family,
+    bench_rhino_beetle_qa_studies_family,
+    bench_stag_beetle_qa_studies_family,
+    bench_tiger_beetle_qa_studies_family,
+)
+from quant_fund.research.benches_w1516 import (
+    bench_atlas_moth_qa_studies_family,
+    bench_gypsy_moth_qa_studies_family,
+    bench_hawk_moth_qa_studies_family,
+    bench_luna_moth_qa_studies_family,
+    bench_tussock_moth_qa_studies_family,
+    bench_underwing_qa_studies_family,
+)
+from quant_fund.research.benches_w1517 import (
+    bench_clubtail_qa_studies_family,
+    bench_damselfly_qa_studies_family,
+    bench_darner_qa_studies_family,
+    bench_forktail_qa_studies_family,
+    bench_hawker_qa_studies_family,
+    bench_spreadwing_qa_studies_family,
+)
+from quant_fund.research.benches_w1518 import (
+    bench_coquette_qa_studies_family,
+    bench_fairy_qa_studies_family,
+    bench_jacobin_qa_studies_family,
+    bench_lancebill_qa_studies_family,
+    bench_sabrewing_qa_studies_family,
+    bench_sheartail_qa_studies_family,
+)
+from quant_fund.research.benches_w1519 import (
+    bench_empusa_qa_studies_family,
+    bench_ghost_mantis_qa_studies_family,
+    bench_mantidfly_qa_studies_family,
+    bench_orchid_mantis_qa_studies_family,
+    bench_praying_mantis_qa_studies_family,
+    bench_shield_mantis_qa_studies_family,
+)
+from quant_fund.research.benches_w1520 import (
+    bench_agaric_qa_studies_family,
+    bench_bolete_qa_studies_family,
+    bench_chanterelle_qa_studies_family,
+    bench_inkcap_qa_studies_family,
+    bench_morel_qa_studies_family,
+    bench_puffball_qa_studies_family,
+)
+from quant_fund.research.benches_w1521 import (
+    bench_cattleya_qa_studies_family,
+    bench_cymbidium_qa_studies_family,
+    bench_dendrobium_qa_studies_family,
+    bench_oncidium_qa_studies_family,
+    bench_paphiopedilum_qa_studies_family,
+    bench_phalaenopsis_qa_studies_family,
+)
+from quant_fund.research.benches_w1522 import (
+    bench_agave_qa_studies_family,
+    bench_aloe_qa_studies_family,
+    bench_echeveria_qa_studies_family,
+    bench_haworthia_qa_studies_family,
+    bench_lithops_qa_studies_family,
+    bench_sedum_qa_studies_family,
+)
+from quant_fund.research.benches_w1523 import (
+    bench_bluegrass_qa_studies_family,
+    bench_fescue_qa_studies_family,
+    bench_miscanthus_qa_studies_family,
+    bench_pampas_qa_studies_family,
+    bench_ryegrass_qa_studies_family,
+    bench_switchgrass_qa_studies_family,
+)
+from quant_fund.research.benches_w1524 import (
+    bench_bulrush_qa_studies_family,
+    bench_carex_qa_studies_family,
+    bench_cattail_qa_studies_family,
+    bench_cottongrass_qa_studies_family,
+    bench_reed_qa_studies_family,
+    bench_rush_qa_studies_family,
+)
+from quant_fund.research.benches_w1525 import (
+    bench_clubmoss_qa_studies_family,
+    bench_haircap_qa_studies_family,
+    bench_hornwort_qa_studies_family,
+    bench_liverwort_qa_studies_family,
+    bench_quillwort_qa_studies_family,
+    bench_sphagnum_qa_studies_family,
+)
+from quant_fund.research.benches_w1526 import (
+    bench_bracken_qa_studies_family,
+    bench_horsetail_qa_studies_family,
+    bench_maidenhair_qa_studies_family,
+    bench_staghorn_qa_studies_family,
+    bench_swordfern_qa_studies_family,
+    bench_treefern_qa_studies_family,
+)
+from quant_fund.research.benches_w1527 import (
+    bench_crustose_qa_studies_family,
+    bench_foliose_qa_studies_family,
+    bench_fruticose_qa_studies_family,
+    bench_oakmoss_qa_studies_family,
+    bench_usnea_qa_studies_family,
+    bench_xanthoria_qa_studies_family,
+)
+from quant_fund.research.benches_w1528 import (
+    bench_calcite_qa_studies_family,
+    bench_feldspar_qa_studies_family,
+    bench_fluorite_qa_studies_family,
+    bench_gypsum_qa_studies_family,
+    bench_olivine_qa_studies_family,
+    bench_quartz_qa_studies_family,
+)
+from quant_fund.research.benches_w1529 import (
+    bench_aquamarine_qa_studies_family,
+    bench_garnet_qa_studies_family,
+    bench_opal_qa_studies_family,
+    bench_ruby_qa_studies_family,
+    bench_tanzanite_qa_studies_family,
+    bench_tourmaline_qa_studies_family,
+)
+from quant_fund.research.benches_w1530 import (
+    bench_amalgam_qa_studies_family,
+    bench_brass_qa_studies_family,
+    bench_bronze_qa_studies_family,
+    bench_nichrome_qa_studies_family,
+    bench_pewter_qa_studies_family,
+    bench_solder_qa_studies_family,
+)
+from quant_fund.research.benches_w1531 import (
+    bench_downy_qa_studies_family,
+    bench_flicker_qa_studies_family,
+    bench_pileated_qa_studies_family,
+    bench_sapsucker_qa_studies_family,
+    bench_woodpecker_qa_studies_family,
+    bench_wryneck_qa_studies_family,
+)
+from quant_fund.research.benches_w1532 import (
+    bench_bee_eater_qa_studies_family,
+    bench_jacamar_qa_studies_family,
+    bench_kookaburra_qa_studies_family,
+    bench_motmot_qa_studies_family,
+    bench_roller_qa_studies_family,
+    bench_tody_qa_studies_family,
+)
+from quant_fund.research.benches_w1533 import (
+    bench_aracari_qa_studies_family,
+    bench_barbet_qa_studies_family,
+    bench_honeyguide_qa_studies_family,
+    bench_hornbill_qa_studies_family,
+    bench_quetzal_qa_studies_family,
+    bench_trogon_qa_studies_family,
+)
+from quant_fund.research.benches_w1534 import (
+    bench_cuckoo_qa_studies_family,
+    bench_frogmouth_qa_studies_family,
+    bench_koel_qa_studies_family,
+    bench_nighthawk_qa_studies_family,
+    bench_nightjar_qa_studies_family,
+    bench_roadrunner_qa_studies_family,
+)
+from quant_fund.research.benches_w1535 import (
+    bench_martin_qa_studies_family,
+    bench_needletail_qa_studies_family,
+    bench_swallow_qa_studies_family,
+    bench_swift_qa_studies_family,
+    bench_swiftlet_qa_studies_family,
+    bench_treeswift_qa_studies_family,
+)
+from quant_fund.research.benches_w1536 import (
+    bench_collared_dove_qa_studies_family,
+    bench_dove_qa_studies_family,
+    bench_mourning_dove_qa_studies_family,
+    bench_pigeon_qa_studies_family,
+    bench_turtle_dove_qa_studies_family,
+    bench_woodpigeon_qa_studies_family,
+)
+from quant_fund.research.benches_w1537 import (
+    bench_coot_qa_studies_family,
+    bench_crake_qa_studies_family,
+    bench_dabchick_qa_studies_family,
+    bench_gallinule_qa_studies_family,
+    bench_rail_qa_studies_family,
+    bench_waterhen_qa_studies_family,
+)
+from quant_fund.research.benches_w1538 import (
+    bench_crowned_crane_qa_studies_family,
+    bench_demoiselle_qa_studies_family,
+    bench_finfoot_qa_studies_family,
+    bench_limpkin_qa_studies_family,
+    bench_trumpeter_qa_studies_family,
+    bench_whooping_qa_studies_family,
+)
+from quant_fund.research.benches_w1539 import (
+    bench_goliath_heron_qa_studies_family,
+    bench_green_heron_qa_studies_family,
+    bench_grey_heron_qa_studies_family,
+    bench_night_heron_qa_studies_family,
+    bench_purple_heron_qa_studies_family,
+    bench_tiger_heron_qa_studies_family,
+)
+from quant_fund.research.benches_w1540 import (
+    bench_cattle_egret_qa_studies_family,
+    bench_glossy_ibis_qa_studies_family,
+    bench_great_egret_qa_studies_family,
+    bench_sacred_ibis_qa_studies_family,
+    bench_snowy_egret_qa_studies_family,
+    bench_squacco_qa_studies_family,
+)
+from quant_fund.research.benches_w1541 import (
+    bench_anhinga_qa_studies_family,
+    bench_darter_qa_studies_family,
+    bench_diving_petrel_qa_studies_family,
+    bench_gadfly_qa_studies_family,
+    bench_manx_qa_studies_family,
+    bench_mollymawk_qa_studies_family,
+)
+from quant_fund.research.benches_w1542 import (
+    bench_accipiter_qa_studies_family,
+    bench_bateleur_qa_studies_family,
+    bench_falconet_qa_studies_family,
+    bench_harpy_qa_studies_family,
+    bench_lammergeier_qa_studies_family,
+    bench_seriema_qa_studies_family,
+)
+from quant_fund.research.benches_w1543 import (
+    bench_oilbird_qa_studies_family,
+    bench_owlet_nightjar_qa_studies_family,
+    bench_pauraque_qa_studies_family,
+    bench_poorwill_qa_studies_family,
+    bench_potoo_qa_studies_family,
+    bench_whip_poor_will_qa_studies_family,
+)
+from quant_fund.research.benches_w1544 import (
+    bench_hoopoe_qa_studies_family,
+    bench_nunbird_qa_studies_family,
+    bench_nunlet_qa_studies_family,
+    bench_puffbird_qa_studies_family,
+    bench_toco_qa_studies_family,
+    bench_woodhoopoe_qa_studies_family,
+)
+from quant_fund.research.benches_w1545 import (
+    bench_amazon_qa_studies_family,
+    bench_cockatoo_qa_studies_family,
+    bench_conure_qa_studies_family,
+    bench_kakapo_qa_studies_family,
+    bench_kea_qa_studies_family,
+    bench_lorikeet_qa_studies_family,
+)
+from quant_fund.research.benches_w1546 import (
+    bench_corncrake_qa_studies_family,
+    bench_flufftail_qa_studies_family,
+    bench_sora_qa_studies_family,
+    bench_sungrebe_qa_studies_family,
+    bench_swamphen_qa_studies_family,
+    bench_takhe_qa_studies_family,
+)
+from quant_fund.research.benches_w1547 import (
+    bench_crowned_pigeon_qa_studies_family,
+    bench_cuckoo_dove_qa_studies_family,
+    bench_emerald_dove_qa_studies_family,
+    bench_fruit_dove_qa_studies_family,
+    bench_ground_dove_qa_studies_family,
+    bench_quail_dove_qa_studies_family,
+)
+from quant_fund.research.benches_w1548 import (
+    bench_ani_qa_studies_family,
+    bench_coua_qa_studies_family,
+    bench_guira_qa_studies_family,
+    bench_hoatzin_qa_studies_family,
+    bench_malkoha_qa_studies_family,
+    bench_turaco_qa_studies_family,
+)
+from quant_fund.research.benches_w1549 import (
+    bench_cassowary_qa_studies_family,
+    bench_emu_qa_studies_family,
+    bench_kiwi_qa_studies_family,
+    bench_ostrich_qa_studies_family,
+    bench_rhea_qa_studies_family,
+    bench_tinamou_qa_studies_family,
+)
+from quant_fund.research.benches_w1550 import (
+    bench_agama_qa_studies_family,
+    bench_chuckwalla_qa_studies_family,
+    bench_frilled_lizard_qa_studies_family,
+    bench_monitor_lizard_qa_studies_family,
+    bench_tegu_qa_studies_family,
+    bench_uromastyx_qa_studies_family,
+)
+from quant_fund.research.benches_w1551 import (
+    bench_bushmaster_qa_studies_family,
+    bench_copperhead_qa_studies_family,
+    bench_coral_snake_qa_studies_family,
+    bench_cottonmouth_qa_studies_family,
+    bench_fer_de_lance_qa_studies_family,
+    bench_rattlesnake_qa_studies_family,
+)
+from quant_fund.research.benches_w1552 import (
+    bench_box_turtle_qa_studies_family,
+    bench_map_turtle_qa_studies_family,
+    bench_painted_turtle_qa_studies_family,
+    bench_slider_qa_studies_family,
+    bench_snapping_turtle_qa_studies_family,
+    bench_tortoise_qa_studies_family,
+)
+from quant_fund.research.benches_w1553 import (
+    bench_dart_frog_qa_studies_family,
+    bench_horned_frog_qa_studies_family,
+    bench_leopard_frog_qa_studies_family,
+    bench_spring_peeper_qa_studies_family,
+    bench_treefrog_qa_studies_family,
+    bench_wood_frog_qa_studies_family,
+)
+from quant_fund.research.benches_w1554 import (
+    bench_black_widow_qa_studies_family,
+    bench_huntsman_qa_studies_family,
+    bench_jumping_spider_qa_studies_family,
+    bench_orb_weaver_qa_studies_family,
+    bench_tarantula_qa_studies_family,
+    bench_wolf_spider_qa_studies_family,
+)
+from quant_fund.research.benches_w1555 import (
+    bench_harvestman_qa_studies_family,
+    bench_pseudoscorpion_qa_studies_family,
+    bench_solifuge_qa_studies_family,
+    bench_tick_qa_studies_family,
+    bench_vinegaroon_qa_studies_family,
+    bench_whip_scorpion_qa_studies_family,
+)
+from quant_fund.research.benches_w1556 import (
+    bench_bristletail_qa_studies_family,
+    bench_pillbug_qa_studies_family,
+    bench_silverfish_qa_studies_family,
+    bench_springtail_qa_studies_family,
+    bench_velvet_worm_qa_studies_family,
+    bench_woodlouse_qa_studies_family,
+)
+from quant_fund.research.benches_w1557 import (
+    bench_arapaima_qa_studies_family,
+    bench_electric_eel_qa_studies_family,
+    bench_knifefish_qa_studies_family,
+    bench_oscar_qa_studies_family,
+    bench_pacu_qa_studies_family,
+    bench_tetra_qa_studies_family,
+)
+from quant_fund.research.benches_w1558 import (
+    bench_char_qa_studies_family,
+    bench_dolly_varden_qa_studies_family,
+    bench_grayling_qa_studies_family,
+    bench_sockeye_qa_studies_family,
+    bench_steelhead_qa_studies_family,
+    bench_whitefish_qa_studies_family,
+)
+from quant_fund.research.benches_w1559 import (
+    bench_anchovy_qa_studies_family,
+    bench_bonito_qa_studies_family,
+    bench_herring_qa_studies_family,
+    bench_kingfish_qa_studies_family,
+    bench_mackerel_qa_studies_family,
+    bench_sardine_qa_studies_family,
+)
+from quant_fund.research.benches_w1560 import (
+    bench_butterflyfish_qa_studies_family,
+    bench_damselfish_qa_studies_family,
+    bench_grouper_qa_studies_family,
+    bench_parrotfish_qa_studies_family,
+    bench_snapper_qa_studies_family,
+    bench_wrasse_qa_studies_family,
+)
+from quant_fund.research.benches_w1561 import (
+    bench_angelfish_qa_studies_family,
+    bench_blenny_qa_studies_family,
+    bench_goby_qa_studies_family,
+    bench_lionfish_qa_studies_family,
+    bench_surgeonfish_qa_studies_family,
+    bench_triggerfish_qa_studies_family,
+)
+from quant_fund.research.benches_w1562 import (
+    bench_boxfish_qa_studies_family,
+    bench_clownfish_qa_studies_family,
+    bench_dragonet_qa_studies_family,
+    bench_mandarinfish_qa_studies_family,
+    bench_pipefish_qa_studies_family,
+    bench_pufferfish_qa_studies_family,
+)
+from quant_fund.research.benches_w1563 import (
+    bench_cleaner_shrimp_qa_studies_family,
+    bench_decorator_crab_qa_studies_family,
+    bench_hermit_crab_qa_studies_family,
+    bench_mantis_shrimp_qa_studies_family,
+    bench_pistol_shrimp_qa_studies_family,
+    bench_porcelain_crab_qa_studies_family,
+)
+from quant_fund.research.benches_w1564 import (
+    bench_bobtail_squid_qa_studies_family,
+    bench_cuttlefish_qa_studies_family,
+    bench_nautilus_qa_studies_family,
+    bench_nudibranch_qa_studies_family,
+    bench_sea_slug_qa_studies_family,
+    bench_vampire_squid_qa_studies_family,
+)
+from quant_fund.research.benches_w1565 import (
+    bench_earthworm_qa_studies_family,
+    bench_feather_duster_qa_studies_family,
+    bench_leech_qa_studies_family,
+    bench_lugworm_qa_studies_family,
+    bench_polychaete_qa_studies_family,
+    bench_ragworm_qa_studies_family,
+)
+from quant_fund.research.benches_w1566 import (
+    bench_bluegill_qa_studies_family,
+    bench_crappie_qa_studies_family,
+    bench_perch_qa_studies_family,
+    bench_pike_qa_studies_family,
+    bench_sturgeon_qa_studies_family,
+    bench_walleye_qa_studies_family,
+)
+from quant_fund.research.benches_w1567 import (
+    bench_barbel_qa_studies_family,
+    bench_bream_qa_studies_family,
+    bench_carp_qa_studies_family,
+    bench_minnow_qa_studies_family,
+    bench_roach_qa_studies_family,
+    bench_tench_qa_studies_family,
+)
+from quant_fund.research.benches_w1568 import (
+    bench_conger_qa_studies_family,
+    bench_garden_eel_qa_studies_family,
+    bench_hagfish_qa_studies_family,
+    bench_lamprey_qa_studies_family,
+    bench_moray_qa_studies_family,
+    bench_ribbon_eel_qa_studies_family,
+)
+from quant_fund.research.benches_w1569 import (
+    bench_eagle_ray_qa_studies_family,
+    bench_guitarfish_qa_studies_family,
+    bench_manta_qa_studies_family,
+    bench_sawfish_qa_studies_family,
+    bench_thornback_qa_studies_family,
+    bench_torpedo_ray_qa_studies_family,
+)
+from quant_fund.research.benches_w1570 import (
+    bench_fiddler_crab_qa_studies_family,
+    bench_ghost_crab_qa_studies_family,
+    bench_horseshoe_qa_studies_family,
+    bench_mud_crab_qa_studies_family,
+    bench_porcelain_qa_studies_family,
+    bench_spider_crab_qa_studies_family,
+)
+from quant_fund.research.benches_w1571 import (
+    bench_clam_qa_studies_family,
+    bench_conch_qa_studies_family,
+    bench_mussel_qa_studies_family,
+    bench_oyster_qa_studies_family,
+    bench_scallop_qa_studies_family,
+    bench_whelk_qa_studies_family,
+)
+from quant_fund.research.benches_w1572 import (
+    bench_aster_qa_studies_family,
+    bench_bluebell_qa_studies_family,
+    bench_buttercup_qa_studies_family,
+    bench_columbine_qa_studies_family,
+    bench_cornflower_qa_studies_family,
+    bench_lupine_qa_studies_family,
+)
+from quant_fund.research.benches_w1573 import (
+    bench_addax_qa_studies_family,
+    bench_fennec_qa_studies_family,
+    bench_jerboa_qa_studies_family,
+    bench_meerkat_qa_studies_family,
+    bench_onager_qa_studies_family,
+    bench_pangolin_qa_studies_family,
+)
+from quant_fund.research.benches_w1574 import (
+    bench_gibbon_qa_studies_family,
+    bench_langur_qa_studies_family,
+    bench_lemur_qa_studies_family,
+    bench_macaque_qa_studies_family,
+    bench_marmoset_qa_studies_family,
+    bench_tamarin_qa_studies_family,
+)
+from quant_fund.research.benches_w1575 import (
+    bench_chinchilla_qa_studies_family,
+    bench_degu_qa_studies_family,
+    bench_gerbil_qa_studies_family,
+    bench_hamster_qa_studies_family,
+    bench_lemming_qa_studies_family,
+    bench_vole_qa_studies_family,
+)
+from quant_fund.research.benches_w1576 import (
+    bench_binturong_qa_studies_family,
+    bench_fossa_qa_studies_family,
+    bench_honey_badger_qa_studies_family,
+    bench_kusimanse_qa_studies_family,
+    bench_maned_wolf_qa_studies_family,
+    bench_sun_bear_qa_studies_family,
+)
+from quant_fund.research.benches_w1577 import (
+    bench_civet_qa_studies_family,
+    bench_genet_qa_studies_family,
+    bench_manul_qa_studies_family,
+    bench_mongoose_qa_studies_family,
+    bench_sloth_bear_qa_studies_family,
+    bench_suricate_qa_studies_family,
+)
+from quant_fund.research.benches_w1578 import (
+    bench_gerenuk_qa_studies_family,
+    bench_markhor_qa_studies_family,
+    bench_nilgai_qa_studies_family,
+    bench_okapi_qa_studies_family,
+    bench_saiga_qa_studies_family,
+    bench_takin_qa_studies_family,
+)
+from quant_fund.research.benches_w1579 import (
+    bench_dikdik_qa_studies_family,
+    bench_grysbok_qa_studies_family,
+    bench_klipspringer_qa_studies_family,
+    bench_rhebok_qa_studies_family,
+    bench_steenbok_qa_studies_family,
+    bench_suni_qa_studies_family,
+)
+from quant_fund.research.benches_w1580 import (
+    bench_chital_qa_studies_family,
+    bench_fallow_qa_studies_family,
+    bench_muntjac_qa_studies_family,
+    bench_pudu_qa_studies_family,
+    bench_roe_qa_studies_family,
+    bench_sika_qa_studies_family,
+)
+from quant_fund.research.benches_w1581 import (
+    bench_elephant_seal_qa_studies_family,
+    bench_fur_seal_qa_studies_family,
+    bench_harp_seal_qa_studies_family,
+    bench_leopard_seal_qa_studies_family,
+    bench_monk_seal_qa_studies_family,
+    bench_weddell_qa_studies_family,
+)
+from quant_fund.research.benches_w1582 import (
+    bench_flying_fox_qa_studies_family,
+    bench_horseshoe_bat_qa_studies_family,
+    bench_leaf_nosed_qa_studies_family,
+    bench_noctule_qa_studies_family,
+    bench_pipistrelle_qa_studies_family,
+    bench_vampire_qa_studies_family,
+)
+from quant_fund.research.benches_w1583 import (
+    bench_bowhead_qa_studies_family,
+    bench_fin_whale_qa_studies_family,
+    bench_humpback_qa_studies_family,
+    bench_minke_qa_studies_family,
+    bench_pilot_whale_qa_studies_family,
+    bench_sperm_whale_qa_studies_family,
+)
+from quant_fund.research.benches_w1584 import (
+    bench_cottontail_qa_studies_family,
+    bench_hare_qa_studies_family,
+    bench_hedgehog_qa_studies_family,
+    bench_hyrax_qa_studies_family,
+    bench_jackrabbit_qa_studies_family,
+    bench_pika_qa_studies_family,
+)
+from quant_fund.research.benches_w1585 import (
+    bench_aardvark_qa_studies_family,
+    bench_elephant_shrew_qa_studies_family,
+    bench_golden_mole_qa_studies_family,
+    bench_gymnure_qa_studies_family,
+    bench_solenodon_qa_studies_family,
+    bench_tenrec_qa_studies_family,
+)
+from quant_fund.research.benches_w1586 import (
+    bench_beira_qa_studies_family,
+    bench_gemsbok_qa_studies_family,
+    bench_madoqua_qa_studies_family,
+    bench_oribi_qa_studies_family,
+    bench_reedbuck_qa_studies_family,
+    bench_tsessebe_qa_studies_family,
+)
+from quant_fund.research.benches_w1587 import (
+    bench_barasingha_qa_studies_family,
+    bench_brocket_qa_studies_family,
+    bench_huemul_qa_studies_family,
+    bench_mule_deer_qa_studies_family,
+    bench_sambar_qa_studies_family,
+    bench_taruca_qa_studies_family,
+)
+from quant_fund.research.benches_w1588 import (
+    bench_bearded_seal_qa_studies_family,
+    bench_crabeater_qa_studies_family,
+    bench_hooded_seal_qa_studies_family,
+    bench_ribbon_seal_qa_studies_family,
+    bench_ringed_seal_qa_studies_family,
+    bench_ross_seal_qa_studies_family,
+)
+from quant_fund.research.benches_w1589 import (
+    bench_porpoise_qa_studies_family,
+    bench_right_whale_qa_studies_family,
+    bench_rissos_qa_studies_family,
+    bench_river_dolphin_qa_studies_family,
+    bench_spinner_qa_studies_family,
+    bench_vaquita_qa_studies_family,
+)
+from quant_fund.research.benches_w1590 import (
+    bench_black_footed_qa_studies_family,
+    bench_fishing_cat_qa_studies_family,
+    bench_jungle_cat_qa_studies_family,
+    bench_pallas_qa_studies_family,
+    bench_rusty_spotted_qa_studies_family,
+    bench_sand_cat_qa_studies_family,
+)
+from quant_fund.research.benches_w1591 import (
+    bench_capuchin_qa_studies_family,
+    bench_saki_qa_studies_family,
+    bench_squirrel_monkey_qa_studies_family,
+    bench_titi_qa_studies_family,
+    bench_uakari_qa_studies_family,
+    bench_woolly_qa_studies_family,
+)
+from quant_fund.research.benches_w1592 import (
+    bench_bushbaby_qa_studies_family,
+    bench_galago_qa_studies_family,
+    bench_indri_qa_studies_family,
+    bench_loris_qa_studies_family,
+    bench_potto_qa_studies_family,
+    bench_tarsier_qa_studies_family,
+)
+from quant_fund.research.benches_w1593 import (
+    bench_colobus_qa_studies_family,
+    bench_drill_qa_studies_family,
+    bench_gelada_qa_studies_family,
+    bench_guenon_qa_studies_family,
+    bench_mandrill_qa_studies_family,
+    bench_mangabey_qa_studies_family,
+)
+from quant_fund.research.benches_w1594 import (
+    bench_bonobo_qa_studies_family,
+    bench_chimpanzee_qa_studies_family,
+    bench_douc_qa_studies_family,
+    bench_proboscis_qa_studies_family,
+    bench_siamang_qa_studies_family,
+    bench_snub_nosed_qa_studies_family,
+)
+from quant_fund.research.benches_w1595 import (
+    bench_andean_cat_qa_studies_family,
+    bench_bay_cat_qa_studies_family,
+    bench_flat_headed_qa_studies_family,
+    bench_geoffroys_qa_studies_family,
+    bench_marbled_cat_qa_studies_family,
+    bench_pampas_cat_qa_studies_family,
+)
+from quant_fund.research.benches_w1596 import (
+    bench_bottlenose_qa_studies_family,
+    bench_dusky_dolphin_qa_studies_family,
+    bench_false_killer_qa_studies_family,
+    bench_melon_head_qa_studies_family,
+    bench_pygmy_whale_qa_studies_family,
+    bench_sea_lion_qa_studies_family,
+)
+from quant_fund.research.benches_w1597 import (
+    bench_bharal_qa_studies_family,
+    bench_chamois_qa_studies_family,
+    bench_goral_qa_studies_family,
+    bench_ibex_qa_studies_family,
+    bench_serow_qa_studies_family,
+    bench_tahr_qa_studies_family,
+)
+from quant_fund.research.benches_w1598 import (
+    bench_bontebok_qa_studies_family,
+    bench_bushbuck_qa_studies_family,
+    bench_greater_kudu_qa_studies_family,
+    bench_lesser_kudu_qa_studies_family,
+    bench_mountain_nyala_qa_studies_family,
+    bench_sitatunga_qa_studies_family,
+)
+from quant_fund.research.benches_w1599 import (
+    bench_aye_aye_qa_studies_family,
+    bench_howler_qa_studies_family,
+    bench_mouse_lemur_qa_studies_family,
+    bench_night_monkey_qa_studies_family,
+    bench_ring_tailed_qa_studies_family,
+    bench_spider_monkey_qa_studies_family,
+)
+from quant_fund.research.benches_w1600 import (
+    bench_abalone_qa_studies_family,
+    bench_chiton_qa_studies_family,
+    bench_cockle_qa_studies_family,
+    bench_cowrie_qa_studies_family,
+    bench_limpet_qa_studies_family,
+    bench_periwinkle_qa_studies_family,
+)
+from quant_fund.research.benches_w1601 import (
+    bench_blossom_bat_qa_studies_family,
+    bench_bulldog_bat_qa_studies_family,
+    bench_free_tailed_qa_studies_family,
+    bench_fruit_bat_qa_studies_family,
+    bench_mouse_eared_qa_studies_family,
+    bench_tent_bat_qa_studies_family,
+)
+from quant_fund.research.benches_w1602 import (
+    bench_desman_qa_studies_family,
+    bench_marsupial_mole_qa_studies_family,
+    bench_moles_lite_qa_studies_family,
+    bench_monotreme_qa_studies_family,
+    bench_moonrat_qa_studies_family,
+    bench_sengi_qa_studies_family,
+)
+from quant_fund.research.benches_w1603 import (
+    bench_axis_qa_studies_family,
+    bench_marsh_deer_qa_studies_family,
+    bench_musk_deer_qa_studies_family,
+    bench_pampas_deer_qa_studies_family,
+    bench_tufted_qa_studies_family,
+    bench_water_deer_qa_studies_family,
+)
+from quant_fund.research.benches_w1604 import (
+    bench_dassie_qa_studies_family,
+    bench_gopher_qa_studies_family,
+    bench_mole_qa_studies_family,
+    bench_rabbit_qa_studies_family,
+    bench_shrew_qa_studies_family,
+    bench_springhare_qa_studies_family,
+)
+from quant_fund.research.benches_w1605 import (
+    bench_decorator_qa_studies_family,
+    bench_fiddler_qa_studies_family,
+    bench_rock_crab_qa_studies_family,
+    bench_sea_snake_qa_studies_family,
+    bench_skate_qa_studies_family,
+    bench_wobbegong_qa_studies_family,
+)
+from quant_fund.research.benches_w1606 import (
+    bench_alpaca_qa_studies_family,
+    bench_aoudad_qa_studies_family,
+    bench_dromedary_qa_studies_family,
+    bench_guanaco_qa_studies_family,
+    bench_salt_qa_studies_family,
+    bench_vicuna_qa_studies_family,
+)
+from quant_fund.research.benches_w1607 import (
+    bench_bamboo_lemur_qa_studies_family,
+    bench_bearded_saki_qa_studies_family,
+    bench_owl_monkey_qa_studies_family,
+    bench_pale_titi_qa_studies_family,
+    bench_uakari_2_qa_studies_family,
+    bench_woolly_lemur_qa_studies_family,
+)
+from quant_fund.research.benches_w1608 import (
+    bench_buffalo_qa_studies_family,
+    bench_kob_qa_studies_family,
+    bench_lechwe_qa_studies_family,
+    bench_rhino_qa_studies_family,
+    bench_roan_qa_studies_family,
+    bench_warthog_qa_studies_family,
+)
+from quant_fund.research.benches_w1609 import (
+    bench_black_lemur_qa_studies_family,
+    bench_brown_lemur_qa_studies_family,
+    bench_dwarf_lemur_qa_studies_family,
+    bench_mongoose_lemur_qa_studies_family,
+    bench_ruffed_qa_studies_family,
+    bench_sportive_lemur_qa_studies_family,
+)
+from quant_fund.research.benches_w1610 import (
+    bench_cavy_qa_studies_family,
+    bench_coypu_qa_studies_family,
+    bench_dhole_qa_studies_family,
+    bench_mara_qa_studies_family,
+    bench_porcupine_qa_studies_family,
+    bench_ratel_qa_studies_family,
+)
+from quant_fund.research.benches_w1611 import (
+    bench_crowned_lemur_qa_studies_family,
+    bench_fat_tailed_qa_studies_family,
+    bench_fork_marked_qa_studies_family,
+    bench_needle_clawed_qa_studies_family,
+    bench_ringtail_qa_studies_family,
+    bench_sifaka_qa_studies_family,
+)
+from quant_fund.research.benches_w1612 import (
+    bench_argali_qa_studies_family,
+    bench_bighorn_qa_studies_family,
+    bench_dall_qa_studies_family,
+    bench_llama_qa_studies_family,
+    bench_mouflon_qa_studies_family,
+    bench_urial_qa_studies_family,
+)
+from quant_fund.research.benches_w1613 import (
+    bench_aurochs_qa_studies_family,
+    bench_banteng_qa_studies_family,
+    bench_gaur_qa_studies_family,
+    bench_saola_qa_studies_family,
+    bench_tamaraw_qa_studies_family,
+    bench_yak_qa_studies_family,
+)
+from quant_fund.research.benches_w1614 import (
+    bench_hog_deer_qa_studies_family,
+    bench_kouprey_qa_studies_family,
+    bench_mule_qa_studies_family,
+    bench_pere_david_qa_studies_family,
+    bench_red_deer_qa_studies_family,
+    bench_wapiti_qa_studies_family,
+)
+from quant_fund.research.benches_w1615 import (
+    bench_golden_brown_qa_studies_family,
+    bench_gray_mouse_qa_studies_family,
+    bench_pygmy_qa_studies_family,
+    bench_slender_qa_studies_family,
+    bench_slow_qa_studies_family,
+    bench_thin_spined_qa_studies_family,
+)
+from quant_fund.research.benches_w1616 import (
+    bench_amphipod_qa_studies_family,
+    bench_barnacle_qa_studies_family,
+    bench_copepod_qa_studies_family,
+    bench_isopod_qa_studies_family,
+    bench_krill_qa_studies_family,
+    bench_sandhopper_qa_studies_family,
+)
+from quant_fund.research.benches_w1617 import (
+    bench_amber_mountain_qa_studies_family,
+    bench_anosy_qa_studies_family,
+    bench_daraina_qa_studies_family,
+    bench_red_bellied_qa_studies_family,
+    bench_russet_qa_studies_family,
+    bench_white_footed_qa_studies_family,
+)
+from quant_fund.research.benches_w1618 import (
+    bench_anglerfish_qa_studies_family,
+    bench_bristlemouth_qa_studies_family,
+    bench_grenadier_qa_studies_family,
+    bench_hatchetfish_qa_studies_family,
+    bench_lanternfish_qa_studies_family,
+    bench_viperfish_qa_studies_family,
+)
+from quant_fund.research.benches_w1619 import (
+    bench_blobfish_qa_studies_family,
+    bench_dragonfish_qa_studies_family,
+    bench_dumbo_qa_studies_family,
+    bench_fangtooth_qa_studies_family,
+    bench_gulper_qa_studies_family,
+    bench_tripodfish_qa_studies_family,
+)
+from quant_fund.research.benches_w1620 import (
+    bench_boomslang_qa_studies_family,
+    bench_death_adder_qa_studies_family,
+    bench_gaboon_qa_studies_family,
+    bench_inland_taipan_qa_studies_family,
+    bench_saw_scaled_qa_studies_family,
+    bench_sea_krait_qa_studies_family,
+)
+from quant_fund.research.benches_w1621 import (
+    bench_cave_beetle_qa_studies_family,
+    bench_cave_cricket_qa_studies_family,
+    bench_cave_fish_qa_studies_family,
+    bench_mudpuppy_qa_studies_family,
+    bench_olm_qa_studies_family,
+    bench_troglobite_qa_studies_family,
+)
+from quant_fund.research.benches_w1622 import (
+    bench_barbary_qa_studies_family,
+    bench_blue_sheep_qa_studies_family,
+    bench_himalayan_qa_studies_family,
+    bench_nilgiri_qa_studies_family,
+    bench_snow_leopard_qa_studies_family,
+    bench_snowcock_qa_studies_family,
+)
+from quant_fund.research.benches_w1623 import (
+    bench_altai_qa_studies_family,
+    bench_blood_pheasant_qa_studies_family,
+    bench_chukar_qa_studies_family,
+    bench_monal_qa_studies_family,
+    bench_snow_partridge_qa_studies_family,
+    bench_wallcreeper_qa_studies_family,
+)
+from quant_fund.research.benches_w1624 import (
+    bench_arctic_hare_qa_studies_family,
+    bench_gyrfalcon_qa_studies_family,
+    bench_pallas_manul_qa_studies_family,
+    bench_ptarmigan_qa_studies_family,
+    bench_snowshoe_qa_studies_family,
+    bench_tundra_swan_qa_studies_family,
+)
+from quant_fund.research.benches_w1625 import (
+    bench_blind_salamander_qa_studies_family,
+    bench_cave_shrimp_qa_studies_family,
+    bench_cave_spider_qa_studies_family,
+    bench_cave_swiftlet_qa_studies_family,
+    bench_grotto_salamander_qa_studies_family,
+    bench_proteus_qa_studies_family,
+)
+from quant_fund.research.benches_w1626 import (
+    bench_bondolo_qa_studies_family,
+    bench_madame_berthe_qa_studies_family,
+    bench_mittermeier_qa_studies_family,
+    bench_northern_qa_studies_family,
+    bench_southern_qa_studies_family,
+    bench_western_qa_studies_family,
+)
+from quant_fund.research.benches_w1627 import (
+    bench_cave_crayfish_qa_studies_family,
+    bench_cave_scorpion_qa_studies_family,
+    bench_cave_springtail_qa_studies_family,
+    bench_cave_worm_qa_studies_family,
+    bench_stygobite_qa_studies_family,
+    bench_troglofish_qa_studies_family,
+)
+from quant_fund.research.benches_w1628 import (
+    bench_colugo_qa_studies_family,
+    bench_geoffroy_qa_studies_family,
+    bench_mandarin_qa_studies_family,
+    bench_moray_eel_qa_studies_family,
+    bench_pangolin_2_qa_studies_family,
+    bench_satyr_qa_studies_family,
+)
+from quant_fund.research.benches_w1629 import (
+    bench_chupacabra_qa_studies_family,
+    bench_jersey_devil_qa_studies_family,
+    bench_kraken_2_qa_studies_family,
+    bench_mothman_qa_studies_family,
+    bench_thunderbird_qa_studies_family,
+    bench_yeti_2_qa_studies_family,
+)
+from quant_fund.research.benches_w1630 import (
+    bench_bigfoot_qa_studies_family,
+    bench_bunyip_qa_studies_family,
+    bench_loch_ness_qa_studies_family,
+    bench_rougarou_qa_studies_family,
+    bench_skinwalker_qa_studies_family,
+    bench_wendigo_qa_studies_family,
+)
+from quant_fund.research.benches_w1631 import (
+    bench_basilisk_qa_studies_family,
+    bench_chimera_qa_studies_family,
+    bench_gorgon_qa_studies_family,
+    bench_griffin_2_qa_studies_family,
+    bench_hydra_2_qa_studies_family,
+    bench_manticore_qa_studies_family,
+)
+from quant_fund.research.benches_w1632 import (
+    bench_cerberus_qa_studies_family,
+    bench_dragon_2_qa_studies_family,
+    bench_minotaur_qa_studies_family,
+    bench_pegasus_qa_studies_family,
+    bench_phoenix_2_qa_studies_family,
+    bench_unicorn_2_qa_studies_family,
+)
+from quant_fund.research.benches_w1633 import (
+    bench_air_sylph_qa_studies_family,
+    bench_earth_golem_qa_studies_family,
+    bench_fire_spirit_qa_studies_family,
+    bench_frost_wight_qa_studies_family,
+    bench_storm_jinn_qa_studies_family,
+    bench_water_sprite_qa_studies_family,
+)
+from quant_fund.research.benches_w1634 import (
+    bench_gnome_2_qa_studies_family,
+    bench_ifrit_qa_studies_family,
+    bench_marid_qa_studies_family,
+    bench_salamander_2_qa_studies_family,
+    bench_sylph_2_qa_studies_family,
+    bench_undine_qa_studies_family,
+)
+from quant_fund.research.benches_w1635 import (
+    bench_kappa_qa_studies_family,
+    bench_kitsune_2_qa_studies_family,
+    bench_oni_qa_studies_family,
+    bench_tanuki_2_qa_studies_family,
+    bench_tengu_qa_studies_family,
+    bench_tsukumogami_qa_studies_family,
+)
+from quant_fund.research.benches_w1636 import (
+    bench_gashadokuro_qa_studies_family,
+    bench_jorogumo_qa_studies_family,
+    bench_kodama_qa_studies_family,
+    bench_namahage_qa_studies_family,
+    bench_nue_2_qa_studies_family,
+    bench_tsuchinoko_qa_studies_family,
+)
+from quant_fund.research.benches_w1637 import (
+    bench_abura_sumashi_qa_studies_family,
+    bench_azukiarai_qa_studies_family,
+    bench_betobeto_2_qa_studies_family,
+    bench_futakuchi_qa_studies_family,
+    bench_rokurokubi_qa_studies_family,
+    bench_shirime_qa_studies_family,
+)
+from quant_fund.research.benches_w1638 import (
+    bench_akaname_qa_studies_family,
+    bench_hitodama_qa_studies_family,
+    bench_ittanmomen_qa_studies_family,
+    bench_nurikabe_qa_studies_family,
+    bench_shikigami_qa_studies_family,
+    bench_ubume_qa_studies_family,
+)
+from quant_fund.research.benches_w1639 import (
+    bench_dorotabo_qa_studies_family,
+    bench_kitsune_3_qa_studies_family,
+    bench_tanuki_3_qa_studies_family,
+    bench_tengu_2_qa_studies_family,
+    bench_yukionna_qa_studies_family,
+    bench_zashiki_warashi_qa_studies_family,
+)
+from quant_fund.research.benches_w1640 import (
+    bench_byakko_qa_studies_family,
+    bench_genbu_qa_studies_family,
+    bench_kirin_2_qa_studies_family,
+    bench_kohryu_qa_studies_family,
+    bench_seiryu_qa_studies_family,
+    bench_suzaku_qa_studies_family,
+)
+from quant_fund.research.benches_w1641 import (
+    bench_bixie_qa_studies_family,
+    bench_fenghuang_qa_studies_family,
+    bench_hundun_qa_studies_family,
+    bench_qiongqi_qa_studies_family,
+    bench_taotie_qa_studies_family,
+    bench_taowu_qa_studies_family,
+)
+from quant_fund.research.benches_w1642 import (
+    bench_basilisk_2_qa_studies_family,
+    bench_chimera_2_qa_studies_family,
+    bench_cockatrice_qa_studies_family,
+    bench_manticore_2_qa_studies_family,
+    bench_sphinx_2_qa_studies_family,
+    bench_wyvern_2_qa_studies_family,
+)
+from quant_fund.research.benches_w1643 import (
+    bench_centaur_2_qa_studies_family,
+    bench_gryphon_qa_studies_family,
+    bench_harpy_2_qa_studies_family,
+    bench_hippogryph_qa_studies_family,
+    bench_minotaur_2_qa_studies_family,
+    bench_satyr_2_qa_studies_family,
+)
+from quant_fund.research.benches_w1644 import (
+    bench_charybdis_qa_studies_family,
+    bench_cyclops_2_qa_studies_family,
+    bench_hydra_3_qa_studies_family,
+    bench_medusa_2_qa_studies_family,
+    bench_scylla_qa_studies_family,
+    bench_siren_2_qa_studies_family,
+)
+from quant_fund.research.benches_w1645 import (
+    bench_argus_qa_studies_family,
+    bench_cerberus_2_qa_studies_family,
+    bench_nemean_qa_studies_family,
+    bench_orthrus_qa_studies_family,
+    bench_pegasus_2_qa_studies_family,
+    bench_typhon_qa_studies_family,
+)
+from quant_fund.research.benches_w1646 import (
+    bench_fenrir_2_qa_studies_family,
+    bench_garm_qa_studies_family,
+    bench_jormungandr_qa_studies_family,
+    bench_nidhogg_qa_studies_family,
+    bench_ratatoskr_qa_studies_family,
+    bench_sleipnir_qa_studies_family,
+)
+from quant_fund.research.benches_w1647 import (
+    bench_akhekh_qa_studies_family,
+    bench_ammit_qa_studies_family,
+    bench_apophis_qa_studies_family,
+    bench_bes_qa_studies_family,
+    bench_sekhmet_qa_studies_family,
+    bench_sphairo_qa_studies_family,
+)
+from quant_fund.research.benches_w1648 import (
+    bench_aitvaras_qa_studies_family,
+    bench_bilwis_qa_studies_family,
+    bench_indus_qa_studies_family,
+    bench_kudlak_qa_studies_family,
+    bench_viy_qa_studies_family,
+    bench_zilant_qa_studies_family,
+)
+from quant_fund.research.benches_w1649 import (
+    bench_aswang_qa_studies_family,
+    bench_bakunawa_qa_studies_family,
+    bench_berbalang_qa_studies_family,
+    bench_kapre_qa_studies_family,
+    bench_sigbin_qa_studies_family,
+    bench_tikbalang_qa_studies_family,
+)
+from quant_fund.research.benches_w1650 import (
+    bench_adjule_qa_studies_family,
+    bench_agogwe_qa_studies_family,
+    bench_biloko_qa_studies_family,
+    bench_kongamato_qa_studies_family,
+    bench_popobawa_qa_studies_family,
+    bench_rompo_qa_studies_family,
+)
+from quant_fund.research.benches_w1651 import (
+    bench_awgy_qa_studies_family,
+    bench_kuritja_qa_studies_family,
+    bench_minka_qa_studies_family,
+    bench_papin_qa_studies_family,
+    bench_yara_qa_studies_family,
+    bench_yowie_qa_studies_family,
+)
+from quant_fund.research.benches_w1652 import (
+    bench_cuco_qa_studies_family,
+    bench_dahu_qa_studies_family,
+    bench_gargouille_qa_studies_family,
+    bench_lavellan_qa_studies_family,
+    bench_muscaliet_qa_studies_family,
+    bench_tarasque_qa_studies_family,
+)
+from quant_fund.research.benches_w1653 import (
+    bench_alion_qa_studies_family,
+    bench_catoblepas_qa_studies_family,
+    bench_jasconius_qa_studies_family,
+    bench_pard_qa_studies_family,
+    bench_peluda_qa_studies_family,
+    bench_zaratan_qa_studies_family,
+)
+from quant_fund.research.benches_w1654 import (
+    bench_amphisbaena_qa_studies_family,
+    bench_bonnacon_qa_studies_family,
+    bench_cerastes_qa_studies_family,
+    bench_leucrotta_qa_studies_family,
+    bench_parandrus_qa_studies_family,
+    bench_questing_qa_studies_family,
+)
+from quant_fund.research.benches_w1655 import (
+    bench_basiliskcock_qa_studies_family,
+    bench_calygreyhound_qa_studies_family,
+    bench_cocatrix_qa_studies_family,
+    bench_gryps_qa_studies_family,
+    bench_mantygre_qa_studies_family,
+    bench_opinicus_qa_studies_family,
+)
+from quant_fund.research.benches_w1656 import (
+    bench_aatxe_qa_studies_family,
+    bench_achiyalabopa_qa_studies_family,
+    bench_afanc_qa_studies_family,
+    bench_akhlut_qa_studies_family,
+    bench_amarok_qa_studies_family,
+    bench_eachuisge_qa_studies_family,
+)
+from quant_fund.research.benches_w1657 import (
+    bench_gargoyle_qa_studies_family,
+    bench_guivre_qa_studies_family,
+    bench_melusine_qa_studies_family,
+    bench_quinotaur_qa_studies_family,
+    bench_tarascon_qa_studies_family,
+    bench_tarrasque_qa_studies_family,
+)
+from quant_fund.research.benches_w1658 import (
+    bench_ahuizotl_qa_studies_family,
+    bench_alicanto_qa_studies_family,
+    bench_cadejo_qa_studies_family,
+    bench_cipactli_qa_studies_family,
+    bench_jinn_qa_studies_family,
+    bench_quetzalcoat_qa_studies_family,
+)
+from quant_fund.research.benches_w1659 import (
+    bench_manananggal_qa_studies_family,
+    bench_minokawa_qa_studies_family,
+    bench_nuno_qa_studies_family,
+    bench_siyokoy_qa_studies_family,
+    bench_tiyanak_qa_studies_family,
+    bench_wakwak_qa_studies_family,
+)
+from quant_fund.research.benches_w1660 import (
+    bench_centaur_qa_studies_family,
+    bench_cyclops_qa_studies_family,
+    bench_griffin_qa_studies_family,
+    bench_hydra_qa_studies_family,
+    bench_medusa_qa_studies_family,
+    bench_sphinx_qa_studies_family,
+)
+from quant_fund.research.benches_w1661 import (
+    bench_draugr_qa_studies_family,
+    bench_fenrir_qa_studies_family,
+    bench_gullinbursti_qa_studies_family,
+    bench_hraesvelgr_qa_studies_family,
+    bench_huginn_qa_studies_family,
+    bench_muninn_qa_studies_family,
+)
+from quant_fund.research.benches_w1662 import (
+    bench_banshee_qa_studies_family,
+    bench_dullahan_qa_studies_family,
+    bench_kelpie_qa_studies_family,
+    bench_leprechaun_qa_studies_family,
+    bench_puca_qa_studies_family,
+    bench_selkie_qa_studies_family,
+)
+from quant_fund.research.benches_w1663 import (
+    bench_barghest_qa_studies_family,
+    bench_black_dog_qa_studies_family,
+    bench_cat_sith_qa_studies_family,
+    bench_church_grim_qa_studies_family,
+    bench_cwn_annwn_qa_studies_family,
+    bench_grimalkin_qa_studies_family,
+)
+from quant_fund.research.benches_w1664 import (
+    bench_kraken_qa_studies_family,
+    bench_krampus_qa_studies_family,
+    bench_roc_qa_studies_family,
+    bench_simurgh_qa_studies_family,
+    bench_siren_qa_studies_family,
+    bench_wyvern_qa_studies_family,
+)
+from quant_fund.research.benches_w1665 import (
+    bench_einherjar_qa_studies_family,
+    bench_hati_qa_studies_family,
+    bench_lindworm_qa_studies_family,
+    bench_skoll_qa_studies_family,
+    bench_vargbroder_qa_studies_family,
+    bench_vedrfolnir_qa_studies_family,
+)
+from quant_fund.research.benches_w1666 import (
+    bench_agta_qa_studies_family,
+    bench_berberoka_qa_studies_family,
+    bench_bungisngis_qa_studies_family,
+    bench_dalaketnon_qa_studies_family,
+    bench_ekek_qa_studies_family,
+    bench_engkanto_qa_studies_family,
+)
+from quant_fund.research.benches_w1667 import (
+    bench_centauride_qa_studies_family,
+    bench_dryad_qa_studies_family,
+    bench_faun_qa_studies_family,
+    bench_hamadryad_qa_studies_family,
+    bench_nereid_qa_studies_family,
+    bench_nymph_qa_studies_family,
+)
+from quant_fund.research.benches_w1668 import (
+    bench_berserkr_qa_studies_family,
+    bench_fafnir_qa_studies_family,
+    bench_jotun_qa_studies_family,
+    bench_regin_qa_studies_family,
+    bench_ulfhednar_qa_studies_family,
+    bench_vargr_qa_studies_family,
+)
+from quant_fund.research.benches_w1669 import (
+    bench_ghouling_qa_studies_family,
+    bench_ikugan_qa_studies_family,
+    bench_kataw_qa_studies_family,
+    bench_lambana_qa_studies_family,
+    bench_sarimanok_qa_studies_family,
+    bench_tamahaling_qa_studies_family,
+)
+from quant_fund.research.benches_w1670 import (
+    bench_alseid_qa_studies_family,
+    bench_gnome_volk_qa_studies_family,
+    bench_meliae_qa_studies_family,
+    bench_napaea_qa_studies_family,
+    bench_oread_qa_studies_family,
+    bench_sylph_qa_studies_family,
+)
+from quant_fund.research.benches_w1671 import (
+    bench_drakk_qa_studies_family,
+    bench_grimr_qa_studies_family,
+    bench_hildr_qa_studies_family,
+    bench_mare_qa_studies_family,
+    bench_nisse_qa_studies_family,
+    bench_sigrun_qa_studies_family,
+)
+from quant_fund.research.benches_w1672 import (
+    bench_domovoi_qa_studies_family,
+    bench_kikimora_qa_studies_family,
+    bench_leshy_qa_studies_family,
+    bench_polevik_qa_studies_family,
+    bench_rusalka_qa_studies_family,
+    bench_vodianoi_qa_studies_family,
+)
+from quant_fund.research.benches_w1673 import (
+    bench_apsara_qa_studies_family,
+    bench_asura_qa_studies_family,
+    bench_gandharva_qa_studies_family,
+    bench_naga_qa_studies_family,
+    bench_rakshasa_qa_studies_family,
+    bench_yaksha_qa_studies_family,
+)
+from quant_fund.research.benches_w1674 import (
+    bench_genii_qa_studies_family,
+    bench_lares_qa_studies_family,
+    bench_larvae_qa_studies_family,
+    bench_lemures_qa_studies_family,
+    bench_manes_qa_studies_family,
+    bench_penates_qa_studies_family,
+)
+from quant_fund.research.benches_w1675 import (
+    bench_chaneque_qa_studies_family,
+    bench_cihuateteo_qa_studies_family,
+    bench_nagual_qa_studies_family,
+    bench_tlalocan_qa_studies_family,
+    bench_tzitzimitl_qa_studies_family,
+    bench_xiuhcoatl_qa_studies_family,
+)
+from quant_fund.research.benches_w1676 import (
+    bench_kinnara_qa_studies_family,
+    bench_pisacha_qa_studies_family,
+    bench_uraga_qa_studies_family,
+    bench_vetala_qa_studies_family,
+    bench_vidyadhara_qa_studies_family,
+    bench_yakshini_qa_studies_family,
+)
+from quant_fund.research.benches_w1677 import (
+    bench_antheia_qa_studies_family,
+    bench_aurae_qa_studies_family,
+    bench_camenae_qa_studies_family,
+    bench_fauns_qa_studies_family,
+    bench_limoniad_qa_studies_family,
+    bench_numina_qa_studies_family,
+)
+from quant_fund.research.benches_w1678 import (
+    bench_bannik_qa_studies_family,
+    bench_dvorovoi_qa_studies_family,
+    bench_mora_qa_studies_family,
+    bench_ovinnik_qa_studies_family,
+    bench_poludnica_qa_studies_family,
+    bench_vila_qa_studies_family,
+)
+from quant_fund.research.benches_w1679 import (
+    bench_alfheim_qa_studies_family,
+    bench_bergrisi_qa_studies_family,
+    bench_geirahod_qa_studies_family,
+    bench_huldra_qa_studies_family,
+    bench_troll_qa_studies_family,
+    bench_vaetter_qa_studies_family,
+)
+from quant_fund.research.benches_w1680 import (
+    bench_coatlicue_qa_studies_family,
+    bench_mictlan_qa_studies_family,
+    bench_mixcoatl_qa_studies_family,
+    bench_tlaloc_qa_studies_family,
+    bench_tonatiuh_qa_studies_family,
+    bench_xipe_qa_studies_family,
+)
+from quant_fund.research.benches_w1681 import (
+    bench_anansi_qa_studies_family,
+    bench_impundulu_qa_studies_family,
+    bench_kalulu_qa_studies_family,
+    bench_mamiwata_qa_studies_family,
+    bench_sasabonsam_qa_studies_family,
+    bench_tokoloshe_qa_studies_family,
+)
+from quant_fund.research.benches_w1682 import (
+    bench_alkonost_qa_studies_family,
+    bench_gamayun_qa_studies_family,
+    bench_sirin_qa_studies_family,
+    bench_veles_qa_studies_family,
+    bench_zhaba_qa_studies_family,
+    bench_zmei_qa_studies_family,
+)
+from quant_fund.research.benches_w1683 import (
+    bench_danava_qa_studies_family,
+    bench_gana_qa_studies_family,
+    bench_gandharva_qa_studies_family,
+    bench_kalakeya_qa_studies_family,
+    bench_kimpurusha_qa_studies_family,
+    bench_rakshasa_qa_studies_family,
+)
+from quant_fund.research.benches_w1684 import (
+    bench_cihuacoatl_qa_studies_family,
+    bench_mayahuel_qa_studies_family,
+    bench_oyohualli_qa_studies_family,
+    bench_quetzalli_qa_studies_family,
+    bench_teteoinnan_qa_studies_family,
+    bench_yaotl_qa_studies_family,
+)
+from quant_fund.research.benches_w1685 import (
+    bench_ettin_qa_studies_family,
+    bench_fylgja_qa_studies_family,
+    bench_landvaettir_qa_studies_family,
+    bench_nokken_qa_studies_family,
+    bench_seidr_qa_studies_family,
+    bench_vette_qa_studies_family,
+)
+from quant_fund.research.benches_w1686 import (
+    bench_abada_qa_studies_family,
+    bench_adze_qa_studies_family,
+    bench_ilomba_qa_studies_family,
+    bench_nbanda_qa_studies_family,
+    bench_ninki_qa_studies_family,
+    bench_okubi_qa_studies_family,
+)
+from quant_fund.research.benches_w1687 import (
+    bench_abti_qa_studies_family,
+    bench_akh_qa_studies_family,
+    bench_apep_qa_studies_family,
+    bench_bastet_qa_studies_family,
+    bench_khonsu_qa_studies_family,
+    bench_sobek_qa_studies_family,
+)
+from quant_fund.research.benches_w1688 import (
+    bench_indiges_qa_studies_family,
+    bench_lar_qa_studies_family,
+    bench_numen_qa_studies_family,
+    bench_penates_qa_studies_family,
+    bench_terminus_qa_studies_family,
+    bench_vertumnus_qa_studies_family,
+)
+from quant_fund.research.benches_w1689 import (
+    bench_apsara_qa_studies_family,
+    bench_bhairava_qa_studies_family,
+    bench_bhuta_qa_studies_family,
+    bench_pretas_qa_studies_family,
+    bench_vetal_qa_studies_family,
+    bench_yaksha_qa_studies_family,
+)
+from quant_fund.research.benches_w1690 import (
+    bench_kladenets_qa_studies_family,
+    bench_kostroma_qa_studies_family,
+    bench_leshii_qa_studies_family,
+    bench_morozko_qa_studies_family,
+    bench_vedmak_qa_studies_family,
+    bench_yarilo_qa_studies_family,
+)
+from quant_fund.research.benches_w1691 import (
+    bench_abzu_qa_studies_family,
+    bench_enki_qa_studies_family,
+    bench_enlil_qa_studies_family,
+    bench_nanna_qa_studies_family,
+    bench_tiamat_qa_studies_family,
+    bench_utu_qa_studies_family,
+)
+from quant_fund.research.benches_w1692 import (
+    bench_alfar_qa_studies_family,
+    bench_draugar_qa_studies_family,
+    bench_hulder_qa_studies_family,
+    bench_muspell_qa_studies_family,
+    bench_svartalf_qa_studies_family,
+    bench_ymir_qa_studies_family,
+)
+from quant_fund.research.benches_w1693 import (
+    bench_asag_qa_studies_family,
+    bench_edimmu_qa_studies_family,
+    bench_galla_qa_studies_family,
+    bench_lamassu_qa_studies_family,
+    bench_shedu_qa_studies_family,
+    bench_utukku_qa_studies_family,
+)
+from quant_fund.research.benches_w1694 import (
+    bench_duwende_qa_studies_family,
+    bench_karibusa_qa_studies_family,
+    bench_mambabarang_qa_studies_family,
+    bench_mangkukulam_qa_studies_family,
+    bench_sokoy_qa_studies_family,
+    bench_tiktik_qa_studies_family,
+)
+from quant_fund.research.benches_w1695 import (
+    bench_dijiang_qa_studies_family,
+    bench_huli_qa_studies_family,
+    bench_jiangshi_qa_studies_family,
+    bench_mogwai_qa_studies_family,
+    bench_yaoguai_qa_studies_family,
+    bench_zhuyin_qa_studies_family,
+)
+from quant_fund.research.benches_w1696 import (
+    bench_dongwanggong_qa_studies_family,
+    bench_fuxi_qa_studies_family,
+    bench_kuafu_qa_studies_family,
+    bench_nuwa_qa_studies_family,
+    bench_shennong_qa_studies_family,
+    bench_xiwangmu_qa_studies_family,
+)
+from quant_fund.research.benches_w1697 import (
+    bench_aoqin_qa_studies_family,
+    bench_guandi_qa_studies_family,
+    bench_houyi_qa_studies_family,
+    bench_wenchang_qa_studies_family,
+    bench_yutu_qa_studies_family,
+    bench_zao_qa_studies_family,
+)
+from quant_fund.research.benches_w1698 import (
+    bench_maui_qa_studies_family,
+    bench_menahune_qa_studies_family,
+    bench_pele_qa_studies_family,
+    bench_rangi_qa_studies_family,
+    bench_tane_qa_studies_family,
+    bench_tangaroa_qa_studies_family,
+)
+from quant_fund.research.benches_w1699 import (
+    bench_amaterasu_qa_studies_family,
+    bench_hachiman_qa_studies_family,
+    bench_inari_qa_studies_family,
+    bench_raijin_qa_studies_family,
+    bench_susanoo_qa_studies_family,
+    bench_tsukuyomi_qa_studies_family,
+)
+from quant_fund.research.benches_w1700 import (
+    bench_brigid_qa_studies_family,
+    bench_dagda_qa_studies_family,
+    bench_danu_qa_studies_family,
+    bench_lugh_qa_studies_family,
+    bench_manannan_qa_studies_family,
+    bench_morrigan_qa_studies_family,
+)
+from quant_fund.research.benches_w1701 import (
+    bench_illapa_qa_studies_family,
+    bench_inti_qa_studies_family,
+    bench_mamaquilla_qa_studies_family,
+    bench_pachamama_qa_studies_family,
+    bench_supay_qa_studies_family,
+    bench_viracocha_qa_studies_family,
+)
+from quant_fund.research.benches_w1702 import (
+    bench_chac_qa_studies_family,
+    bench_hunab_qa_studies_family,
+    bench_itzamna_qa_studies_family,
+    bench_ixchel_qa_studies_family,
+    bench_kukulcan_qa_studies_family,
+    bench_yumkaax_qa_studies_family,
+)
+from quant_fund.research.benches_w1703 import (
+    bench_dumuzi_qa_studies_family,
+    bench_inanna_qa_studies_family,
+    bench_marduk_qa_studies_family,
+    bench_namtar_qa_studies_family,
+    bench_nergal_qa_studies_family,
+    bench_ninhursag_qa_studies_family,
+)
+from quant_fund.research.benches_w1704 import (
+    bench_adad_qa_studies_family,
+    bench_ashur_qa_studies_family,
+    bench_ishtar_qa_studies_family,
+    bench_nabu_qa_studies_family,
+    bench_shamash_qa_studies_family,
+    bench_sin_qa_studies_family,
+)
+from quant_fund.research.benches_w1705 import (
+    bench_ahriman_qa_studies_family,
+    bench_ahuramazda_qa_studies_family,
+    bench_anahita_qa_studies_family,
+    bench_mithra_qa_studies_family,
+    bench_verethragna_qa_studies_family,
+    bench_yazata_qa_studies_family,
+)
+from quant_fund.research.benches_w1706 import (
+    bench_akana_qa_studies_family,
+    bench_erlik_qa_studies_family,
+    bench_kayra_qa_studies_family,
+    bench_perysh_qa_studies_family,
+    bench_tengri_qa_studies_family,
+    bench_ulgen_qa_studies_family,
+)
+from quant_fund.research.benches_w1707 import (
+    bench_ahti_qa_studies_family,
+    bench_ilmatar_qa_studies_family,
+    bench_kiputytto_qa_studies_family,
+    bench_louhi_qa_studies_family,
+    bench_tapio_qa_studies_family,
+    bench_ukko_qa_studies_family,
+)
+from quant_fund.research.benches_w1708 import (
+    bench_metsik_qa_studies_family,
+    bench_naveluz_qa_studies_family,
+    bench_numishi_qa_studies_family,
+    bench_numit_qa_studies_family,
+    bench_piryani_qa_studies_family,
+    bench_yejmun_qa_studies_family,
+)
+from quant_fund.research.benches_w1709 import (
+    bench_arinniti_qa_studies_family,
+    bench_hannahanna_qa_studies_family,
+    bench_inara_qa_studies_family,
+    bench_kamrusepa_qa_studies_family,
+    bench_tarhunna_qa_studies_family,
+    bench_telepinu_qa_studies_family,
+)
+from quant_fund.research.benches_w1710 import (
+    bench_anat_qa_studies_family,
+    bench_asherah_qa_studies_family,
+    bench_baal_qa_studies_family,
+    bench_lotan_qa_studies_family,
+    bench_mot_qa_studies_family,
+    bench_yam_qa_studies_family,
+)
+from quant_fund.research.benches_w1711 import (
+    bench_baalat_qa_studies_family,
+    bench_dagon_qa_studies_family,
+    bench_eshmun_qa_studies_family,
+    bench_melqart_qa_studies_family,
+    bench_resheph_qa_studies_family,
+    bench_tanit_qa_studies_family,
+)
+from quant_fund.research.benches_w1712 import (
+    bench_astghik_qa_studies_family,
+    bench_hayk_qa_studies_family,
+    bench_nahapet_qa_studies_family,
+    bench_nane_qa_studies_family,
+    bench_tir_qa_studies_family,
+    bench_vahagn_qa_studies_family,
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
@@ -2790,7 +14134,13 @@ def _provenance(
         "odom_comp": bench_odom_comp_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
-    data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
+    data_hash = hash_bytes(
+        json.dumps(
+            scope,
+            sort_keys=True,
+            default=lambda obj: getattr(obj, "__name__", str(obj)),
+        ).encode("utf-8")
+    )
     # Shape-only provenance is insufficient: two datasets can share the same
     # dimensions while containing different observations.  Polars' row hash
     # is deterministic for the materialized frame and keeps the receipt

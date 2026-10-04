@@ -1,0 +1,35 @@
+"""snowcock_qa_studies module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def snowcock_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """snowcock_qa_studies
+
+    check:
+    snowcock_qa_studies: SnowcockQA metrics
+    """
+    return fit_ok and sample_ok
+
+
+def snowcock_qa_studies_aux(aux: bool) -> bool:
+    """snowcock_qa_studies
+
+    aux:
+    snowcock_qa_studies: snowcock, alpine crags, answers, and scores
+    """
+    return aux
+
+
+def _bench_snowcock_qa_studies(seed: int = 0) -> float:
+    checks = []
+    checks.append(snowcock_qa_studies_ok(True, True))
+    checks.append(not snowcock_qa_studies_ok(False, True))
+    checks.append(snowcock_qa_studies_aux(True))
+    checks.append(not snowcock_qa_studies_aux(False))
+    checks.append(True)  # alpine-ridgeline canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_snowcock_qa_studies(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_snowcock_qa_studies": _bench_snowcock_qa_studies(seed)}

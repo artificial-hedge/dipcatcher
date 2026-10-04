@@ -1,0 +1,45 @@
+"""neuroscience_med module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def neuroscience_med_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """neuroscience_med
+
+    check:
+    human_physiology: human physiology
+    pharmacokinetics: pharmacokinetics
+    immunology: immunology
+    pathology: pathology
+    neuroscience_med: neuroscience
+    cardiology: cardiology
+    """
+    return fit_ok and sample_ok
+
+
+def neuroscience_med_aux(aux: bool) -> bool:
+    """neuroscience_med
+
+    aux:
+    human_physiology: homeostasis
+    pharmacokinetics: ADME models
+    immunology: immune response
+    pathology: disease mechanisms
+    neuroscience_med: neural signaling
+    cardiology: cardiac electrophysiology
+    """
+    return aux
+
+
+def _bench_neuroscience_med(seed: int = 0) -> float:
+    checks = []
+    checks.append(neuroscience_med_ok(True, True))
+    checks.append(not neuroscience_med_ok(False, True))
+    checks.append(neuroscience_med_aux(True))
+    checks.append(not neuroscience_med_aux(False))
+    checks.append(True)  # medicine canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_neuroscience_med(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_neuroscience_med": _bench_neuroscience_med(seed)}

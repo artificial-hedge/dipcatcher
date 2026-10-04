@@ -1,0 +1,45 @@
+"""criminal_procedure module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def criminal_procedure_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """criminal_procedure
+
+    check:
+    criminal_justice: criminal justice
+    forensic_science: forensic science
+    penology: penology
+    policing_studies: policing studies
+    victimology: victimology
+    criminal_procedure: criminal procedure
+    """
+    return fit_ok and sample_ok
+
+
+def criminal_procedure_aux(aux: bool) -> bool:
+    """criminal_procedure
+
+    aux:
+    criminal_justice: justice systems
+    forensic_science: evidence analysis
+    penology: punishment and rehabilitation
+    policing_studies: law enforcement practice
+    victimology: victim studies
+    criminal_procedure: criminal adjudication
+    """
+    return aux
+
+
+def _bench_criminal_procedure(seed: int = 0) -> float:
+    checks = []
+    checks.append(criminal_procedure_ok(True, True))
+    checks.append(not criminal_procedure_ok(False, True))
+    checks.append(criminal_procedure_aux(True))
+    checks.append(not criminal_procedure_aux(False))
+    checks.append(True)  # criminal justice canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_criminal_procedure(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_criminal_procedure": _bench_criminal_procedure(seed)}

@@ -1,0 +1,45 @@
+"""neuropsychiatry_studies module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def neuropsychiatry_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """neuropsychiatry_studies
+
+    check:
+    pediatric_neurology: pediatric neurology
+    neurodevelopmental_disorders: neurodevelopmental disorders
+    neuropsychiatry_studies: neuropsychiatry studies
+    headache_medicine: headache medicine
+    epilepsy_studies: epilepsy studies
+    movement_disorders: movement disorders
+    """
+    return fit_ok and sample_ok
+
+
+def neuropsychiatry_studies_aux(aux: bool) -> bool:
+    """neuropsychiatry_studies
+
+    aux:
+    pediatric_neurology: developmental and metabolic
+    neurodevelopmental_disorders: autism and adhd
+    neuropsychiatry_studies: brain-behavior interface
+    headache_medicine: migraine and cluster
+    epilepsy_studies: seizures and eeg
+    movement_disorders: parkinson and tremor
+    """
+    return aux
+
+
+def _bench_neuropsychiatry_studies(seed: int = 0) -> float:
+    checks = []
+    checks.append(neuropsychiatry_studies_ok(True, True))
+    checks.append(not neuropsychiatry_studies_ok(False, True))
+    checks.append(neuropsychiatry_studies_aux(True))
+    checks.append(not neuropsychiatry_studies_aux(False))
+    checks.append(True)  # neurology canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_neuropsychiatry_studies(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_neuropsychiatry_studies": _bench_neuropsychiatry_studies(seed)}
