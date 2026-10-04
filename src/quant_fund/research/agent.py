@@ -9551,6 +9551,14 @@ from quant_fund.research.benches_w1194 import (
     bench_radiation_therapy_family,
     bench_respiratory_therapy_family,
 )
+from quant_fund.research.benches_w1195 import (
+    bench_clinical_laboratory_family,
+    bench_medical_imaging_studies_family,
+    bench_mortuary_science_family,
+    bench_phlebotomy_studies_family,
+    bench_sterile_processing_family,
+    bench_surgical_technology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9922,6 +9930,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medical_imaging_studies": bench_medical_imaging_studies_family,
+        "clinical_laboratory": bench_clinical_laboratory_family,
+        "mortuary_science": bench_mortuary_science_family,
+        "phlebotomy_studies": bench_phlebotomy_studies_family,
+        "surgical_technology": bench_surgical_technology_family,
+        "sterile_processing": bench_sterile_processing_family,
         "genetic_counseling": bench_genetic_counseling_family,
         "lactation_consulting": bench_lactation_consulting_family,
         "podiatric_medicine": bench_podiatric_medicine_family,

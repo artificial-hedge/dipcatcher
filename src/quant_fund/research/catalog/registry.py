@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1195 clinical-support canon.
+        "medical_imaging_studies",
+        "clinical_laboratory",
+        "mortuary_science",
+        "phlebotomy_studies",
+        "surgical_technology",
+        "sterile_processing",
         # Wave-1194 clinical-specialties canon.
         "genetic_counseling",
         "lactation_consulting",
