@@ -3243,6 +3243,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "debate_qa_studies",
         "editorial_qa_studies",
         "headline_qa_studies",
+        # Wave-1426 leisure canon.
+        "challenge_qa_studies",
+        "contest_qa_studies",
+        "game_qa_studies",
+        "hobby_qa_studies",
+        "leisure_qa_studies",
+        "match_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

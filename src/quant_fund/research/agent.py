@@ -11399,6 +11399,14 @@ from quant_fund.research.benches_w1425 import (
     bench_editorial_qa_studies_family,
     bench_headline_qa_studies_family,
 )
+from quant_fund.research.benches_w1426 import (
+    bench_challenge_qa_studies_family,
+    bench_contest_qa_studies_family,
+    bench_game_qa_studies_family,
+    bench_hobby_qa_studies_family,
+    bench_leisure_qa_studies_family,
+    bench_match_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12615,6 +12623,12 @@ def _provenance(
         "debate_qa_studies": bench_debate_qa_studies_family,
         "editorial_qa_studies": bench_editorial_qa_studies_family,
         "headline_qa_studies": bench_headline_qa_studies_family,
+        "challenge_qa_studies": bench_challenge_qa_studies_family,
+        "contest_qa_studies": bench_contest_qa_studies_family,
+        "game_qa_studies": bench_game_qa_studies_family,
+        "hobby_qa_studies": bench_hobby_qa_studies_family,
+        "leisure_qa_studies": bench_leisure_qa_studies_family,
+        "match_qa_studies": bench_match_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
