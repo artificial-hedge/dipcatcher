@@ -12551,6 +12551,14 @@ from quant_fund.research.benches_w1569 import (
     bench_thornback_qa_studies_family,
     bench_torpedo_ray_qa_studies_family,
 )
+from quant_fund.research.benches_w1570 import (
+    bench_fiddler_crab_qa_studies_family,
+    bench_ghost_crab_qa_studies_family,
+    bench_horseshoe_qa_studies_family,
+    bench_mud_crab_qa_studies_family,
+    bench_porcelain_qa_studies_family,
+    bench_spider_crab_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14526,6 +14534,12 @@ def _provenance(
         "sawfish_qa_studies": bench_sawfish_qa_studies_family,
         "thornback_qa_studies": bench_thornback_qa_studies_family,
         "torpedo_ray_qa_studies": bench_torpedo_ray_qa_studies_family,
+        "fiddler_crab_qa_studies": bench_fiddler_crab_qa_studies_family,
+        "ghost_crab_qa_studies": bench_ghost_crab_qa_studies_family,
+        "horseshoe_qa_studies": bench_horseshoe_qa_studies_family,
+        "mud_crab_qa_studies": bench_mud_crab_qa_studies_family,
+        "porcelain_qa_studies": bench_porcelain_qa_studies_family,
+        "spider_crab_qa_studies": bench_spider_crab_qa_studies_family,
         "moray_qa_studies": bench_moray_qa_studies_family,
         "ribbon_eel_qa_studies": bench_ribbon_eel_qa_studies_family,
         "pike_qa_studies": bench_pike_qa_studies_family,

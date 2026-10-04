@@ -4251,6 +4251,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sawfish_qa_studies",
         "thornback_qa_studies",
         "torpedo_ray_qa_studies",
+        # Wave-1570 crab canon.
+        "fiddler_crab_qa_studies",
+        "ghost_crab_qa_studies",
+        "horseshoe_qa_studies",
+        "mud_crab_qa_studies",
+        "porcelain_qa_studies",
+        "spider_crab_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
