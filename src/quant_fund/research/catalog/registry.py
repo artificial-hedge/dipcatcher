@@ -4300,6 +4300,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kusimanse_qa_studies",
         "maned_wolf_qa_studies",
         "sun_bear_qa_studies",
+        # Wave-1577 carnivore canon.
+        "civet_qa_studies",
+        "genet_qa_studies",
+        "manul_qa_studies",
+        "mongoose_qa_studies",
+        "sloth_bear_qa_studies",
+        "suricate_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

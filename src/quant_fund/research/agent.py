@@ -12607,6 +12607,14 @@ from quant_fund.research.benches_w1576 import (
     bench_maned_wolf_qa_studies_family,
     bench_sun_bear_qa_studies_family,
 )
+from quant_fund.research.benches_w1577 import (
+    bench_civet_qa_studies_family,
+    bench_genet_qa_studies_family,
+    bench_manul_qa_studies_family,
+    bench_mongoose_qa_studies_family,
+    bench_sloth_bear_qa_studies_family,
+    bench_suricate_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14610,6 +14618,12 @@ def _provenance(
         "kusimanse_qa_studies": bench_kusimanse_qa_studies_family,
         "maned_wolf_qa_studies": bench_maned_wolf_qa_studies_family,
         "sun_bear_qa_studies": bench_sun_bear_qa_studies_family,
+        "civet_qa_studies": bench_civet_qa_studies_family,
+        "genet_qa_studies": bench_genet_qa_studies_family,
+        "manul_qa_studies": bench_manul_qa_studies_family,
+        "mongoose_qa_studies": bench_mongoose_qa_studies_family,
+        "sloth_bear_qa_studies": bench_sloth_bear_qa_studies_family,
+        "suricate_qa_studies": bench_suricate_qa_studies_family,
         "gerbil_qa_studies": bench_gerbil_qa_studies_family,
         "hamster_qa_studies": bench_hamster_qa_studies_family,
         "lemming_qa_studies": bench_lemming_qa_studies_family,
