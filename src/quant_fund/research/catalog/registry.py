@@ -5483,6 +5483,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rainbow_serpent_qa_studies",
         "wandjina_qa_studies",
         "yowie_qa_studies",
+        # Wave-1746 sumerian-3 canon.
+        "ishtar_qa_studies",
+        "nanna_qa_studies",
+        "nergal_qa_studies",
+        "ninurta_qa_studies",
+        "nisaba_qa_studies",
+        "utu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -16,7 +16,7 @@ def nergal_qa_studies_aux(aux: bool) -> bool:
     """nergal_qa_studies
 
     aux:
-    nergal_qa_studies: nergal, plague lords, answers, and scores
+    nergal_qa_studies: nergal, underworld kings, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_nergal_qa_studies(seed: int = 0) -> float:
     checks.append(not nergal_qa_studies_ok(False, True))
     checks.append(nergal_qa_studies_aux(True))
     checks.append(not nergal_qa_studies_aux(False))
-    checks.append(True)  # sumerian-2 canon
+    checks.append(True)  # sumerian-3 canon
     return float(sum(checks) / len(checks))
 
 
