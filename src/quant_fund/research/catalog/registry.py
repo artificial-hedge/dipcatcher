@@ -3803,6 +3803,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shoveler_qa_studies",
         "teal_qa_studies",
         "wigeon_qa_studies",
+        # Wave-1506 duck canon.
+        "bufflehead_qa_studies",
+        "canvasback_qa_studies",
+        "eider_qa_studies",
+        "mallard_qa_studies",
+        "merganser_qa_studies",
+        "scoter_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
