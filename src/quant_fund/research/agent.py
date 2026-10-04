@@ -12295,6 +12295,14 @@ from quant_fund.research.benches_w1537 import (
     bench_rail_qa_studies_family,
     bench_waterhen_qa_studies_family,
 )
+from quant_fund.research.benches_w1538 import (
+    bench_crowned_crane_qa_studies_family,
+    bench_demoiselle_qa_studies_family,
+    bench_finfoot_qa_studies_family,
+    bench_limpkin_qa_studies_family,
+    bench_trumpeter_qa_studies_family,
+    bench_whooping_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14134,6 +14142,12 @@ def _provenance(
         "gallinule_qa_studies": bench_gallinule_qa_studies_family,
         "rail_qa_studies": bench_rail_qa_studies_family,
         "waterhen_qa_studies": bench_waterhen_qa_studies_family,
+        "crowned_crane_qa_studies": bench_crowned_crane_qa_studies_family,
+        "demoiselle_qa_studies": bench_demoiselle_qa_studies_family,
+        "finfoot_qa_studies": bench_finfoot_qa_studies_family,
+        "limpkin_qa_studies": bench_limpkin_qa_studies_family,
+        "trumpeter_qa_studies": bench_trumpeter_qa_studies_family,
+        "whooping_qa_studies": bench_whooping_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
