@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-618 p-adic-5 canon.
+        "fontaine_curve",
+        "untilt",
+        "perfectoid_c",
+        "b_drb",
+        "phi_mod",
+        "ad_period",
         # Wave-617 algebraic-K-6 canon.
         "gillet_thomason",
         "khomo_k",
