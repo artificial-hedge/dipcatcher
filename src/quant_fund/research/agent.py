@@ -10703,6 +10703,14 @@ from quant_fund.research.benches_w1338 import (
     bench_proof_pile_studies_family,
     bench_theorem_qa_studies_family,
 )
+from quant_fund.research.benches_w1339 import (
+    bench_aqua_rat_studies_family,
+    bench_geo_qa_studies_family,
+    bench_hol_step_studies_family,
+    bench_math_odyssey_studies_family,
+    bench_tab_math_studies_family,
+    bench_uni_math_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11470,6 +11478,12 @@ def _provenance(
         "gsm_hard_studies": bench_gsm_hard_studies_family,
         "math_reason_studies": bench_math_reason_studies_family,
         "mini_f2f_studies": bench_mini_f2f_studies_family,
+        "aqua_rat_studies": bench_aqua_rat_studies_family,
+        "geo_qa_studies": bench_geo_qa_studies_family,
+        "hol_step_studies": bench_hol_step_studies_family,
+        "math_odyssey_studies": bench_math_odyssey_studies_family,
+        "tab_math_studies": bench_tab_math_studies_family,
+        "uni_math_studies": bench_uni_math_studies_family,
         "proof_pile_studies": bench_proof_pile_studies_family,
         "theorem_qa_studies": bench_theorem_qa_studies_family,
         "voyager_minecraft_studies": bench_voyager_minecraft_studies_family,
