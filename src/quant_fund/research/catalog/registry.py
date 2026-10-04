@@ -4090,6 +4090,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sungrebe_qa_studies",
         "swamphen_qa_studies",
         "takhe_qa_studies",
+        # Wave-1547 columbid-2 canon.
+        "crowned_pigeon_qa_studies",
+        "cuckoo_dove_qa_studies",
+        "emerald_dove_qa_studies",
+        "fruit_dove_qa_studies",
+        "ground_dove_qa_studies",
+        "quail_dove_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

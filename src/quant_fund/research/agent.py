@@ -12367,6 +12367,14 @@ from quant_fund.research.benches_w1546 import (
     bench_swamphen_qa_studies_family,
     bench_takhe_qa_studies_family,
 )
+from quant_fund.research.benches_w1547 import (
+    bench_crowned_pigeon_qa_studies_family,
+    bench_cuckoo_dove_qa_studies_family,
+    bench_emerald_dove_qa_studies_family,
+    bench_fruit_dove_qa_studies_family,
+    bench_ground_dove_qa_studies_family,
+    bench_quail_dove_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14253,6 +14261,12 @@ def _provenance(
         "sungrebe_qa_studies": bench_sungrebe_qa_studies_family,
         "swamphen_qa_studies": bench_swamphen_qa_studies_family,
         "takhe_qa_studies": bench_takhe_qa_studies_family,
+        "crowned_pigeon_qa_studies": bench_crowned_pigeon_qa_studies_family,
+        "cuckoo_dove_qa_studies": bench_cuckoo_dove_qa_studies_family,
+        "emerald_dove_qa_studies": bench_emerald_dove_qa_studies_family,
+        "fruit_dove_qa_studies": bench_fruit_dove_qa_studies_family,
+        "ground_dove_qa_studies": bench_ground_dove_qa_studies_family,
+        "quail_dove_qa_studies": bench_quail_dove_qa_studies_family,
         "woodhoopoe_qa_studies": bench_woodhoopoe_qa_studies_family,
         "amazon_qa_studies": bench_amazon_qa_studies_family,
         "cockatoo_qa_studies": bench_cockatoo_qa_studies_family,
