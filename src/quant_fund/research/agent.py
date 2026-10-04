@@ -9263,6 +9263,14 @@ from quant_fund.research.benches_w1158 import (
     bench_psychology_5_family,
     bench_sociology_6_family,
 )
+from quant_fund.research.benches_w1159 import (
+    bench_aerospace_engineering_2_family,
+    bench_biomedical_engineering_2_family,
+    bench_chemical_engineering_2_family,
+    bench_civil_engineering_2_family,
+    bench_electrical_engineering_2_family,
+    bench_mechanical_engineering_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9634,6 +9642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "biomedical_engineering_2": bench_biomedical_engineering_2_family,
+        "chemical_engineering_2": bench_chemical_engineering_2_family,
+        "mechanical_engineering_2": bench_mechanical_engineering_2_family,
+        "civil_engineering_2": bench_civil_engineering_2_family,
+        "electrical_engineering_2": bench_electrical_engineering_2_family,
+        "aerospace_engineering_2": bench_aerospace_engineering_2_family,
         "sociology_6": bench_sociology_6_family,
         "economics_6": bench_economics_6_family,
         "political_science_3": bench_political_science_3_family,

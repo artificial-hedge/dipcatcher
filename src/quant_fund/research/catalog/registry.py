@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1159 engineering canon.
+        "biomedical_engineering_2",
+        "chemical_engineering_2",
+        "mechanical_engineering_2",
+        "civil_engineering_2",
+        "electrical_engineering_2",
+        "aerospace_engineering_2",
         # Wave-1158 social-sciences canon.
         "sociology_6",
         "economics_6",
