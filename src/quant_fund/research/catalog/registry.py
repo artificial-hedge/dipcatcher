@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-919 computational-geometry-4 canon.
+        "voronoi_lite",
+        "delaunay_flip",
+        "convex_layers",
+        "polygon_offset",
+        "rotating_sweep",
+        "visibility_graph",
         # Wave-918 data-structures-4/geometry-3 canon.
         "fractional_cascade",
         "range_min_query",
