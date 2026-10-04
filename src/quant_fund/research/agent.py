@@ -4607,6 +4607,14 @@ from quant_fund.research.benches_w576 import (
     bench_s_transform_family,
     bench_voiculescu_thm_family,
 )
+from quant_fund.research.benches_w577 import (
+    bench_char_cycle_family,
+    bench_d_module2_family,
+    bench_intersection_homology_family,
+    bench_middle_perversity_family,
+    bench_nearby_cycles_family,
+    bench_perverse_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4986,6 +4994,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "perverse_sheaf": bench_perverse_sheaf_family,
+        "intersection_homology": bench_intersection_homology_family,
+        "nearby_cycles": bench_nearby_cycles_family,
+        "d_module2": bench_d_module2_family,
+        "char_cycle": bench_char_cycle_family,
+        "middle_perversity": bench_middle_perversity_family,
         "free_prob": bench_free_prob_family,
         "r_transform": bench_r_transform_family,
         "s_transform": bench_s_transform_family,
