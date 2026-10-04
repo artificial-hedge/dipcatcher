@@ -4902,6 +4902,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leprechaun_qa_studies",
         "puca_qa_studies",
         "selkie_qa_studies",
+        # Wave-1663 british-folk canon.
+        "barghest_qa_studies",
+        "black_dog_qa_studies",
+        "cat_sith_qa_studies",
+        "church_grim_qa_studies",
+        "cwn_annwn_qa_studies",
+        "grimalkin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

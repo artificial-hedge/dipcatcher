@@ -13295,6 +13295,14 @@ from quant_fund.research.benches_w1662 import (
     bench_puca_qa_studies_family,
     bench_selkie_qa_studies_family,
 )
+from quant_fund.research.benches_w1663 import (
+    bench_barghest_qa_studies_family,
+    bench_black_dog_qa_studies_family,
+    bench_cat_sith_qa_studies_family,
+    bench_church_grim_qa_studies_family,
+    bench_cwn_annwn_qa_studies_family,
+    bench_grimalkin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
