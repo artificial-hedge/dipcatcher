@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1132 history-4 canon.
+        "history_of_emotions",
+        "history_of_sexuality",
+        "history_of_the_book",
+        "history_of_capitalism",
+        "history_of_religions",
+        "microhistory",
         # Wave-1131 sociology-5 canon.
         "sociology_of_migration",
         "sociology_of_housing",
