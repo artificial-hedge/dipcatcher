@@ -12175,6 +12175,14 @@ from quant_fund.research.benches_w1522 import (
     bench_lithops_qa_studies_family,
     bench_sedum_qa_studies_family,
 )
+from quant_fund.research.benches_w1523 import (
+    bench_bluegrass_qa_studies_family,
+    bench_fescue_qa_studies_family,
+    bench_miscanthus_qa_studies_family,
+    bench_pampas_qa_studies_family,
+    bench_ryegrass_qa_studies_family,
+    bench_switchgrass_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13925,6 +13933,12 @@ def _provenance(
         "haworthia_qa_studies": bench_haworthia_qa_studies_family,
         "lithops_qa_studies": bench_lithops_qa_studies_family,
         "sedum_qa_studies": bench_sedum_qa_studies_family,
+        "bluegrass_qa_studies": bench_bluegrass_qa_studies_family,
+        "fescue_qa_studies": bench_fescue_qa_studies_family,
+        "miscanthus_qa_studies": bench_miscanthus_qa_studies_family,
+        "pampas_qa_studies": bench_pampas_qa_studies_family,
+        "ryegrass_qa_studies": bench_ryegrass_qa_studies_family,
+        "switchgrass_qa_studies": bench_switchgrass_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
