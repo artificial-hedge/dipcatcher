@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1248 ophthalmology-vision canon.
+        "retinal_studies",
+        "corneal_studies",
+        "glaucoma_studies",
+        "cataract_studies",
+        "macular_studies",
+        "refractive_studies",
         # Wave-1247 nephro-renal canon.
         "glomerular_studies",
         "tubulointerstitial_studies",
