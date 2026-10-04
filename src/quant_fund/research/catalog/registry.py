@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-525 ergodic-theory canon.
+        "birkhoff",
+        "mean_ergodic",
+        "mixing_weak",
+        "entropy_ks",
+        "bernoulli_shift",
+        "osceledets",
         # Wave-524 Ramsey-theory canon.
         "hales_jewett",
         "rado_thm",

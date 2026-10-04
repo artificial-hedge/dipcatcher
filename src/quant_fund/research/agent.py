@@ -4191,6 +4191,14 @@ from quant_fund.research.benches_w524 import (
     bench_rado_thm_family,
     bench_schur_thm_family,
 )
+from quant_fund.research.benches_w525 import (
+    bench_bernoulli_shift_family,
+    bench_birkhoff_family,
+    bench_entropy_ks_family,
+    bench_mean_ergodic_family,
+    bench_mixing_weak_family,
+    bench_osceledets_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4570,6 +4578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "birkhoff": bench_birkhoff_family,
+        "mean_ergodic": bench_mean_ergodic_family,
+        "mixing_weak": bench_mixing_weak_family,
+        "entropy_ks": bench_entropy_ks_family,
+        "bernoulli_shift": bench_bernoulli_shift_family,
+        "osceledets": bench_osceledets_family,
         "hales_jewett": bench_hales_jewett_family,
         "rado_thm": bench_rado_thm_family,
         "gallai_thm": bench_gallai_thm_family,
