@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1238 vascular-medicine canon.
+        "vascular_medicine_studies",
+        "phlebology_studies",
+        "lymphatic_medicine",
+        "vascular_lab_studies",
+        "peripheral_artery_studies",
+        "aortic_medicine_studies",
         # Wave-1237 clinical-pharmacy canon.
         "clinical_pharmacy_studies",
         "pharmacy_practice_studies",
