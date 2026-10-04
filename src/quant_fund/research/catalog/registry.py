@@ -4188,6 +4188,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "parrotfish_qa_studies",
         "snapper_qa_studies",
         "wrasse_qa_studies",
+        # Wave-1561 reef-fish-2 canon.
+        "angelfish_qa_studies",
+        "blenny_qa_studies",
+        "goby_qa_studies",
+        "lionfish_qa_studies",
+        "surgeonfish_qa_studies",
+        "triggerfish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
