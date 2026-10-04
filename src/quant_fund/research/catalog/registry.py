@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1021 epidemiology canon.
+        "sir_epidemic",
+        "sis_epidemic",
+        "seir_epidemic",
+        "r0_estimation",
+        "herd_immunity",
+        "branching_epidemic",
         # Wave-1020 ecology/evolution canon.
         "predator_prey",
         "lotka_volterra",
