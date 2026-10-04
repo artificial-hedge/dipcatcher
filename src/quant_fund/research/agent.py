@@ -11879,6 +11879,14 @@ from quant_fund.research.benches_w1485 import (
     bench_sandpiper_qa_studies_family,
     bench_tern_qa_studies_family,
 )
+from quant_fund.research.benches_w1486 import (
+    bench_flamingo_qa_studies_family,
+    bench_godwit_qa_studies_family,
+    bench_grebe_qa_studies_family,
+    bench_pelican_qa_studies_family,
+    bench_spoonbill_qa_studies_family,
+    bench_stork_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13441,6 +13449,12 @@ def _provenance(
         "avocet_qa_studies": bench_avocet_qa_studies_family,
         "egret_qa_studies": bench_egret_qa_studies_family,
         "heron_qa_studies": bench_heron_qa_studies_family,
+        "flamingo_qa_studies": bench_flamingo_qa_studies_family,
+        "godwit_qa_studies": bench_godwit_qa_studies_family,
+        "grebe_qa_studies": bench_grebe_qa_studies_family,
+        "pelican_qa_studies": bench_pelican_qa_studies_family,
+        "spoonbill_qa_studies": bench_spoonbill_qa_studies_family,
+        "stork_qa_studies": bench_stork_qa_studies_family,
         "plover_qa_studies": bench_plover_qa_studies_family,
         "sandpiper_qa_studies": bench_sandpiper_qa_studies_family,
         "tern_qa_studies": bench_tern_qa_studies_family,
