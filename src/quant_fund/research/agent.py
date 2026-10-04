@@ -10255,6 +10255,14 @@ from quant_fund.research.benches_w1282 import (
     bench_vla_model_studies_family,
     bench_world_sim_studies_family,
 )
+from quant_fund.research.benches_w1283 import (
+    bench_context_compression_studies_family,
+    bench_episodic_memory_studies_family,
+    bench_memory_bank_studies_family,
+    bench_retrieval_memory_studies_family,
+    bench_semantic_memory_studies_family,
+    bench_working_memory_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10770,6 +10778,12 @@ def _provenance(
         "video_diffusion_studies": bench_video_diffusion_studies_family,
         "vla_model_studies": bench_vla_model_studies_family,
         "world_sim_studies": bench_world_sim_studies_family,
+        "context_compression_studies": bench_context_compression_studies_family,
+        "episodic_memory_studies": bench_episodic_memory_studies_family,
+        "memory_bank_studies": bench_memory_bank_studies_family,
+        "retrieval_memory_studies": bench_retrieval_memory_studies_family,
+        "semantic_memory_studies": bench_semantic_memory_studies_family,
+        "working_memory_studies": bench_working_memory_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
