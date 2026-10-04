@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1134 computational-math canon.
+        "finite_element_theory",
+        "spectral_theory_numerics",
+        "adaptive_method_theory",
+        "reduced_order_modeling",
+        "uncertainty_quantification_2",
+        "high_performance_numerics",
         # Wave-1133 physics-4 canon.
         "statistical_field_theory",
         "conformal_field_theory",
