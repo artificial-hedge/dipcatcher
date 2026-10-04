@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1216 internal-medicine canon.
+        "internal_medicine",
+        "hospital_medicine",
+        "critical_care_medicine",
+        "pulmonary_medicine",
+        "gastroenterology_studies",
+        "hepatology_studies",
         # Wave-1215 cardio-surgery canon.
         "vascular_surgery",
         "cardiac_surgery",
