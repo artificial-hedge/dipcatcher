@@ -6607,6 +6607,14 @@ from quant_fund.research.benches_w826 import (
     bench_levy_ineq_family,
     bench_max_ineq_family,
 )
+from quant_fund.research.benches_w827 import (
+    bench_chung_series_family,
+    bench_ito_nisio_family,
+    bench_kolmogorov_two_family,
+    bench_ortega_series_family,
+    bench_salem_zygmund_family,
+    bench_three_series_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6978,6 +6986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "three_series": bench_three_series_family,
+        "kolmogorov_two": bench_kolmogorov_two_family,
+        "ito_nisio": bench_ito_nisio_family,
+        "chung_series": bench_chung_series_family,
+        "ortega_series": bench_ortega_series_family,
+        "salem_zygmund": bench_salem_zygmund_family,
         "doob_ineq": bench_doob_ineq_family,
         "max_ineq": bench_max_ineq_family,
         "bj_ineq": bench_bj_ineq_family,
