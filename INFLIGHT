@@ -1,3 +1,4 @@
+feat(research): wave 552 — contact-topology canon (contact_form, legendrian_knot, overtwisted, tight_contact, giroux_corr, convex_surface) (3267->3273 families)
 feat(research): wave 551 — foliation-theory canon (foliation, holonomy_grp, godbillon_vey, haefliger_struct, novikov_thm, thurston_fol) (3261->3267 families)
 feat(research): wave 550 — characteristic-classes canon (chern_class, pontryagin_class, euler_class, todd_genus, chern_character, hirzebruch_sig) (3255->3261 families)
 feat(research): wave 549 — index-theory canon (atiyah_singer, dirac_op, eta_invariant, heat_kernel2, signature_op, analytic_torsion) (3249->3255 families)
