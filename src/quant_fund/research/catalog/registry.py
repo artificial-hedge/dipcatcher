@@ -3250,6 +3250,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hobby_qa_studies",
         "leisure_qa_studies",
         "match_qa_studies",
+        # Wave-1427 terrain-2 canon.
+        "canyon_qa_studies",
+        "coast_qa_studies",
+        "desert_qa_studies",
+        "field_qa_studies",
+        "forest_qa_studies",
+        "glacier_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

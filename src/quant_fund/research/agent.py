@@ -11407,6 +11407,14 @@ from quant_fund.research.benches_w1426 import (
     bench_leisure_qa_studies_family,
     bench_match_qa_studies_family,
 )
+from quant_fund.research.benches_w1427 import (
+    bench_canyon_qa_studies_family,
+    bench_coast_qa_studies_family,
+    bench_desert_qa_studies_family,
+    bench_field_qa_studies_family,
+    bench_forest_qa_studies_family,
+    bench_glacier_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12629,6 +12637,12 @@ def _provenance(
         "hobby_qa_studies": bench_hobby_qa_studies_family,
         "leisure_qa_studies": bench_leisure_qa_studies_family,
         "match_qa_studies": bench_match_qa_studies_family,
+        "canyon_qa_studies": bench_canyon_qa_studies_family,
+        "coast_qa_studies": bench_coast_qa_studies_family,
+        "desert_qa_studies": bench_desert_qa_studies_family,
+        "field_qa_studies": bench_field_qa_studies_family,
+        "forest_qa_studies": bench_forest_qa_studies_family,
+        "glacier_qa_studies": bench_glacier_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
