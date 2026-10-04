@@ -1,3 +1,4 @@
+feat(research): wave 750 — dimer/Ising canon (smirnov_ising, chelkak_ising, kenyon_dimers, thurston_tiling, duminil_copin2, hongler_ising) (4455->4461 families)
 feat(research): wave 749 — vertex-model-2 canon (bufetov_sixv, borodin_bufetov, kuan_sixv, dimitrov_sixv, borodin_wheeler, wheeler_zinn) (4449->4455 families)
 feat(research): wave 748 — vertex-model canon (borodin_sixv, gowers_knot, baxter_vertex, reshetikhin_vertex, corwin_petrov, aggarwal_sixv) (4443->4449 families)
 feat(research): wave 747 — ASEP-2 canon (bertini_giacomin, gardina_asym, schutz_tasep, balazs_seppalainen, quastel_valko, timar_tasep) (4437->4443 families)
