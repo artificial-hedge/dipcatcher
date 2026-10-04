@@ -7191,6 +7191,14 @@ from quant_fund.research.benches_w899 import (
     bench_rational_interp_family,
     bench_shanks_trans_family,
 )
+from quant_fund.research.benches_w900 import (
+    bench_ball_tree_family,
+    bench_cover_tree_family,
+    bench_kd_tree_family,
+    bench_quad_tree_family,
+    bench_r_tree_family,
+    bench_vp_tree_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7562,6 +7570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kd_tree": bench_kd_tree_family,
+        "ball_tree": bench_ball_tree_family,
+        "cover_tree": bench_cover_tree_family,
+        "r_tree": bench_r_tree_family,
+        "quad_tree": bench_quad_tree_family,
+        "vp_tree": bench_vp_tree_family,
         "cardinal_interp": bench_cardinal_interp_family,
         "bernstein_form": bench_bernstein_form_family,
         "shanks_trans": bench_shanks_trans_family,
