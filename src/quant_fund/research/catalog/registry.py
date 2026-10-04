@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1106 materials-2 canon.
+        "semiconductors_materials",
+        "composite_materials",
+        "thin_films",
+        "biomaterials",
+        "phase_diagrams",
+        "characterization_methods",
         # Wave-1105 behavioral-econ-2 canon.
         "prospect_theory",
         "bounded_rationality",
