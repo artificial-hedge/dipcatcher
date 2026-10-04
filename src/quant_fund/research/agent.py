@@ -9631,6 +9631,14 @@ from quant_fund.research.benches_w1204 import (
     bench_longevity_medicine_family,
     bench_palliative_care_family,
 )
+from quant_fund.research.benches_w1205 import (
+    bench_aerospace_medicine_family,
+    bench_diving_medicine_family,
+    bench_high_altitude_medicine_family,
+    bench_hyperbaric_oxygen_family,
+    bench_space_physiology_family,
+    bench_wilderness_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10002,6 +10010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "aerospace_medicine": bench_aerospace_medicine_family,
+        "diving_medicine": bench_diving_medicine_family,
+        "wilderness_medicine": bench_wilderness_medicine_family,
+        "space_physiology": bench_space_physiology_family,
+        "hyperbaric_oxygen": bench_hyperbaric_oxygen_family,
+        "high_altitude_medicine": bench_high_altitude_medicine_family,
         "geriatric_medicine": bench_geriatric_medicine_family,
         "palliative_care": bench_palliative_care_family,
         "hospice_care": bench_hospice_care_family,
