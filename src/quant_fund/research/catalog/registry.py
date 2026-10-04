@@ -5378,6 +5378,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "payna_qa_studies",
         "taigan_qa_studies",
         "yalyk_qa_studies",
+        # Wave-1731 taino-myth canon.
+        "atabei_qa_studies",
+        "boinayel_qa_studies",
+        "deminan_qa_studies",
+        "juracan_qa_studies",
+        "karacarol_qa_studies",
+        "yucahu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

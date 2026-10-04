@@ -13839,6 +13839,14 @@ from quant_fund.research.benches_w1730 import (
     bench_taigan_qa_studies_family,
     bench_yalyk_qa_studies_family,
 )
+from quant_fund.research.benches_w1731 import (
+    bench_atabei_qa_studies_family,
+    bench_boinayel_qa_studies_family,
+    bench_deminan_qa_studies_family,
+    bench_juracan_qa_studies_family,
+    bench_karacarol_qa_studies_family,
+    bench_yucahu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
