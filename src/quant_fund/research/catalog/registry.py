@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-814 stochastic-flow canon.
+        "stochastic_flow",
+        "kunita_flow",
+        "liouville_flow",
+        "stochastic_damping",
+        "meyers_process",
+        "karal_flow",
         # Wave-813 diffusion-theory canon.
         "feller_boundary",
         "scale_measure",
