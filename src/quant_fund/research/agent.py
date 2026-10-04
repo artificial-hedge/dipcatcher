@@ -8927,6 +8927,14 @@ from quant_fund.research.benches_w1116 import (
     bench_psychopathology_family,
     bench_sport_psychology_family,
 )
+from quant_fund.research.benches_w1117 import (
+    bench_historical_sociology_family,
+    bench_legal_sociology_family,
+    bench_mathematical_sociology_family,
+    bench_military_sociology_family,
+    bench_science_studies_family,
+    bench_sociology_of_knowledge_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9298,6 +9306,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mathematical_sociology": bench_mathematical_sociology_family,
+        "historical_sociology": bench_historical_sociology_family,
+        "science_studies": bench_science_studies_family,
+        "sociology_of_knowledge": bench_sociology_of_knowledge_family,
+        "military_sociology": bench_military_sociology_family,
+        "legal_sociology": bench_legal_sociology_family,
         "experimental_psychology": bench_experimental_psychology_family,
         "comparative_psychology": bench_comparative_psychology_family,
         "evolutionary_psychology": bench_evolutionary_psychology_family,
