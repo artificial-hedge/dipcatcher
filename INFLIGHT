@@ -1,3 +1,4 @@
+w1405 audio-QA canon: ambi_qa_studies, audio_qa_lite_studies, avsd_lite_studies, clotho_qa_studies, esc_qa_studies, music_avqa_studies (8379->8385)
 w1404 video-QA canon: activitynet_qa_studies, how2qa_lite_studies, movie_qa_lite_studies, msrvtt_qa_studies, nextqa_lite_studies, star_qa_lite_studies (8373->8379)
 w1403 vision-doc-QA canon: ai2d_lite_studies, chart_qa_lite_studies, docvqa_lite_studies, infovqa_lite_studies, mmqa_lite_studies, ocrvqa_lite_studies (8367->8373)
 w1402 science-QA-2 canon: ai2_arc_lite_studies, arc_da_lite_studies, drug_qa_lite_studies, emrqa_lite_studies, head_qa_lite_studies, medmcqa_lite_studies (8361->8367)
