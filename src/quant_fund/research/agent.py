@@ -10559,6 +10559,14 @@ from quant_fund.research.benches_w1320 import (
     bench_vsi_bench_studies_family,
     bench_webvoyager_studies_family,
 )
+from quant_fund.research.benches_w1321 import (
+    bench_chart_gqa_studies_family,
+    bench_mathvista_studies_family,
+    bench_mkqa_studies_family,
+    bench_mmmlu_studies_family,
+    bench_mmmu_studies_family,
+    bench_videomme_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11259,6 +11267,12 @@ def _provenance(
         "osworld_studies": bench_osworld_studies_family,
         "screen_eval_studies": bench_screen_eval_studies_family,
         "vsi_bench_studies": bench_vsi_bench_studies_family,
+        "chart_gqa_studies": bench_chart_gqa_studies_family,
+        "mathvista_studies": bench_mathvista_studies_family,
+        "mkqa_studies": bench_mkqa_studies_family,
+        "mmmlu_studies": bench_mmmlu_studies_family,
+        "mmmu_studies": bench_mmmu_studies_family,
+        "videomme_studies": bench_videomme_studies_family,
         "webvoyager_studies": bench_webvoyager_studies_family,
         "objectnet_studies": bench_objectnet_studies_family,
         "ood_bench_studies": bench_ood_bench_studies_family,

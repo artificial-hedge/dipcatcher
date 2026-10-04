@@ -1,3 +1,4 @@
+w1321 multimodal-eval canon: chart_gqa_studies, mathvista_studies, mkqa_studies, mmmlu_studies, mmmu_studies, videomme_studies (7875->7881)
 w1320 agent-eval canon: gaia_bench_studies, mmbench_agent_studies, osworld_studies, screen_eval_studies, vsi_bench_studies, webvoyager_studies (7869->7875)
 w1319 benchmark-eval canon: math_bench_studies, multirc_studies, ninco_studies, objectnet_studies, ood_bench_studies, wild_bench_studies (7863->7869)
 w1318 NLP-eval-2 canon: cb_studies, cola_studies, qqp_studies, squad_v2_studies, sst2_studies, wic_studies (7857->7863)
