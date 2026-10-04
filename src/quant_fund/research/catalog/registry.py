@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-574 differential-topology-2 canon.
+        "exotic_sphere",
+        "kervaire_milnor",
+        "surgery_theory",
+        "smale_hcob",
+        "whitney_trick",
+        "immersion_thm",
         # Wave-573 Hodge-2/periods canon.
         "griffiths_transv",
         "period_domain",

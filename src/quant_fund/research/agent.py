@@ -4583,6 +4583,14 @@ from quant_fund.research.benches_w573 import (
     bench_mumford_tate_family,
     bench_period_domain_family,
 )
+from quant_fund.research.benches_w574 import (
+    bench_exotic_sphere_family,
+    bench_immersion_thm_family,
+    bench_kervaire_milnor_family,
+    bench_smale_hcob_family,
+    bench_surgery_theory_family,
+    bench_whitney_trick_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4962,6 +4970,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "exotic_sphere": bench_exotic_sphere_family,
+        "kervaire_milnor": bench_kervaire_milnor_family,
+        "surgery_theory": bench_surgery_theory_family,
+        "smale_hcob": bench_smale_hcob_family,
+        "whitney_trick": bench_whitney_trick_family,
+        "immersion_thm": bench_immersion_thm_family,
         "griffiths_transv": bench_griffiths_transv_family,
         "period_domain": bench_period_domain_family,
         "mumford_tate": bench_mumford_tate_family,
