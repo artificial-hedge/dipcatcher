@@ -10863,6 +10863,14 @@ from quant_fund.research.benches_w1358 import (
     bench_quac_lite_studies_family,
     bench_trivia_web_studies_family,
 )
+from quant_fund.research.benches_w1359 import (
+    bench_argu_ana_studies_family,
+    bench_babi_lite_studies_family,
+    bench_curious_qa_studies_family,
+    bench_qasper_lite_studies_family,
+    bench_scifact_lite_studies_family,
+    bench_web_questions_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11699,6 +11707,12 @@ def _provenance(
         "multirc_lite_studies": bench_multirc_lite_studies_family,
         "quoref_lite_studies": bench_quoref_lite_studies_family,
         "adver_qa_studies": bench_adver_qa_studies_family,
+        "argu_ana_studies": bench_argu_ana_studies_family,
+        "babi_lite_studies": bench_babi_lite_studies_family,
+        "curious_qa_studies": bench_curious_qa_studies_family,
+        "qasper_lite_studies": bench_qasper_lite_studies_family,
+        "scifact_lite_studies": bench_scifact_lite_studies_family,
+        "web_questions_studies": bench_web_questions_studies_family,
         "coqa_lite_studies": bench_coqa_lite_studies_family,
         "drop_lite_studies": bench_drop_lite_studies_family,
         "duo_rc_studies": bench_duo_rc_studies_family,
