@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1250 ent-head-neck canon.
+        "sinus_studies",
+        "laryngology_studies",
+        "otology_studies",
+        "rhinology_studies",
+        "head_neck_surgery_studies",
+        "cochlear_studies",
         # Wave-1249 dermatology-clinical canon.
         "skin_cancer_studies",
         "psoriasis_studies",
