@@ -10591,6 +10591,14 @@ from quant_fund.research.benches_w1324 import (
     bench_prometheus_eval_studies_family,
     bench_reward_bench_studies_family,
 )
+from quant_fund.research.benches_w1325 import (
+    bench_babilong_studies_family,
+    bench_infinitebench_studies_family,
+    bench_longbench_studies_family,
+    bench_lv_eval_studies_family,
+    bench_ruler_bench_studies_family,
+    bench_zero_scrolls_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11305,6 +11313,12 @@ def _provenance(
         "alpacaeval_studies": bench_alpacaeval_studies_family,
         "arena_hard_studies": bench_arena_hard_studies_family,
         "judge_bench_studies": bench_judge_bench_studies_family,
+        "babilong_studies": bench_babilong_studies_family,
+        "infinitebench_studies": bench_infinitebench_studies_family,
+        "longbench_studies": bench_longbench_studies_family,
+        "lv_eval_studies": bench_lv_eval_studies_family,
+        "ruler_bench_studies": bench_ruler_bench_studies_family,
+        "zero_scrolls_studies": bench_zero_scrolls_studies_family,
         "mt_bench_judge_studies": bench_mt_bench_judge_studies_family,
         "prometheus_eval_studies": bench_prometheus_eval_studies_family,
         "reward_bench_studies": bench_reward_bench_studies_family,

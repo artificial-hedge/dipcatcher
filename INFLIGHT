@@ -1,3 +1,4 @@
+w1325 long-context-eval canon: babilong_studies, infinitebench_studies, longbench_studies, lv_eval_studies, ruler_bench_studies, zero_scrolls_studies (7899->7905)
 w1324 judge-eval canon: alpacaeval_studies, arena_hard_studies, judge_bench_studies, mt_bench_judge_studies, prometheus_eval_studies, reward_bench_studies (7893->7899)
 w1323 code-eval canon: bigcodebench_studies, ds1000_studies, humaneval_plus_studies, livecodebench_studies, mbpp_plus_studies, swe_perf_studies (7887->7893)
 w1322 reasoning-eval canon: logic_bench_studies, minif2f_studies, olympiad_bench_studies, putnam_studies, truthfulqa_studies, zebra_logic_studies (7881->7887)
