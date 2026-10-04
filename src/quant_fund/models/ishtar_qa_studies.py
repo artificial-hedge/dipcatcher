@@ -16,7 +16,7 @@ def ishtar_qa_studies_aux(aux: bool) -> bool:
     """ishtar_qa_studies
 
     aux:
-    ishtar_qa_studies: ishtar, love-war goddesses, answers, and scores
+    ishtar_qa_studies: ishtar, morning queens, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_ishtar_qa_studies(seed: int = 0) -> float:
     checks.append(not ishtar_qa_studies_ok(False, True))
     checks.append(ishtar_qa_studies_aux(True))
     checks.append(not ishtar_qa_studies_aux(False))
-    checks.append(True)  # babylonian-myth canon
+    checks.append(True)  # sumerian-3 canon
     return float(sum(checks) / len(checks))
 
 
