@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-635 commutative-algebra-5 canon.
+        "excellent_ring",
+        "zariski_main",
+        "going_up",
+        "lying_over",
+        "integral_closure2",
+        "weil_divisor2",
         # Wave-634 category-9 canon.
         "icon_cat",
         "bicat2",
