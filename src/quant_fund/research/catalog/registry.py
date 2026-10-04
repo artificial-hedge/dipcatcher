@@ -5497,6 +5497,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sif_qa_studies",
         "ullr_qa_studies",
         "vidar_qa_studies",
+        # Wave-1748 tibetan-myth canon.
+        "beg_tse_qa_studies",
+        "dorje_legpa_qa_studies",
+        "palden_lhamo_qa_studies",
+        "pehar_qa_studies",
+        "tsen_god_qa_studies",
+        "tsiu_marpo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
