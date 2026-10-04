@@ -14991,6 +14991,14 @@ from quant_fund.research.benches_w1874 import (
     bench_sleih_beggey_qa_studies_family,
     bench_ushtey_qa_studies_family,
 )
+from quant_fund.research.benches_w1875 import (
+    bench_abdastartus_qa_studies_family,
+    bench_bariha_qa_studies_family,
+    bench_bodastart_qa_studies_family,
+    bench_mider_qa_studies_family,
+    bench_reshef_qa_studies_family,
+    bench_safon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
