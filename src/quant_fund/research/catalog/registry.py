@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1244 imaging-modality canon.
+        "neuroradiology_studies",
+        "mammography_studies",
+        "ultrasound_studies",
+        "ct_imaging_studies",
+        "mri_studies",
+        "pet_imaging_studies",
         # Wave-1243 infectious-medicine canon.
         "sepsis_studies",
         "tuberculosis_studies",
