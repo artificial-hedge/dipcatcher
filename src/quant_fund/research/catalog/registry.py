@@ -6729,6 +6729,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nian_qa_studies",
         "wuzhiqi_qa_studies",
         "xiangliu_qa_studies",
+        # Wave-1924 turkic-demon-2 canon.
+        "achiyay_qa_studies",
+        "cayt_qa_studies",
+        "emegen_qa_studies",
+        "maymene_qa_studies",
+        "ubir_qa_studies",
+        "uor_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

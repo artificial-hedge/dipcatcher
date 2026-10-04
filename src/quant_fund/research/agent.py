@@ -15383,6 +15383,14 @@ from quant_fund.research.benches_w1923 import (
     bench_wuzhiqi_qa_studies_family,
     bench_xiangliu_qa_studies_family,
 )
+from quant_fund.research.benches_w1924 import (
+    bench_achiyay_qa_studies_family,
+    bench_cayt_qa_studies_family,
+    bench_emegen_qa_studies_family,
+    bench_maymene_qa_studies_family,
+    bench_ubir_qa_studies_family,
+    bench_uor_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
