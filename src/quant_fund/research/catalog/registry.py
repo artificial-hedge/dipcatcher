@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-548 Floer-theory canon.
+        "floer_homology",
+        "knot_floer",
+        "instanton_floer",
+        "monopole_floer",
+        "lagrangian_floer",
+        "fukaya_cat",
         # Wave-547 4-manifold canon.
         "four_mfd",
         "donaldson_thm",
