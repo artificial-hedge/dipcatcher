@@ -1285,6 +1285,18 @@ class HarnessClient:
         it fails closed immediately after."""
         return dict(self._json("DELETE", f"/harness/keys/{key_id}"))
 
+    def key_usage(self, key_id: str) -> dict[str, Any]:
+        """``GET /harness/keys/{id}/usage`` — the key's usage card:
+        live counters, declared budgets with headroom, rate-window
+        state, and the completion-ring spend split. Needs admin."""
+        return dict(self._json("GET", f"/harness/keys/{key_id}/usage", idempotent=True))
+
+    def self_usage(self) -> dict[str, Any]:
+        """``GET /harness/self`` — the calling credential's own card:
+        which class it is (``managed`` / ``env`` / ``none``) plus, for
+        managed keys, live budget headroom. Only needs ``read`` scope."""
+        return dict(self._json("GET", "/harness/self", idempotent=True))
+
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs
         ``/harness/gate/check``; a refusal rides ``ok=False``, it never

@@ -551,6 +551,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/keys/{key_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Key Usage
+         * @description One key's usage card — live counters, declared budgets with
+         *     derived headroom, the rpm window state, and the completion-ring
+         *     spend split. Counters are live meters (not journaled) and reset
+         *     on restart like ``uses``.
+         */
+        get: operations["key_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/runs": {
         parameters: {
             query?: never;
@@ -585,6 +608,28 @@ export interface paths {
          *     pre-flight: no backend, no slot, stays up during drain.
          */
         post: operations["harness_score"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/self": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Self Usage
+         * @description The calling credential's own card — ``read`` scope, so any
+         *     managed key watches its own budgets without admin. The env key
+         *     and loopback dev callers are the unmetered roots.
+         */
+        get: operations["self_usage"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2536,6 +2581,60 @@ export interface components {
             uses: number;
         };
         /**
+         * ApiKeyUsageResponse
+         * @description Usage card for one managed key: live counters (``uses`` /
+         *     ``tokens_used`` reset on restart like every live meter), declared
+         *     budgets with derived headroom, the rpm window state, and the
+         *     completion-ring spend split.
+         */
+        ApiKeyUsageResponse: {
+            /** Admin */
+            admin: boolean;
+            /** Created At */
+            created_at: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Expires At */
+            expires_at: number | null;
+            /** Id */
+            id: string;
+            /** Last Used At */
+            last_used_at: number | null;
+            /** Log Cap */
+            log_cap: number;
+            /** Log Dropped */
+            log_dropped: number;
+            /** Max Requests */
+            max_requests: number | null;
+            /** Max Tokens */
+            max_tokens: number | null;
+            /** Name */
+            name: string | null;
+            /**
+             * Object
+             * @default key_usage
+             * @constant
+             */
+            object: "key_usage";
+            /** Requests Remaining */
+            requests_remaining: number | null;
+            /** Revoked At */
+            revoked_at: number | null;
+            /** Rpm */
+            rpm: number | null;
+            served: components["schemas"]["KeyServedUsage"];
+            /** Tokens Remaining */
+            tokens_remaining: number | null;
+            /** Tokens Used */
+            tokens_used: number;
+            /** Uses */
+            uses: number;
+            /** Window Remaining */
+            window_remaining: number | null;
+            /** Window Reset S */
+            window_reset_s: number | null;
+        };
+        /**
          * BackendAttempt
          * @description One link of a backend fallback chain: which name was tried and how
          *     it ended (``error_class`` carries the verdict on a failed link).
@@ -3998,6 +4097,55 @@ export interface components {
             status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
         };
         /**
+         * KeyServedUsage
+         * @description Served-call aggregation over the completion ring for one
+         *     credential fingerprint — a bounded window: ``log_dropped`` on the
+         *     parent card marks when these totals are a lower bound on lifetime
+         *     spend, not the full record.
+         */
+        KeyServedUsage: {
+            /**
+             * By Backend
+             * @default {}
+             */
+            by_backend: {
+                [key: string]: components["schemas"]["KeyUsageBackendSplit"];
+            };
+            /**
+             * Calls
+             * @default 0
+             */
+            calls: number;
+            /**
+             * Completion Tokens
+             * @default 0
+             */
+            completion_tokens: number;
+            /**
+             * Prompt Tokens
+             * @default 0
+             */
+            prompt_tokens: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+        };
+        /** KeyUsageBackendSplit */
+        KeyUsageBackendSplit: {
+            /**
+             * Calls
+             * @default 0
+             */
+            calls: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+        };
+        /**
          * MetricsResponse
          * @description Point-in-time ops snapshot: totals since process start.
          */
@@ -4983,6 +5131,31 @@ export interface components {
              * @constant
              */
             object: "list";
+        };
+        /**
+         * SelfUsageResponse
+         * @description The calling credential's own card — read-scope self-introspection
+         *     so a key holder watches its own budgets without admin. ``env`` (the
+         *     bootstrap credential) and ``none`` (loopback dev) are unmetered
+         *     roots; ``managed`` embeds the full usage card.
+         */
+        SelfUsageResponse: {
+            /**
+             * Credential
+             * @enum {string}
+             */
+            credential: "managed" | "env" | "none";
+            key: components["schemas"]["ApiKeyUsageResponse"] | null;
+            /** Metered */
+            metered: boolean;
+            /**
+             * Object
+             * @default self_usage
+             * @constant
+             */
+            object: "self_usage";
+            /** Scopes */
+            scopes: string[];
         };
         /**
          * UsageBucket
@@ -6982,6 +7155,73 @@ export interface operations {
             };
         };
     };
+    key_usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyUsageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     run_command: {
         parameters: {
             query?: never;
@@ -7118,6 +7358,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    self_usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SelfUsageResponse"];
                 };
             };
         };

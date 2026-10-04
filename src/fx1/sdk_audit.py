@@ -641,6 +641,30 @@ def sdk_audit() -> dict[str, bool]:
         _raises(lambda: sdk.key_create("x", max_requests=0)) == "ValueError"
         and _raises(lambda: sdk.key_create("x", max_tokens=-1)) == "ValueError"
     )
+    # the usage card mirrors GET /harness/keys/{id}/usage — budgets with
+    # derived headroom, live counters, and the (empty in-process) served
+    # split; the self card reports the unmetered env root
+    uc = sdk.key_usage(qto["id"])
+    out["key_usage_card"] = (
+        uc["object"] == "key_usage"
+        and uc["id"] == qto["id"]
+        and uc["uses"] == 0
+        and uc["requests_remaining"] == 10
+        and uc["tokens_remaining"] == 5000
+        and uc["tokens_used"] == 0
+        and uc["window_remaining"] is None
+        and uc["served"]["calls"] == 0
+        and uc["log_cap"] > 0
+    )
+    out["key_usage_unknown_raises"] = _raises(lambda: sdk.key_usage("nope")) == "KeyError"
+    su = sdk.self_usage()
+    out["self_usage_env"] = (
+        su["object"] == "self_usage"
+        and su["credential"] == "env"
+        and su["metered"] is False
+        and su["key"] is None
+        and su["scopes"] == ["read", "write", "admin"]
+    )
 
     # ---- /v1/vector_stores + file_search twin -------------------------------
     # in-process RAG: upload bytes → attach → search hits feed a

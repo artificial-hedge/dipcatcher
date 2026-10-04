@@ -893,6 +893,198 @@
         "title": "ApiKeyRecordModel",
         "type": "object"
       },
+      "ApiKeyUsageResponse": {
+        "additionalProperties": false,
+        "description": "Usage card for one managed key: live counters (``uses`` /\n``tokens_used`` reset on restart like every live meter), declared\nbudgets with derived headroom, the rpm window state, and the\ncompletion-ring spend split.",
+        "properties": {
+          "admin": {
+            "title": "Admin",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "log_cap": {
+            "title": "Log Cap",
+            "type": "integer"
+          },
+          "log_dropped": {
+            "title": "Log Dropped",
+            "type": "integer"
+          },
+          "max_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requests"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "object": {
+            "const": "key_usage",
+            "default": "key_usage",
+            "title": "Object",
+            "type": "string"
+          },
+          "requests_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requests Remaining"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "rpm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rpm"
+          },
+          "served": {
+            "$ref": "#/components/schemas/KeyServedUsage"
+          },
+          "tokens_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens Remaining"
+          },
+          "tokens_used": {
+            "title": "Tokens Used",
+            "type": "integer"
+          },
+          "uses": {
+            "title": "Uses",
+            "type": "integer"
+          },
+          "window_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window Remaining"
+          },
+          "window_reset_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window Reset S"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "admin",
+          "enabled",
+          "created_at",
+          "expires_at",
+          "revoked_at",
+          "uses",
+          "tokens_used",
+          "last_used_at",
+          "max_requests",
+          "requests_remaining",
+          "max_tokens",
+          "tokens_remaining",
+          "rpm",
+          "window_remaining",
+          "window_reset_s",
+          "served",
+          "log_cap",
+          "log_dropped"
+        ],
+        "title": "ApiKeyUsageResponse",
+        "type": "object"
+      },
       "BackendAttempt": {
         "additionalProperties": false,
         "description": "One link of a backend fallback chain: which name was tried and how\nit ended (``error_class`` carries the verdict on a failed link).",
@@ -5074,6 +5266,59 @@
         "title": "JobSubmitResponse",
         "type": "object"
       },
+      "KeyServedUsage": {
+        "additionalProperties": false,
+        "description": "Served-call aggregation over the completion ring for one\ncredential fingerprint \u2014 a bounded window: ``log_dropped`` on the\nparent card marks when these totals are a lower bound on lifetime\nspend, not the full record.",
+        "properties": {
+          "by_backend": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/KeyUsageBackendSplit"
+            },
+            "default": {},
+            "title": "By Backend",
+            "type": "object"
+          },
+          "calls": {
+            "default": 0,
+            "title": "Calls",
+            "type": "integer"
+          },
+          "completion_tokens": {
+            "default": 0,
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "default": 0,
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "default": 0,
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "title": "KeyServedUsage",
+        "type": "object"
+      },
+      "KeyUsageBackendSplit": {
+        "additionalProperties": false,
+        "properties": {
+          "calls": {
+            "default": 0,
+            "title": "Calls",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "default": 0,
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "title": "KeyUsageBackendSplit",
+        "type": "object"
+      },
       "MetricsResponse": {
         "additionalProperties": false,
         "description": "Point-in-time ops snapshot: totals since process start.",
@@ -7743,6 +7988,56 @@
           "data"
         ],
         "title": "ScoreResponse",
+        "type": "object"
+      },
+      "SelfUsageResponse": {
+        "additionalProperties": false,
+        "description": "The calling credential's own card \u2014 read-scope self-introspection\nso a key holder watches its own budgets without admin. ``env`` (the\nbootstrap credential) and ``none`` (loopback dev) are unmetered\nroots; ``managed`` embeds the full usage card.",
+        "properties": {
+          "credential": {
+            "enum": [
+              "managed",
+              "env",
+              "none"
+            ],
+            "title": "Credential",
+            "type": "string"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApiKeyUsageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metered": {
+            "title": "Metered",
+            "type": "boolean"
+          },
+          "object": {
+            "const": "self_usage",
+            "default": "self_usage",
+            "title": "Object",
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "credential",
+          "scopes",
+          "metered",
+          "key"
+        ],
+        "title": "SelfUsageResponse",
         "type": "object"
       },
       "UsageBucket": {
@@ -12484,6 +12779,161 @@
         ]
       }
     },
+    "/harness/keys/{key_id}/usage": {
+      "get": {
+        "description": "One key's usage card \u2014 live counters, declared budgets with\nderived headroom, the rpm window state, and the completion-ring\nspend split. Counters are live meters (not journaled) and reset\non restart like ``uses``.",
+        "operationId": "key_usage",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key_id",
+            "required": true,
+            "schema": {
+              "title": "Key Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyUsageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Key Usage",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "operationId": "run_command",
@@ -12806,6 +13256,84 @@
         "summary": "Score",
         "tags": [
           "harness"
+        ]
+      }
+    },
+    "/harness/self": {
+      "get": {
+        "description": "The calling credential's own card \u2014 ``read`` scope, so any\nmanaged key watches its own budgets without admin. The env key\nand loopback dev callers are the unmetered roots.",
+        "operationId": "self_usage",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelfUsageResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Self Usage",
+        "tags": [
+          "ops"
         ]
       }
     },

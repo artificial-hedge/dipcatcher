@@ -42,6 +42,8 @@ export type UsageBucket = components["schemas"]["UsageBucket"];
 export type UsageReport = components["schemas"]["UsageReport"];
 export type ApiKeyMintResponse = components["schemas"]["ApiKeyMintResponse"];
 export type ApiKeyRecord = components["schemas"]["ApiKeyRecordModel"];
+export type ApiKeyUsageResponse = components["schemas"]["ApiKeyUsageResponse"];
+export type SelfUsageResponse = components["schemas"]["SelfUsageResponse"];
 export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
 export type EvalRecord = components["schemas"]["EvalRecord"];
@@ -793,6 +795,36 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as ApiKeyRecord;
+  }
+
+  /**
+   * GET /harness/keys/{id}/usage — the key's usage card: live counters,
+   * declared budgets with derived headroom, the rate-window state, and
+   * the completion-ring spend split. Needs admin on the wire.
+   */
+  async keyUsage(keyId: string): Promise<ApiKeyUsageResponse> {
+    const res = await this.send({
+      method: "GET",
+      path: `/harness/keys/${encodeURIComponent(keyId)}/usage`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyUsageResponse;
+  }
+
+  /**
+   * GET /harness/self — the calling credential's own card: which class
+   * it is (`managed` / `env` / `none`) plus, for managed keys, live
+   * budget headroom. Only needs `read` scope.
+   */
+  async selfUsage(): Promise<SelfUsageResponse> {
+    const res = await this.send({
+      method: "GET",
+      path: "/harness/self",
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as SelfUsageResponse;
   }
 
   // ---- OpenAI-compatible ingress (/v1) ------------------------------------

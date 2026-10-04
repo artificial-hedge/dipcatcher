@@ -160,7 +160,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
-from fx1.serve.keys import ApiKeyStore, KeyStoreError
+from fx1.serve.keys import SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -1353,6 +1353,66 @@ class ApiKeyRecordModel(_Model):
 class ApiKeyListResponse(_Model):
     object: Literal["list"] = "list"
     data: list[ApiKeyRecordModel]
+
+
+class KeyUsageBackendSplit(_Model):
+    calls: int = 0
+    total_tokens: int = 0
+
+
+class KeyServedUsage(_Model):
+    """Served-call aggregation over the completion ring for one
+    credential fingerprint — a bounded window: ``log_dropped`` on the
+    parent card marks when these totals are a lower bound on lifetime
+    spend, not the full record."""
+
+    calls: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    by_backend: dict[str, KeyUsageBackendSplit] = {}
+
+
+class ApiKeyUsageResponse(_Model):
+    """Usage card for one managed key: live counters (``uses`` /
+    ``tokens_used`` reset on restart like every live meter), declared
+    budgets with derived headroom, the rpm window state, and the
+    completion-ring spend split."""
+
+    id: str
+    object: Literal["key_usage"] = "key_usage"
+    name: str | None
+    admin: bool
+    enabled: bool
+    created_at: float
+    expires_at: float | None
+    revoked_at: float | None
+    uses: int
+    tokens_used: int
+    last_used_at: float | None
+    max_requests: int | None
+    requests_remaining: int | None
+    max_tokens: int | None
+    tokens_remaining: int | None
+    rpm: int | None
+    window_remaining: int | None
+    window_reset_s: int | None
+    served: KeyServedUsage
+    log_cap: int
+    log_dropped: int
+
+
+class SelfUsageResponse(_Model):
+    """The calling credential's own card — read-scope self-introspection
+    so a key holder watches its own budgets without admin. ``env`` (the
+    bootstrap credential) and ``none`` (loopback dev) are unmetered
+    roots; ``managed`` embeds the full usage card."""
+
+    object: Literal["self_usage"] = "self_usage"
+    credential: Literal["managed", "env", "none"]
+    scopes: list[str]
+    metered: bool
+    key: ApiKeyUsageResponse | None
 
 
 def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
@@ -8129,6 +8189,15 @@ def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore)
     return JSONResponse(status_code=429, content=rl_body, headers=headers)
 
 
+def _require_admin(request: Request) -> None:
+    if not getattr(request.state, "admin", False):
+        raise ApiError(
+            403,
+            "key management requires the bootstrap credential",
+            code="admin_required",
+        )
+
+
 def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
     """OpenAI's standing rate-limit headers for a managed key with a
     declared rpm window — empty for env/loopback auth or unwindowed
@@ -8143,6 +8212,133 @@ def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str,
         "X-RateLimit-Remaining-Requests": str(ws[1]),
         "X-RateLimit-Reset-Requests": str(ws[2]),
     }
+
+
+def _key_served_usage(records: list[CompletionRecord], key_id: str) -> KeyServedUsage:
+    """Aggregate the completion ring for one credential fingerprint."""
+    calls = 0
+    prompt = 0
+    completion = 0
+    total_all = 0
+    by_backend: dict[str, list[int]] = {}
+    for rec in records:
+        if rec.key_id != key_id:
+            continue
+        calls += 1
+        usage = rec.usage or {}
+        p = int(usage.get("prompt_tokens") or 0)
+        c = int(usage.get("completion_tokens") or 0)
+        t = usage.get("total_tokens")
+        tt = int(t) if t is not None else p + c
+        prompt += p
+        completion += c
+        total_all += tt
+        bb = by_backend.setdefault(rec.backend, [0, 0])
+        bb[0] += 1
+        bb[1] += tt
+    return KeyServedUsage(
+        calls=calls,
+        prompt_tokens=prompt,
+        completion_tokens=completion,
+        total_tokens=total_all,
+        by_backend={
+            k: KeyUsageBackendSplit(calls=v[0], total_tokens=v[1])
+            for k, v in sorted(by_backend.items())
+        },
+    )
+
+
+def _key_usage_response(
+    rec: dict[str, Any],
+    key_store: ApiKeyStore,
+    completion_log: _CompletionLog,
+) -> ApiKeyUsageResponse:
+    """Build one key's usage card — counters + budgets + window + the
+    completion-ring spend split. Shared by the admin route and the
+    managed branch of ``/harness/self``."""
+    uses = int(rec.get("uses") or 0)
+    tokens_used = int(rec.get("tokens_used") or 0)
+    max_req = rec.get("max_requests")
+    max_tok = rec.get("max_tokens")
+    ws = key_store.window_state(rec["key_id"])
+    return ApiKeyUsageResponse(
+        id=rec["key_id"],
+        name=rec.get("name"),
+        admin=bool(rec.get("admin")),
+        enabled=bool(rec.get("enabled", True)),
+        created_at=rec["created_at"],
+        expires_at=rec.get("expires_at"),
+        revoked_at=rec.get("revoked_at"),
+        uses=uses,
+        tokens_used=tokens_used,
+        last_used_at=rec.get("last_used_at"),
+        max_requests=max_req,
+        requests_remaining=(max(0, int(max_req) - uses) if max_req is not None else None),
+        max_tokens=max_tok,
+        tokens_remaining=(max(0, int(max_tok) - tokens_used) if max_tok is not None else None),
+        rpm=rec.get("rpm"),
+        window_remaining=(ws[1] if ws is not None else None),
+        window_reset_s=(ws[2] if ws is not None else None),
+        served=_key_served_usage(completion_log.all(), rec["key_id"]),
+        log_cap=completion_log.cap,
+        log_dropped=completion_log.dropped,
+    )
+
+
+def _mount_key_introspection(
+    app: FastAPI,
+    *,
+    key_store: ApiKeyStore,
+    completion_log: _CompletionLog,
+) -> None:
+    """Per-key usage introspection: the admin card on
+    ``/harness/keys/{id}/usage`` and the caller's own card on
+    ``/harness/self`` (read scope — any credential watches itself)."""
+
+    @app.get(
+        "/harness/keys/{key_id}/usage",
+        response_model=ApiKeyUsageResponse,
+        tags=["ops"],
+        operation_id="key_usage",
+    )
+    def key_usage(key_id: str, request: Request) -> ApiKeyUsageResponse:
+        """One key's usage card — live counters, declared budgets with
+        derived headroom, the rpm window state, and the completion-ring
+        spend split. Counters are live meters (not journaled) and reset
+        on restart like ``uses``."""
+        _require_admin(request)
+        rec = key_store.get(key_id)
+        if rec is None:
+            raise ApiError(404, f"unknown key {key_id!r}", code="key_not_found")
+        return _key_usage_response(rec, key_store, completion_log)
+
+    @app.get(
+        "/harness/self",
+        response_model=SelfUsageResponse,
+        tags=["ops"],
+        operation_id="self_usage",
+    )
+    def self_usage(request: Request) -> SelfUsageResponse:
+        """The calling credential's own card — ``read`` scope, so any
+        managed key watches its own budgets without admin. The env key
+        and loopback dev callers are the unmetered roots."""
+        key_id = getattr(request.state, "key_id", None)
+        if key_id in (None, "env"):
+            return SelfUsageResponse(
+                credential="env" if key_id == "env" else "none",
+                scopes=list(SCOPES),
+                metered=False,
+                key=None,
+            )
+        rec = key_store.get(key_id)
+        if rec is None:
+            raise ApiError(404, f"unknown key {key_id!r}", code="key_not_found")
+        return SelfUsageResponse(
+            credential="managed",
+            scopes=list(rec.get("scopes") or []),
+            metered=True,
+            key=_key_usage_response(rec, key_store, completion_log),
+        )
 
 
 def _required_scope(method: str, path: str) -> str:
@@ -8684,6 +8880,7 @@ def create_app(
                 "anthropic_models": True,
                 "key_scopes": True,
                 "key_quotas": True,
+                "key_usage": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8821,14 +9018,6 @@ def create_app(
             since=since,
             until=until,
         )
-
-    def _require_admin(request: Request) -> None:
-        if not getattr(request.state, "admin", False):
-            raise ApiError(
-                403,
-                "key management requires the bootstrap credential",
-                code="admin_required",
-            )
 
     @app.post(
         "/harness/keys",
@@ -8995,6 +9184,7 @@ def create_app(
         return resp
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
+    _mount_key_introspection(app, key_store=key_store, completion_log=completion_log)
 
     def _resolve_request_backend(
         backend_name: str,

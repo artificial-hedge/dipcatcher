@@ -1305,6 +1305,34 @@ def harness_key_revoke(
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
+@harness_app.command("key-usage")
+def harness_key_usage(
+    key_id: str,
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """One managed key's usage card — live counters, budget headroom,
+    rate-window state, and the completion-ring spend split. Admin on
+    the wire."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_usage(key_id))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("self")
+def harness_self(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """The calling credential's own card — its class (managed / env /
+    loopback) plus, for managed keys, live budget headroom. Read scope."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.self_usage())
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
 @harness_app.command("compat")
 def harness_compat(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
