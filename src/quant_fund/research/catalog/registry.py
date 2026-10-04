@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1330 safety-alignment-2 canon.
+        "beaver_safe_studies",
+        "do_not_answer_studies",
+        "hh_rlhf_studies",
+        "honest_eval_studies",
+        "safe_rlhf_studies",
+        "sos_bench_studies",
         # Wave-1329 long-context-2 canon.
         "gov_report_studies",
         "looogle_studies",

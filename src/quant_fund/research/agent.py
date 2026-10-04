@@ -10631,6 +10631,14 @@ from quant_fund.research.benches_w1329 import (
     bench_niah_v2_studies_family,
     bench_passkey_retrieval_studies_family,
 )
+from quant_fund.research.benches_w1330 import (
+    bench_beaver_safe_studies_family,
+    bench_do_not_answer_studies_family,
+    bench_hh_rlhf_studies_family,
+    bench_honest_eval_studies_family,
+    bench_safe_rlhf_studies_family,
+    bench_sos_bench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11368,6 +11376,12 @@ def _provenance(
         "marathon_eval_studies": bench_marathon_eval_studies_family,
         "niah_v2_studies": bench_niah_v2_studies_family,
         "passkey_retrieval_studies": bench_passkey_retrieval_studies_family,
+        "beaver_safe_studies": bench_beaver_safe_studies_family,
+        "do_not_answer_studies": bench_do_not_answer_studies_family,
+        "hh_rlhf_studies": bench_hh_rlhf_studies_family,
+        "honest_eval_studies": bench_honest_eval_studies_family,
+        "safe_rlhf_studies": bench_safe_rlhf_studies_family,
+        "sos_bench_studies": bench_sos_bench_studies_family,
         "code_contests_studies": bench_code_contests_studies_family,
         "multipl_e_studies": bench_multipl_e_studies_family,
         "polyglot_bench_studies": bench_polyglot_bench_studies_family,
