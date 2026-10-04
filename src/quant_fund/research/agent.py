@@ -11087,6 +11087,14 @@ from quant_fund.research.benches_w1386 import (
     bench_scienceworld_studies_family,
     bench_textworld_lite_studies_family,
 )
+from quant_fund.research.benches_w1387 import (
+    bench_api_blend_studies_family,
+    bench_bfcl_v3_studies_family,
+    bench_gorilla_eval_studies_family,
+    bench_gta_bench_studies_family,
+    bench_seal_tools_studies_family,
+    bench_stabletoolbench_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12075,6 +12083,12 @@ def _provenance(
         "jericho_lite_studies": bench_jericho_lite_studies_family,
         "scienceworld_studies": bench_scienceworld_studies_family,
         "textworld_lite_studies": bench_textworld_lite_studies_family,
+        "api_blend_studies": bench_api_blend_studies_family,
+        "bfcl_v3_studies": bench_bfcl_v3_studies_family,
+        "gorilla_eval_studies": bench_gorilla_eval_studies_family,
+        "gta_bench_studies": bench_gta_bench_studies_family,
+        "seal_tools_studies": bench_seal_tools_studies_family,
+        "stabletoolbench_studies": bench_stabletoolbench_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
