@@ -10623,6 +10623,14 @@ from quant_fund.research.benches_w1328 import (
     bench_polyglot_bench_studies_family,
     bench_repobench_studies_family,
 )
+from quant_fund.research.benches_w1329 import (
+    bench_gov_report_studies_family,
+    bench_looogle_studies_family,
+    bench_lost_middle_studies_family,
+    bench_marathon_eval_studies_family,
+    bench_niah_v2_studies_family,
+    bench_passkey_retrieval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11354,6 +11362,12 @@ def _provenance(
         "realtoxicity_studies": bench_realtoxicity_studies_family,
         "apps_bench_studies": bench_apps_bench_studies_family,
         "class_eval_studies": bench_class_eval_studies_family,
+        "gov_report_studies": bench_gov_report_studies_family,
+        "looogle_studies": bench_looogle_studies_family,
+        "lost_middle_studies": bench_lost_middle_studies_family,
+        "marathon_eval_studies": bench_marathon_eval_studies_family,
+        "niah_v2_studies": bench_niah_v2_studies_family,
+        "passkey_retrieval_studies": bench_passkey_retrieval_studies_family,
         "code_contests_studies": bench_code_contests_studies_family,
         "multipl_e_studies": bench_multipl_e_studies_family,
         "polyglot_bench_studies": bench_polyglot_bench_studies_family,

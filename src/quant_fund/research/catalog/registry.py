@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1329 long-context-2 canon.
+        "gov_report_studies",
+        "looogle_studies",
+        "lost_middle_studies",
+        "marathon_eval_studies",
+        "niah_v2_studies",
+        "passkey_retrieval_studies",
         # Wave-1328 code-eval-2 canon.
         "apps_bench_studies",
         "class_eval_studies",
