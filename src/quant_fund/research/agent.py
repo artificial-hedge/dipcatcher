@@ -4591,6 +4591,14 @@ from quant_fund.research.benches_w574 import (
     bench_surgery_theory_family,
     bench_whitney_trick_family,
 )
+from quant_fund.research.benches_w575 import (
+    bench_airy_process_family,
+    bench_beta_ensemble_family,
+    bench_circular_law_family,
+    bench_dyson_brownian_family,
+    bench_sine_kernel_family,
+    bench_tracy_widom_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4970,6 +4978,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "circular_law": bench_circular_law_family,
+        "dyson_brownian": bench_dyson_brownian_family,
+        "sine_kernel": bench_sine_kernel_family,
+        "airy_process": bench_airy_process_family,
+        "tracy_widom": bench_tracy_widom_family,
+        "beta_ensemble": bench_beta_ensemble_family,
         "exotic_sphere": bench_exotic_sphere_family,
         "kervaire_milnor": bench_kervaire_milnor_family,
         "surgery_theory": bench_surgery_theory_family,
