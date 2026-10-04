@@ -6879,6 +6879,14 @@ from quant_fund.research.benches_w860 import (
     bench_nurbs_elem_family,
     bench_xfem_family,
 )
+from quant_fund.research.benches_w861 import (
+    bench_ars_imex_family,
+    bench_dirk_scheme_family,
+    bench_exponential_euler_family,
+    bench_imex_rk_family,
+    bench_rosenbrock_w_family,
+    bench_ssp_rk_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7250,6 +7258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "imex_rk": bench_imex_rk_family,
+        "ssp_rk": bench_ssp_rk_family,
+        "exponential_euler": bench_exponential_euler_family,
+        "rosenbrock_w": bench_rosenbrock_w_family,
+        "ars_imex": bench_ars_imex_family,
+        "dirk_scheme": bench_dirk_scheme_family,
         "iso_geom": bench_iso_geom_family,
         "nurbs_elem": bench_nurbs_elem_family,
         "xfem": bench_xfem_family,

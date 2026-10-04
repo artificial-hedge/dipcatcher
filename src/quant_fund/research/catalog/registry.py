@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-861 time-marching/ODE canon.
+        "imex_rk",
+        "ssp_rk",
+        "exponential_euler",
+        "rosenbrock_w",
+        "ars_imex",
+        "dirk_scheme",
         # Wave-860 isogeometric/immersed-methods canon.
         "iso_geom",
         "nurbs_elem",
