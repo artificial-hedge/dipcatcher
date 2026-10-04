@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-824 stochastic-order canon.
+        "usual_stoch_order",
+        "first_order_dom",
+        "second_order_dom",
+        "convex_order",
+        "hazard_rate_order",
+        "supermodular_order",
         # Wave-823 law-of-process canon.
         "support_law",
         "polish_law",
