@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-533 geometric-measure-theory canon.
+        "rectifiability",
+        "tangent_measure",
+        "density_thm",
+        "marstrand",
+        "besicovitch",
+        "preiss_rect",
         # Wave-532 fractal-geometry canon.
         "hausdorff_dim",
         "box_counting",
