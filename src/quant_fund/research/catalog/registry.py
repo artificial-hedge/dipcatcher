@@ -3376,6 +3376,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "estuary_qa_studies",
         "marsh_qa_studies",
         "pond_qa_studies",
+        # Wave-1445 arboreal canon.
+        "birch_qa_studies",
+        "cedar_qa_studies",
+        "elm_qa_studies",
+        "maple_qa_studies",
+        "oak_qa_studies",
+        "willow_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
