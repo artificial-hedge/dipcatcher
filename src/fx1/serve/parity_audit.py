@@ -3904,6 +3904,93 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         # provisioning turned auth on: the keyless remote now 401s
         and _raises(lambda: remote.key_create("x"))[0] == "HarnessAuthError"
     )
+
+    # --- Anthropic /v1/messages parity -----------------------------------
+    # One translation module (fx1.serve.anthropic_compat) serves all
+    # surfaces: the same request over the wire, in-process, and through
+    # the typed remote client must produce the same message object, the
+    # same event grammar, and the same fail-closed refusals.
+    # NOTE: runs after the /harness/keys probes above — provisioning
+    # turned auth on, so every wire/remote call here rides the admin key.
+    _am_auth = {"X-API-Key": _boot.json()["key"]}
+    _am_keyed = HarnessClient(
+        "http://harness.test",
+        transport=_tc_transport(client),
+        api_key=_boot.json()["key"],
+    )
+    _am_req = {
+        "model": "fx1",
+        "max_tokens": 64,
+        "system": "be terse",
+        "messages": [{"role": "user", "content": "ping"}],
+        "fx1": {"backend": "byok"},
+    }
+    _am_wire = client.post("/v1/messages", json=_am_req, headers=_am_auth)
+    _am_sdk, _am_sdk_cid = sdk.anthropic_message(dict(_am_req))
+    _am_remote, _am_remote_cid = _am_keyed.create_message(
+        [{"role": "user", "content": "ping"}],
+        model="fx1",
+        max_tokens=64,
+        system="be terse",
+        backend="byok",
+    )
+    out["anthropic_envelope_parity"] = (
+        _am_wire.status_code == 200
+        and _am_wire.json()["type"] == "message" == _am_sdk.type
+        and _am_wire.json()["content"] == _am_sdk.model_dump(mode="json")["content"]
+        and _am_wire.json()["stop_reason"] == _am_sdk.stop_reason == "end_turn"
+        and _am_wire.json()["usage"]["output_tokens"] == _am_sdk.usage.output_tokens
+        and _am_remote["type"] == "message"
+        and _am_remote["content"] == _am_wire.json()["content"]
+        and bool(_am_sdk_cid)
+        and bool(_am_remote_cid)
+    )
+    # stream grammar parity — the wire SSE frames (read through the
+    # typed client) carry the same event grammar as the in-process SDK
+    # list, and the text deltas re-assemble the same answer
+    _remote_events, _remote_stream_cid = _am_keyed.create_message_stream(
+        [{"role": "user", "content": "ping"}],
+        model="fx1",
+        max_tokens=64,
+        system="be terse",
+        backend="byok",
+    )
+    _sdk_events, _ = sdk.anthropic_message_stream(dict(_am_req))
+    out["anthropic_stream_parity"] = (
+        [e["data"]["type"] if "data" in e else e.get("type") for e in _sdk_events]
+        == [e["type"] for e in _remote_events]
+        and _sdk_events[0]["data"]["type"] == "message_start"
+        and _remote_events[-1]["type"] == "message_stop"
+        and "".join(
+            e["delta"]["text"]
+            for e in _remote_events
+            if e["type"] == "content_block_delta" and e["delta"].get("type") == "text_delta"
+        )
+        == _am_wire.json()["content"][0]["text"]
+        and bool(_remote_stream_cid)
+    )
+    # fail-closed parity — the same refusal reaches all three surfaces:
+    # 422 anthropic-shaped on the wire, ValueError in-process and through
+    # the client (422 maps to ValueError in the client's error table)
+    _am_bad = {"model": "fx1", "messages": [{"role": "user", "content": "x"}]}
+    _wire_bad = client.post("/v1/messages", json=_am_bad, headers=_am_auth)
+    out["anthropic_failclosed_parity"] = (
+        _wire_bad.status_code == 422
+        and _wire_bad.json().get("type") == "error"
+        and _wire_bad.json()["error"]["type"] == "invalid_request_error"
+        and _raises(lambda: sdk.anthropic_message(_am_bad))[0] == "ValidationError"
+        and _raises(
+            lambda: _am_keyed.create_message([{"role": "user", "content": "x"}], max_tokens=0)
+        )[0]
+        == "ValueError"
+        # a wrong key is refused in the Anthropic error envelope — the
+        # auth failure itself is drop-in-shaped, not an OpenAI body
+        and client.post("/v1/messages", json=_am_req, headers={"x-api-key": "sk-wrong"}).json()
+        == {
+            "type": "error",
+            "error": {"type": "authentication_error", "message": "invalid or missing API key"},
+        }
+    )
     return out
 
 

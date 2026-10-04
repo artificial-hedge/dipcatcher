@@ -142,6 +142,16 @@ def _retry_after_s(headers: Mapping[str, str]) -> float | None:
     return None
 
 
+def _hget(headers: Mapping[str, str], name: str) -> str | None:
+    """Case-insensitive header lookup — transports differ in casing
+    (urllib preserves the wire casing; test clients lowercase)."""
+    low = name.lower()
+    for k, v in headers.items():
+        if k.lower() == low:
+            return v
+    return None
+
+
 def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
     """Collect Responses SSE frames until the terminal event.
 
@@ -1551,7 +1561,7 @@ class HarnessClient:
             extra_headers=extra_headers,
         )
         envelope = json.loads(body)
-        return envelope, headers.get("X-Fx1-Completion-Id")
+        return envelope, _hget(headers, "X-Fx1-Completion-Id")
 
     def chat_completion_stream(
         self,
@@ -1674,7 +1684,170 @@ class HarnessClient:
             chunks.append(json.loads(frame))
         if not saw_done:
             raise HarnessTransportError("stream ended without [DONE]")
-        return chunks, headers.get("X-Fx1-Completion-Id")
+        return chunks, _hget(headers, "X-Fx1-Completion-Id")
+
+    def create_message(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        max_tokens: int = 1024,
+        system: str | list[dict[str, Any]] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        stop_sequences: list[str] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/messages`` — the Anthropic Messages surface over the
+        gated pipeline.
+
+        ``messages`` are Anthropic turns (``{"role": "user"|"assistant",
+        "content": str | [blocks]}``); ``system`` takes a string or
+        text-block list; ``tools`` use Anthropic's ``{"name",
+        "description", "input_schema"}`` shape and ``tool_choice``
+        ``{"type": "auto"|"any"|"tool"|"none"}``. ``max_tokens`` is
+        required by the contract. Anthropic-only knobs the pipeline
+        cannot honor (``top_k``, ``thinking``, ``cache_control``,
+        image/document blocks) fail closed — the refusal is the
+        Anthropic error envelope ``{type: "error", error: {...}}``.
+
+        Returns ``(message_object, completion_id)`` — the cid links the
+        call to ``completion()``/``completion_receipt()``;
+        ``idempotency_key`` rides ``Idempotency-Key`` (same-key+body
+        replays byte-identically)."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "system": system,
+            "temperature": temperature,
+            "top_p": top_p,
+            "stop_sequences": stop_sequences,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "metadata": {"user_id": user_id} if user_id is not None else None,
+            "stream": False,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/messages",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        return json.loads(body), _hget(headers, "X-Fx1-Completion-Id")
+
+    def create_message_stream(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        max_tokens: int = 1024,
+        system: str | list[dict[str, Any]] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        stop_sequences: list[str] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        idempotency_key: str | None = None,
+        last_event_id: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`create_message` — returns
+        ``(events, completion_id)`` where events are the parsed Anthropic
+        SSE payloads (``message_start``/``content_block_*``/
+        ``message_delta``/``message_stop`` frames). ``last_event_id``
+        resumes a dropped keyed stream — frames carry ``id: <index>``
+        like the OpenAI surface."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "system": system,
+            "temperature": temperature,
+            "top_p": top_p,
+            "stop_sequences": stop_sequences,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "metadata": {"user_id": user_id} if user_id is not None else None,
+            "stream": True,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/messages",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        events: list[dict[str, Any]] = []
+        saw_stop = False
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            event = json.loads(line[len("data: ") :])
+            events.append(event)
+            if event.get("type") == "message_stop":
+                saw_stop = True
+                break
+        if not saw_stop:
+            raise HarnessTransportError("stream ended without message_stop")
+        return events, _hget(headers, "X-Fx1-Completion-Id")
 
     def responses_create(
         self,
@@ -1775,7 +1948,7 @@ class HarnessClient:
             idempotent=idempotency_key is not None,
             extra_headers=extra_headers,
         )
-        return json.loads(body), headers.get("X-Fx1-Completion-Id")
+        return json.loads(body), _hget(headers, "X-Fx1-Completion-Id")
 
     def responses_create_stream(  # NOSONAR(S3776)
         self,
@@ -1809,7 +1982,7 @@ class HarnessClient:
         )
         return (
             _responses_sse_events(body),
-            headers.get("X-Fx1-Completion-Id"),
+            _hget(headers, "X-Fx1-Completion-Id"),
         )
 
     def _responses_payload(
@@ -1957,7 +2130,7 @@ class HarnessClient:
             extra_headers=extra_headers,
         )
         envelope = json.loads(body)
-        return envelope, headers.get("X-Fx1-Completion-Id")
+        return envelope, _hget(headers, "X-Fx1-Completion-Id")
 
     # ---- files + batches -----------------------------------------------------
 

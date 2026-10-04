@@ -1,6 +1,389 @@
 {
   "components": {
     "schemas": {
+      "AnthropicMessage": {
+        "additionalProperties": false,
+        "description": "One Anthropic transcript turn \u2014 ``role`` is ``user`` or\n``assistant``; ``content`` is a string or a block list. Supported\nblock types: ``text`` (any turn), ``tool_use`` (assistant turns \u2014\na prior round's calls), ``tool_result`` (user turns \u2014 the tool's\nanswer). Every other declared block type is refused, not dropped.",
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Content"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "AnthropicMessage",
+        "type": "object"
+      },
+      "AnthropicMessageObject": {
+        "additionalProperties": false,
+        "description": "The ``POST /v1/messages`` response \u2014 Anthropic's ``message``\nobject. ``content`` blocks are loose dicts (``text``/``tool_use``);\n``stop_reason`` is the OpenAI finish verdict translated\n(``end_turn``/``max_tokens``/``tool_use``/``refusal``).",
+        "properties": {
+          "content": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Content",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "role": {
+            "const": "assistant",
+            "default": "assistant",
+            "title": "Role",
+            "type": "string"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "end_turn",
+                  "max_tokens",
+                  "stop_sequence",
+                  "tool_use",
+                  "refusal"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          },
+          "stop_sequence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Sequence"
+          },
+          "type": {
+            "const": "message",
+            "default": "message",
+            "title": "Type",
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/AnthropicUsage"
+          }
+        },
+        "required": [
+          "id",
+          "model",
+          "content",
+          "stop_reason",
+          "usage"
+        ],
+        "title": "AnthropicMessageObject",
+        "type": "object"
+      },
+      "AnthropicMessagesRequest": {
+        "additionalProperties": true,
+        "description": "``POST /v1/messages`` body \u2014 Anthropic's create-message contract.\n``max_tokens`` is required (the Anthropic contract, unlike OpenAI's).\nExtra fields are tolerated for SDK bookkeeping keys but the\ndocumented-but-unsupported knobs in ``ANTHROPIC_UNSUPPORTED`` refuse\n(a 400, never a silent ignore).",
+        "properties": {
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_tokens": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 262144.0,
+            "title": "Max Tokens",
+            "type": "integer"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/AnthropicMessage"
+            },
+            "maxItems": 512,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnthropicMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "stop_sequences": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Sequences"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnthropicToolChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnthropicTool"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
+          }
+        },
+        "required": [
+          "messages",
+          "max_tokens"
+        ],
+        "title": "AnthropicMessagesRequest",
+        "type": "object"
+      },
+      "AnthropicMetadata": {
+        "additionalProperties": false,
+        "description": "Anthropic's ``metadata`` object \u2014 ``user_id`` is the only field the\ncontract defines (maps to OpenAI's ``user`` audit stamp).",
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "title": "AnthropicMetadata",
+        "type": "object"
+      },
+      "AnthropicTool": {
+        "additionalProperties": false,
+        "description": "One Anthropic ``tools[]`` entry \u2014 ``input_schema`` is the JSON\nSchema the model fills into a ``tool_use`` block's ``input``.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "input_schema": {
+            "additionalProperties": true,
+            "title": "Input Schema",
+            "type": "object"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$",
+            "title": "Name",
+            "type": "string"
+          },
+          "type": {
+            "const": "custom",
+            "default": "custom",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "input_schema"
+        ],
+        "title": "AnthropicTool",
+        "type": "object"
+      },
+      "AnthropicToolChoice": {
+        "additionalProperties": false,
+        "description": "Anthropic ``tool_choice``: ``auto``/``any``/``tool``/``none`` \u2014\n``tool`` pins one tool by ``name``.",
+        "properties": {
+          "disable_parallel_tool_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disable Parallel Tool Use"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "type": {
+            "enum": [
+              "auto",
+              "any",
+              "tool",
+              "none"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "AnthropicToolChoice",
+        "type": "object"
+      },
+      "AnthropicUsage": {
+        "additionalProperties": false,
+        "description": "Anthropic ``usage`` \u2014 input/output token counts plus the cache\nfields (always 0 here \u2014 the gated pipeline has no prompt cache;\nreporting zeros is the honest contract).",
+        "properties": {
+          "cache_creation_input_tokens": {
+            "default": 0,
+            "title": "Cache Creation Input Tokens",
+            "type": "integer"
+          },
+          "cache_read_input_tokens": {
+            "default": 0,
+            "title": "Cache Read Input Tokens",
+            "type": "integer"
+          },
+          "input_tokens": {
+            "default": 0,
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "default": 0,
+            "title": "Output Tokens",
+            "type": "integer"
+          }
+        },
+        "title": "AnthropicUsage",
+        "type": "object"
+      },
       "ApiKeyCreateRequest": {
         "additionalProperties": false,
         "properties": {
@@ -20290,6 +20673,194 @@
         "summary": "Resume Finetune Job",
         "tags": [
           "openai"
+        ]
+      }
+    },
+    "/v1/messages": {
+      "post": {
+        "description": "Anthropic Messages-compatible completion over the gated pipeline.\n\nThe request translates into the shared OpenAI core \u2014 same honesty\ngate, same fail-closed validation, same metering \u2014 and the\ncompletion translates out to Anthropic's `message` object (or the\n`message_start`/`content_block_*`/`message_delta`/`message_stop`\nSSE grammar when `stream` is set). Auth is the same surface:\n`X-API-Key`, `Authorization: Bearer`, or a managed `/harness/keys`\nkey; the stock anthropic SDK's `x-api-key` header works\nunmodified. Anthropic-only knobs the pipeline cannot honor\n(`top_k`, `thinking`, `service_tier`, `cache_control`, image or\ndocument blocks, \u2026) refuse `400 invalid_request_error` instead\nof silently dropping.\n\n`Idempotency-Key` makes the call retry-safe \u2014 a same-key+body\nretry replays the pinned completion byte-identically (JSON or\nSSE, `X-Fx1-Idempotent-Replay: true`); a key reused with a\ndifferent body fails closed 409. Keyed streams resume on\n`Last-Event-ID` \u2014 frames at or below the delivered index are\ndropped, and a resume with no pinned record fails closed 409.\n`X-Fx1-Completion-Id` links the response to the completion-log\nrecord (`GET /harness/completions/{id}`) and its sealed receipt.\n`X-Fx1-*` backend headers and the `fx1` extension object carry\nover from the OpenAI surface (backend selection, BYOK, deadline).",
+        "operationId": "anthropic_messages",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnthropicMessagesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnthropicMessageObject"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Anthropic Messages",
+        "tags": [
+          "anthropic"
         ]
       }
     },

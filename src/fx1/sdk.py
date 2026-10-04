@@ -49,6 +49,13 @@ from typing import Any
 from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
 from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
+from fx1.serve.anthropic_compat import (
+    AnthropicMessageObject,
+    AnthropicMessagesRequest,
+    anthropic_envelope,
+    anthropic_events,
+    anthropic_to_openai,
+)
 from fx1.serve.backends import (
     BackendNotConfiguredError,
     EmbeddingBackend,
@@ -2272,6 +2279,78 @@ class Fx1Harness:
         if last_event_id is not None:
             chunks = chunks[last_event_id + 1 :]
         return chunks, first.completion_id
+
+    def anthropic_message(
+        self,
+        request: AnthropicMessagesRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[AnthropicMessageObject, str | None]:
+        """One Anthropic Messages-surface call, weights-direct.
+
+        ``request`` is the same body ``POST /v1/messages`` takes — a dict
+        or a parsed :class:`AnthropicMessagesRequest`. The Anthropic
+        contract translates into the shared OpenAI gated path
+        (``anthropic_to_openai`` → :meth:`openai_chat`), then the
+        completion envelope translates out to the ``message`` object —
+        the wire's own translation layer, so this leg cannot drift from
+        ``/v1/messages``: same fail-closed validation (``max_tokens``
+        required, strict role alternation, unsupported knobs refuse),
+        same gate, same metering, same completion log.
+
+        Returns the ``message`` object plus the completion-log id —
+        ``None`` when the log dropped it.
+        """
+        body = (
+            request
+            if isinstance(request, AnthropicMessagesRequest)
+            else AnthropicMessagesRequest.model_validate(request)
+        )
+        env, cid = self.openai_chat(
+            OpenAIChatRequest.model_validate(anthropic_to_openai(body)),
+            headers=headers,
+        )
+        return (
+            AnthropicMessageObject.model_validate(
+                anthropic_envelope(env.model_dump(mode="json"), model=body.model)
+            ),
+            cid,
+        )
+
+    def anthropic_message_stream(
+        self,
+        request: AnthropicMessagesRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+        last_event_id: int | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """The ``stream: true`` surface in-process — Anthropic SSE event
+        payloads (``{"event", "data"}`` pairs), minus the wire framing.
+
+        Runs the same gated completion as :meth:`anthropic_message`,
+        then emits the ``message_start`` → ``content_block_*`` →
+        ``message_delta`` → ``message_stop`` grammar the wire serializes.
+        ``last_event_id`` applies the same sequence filter the wire's
+        resume uses — only events above that index are returned.
+
+        Returns ``(events, completion_id)`` — the id links to the
+        completion log and its sealed receipt.
+        """
+        if last_event_id is not None and last_event_id < 0:
+            raise ValueError(f"last_event_id must be >= 0, got {last_event_id}")
+        body = (
+            request
+            if isinstance(request, AnthropicMessagesRequest)
+            else AnthropicMessagesRequest.model_validate(request)
+        )
+        env, cid = self.openai_chat(
+            OpenAIChatRequest.model_validate(anthropic_to_openai(body)),
+            headers=headers,
+        )
+        events = list(anthropic_events(env.model_dump(mode="json"), model=body.model))
+        if last_event_id is not None:
+            events = events[last_event_id + 1 :]
+        return events, cid
 
     def openai_response(
         self,

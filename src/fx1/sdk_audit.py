@@ -800,6 +800,113 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk_vs.vector_store_get(_vs["id"])) == "VectorStoreError"
     )
 
+    # ---- Anthropic /v1/messages SDK surface --------------------------------
+    # anthropic_message/anthropic_message_stream run the shared chat core
+    # in-process — the answer is the Anthropic message object, the event
+    # list is the Anthropic grammar, refusals raise the same ValidationError
+    # the wire turns into its {type:"error"} envelope.
+    sdk_am = Fx1Harness(backend_resolver=lambda *a, **k: _FakeBackend("clean answer"))
+    _am_msg, _am_cid = sdk_am.anthropic_message(
+        {
+            "model": "fx1",
+            "max_tokens": 64,
+            "system": "be terse",
+            "messages": [{"role": "user", "content": "ping"}],
+        }
+    )
+    out["anthropic_message_sdk"] = (
+        _am_msg.type == "message"
+        and _am_msg.role == "assistant"
+        and _am_msg.id.startswith("msg_")
+        and _am_msg.content == [{"type": "text", "text": "clean answer"}]
+        and _am_msg.stop_reason == "end_turn"
+        and _am_msg.usage.output_tokens >= 0
+        and bool(_am_cid)
+    )
+    _am_events, _am_scid = sdk_am.anthropic_message_stream(
+        {
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "hi"}],
+        }
+    )
+    _am_names = [e["data"]["type"] if "data" in e else e.get("type") for e in _am_events]
+    out["anthropic_stream_sdk"] = (
+        _am_names[0] == "message_start"
+        and "ping" in _am_names
+        and "content_block_start" in _am_names
+        and _am_names[-2:] == ["message_delta", "message_stop"]
+        and bool(_am_scid)
+        and "".join(
+            e["data"]["delta"]["text"]
+            for e in _am_events
+            if e.get("data", {}).get("type") == "content_block_delta"
+            and e["data"]["delta"].get("type") == "text_delta"
+        )
+        == "clean answer"
+    )
+    out["anthropic_stream_resume_sdk"] = (
+        sdk_am.anthropic_message_stream(
+            {
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+            last_event_id=1,
+        )[0]
+        == list(
+            sdk_am.anthropic_message_stream(
+                {
+                    "model": "fx1",
+                    "max_tokens": 64,
+                    "messages": [{"role": "user", "content": "hi"}],
+                }
+            )[0]
+        )[2:]
+    )
+    out["anthropic_failclosed_sdk"] = (
+        # max_tokens required; assistant-first turn; top_k unsupported —
+        # the request model refuses before any backend call
+        _raises(
+            lambda: sdk_am.anthropic_message(
+                {"model": "fx1", "messages": [{"role": "user", "content": "x"}]}
+            )
+        )
+        == "ValidationError"
+        and _raises(
+            lambda: sdk_am.anthropic_message(
+                {
+                    "model": "fx1",
+                    "max_tokens": 8,
+                    "messages": [{"role": "assistant", "content": "x"}],
+                }
+            )
+        )
+        == "ValidationError"
+        and _raises(
+            lambda: sdk_am.anthropic_message(
+                {
+                    "model": "fx1",
+                    "max_tokens": 8,
+                    "messages": [{"role": "user", "content": "x"}],
+                    "top_k": 40,
+                }
+            )
+        )
+        == "ValidationError"
+        and _raises(
+            lambda: sdk_am.anthropic_message_stream(
+                {
+                    "model": "fx1",
+                    "max_tokens": 8,
+                    "messages": [{"role": "user", "content": "x"}],
+                },
+                last_event_id=-1,
+            )
+        )
+        == "ValueError"
+    )
+
     return out
 
 

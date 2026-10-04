@@ -193,6 +193,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "model",
         "model-delete",
         "respond",
+        "message",
         "embed",
         "moderate",
         "chat-get",
@@ -300,6 +301,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         )
         _rc = runner.invoke(app, ["harness", "respond", "hi", "--backend", "no-such"])
         out["harness_respond_deadlink_2"] = _rc.exit_code == 2 and _rc.stderr.startswith("error:")
+        # message (Anthropic /v1/messages): bad JSON flags are arg
+        # faults, a dead link is a clean 2 — same in-process contract
+        out["harness_message_bad_tools_2"] = (
+            runner.invoke(app, ["harness", "message", "hi", "--tools", "{bad"]).exit_code == 2
+        )
+        out["harness_message_bad_choice_2"] = (
+            runner.invoke(app, ["harness", "message", "hi", "--tool-choice", "x"]).exit_code == 2
+        )
+        _mc2 = runner.invoke(app, ["harness", "message", "hi", "--backend", "no-such"])
+        out["harness_message_deadlink_2"] = _mc2.exit_code == 2 and _mc2.stderr.startswith("error:")
         _ec = runner.invoke(app, ["harness", "embed", "hi", "--backend", "no-such"])
         out["harness_embed_deadlink_2"] = _ec.exit_code == 2 and _ec.stderr.startswith("error:")
         _mc = runner.invoke(app, ["harness", "moderate", "hello"])
