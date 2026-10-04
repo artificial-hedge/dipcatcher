@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-895 root-finding canon.
+        "secant_root",
+        "regula_falsi",
+        "muller_root",
+        "aitken_steffensen",
+        "richardson_limit",
+        "bulirsch_stoer",
         # Wave-894 interpolation canon.
         "lagrange_interp",
         "neville_interp",

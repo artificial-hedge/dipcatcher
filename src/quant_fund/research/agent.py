@@ -7151,6 +7151,14 @@ from quant_fund.research.benches_w894 import (
     bench_lagrange_interp_family,
     bench_neville_interp_family,
 )
+from quant_fund.research.benches_w895 import (
+    bench_aitken_steffensen_family,
+    bench_bulirsch_stoer_family,
+    bench_muller_root_family,
+    bench_regula_falsi_family,
+    bench_richardson_limit_family,
+    bench_secant_root_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7522,6 +7530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "secant_root": bench_secant_root_family,
+        "regula_falsi": bench_regula_falsi_family,
+        "muller_root": bench_muller_root_family,
+        "aitken_steffensen": bench_aitken_steffensen_family,
+        "richardson_limit": bench_richardson_limit_family,
+        "bulirsch_stoer": bench_bulirsch_stoer_family,
         "lagrange_interp": bench_lagrange_interp_family,
         "neville_interp": bench_neville_interp_family,
         "hermite_interp": bench_hermite_interp_family,
