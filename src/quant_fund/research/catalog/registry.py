@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-978 harmonic-analysis-2 canon.
+        "hausdorff_young",
+        "restriction_est",
+        "bochner_riesz",
+        "lp_multiplier",
+        "oscillatory_int",
+        "strichartz_est",
         # Wave-977 Bochner/vector-valued canon.
         "bochner_integral",
         "lusin_rep",

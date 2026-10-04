@@ -7815,6 +7815,14 @@ from quant_fund.research.benches_w977 import (
     bench_pettis_weak_family,
     bench_radon_nikodym_prop_family,
 )
+from quant_fund.research.benches_w978 import (
+    bench_bochner_riesz_family,
+    bench_hausdorff_young_family,
+    bench_lp_multiplier_family,
+    bench_oscillatory_int_family,
+    bench_restriction_est_family,
+    bench_strichartz_est_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8186,6 +8194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hausdorff_young": bench_hausdorff_young_family,
+        "restriction_est": bench_restriction_est_family,
+        "bochner_riesz": bench_bochner_riesz_family,
+        "lp_multiplier": bench_lp_multiplier_family,
+        "oscillatory_int": bench_oscillatory_int_family,
+        "strichartz_est": bench_strichartz_est_family,
         "bochner_integral": bench_bochner_integral_family,
         "lusin_rep": bench_lusin_rep_family,
         "radon_nikodym_prop": bench_radon_nikodym_prop_family,
