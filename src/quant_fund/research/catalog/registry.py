@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1267 neuro-symbolic canon.
+        "alpha_tensor_studies",
+        "differentiable_sat_studies",
+        "neural_theorem_studies",
+        "program_synthesis_studies",
+        "sketch_programming_studies",
+        "symbolic_regression_dl_studies",
         # Wave-1266 LLM-inference-2 canon.
         "diffusion_lm_studies",
         "kv_compression_studies",

@@ -10127,6 +10127,14 @@ from quant_fund.research.benches_w1266 import (
     bench_rope_scaling_studies_family,
     bench_sparse_attention_studies_family,
 )
+from quant_fund.research.benches_w1267 import (
+    bench_alpha_tensor_studies_family,
+    bench_differentiable_sat_studies_family,
+    bench_neural_theorem_studies_family,
+    bench_program_synthesis_studies_family,
+    bench_sketch_programming_studies_family,
+    bench_symbolic_regression_dl_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10546,6 +10554,12 @@ def _provenance(
         "moe_shared_expert_studies": bench_moe_shared_expert_studies_family,
         "rope_scaling_studies": bench_rope_scaling_studies_family,
         "sparse_attention_studies": bench_sparse_attention_studies_family,
+        "alpha_tensor_studies": bench_alpha_tensor_studies_family,
+        "differentiable_sat_studies": bench_differentiable_sat_studies_family,
+        "neural_theorem_studies": bench_neural_theorem_studies_family,
+        "program_synthesis_studies": bench_program_synthesis_studies_family,
+        "sketch_programming_studies": bench_sketch_programming_studies_family,
+        "symbolic_regression_dl_studies": bench_symbolic_regression_dl_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
