@@ -12911,6 +12911,14 @@ from quant_fund.research.benches_w1614 import (
     bench_red_deer_qa_studies_family,
     bench_wapiti_qa_studies_family,
 )
+from quant_fund.research.benches_w1615 import (
+    bench_golden_brown_qa_studies_family,
+    bench_gray_mouse_qa_studies_family,
+    bench_pygmy_qa_studies_family,
+    bench_slender_qa_studies_family,
+    bench_slow_qa_studies_family,
+    bench_thin_spined_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15046,6 +15054,12 @@ def _provenance(
         "aurochs_qa_studies": bench_aurochs_qa_studies_family,
         "hog_deer_qa_studies": bench_hog_deer_qa_studies_family,
         "kouprey_qa_studies": bench_kouprey_qa_studies_family,
+        "golden_brown_qa_studies": bench_golden_brown_qa_studies_family,
+        "gray_mouse_qa_studies": bench_gray_mouse_qa_studies_family,
+        "pygmy_qa_studies": bench_pygmy_qa_studies_family,
+        "slender_qa_studies": bench_slender_qa_studies_family,
+        "slow_qa_studies": bench_slow_qa_studies_family,
+        "thin_spined_qa_studies": bench_thin_spined_qa_studies_family,
         "mule_qa_studies": bench_mule_qa_studies_family,
         "pere_david_qa_studies": bench_pere_david_qa_studies_family,
         "red_deer_qa_studies": bench_red_deer_qa_studies_family,
