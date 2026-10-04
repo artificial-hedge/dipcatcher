@@ -4062,6 +4062,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "harpy_qa_studies",
         "lammergeier_qa_studies",
         "seriema_qa_studies",
+        # Wave-1543 nightjar-2 canon.
+        "oilbird_qa_studies",
+        "owlet_nightjar_qa_studies",
+        "pauraque_qa_studies",
+        "poorwill_qa_studies",
+        "potoo_qa_studies",
+        "whip_poor_will_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

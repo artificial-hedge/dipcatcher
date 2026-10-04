@@ -12335,6 +12335,14 @@ from quant_fund.research.benches_w1542 import (
     bench_lammergeier_qa_studies_family,
     bench_seriema_qa_studies_family,
 )
+from quant_fund.research.benches_w1543 import (
+    bench_oilbird_qa_studies_family,
+    bench_owlet_nightjar_qa_studies_family,
+    bench_pauraque_qa_studies_family,
+    bench_poorwill_qa_studies_family,
+    bench_potoo_qa_studies_family,
+    bench_whip_poor_will_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14204,6 +14212,12 @@ def _provenance(
         "harpy_qa_studies": bench_harpy_qa_studies_family,
         "lammergeier_qa_studies": bench_lammergeier_qa_studies_family,
         "seriema_qa_studies": bench_seriema_qa_studies_family,
+        "oilbird_qa_studies": bench_oilbird_qa_studies_family,
+        "owlet_nightjar_qa_studies": bench_owlet_nightjar_qa_studies_family,
+        "pauraque_qa_studies": bench_pauraque_qa_studies_family,
+        "poorwill_qa_studies": bench_poorwill_qa_studies_family,
+        "potoo_qa_studies": bench_potoo_qa_studies_family,
+        "whip_poor_will_qa_studies": bench_whip_poor_will_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
