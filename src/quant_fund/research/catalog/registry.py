@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1060 education canon.
+        "curriculum_design",
+        "pedagogy",
+        "educational_psychology",
+        "assessment_theory",
+        "learning_sciences",
+        "educational_technology",
         # Wave-1059 history canon.
         "historiography",
         "ancient_history",
