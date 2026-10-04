@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1114 physics-3 canon.
+        "classical_mechanics",
+        "quantum_mechanics_2",
+        "statistical_mechanics_2",
+        "nuclear_physics",
+        "plasma_physics",
+        "condensed_matter_2",
         # Wave-1113 medicine-4 canon.
         "surgery",
         "anesthesiology",
