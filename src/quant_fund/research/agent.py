@@ -8679,6 +8679,14 @@ from quant_fund.research.benches_w1085 import (
     bench_romanticism_family,
     bench_victorian_studies_family,
 )
+from quant_fund.research.benches_w1086 import (
+    bench_assyriology_family,
+    bench_egyptology_family,
+    bench_indology_family,
+    bench_iranian_studies_family,
+    bench_ottoman_studies_family,
+    bench_sinology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9050,6 +9058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "assyriology": bench_assyriology_family,
+        "egyptology": bench_egyptology_family,
+        "sinology": bench_sinology_family,
+        "indology": bench_indology_family,
+        "iranian_studies": bench_iranian_studies_family,
+        "ottoman_studies": bench_ottoman_studies_family,
         "medieval_literature": bench_medieval_literature_family,
         "renaissance_literature": bench_renaissance_literature_family,
         "romanticism": bench_romanticism_family,
