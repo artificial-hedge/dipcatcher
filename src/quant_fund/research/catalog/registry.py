@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-596 p-adic-Hodge canon.
+        "breuil_mod",
+        "kisin_mod",
+        "galois_lattice",
+        "padic_hodge",
+        "finite_height",
+        "etale_phi",
         # Wave-595 crystalline-cohomology canon.
         "crys_cohom",
         "syntomic",

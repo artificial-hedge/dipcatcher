@@ -4759,6 +4759,14 @@ from quant_fund.research.benches_w595 import (
     bench_pd_envelope_family,
     bench_syntomic_family,
 )
+from quant_fund.research.benches_w596 import (
+    bench_breuil_mod_family,
+    bench_etale_phi_family,
+    bench_finite_height_family,
+    bench_galois_lattice_family,
+    bench_kisin_mod_family,
+    bench_padic_hodge_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5138,6 +5146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "breuil_mod": bench_breuil_mod_family,
+        "kisin_mod": bench_kisin_mod_family,
+        "galois_lattice": bench_galois_lattice_family,
+        "padic_hodge": bench_padic_hodge_family,
+        "finite_height": bench_finite_height_family,
+        "etale_phi": bench_etale_phi_family,
         "crys_cohom": bench_crys_cohom_family,
         "syntomic": bench_syntomic_family,
         "divided_power": bench_divided_power_family,
