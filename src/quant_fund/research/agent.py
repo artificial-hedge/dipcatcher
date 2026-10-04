@@ -8959,6 +8959,14 @@ from quant_fund.research.benches_w1120 import (
     bench_psychological_anthropology_family,
     bench_visual_anthropology_family,
 )
+from quant_fund.research.benches_w1121 import (
+    bench_economic_geography_family,
+    bench_gis_science_family,
+    bench_health_geography_family,
+    bench_political_geography_family,
+    bench_population_geography_family,
+    bench_regional_geography_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9330,6 +9338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "regional_geography": bench_regional_geography_family,
+        "health_geography": bench_health_geography_family,
+        "population_geography": bench_population_geography_family,
+        "economic_geography": bench_economic_geography_family,
+        "political_geography": bench_political_geography_family,
+        "gis_science": bench_gis_science_family,
         "visual_anthropology": bench_visual_anthropology_family,
         "applied_anthropology": bench_applied_anthropology_family,
         "forensic_anthropology": bench_forensic_anthropology_family,

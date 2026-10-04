@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1121 geography-3 canon.
+        "regional_geography",
+        "health_geography",
+        "population_geography",
+        "economic_geography",
+        "political_geography",
+        "gis_science",
         # Wave-1120 anthropology-4 canon.
         "visual_anthropology",
         "applied_anthropology",
