@@ -11095,6 +11095,14 @@ from quant_fund.research.benches_w1387 import (
     bench_seal_tools_studies_family,
     bench_stabletoolbench_studies_family,
 )
+from quant_fund.research.benches_w1388 import (
+    bench_corpus_qa_studies_family,
+    bench_crag_bench_studies_family,
+    bench_domain_rag_studies_family,
+    bench_freshqa_studies_family,
+    bench_ragas_lite_studies_family,
+    bench_rgb_eval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12089,6 +12097,12 @@ def _provenance(
         "gta_bench_studies": bench_gta_bench_studies_family,
         "seal_tools_studies": bench_seal_tools_studies_family,
         "stabletoolbench_studies": bench_stabletoolbench_studies_family,
+        "corpus_qa_studies": bench_corpus_qa_studies_family,
+        "crag_bench_studies": bench_crag_bench_studies_family,
+        "domain_rag_studies": bench_domain_rag_studies_family,
+        "freshqa_studies": bench_freshqa_studies_family,
+        "ragas_lite_studies": bench_ragas_lite_studies_family,
+        "rgb_eval_studies": bench_rgb_eval_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1388 RAG-eval canon.
+        "corpus_qa_studies",
+        "crag_bench_studies",
+        "domain_rag_studies",
+        "freshqa_studies",
+        "ragas_lite_studies",
+        "rgb_eval_studies",
         # Wave-1387 tool-use canon.
         "api_blend_studies",
         "bfcl_v3_studies",
