@@ -7327,6 +7327,14 @@ from quant_fund.research.benches_w916 import (
     bench_rank_pairing_family,
     bench_soft_heap_family,
 )
+from quant_fund.research.benches_w917 import (
+    bench_bucket_sort_family,
+    bench_chained_hash_family,
+    bench_linear_probe_family,
+    bench_rand_access_list_family,
+    bench_shell_sort_family,
+    bench_skew_list_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7698,6 +7706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chained_hash": bench_chained_hash_family,
+        "linear_probe": bench_linear_probe_family,
+        "bucket_sort": bench_bucket_sort_family,
+        "shell_sort": bench_shell_sort_family,
+        "rand_access_list": bench_rand_access_list_family,
+        "skew_list": bench_skew_list_family,
         "soft_heap": bench_soft_heap_family,
         "hollow_heap": bench_hollow_heap_family,
         "rank_pairing": bench_rank_pairing_family,

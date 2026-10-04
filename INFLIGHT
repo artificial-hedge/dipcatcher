@@ -1,3 +1,4 @@
+feat(research): wave 917 — data-structures-3 canon (chained_hash, linear_probe, bucket_sort, shell_sort, rand_access_list, skew_list) (5451->5457 families)
 feat(research): wave 916 — data-structures-2 canon (soft_heap, hollow_heap, rank_pairing, hollow_dsu, da_trie, fst_index) (5445->5451 families)
 feat(research): wave 915 — BVP/tree-exotics canon (superposition_bvp, continuation_bvp, robbins_bvp, bvp_eigen, loser_tree, fusion_tree) (5439->5445 families)
 feat(research): wave 914 — RK/BVP-methods-2 canon (ralston_rk, verner_rk, ralston_second, runge_kutta4, invariant_imbedding, green_function_bvp) (5433->5439 families)
