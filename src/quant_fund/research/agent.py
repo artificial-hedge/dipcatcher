@@ -10263,6 +10263,14 @@ from quant_fund.research.benches_w1283 import (
     bench_semantic_memory_studies_family,
     bench_working_memory_studies_family,
 )
+from quant_fund.research.benches_w1284 import (
+    bench_citation_check_studies_family,
+    bench_claim_verifier_studies_family,
+    bench_entailment_studies_family,
+    bench_factuality_score_studies_family,
+    bench_grounding_verify_studies_family,
+    bench_self_reflect_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10784,6 +10792,12 @@ def _provenance(
         "retrieval_memory_studies": bench_retrieval_memory_studies_family,
         "semantic_memory_studies": bench_semantic_memory_studies_family,
         "working_memory_studies": bench_working_memory_studies_family,
+        "citation_check_studies": bench_citation_check_studies_family,
+        "claim_verifier_studies": bench_claim_verifier_studies_family,
+        "entailment_studies": bench_entailment_studies_family,
+        "factuality_score_studies": bench_factuality_score_studies_family,
+        "grounding_verify_studies": bench_grounding_verify_studies_family,
+        "self_reflect_studies": bench_self_reflect_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

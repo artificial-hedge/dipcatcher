@@ -1,3 +1,4 @@
+w1284 grounding/hallucination canon: citation_check_studies, claim_verifier_studies, entailment_studies, factuality_score_studies, grounding_verify_studies, self_reflect_studies (7653->7659)
 w1283 agent-memory canon: context_compression_studies, episodic_memory_studies, memory_bank_studies, retrieval_memory_studies, semantic_memory_studies, working_memory_studies (7647->7653)
 w1282 embodied-VLA canon: affordance_map_studies, embodied_agent_studies, spatial_reasoning_studies, video_diffusion_studies, vla_model_studies, world_sim_studies (7641->7647)
 w1281 reasoning-prompt canon: analogical_prompting_studies, graph_of_thought_studies, least_to_most_studies, plan_and_solve_studies, step_back_studies, tree_of_thought_studies (7635->7641)
