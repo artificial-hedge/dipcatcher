@@ -3537,6 +3537,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tundra_qa_studies",
         "valley_qa_studies",
         "volcano_qa_studies",
+        # Wave-1468 moorland canon.
+        "dale_qa_studies",
+        "fen_qa_studies",
+        "glen_qa_studies",
+        "heath_qa_studies",
+        "knoll_qa_studies",
+        "moor_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

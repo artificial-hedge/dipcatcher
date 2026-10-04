@@ -11735,6 +11735,14 @@ from quant_fund.research.benches_w1467 import (
     bench_valley_qa_studies_family,
     bench_volcano_qa_studies_family,
 )
+from quant_fund.research.benches_w1468 import (
+    bench_dale_qa_studies_family,
+    bench_fen_qa_studies_family,
+    bench_glen_qa_studies_family,
+    bench_heath_qa_studies_family,
+    bench_knoll_qa_studies_family,
+    bench_moor_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13203,6 +13211,12 @@ def _provenance(
         "tundra_qa_studies": bench_tundra_qa_studies_family,
         "valley_qa_studies": bench_valley_qa_studies_family,
         "volcano_qa_studies": bench_volcano_qa_studies_family,
+        "dale_qa_studies": bench_dale_qa_studies_family,
+        "fen_qa_studies": bench_fen_qa_studies_family,
+        "glen_qa_studies": bench_glen_qa_studies_family,
+        "heath_qa_studies": bench_heath_qa_studies_family,
+        "knoll_qa_studies": bench_knoll_qa_studies_family,
+        "moor_qa_studies": bench_moor_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
