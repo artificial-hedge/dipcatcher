@@ -8095,6 +8095,14 @@ from quant_fund.research.benches_w1012 import (
     bench_parton_model_family,
     bench_quark_model_family,
 )
+from quant_fund.research.benches_w1013 import (
+    bench_born_oppenheimer_family,
+    bench_hartree_fock_family,
+    bench_molecular_orbitals_family,
+    bench_rotational_spectra_family,
+    bench_vibrational_spectra_family,
+    bench_zeeman_effect_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8466,6 +8474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hartree_fock": bench_hartree_fock_family,
+        "born_oppenheimer": bench_born_oppenheimer_family,
+        "molecular_orbitals": bench_molecular_orbitals_family,
+        "rotational_spectra": bench_rotational_spectra_family,
+        "vibrational_spectra": bench_vibrational_spectra_family,
+        "zeeman_effect": bench_zeeman_effect_family,
         "bcs_theory": bench_bcs_theory_family,
         "nuclear_shell_model": bench_nuclear_shell_model_family,
         "nuclear_liquid_drop": bench_nuclear_liquid_drop_family,
