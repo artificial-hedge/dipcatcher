@@ -12943,6 +12943,14 @@ from quant_fund.research.benches_w1618 import (
     bench_lanternfish_qa_studies_family,
     bench_viperfish_qa_studies_family,
 )
+from quant_fund.research.benches_w1619 import (
+    bench_blobfish_qa_studies_family,
+    bench_dragonfish_qa_studies_family,
+    bench_dumbo_qa_studies_family,
+    bench_fangtooth_qa_studies_family,
+    bench_gulper_qa_studies_family,
+    bench_tripodfish_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15086,6 +15094,12 @@ def _provenance(
         "anosy_qa_studies": bench_anosy_qa_studies_family,
         "anglerfish_qa_studies": bench_anglerfish_qa_studies_family,
         "bristlemouth_qa_studies": bench_bristlemouth_qa_studies_family,
+        "blobfish_qa_studies": bench_blobfish_qa_studies_family,
+        "dragonfish_qa_studies": bench_dragonfish_qa_studies_family,
+        "dumbo_qa_studies": bench_dumbo_qa_studies_family,
+        "fangtooth_qa_studies": bench_fangtooth_qa_studies_family,
+        "gulper_qa_studies": bench_gulper_qa_studies_family,
+        "tripodfish_qa_studies": bench_tripodfish_qa_studies_family,
         "grenadier_qa_studies": bench_grenadier_qa_studies_family,
         "hatchetfish_qa_studies": bench_hatchetfish_qa_studies_family,
         "lanternfish_qa_studies": bench_lanternfish_qa_studies_family,
