@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1359 QA-exotics canon.
+        "argu_ana_studies",
+        "babi_lite_studies",
+        "curious_qa_studies",
+        "qasper_lite_studies",
+        "scifact_lite_studies",
+        "web_questions_studies",
         # Wave-1358 reading-comp-4 canon.
         "adver_qa_studies",
         "coqa_lite_studies",
