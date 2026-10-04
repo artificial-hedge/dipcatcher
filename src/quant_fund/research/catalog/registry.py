@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1254 molecular-genetics-2 canon.
+        "allele_studies",
+        "snp_studies",
+        "cnv_studies",
+        "haplotype_studies",
+        "penetrance_studies",
+        "pedigree_studies",
         # Wave-1253 immune-mediators canon.
         "cytokine_studies",
         "chemokine_studies",

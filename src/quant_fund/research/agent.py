@@ -10023,6 +10023,14 @@ from quant_fund.research.benches_w1253 import (
     bench_interferon_studies_family,
     bench_lymphocyte_studies_family,
 )
+from quant_fund.research.benches_w1254 import (
+    bench_allele_studies_family,
+    bench_cnv_studies_family,
+    bench_haplotype_studies_family,
+    bench_pedigree_studies_family,
+    bench_penetrance_studies_family,
+    bench_snp_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10394,6 +10402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "allele_studies": bench_allele_studies_family,
+        "snp_studies": bench_snp_studies_family,
+        "cnv_studies": bench_cnv_studies_family,
+        "haplotype_studies": bench_haplotype_studies_family,
+        "penetrance_studies": bench_penetrance_studies_family,
+        "pedigree_studies": bench_pedigree_studies_family,
         "cytokine_studies": bench_cytokine_studies_family,
         "chemokine_studies": bench_chemokine_studies_family,
         "interferon_studies": bench_interferon_studies_family,
