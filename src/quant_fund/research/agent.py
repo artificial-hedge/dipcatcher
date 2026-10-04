@@ -13311,6 +13311,14 @@ from quant_fund.research.benches_w1664 import (
     bench_siren_qa_studies_family,
     bench_wyvern_qa_studies_family,
 )
+from quant_fund.research.benches_w1665 import (
+    bench_einherjar_qa_studies_family,
+    bench_hati_qa_studies_family,
+    bench_lindworm_qa_studies_family,
+    bench_skoll_qa_studies_family,
+    bench_vargbroder_qa_studies_family,
+    bench_vedrfolnir_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

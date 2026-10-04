@@ -4916,6 +4916,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "simurgh_qa_studies",
         "siren_qa_studies",
         "wyvern_qa_studies",
+        # Wave-1665 norse-realm canon.
+        "einherjar_qa_studies",
+        "hati_qa_studies",
+        "lindworm_qa_studies",
+        "skoll_qa_studies",
+        "vargbroder_qa_studies",
+        "vedrfolnir_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
