@@ -13727,6 +13727,14 @@ from quant_fund.research.benches_w1716 import (
     bench_theandrites_qa_studies_family,
     bench_zibelthiurdos_qa_studies_family,
 )
+from quant_fund.research.benches_w1717 import (
+    bench_bindus_qa_studies_family,
+    bench_illyris_qa_studies_family,
+    bench_medaurus_qa_studies_family,
+    bench_redon_qa_studies_family,
+    bench_thana_qa_studies_family,
+    bench_vidasus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

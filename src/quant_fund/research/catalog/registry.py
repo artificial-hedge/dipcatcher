@@ -5280,6 +5280,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "semele_qa_studies",
         "theandrites_qa_studies",
         "zibelthiurdos_qa_studies",
+        # Wave-1717 illyrian-myth canon.
+        "bindus_qa_studies",
+        "illyris_qa_studies",
+        "medaurus_qa_studies",
+        "redon_qa_studies",
+        "thana_qa_studies",
+        "vidasus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
