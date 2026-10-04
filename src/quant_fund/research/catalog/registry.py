@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-912 spatial-index-2 canon.
+        "octree_index",
+        "range_tree",
+        "hilbert_curve",
+        "z_curve",
+        "morton_order",
+        "rstar_tree",
         # Wave-911 computational-geometry-2 canon.
         "monotone_chain",
         "gift_wrap",

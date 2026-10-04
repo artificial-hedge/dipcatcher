@@ -1,3 +1,4 @@
+feat(research): wave 912 — spatial-index-2 canon (octree_index, range_tree, hilbert_curve, z_curve, morton_order, rstar_tree) (5421->5427 families)
 feat(research): wave 911 — computational-geometry-2 canon (monotone_chain, gift_wrap, chan_hull, liang_barsky, cohen_sutherland, bezier_eval) (5415->5421 families)
 feat(research): wave 910 — b-tree family canon (b_tree, b_plus_tree, b_star_tree, weight_balanced_tree, wavl_tree, tango_tree) (5409->5415 families)
 feat(research): wave 909 — deque/linked-structure canon (doubly_linked_list, unrolled_list, gap_buffer, piece_table, deque_array, xor_linked_list) (5403->5409 families)
