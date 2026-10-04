@@ -6623,6 +6623,14 @@ from quant_fund.research.benches_w828 import (
     bench_uniform_section_family,
     bench_von_neumann_sel_family,
 )
+from quant_fund.research.benches_w829 import (
+    bench_bounded_mart_family,
+    bench_cadlag_mart_family,
+    bench_decomp_mart_family,
+    bench_fv_mart_family,
+    bench_local_time_process_family,
+    bench_locator_proc_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6994,6 +7002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "local_time_process": bench_local_time_process_family,
+        "bounded_mart": bench_bounded_mart_family,
+        "fv_mart": bench_fv_mart_family,
+        "cadlag_mart": bench_cadlag_mart_family,
+        "locator_proc": bench_locator_proc_family,
+        "decomp_mart": bench_decomp_mart_family,
         "projection_theorem": bench_projection_theorem_family,
         "uniform_section": bench_uniform_section_family,
         "dellacherie_section": bench_dellacherie_section_family,
