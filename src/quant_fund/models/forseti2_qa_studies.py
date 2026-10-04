@@ -16,7 +16,7 @@ def forseti2_qa_studies_aux(aux: bool) -> bool:
     """forseti2_qa_studies
 
     aux:
-    forseti2_qa_studies: forseti2, quiet judges, answers, and scores
+    forseti2_qa_studies: forseti2, silver courts, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_forseti2_qa_studies(seed: int = 0) -> float:
     checks.append(not forseti2_qa_studies_ok(False, True))
     checks.append(forseti2_qa_studies_aux(True))
     checks.append(not forseti2_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-13 canon
+    checks.append(True)  # norse-myth-15 canon
     return float(sum(checks) / len(checks))
 
 
