@@ -14023,6 +14023,14 @@ from quant_fund.research.benches_w1753 import (
     bench_yinglong_qa_studies_family,
     bench_zhurong_qa_studies_family,
 )
+from quant_fund.research.benches_w1754 import (
+    bench_fujin_qa_studies_family,
+    bench_hachiman_qa_studies_family,
+    bench_inari_qa_studies_family,
+    bench_raijin_qa_studies_family,
+    bench_sarutahiko_qa_studies_family,
+    bench_uzume_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

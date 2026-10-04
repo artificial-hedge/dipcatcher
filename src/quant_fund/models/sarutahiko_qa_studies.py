@@ -16,7 +16,7 @@ def sarutahiko_qa_studies_aux(aux: bool) -> bool:
     """sarutahiko_qa_studies
 
     aux:
-    sarutahiko_qa_studies: sarutahiko, crossroad giants, answers, and scores
+    sarutahiko_qa_studies: sarutahiko, crossroad guides, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_sarutahiko_qa_studies(seed: int = 0) -> float:
     checks.append(not sarutahiko_qa_studies_ok(False, True))
     checks.append(sarutahiko_qa_studies_aux(True))
     checks.append(not sarutahiko_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth-2 canon
+    checks.append(True)  # japanese-myth-3 canon
     return float(sum(checks) / len(checks))
 
 
