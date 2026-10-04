@@ -9767,6 +9767,14 @@ from quant_fund.research.benches_w1221 import (
     bench_optometry_studies_family,
     bench_otolaryngology_studies_family,
 )
+from quant_fund.research.benches_w1222 import (
+    bench_hand_surgery_family,
+    bench_joint_replacement_family,
+    bench_musculoskeletal_medicine_family,
+    bench_orthopedics_studies_family,
+    bench_spine_surgery_family,
+    bench_sports_medicine_orthopedics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10138,6 +10146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "orthopedics_studies": bench_orthopedics_studies_family,
+        "sports_medicine_orthopedics": bench_sports_medicine_orthopedics_family,
+        "musculoskeletal_medicine": bench_musculoskeletal_medicine_family,
+        "spine_surgery": bench_spine_surgery_family,
+        "joint_replacement": bench_joint_replacement_family,
+        "hand_surgery": bench_hand_surgery_family,
         "dermatology_studies": bench_dermatology_studies_family,
         "ophthalmology_studies": bench_ophthalmology_studies_family,
         "otolaryngology_studies": bench_otolaryngology_studies_family,
