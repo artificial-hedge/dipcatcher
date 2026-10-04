@@ -14927,6 +14927,14 @@ from quant_fund.research.benches_w1866 import (
     bench_seneschal_qa_studies_family,
     bench_ynis_qa_studies_family,
 )
+from quant_fund.research.benches_w1867 import (
+    bench_antenociticus_qa_studies_family,
+    bench_ares_lusitani_qa_studies_family,
+    bench_braciaca_qa_studies_family,
+    bench_deiba_qa_studies_family,
+    bench_nantosuelta_qa_studies_family,
+    bench_ognios_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
