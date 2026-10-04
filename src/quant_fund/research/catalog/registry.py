@@ -5091,6 +5091,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pretas_qa_studies",
         "vetal_qa_studies",
         "yaksha_qa_studies",
+        # Wave-1690 slavic-myth-3 canon.
+        "kladenets_qa_studies",
+        "kostroma_qa_studies",
+        "leshii_qa_studies",
+        "morozko_qa_studies",
+        "vedmak_qa_studies",
+        "yarilo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

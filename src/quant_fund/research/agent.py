@@ -13511,6 +13511,14 @@ from quant_fund.research.benches_w1689 import (
     bench_vetal_qa_studies_family,
     bench_yaksha_qa_studies_family,
 )
+from quant_fund.research.benches_w1690 import (
+    bench_kladenets_qa_studies_family,
+    bench_kostroma_qa_studies_family,
+    bench_leshii_qa_studies_family,
+    bench_morozko_qa_studies_family,
+    bench_vedmak_qa_studies_family,
+    bench_yarilo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
