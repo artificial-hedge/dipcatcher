@@ -10479,6 +10479,14 @@ from quant_fund.research.benches_w1310 import (
     bench_factscore_studies_family,
     bench_self_bleu_studies_family,
 )
+from quant_fund.research.benches_w1311 import (
+    bench_aegis_studies_family,
+    bench_air_bench_studies_family,
+    bench_overkill_studies_family,
+    bench_salad_bench_studies_family,
+    bench_sorry_bench_studies_family,
+    bench_wildguard_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11142,6 +11150,12 @@ def _provenance(
         "mmlu_pro_studies": bench_mmlu_pro_studies_family,
         "tau_bench_studies": bench_tau_bench_studies_family,
         "alpaca_eval_studies": bench_alpaca_eval_studies_family,
+        "aegis_studies": bench_aegis_studies_family,
+        "air_bench_studies": bench_air_bench_studies_family,
+        "overkill_studies": bench_overkill_studies_family,
+        "salad_bench_studies": bench_salad_bench_studies_family,
+        "sorry_bench_studies": bench_sorry_bench_studies_family,
+        "wildguard_studies": bench_wildguard_studies_family,
         "attribution_eval_studies": bench_attribution_eval_studies_family,
         "citation_eval_studies": bench_citation_eval_studies_family,
         "diversity_eval_studies": bench_diversity_eval_studies_family,
