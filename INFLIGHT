@@ -1,3 +1,4 @@
+feat(research): wave 807 — optimal-stopping canon (snell_envelope, secretary_dp, cayley_moser, chow_robbins, markov_stopping, free_boundary) (4797->4803 families)
 feat(research): wave 806 — jump-process canon (jump_diffusion, merton_jump, kou_model, compound_poisson, excursion_theory, marked_hawkes) (4791->4797 families)
 feat(research): wave 805 — stochastic-calculus canon (ito_isometry, stratonovich_conv, tanaka_meyer, follmer_strat, skorohod_lemma, doss_sussmann) (4785->4791 families)
 feat(research): wave 804 — Malliavin canon (nualart_zakai, watanabe_map, malliavin_cov, density_bound, absolute_cont, smoothness_h) (4779->4785 families)
