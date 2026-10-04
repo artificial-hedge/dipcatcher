@@ -3817,6 +3817,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "merlin_qa_studies",
         "peregrine_qa_studies",
         "sparrowhawk_qa_studies",
+        # Wave-1508 songbird canon.
+        "chickadee_qa_studies",
+        "finch_qa_studies",
+        "sparrow_qa_studies",
+        "thrush_qa_studies",
+        "warbler_qa_studies",
+        "wren_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

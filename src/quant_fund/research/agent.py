@@ -12055,6 +12055,14 @@ from quant_fund.research.benches_w1507 import (
     bench_peregrine_qa_studies_family,
     bench_sparrowhawk_qa_studies_family,
 )
+from quant_fund.research.benches_w1508 import (
+    bench_chickadee_qa_studies_family,
+    bench_finch_qa_studies_family,
+    bench_sparrow_qa_studies_family,
+    bench_thrush_qa_studies_family,
+    bench_warbler_qa_studies_family,
+    bench_wren_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13715,6 +13723,12 @@ def _provenance(
         "merlin_qa_studies": bench_merlin_qa_studies_family,
         "peregrine_qa_studies": bench_peregrine_qa_studies_family,
         "sparrowhawk_qa_studies": bench_sparrowhawk_qa_studies_family,
+        "chickadee_qa_studies": bench_chickadee_qa_studies_family,
+        "finch_qa_studies": bench_finch_qa_studies_family,
+        "sparrow_qa_studies": bench_sparrow_qa_studies_family,
+        "thrush_qa_studies": bench_thrush_qa_studies_family,
+        "warbler_qa_studies": bench_warbler_qa_studies_family,
+        "wren_qa_studies": bench_wren_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
