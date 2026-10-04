@@ -4639,6 +4639,14 @@ from quant_fund.research.benches_w580 import (
     bench_species_theory_family,
     bench_transfer_matrix_family,
 )
+from quant_fund.research.benches_w581 import (
+    bench_bockstein_ss_family,
+    bench_bousfield_ss_family,
+    bench_cartan_ss_family,
+    bench_eilenberg_moore_family,
+    bench_lyndon_ss_family,
+    bench_serre_ss4_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5018,6 +5026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "serre_ss4": bench_serre_ss4_family,
+        "bockstein_ss": bench_bockstein_ss_family,
+        "eilenberg_moore": bench_eilenberg_moore_family,
+        "bousfield_ss": bench_bousfield_ss_family,
+        "lyndon_ss": bench_lyndon_ss_family,
+        "cartan_ss": bench_cartan_ss_family,
         "species_theory": bench_species_theory_family,
         "cycle_index": bench_cycle_index_family,
         "lagrange_inversion": bench_lagrange_inversion_family,

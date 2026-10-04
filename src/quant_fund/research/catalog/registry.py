@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-581 spectral-sequences canon.
+        "serre_ss4",
+        "bockstein_ss",
+        "eilenberg_moore",
+        "bousfield_ss",
+        "lyndon_ss",
+        "cartan_ss",
         # Wave-580 enumerative-combinatorics canon.
         "species_theory",
         "cycle_index",
