@@ -8831,6 +8831,14 @@ from quant_fund.research.benches_w1104 import (
     bench_public_law_family,
     bench_security_studies_family,
 )
+from quant_fund.research.benches_w1105 import (
+    bench_bounded_rationality_family,
+    bench_experimental_economics_family,
+    bench_financial_behavior_family,
+    bench_neuroeconomics_family,
+    bench_nudge_theory_family,
+    bench_prospect_theory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9202,6 +9210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "prospect_theory": bench_prospect_theory_family,
+        "bounded_rationality": bench_bounded_rationality_family,
+        "nudge_theory": bench_nudge_theory_family,
+        "neuroeconomics": bench_neuroeconomics_family,
+        "experimental_economics": bench_experimental_economics_family,
+        "financial_behavior": bench_financial_behavior_family,
         "american_politics": bench_american_politics_family,
         "political_behavior": bench_political_behavior_family,
         "public_law": bench_public_law_family,
