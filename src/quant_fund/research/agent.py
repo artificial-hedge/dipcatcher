@@ -15143,6 +15143,14 @@ from quant_fund.research.benches_w1893 import (
     bench_lilitu_qa_studies_family,
     bench_rabisu_qa_studies_family,
 )
+from quant_fund.research.benches_w1894 import (
+    bench_asakku_qa_studies_family,
+    bench_ekimmu_qa_studies_family,
+    bench_etemmu_qa_studies_family,
+    bench_gidim_qa_studies_family,
+    bench_maskim_qa_studies_family,
+    bench_sebettu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
