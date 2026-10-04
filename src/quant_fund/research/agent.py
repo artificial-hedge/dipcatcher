@@ -5815,6 +5815,14 @@ from quant_fund.research.benches_w727 import (
     bench_patching_arg_family,
     bench_taylor_wiles_family,
 )
+from quant_fund.research.benches_w728 import (
+    bench_a1_degrees_family,
+    bench_emerton_glass_family,
+    bench_luan_yao_family,
+    bench_morel_voev_family,
+    bench_totaro_cycle_family,
+    bench_voev_homotopy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6194,6 +6202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "emerton_glass": bench_emerton_glass_family,
+        "luan_yao": bench_luan_yao_family,
+        "morel_voev": bench_morel_voev_family,
+        "voev_homotopy": bench_voev_homotopy_family,
+        "totaro_cycle": bench_totaro_cycle_family,
+        "a1_degrees": bench_a1_degrees_family,
         "galdef_ring": bench_galdef_ring_family,
         "patching_arg": bench_patching_arg_family,
         "taylor_wiles": bench_taylor_wiles_family,

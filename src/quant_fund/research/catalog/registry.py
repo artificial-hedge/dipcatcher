@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-728 motivic-A1 canon.
+        "emerton_glass",
+        "luan_yao",
+        "morel_voev",
+        "voev_homotopy",
+        "totaro_cycle",
+        "a1_degrees",
         # Wave-727 Galois-deformation-2 canon.
         "galdef_ring",
         "patching_arg",
