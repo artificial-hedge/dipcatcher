@@ -6666,6 +6666,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "marid_qa_studies",
         "nasnas_qa_studies",
         "shaitan_qa_studies",
+        # Wave-1915 shedim canon.
+        "dybbuk_qa_studies",
+        "ibbur_qa_studies",
+        "lilim_qa_studies",
+        "mazzik_qa_studies",
+        "seirim_qa_studies",
+        "shedim_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -15311,6 +15311,14 @@ from quant_fund.research.benches_w1914 import (
     bench_nasnas_qa_studies_family,
     bench_shaitan_qa_studies_family,
 )
+from quant_fund.research.benches_w1915 import (
+    bench_dybbuk_qa_studies_family,
+    bench_ibbur_qa_studies_family,
+    bench_lilim_qa_studies_family,
+    bench_mazzik_qa_studies_family,
+    bench_seirim_qa_studies_family,
+    bench_shedim_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
