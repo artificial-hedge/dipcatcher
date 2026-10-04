@@ -18,7 +18,8 @@ flips to ``fail`` if the behavior regresses:
 - ``resample_ohlcv`` (features.py): a bar released before its own event could
   hide inside a bucket whose aggregate max ``available_time`` still passed,
   and a bucket mixing ``revision_id`` values silently collapsed to the first
-  while a ``source`` mix raised. Both are refused up front now.
+  while a ``source`` mix raised. Both are refused up front now. Duplicate
+  input bar keys are also refused before aggregation can hide them.
 - ``validate_forecast_schema`` (schema.py): quantile ordering was only
   checked on rows where *every* quantile was non-null — a crossing could
   hide behind one missing value. Present adjacent pairs are now ordered on
@@ -58,8 +59,8 @@ from fx1.forecast.schema import (
     validate_feature_schema,
     validate_forecast_schema,
 )
-from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.schemas.errors import LeakageError, PointInTimeError
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes, hash_file
 from quant_fund.utils.reproducibility import git_revision
 
@@ -746,7 +747,6 @@ def _resample_probes() -> list[dict[str, str]]:
         ]
     )
     duplicate_key = pl.DataFrame([bar(9, 10.0), bar(9, 11.0)])
-    n_merged = resample_ohlcv(duplicate_key, "1d").height
     shuffled = intra.sample(fraction=1.0, shuffle=True, seed=3)
     late_release = resample_ohlcv(
         pl.DataFrame([bar(9, 10.0, avail=day.replace(hour=10)), bar(14, 12.0)]),
@@ -830,12 +830,12 @@ def _resample_probes() -> list[dict[str, str]]:
             PointInTimeError,
             verdict="fixed",
         ),
-        _flag(
-            "duplicate_keys_merged_silently",
+        _expect_error(
+            "duplicate_keys_refused",
             area,
-            f"two bars sharing (security_id, event_time) aggregate into "
-            f"{n_merged} bucket row(s) — the pipeline's duplicate check only "
-            f"sees post-resample keys",
+            lambda: resample_ohlcv(duplicate_key, "1d"),
+            PointInTimeError,
+            verdict="fixed",
         ),
         _flag(
             "invalid_every_raises_polars_error",
@@ -1121,5 +1121,5 @@ def write_forecast_data_audit_receipt(
     directory.mkdir(parents=True, exist_ok=True)
     receipt = forecast_data_audit_bench()
     path = directory / AUDIT_RECEIPT_NAME
-    _atomic_write_text(path, json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+    atomic_write_text(path, json.dumps(receipt, indent=2, sort_keys=True) + "\n")
     return path

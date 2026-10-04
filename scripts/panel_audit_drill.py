@@ -42,7 +42,16 @@ from quant_fund.research.fleet_eval import (
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-BARS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/file_us_wide/bronze/bars.parquet")
+BARS = Path("data/file_us_wide/bronze/bars.parquet")
+OUT_DIR = Path("receipts")
+_args = sys.argv[1:]
+if "--out" in _args:
+    _i = _args.index("--out")
+    OUT_DIR = Path(_args[_i + 1])
+    _args = _args[:_i] + _args[_i + 2 :]
+_pos = [a for a in _args if not a.startswith("--")]
+if _pos:
+    BARS = Path(_pos[0])
 N_TRAIN = 1000
 N_EVAL = 300
 LEVEL = 0.8
@@ -119,7 +128,7 @@ def main() -> None:
             pl.col("breach_rate").mean().alias("mean_breach_rate"),
             pl.len().alias("n_symbols"),
         )
-        .sort("pooled_evalue", descending=True)
+        .sort(["pooled_evalue", "head"], descending=[True, False])
     )
     symbol_rows = (
         ok.group_by("shard")
@@ -127,7 +136,7 @@ def main() -> None:
             pl.col("final_evalue").mean().alias("pooled_evalue"),
             pl.col("coverage_alarm").sum().alias("n_heads_alarmed"),
         )
-        .sort("pooled_evalue", descending=True)
+        .sort(["pooled_evalue", "shard"], descending=[True, False])
     )
     heads = sorted(ok["head"].unique().to_list())
     alpha = 0.05
@@ -158,7 +167,7 @@ def main() -> None:
         },
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         "drill": {
-            "tape": str(BARS.resolve()),
+            "tape": str(BARS),
             "symbols_sampled": symbols,
             "n_train": N_TRAIN,
             "n_eval": N_EVAL,
@@ -172,10 +181,12 @@ def main() -> None:
             "cross_sectional_panel",
         ],
     }
+    receipt.pop("code_revision", None)
+    receipt.pop("meta", None)
     canonical = json.loads(canonical_json_bytes(dict(receipt)))
     digest = hash_bytes(canonical_json_bytes(canonical))
     payload = {**canonical, "receipt_sha256": digest}
-    out = Path("receipts") / "panel_audit_real_drill.json"
+    out = OUT_DIR / "panel_audit_real_drill.json"
     _atomic_write_text(out, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     result = verify_receipt_file(out)
     family = receipt["family"]

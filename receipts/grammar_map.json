@@ -1,0 +1,116 @@
+{
+ "schema": "grammar_map.v1",
+ "kind": "wave25_map",
+ "asset": "AMZN",
+ "n_lanes": 7,
+ "lanes": [
+  {
+   "receipt": "zone_card.json",
+   "question": "is the closed cell's maker grammar tape-scale?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "zone_improves_card": false,
+    "life_on_tape_scale": false,
+    "exec_share_on_card": true
+   }
+  },
+  {
+   "receipt": "zone_ttl.json",
+   "question": "does maker aging (ttl) bracket the residual?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "ttl_reaches_life_scale": true,
+    "ttl_improves_mix": false,
+    "ttl_keeps_closure": true,
+    "kernel_carried": true
+   }
+  },
+  {
+   "receipt": "zone_churn.json",
+   "question": "does cancel-into-repost churn close it?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "churn_closes_joint": true,
+    "churn_lifts_pins": true,
+    "churn_keeps_life": true,
+    "kernel_carried": true
+   }
+  },
+  {
+   "receipt": "churn_stability.json",
+   "question": "is the closure structural or a rate?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "closure_near_structural": false,
+    "closure_multi_flow": false,
+    "churn_is_mechanism": false
+   }
+  },
+  {
+   "receipt": "churn_reseed.json",
+   "question": "where do emptied vacancies die?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "repost_fates_sum": true,
+    "joint_reseed_in_band": true,
+    "walked_past_rare": true,
+    "repost_underfill": true
+   }
+  },
+  {
+   "receipt": "repost_latency.json",
+   "question": "does repost delay resolve reseed residual?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "reseed_card_closed": true,
+    "pins_survive": true,
+    "kernel_carried": true
+   }
+  },
+  {
+   "receipt": "joint_tune.json",
+   "question": "is the pins/life corner a frontier?",
+   "sealed": true,
+   "claims": {
+    "cells_measured": true,
+    "joint_closure_found": false,
+    "grammar_keeps_pins": true,
+    "kernel_carried": false
+   }
+  }
+ ],
+ "mechanism_map": {
+  "maker_aging": "maker_ttl \u2014 cancel path expiry, 0 = bit-identical",
+  "requote_churn": "maker_requote \u2014 cancel-into-repost on expiry",
+  "reseed_timing": "fill_repost_delay \u2014 d60 holds pins, d110 hits tape grammar",
+  "frontier": "ttl<=75 for tape life vs ttl>=150 for 7 pins"
+ },
+ "falsified_channels": [
+  "pure maker aging as pin-lifter (zone_ttl \u2014 ttl brackets but does not lift)",
+  "churn as pin mechanism (churn_stability \u2014 rq0 controls hold equally)",
+  "walked-past repost drops as binder (churn_reseed \u2014 rare and benign)",
+  "pins + grammar + kernel on one cell (joint_tune \u2014 Pareto frontier)"
+ ],
+ "claims": {
+  "all_member_receipts_sealed": true,
+  "all_lanes_present": true,
+  "grammar_gap_was_real": true,
+  "ttl_reaches_scale": true,
+  "churn_closes": true,
+  "churn_not_mechanism": true,
+  "residual_is_underfill": true,
+  "latency_closes": true,
+  "joint_frontier_exists": true
+ },
+ "interpretation": "Event-grammar campaign closed as a mapped frontier. zone_card found the divergence: the closed-spread cell's executed makers lived ~150-300 events vs the tape's ~25.5. maker_ttl brackets it (tape-speed aging reaches 35.8 ev and keeps 6/7 pins); maker_requote resolves it (z12+ttl200+rq60 holds all 7 pins at life ~88 ev, and ttl50+rq90 sits at the tape's exact median, 26.6 vs 25.5). churn_reseed instrumented the last channel: emptied-vacancy deaths are benign refills, and the binder was repost under-engagement \u2014 the d60 delay lands a new all-pins cell. joint_tune maps the final corner: pins + tape-scale life + kernel form a Pareto frontier \u2014 fast churn overshoots the reseed pin (vacancies kept hot) while slow churn holds it, and the closest compose (ttl50_rq90_d110) misses by ~half a pin. Every channel now has its mechanism AND its measured failure mode; the remaining divergence is a rate phenomenon, not a knob gap.",
+ "git_revision": "b9268aeec410e02b81ebf104e084c7c9392429c5",
+ "data_label": "MIXED",
+ "research_only": true,
+ "receipt_sha256": "a008b590aaf8733d1cfa1424c38d5b254727ce54c9e8405fa699e6b24ffc8aa9"
+}

@@ -1,0 +1,40 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/panel_audit_drill.py",
+  "receipt_sha256": "5a54698682f7e644d973645794b6eb915e6256dabffb0572e3bc50437448720c",
+  "replay": {
+    "argv": [
+      "scripts/panel_audit_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/panel_audit_real_drill.json",
+        "sha256": "2aeac7fdb293b6cada33ed904918a43fc9c4e7b39f21044078fd1ca3ee10ed20"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "heads",
+        "n_cells_total"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de",
+      "drift_reason": "registry_growth",
+      "receipt": "receipts/panel_audit_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

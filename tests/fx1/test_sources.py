@@ -189,7 +189,10 @@ def test_agent_gw_config_file_counts_as_credentials(monkeypatch, tmp_path):
     kimi_dir = tmp_path / ".kimi"
     kimi_dir.mkdir()
     (kimi_dir / "agent-gw.json").write_text("{}", encoding="utf-8")
+    # Path.home() consults USERPROFILE on Windows and HOME on POSIX; patch
+    # both so the test is portable across the local lab and CI hosts.
     monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))
     adapter = build_adapter(get_spec("wind"))
     assert adapter.credentials_present() is True
 

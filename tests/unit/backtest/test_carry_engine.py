@@ -172,3 +172,79 @@ def test_missing_spot_bar_blocks_entry(tmp_path) -> None:
     )
     res = run_carry_backtest(perp, spot_late, None, _weights(0.5, at=0), cfg, initial_nav=1e5)
     assert res.fills.height == 0
+
+
+@pytest.mark.parametrize("second_rate", [0.01, 0.02, -0.01])
+def test_duplicate_funding_events_fail_closed(tmp_path, second_rate: float) -> None:
+    """SYNTHETIC: the shared funding parser must also protect paired carry."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = True
+    perp, spot = _pair_bars([100.0] * 10)
+    funding = pl.concat([_funding(0.01, at=5), _funding(second_rate, at=5)])
+    with pytest.raises(ValueError, match="duplicate funding event"):
+        run_carry_backtest(perp, spot, funding, _weights(0.5), cfg, initial_nav=1e5)
+
+
+@pytest.mark.parametrize("cash_buffer_frac", [0.0, 0.02])
+@pytest.mark.parametrize("impact_y", [0.0, 3.0])
+def test_costed_purchase_reserves_cash_for_both_legs(tmp_path, cash_buffer_frac, impact_y):
+    """SYNTHETIC: fees must not borrow cash or consume the reserved buffer."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = False
+    cfg.costs.commission_bps = 100.0
+    cfg.costs.half_spread_bps = 25.0
+    cfg.costs.bps_per_turnover = 15.0
+    cfg.costs.impact_y = impact_y
+    perp, spot = _pair_bars([120.0] * 4, [100.0] * 4)
+    result = run_carry_backtest(
+        perp,
+        spot,
+        None,
+        _weights(2.0),
+        cfg,
+        initial_nav=100_000.0,
+        cash_buffer_frac=cash_buffer_frac,
+    )
+    assert result.fills.height == 1
+    fill = result.fills.row(0, named=True)
+    # Flat marks leave only execution costs in NAV; subtract spot inventory
+    # to recover the cash wallet independently, including turnover-bps fees.
+    cash = result.equity["nav"][-1] - fill["quantity"] * fill["spot_price"]
+    assert cash >= 100_000.0 * cash_buffer_frac - 1e-8
+    assert cash == pytest.approx(100_000.0 * cash_buffer_frac, abs=1e-7)
+
+
+def test_affordable_costed_purchase_and_unwind_keep_requested_quantity(tmp_path):
+    """SYNTHETIC: a nonbinding cash cap must not shrink entries or exits."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = False
+    cfg.costs.commission_bps = 100.0
+    perp, spot = _pair_bars([100.0] * 4)
+    weights = pl.concat([_weights(0.25), _weights(0.0, at=2)])
+    result = run_carry_backtest(perp, spot, None, weights, cfg, initial_nav=100_000.0)
+    assert result.fills["quantity"].to_list() == pytest.approx([250.0, -250.0])
+    assert result.equity["gross"][-1] == 0.0
+
+
+def test_cost_clamp_preserves_participation_cap(tmp_path):
+    """SYNTHETIC: affordability cannot increase a liquidity-capped order."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = False
+    cfg.costs.commission_bps = 100.0
+    cfg.costs.participation_limit = 0.01
+    perp, spot = _pair_bars([100.0] * 4)
+    perp = perp.with_columns(pl.lit(1000.0).alias("volume"))
+    spot = spot.with_columns(pl.lit(1000.0).alias("volume"))
+    result = run_carry_backtest(perp, spot, None, _weights(2.0), cfg, initial_nav=100_000.0)
+    assert result.fills["quantity"].to_list() == pytest.approx([10.0])
+
+
+def test_cost_clamp_skips_subminimum_purchase(tmp_path):
+    """SYNTHETIC: after costs, an affordable fill below $1 must lapse."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = False
+    cfg.costs.commission_bps = 100_000.0
+    perp, spot = _pair_bars([100.0] * 4)
+    result = run_carry_backtest(perp, spot, None, _weights(2.0), cfg, initial_nav=10.0)
+    assert result.fills.height == 0
+    assert result.equity["nav"].to_list() == [10.0] * 4

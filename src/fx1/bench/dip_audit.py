@@ -6,12 +6,12 @@ forbidden tokens as whole ``_``-separated words, so ``unrealizedpnl``,
 now a substring check on the normalized key.
 
 Pinned contract edges: causal detection uses only the running peak;
-the recovery window is exactly ``[i, i+bars)`` — recovery at ``i+bars``
-is NOT observable (boundary pinned); horizons past the data record
-``None`` and are never imputed; ``unconditional_baseline`` reports NaN
-on an empty horizon rather than fabricating a rate; out-of-range
+the recovery window is exactly ``[i+1, i+bars+1)`` — recovery at
+``i+bars`` is included (boundary pinned); horizons past the data record
+``None`` and are never imputed; ``unconditional_baseline`` omits horizons
+without observations rather than fabricating a rate; out-of-range
 probabilities and malformed inputs raise; forecasts for unknown events
-are dropped; ``brier_overall`` is absent when no pairs survive.
+fail closed; ``brier_overall`` is absent when no pairs survive.
 Sealed ``dip_audit.v1`` (fx1-side receipt).
 """
 
@@ -37,8 +37,8 @@ def _detection() -> dict[str, Any]:
         "n_events": len(ev),
         "depth": round(e.depth, 6),
         "h1_observable": e.recovered["h1"] is not None,
-        "h1_recovered": e.recovered["h1"],  # window [2,4): bar3 recovers
-        "boundary_out": _boundary(closes, dates),
+        "h1_recovered": e.recovered["h1"],  # window [3,5): bar3 recovers
+        "boundary_out": _boundary(),
         "rearm": _rearm(),
         "nonfinite_raises": _raises(
             lambda: detect_dip_events([100.0, float("nan")], ["a", "b"], "X")
@@ -50,19 +50,20 @@ def _detection() -> dict[str, Any]:
     }
 
 
-def _boundary(closes: list[float], dates: list[str]) -> dict[str, Any]:
+def _boundary() -> dict[str, Any]:
     from fx1.bench.dip import detect_dip_events
 
-    # Recovery exactly at i+bars is outside the observable window.
+    # Recovery exactly at i+bars is included; longer incomplete horizons
+    # stay unobservable even if an earlier bar has already recovered.
     tape = [100.0, 89.0, 90.0, 101.0]
     d = [f"b{i}" for i in range(4)]
     ev = detect_dip_events(tape, d, "X", threshold=0.10, horizons_bars={"h": 1})
-    inside = ev[0].recovered["h"]  # window [1,2): only bar1, no recovery
+    inside = ev[0].recovered["h"]  # window [2,3): bar2 has not recovered
     ev2 = detect_dip_events(tape, d, "X", threshold=0.10, horizons_bars={"h": 2})
-    at_edge = ev2[0].recovered["h"]  # window [1,3): bars 1,2 no recovery
+    at_edge = ev2[0].recovered["h"]  # window [2,4): bar3 recovers at the boundary
     ev3 = detect_dip_events(tape, d, "X", threshold=0.10, horizons_bars={"h": 3})
-    within = ev3[0].recovered["h"]  # window [1,4): bar3 recovers
-    return {"h1": inside, "h2": at_edge, "h3": within}
+    unobservable = ev3[0].recovered["h"]  # window [2,5): bar4 is unavailable
+    return {"h1": inside, "h2": at_edge, "h3": unobservable}
 
 
 def _rearm() -> bool:
@@ -99,7 +100,6 @@ def _scoring() -> dict[str, Any]:
     fc = [
         DipForecast("X", "t0", {"h1": 0.9, "h2": 0.5}),
         DipForecast("X", "t1", {"h1": 0.1, "h2": 0.8}),
-        DipForecast("GHOST", "t9", {"h1": 0.5}),  # unknown event — dropped
     ]
     metrics = evaluate_forecasts(ev, fc, n_bins=4)
     out = {
@@ -107,7 +107,9 @@ def _scoring() -> dict[str, Any]:
         "baseline_h2": baseline["h2"],  # 1 of 1 observable
         # t0's h2 flag is None (unobservable): only t1's forecast counts.
         "h2_skips_unobservable": metrics.get("n_h2") == 1.0,
-        "ghost_dropped": metrics.get("n_h1") == 2.0,
+        "ghost_rejected": _raises(
+            lambda: evaluate_forecasts(ev, [*fc, DipForecast("GHOST", "t9", {"h1": 0.5})])
+        ),
         "oor_prob_raises": _raises(
             lambda: evaluate_forecasts(ev, [DipForecast("X", "t0", {"h1": 1.5})])
         ),
@@ -154,7 +156,7 @@ def dip_audit_bench() -> dict[str, Any]:
     ok = (
         d["n_events"] == 1
         and d["h1_recovered"] is True
-        and d["boundary_out"] == {"h1": False, "h2": False, "h3": True}
+        and d["boundary_out"] == {"h1": False, "h2": True, "h3": None}
         and d["rearm"] is True
         and d["nonfinite_raises"] == "raise:ValueError"
         and d["misaligned_raises"] == "raise:ValueError"
@@ -162,7 +164,7 @@ def dip_audit_bench() -> dict[str, Any]:
         and s["baseline_h1"] == 0.5
         and s["baseline_h2"] == 1.0
         and s["h2_skips_unobservable"] is True
-        and s["ghost_dropped"] is True
+        and s["ghost_rejected"] == "raise:ValueError"
         and s["oor_prob_raises"] == "raise:ValueError"
         and s["brier_overall_absent_when_empty"] is True
         and s["baseline_nan_on_empty"] is True

@@ -138,6 +138,12 @@ def run_carry_backtest(
 
     Negative weights are rejected — negative-funding harvest would need spot
     borrow this book does not model.
+    Funding follows ``run_perp_backtest``: exact application bar-label matches,
+    applied after open fills and before liquidation using the perp close
+    mark (or a permitted carried mark). Unmapped off-grid events are skipped and
+    counted in ``funding_events_dropped`` when reported. By default the funding
+    ``event_time`` supplies the label; explicit ``application_time`` mapping
+    does not imply automatic interval bucketing.
     """
     if weights.height:
         _ = _target_weight_map(weights)
@@ -159,7 +165,9 @@ def run_carry_backtest(
         else infer_periods_per_year(times, perp_cfg.bar_seconds_hint)
     )
     fund_map = (
-        _funding_by_time(funding, multiplier=perp_cfg.funding_spike_multiplier)
+        _funding_by_time(
+            funding, multiplier=perp_cfg.funding_spike_multiplier, bar_times=set(times)
+        )
         if perp_cfg.funding_enabled
         else {}
     )
@@ -306,6 +314,35 @@ def run_carry_backtest(
                 costs_s = total_cost(
                     delta, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
                 )
+            if delta > 0:
+                # Both legs' costs are cash debits too. The notional-only
+                # clamp above is merely an upper bound; solve the monotone
+                # spot-notional + pair-cost budget after the other caps.
+                budget = max(0.0, book.cash - cash_buffer_frac * equity)
+                required = delta * so + float(costs_p["total"]) + float(costs_s["total"])
+                if required > budget:
+                    lo, hi = 0.0, float(delta)
+                    for _ in range(64):
+                        mid = (lo + hi) / 2.0
+                        cp = total_cost(
+                            mid, po, advs_p.get(sid, 1.0), vols_p.get(sid, 0.02), config.costs
+                        )
+                        cs = total_cost(
+                            mid, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
+                        )
+                        if mid * so + float(cp["total"]) + float(cs["total"]) <= budget:
+                            lo = mid
+                        else:
+                            hi = mid
+                    delta = lo
+                    if delta * so < 1.0 or delta * po < 1.0:
+                        continue
+                    costs_p = total_cost(
+                        delta, po, advs_p.get(sid, 1.0), vols_p.get(sid, 0.02), config.costs
+                    )
+                    costs_s = total_cost(
+                        delta, so, advs_s.get(sid, 1.0), vols_s.get(sid, 0.02), config.costs
+                    )
             try:
                 kill.assert_new_orders_allowed()
             except KillSwitchActive:

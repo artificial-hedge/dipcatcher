@@ -57,6 +57,13 @@ def test_quant_fund_imports_fx1_only_for_version() -> None:
     )
 
 
+# The fx1 surface ships /verify-receipt endpoints + receipt-seal audit
+# probes by design — they must reach the verifier module, which is the
+# harness's public verify API. Everything else under research/ stays
+# forbidden.
+_FX1_RECEIPT_VERIFY = "quant_fund.research.receipt_v2"
+
+
 def test_fx1_may_import_quant_fund_but_never_its_research_internals() -> None:
     """fx1 may consume quant_fund's data/schemas/utils — not its sealed
     evidence or scoring lanes (research/, proofcore/, pit/, proof/, reality/),
@@ -67,7 +74,8 @@ def test_fx1_may_import_quant_fund_but_never_its_research_internals() -> None:
     for path in sorted(fx1.rglob("*.py")):
         rel = path.relative_to(fx1.parent)
         for parts in _quant_fund_import_paths(path):
-            if len(parts) > 1 and parts[1] in forbidden:
+            mod = ".".join(parts[:3])
+            if len(parts) > 1 and parts[1] in forbidden and mod != _FX1_RECEIPT_VERIFY:
                 offenders.append(f"{rel}: {'.'.join(parts)}")
     assert offenders == [], (
         "fx1 -> quant_fund edge reaching sealed/verification internals:\n" + "\n".join(offenders)

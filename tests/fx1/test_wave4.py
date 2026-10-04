@@ -167,7 +167,7 @@ def test_forecast_probability_range_enforced():
 
 def test_cited_complete_appends_provenance():
     class FakeBackend:
-        def complete(self, messages):
+        def complete(self, messages, *, sampling=None):
             return "Research evidence: CRPS 0.31."
 
     out = cited_complete(FakeBackend(), [], receipt_hashes=["d" * 64])
