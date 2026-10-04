@@ -3061,7 +3061,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
-        # Wave-1258 omics canon.
+        # Wave-1259 drug-discovery canon.
+    "qsar_studies",
+    "docking_studies",
+    "admet_studies",
+    "lead_optimization_studies",
+    "virtual_screening_studies",
+    "de_novo_design_studies",
+# Wave-1258 omics canon.
         "transcriptome_studies",
         "proteome_studies",
         "metabolome_studies",
