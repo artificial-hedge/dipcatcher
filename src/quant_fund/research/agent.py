@@ -12047,6 +12047,14 @@ from quant_fund.research.benches_w1506 import (
     bench_merganser_qa_studies_family,
     bench_scoter_qa_studies_family,
 )
+from quant_fund.research.benches_w1507 import (
+    bench_buzzard_qa_studies_family,
+    bench_caracara_qa_studies_family,
+    bench_goshawk_qa_studies_family,
+    bench_merlin_qa_studies_family,
+    bench_peregrine_qa_studies_family,
+    bench_sparrowhawk_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13701,6 +13709,12 @@ def _provenance(
         "mallard_qa_studies": bench_mallard_qa_studies_family,
         "merganser_qa_studies": bench_merganser_qa_studies_family,
         "scoter_qa_studies": bench_scoter_qa_studies_family,
+        "buzzard_qa_studies": bench_buzzard_qa_studies_family,
+        "caracara_qa_studies": bench_caracara_qa_studies_family,
+        "goshawk_qa_studies": bench_goshawk_qa_studies_family,
+        "merlin_qa_studies": bench_merlin_qa_studies_family,
+        "peregrine_qa_studies": bench_peregrine_qa_studies_family,
+        "sparrowhawk_qa_studies": bench_sparrowhawk_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
