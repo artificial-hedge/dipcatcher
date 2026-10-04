@@ -8127,6 +8127,14 @@ from quant_fund.research.benches_w1016 import (
     bench_interference_fringes_family,
     bench_polarization_states_family,
 )
+from quant_fund.research.benches_w1017 import (
+    bench_navier_cauchy_family,
+    bench_plasticity_family,
+    bench_poroelasticity_family,
+    bench_rheology_family,
+    bench_stress_tensor_family,
+    bench_viscoelasticity_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8498,6 +8506,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "navier_cauchy": bench_navier_cauchy_family,
+        "stress_tensor": bench_stress_tensor_family,
+        "rheology": bench_rheology_family,
+        "viscoelasticity": bench_viscoelasticity_family,
+        "plasticity": bench_plasticity_family,
+        "poroelasticity": bench_poroelasticity_family,
         "diffraction_grating": bench_diffraction_grating_family,
         "fourier_optics": bench_fourier_optics_family,
         "interference_fringes": bench_interference_fringes_family,

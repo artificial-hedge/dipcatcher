@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1017 continuum-mechanics canon.
+        "navier_cauchy",
+        "stress_tensor",
+        "rheology",
+        "viscoelasticity",
+        "plasticity",
+        "poroelasticity",
         # Wave-1016 optics-2 canon.
         "diffraction_grating",
         "fourier_optics",
