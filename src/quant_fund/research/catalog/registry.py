@@ -3880,6 +3880,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "luna_moth_qa_studies",
         "tussock_moth_qa_studies",
         "underwing_qa_studies",
+        # Wave-1517 dragonfly canon.
+        "clubtail_qa_studies",
+        "damselfly_qa_studies",
+        "darner_qa_studies",
+        "forktail_qa_studies",
+        "hawker_qa_studies",
+        "spreadwing_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
