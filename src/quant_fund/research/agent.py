@@ -8823,6 +8823,14 @@ from quant_fund.research.benches_w1103 import (
     bench_severe_weather_family,
     bench_tropical_meteorology_family,
 )
+from quant_fund.research.benches_w1104 import (
+    bench_american_politics_family,
+    bench_policy_analysis_family,
+    bench_political_behavior_family,
+    bench_political_methodology_family,
+    bench_public_law_family,
+    bench_security_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9194,6 +9202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "american_politics": bench_american_politics_family,
+        "political_behavior": bench_political_behavior_family,
+        "public_law": bench_public_law_family,
+        "political_methodology": bench_political_methodology_family,
+        "security_studies": bench_security_studies_family,
+        "policy_analysis": bench_policy_analysis_family,
         "severe_weather": bench_severe_weather_family,
         "boundary_layer_meteorology": bench_boundary_layer_meteorology_family,
         "radar_meteorology": bench_radar_meteorology_family,
