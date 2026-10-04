@@ -6428,6 +6428,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "milkart_qa_studies",
         "tamgak_qa_studies",
         "tesfit_qa_studies",
+        # Wave-1881 numidian-2 canon.
+        "juba_qa_studies",
+        "jugurtha_qa_studies",
+        "massinissa_qa_studies",
+        "micipsa_qa_studies",
+        "naravas_qa_studies",
+        "syphax_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

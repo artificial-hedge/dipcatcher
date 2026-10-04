@@ -15039,6 +15039,14 @@ from quant_fund.research.benches_w1880 import (
     bench_tamgak_qa_studies_family,
     bench_tesfit_qa_studies_family,
 )
+from quant_fund.research.benches_w1881 import (
+    bench_juba_qa_studies_family,
+    bench_jugurtha_qa_studies_family,
+    bench_massinissa_qa_studies_family,
+    bench_micipsa_qa_studies_family,
+    bench_naravas_qa_studies_family,
+    bench_syphax_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
