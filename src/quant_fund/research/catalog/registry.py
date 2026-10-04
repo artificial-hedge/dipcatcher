@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1089 linguistics-2 canon.
+        "sociolinguistics",
+        "psycholinguistics",
+        "computational_linguistics",
+        "corpus_linguistics",
+        "dialectology",
+        "historical_linguistics",
         # Wave-1088 philosophy-2 canon.
         "ancient_philosophy",
         "medieval_philosophy",
