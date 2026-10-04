@@ -7311,6 +7311,14 @@ from quant_fund.research.benches_w914 import (
     bench_runge_kutta4_family,
     bench_verner_rk_family,
 )
+from quant_fund.research.benches_w915 import (
+    bench_bvp_eigen_family,
+    bench_continuation_bvp_family,
+    bench_fusion_tree_family,
+    bench_loser_tree_family,
+    bench_robbins_bvp_family,
+    bench_superposition_bvp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7682,6 +7690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "superposition_bvp": bench_superposition_bvp_family,
+        "continuation_bvp": bench_continuation_bvp_family,
+        "robbins_bvp": bench_robbins_bvp_family,
+        "bvp_eigen": bench_bvp_eigen_family,
+        "loser_tree": bench_loser_tree_family,
+        "fusion_tree": bench_fusion_tree_family,
         "ralston_rk": bench_ralston_rk_family,
         "verner_rk": bench_verner_rk_family,
         "ralston_second": bench_ralston_second_family,
