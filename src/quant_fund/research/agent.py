@@ -8887,6 +8887,14 @@ from quant_fund.research.benches_w1111 import (
     bench_stereochemistry_family,
     bench_supramolecular_chemistry_family,
 )
+from quant_fund.research.benches_w1112 import (
+    bench_biophysics_family,
+    bench_comparative_anatomy_family,
+    bench_developmental_biology_family,
+    bench_ethology_family,
+    bench_evolutionary_biology_family,
+    bench_neurobiology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9258,6 +9266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "biophysics": bench_biophysics_family,
+        "evolutionary_biology": bench_evolutionary_biology_family,
+        "developmental_biology": bench_developmental_biology_family,
+        "neurobiology": bench_neurobiology_family,
+        "ethology": bench_ethology_family,
+        "comparative_anatomy": bench_comparative_anatomy_family,
         "quantum_chemistry": bench_quantum_chemistry_family,
         "spectroscopy": bench_spectroscopy_family,
         "photochemistry": bench_photochemistry_family,
