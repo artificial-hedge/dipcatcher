@@ -15455,6 +15455,14 @@ from quant_fund.research.benches_w1932 import (
     bench_vucub_qa_studies_family,
     bench_xtabay_qa_studies_family,
 )
+from quant_fund.research.benches_w1933 import (
+    bench_bacoo_qa_studies_family,
+    bench_duppy_qa_studies_family,
+    bench_jumbie_qa_studies_family,
+    bench_lagahoo_qa_studies_family,
+    bench_ole_higue_qa_studies_family,
+    bench_soucouyant_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
