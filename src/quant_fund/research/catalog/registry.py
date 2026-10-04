@@ -5273,6 +5273,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kezion_qa_studies",
         "sabazios_qa_studies",
         "zamolxis_qa_studies",
+        # Wave-1716 thracian-myth canon.
+        "heroas_qa_studies",
+        "kottiso_qa_studies",
+        "kotys_qa_studies",
+        "semele_qa_studies",
+        "theandrites_qa_studies",
+        "zibelthiurdos_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
