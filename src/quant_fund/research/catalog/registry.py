@@ -4923,6 +4923,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "skoll_qa_studies",
         "vargbroder_qa_studies",
         "vedrfolnir_qa_studies",
+        # Wave-1666 filipino-myth canon.
+        "agta_qa_studies",
+        "berberoka_qa_studies",
+        "bungisngis_qa_studies",
+        "dalaketnon_qa_studies",
+        "ekek_qa_studies",
+        "engkanto_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
