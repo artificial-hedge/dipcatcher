@@ -11551,6 +11551,14 @@ from quant_fund.research.benches_w1444 import (
     bench_marsh_qa_studies_family,
     bench_pond_qa_studies_family,
 )
+from quant_fund.research.benches_w1445 import (
+    bench_birch_qa_studies_family,
+    bench_cedar_qa_studies_family,
+    bench_elm_qa_studies_family,
+    bench_maple_qa_studies_family,
+    bench_oak_qa_studies_family,
+    bench_willow_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12881,6 +12889,12 @@ def _provenance(
         "estuary_qa_studies": bench_estuary_qa_studies_family,
         "marsh_qa_studies": bench_marsh_qa_studies_family,
         "pond_qa_studies": bench_pond_qa_studies_family,
+        "birch_qa_studies": bench_birch_qa_studies_family,
+        "cedar_qa_studies": bench_cedar_qa_studies_family,
+        "elm_qa_studies": bench_elm_qa_studies_family,
+        "maple_qa_studies": bench_maple_qa_studies_family,
+        "oak_qa_studies": bench_oak_qa_studies_family,
+        "willow_qa_studies": bench_willow_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
