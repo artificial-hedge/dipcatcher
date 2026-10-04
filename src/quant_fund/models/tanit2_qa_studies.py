@@ -7,7 +7,7 @@ def tanit2_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
     """tanit2_qa_studies
 
     check:
-    tanit2_qa_studies: Tanit2QA metrics
+    tanit2_qa_studies: q
     """
     return fit_ok and sample_ok
 
@@ -16,7 +16,7 @@ def tanit2_qa_studies_aux(aux: bool) -> bool:
     """tanit2_qa_studies
 
     aux:
-    tanit2_qa_studies: tanit2, moon mothers, answers, and scores
+    tanit2_qa_studies: u
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tanit2_qa_studies(seed: int = 0) -> float:
     checks.append(not tanit2_qa_studies_ok(False, True))
     checks.append(tanit2_qa_studies_aux(True))
     checks.append(not tanit2_qa_studies_aux(False))
-    checks.append(True)  # phoenician-2 canon
+    checks.append(True)  # amazigh-myth canon
     return float(sum(checks) / len(checks))
 
 
