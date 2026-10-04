@@ -10223,6 +10223,14 @@ from quant_fund.research.benches_w1278 import (
     bench_prefix_caching_studies_family,
     bench_tensor_parallel_studies_family,
 )
+from quant_fund.research.benches_w1279 import (
+    bench_activation_checkpoint_studies_family,
+    bench_fsdp_sharding_studies_family,
+    bench_hybrid_parallel_studies_family,
+    bench_pipeline_schedule_studies_family,
+    bench_sequence_parallel_studies_family,
+    bench_zero_optimizer_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10714,6 +10722,12 @@ def _provenance(
         "early_exit_studies": bench_early_exit_studies_family,
         "prefix_caching_studies": bench_prefix_caching_studies_family,
         "tensor_parallel_studies": bench_tensor_parallel_studies_family,
+        "activation_checkpoint_studies": bench_activation_checkpoint_studies_family,
+        "fsdp_sharding_studies": bench_fsdp_sharding_studies_family,
+        "hybrid_parallel_studies": bench_hybrid_parallel_studies_family,
+        "pipeline_schedule_studies": bench_pipeline_schedule_studies_family,
+        "sequence_parallel_studies": bench_sequence_parallel_studies_family,
+        "zero_optimizer_studies": bench_zero_optimizer_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
