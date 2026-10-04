@@ -5077,6 +5077,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bastet_qa_studies",
         "khonsu_qa_studies",
         "sobek_qa_studies",
+        # Wave-1688 roman-myth-2 canon.
+        "indiges_qa_studies",
+        "lar_qa_studies",
+        "numen_qa_studies",
+        "penates_qa_studies",
+        "terminus_qa_studies",
+        "vertumnus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

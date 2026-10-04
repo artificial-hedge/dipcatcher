@@ -13495,6 +13495,14 @@ from quant_fund.research.benches_w1687 import (
     bench_khonsu_qa_studies_family,
     bench_sobek_qa_studies_family,
 )
+from quant_fund.research.benches_w1688 import (
+    bench_indiges_qa_studies_family,
+    bench_lar_qa_studies_family,
+    bench_numen_qa_studies_family,
+    bench_penates_qa_studies_family,
+    bench_terminus_qa_studies_family,
+    bench_vertumnus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
