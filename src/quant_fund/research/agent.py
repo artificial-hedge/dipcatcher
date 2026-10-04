@@ -8391,6 +8391,14 @@ from quant_fund.research.benches_w1049 import (
     bench_periodontology_family,
     bench_prosthodontics_family,
 )
+from quant_fund.research.benches_w1050 import (
+    bench_clinical_pharmacology_family,
+    bench_drug_metabolism_family,
+    bench_neuropharmacology_family,
+    bench_pharmacodynamics_family,
+    bench_pharmacokinetics_2_family,
+    bench_toxicology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8762,6 +8770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pharmacodynamics": bench_pharmacodynamics_family,
+        "pharmacokinetics_2": bench_pharmacokinetics_2_family,
+        "toxicology": bench_toxicology_family,
+        "clinical_pharmacology": bench_clinical_pharmacology_family,
+        "neuropharmacology": bench_neuropharmacology_family,
+        "drug_metabolism": bench_drug_metabolism_family,
         "dental_anatomy": bench_dental_anatomy_family,
         "oral_pathology": bench_oral_pathology_family,
         "periodontology": bench_periodontology_family,
