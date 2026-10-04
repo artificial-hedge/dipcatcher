@@ -9919,6 +9919,14 @@ from quant_fund.research.benches_w1240 import (
     bench_respiratory_studies_family,
     bench_sleep_breathing_studies_family,
 )
+from quant_fund.research.benches_w1241 import (
+    bench_anemia_studies_family,
+    bench_bleeding_disorders_family,
+    bench_coagulation_studies_family,
+    bench_hemoglobin_studies_family,
+    bench_marrow_studies_family,
+    bench_thrombosis_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10290,6 +10298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "anemia_studies": bench_anemia_studies_family,
+        "coagulation_studies": bench_coagulation_studies_family,
+        "hemoglobin_studies": bench_hemoglobin_studies_family,
+        "thrombosis_medicine": bench_thrombosis_medicine_family,
+        "bleeding_disorders": bench_bleeding_disorders_family,
+        "marrow_studies": bench_marrow_studies_family,
         "respiratory_studies": bench_respiratory_studies_family,
         "asthma_studies": bench_asthma_studies_family,
         "copd_studies": bench_copd_studies_family,

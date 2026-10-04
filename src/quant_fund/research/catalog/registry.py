@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1241 hematology canon.
+        "anemia_studies",
+        "coagulation_studies",
+        "hemoglobin_studies",
+        "thrombosis_medicine",
+        "bleeding_disorders",
+        "marrow_studies",
         # Wave-1240 pulmonology canon.
         "respiratory_studies",
         "asthma_studies",
