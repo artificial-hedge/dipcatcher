@@ -15055,6 +15055,14 @@ from quant_fund.research.benches_w1882 import (
     bench_segimer_qa_studies_family,
     bench_vercina_qa_studies_family,
 )
+from quant_fund.research.benches_w1883 import (
+    bench_aewan_qa_studies_family,
+    bench_banguilet_qa_studies_family,
+    bench_hemmi_qa_studies_family,
+    bench_maziun_qa_studies_family,
+    bench_tissardal_qa_studies_family,
+    bench_zilalsen_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
