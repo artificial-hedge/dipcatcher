@@ -11687,6 +11687,14 @@ from quant_fund.research.benches_w1461 import (
     bench_sloth_qa_studies_family,
     bench_toucan_qa_studies_family,
 )
+from quant_fund.research.benches_w1462 import (
+    bench_crab_qa_studies_family,
+    bench_jellyfish_qa_studies_family,
+    bench_octopus_qa_studies_family,
+    bench_seahorse_qa_studies_family,
+    bench_squid_qa_studies_family,
+    bench_stingray_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13119,6 +13127,12 @@ def _provenance(
         "orangutan_qa_studies": bench_orangutan_qa_studies_family,
         "sloth_qa_studies": bench_sloth_qa_studies_family,
         "toucan_qa_studies": bench_toucan_qa_studies_family,
+        "crab_qa_studies": bench_crab_qa_studies_family,
+        "jellyfish_qa_studies": bench_jellyfish_qa_studies_family,
+        "octopus_qa_studies": bench_octopus_qa_studies_family,
+        "seahorse_qa_studies": bench_seahorse_qa_studies_family,
+        "squid_qa_studies": bench_squid_qa_studies_family,
+        "stingray_qa_studies": bench_stingray_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
