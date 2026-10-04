@@ -10351,6 +10351,14 @@ from quant_fund.research.benches_w1294 import (
     bench_reading_vector_studies_family,
     bench_refusal_vector_studies_family,
 )
+from quant_fund.research.benches_w1295 import (
+    bench_activation_patch_studies_family,
+    bench_circuit_tracer_studies_family,
+    bench_feature_dashboard_studies_family,
+    bench_jailbreak_detect_studies_family,
+    bench_mech_anomaly_studies_family,
+    bench_sae_linter_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10938,6 +10946,12 @@ def _provenance(
         "honesty_vector_studies": bench_honesty_vector_studies_family,
         "reading_vector_studies": bench_reading_vector_studies_family,
         "refusal_vector_studies": bench_refusal_vector_studies_family,
+        "activation_patch_studies": bench_activation_patch_studies_family,
+        "circuit_tracer_studies": bench_circuit_tracer_studies_family,
+        "feature_dashboard_studies": bench_feature_dashboard_studies_family,
+        "jailbreak_detect_studies": bench_jailbreak_detect_studies_family,
+        "mech_anomaly_studies": bench_mech_anomaly_studies_family,
+        "sae_linter_studies": bench_sae_linter_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
