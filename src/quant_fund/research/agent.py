@@ -12927,6 +12927,14 @@ from quant_fund.research.benches_w1616 import (
     bench_krill_qa_studies_family,
     bench_sandhopper_qa_studies_family,
 )
+from quant_fund.research.benches_w1617 import (
+    bench_amber_mountain_qa_studies_family,
+    bench_anosy_qa_studies_family,
+    bench_daraina_qa_studies_family,
+    bench_red_bellied_qa_studies_family,
+    bench_russet_qa_studies_family,
+    bench_white_footed_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15066,6 +15074,12 @@ def _provenance(
         "amphipod_qa_studies": bench_amphipod_qa_studies_family,
         "barnacle_qa_studies": bench_barnacle_qa_studies_family,
         "copepod_qa_studies": bench_copepod_qa_studies_family,
+        "amber_mountain_qa_studies": bench_amber_mountain_qa_studies_family,
+        "anosy_qa_studies": bench_anosy_qa_studies_family,
+        "daraina_qa_studies": bench_daraina_qa_studies_family,
+        "red_bellied_qa_studies": bench_red_bellied_qa_studies_family,
+        "russet_qa_studies": bench_russet_qa_studies_family,
+        "white_footed_qa_studies": bench_white_footed_qa_studies_family,
         "isopod_qa_studies": bench_isopod_qa_studies_family,
         "krill_qa_studies": bench_krill_qa_studies_family,
         "sandhopper_qa_studies": bench_sandhopper_qa_studies_family,
