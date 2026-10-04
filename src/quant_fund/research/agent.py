@@ -15119,6 +15119,14 @@ from quant_fund.research.benches_w1890 import (
     bench_pairika_qa_studies_family,
     bench_spenta_mainyu_qa_studies_family,
 )
+from quant_fund.research.benches_w1891 import (
+    bench_bergelmir_qa_studies_family,
+    bench_jormunrek_qa_studies_family,
+    bench_khan_tengri_qa_studies_family,
+    bench_peri_qa_studies_family,
+    bench_umm_sibyan_qa_studies_family,
+    bench_ymir_hrimthurs_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

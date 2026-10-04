@@ -6498,6 +6498,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "khshathra_qa_studies",
         "pairika_qa_studies",
         "spenta_mainyu_qa_studies",
+        # Wave-1891 folk-spirit lore canon.
+        "bergelmir_qa_studies",
+        "jormunrek_qa_studies",
+        "khan_tengri_qa_studies",
+        "peri_qa_studies",
+        "umm_sibyan_qa_studies",
+        "ymir_hrimthurs_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
