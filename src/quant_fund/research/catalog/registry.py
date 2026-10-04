@@ -4755,6 +4755,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "qiongqi_qa_studies",
         "taotie_qa_studies",
         "taowu_qa_studies",
+        # Wave-1642 chimera canon.
+        "basilisk_2_qa_studies",
+        "chimera_2_qa_studies",
+        "cockatrice_qa_studies",
+        "manticore_2_qa_studies",
+        "sphinx_2_qa_studies",
+        "wyvern_2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
