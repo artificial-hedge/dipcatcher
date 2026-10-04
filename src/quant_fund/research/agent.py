@@ -8159,6 +8159,14 @@ from quant_fund.research.benches_w1020 import (
     bench_neutral_theory_family,
     bench_predator_prey_family,
 )
+from quant_fund.research.benches_w1021 import (
+    bench_branching_epidemic_family,
+    bench_herd_immunity_family,
+    bench_r0_estimation_family,
+    bench_seir_epidemic_family,
+    bench_sir_epidemic_family,
+    bench_sis_epidemic_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8530,6 +8538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sir_epidemic": bench_sir_epidemic_family,
+        "sis_epidemic": bench_sis_epidemic_family,
+        "seir_epidemic": bench_seir_epidemic_family,
+        "r0_estimation": bench_r0_estimation_family,
+        "herd_immunity": bench_herd_immunity_family,
+        "branching_epidemic": bench_branching_epidemic_family,
         "predator_prey": bench_predator_prey_family,
         "lotka_volterra": bench_lotka_volterra_family,
         "logistic_growth": bench_logistic_growth_family,
