@@ -4767,6 +4767,14 @@ from quant_fund.research.benches_w596 import (
     bench_kisin_mod_family,
     bench_padic_hodge_family,
 )
+from quant_fund.research.benches_w597 import (
+    bench_bousfield_kan_family,
+    bench_curtis_lower_family,
+    bench_dror_smith_family,
+    bench_lannes_t_family,
+    bench_periodicity_thm_family,
+    bench_telescope_conj_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5146,6 +5154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "curtis_lower": bench_curtis_lower_family,
+        "bousfield_kan": bench_bousfield_kan_family,
+        "lannes_t": bench_lannes_t_family,
+        "dror_smith": bench_dror_smith_family,
+        "telescope_conj": bench_telescope_conj_family,
+        "periodicity_thm": bench_periodicity_thm_family,
         "breuil_mod": bench_breuil_mod_family,
         "kisin_mod": bench_kisin_mod_family,
         "galois_lattice": bench_galois_lattice_family,
