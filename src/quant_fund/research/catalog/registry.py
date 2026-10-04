@@ -3383,6 +3383,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maple_qa_studies",
         "oak_qa_studies",
         "willow_qa_studies",
+        # Wave-1446 instrument canon.
+        "cello_qa_studies",
+        "drum_qa_studies",
+        "flute_qa_studies",
+        "guitar_qa_studies",
+        "piano_qa_studies",
+        "violin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

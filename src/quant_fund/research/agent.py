@@ -11559,6 +11559,14 @@ from quant_fund.research.benches_w1445 import (
     bench_oak_qa_studies_family,
     bench_willow_qa_studies_family,
 )
+from quant_fund.research.benches_w1446 import (
+    bench_cello_qa_studies_family,
+    bench_drum_qa_studies_family,
+    bench_flute_qa_studies_family,
+    bench_guitar_qa_studies_family,
+    bench_piano_qa_studies_family,
+    bench_violin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12895,6 +12903,12 @@ def _provenance(
         "maple_qa_studies": bench_maple_qa_studies_family,
         "oak_qa_studies": bench_oak_qa_studies_family,
         "willow_qa_studies": bench_willow_qa_studies_family,
+        "cello_qa_studies": bench_cello_qa_studies_family,
+        "drum_qa_studies": bench_drum_qa_studies_family,
+        "flute_qa_studies": bench_flute_qa_studies_family,
+        "guitar_qa_studies": bench_guitar_qa_studies_family,
+        "piano_qa_studies": bench_piano_qa_studies_family,
+        "violin_qa_studies": bench_violin_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
