@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-644 algebraic-K-8 canon.
+        "s_multicat",
+        "allday_k",
+        "residue_k",
+        "suslin_wagoner",
+        "weibel_nil",
+        "hall_alg",
         # Wave-643 homotopy-18 canon.
         "toda_smith",
         "mahowald_inv",
