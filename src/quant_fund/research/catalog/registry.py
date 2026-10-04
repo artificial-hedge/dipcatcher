@@ -3684,6 +3684,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oncilla_qa_studies",
         "panther_qa_studies",
         "tiger_qa_studies",
+        # Wave-1489 bloom canon.
+        "clover_qa_studies",
+        "heather_qa_studies",
+        "lavender_qa_studies",
+        "lilac_qa_studies",
+        "marigold_qa_studies",
+        "primrose_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

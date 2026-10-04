@@ -11903,6 +11903,14 @@ from quant_fund.research.benches_w1488 import (
     bench_panther_qa_studies_family,
     bench_tiger_qa_studies_family,
 )
+from quant_fund.research.benches_w1489 import (
+    bench_clover_qa_studies_family,
+    bench_heather_qa_studies_family,
+    bench_lavender_qa_studies_family,
+    bench_lilac_qa_studies_family,
+    bench_marigold_qa_studies_family,
+    bench_primrose_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13475,6 +13483,12 @@ def _provenance(
         "dingo_qa_studies": bench_dingo_qa_studies_family,
         "kodkod_qa_studies": bench_kodkod_qa_studies_family,
         "oncilla_qa_studies": bench_oncilla_qa_studies_family,
+        "clover_qa_studies": bench_clover_qa_studies_family,
+        "heather_qa_studies": bench_heather_qa_studies_family,
+        "lavender_qa_studies": bench_lavender_qa_studies_family,
+        "lilac_qa_studies": bench_lilac_qa_studies_family,
+        "marigold_qa_studies": bench_marigold_qa_studies_family,
+        "primrose_qa_studies": bench_primrose_qa_studies_family,
         "panther_qa_studies": bench_panther_qa_studies_family,
         "tiger_qa_studies": bench_tiger_qa_studies_family,
         "kittiwake_qa_studies": bench_kittiwake_qa_studies_family,
