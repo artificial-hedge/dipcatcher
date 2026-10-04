@@ -12527,6 +12527,14 @@ from quant_fund.research.benches_w1566 import (
     bench_sturgeon_qa_studies_family,
     bench_walleye_qa_studies_family,
 )
+from quant_fund.research.benches_w1567 import (
+    bench_barbel_qa_studies_family,
+    bench_bream_qa_studies_family,
+    bench_carp_qa_studies_family,
+    bench_minnow_qa_studies_family,
+    bench_roach_qa_studies_family,
+    bench_tench_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14486,6 +14494,12 @@ def _provenance(
         "bluegill_qa_studies": bench_bluegill_qa_studies_family,
         "crappie_qa_studies": bench_crappie_qa_studies_family,
         "perch_qa_studies": bench_perch_qa_studies_family,
+        "barbel_qa_studies": bench_barbel_qa_studies_family,
+        "bream_qa_studies": bench_bream_qa_studies_family,
+        "carp_qa_studies": bench_carp_qa_studies_family,
+        "minnow_qa_studies": bench_minnow_qa_studies_family,
+        "roach_qa_studies": bench_roach_qa_studies_family,
+        "tench_qa_studies": bench_tench_qa_studies_family,
         "pike_qa_studies": bench_pike_qa_studies_family,
         "sturgeon_qa_studies": bench_sturgeon_qa_studies_family,
         "walleye_qa_studies": bench_walleye_qa_studies_family,
