@@ -1,3 +1,4 @@
+w1348 NLI-eval canon: anli_r1_studies, anli_r2_studies, anli_r3_studies, mnli_match_studies, scitail_lite_studies, snli_lite_studies (8037->8043)
 w1347 logical-reasoning-eval canon: abductive_nli_studies, conseq_log_studies, logiqa_log_studies, lsat_log_studies, reason_mc_studies, recli_log_studies (8031->8037)
 w1346 KB-QA canon: grail_qa_studies, graph_questions_studies, kqa_pro_studies, lc_quad_studies, mintaka_qa_studies, spinach_qa_studies (8025->8031)
 w1345 open-domain-QA canon: complex_qa_studies, entity_quests_studies, freebase_qa_studies, nq_open_studies, trivia_qa_studies, web_qa_studies (8019->8025)
