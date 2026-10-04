@@ -11367,6 +11367,14 @@ from quant_fund.research.benches_w1421 import (
     bench_spatial_qa_studies_family,
     bench_terrain_qa_studies_family,
 )
+from quant_fund.research.benches_w1422 import (
+    bench_calendar_qa_studies_family,
+    bench_century_qa_studies_family,
+    bench_date_qa_studies_family,
+    bench_decade_qa_studies_family,
+    bench_epoch_qa_studies_family,
+    bench_era_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12559,6 +12567,12 @@ def _provenance(
         "route_qa_studies": bench_route_qa_studies_family,
         "spatial_qa_studies": bench_spatial_qa_studies_family,
         "terrain_qa_studies": bench_terrain_qa_studies_family,
+        "calendar_qa_studies": bench_calendar_qa_studies_family,
+        "century_qa_studies": bench_century_qa_studies_family,
+        "date_qa_studies": bench_date_qa_studies_family,
+        "decade_qa_studies": bench_decade_qa_studies_family,
+        "epoch_qa_studies": bench_epoch_qa_studies_family,
+        "era_qa_studies": bench_era_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
