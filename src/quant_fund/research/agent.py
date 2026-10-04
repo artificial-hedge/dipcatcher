@@ -8815,6 +8815,14 @@ from quant_fund.research.benches_w1102 import (
     bench_tectonics_family,
     bench_volcanology_family,
 )
+from quant_fund.research.benches_w1103 import (
+    bench_boundary_layer_meteorology_family,
+    bench_micrometeorology_family,
+    bench_polar_meteorology_family,
+    bench_radar_meteorology_family,
+    bench_severe_weather_family,
+    bench_tropical_meteorology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9186,6 +9194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "severe_weather": bench_severe_weather_family,
+        "boundary_layer_meteorology": bench_boundary_layer_meteorology_family,
+        "radar_meteorology": bench_radar_meteorology_family,
+        "tropical_meteorology": bench_tropical_meteorology_family,
+        "polar_meteorology": bench_polar_meteorology_family,
+        "micrometeorology": bench_micrometeorology_family,
         "mineralogy": bench_mineralogy_family,
         "volcanology": bench_volcanology_family,
         "sedimentology": bench_sedimentology_family,
