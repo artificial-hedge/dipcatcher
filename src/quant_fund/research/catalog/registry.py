@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-715 cluster-algebra canon.
+        "cluster_algebra",
+        "quiver_mutation",
+        "tilting_object",
+        "auslander_reiten",
+        "cluster_category",
+        "silting_object",
         # Wave-714 motivic-25 canon.
         "motivic_total",
         "motivic_partial",

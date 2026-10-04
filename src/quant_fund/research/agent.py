@@ -5711,6 +5711,14 @@ from quant_fund.research.benches_w714 import (
     bench_motivic_partial_family,
     bench_motivic_total_family,
 )
+from quant_fund.research.benches_w715 import (
+    bench_auslander_reiten_family,
+    bench_cluster_algebra_family,
+    bench_cluster_category_family,
+    bench_quiver_mutation_family,
+    bench_silting_object_family,
+    bench_tilting_object_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6090,6 +6098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cluster_algebra": bench_cluster_algebra_family,
+        "quiver_mutation": bench_quiver_mutation_family,
+        "tilting_object": bench_tilting_object_family,
+        "auslander_reiten": bench_auslander_reiten_family,
+        "cluster_category": bench_cluster_category_family,
+        "silting_object": bench_silting_object_family,
         "motivic_total": bench_motivic_total_family,
         "motivic_partial": bench_motivic_partial_family,
         "motivic_functor": bench_motivic_functor_family,
