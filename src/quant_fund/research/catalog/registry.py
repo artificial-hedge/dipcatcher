@@ -5728,6 +5728,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lleu_qa_studies",
         "lludd_qa_studies",
         "taliesin_qa_studies",
+        # Wave-1781 greek-myth-8 canon.
+        "apollo_qa_studies",
+        "artemis_qa_studies",
+        "athena_qa_studies",
+        "demeter_qa_studies",
+        "hera_qa_studies",
+        "persephone_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

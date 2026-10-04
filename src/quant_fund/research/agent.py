@@ -14239,6 +14239,14 @@ from quant_fund.research.benches_w1780 import (
     bench_lludd_qa_studies_family,
     bench_taliesin_qa_studies_family,
 )
+from quant_fund.research.benches_w1781 import (
+    bench_apollo_qa_studies_family,
+    bench_artemis_qa_studies_family,
+    bench_athena_qa_studies_family,
+    bench_demeter_qa_studies_family,
+    bench_hera_qa_studies_family,
+    bench_persephone_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
