@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1018 relativity-2 canon.
+        "lorentz_transformation",
+        "spacetime_interval",
+        "four_vectors",
+        "geodesic_motion",
+        "gravitational_lensing",
+        "gravitational_waves",
         # Wave-1017 continuum-mechanics canon.
         "navier_cauchy",
         "stress_tensor",
