@@ -6722,6 +6722,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nakki_qa_studies",
         "painajainen_qa_studies",
         "tursas_qa_studies",
+        # Wave-1923 chinese-demon canon.
+        "baigujing_qa_studies",
+        "hanba_qa_studies",
+        "jiuying_qa_studies",
+        "nian_qa_studies",
+        "wuzhiqi_qa_studies",
+        "xiangliu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
