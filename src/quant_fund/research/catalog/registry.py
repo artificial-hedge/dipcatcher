@@ -3530,6 +3530,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "crag_qa_studies",
         "plateau_qa_studies",
         "ravine_qa_studies",
+        # Wave-1467 highland canon.
+        "arch_qa_studies",
+        "steppe_qa_studies",
+        "summit_qa_studies",
+        "tundra_qa_studies",
+        "valley_qa_studies",
+        "volcano_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
