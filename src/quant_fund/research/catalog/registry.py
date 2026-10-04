@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-975 distribution-theory canon.
+        "schwartz_dist",
+        "temper_dist",
+        "dist_convolution",
+        "sing_support",
+        "paley_wiener",
+        "sobolev_trace",
         # Wave-974 interpolation-theory canon.
         "real_interp_k",
         "complex_interp",
