@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-997 dispersive-PDE canon.
+        "nls_dispersion",
+        "kdv_dispersion",
+        "strichartz_estimates",
+        "local_smoothing",
+        "bilinear_estimates",
+        "i_method",
         # Wave-996 Riemann-Hilbert canon.
         "dbar_method",
         "orthogonal_poly_rh",

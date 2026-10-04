@@ -1,3 +1,4 @@
+feat(research): wave 997 — dispersive-PDE canon (nls_dispersion, kdv_dispersion, strichartz_estimates, local_smoothing, bilinear_estimates, i_method) (5931->5937 families)
 feat(research): wave 996 — Riemann-Hilbert canon (dbar_method, orthogonal_poly_rh, isomonodromy, fokas_unified, deift_zhou, small_norm_rh) (5925->5931 families)
 feat(research): wave 995 — integrable-systems canon (sine_gordon, nls_soliton, toda_lattice, calogero_moser, kp_hierarchy, painleve_eq) (5919->5925 families)
 feat(research): wave 994 — inverse-spectral canon (inverse_scattering, marchenko_eq, gelfand_levitan, kdv_isospectral, trace_formulas, borg_levinson) (5913->5919 families)
