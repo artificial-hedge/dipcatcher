@@ -16,7 +16,7 @@ def bastet_qa_studies_aux(aux: bool) -> bool:
     """bastet_qa_studies
 
     aux:
-    bastet_qa_studies: bastet, hearth cats, answers, and scores
+    bastet_qa_studies: bastet, cat guardians, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_bastet_qa_studies(seed: int = 0) -> float:
     checks.append(not bastet_qa_studies_ok(False, True))
     checks.append(bastet_qa_studies_aux(True))
     checks.append(not bastet_qa_studies_aux(False))
-    checks.append(True)  # egyptian-2 canon
+    checks.append(True)  # egyptian-4 canon
     return float(sum(checks) / len(checks))
 
 

@@ -5679,6 +5679,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sif_qa_studies",
         "vali_qa_studies",
         "vitharr_qa_studies",
+        # Wave-1774 egyptian-4 canon.
+        "bastet_qa_studies",
+        "hathor_qa_studies",
+        "nut_qa_studies",
+        "sekhmet_qa_studies",
+        "sobek_qa_studies",
+        "thoth_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

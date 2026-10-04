@@ -14183,6 +14183,14 @@ from quant_fund.research.benches_w1773 import (
     bench_vali_qa_studies_family,
     bench_vitharr_qa_studies_family,
 )
+from quant_fund.research.benches_w1774 import (
+    bench_bastet_qa_studies_family,
+    bench_hathor_qa_studies_family,
+    bench_nut_qa_studies_family,
+    bench_sekhmet_qa_studies_family,
+    bench_sobek_qa_studies_family,
+    bench_thoth_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
