@@ -3187,6 +3187,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "howto_qa_studies",
         "instruct_qa_studies",
         "lesson_qa_studies",
+        # Wave-1418 lore-reference canon.
+        "almanac_qa_studies",
+        "atlas_qa_studies",
+        "idiom_qa_studies",
+        "jeopardy_qa_studies",
+        "misc_qa_studies",
+        "myth_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
