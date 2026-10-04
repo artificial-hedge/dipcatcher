@@ -4986,6 +4986,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lemures_qa_studies",
         "manes_qa_studies",
         "penates_qa_studies",
+        # Wave-1675 aztec-myth canon.
+        "chaneque_qa_studies",
+        "cihuateteo_qa_studies",
+        "nagual_qa_studies",
+        "tlalocan_qa_studies",
+        "tzitzimitl_qa_studies",
+        "xiuhcoatl_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
