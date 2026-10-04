@@ -5759,6 +5759,14 @@ from quant_fund.research.benches_w720 import (
     bench_rouquier_dim_family,
     bench_serre_dim_family,
 )
+from quant_fund.research.benches_w721 import (
+    bench_beilinson_height_family,
+    bench_brown_motives_family,
+    bench_mixed_elliptic_family,
+    bench_motivic_pi_family,
+    bench_mzc_motive_family,
+    bench_zeta_element_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6138,6 +6146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "brown_motives": bench_brown_motives_family,
+        "mzc_motive": bench_mzc_motive_family,
+        "zeta_element": bench_zeta_element_family,
+        "mixed_elliptic": bench_mixed_elliptic_family,
+        "motivic_pi": bench_motivic_pi_family,
+        "beilinson_height": bench_beilinson_height_family,
         "cluster_tilting": bench_cluster_tilting_family,
         "derived_morita": bench_derived_morita_family,
         "preprojective_alg": bench_preprojective_alg_family,
