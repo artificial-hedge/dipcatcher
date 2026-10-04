@@ -6029,6 +6029,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sulde2_qa_studies",
         "tengri2_qa_studies",
         "ukerm2_qa_studies",
+        # Wave-1824 hungarian-myth-2 canon.
+        "boszorka2_qa_studies",
+        "liderec2_qa_studies",
+        "remete2_qa_studies",
+        "sarkany2_qa_studies",
+        "tatros2_qa_studies",
+        "turul2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
