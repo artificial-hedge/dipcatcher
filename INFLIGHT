@@ -1,3 +1,4 @@
+w1276 interpretability-3 canon: attribution_patching_studies, causal_scrubbing_studies, function_vector_studies, induction_head_studies, monosemantic_studies, superposition_studies (7605->7611)
 w1275 inference-scaling canon: deliberate_search_studies, latent_reasoning_studies, self_improvement_studies, test_time_scaling_studies, tree_thought_studies, verifier_gated_studies (7599->7605)
 w1274 agent-infrastructure canon: agent_memory_studies, code_agent_studies, computer_use_studies, mcp_protocol_studies, skill_library_studies, web_agent_studies (7593->7599)
 w1273 AI-safety canon: alignment_eval_studies, guardrail_studies, hallucination_detect_studies, jailbreak_defense_studies, red_team_studies, sleeper_agent_studies (7587->7593)
