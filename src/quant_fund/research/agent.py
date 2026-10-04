@@ -7999,6 +7999,14 @@ from quant_fund.research.benches_w1000 import (
     bench_mindlin_reissner_family,
     bench_navier_elasticity_family,
 )
+from quant_fund.research.benches_w1001 import (
+    bench_beale_kato_majda_family,
+    bench_euler_equations_family,
+    bench_ladyzhenskaya_weak_family,
+    bench_leray_theory_family,
+    bench_navier_stokes_family,
+    bench_vorticity_form_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8370,6 +8378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "euler_equations": bench_euler_equations_family,
+        "navier_stokes": bench_navier_stokes_family,
+        "vorticity_form": bench_vorticity_form_family,
+        "beale_kato_majda": bench_beale_kato_majda_family,
+        "ladyzhenskaya_weak": bench_ladyzhenskaya_weak_family,
+        "leray_theory": bench_leray_theory_family,
         "navier_elasticity": bench_navier_elasticity_family,
         "kirchhoff_plate": bench_kirchhoff_plate_family,
         "mindlin_reissner": bench_mindlin_reissner_family,
