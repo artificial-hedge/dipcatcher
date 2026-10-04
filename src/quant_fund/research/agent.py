@@ -13815,6 +13815,14 @@ from quant_fund.research.benches_w1727 import (
     bench_tenger_qa_studies_family,
     bench_ulgan_qa_studies_family,
 )
+from quant_fund.research.benches_w1728 import (
+    bench_boszorka_qa_studies_family,
+    bench_csaba_qa_studies_family,
+    bench_garabonci_qa_studies_family,
+    bench_isten_qa_studies_family,
+    bench_liderc_qa_studies_family,
+    bench_taltos_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
