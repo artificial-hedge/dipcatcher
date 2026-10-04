@@ -8783,6 +8783,14 @@ from quant_fund.research.benches_w1098 import (
     bench_political_anthropology_family,
     bench_urban_anthropology_family,
 )
+from quant_fund.research.benches_w1099 import (
+    bench_abnormal_psychology_family,
+    bench_forensic_psychology_family,
+    bench_health_psychology_family,
+    bench_neuropsychology_family,
+    bench_organizational_psychology_family,
+    bench_personality_psychology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9154,6 +9162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "personality_psychology": bench_personality_psychology_family,
+        "abnormal_psychology": bench_abnormal_psychology_family,
+        "health_psychology": bench_health_psychology_family,
+        "neuropsychology": bench_neuropsychology_family,
+        "forensic_psychology": bench_forensic_psychology_family,
+        "organizational_psychology": bench_organizational_psychology_family,
         "biological_anthropology": bench_biological_anthropology_family,
         "paleoanthropology": bench_paleoanthropology_family,
         "medical_anthropology": bench_medical_anthropology_family,
