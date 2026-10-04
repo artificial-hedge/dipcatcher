@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1311 safety-benchmark canon.
+        "aegis_studies",
+        "air_bench_studies",
+        "overkill_studies",
+        "salad_bench_studies",
+        "sorry_bench_studies",
+        "wildguard_studies",
         # Wave-1310 generation-quality canon.
         "alpaca_eval_studies",
         "attribution_eval_studies",
