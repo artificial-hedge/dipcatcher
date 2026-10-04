@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-593 nonabelian-Hodge canon.
+        "higgs_bundle2",
+        "hitchin_section",
+        "simpson_corr",
+        "nonabelian_hodge",
+        "harmonic_bdl",
+        "hodge_moduli",
         # Wave-592 tensor-category canon.
         "tensor_cat",
         "braided_cat",
