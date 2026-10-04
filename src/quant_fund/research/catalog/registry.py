@@ -4776,6 +4776,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "medusa_2_qa_studies",
         "scylla_qa_studies",
         "siren_2_qa_studies",
+        # Wave-1645 monster canon.
+        "argus_qa_studies",
+        "cerberus_2_qa_studies",
+        "nemean_qa_studies",
+        "orthrus_qa_studies",
+        "pegasus_2_qa_studies",
+        "typhon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
