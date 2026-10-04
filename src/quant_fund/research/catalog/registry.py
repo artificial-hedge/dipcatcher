@@ -4930,6 +4930,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dalaketnon_qa_studies",
         "ekek_qa_studies",
         "engkanto_qa_studies",
+        # Wave-1667 greek-nature canon.
+        "centauride_qa_studies",
+        "dryad_qa_studies",
+        "faun_qa_studies",
+        "hamadryad_qa_studies",
+        "nereid_qa_studies",
+        "nymph_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
