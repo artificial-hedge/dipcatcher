@@ -13087,6 +13087,14 @@ from quant_fund.research.benches_w1636 import (
     bench_nue_2_qa_studies_family,
     bench_tsuchinoko_qa_studies_family,
 )
+from quant_fund.research.benches_w1637 import (
+    bench_abura_sumashi_qa_studies_family,
+    bench_azukiarai_qa_studies_family,
+    bench_betobeto_2_qa_studies_family,
+    bench_futakuchi_qa_studies_family,
+    bench_rokurokubi_qa_studies_family,
+    bench_shirime_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15331,6 +15339,12 @@ def _provenance(
         "namahage_qa_studies": bench_namahage_qa_studies_family,
         "nue_2_qa_studies": bench_nue_2_qa_studies_family,
         "tsuchinoko_qa_studies": bench_tsuchinoko_qa_studies_family,
+        "abura_sumashi_qa_studies": bench_abura_sumashi_qa_studies_family,
+        "azukiarai_qa_studies": bench_azukiarai_qa_studies_family,
+        "betobeto_2_qa_studies": bench_betobeto_2_qa_studies_family,
+        "futakuchi_qa_studies": bench_futakuchi_qa_studies_family,
+        "rokurokubi_qa_studies": bench_rokurokubi_qa_studies_family,
+        "shirime_qa_studies": bench_shirime_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
