@@ -172,8 +172,10 @@ def _swap_lines(path: Path, i: int, j: int) -> None:
 
 
 def _probe_journal_recovery() -> dict[str, bool]:
-    """Malformed/reordered journal lines: prefix recovery holds, but the
-    key store swallows every replay warning and can resurrect revokes."""
+    """Malformed/reordered journal lines: prefix recovery holds, the key
+    store surfaces replay warnings like the other journaled stores, and
+    tamper-shaped corruption quarantines instead of resurrecting
+    revokes."""
     out: dict[str, bool] = {}
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "keys.jsonl"
@@ -187,12 +189,12 @@ def _probe_journal_recovery() -> dict[str, bool]:
         out["keystore_recovers_prefix_keys"] = (
             reloaded.authenticate(raw_a) is not None and reloaded.get(rec_b["key_id"]) is None
         )
-        # divergence: job/idem stores publish `recover_warnings`; the key
-        # store drops the list, so an operator sees a healthy boot while
-        # a minted key is gone
+        # the store publishes `recover_warnings` like the job/idem
+        # stores — a dropped suffix is loud on boot, never a silent gap
         out["keystore_warns_on_corrupt_journal"] = bool(getattr(reloaded, "recover_warnings", None))
-        # resurrect: corrupt the revoke record itself — replay drops it
-        # and everything after; the dead key must still stay dead
+        # resurrect guard: corrupt the revoke record itself — replay
+        # drops it and everything after; tamper-shaped corruption fails
+        # closed (replayed keys quarantine) so the dead key stays dead
         p2 = Path(td) / "keys2.jsonl"
         s2 = ApiKeyStore(journal=JobJournal(p2))
         raw_v, rec_v = s2.mint(name="victim")
@@ -206,9 +208,8 @@ def _probe_journal_recovery() -> dict[str, bool]:
             and not rec_v2.get("enabled", True)
             and s3.authenticate(raw_v) is None
         )
-        # post-corruption mint: accepted and works in memory, but the
-        # journal still truncates at the torn line — the new key is
-        # unreachable on the next boot
+        # post-corruption mint: the boot compact repairs the journal
+        # chain, so a key minted after recovery persists to the next boot
         raw_c, rec_c = s3.mint(name="post")
         s4 = ApiKeyStore(journal=JobJournal(p2))
         out["post_corruption_mint_survives_restart"] = (
@@ -314,9 +315,8 @@ def _probe_lifecycle() -> dict[str, bool]:
         raw_q, rec_q = s1.mint(max_requests=2)
         s1.authenticate(raw_q)
         s2 = ApiKeyStore(journal=JobJournal(p))
-        # divergence: uses/tokens_used are in-memory mutations — the
-        # journal only carries mint/revoke records, so a restart hands a
-        # spent key its full budget back
+        # usage counters journal as record snapshots — a restart
+        # restores the spend instead of resetting the budget
         rec_q2 = s2.get(rec_q["key_id"])
         out["quota_persists_across_restart"] = rec_q2 is not None and rec_q2["uses"] == 1
 
@@ -396,8 +396,8 @@ def _probe_wire_abuse() -> dict[str, bool]:
     out["wire_wrong_content_type_422"] = r.status_code == 422
     deep = b'{"command":"doctor","x":' + b"[" * 3000 + b"]" * 3000 + b"}"
     r = client.post("/harness/runs", content=deep, headers={"content-type": "application/json"})
-    # divergence: json.loads recursion escapes the 4xx envelope — a bare
-    # 500 instead of a structured refusal
+    # json.loads recursion lands in the structured 4xx envelope like
+    # every other malformed body — never a bare 500
     out["wire_deep_json_fails_closed"] = r.status_code in (400, 413, 422)
 
     with _root_env():
@@ -536,7 +536,7 @@ def _probe_idempotency() -> dict[str, bool]:
     out["idem_conflict_under_drain"] = r5.status_code == 409
 
     # same-key concurrent submit: every racer must see ONE execution —
-    # measured: the lookup→put window lets threads miss the cache
+    # the store's claim_lock serializes the check-then-put span
     out["idem_race_single_execution"] = _race_until_defect(
         lambda tag: _idem_race("/harness/runs", tag), "fa-race"
     )

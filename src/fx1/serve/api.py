@@ -55,6 +55,7 @@ from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import (
     AbstractAsyncContextManager,
+    AbstractContextManager,
     asynccontextmanager,
     contextmanager,
 )
@@ -1900,6 +1901,16 @@ def _breaker_key(body: CompleteRequest | CompleteBatchRequest) -> str:
     return _breaker_key_name(body.backend, body.byok)
 
 
+def _idem_key(idempotency_key: str | None) -> str | None:
+    """Normalize + bound an ``Idempotency-Key`` — ``None`` when absent,
+    400 when over the cap. Shared by the lookup preamble and by routes
+    that take a store's ``claim_lock`` around check+execute+put."""
+    key = (idempotency_key or "").strip() or None
+    if key is not None and len(key) > _IDEM_KEY_MAX:
+        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+    return key
+
+
 def _idem_lookup[IdemT: BaseModel](
     idempotency_key: str | None,
     store: _IdemStore[IdemT],
@@ -1909,11 +1920,9 @@ def _idem_lookup[IdemT: BaseModel](
     look up a stored replay. Returns ``(key, cached)`` — a cached hit
     is the response to return verbatim plus ``replayed: True``; a key
     reused with a different body fails closed 409."""
-    key = (idempotency_key or "").strip() or None
+    key = _idem_key(idempotency_key)
     if key is None:
         return None, None
-    if len(key) > _IDEM_KEY_MAX:
-        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
     entry = store.get(key)
     if entry is None:
         return key, None
@@ -1995,93 +2004,96 @@ def _submit_job(
     """Job submission core: idempotency lookup -> command validation ->
     slot admission -> background execution. The slot is held for the
     job's lifetime and released by the worker, so the queue can never
-    grow past ``max_inflight`` (no unbounded buffering)."""
-    key = (idempotency_key or "").strip() or None
-    if key is not None and len(key) > _IDEM_KEY_MAX:
-        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-    body_fp = _body_fp(body, exclude={"idempotency_key"})
-    if key is not None:
-        entry = job_store.get_key(key)
-        if entry is not None:
-            fp, job_id = entry
-            if fp != body_fp:
-                raise ApiError(
-                    409,
-                    "Idempotency-Key reuse with a different request body",
-                )
-            job = job_store.get(job_id)
-            if job is not None:
-                return JobSubmitResponse(job_id=job_id, status=job.status, replayed=True)
-    try:
-        lab.get(body.command)  # fail closed at submit, not in the worker
-    except KeyError as exc:
-        raise ApiError(404, str(exc)) from exc
-    if metrics.draining.is_set():
-        raise ApiError(503, "harness is draining — no new work accepted", code="draining")
-    if not inflight.acquire(blocking=False):
-        raise ApiError(
-            503,
-            f"harness at max_inflight={metrics.max_inflight} — retry later",
-            code="over_capacity",
-            headers={"Retry-After": "1"},
-        )
-    metrics.acquire()
-    job = JobStatusResponse(
-        job_id=uuid.uuid4().hex,
-        status="queued",
-        created_at=time.time(),
-        finished_at=None,
-        result=None,
-        error=None,
-        callback_url=body.callback_url,
-    )
-    job._callback_secret = body.callback_secret
+    grow past ``max_inflight`` (no unbounded buffering).
 
-    def _exec() -> None:
-        if job.status == "cancelled":
+    The whole span runs under the key's ``claim_lock``: concurrent
+    same-key submits serialize behind the leader and replay its stored
+    job id rather than each minting their own."""
+    key = _idem_key(idempotency_key)
+    body_fp = _body_fp(body, exclude={"idempotency_key"})
+    with job_store.claim_lock(key):
+        if key is not None:
+            entry = job_store.get_key(key)
+            if entry is not None:
+                fp, job_id = entry
+                if fp != body_fp:
+                    raise ApiError(
+                        409,
+                        "Idempotency-Key reuse with a different request body",
+                    )
+                job = job_store.get(job_id)
+                if job is not None:
+                    return JobSubmitResponse(job_id=job_id, status=job.status, replayed=True)
+        try:
+            lab.get(body.command)  # fail closed at submit, not in the worker
+        except KeyError as exc:
+            raise ApiError(404, str(exc)) from exc
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                f"harness at max_inflight={metrics.max_inflight} — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        job = JobStatusResponse(
+            job_id=uuid.uuid4().hex,
+            status="queued",
+            created_at=time.time(),
+            finished_at=None,
+            result=None,
+            error=None,
+            callback_url=body.callback_url,
+        )
+        job._callback_secret = body.callback_secret
+
+        def _exec() -> None:
+            if job.status == "cancelled":
+                metrics.release()
+                inflight.release()
+                return
+            job.status = "running"
+            job_store.mark(job)
+            try:
+                result = lab.run(
+                    body.command,
+                    body.extra_args or None,
+                    config=Path(body.config) if body.config else None,
+                )
+                command = lab.get(body.command)
+                stdout, stdout_truncated = _cap_job_text(result.stdout)
+                stderr, stderr_truncated = _cap_job_text(result.stderr)
+                job.result = HarnessRunResponse(
+                    command=result.command,
+                    exit_code=result.exit_code,
+                    stdout=stdout,
+                    stderr=stderr,
+                    ok=result.ok,
+                    timeout_s=command.timeout_s,
+                    stdout_truncated=stdout_truncated,
+                    stderr_truncated=stderr_truncated,
+                )
+                job.status = "succeeded"
+            except Exception as exc:  # noqa: BLE001 — worker faults land in the record
+                job.error = f"{type(exc).__name__}: {exc}"
+                job.status = "failed"
+            finally:
+                _deliver_callback(job)
+            job.finished_at = time.time()
+            job_store.mark(job)
             metrics.release()
             inflight.release()
-            return
-        job.status = "running"
-        job_store.mark(job)
-        try:
-            result = lab.run(
-                body.command,
-                body.extra_args or None,
-                config=Path(body.config) if body.config else None,
-            )
-            command = lab.get(body.command)
-            stdout, stdout_truncated = _cap_job_text(result.stdout)
-            stderr, stderr_truncated = _cap_job_text(result.stderr)
-            job.result = HarnessRunResponse(
-                command=result.command,
-                exit_code=result.exit_code,
-                stdout=stdout,
-                stderr=stderr,
-                ok=result.ok,
-                timeout_s=command.timeout_s,
-                stdout_truncated=stdout_truncated,
-                stderr_truncated=stderr_truncated,
-            )
-            job.status = "succeeded"
-        except Exception as exc:  # noqa: BLE001 — worker faults land in the record
-            job.error = f"{type(exc).__name__}: {exc}"
-            job.status = "failed"
-        finally:
-            _deliver_callback(job)
-        job.finished_at = time.time()
-        job_store.mark(job)
-        metrics.release()
-        inflight.release()
 
-    try:
-        jobs_executor.submit(_exec)
-    except RuntimeError as exc:  # executor gone (shutdown race)
-        metrics.release()
-        inflight.release()
-        raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-    job_store.put(job, key, body_fp)
-    return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
+        try:
+            jobs_executor.submit(_exec)
+        except RuntimeError as exc:  # executor gone (shutdown race)
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        job_store.put(job, key, body_fp)
+        return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
 
 def _make_lifespan(
@@ -2447,6 +2459,47 @@ def _mount_job_routes(
         )
 
 
+class _ClaimLocks:
+    """Bounded map of per-key mutexes — the single-execution primitive
+    for ``Idempotency-Key`` check+insert.
+
+    A route holds its key's lock across the store lookup, the work, and
+    the ``put``: same-key racers serialize behind the leader, and the
+    second comer replays the stored answer instead of double-executing
+    (the check-then-put window is the defect this closes). Entries are
+    bounded like the store itself — the oldest *unheld* lock evicts
+    first, so a lock is never stolen mid-flight; if every lock is held
+    the map overshoots the bound rather than break dedup."""
+
+    def __init__(self, bound: int) -> None:
+        self._guard = threading.Lock()
+        self._locks: OrderedDict[str, threading.Lock] = OrderedDict()
+        self._bound = bound
+
+    @contextmanager
+    def hold(self, key: str | None) -> Iterator[None]:
+        """Hold ``key``'s mutex for the lookup+execute+put span.
+
+        ``None`` (no idempotency key) is a no-op hold — unsynchronized
+        calls keep their plain path."""
+        if key is None:
+            yield
+            return
+        with self._guard:
+            lock = self._locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._locks[key] = lock
+            self._locks.move_to_end(key)
+            while len(self._locks) > self._bound:
+                stale = next((k for k, held in self._locks.items() if not held.locked()), None)
+                if stale is None:
+                    break
+                del self._locks[stale]
+        with lock:
+            yield
+
+
 class _IdemStore[IdemT: BaseModel]:
     """Bounded LRU of ``Idempotency-Key`` -> stored response.
 
@@ -2454,6 +2507,10 @@ class _IdemStore[IdemT: BaseModel]:
     retry a submission after a transport blip without double-executing
     the work. Read-only replays bypass the drain latch and the
     concurrency cap: the work already happened.
+
+    Routes needing single-execution under concurrent same-key submits
+    wrap lookup+execute+put in :meth:`claim_lock` — the second racer
+    then replays the leader's stored answer rather than re-running it.""
 
     With a ``JobJournal`` bound, each ``put`` is journaled (key,
     fingerprint, and the stored response itself — the replay *is* the
@@ -2473,6 +2530,7 @@ class _IdemStore[IdemT: BaseModel]:
         self._max = max_entries
         self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
         self._journal = journal
+        self._claims = _ClaimLocks(max_entries)
         self.recover_warnings: list[str] = []
         if journal is not None:
             if model is None:
@@ -2500,6 +2558,12 @@ class _IdemStore[IdemT: BaseModel]:
                     for k, (fp, resp) in self._map.items()
                 ]
             )
+
+    def claim_lock(self, key: str | None) -> AbstractContextManager[None]:
+        """Per-key mutex spanning the idempotent route's lookup+execute
+        +put — makes the check-and-insert atomic so concurrent same-key
+        submits single-execute instead of each missing the cache."""
+        return self._claims.hold(key)
 
     def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
@@ -2601,6 +2665,7 @@ class _JobStore:
         self._job_key: dict[str, str] = {}
         self._job_fp: dict[str, str] = {}
         self._journal = journal
+        self._claims = _ClaimLocks(max_entries)
         self.recover_warnings: list[str] = []
         if journal is not None:
             res = journal.replay()
@@ -2695,6 +2760,12 @@ class _JobStore:
                 if self._journal is not None:
                     self._journal.append(self._record(job))
             return out
+
+    def claim_lock(self, key: str | None) -> AbstractContextManager[None]:
+        """Per-key mutex spanning job submit's get_key+execute+put —
+        same-key concurrent submits single-mint instead of each missing
+        the index window."""
+        return self._claims.hold(key)
 
     def get_key(self, key: str) -> tuple[str, str] | None:
         with self._lock:
@@ -8695,6 +8766,23 @@ def create_app(
             content=jsonable_encoder({"detail": exc.errors(), "code": "validation"}),
         )
 
+    @app.exception_handler(RecursionError)
+    async def _recursion_error(request: Request, exc: RecursionError) -> JSONResponse:
+        """A JSON body nested past the interpreter's recursion ceiling
+        escapes ``request.json()`` as ``RecursionError``, not
+        ``RequestValidationError`` — still a client fault, so it lands in
+        the same structured 4xx envelope instead of a bare 500."""
+        msg = "request body exceeds maximum JSON depth"
+        if is_openai_path(request.url.path):
+            return JSONResponse(
+                status_code=400,
+                content=_v1_error_body(request.url.path, msg, 400, "bad_request"),
+            )
+        return JSONResponse(
+            status_code=400,
+            content={"detail": msg, "code": "bad_request"},
+        )
+
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
         request_id = _request_id(request.headers.get("x-request-id"))
@@ -9156,32 +9244,37 @@ def create_app(
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
         body_fp = _body_fp(body, exclude={"idempotency_key"})
-        key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
-        if replay is not None:
-            return replay
-        with _work_gate():
-            try:
-                result = lab.run(
-                    body.command,
-                    body.extra_args or None,
-                    config=Path(body.config) if body.config else None,
+        key = _idem_key(idempotency_key or body.idempotency_key)
+        # the key's claim_lock spans lookup+execute+put: a same-key racer
+        # serializes behind the leader and replays its stored answer
+        # instead of double-executing through the check-then-put window
+        with idem_store.claim_lock(key):
+            _, replay = _idem_lookup(key, idem_store, body_fp)
+            if replay is not None:
+                return replay
+            with _work_gate():
+                try:
+                    result = lab.run(
+                        body.command,
+                        body.extra_args or None,
+                        config=Path(body.config) if body.config else None,
+                    )
+                except KeyError as exc:
+                    raise ApiError(404, str(exc)) from exc
+                except ValueError as exc:
+                    raise ApiError(422, str(exc)) from exc
+                command = lab.get(body.command)
+                resp = HarnessRunResponse(
+                    command=result.command,
+                    exit_code=result.exit_code,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    ok=result.ok,
+                    timeout_s=command.timeout_s,
                 )
-            except KeyError as exc:
-                raise ApiError(404, str(exc)) from exc
-            except ValueError as exc:
-                raise ApiError(422, str(exc)) from exc
-            command = lab.get(body.command)
-            resp = HarnessRunResponse(
-                command=result.command,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                stderr=result.stderr,
-                ok=result.ok,
-                timeout_s=command.timeout_s,
-            )
-        if key is not None:
-            idem_store.put(key, body_fp, resp)
-        return resp
+            if key is not None:
+                idem_store.put(key, body_fp, resp)
+            return resp
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
     _mount_key_introspection(app, key_store=key_store, completion_log=completion_log)

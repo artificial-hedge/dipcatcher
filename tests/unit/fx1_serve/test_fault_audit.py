@@ -7,10 +7,11 @@ import pytest
 from fx1.serve.fault_audit import fault_audit, fault_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
-# Probes pinned False on live, measured divergences. Each names the
-# expected contract; when a fix lands the probe flips True, the failing
-# assertion below forces the pin to shrink, and the receipt reseals.
-_KNOWN_DEFECTS = {
+# Probes that pinned False as measured divergences before the fix lane.
+# Each names the contract it now holds; the assertion below keeps them
+# regression-pinned True so a reversion re-breaks the test, not the
+# receipt.
+_FORMER_DEFECTS = {
     "keystore_warns_on_corrupt_journal",
     "revoked_key_stays_dead_through_corruption",
     "post_corruption_mint_survives_restart",
@@ -30,21 +31,19 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_contract_probes_hold() -> None:
     results = fault_audit()
     for name, ok in results.items():
-        if name not in _KNOWN_DEFECTS:
-            assert ok is True, f"probe {name} failed"
+        assert ok is True, f"probe {name} failed"
 
 
-def test_defect_probes_reproduce() -> None:
-    """Each pinned defect still measures the live divergence."""
+def test_defect_probes_fixed() -> None:
+    """Each formerly pinned defect now measures the fixed contract."""
     results = fault_audit()
-    assert results.keys() >= _KNOWN_DEFECTS
-    for name in sorted(_KNOWN_DEFECTS):
-        assert results[name] is False, f"defect {name} no longer reproduces"
+    for name in sorted(_FORMER_DEFECTS):
+        assert results.get(name) is True, f"former defect {name} regressed"
 
 
 def test_receipt_verifies() -> None:
     blob = fault_audit_bench()
-    assert blob["claim"]["ok"] is False  # defects are pinned, not hidden
+    assert blob["claim"]["ok"] is True
     verdict = verify_receipt_payload(blob)
     assert verdict["valid"] is True
 

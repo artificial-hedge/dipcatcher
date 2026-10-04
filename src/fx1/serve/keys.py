@@ -17,9 +17,22 @@ Honesty rules:
   delete — the audit trail of which key existed stays.
 - Under ``--state-dir`` every mint/revoke is journaled (hash-chained
   JSONL, verified on replay) so a restart does not resurrect a revoked
-  key or lose a minted one. ``uses``/``last_used_at`` are live
-  operational counters — deliberately NOT journaled (a per-request fsync
-  would tax the hot path); they reset honestly to zero on restart.
+  key or lose a minted one. ``uses``/``tokens_used``/``last_used_at``
+  ride the same journal as counter-snapshot records — a restart restores
+  the spend instead of handing an exhausted budget back. Only the rpm
+  window counters (``_window_*``) stay live-only. Boot replays then
+  compacts the journal, folding counter churn back into one record per
+  key.
+- Replay fails closed on tamper-shaped corruption and reports every
+  break on ``recover_warnings`` (same contract as the job/idem stores).
+  A torn *final* line — the crash-mid-append signature — truncates
+  honestly and the verified prefix still boots. A well-formed line that
+  fails verification, or damage mid-file, means the dropped suffix may
+  have carried a revoke: every replayed key then quarantines
+  (``enabled=False`` + ``quarantined`` marker, ``recovery_quarantined``
+  flips) so a dead credential can never resurrect through corruption —
+  the records stay listed for audit and the compacted journal keeps
+  post-recovery mints durable.
 - Auth failure is uniform: bad credentials and absent credentials get
   the same 401 shape as a wrong env key — no oracle for which entries
   exist. Expired keys fail the same way — a dead credential is a dead
@@ -44,10 +57,10 @@ Honesty rules:
   refuses ``quota_exceeded`` once ``uses`` reaches ``max_requests``
   authenticated calls, or once its reported token spend (charged out of
   the completion log as providers report it) reaches ``max_tokens``.
-  Budgets are declared durably at mint but meter on live counters —
-  like ``uses``, they reset on restart; a budget gates the *next*
-  call, so the request that crosses the token line completes and only
-  then counts against the next one.
+  Budgets are declared durably at mint and meter on journaled counters —
+  a restart restores the spend, never resets it; a budget gates the
+  *next* call, so the request that crosses the token line completes and
+  only then counts against the next one.
 """
 
 from __future__ import annotations
@@ -145,8 +158,25 @@ class ApiKeyStore:
         self._by_id: dict[str, str] = {}  # key_id -> sha256
         self._journal = journal
         self._clock = clock
+        # Operator-visible recovery diagnostics, same contract as the
+        # job/idem stores: every chain break lands a warning here instead
+        # of booting silently past dropped records.
+        self.recover_warnings: list[str] = []
+        # Set when replay found tamper-shaped corruption (a verified-fail
+        # line or mid-file damage): the dropped suffix may have carried a
+        # revoke, so recovered keys boot disabled for audit rather than
+        # trusting the prefix — fail closed, never resurrect.
+        self.recovery_quarantined = False
         if journal is not None:
             res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            tampered = res.dropped > 0 and not res.torn_tail
+            if tampered:
+                self.recovery_quarantined = True
+                self.recover_warnings.append(
+                    f"journal {journal.path.name}: unverified line(s) mid-journal — "
+                    "replayed keys quarantined (fail closed)"
+                )
             for payload in res.payloads:
                 rec = payload.get("record")
                 if isinstance(rec, dict) and isinstance(rec.get("sha256"), str):
@@ -158,10 +188,23 @@ class ApiKeyStore:
                     rec.setdefault("max_requests", None)
                     rec.setdefault("max_tokens", None)
                     rec.setdefault("tokens_used", 0)
+                    rec.setdefault("uses", 0)
+                    rec.setdefault("last_used_at", None)
+                    if tampered:
+                        rec["enabled"] = False
+                        rec["quarantined"] = True
                     self._by_hash[rec["sha256"]] = rec
                     kid = rec.get("key_id")
                     if isinstance(kid, str):
                         self._by_id[kid] = rec["sha256"]
+            # Compact on boot like _JobStore — folds counter-snapshot
+            # churn into one record per key and repairs a torn or
+            # tampered tail so post-recovery mints land on a healthy
+            # chain. Only when there is state to fold or repair: a
+            # virgin store creates its journal lazily on first mint, so
+            # a never-written state dir never gains an empty file.
+            if res.payloads or res.dropped > 0:
+                self._compact_locked()
 
     @property
     def has_keys(self) -> bool:
@@ -173,6 +216,14 @@ class ApiKeyStore:
     def _append(self, rec: dict[str, Any]) -> None:
         if self._journal is not None:
             self._journal.append({"record": rec})
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal holding only the live records — same
+        boot-time fold as ``_JobStore._compact_locked``: dead history,
+        counter-snapshot churn, and torn/tampered tails never accumulate.
+        Caller holds ``self._lock`` or runs at construction."""
+        if self._journal is not None:
+            self._journal.compact([{"record": rec} for rec in self._by_hash.values()])
 
     def mint(
         self,
@@ -249,7 +300,8 @@ class ApiKeyStore:
 
     def authenticate(self, raw: str) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
-        Bumps the live use counters (not journaled).
+        Bumps the use counters and journals the snapshot, so a restart
+        keeps the key's spend instead of resetting it.
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
@@ -298,6 +350,9 @@ class ApiKeyStore:
                 rec["_window_count"] += 1
             rec["uses"] += 1
             rec["last_used_at"] = now
+            # journal the counter snapshot under the same lock — a restart
+            # restores the spend instead of resetting the budget
+            self._append(rec)
             return _wire(rec)
 
     def window_state(self, key_id: str) -> tuple[int, int, int] | None:
@@ -334,6 +389,7 @@ class ApiKeyStore:
             rec = self._by_hash.get(sha) if sha is not None else None
             if rec is not None:
                 rec["tokens_used"] = int(rec.get("tokens_used", 0)) + int(tokens)
+                self._append(rec)
 
     def get(self, key_id: str) -> dict[str, Any] | None:
         with self._lock:

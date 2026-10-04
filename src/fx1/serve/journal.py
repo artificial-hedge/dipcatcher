@@ -60,12 +60,22 @@ def _line_bytes(seq: int, chain: str, payload: dict[str, Any]) -> bytes:
 class ReplayResult:
     """What ``replay`` found: verified payloads in order, plus where the
     chain broke (``truncated_at`` is the byte offset of the first bad
-    line; ``dropped`` counts lines after it)."""
+    line; ``dropped`` counts lines after it).
+
+    ``torn_tail`` marks the benign break shape: the first bad line is an
+    unparseable *final* line — the signature of a crash mid-append — so
+    the verified prefix is intact and only durability was lost. Any other
+    break (a well-formed line that fails verification, or unparseable
+    damage with valid lines behind it) is tamper-shaped: the dropped
+    suffix may have carried state a security-relevant store cannot
+    ignore, and such callers should fail closed rather than trust the
+    replayed prefix."""
 
     payloads: list[dict[str, Any]]
     truncated_at: int | None = None
     dropped: int = 0
     warnings: list[str] = field(default_factory=list)
+    torn_tail: bool = False
 
 
 class JobJournal:
@@ -126,6 +136,9 @@ class JobJournal:
             if not ok:
                 out.truncated_at = offset - len(raw)
                 out.dropped = len(data[out.truncated_at :].splitlines())
+                # torn tail = unparseable final line (crash mid-append);
+                # everything else is tamper-shaped and fail-close worthy.
+                out.torn_tail = line is None and offset >= len(data)
                 out.warnings.append(
                     f"journal {self.path.name}: chain broke at byte "
                     f"{out.truncated_at} ({out.dropped} line(s) dropped)"
