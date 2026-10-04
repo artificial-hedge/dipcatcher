@@ -3110,6 +3110,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "time_qa_studies",
         "timedial_qa_studies",
         "timetravel_lite_studies",
+        # Wave-1407 conversational-QA canon.
+        "canard_lite_studies",
+        "clarq_lite_studies",
+        "doqa_lite_studies",
+        "duread_qa_studies",
+        "orchid_qa_studies",
+        "qrecc_lite_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
