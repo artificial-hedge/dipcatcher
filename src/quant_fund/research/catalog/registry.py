@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-800 stochastic-vol canon.
+        "heston_model",
+        "bates_model",
+        "rough_heston",
+        "sabr_model",
+        "three_two_vol",
+        "scott_vol",
         # Wave-799 path-PDE canon.
         "path_dependent_pde",
         "functional_ito",

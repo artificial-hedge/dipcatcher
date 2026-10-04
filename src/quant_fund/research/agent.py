@@ -6391,6 +6391,14 @@ from quant_fund.research.benches_w799 import (
     bench_path_sobolev_family,
     bench_viscosity_path_family,
 )
+from quant_fund.research.benches_w800 import (
+    bench_bates_model_family,
+    bench_heston_model_family,
+    bench_rough_heston_family,
+    bench_sabr_model_family,
+    bench_scott_vol_family,
+    bench_three_two_vol_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6770,6 +6778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "heston_model": bench_heston_model_family,
+        "bates_model": bench_bates_model_family,
+        "rough_heston": bench_rough_heston_family,
+        "sabr_model": bench_sabr_model_family,
+        "three_two_vol": bench_three_two_vol_family,
+        "scott_vol": bench_scott_vol_family,
         "path_dependent_pde": bench_path_dependent_pde_family,
         "functional_ito": bench_functional_ito_family,
         "dupire_functional": bench_dupire_functional_family,
