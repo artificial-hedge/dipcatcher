@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1082 jewish studies canon.
+        "jewish_studies",
+        "talmudic_studies",
+        "hebrew_language",
+        "rabbinics",
+        "kabbalah",
+        "jewish_philosophy",
         # Wave-1081 renaissance/early modern canon.
         "renaissance_studies",
         "early_modern",

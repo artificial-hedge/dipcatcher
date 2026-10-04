@@ -8647,6 +8647,14 @@ from quant_fund.research.benches_w1081 import (
     bench_reformation_studies_family,
     bench_renaissance_studies_family,
 )
+from quant_fund.research.benches_w1082 import (
+    bench_hebrew_language_family,
+    bench_jewish_philosophy_family,
+    bench_jewish_studies_family,
+    bench_kabbalah_family,
+    bench_rabbinics_family,
+    bench_talmudic_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9018,6 +9026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jewish_studies": bench_jewish_studies_family,
+        "talmudic_studies": bench_talmudic_studies_family,
+        "hebrew_language": bench_hebrew_language_family,
+        "rabbinics": bench_rabbinics_family,
+        "kabbalah": bench_kabbalah_family,
+        "jewish_philosophy": bench_jewish_philosophy_family,
         "renaissance_studies": bench_renaissance_studies_family,
         "early_modern": bench_early_modern_family,
         "humanism": bench_humanism_family,
