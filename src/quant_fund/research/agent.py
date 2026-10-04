@@ -13015,6 +13015,14 @@ from quant_fund.research.benches_w1627 import (
     bench_stygobite_qa_studies_family,
     bench_troglofish_qa_studies_family,
 )
+from quant_fund.research.benches_w1628 import (
+    bench_colugo_qa_studies_family,
+    bench_geoffroy_qa_studies_family,
+    bench_mandarin_qa_studies_family,
+    bench_moray_eel_qa_studies_family,
+    bench_pangolin_2_qa_studies_family,
+    bench_satyr_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15205,6 +15213,12 @@ def _provenance(
         "cave_worm_qa_studies": bench_cave_worm_qa_studies_family,
         "stygobite_qa_studies": bench_stygobite_qa_studies_family,
         "troglofish_qa_studies": bench_troglofish_qa_studies_family,
+        "colugo_qa_studies": bench_colugo_qa_studies_family,
+        "geoffroy_qa_studies": bench_geoffroy_qa_studies_family,
+        "mandarin_qa_studies": bench_mandarin_qa_studies_family,
+        "moray_eel_qa_studies": bench_moray_eel_qa_studies_family,
+        "pangolin_2_qa_studies": bench_pangolin_2_qa_studies_family,
+        "satyr_qa_studies": bench_satyr_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,

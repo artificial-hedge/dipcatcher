@@ -4657,6 +4657,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cave_worm_qa_studies",
         "stygobite_qa_studies",
         "troglofish_qa_studies",
+        # Wave-1628 exotic-fauna canon.
+        "colugo_qa_studies",
+        "geoffroy_qa_studies",
+        "mandarin_qa_studies",
+        "moray_eel_qa_studies",
+        "pangolin_2_qa_studies",
+        "satyr_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
