@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1327 safety-bias-eval canon.
+        "bbq_bias_studies",
+        "bold_bias_studies",
+        "crowspairs_studies",
+        "holist_bias_studies",
+        "realtoxicity_studies",
+        "toxigen_eval_studies",
         # Wave-1326 privacy-inference-2 canon.
         "attribute_inference_studies",
         "canary_memorization_studies",
