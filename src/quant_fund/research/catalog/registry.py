@@ -6617,6 +6617,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kishi_demon_qa_studies",
         "obayifo_qa_studies",
         "ogboni_qa_studies",
+        # Wave-1908 brazilian-slavic remnant canon.
+        "anhanga_qa_studies",
+        "bolotnik_qa_studies",
+        "dvorovoy_qa_studies",
+        "jurupari_qa_studies",
+        "lobisomem_qa_studies",
+        "mula_sem_cabeca_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
