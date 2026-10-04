@@ -3096,6 +3096,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "msrvtt_qa_studies",
         "nextqa_lite_studies",
         "star_qa_lite_studies",
+        # Wave-1405 audio-QA canon.
+        "ambi_qa_studies",
+        "audio_qa_lite_studies",
+        "avsd_lite_studies",
+        "clotho_qa_studies",
+        "esc_qa_studies",
+        "music_avqa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
