@@ -12823,6 +12823,14 @@ from quant_fund.research.benches_w1603 import (
     bench_tufted_qa_studies_family,
     bench_water_deer_qa_studies_family,
 )
+from quant_fund.research.benches_w1604 import (
+    bench_dassie_qa_studies_family,
+    bench_gopher_qa_studies_family,
+    bench_mole_qa_studies_family,
+    bench_rabbit_qa_studies_family,
+    bench_shrew_qa_studies_family,
+    bench_springhare_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14923,6 +14931,12 @@ def _provenance(
         "musk_deer_qa_studies": bench_musk_deer_qa_studies_family,
         "pampas_deer_qa_studies": bench_pampas_deer_qa_studies_family,
         "tufted_qa_studies": bench_tufted_qa_studies_family,
+        "dassie_qa_studies": bench_dassie_qa_studies_family,
+        "gopher_qa_studies": bench_gopher_qa_studies_family,
+        "mole_qa_studies": bench_mole_qa_studies_family,
+        "rabbit_qa_studies": bench_rabbit_qa_studies_family,
+        "shrew_qa_studies": bench_shrew_qa_studies_family,
+        "springhare_qa_studies": bench_springhare_qa_studies_family,
         "water_deer_qa_studies": bench_water_deer_qa_studies_family,
         "moonrat_qa_studies": bench_moonrat_qa_studies_family,
         "sengi_qa_studies": bench_sengi_qa_studies_family,

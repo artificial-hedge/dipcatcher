@@ -4489,6 +4489,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pampas_deer_qa_studies",
         "tufted_qa_studies",
         "water_deer_qa_studies",
+        # Wave-1604 burrow-mammal canon.
+        "dassie_qa_studies",
+        "gopher_qa_studies",
+        "mole_qa_studies",
+        "rabbit_qa_studies",
+        "shrew_qa_studies",
+        "springhare_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
