@@ -9079,6 +9079,14 @@ from quant_fund.research.benches_w1135 import (
     bench_sports_medicine_family,
     bench_urology_family,
 )
+from quant_fund.research.benches_w1136 import (
+    bench_environmental_law_family,
+    bench_evidence_law_family,
+    bench_family_law_family,
+    bench_immigration_law_family,
+    bench_labor_law_family,
+    bench_tax_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9450,6 +9458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "environmental_law": bench_environmental_law_family,
+        "family_law": bench_family_law_family,
+        "labor_law": bench_labor_law_family,
+        "tax_law": bench_tax_law_family,
+        "evidence_law": bench_evidence_law_family,
+        "immigration_law": bench_immigration_law_family,
         "urology": bench_urology_family,
         "ophthalmology": bench_ophthalmology_family,
         "otolaryngology": bench_otolaryngology_family,

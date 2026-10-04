@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1136 law-4 canon.
+        "environmental_law",
+        "family_law",
+        "labor_law",
+        "tax_law",
+        "evidence_law",
+        "immigration_law",
         # Wave-1135 medicine-5 canon.
         "urology",
         "ophthalmology",
