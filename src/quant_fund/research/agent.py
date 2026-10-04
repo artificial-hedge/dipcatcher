@@ -9943,6 +9943,14 @@ from quant_fund.research.benches_w1243 import (
     bench_sexually_transmitted_studies_family,
     bench_tuberculosis_studies_family,
 )
+from quant_fund.research.benches_w1244 import (
+    bench_ct_imaging_studies_family,
+    bench_mammography_studies_family,
+    bench_mri_studies_family,
+    bench_neuroradiology_studies_family,
+    bench_pet_imaging_studies_family,
+    bench_ultrasound_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10314,6 +10322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "neuroradiology_studies": bench_neuroradiology_studies_family,
+        "mammography_studies": bench_mammography_studies_family,
+        "ultrasound_studies": bench_ultrasound_studies_family,
+        "ct_imaging_studies": bench_ct_imaging_studies_family,
+        "mri_studies": bench_mri_studies_family,
+        "pet_imaging_studies": bench_pet_imaging_studies_family,
         "sepsis_studies": bench_sepsis_studies_family,
         "tuberculosis_studies": bench_tuberculosis_studies_family,
         "mycosis_studies": bench_mycosis_studies_family,
