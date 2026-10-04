@@ -2432,6 +2432,10 @@ export interface components {
              * @default false
              */
             admin: boolean;
+            /** Max Requests */
+            max_requests?: number | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
             /** Name */
             name?: string | null;
             /** Rpm */
@@ -2467,6 +2471,10 @@ export interface components {
             id: string;
             /** Key */
             key: string;
+            /** Max Requests */
+            max_requests: number | null;
+            /** Max Tokens */
+            max_tokens: number | null;
             /** Name */
             name: string | null;
             /**
@@ -2481,6 +2489,8 @@ export interface components {
             rpm: number | null;
             /** Scopes */
             scopes: string[];
+            /** Tokens Used */
+            tokens_used: number;
         };
         /**
          * ApiKeyRecordModel
@@ -2500,6 +2510,10 @@ export interface components {
             id: string;
             /** Last Used At */
             last_used_at: number | null;
+            /** Max Requests */
+            max_requests: number | null;
+            /** Max Tokens */
+            max_tokens: number | null;
             /** Name */
             name: string | null;
             /**
@@ -2516,6 +2530,8 @@ export interface components {
             rpm: number | null;
             /** Scopes */
             scopes: string[];
+            /** Tokens Used */
+            tokens_used: number;
             /** Uses */
             uses: number;
         };

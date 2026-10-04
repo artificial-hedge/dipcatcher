@@ -531,6 +531,32 @@
             "title": "Admin",
             "type": "boolean"
           },
+          "max_requests": {
+            "anyOf": [
+              {
+                "maximum": 2147483647.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requests"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "maximum": 9.223372036854776e+18,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
           "name": {
             "anyOf": [
               {
@@ -641,6 +667,28 @@
             "title": "Key",
             "type": "string"
           },
+          "max_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requests"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
           "name": {
             "anyOf": [
               {
@@ -679,6 +727,10 @@
             },
             "title": "Scopes",
             "type": "array"
+          },
+          "tokens_used": {
+            "title": "Tokens Used",
+            "type": "integer"
           }
         },
         "required": [
@@ -688,8 +740,11 @@
           "admin",
           "scopes",
           "rpm",
+          "max_requests",
+          "max_tokens",
           "expires_at",
           "created_at",
+          "tokens_used",
           "key"
         ],
         "title": "ApiKeyMintResponse",
@@ -736,6 +791,28 @@
               }
             ],
             "title": "Last Used At"
+          },
+          "max_requests": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Requests"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
           },
           "name": {
             "anyOf": [
@@ -787,6 +864,10 @@
             "title": "Scopes",
             "type": "array"
           },
+          "tokens_used": {
+            "title": "Tokens Used",
+            "type": "integer"
+          },
           "uses": {
             "title": "Uses",
             "type": "integer"
@@ -799,11 +880,14 @@
           "admin",
           "scopes",
           "rpm",
+          "max_requests",
+          "max_tokens",
           "expires_at",
           "created_at",
           "enabled",
           "revoked_at",
           "uses",
+          "tokens_used",
           "last_used_at"
         ],
         "title": "ApiKeyRecordModel",

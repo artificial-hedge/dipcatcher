@@ -387,12 +387,13 @@ export class HarnessApiClient {
     return Number.isFinite(secs) && secs >= 0 ? secs * 1000 : null;
   }
 
-  /** 429 always retries; 503 only when it carries Retry-After (the
-   * in-flight cap — a backend-misconfig 503 never will). */
+  /** 429/503 retry only when they carry Retry-After — every retryable
+   * refusal on this wire declares one (rate windows, in-flight cap); a
+   * hard `quota_exceeded` 429 carries none and is terminal. */
   private static retryable(res: Response): boolean {
     return (
-      res.status === 429 ||
-      (res.status === 503 && HarnessApiClient.retryAfterMs(res) !== null)
+      (res.status === 429 || res.status === 503) &&
+      HarnessApiClient.retryAfterMs(res) !== null
     );
   }
 
@@ -735,6 +736,8 @@ export class HarnessApiClient {
     rpm?: number,
     ttlS?: number,
     scopes?: string[],
+    maxRequests?: number,
+    maxTokens?: number,
   ): Promise<ApiKeyMintResponse> {
     const body: {
       name?: string;
@@ -742,12 +745,16 @@ export class HarnessApiClient {
       rpm?: number;
       ttl_s?: number;
       scopes?: string[];
+      max_requests?: number;
+      max_tokens?: number;
     } = {};
     if (name !== undefined) body.name = name;
     if (admin !== undefined) body.admin = admin;
     if (rpm !== undefined) body.rpm = rpm;
     if (ttlS !== undefined) body.ttl_s = ttlS;
     if (scopes !== undefined) body.scopes = scopes;
+    if (maxRequests !== undefined) body.max_requests = maxRequests;
+    if (maxTokens !== undefined) body.max_tokens = maxTokens;
     const res = await this.send({
       method: "POST",
       path: "/harness/keys",

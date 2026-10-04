@@ -1465,6 +1465,29 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "rpm": 5,
             "ttl_s": 60.0,
             "scopes": None,
+            "max_requests": None,
+            "max_tokens": None,
+        }
+        kcq = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--name",
+                "svc",
+                "--max-requests",
+                "100",
+                "--max-tokens",
+                "500000",
+            ],
+        )
+        out["key_create_quota_forwards"] = kcq.exit_code == 0 and fake.last_key_kw == {
+            "admin": False,
+            "rpm": None,
+            "ttl_s": None,
+            "scopes": None,
+            "max_requests": 100,
+            "max_tokens": 500000,
         }
         kc3 = runner.invoke(
             app,
@@ -1484,6 +1507,8 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "rpm": None,
             "ttl_s": None,
             "scopes": ["read", "write"],
+            "max_requests": None,
+            "max_tokens": None,
         }
         kl = runner.invoke(app, ["harness", "keys"])
         out["key_list_json"] = (
@@ -2552,6 +2577,27 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "rpm": 5,
             "ttl_s": 60.0,
             "scopes": None,
+            "max_requests": None,
+            "max_tokens": None,
+        }
+        kcq = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-create",
+                "--remote",
+                "http://h.test",
+                "--max-requests",
+                "100",
+            ],
+        )
+        out["key_create_quota_remote"] = kcq.exit_code == 0 and remotes[-1].last_key_kw == {
+            "admin": False,
+            "rpm": None,
+            "ttl_s": None,
+            "scopes": None,
+            "max_requests": 100,
+            "max_tokens": None,
         }
         kc3 = runner.invoke(
             app,
@@ -2570,6 +2616,8 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "rpm": None,
             "ttl_s": None,
             "scopes": ["read"],
+            "max_requests": None,
+            "max_tokens": None,
         }
         kl = runner.invoke(app, ["harness", "keys", "--remote", "http://h.test"])
         out["key_list_remote"] = kl.exit_code == 0 and json.loads(kl.stdout)[0]["id"] == "krem"

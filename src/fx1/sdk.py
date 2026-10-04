@@ -664,6 +664,8 @@ class Fx1Harness:
         rpm: int | None = None,
         ttl_s: float | None = None,
         scopes: list[str] | tuple[str, ...] | None = None,
+        max_requests: int | None = None,
+        max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """Mint a managed key — returns the wire mint shape including the
         raw ``key`` (shown once, never stored). ``admin=True`` keys may
@@ -671,11 +673,21 @@ class Fx1Harness:
         fixed-window request rate and ``ttl_s`` bakes an expiry into the
         journaled record. ``scopes`` bounds the key to ``read``/``write``/
         ``admin`` surface classes — journaled with the record so the
-        wire enforces the declared policy across restarts."""
+        wire enforces the declared policy across restarts.
+        ``max_requests``/``max_tokens`` declare hard budgets — an
+        exhausted key answers 429 ``quota_exceeded`` on the wire."""
         from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
 
         try:
-            raw, rec = self._key_store.mint(name, admin=admin, rpm=rpm, ttl_s=ttl_s, scopes=scopes)
+            raw, rec = self._key_store.mint(
+                name,
+                admin=admin,
+                rpm=rpm,
+                ttl_s=ttl_s,
+                scopes=scopes,
+                max_requests=max_requests,
+                max_tokens=max_tokens,
+            )
         except KeyStoreError as exc:
             raise ValueError(str(exc)) from exc
         return {
@@ -686,8 +698,11 @@ class Fx1Harness:
             "admin": bool(rec.get("admin")),
             "scopes": list(rec["scopes"]),
             "rpm": rec.get("rpm"),
+            "max_requests": rec.get("max_requests"),
+            "max_tokens": rec.get("max_tokens"),
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
+            "tokens_used": int(rec.get("tokens_used") or 0),
             "key": raw,
         }
 
@@ -727,11 +742,14 @@ class Fx1Harness:
                 or (["read", "write", "admin"] if rec.get("admin") else ["read", "write"])
             ),
             "rpm": rec.get("rpm"),
+            "max_requests": rec.get("max_requests"),
+            "max_tokens": rec.get("max_tokens"),
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
             "enabled": rec["enabled"],
             "revoked_at": rec["revoked_at"],
             "uses": rec["uses"],
+            "tokens_used": int(rec.get("tokens_used") or 0),
             "last_used_at": rec["last_used_at"],
         }
 
