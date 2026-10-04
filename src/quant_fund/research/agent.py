@@ -8087,6 +8087,14 @@ from quant_fund.research.benches_w1011 import (
     bench_phonon_spectrum_family,
     bench_tight_binding_family,
 )
+from quant_fund.research.benches_w1012 import (
+    bench_bcs_theory_family,
+    bench_cabibbo_km_family,
+    bench_nuclear_liquid_drop_family,
+    bench_nuclear_shell_model_family,
+    bench_parton_model_family,
+    bench_quark_model_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8458,6 +8466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bcs_theory": bench_bcs_theory_family,
+        "nuclear_shell_model": bench_nuclear_shell_model_family,
+        "nuclear_liquid_drop": bench_nuclear_liquid_drop_family,
+        "quark_model": bench_quark_model_family,
+        "parton_model": bench_parton_model_family,
+        "cabibbo_km": bench_cabibbo_km_family,
         "bloch_theorem": bench_bloch_theorem_family,
         "tight_binding": bench_tight_binding_family,
         "phonon_spectrum": bench_phonon_spectrum_family,

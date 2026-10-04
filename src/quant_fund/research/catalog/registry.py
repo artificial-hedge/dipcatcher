@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1012 nuclear/particle-physics canon.
+        "bcs_theory",
+        "nuclear_shell_model",
+        "nuclear_liquid_drop",
+        "quark_model",
+        "parton_model",
+        "cabibbo_km",
         # Wave-1011 condensed-matter canon.
         "bloch_theorem",
         "tight_binding",
