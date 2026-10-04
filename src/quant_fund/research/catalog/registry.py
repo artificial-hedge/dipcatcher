@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1036 petroleum-engineering canon.
+        "reservoir_engineering",
+        "drilling_engineering",
+        "production_engineering",
+        "formation_evaluation",
+        "well_testing",
+        "enhanced_recovery",
         # Wave-1035 nuclear-engineering canon.
         "reactor_physics",
         "radiation_protection",
