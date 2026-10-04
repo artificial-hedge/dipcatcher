@@ -11015,6 +11015,14 @@ from quant_fund.research.benches_w1377 import (
     bench_equiv_lite_studies_family,
     bench_wsc_lite_studies_family,
 )
+from quant_fund.research.benches_w1378 import (
+    bench_aqua_lite_studies_family,
+    bench_fin_qa_studies_family,
+    bench_math_qa_studies_family,
+    bench_num_glue_studies_family,
+    bench_tab_fact_studies_family,
+    bench_tat_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11949,6 +11957,12 @@ def _provenance(
         "dream_lite_studies": bench_dream_lite_studies_family,
         "equiv_lite_studies": bench_equiv_lite_studies_family,
         "wsc_lite_studies": bench_wsc_lite_studies_family,
+        "aqua_lite_studies": bench_aqua_lite_studies_family,
+        "fin_qa_studies": bench_fin_qa_studies_family,
+        "math_qa_studies": bench_math_qa_studies_family,
+        "num_glue_studies": bench_num_glue_studies_family,
+        "tab_fact_studies": bench_tab_fact_studies_family,
+        "tat_qa_studies": bench_tat_qa_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
