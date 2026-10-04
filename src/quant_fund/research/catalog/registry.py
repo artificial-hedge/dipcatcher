@@ -3670,6 +3670,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pelican_qa_studies",
         "spoonbill_qa_studies",
         "stork_qa_studies",
+        # Wave-1487 seabird-2 canon.
+        "auk_qa_studies",
+        "fulmar_qa_studies",
+        "gull_qa_studies",
+        "jaeger_qa_studies",
+        "kittiwake_qa_studies",
+        "tropicbird_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
