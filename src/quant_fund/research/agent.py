@@ -6735,6 +6735,14 @@ from quant_fund.research.benches_w842 import (
     bench_legendre_tau_family,
     bench_spectral_deriv_family,
 )
+from quant_fund.research.benches_w843 import (
+    bench_b_spline_family,
+    bench_blossoming_family,
+    bench_box_spline_family,
+    bench_cardinal_spline_family,
+    bench_de_boor_family,
+    bench_knot_insertion_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7106,6 +7114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "b_spline": bench_b_spline_family,
+        "de_boor": bench_de_boor_family,
+        "cardinal_spline": bench_cardinal_spline_family,
+        "knot_insertion": bench_knot_insertion_family,
+        "blossoming": bench_blossoming_family,
+        "box_spline": bench_box_spline_family,
         "chebyshev_grid": bench_chebyshev_grid_family,
         "fourier_galerkin": bench_fourier_galerkin_family,
         "legendre_tau": bench_legendre_tau_family,
