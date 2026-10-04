@@ -3320,6 +3320,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nebula_qa_studies",
         "planet_qa_studies",
         "star_qa_studies",
+        # Wave-1437 mythic canon.
+        "deity_qa_studies",
+        "dragon_qa_studies",
+        "hero_qa_studies",
+        "olympus_qa_studies",
+        "phoenix_qa_studies",
+        "titan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
