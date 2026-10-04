@@ -3621,6 +3621,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "coati_qa_studies",
         "peccary_qa_studies",
         "tapir_qa_studies",
+        # Wave-1480 reptile canon.
+        "adder_qa_studies",
+        "boa_qa_studies",
+        "krait_qa_studies",
+        "mamba_qa_studies",
+        "monitor_qa_studies",
+        "taipan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
