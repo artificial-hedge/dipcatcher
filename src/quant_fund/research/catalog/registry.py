@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1180 allied-health canon.
+        "nursing_studies",
+        "allied_health",
+        "midwifery",
+        "paramedicine",
+        "occupational_science",
+        "speech_pathology",
         # Wave-1179 security canon.
         "war_studies",
         "strategic_analysis",
