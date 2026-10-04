@@ -3509,6 +3509,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "firefly_qa_studies",
         "sprout_qa_studies",
         "truffle_qa_studies",
+        # Wave-1464 monolith canon.
+        "abyss_qa_studies",
+        "beacon_qa_studies",
+        "blizzard_qa_studies",
+        "monolith_qa_studies",
+        "spire_qa_studies",
+        "tempest_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
