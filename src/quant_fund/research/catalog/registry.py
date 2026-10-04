@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1073 theology-2 canon.
+        "systematic_theology",
+        "biblical_exegesis",
+        "church_history",
+        "pastoral_theology",
+        "liturgical_studies",
+        "missiology",
         # Wave-1072 film studies canon.
         "film_studies",
         "cinema_studies",
