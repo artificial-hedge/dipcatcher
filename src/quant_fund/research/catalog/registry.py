@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1047 marine-biology canon.
+        "plankton_dynamics",
+        "marine_ecology",
+        "fisheries_science",
+        "aquaculture",
+        "benthic_biology",
+        "coral_reef_ecology",
         # Wave-1046 meteorology canon.
         "atmospheric_dynamics",
         "synoptic_meteorology",
