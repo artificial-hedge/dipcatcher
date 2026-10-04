@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-770 extreme-value canon.
+        "gumbel_domain",
+        "weibull_domain",
+        "frechet_domain",
+        "peak_over",
+        "hill_est",
+        "pickands_est",
         # Wave-769 Stein-method canon.
         "stein_method",
         "stein_equation",
