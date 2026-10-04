@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-585 intersection-theory canon.
+        "intersection_theory",
+        "macpherson_chern",
+        "weil_divisor",
+        "picard_group",
+        "line_bundle",
+        "canonical_bundle",
         # Wave-584 condensed-3 canon.
         "clausen_scholze2",
         "solid_cohom",

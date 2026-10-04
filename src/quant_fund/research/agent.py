@@ -4671,6 +4671,14 @@ from quant_fund.research.benches_w584 import (
     bench_solid_cohom_family,
     bench_solid_tensor2_family,
 )
+from quant_fund.research.benches_w585 import (
+    bench_canonical_bundle_family,
+    bench_intersection_theory_family,
+    bench_line_bundle_family,
+    bench_macpherson_chern_family,
+    bench_picard_group_family,
+    bench_weil_divisor_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5050,6 +5058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "intersection_theory": bench_intersection_theory_family,
+        "macpherson_chern": bench_macpherson_chern_family,
+        "weil_divisor": bench_weil_divisor_family,
+        "picard_group": bench_picard_group_family,
+        "line_bundle": bench_line_bundle_family,
+        "canonical_bundle": bench_canonical_bundle_family,
         "clausen_scholze2": bench_clausen_scholze2_family,
         "solid_cohom": bench_solid_cohom_family,
         "nuclear_space": bench_nuclear_space_family,
