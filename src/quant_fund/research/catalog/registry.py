@@ -4832,6 +4832,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lavellan_qa_studies",
         "muscaliet_qa_studies",
         "tarasque_qa_studies",
+        # Wave-1653 global-beast canon.
+        "alion_qa_studies",
+        "catoblepas_qa_studies",
+        "jasconius_qa_studies",
+        "pard_qa_studies",
+        "peluda_qa_studies",
+        "zaratan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
