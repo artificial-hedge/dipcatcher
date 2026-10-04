@@ -7767,6 +7767,14 @@ from quant_fund.research.benches_w971 import (
     bench_index_pairing_family,
     bench_spectral_triple_family,
 )
+from quant_fund.research.benches_w972 import (
+    bench_free_berg_family,
+    bench_free_cumulant_family,
+    bench_free_entropy_family,
+    bench_free_fisher_info_family,
+    bench_freeness_check_family,
+    bench_matrix_model_free_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8138,6 +8146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "free_entropy": bench_free_entropy_family,
+        "free_fisher_info": bench_free_fisher_info_family,
+        "free_cumulant": bench_free_cumulant_family,
+        "freeness_check": bench_freeness_check_family,
+        "matrix_model_free": bench_matrix_model_free_family,
+        "free_berg": bench_free_berg_family,
         "spectral_triple": bench_spectral_triple_family,
         "connes_metric": bench_connes_metric_family,
         "index_pairing": bench_index_pairing_family,
