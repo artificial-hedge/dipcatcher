@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1290 quantization/compression canon.
+        "awq_studies",
+        "entropy_code_quant_studies",
+        "gptq_studies",
+        "kv_cache_quant_studies",
+        "smoothquant_studies",
+        "weight_share_studies",
         # Wave-1289 reasoning/CoT canon.
         "analogical_prompt_studies",
         "cot_studies",

@@ -1,3 +1,4 @@
+w1290 quantization/compression canon: awq_studies, entropy_code_quant_studies, gptq_studies, kv_cache_quant_studies, smoothquant_studies, weight_share_studies (7689->7695)
 w1289 reasoning/CoT canon: analogical_prompt_studies, cot_studies, reflexion_studies, scratchpad_studies, self_consistency_studies, stepwise_verify_studies (7683->7689)
 w1288 RL-imitation canon: adversarial_irl_studies, behavior_cloning_studies, dagger_studies, offline_distill_studies, preference_irl_studies, skill_extraction_studies (7677->7683)
 w1287 agent-safety canon: capability_eval_studies, control_eval_studies, deception_eval_studies, prompt_injection_studies, sandbox_escape_studies, tool_call_verify_studies (7671->7677)
