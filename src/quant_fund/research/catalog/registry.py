@@ -4363,6 +4363,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gymnure_qa_studies",
         "solenodon_qa_studies",
         "tenrec_qa_studies",
+        # Wave-1586 plains-game canon.
+        "beira_qa_studies",
+        "gemsbok_qa_studies",
+        "madoqua_qa_studies",
+        "oribi_qa_studies",
+        "reedbuck_qa_studies",
+        "tsessebe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
