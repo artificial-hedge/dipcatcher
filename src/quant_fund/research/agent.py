@@ -10687,6 +10687,14 @@ from quant_fund.research.benches_w1336 import (
     bench_web_nav_studies_family,
     bench_webarena_studies_family,
 )
+from quant_fund.research.benches_w1337 import (
+    bench_android_env_studies_family,
+    bench_api_bank_studies_family,
+    bench_gaia_level_studies_family,
+    bench_video_game_studies_family,
+    bench_voyager_minecraft_studies_family,
+    bench_web_shopping_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11446,6 +11454,12 @@ def _provenance(
         "codegen_universal_studies": bench_codegen_universal_studies_family,
         "long_code_bench_studies": bench_long_code_bench_studies_family,
         "assistantbench_studies": bench_assistantbench_studies_family,
+        "android_env_studies": bench_android_env_studies_family,
+        "api_bank_studies": bench_api_bank_studies_family,
+        "gaia_level_studies": bench_gaia_level_studies_family,
+        "video_game_studies": bench_video_game_studies_family,
+        "voyager_minecraft_studies": bench_voyager_minecraft_studies_family,
+        "web_shopping_studies": bench_web_shopping_studies_family,
         "mind2web_studies": bench_mind2web_studies_family,
         "miniwob_studies": bench_miniwob_studies_family,
         "visual_web_studies": bench_visual_web_studies_family,
