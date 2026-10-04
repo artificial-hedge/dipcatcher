@@ -13583,6 +13583,14 @@ from quant_fund.research.benches_w1698 import (
     bench_tane_qa_studies_family,
     bench_tangaroa_qa_studies_family,
 )
+from quant_fund.research.benches_w1699 import (
+    bench_amaterasu_qa_studies_family,
+    bench_hachiman_qa_studies_family,
+    bench_inari_qa_studies_family,
+    bench_raijin_qa_studies_family,
+    bench_susanoo_qa_studies_family,
+    bench_tsukuyomi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
