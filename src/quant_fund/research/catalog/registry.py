@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1164 communication canon.
+        "education_5",
+        "communication_studies_2",
+        "media_studies_2",
+        "journalism_2",
+        "library_science_2",
+        "information_science_2",
         # Wave-1163 business canon.
         "accounting_2",
         "finance_4",

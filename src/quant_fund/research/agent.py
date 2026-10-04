@@ -9303,6 +9303,14 @@ from quant_fund.research.benches_w1163 import (
     bench_management_2_family,
     bench_marketing_2_family,
 )
+from quant_fund.research.benches_w1164 import (
+    bench_communication_studies_2_family,
+    bench_education_5_family,
+    bench_information_science_2_family,
+    bench_journalism_2_family,
+    bench_library_science_2_family,
+    bench_media_studies_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9674,6 +9682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "education_5": bench_education_5_family,
+        "communication_studies_2": bench_communication_studies_2_family,
+        "media_studies_2": bench_media_studies_2_family,
+        "journalism_2": bench_journalism_2_family,
+        "library_science_2": bench_library_science_2_family,
+        "information_science_2": bench_information_science_2_family,
         "accounting_2": bench_accounting_2_family,
         "finance_4": bench_finance_4_family,
         "marketing_2": bench_marketing_2_family,
