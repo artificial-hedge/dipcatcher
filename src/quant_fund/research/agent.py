@@ -12511,6 +12511,14 @@ from quant_fund.research.benches_w1564 import (
     bench_sea_slug_qa_studies_family,
     bench_vampire_squid_qa_studies_family,
 )
+from quant_fund.research.benches_w1565 import (
+    bench_earthworm_qa_studies_family,
+    bench_feather_duster_qa_studies_family,
+    bench_leech_qa_studies_family,
+    bench_lugworm_qa_studies_family,
+    bench_polychaete_qa_studies_family,
+    bench_ragworm_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14464,6 +14472,12 @@ def _provenance(
         "cuttlefish_qa_studies": bench_cuttlefish_qa_studies_family,
         "nautilus_qa_studies": bench_nautilus_qa_studies_family,
         "nudibranch_qa_studies": bench_nudibranch_qa_studies_family,
+        "earthworm_qa_studies": bench_earthworm_qa_studies_family,
+        "feather_duster_qa_studies": bench_feather_duster_qa_studies_family,
+        "leech_qa_studies": bench_leech_qa_studies_family,
+        "lugworm_qa_studies": bench_lugworm_qa_studies_family,
+        "polychaete_qa_studies": bench_polychaete_qa_studies_family,
+        "ragworm_qa_studies": bench_ragworm_qa_studies_family,
         "sea_slug_qa_studies": bench_sea_slug_qa_studies_family,
         "vampire_squid_qa_studies": bench_vampire_squid_qa_studies_family,
         "hermit_crab_qa_studies": bench_hermit_crab_qa_studies_family,
