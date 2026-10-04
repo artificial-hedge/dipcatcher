@@ -14999,6 +14999,14 @@ from quant_fund.research.benches_w1875 import (
     bench_reshef_qa_studies_family,
     bench_safon_qa_studies_family,
 )
+from quant_fund.research.benches_w1876 import (
+    bench_abdir_qa_studies_family,
+    bench_baal_magon_qa_studies_family,
+    bench_melkob_qa_studies_family,
+    bench_safun_hu_qa_studies_family,
+    bench_shadash_qa_studies_family,
+    bench_sinn_bedri_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

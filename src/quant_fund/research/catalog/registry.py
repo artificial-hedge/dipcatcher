@@ -6393,6 +6393,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mider_qa_studies",
         "reshef_qa_studies",
         "safon_qa_studies",
+        # Wave-1876 punic-4 canon.
+        "abdir_qa_studies",
+        "baal_magon_qa_studies",
+        "melkob_qa_studies",
+        "safun_hu_qa_studies",
+        "shadash_qa_studies",
+        "sinn_bedri_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
