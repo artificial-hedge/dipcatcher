@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-647 homotopy-19 canon.
+        "selick_htpy",
+        "arkowitz_htpy",
+        "lin_htpy",
+        "kahn_priddy",
+        "bochner_htpy",
+        "tits_building",
         # Wave-646 p-adic-7 canon.
         "fargues_cat",
         "v_stack",
