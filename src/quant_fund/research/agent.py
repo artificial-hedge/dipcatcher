@@ -14839,6 +14839,14 @@ from quant_fund.research.benches_w1855 import (
     bench_nabia_qa_studies_family,
     bench_trebaruna_qa_studies_family,
 )
+from quant_fund.research.benches_w1856 import (
+    bench_cernunnos_qa_studies_family,
+    bench_epona_qa_studies_family,
+    bench_esus_qa_studies_family,
+    bench_rosmerta_qa_studies_family,
+    bench_taranis_qa_studies_family,
+    bench_teutates_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
