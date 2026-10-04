@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1143 physics-5 canon.
+        "nanotechnology",
+        "biophysics_2",
+        "condensed_matter_3",
+        "optics_3",
+        "acoustics_2",
+        "thermodynamics_2",
         # Wave-1142 quantum-technology canon.
         "quantum_computing",
         "quantum_information_2",

@@ -9135,6 +9135,14 @@ from quant_fund.research.benches_w1142 import (
     bench_quantum_optics_family,
     bench_quantum_sensing_family,
 )
+from quant_fund.research.benches_w1143 import (
+    bench_acoustics_2_family,
+    bench_biophysics_2_family,
+    bench_condensed_matter_3_family,
+    bench_nanotechnology_family,
+    bench_optics_3_family,
+    bench_thermodynamics_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9506,6 +9514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nanotechnology": bench_nanotechnology_family,
+        "biophysics_2": bench_biophysics_2_family,
+        "condensed_matter_3": bench_condensed_matter_3_family,
+        "optics_3": bench_optics_3_family,
+        "acoustics_2": bench_acoustics_2_family,
+        "thermodynamics_2": bench_thermodynamics_2_family,
         "quantum_computing": bench_quantum_computing_family,
         "quantum_information_2": bench_quantum_information_2_family,
         "quantum_chemistry_2": bench_quantum_chemistry_2_family,
