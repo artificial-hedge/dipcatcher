@@ -10895,6 +10895,14 @@ from quant_fund.research.benches_w1362 import (
     bench_snopes_lite_studies_family,
     bench_stance_detect_studies_family,
 )
+from quant_fund.research.benches_w1363 import (
+    bench_age_bias_studies_family,
+    bench_curry_qa_studies_family,
+    bench_cw_qa2_studies_family,
+    bench_dialect_bias_studies_family,
+    bench_politi_fact_studies_family,
+    bench_rumor_twitter_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11739,6 +11747,12 @@ def _provenance(
         "emergent_lite_studies": bench_emergent_lite_studies_family,
         "fake_news_studies": bench_fake_news_studies_family,
         "snopes_lite_studies": bench_snopes_lite_studies_family,
+        "age_bias_studies": bench_age_bias_studies_family,
+        "curry_qa_studies": bench_curry_qa_studies_family,
+        "cw_qa2_studies": bench_cw_qa2_studies_family,
+        "dialect_bias_studies": bench_dialect_bias_studies_family,
+        "politi_fact_studies": bench_politi_fact_studies_family,
+        "rumor_twitter_studies": bench_rumor_twitter_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

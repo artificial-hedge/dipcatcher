@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1363 rumor-bias canon.
+        "age_bias_studies",
+        "curry_qa_studies",
+        "cw_qa2_studies",
+        "dialect_bias_studies",
+        "politi_fact_studies",
+        "rumor_twitter_studies",
         # Wave-1362 fake-news canon.
         "check_that_studies",
         "claim_buster_studies",
