@@ -4342,6 +4342,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "noctule_qa_studies",
         "pipistrelle_qa_studies",
         "vampire_qa_studies",
+        # Wave-1583 cetacean canon.
+        "bowhead_qa_studies",
+        "fin_whale_qa_studies",
+        "humpback_qa_studies",
+        "minke_qa_studies",
+        "pilot_whale_qa_studies",
+        "sperm_whale_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
