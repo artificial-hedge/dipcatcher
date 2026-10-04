@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-521 analytic-NT canon.
+        "explicit_formula",
+        "zero_density",
+        "riemann_zeta",
+        "dirichlet_l",
+        "linnik_thm",
+        "chebyshev_bias",
         # Wave-520 automorphic-GL(n) canon.
         "gln_automorphic",
         "whittaker_model",

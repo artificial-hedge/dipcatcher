@@ -4159,6 +4159,14 @@ from quant_fund.research.benches_w520 import (
     bench_rankin_selberg_family,
     bench_whittaker_model_family,
 )
+from quant_fund.research.benches_w521 import (
+    bench_chebyshev_bias_family,
+    bench_dirichlet_l_family,
+    bench_explicit_formula_family,
+    bench_linnik_thm_family,
+    bench_riemann_zeta_family,
+    bench_zero_density_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4538,6 +4546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "explicit_formula": bench_explicit_formula_family,
+        "zero_density": bench_zero_density_family,
+        "riemann_zeta": bench_riemann_zeta_family,
+        "dirichlet_l": bench_dirichlet_l_family,
+        "linnik_thm": bench_linnik_thm_family,
+        "chebyshev_bias": bench_chebyshev_bias_family,
         "gln_automorphic": bench_gln_automorphic_family,
         "whittaker_model": bench_whittaker_model_family,
         "godement_jacq": bench_godement_jacq_family,
