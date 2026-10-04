@@ -4419,6 +4419,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "guenon_qa_studies",
         "mandrill_qa_studies",
         "mangabey_qa_studies",
+        # Wave-1594 primate-2 canon.
+        "bonobo_qa_studies",
+        "chimpanzee_qa_studies",
+        "douc_qa_studies",
+        "proboscis_qa_studies",
+        "siamang_qa_studies",
+        "snub_nosed_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
