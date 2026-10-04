@@ -5868,6 +5868,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "remus2_qa_studies",
         "romulus2_qa_studies",
         "turnus2_qa_studies",
+        # Wave-1801 incan-myth-3 canon.
+        "apocatequil2_qa_studies",
+        "inti2_qa_studies",
+        "kon2_qa_studies",
+        "pacamama2_qa_studies",
+        "supay2_qa_studies",
+        "viracocha2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
