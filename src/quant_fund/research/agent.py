@@ -12343,6 +12343,14 @@ from quant_fund.research.benches_w1543 import (
     bench_potoo_qa_studies_family,
     bench_whip_poor_will_qa_studies_family,
 )
+from quant_fund.research.benches_w1544 import (
+    bench_hoopoe_qa_studies_family,
+    bench_nunbird_qa_studies_family,
+    bench_nunlet_qa_studies_family,
+    bench_puffbird_qa_studies_family,
+    bench_toco_qa_studies_family,
+    bench_woodhoopoe_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14218,6 +14226,12 @@ def _provenance(
         "poorwill_qa_studies": bench_poorwill_qa_studies_family,
         "potoo_qa_studies": bench_potoo_qa_studies_family,
         "whip_poor_will_qa_studies": bench_whip_poor_will_qa_studies_family,
+        "hoopoe_qa_studies": bench_hoopoe_qa_studies_family,
+        "nunbird_qa_studies": bench_nunbird_qa_studies_family,
+        "nunlet_qa_studies": bench_nunlet_qa_studies_family,
+        "puffbird_qa_studies": bench_puffbird_qa_studies_family,
+        "toco_qa_studies": bench_toco_qa_studies_family,
+        "woodhoopoe_qa_studies": bench_woodhoopoe_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
