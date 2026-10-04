@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-573 Hodge-2/periods canon.
+        "griffiths_transv",
+        "period_domain",
+        "mumford_tate",
+        "hodge_class",
+        "absolute_hodge",
+        "hodge_conj",
         # Wave-572 abelian-varieties canon.
         "abelian_variety",
         "isogeny_av",
