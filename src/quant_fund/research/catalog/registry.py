@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-902 trie/string-index canon.
+        "trie",
+        "patricia_trie",
+        "suffix_trie",
+        "ternary_trie",
+        "radix_trie",
+        "crit_bit_tree",
         # Wave-901 heap canon.
         "binary_heap",
         "fibonacci_heap",
