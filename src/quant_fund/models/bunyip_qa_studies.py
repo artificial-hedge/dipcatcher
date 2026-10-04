@@ -16,7 +16,7 @@ def bunyip_qa_studies_aux(aux: bool) -> bool:
     """bunyip_qa_studies
 
     aux:
-    bunyip_qa_studies: bunyips, billabongs, answers, and scores
+    bunyip_qa_studies: bunyip, billabong lurkers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_bunyip_qa_studies(seed: int = 0) -> float:
     checks.append(not bunyip_qa_studies_ok(False, True))
     checks.append(bunyip_qa_studies_aux(True))
     checks.append(not bunyip_qa_studies_aux(False))
-    checks.append(True)  # cryptid-2 canon
+    checks.append(True)  # aboriginal-myth canon
     return float(sum(checks) / len(checks))
 
 

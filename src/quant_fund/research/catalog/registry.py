@@ -5476,6 +5476,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sedna_qa_studies",
         "tekkeitsertok_qa_studies",
         "torngarsuk_qa_studies",
+        # Wave-1745 aboriginal-myth canon.
+        "altjira_qa_studies",
+        "bunyip_qa_studies",
+        "mimis_qa_studies",
+        "rainbow_serpent_qa_studies",
+        "wandjina_qa_studies",
+        "yowie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
