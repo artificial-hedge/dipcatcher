@@ -4685,6 +4685,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "griffin_2_qa_studies",
         "hydra_2_qa_studies",
         "manticore_qa_studies",
+        # Wave-1632 legendary-2 canon.
+        "cerberus_qa_studies",
+        "dragon_2_qa_studies",
+        "minotaur_qa_studies",
+        "pegasus_qa_studies",
+        "phoenix_2_qa_studies",
+        "unicorn_2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
