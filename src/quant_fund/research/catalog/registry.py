@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-688 spectral-AG-7 canon.
+        "spectral_field",
+        "spectral_lattice",
+        "spectral_filtration",
+        "spectral_cellular",
+        "spectral_cohomological",
+        "spectral_finite",
         # Wave-687 category-17 canon.
         "cat_fibrant_obj",
         "cat_cofibrant",
