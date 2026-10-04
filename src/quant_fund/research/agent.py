@@ -7527,6 +7527,14 @@ from quant_fund.research.benches_w941 import (
     bench_proximal_subdiff_family,
     bench_semismooth_newton_family,
 )
+from quant_fund.research.benches_w942 import (
+    bench_backward_forward_family,
+    bench_ishikawa_iter_family,
+    bench_malitsky_golden_family,
+    bench_mann_iter_family,
+    bench_primal_dual_hybrid_family,
+    bench_vu_condat_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7898,6 +7906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "primal_dual_hybrid": bench_primal_dual_hybrid_family,
+        "vu_condat": bench_vu_condat_family,
+        "backward_forward": bench_backward_forward_family,
+        "malitsky_golden": bench_malitsky_golden_family,
+        "mann_iter": bench_mann_iter_family,
+        "ishikawa_iter": bench_ishikawa_iter_family,
         "limiting_subdiff": bench_limiting_subdiff_family,
         "proximal_subdiff": bench_proximal_subdiff_family,
         "ekeland_var": bench_ekeland_var_family,

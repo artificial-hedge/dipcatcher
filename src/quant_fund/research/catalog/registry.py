@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-942 primal-dual canon.
+        "primal_dual_hybrid",
+        "vu_condat",
+        "backward_forward",
+        "malitsky_golden",
+        "mann_iter",
+        "ishikawa_iter",
         # Wave-941 nonsmooth-Newton canon.
         "limiting_subdiff",
         "proximal_subdiff",
