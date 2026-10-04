@@ -54,11 +54,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "943f52aaadb67b65189187241f4ec54cdbd29809",
+  "git_revision": "436500ce8cc81eb3a05eb937eeaeef5c30c08def",
   "interpretation": "Harness holds under adversarial conditions: journal corruption recovers the clean prefix and reports it, key races lose no updates, TTL/quota/rpm boundaries are exact, wire abuse gets the uniform error envelope, header and BYOK smuggling fail closed, idempotent replays and conflicts survive drain, and unreadable state dirs fail loudly.",
   "kind": "fault_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "af34dcf980e8f4360a6c79c47623a4dbbcf716152a299a561042c41bcfbf49d0",
+  "receipt_sha256": "10d2cdcdff5233b368e8ae57aef1957f98542664ee76a956b77f2d1b43f71d5b",
   "research_only": true,
   "schema": "fault_audit.v1"
 }
