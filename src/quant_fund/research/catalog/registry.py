@@ -3957,6 +3957,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oakmoss_qa_studies",
         "usnea_qa_studies",
         "xanthoria_qa_studies",
+        # Wave-1528 mineral canon.
+        "calcite_qa_studies",
+        "feldspar_qa_studies",
+        "fluorite_qa_studies",
+        "gypsum_qa_studies",
+        "olivine_qa_studies",
+        "quartz_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
