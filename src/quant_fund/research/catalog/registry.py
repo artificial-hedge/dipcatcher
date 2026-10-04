@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1227 radiology canon.
+        "radiology_studies",
+        "diagnostic_imaging",
+        "interventional_neuroradiology",
+        "pediatric_imaging",
+        "musculoskeletal_imaging",
+        "body_imaging",
         # Wave-1226 pathology canon.
         "pathology_studies",
         "anatomical_pathology",

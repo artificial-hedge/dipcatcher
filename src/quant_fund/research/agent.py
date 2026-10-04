@@ -9807,6 +9807,14 @@ from quant_fund.research.benches_w1226 import (
     bench_molecular_pathology_family,
     bench_pathology_studies_family,
 )
+from quant_fund.research.benches_w1227 import (
+    bench_body_imaging_family,
+    bench_diagnostic_imaging_family,
+    bench_interventional_neuroradiology_family,
+    bench_musculoskeletal_imaging_family,
+    bench_pediatric_imaging_family,
+    bench_radiology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10178,6 +10186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "radiology_studies": bench_radiology_studies_family,
+        "diagnostic_imaging": bench_diagnostic_imaging_family,
+        "interventional_neuroradiology": bench_interventional_neuroradiology_family,
+        "pediatric_imaging": bench_pediatric_imaging_family,
+        "musculoskeletal_imaging": bench_musculoskeletal_imaging_family,
+        "body_imaging": bench_body_imaging_family,
         "pathology_studies": bench_pathology_studies_family,
         "anatomical_pathology": bench_anatomical_pathology_family,
         "clinical_pathology": bench_clinical_pathology_family,
