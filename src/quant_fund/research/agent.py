@@ -9863,6 +9863,14 @@ from quant_fund.research.benches_w1233 import (
     bench_mitochondrial_medicine_family,
     bench_pharmacogenomics_studies_family,
 )
+from quant_fund.research.benches_w1234 import (
+    bench_breast_medicine_family,
+    bench_contraception_studies_family,
+    bench_infertility_studies_family,
+    bench_menopause_medicine_family,
+    bench_pelvic_health_studies_family,
+    bench_urogynecology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10234,6 +10242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "menopause_medicine": bench_menopause_medicine_family,
+        "urogynecology_studies": bench_urogynecology_studies_family,
+        "breast_medicine": bench_breast_medicine_family,
+        "infertility_studies": bench_infertility_studies_family,
+        "contraception_studies": bench_contraception_studies_family,
+        "pelvic_health_studies": bench_pelvic_health_studies_family,
         "medical_genetics_studies": bench_medical_genetics_studies_family,
         "genetic_diagnostics": bench_genetic_diagnostics_family,
         "lysosomal_medicine": bench_lysosomal_medicine_family,
