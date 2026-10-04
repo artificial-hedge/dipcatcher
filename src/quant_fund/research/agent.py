@@ -8383,6 +8383,14 @@ from quant_fund.research.benches_w1048 import (
     bench_veterinary_pathology_family,
     bench_veterinary_pharmacology_family,
 )
+from quant_fund.research.benches_w1049 import (
+    bench_dental_anatomy_family,
+    bench_endodontics_family,
+    bench_oral_pathology_family,
+    bench_orthodontics_family,
+    bench_periodontology_family,
+    bench_prosthodontics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8754,6 +8762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dental_anatomy": bench_dental_anatomy_family,
+        "oral_pathology": bench_oral_pathology_family,
+        "periodontology": bench_periodontology_family,
+        "endodontics": bench_endodontics_family,
+        "orthodontics": bench_orthodontics_family,
+        "prosthodontics": bench_prosthodontics_family,
         "veterinary_anatomy": bench_veterinary_anatomy_family,
         "veterinary_pathology": bench_veterinary_pathology_family,
         "veterinary_pharmacology": bench_veterinary_pharmacology_family,
