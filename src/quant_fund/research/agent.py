@@ -8327,6 +8327,14 @@ from quant_fund.research.benches_w1041 import (
     bench_offshore_engineering_family,
     bench_submarine_systems_family,
 )
+from quant_fund.research.benches_w1042 import (
+    bench_food_chemistry_family,
+    bench_food_microbiology_family,
+    bench_food_processing_family,
+    bench_food_safety_family,
+    bench_nutrition_science_family,
+    bench_sensory_evaluation_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8698,6 +8706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "food_chemistry": bench_food_chemistry_family,
+        "food_microbiology": bench_food_microbiology_family,
+        "food_processing": bench_food_processing_family,
+        "nutrition_science": bench_nutrition_science_family,
+        "sensory_evaluation": bench_sensory_evaluation_family,
+        "food_safety": bench_food_safety_family,
         "naval_architecture": bench_naval_architecture_family,
         "offshore_engineering": bench_offshore_engineering_family,
         "marine_propulsion": bench_marine_propulsion_family,

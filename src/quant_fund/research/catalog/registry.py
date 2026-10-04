@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1042 food-science canon.
+        "food_chemistry",
+        "food_microbiology",
+        "food_processing",
+        "nutrition_science",
+        "sensory_evaluation",
+        "food_safety",
         # Wave-1041 ocean-engineering canon.
         "naval_architecture",
         "offshore_engineering",
