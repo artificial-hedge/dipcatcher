@@ -1,3 +1,4 @@
+feat(research): wave 523 — incidence-geometry canon (erdos_distinct, sz_trotter, kakeya, ff_kakeya, joints_thm, guth_katz) (3093->3099 families)
 feat(research): wave 522 — additive-combinatorics canon (freiman_thm, szemeredi, green_tao, roth_thm, gowers_norm, plunnecke) (3087->3093 families)
 feat(research): wave 521 — analytic-NT canon (explicit_formula, zero_density, riemann_zeta, dirichlet_l, linnik_thm, chebyshev_bias) (3081->3087 families)
 feat(research): wave 520 — automorphic-GL(n) canon (gln_automorphic, whittaker_model, godement_jacq, rankin_selberg, langlands_lfunc, converse_thm) (3075->3081 families)
