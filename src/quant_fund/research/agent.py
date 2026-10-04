@@ -10671,6 +10671,14 @@ from quant_fund.research.benches_w1334 import (
     bench_needle_multi_studies_family,
     bench_qmsum_eval_studies_family,
 )
+from quant_fund.research.benches_w1335 import (
+    bench_code_rag_studies_family,
+    bench_codegen_universal_studies_family,
+    bench_long_code_bench_studies_family,
+    bench_odex_eval_studies_family,
+    bench_swe_dev_studies_family,
+    bench_swe_multimodal_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11426,6 +11434,12 @@ def _provenance(
         "vlur_studies": bench_vlur_studies_family,
         "books_qa_studies": bench_books_qa_studies_family,
         "lcc_codebase_studies": bench_lcc_codebase_studies_family,
+        "code_rag_studies": bench_code_rag_studies_family,
+        "codegen_universal_studies": bench_codegen_universal_studies_family,
+        "long_code_bench_studies": bench_long_code_bench_studies_family,
+        "odex_eval_studies": bench_odex_eval_studies_family,
+        "swe_dev_studies": bench_swe_dev_studies_family,
+        "swe_multimodal_studies": bench_swe_multimodal_studies_family,
         "multi_news_eval_studies": bench_multi_news_eval_studies_family,
         "narrative_qa_studies": bench_narrative_qa_studies_family,
         "needle_multi_studies": bench_needle_multi_studies_family,
