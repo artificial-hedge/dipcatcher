@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1048 veterinary-medicine canon.
+        "veterinary_anatomy",
+        "veterinary_pathology",
+        "veterinary_pharmacology",
+        "animal_surgery",
+        "veterinary_epidemiology",
+        "equine_medicine",
         # Wave-1047 marine-biology canon.
         "plankton_dynamics",
         "marine_ecology",
