@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1218 nephrology canon.
+        "nephrology_studies",
+        "dialysis_medicine",
+        "renal_transplant",
+        "acid_base_medicine",
+        "hypertension_medicine",
+        "urology_studies",
         # Wave-1217 endocrinology canon.
         "endocrinology_studies",
         "diabetes_medicine",
