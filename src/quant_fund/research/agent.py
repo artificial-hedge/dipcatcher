@@ -11103,6 +11103,14 @@ from quant_fund.research.benches_w1388 import (
     bench_ragas_lite_studies_family,
     bench_rgb_eval_studies_family,
 )
+from quant_fund.research.benches_w1389 import (
+    bench_book_sum_studies_family,
+    bench_fanout_qa_studies_family,
+    bench_infinitesum_studies_family,
+    bench_marlense_studies_family,
+    bench_narra_sum_studies_family,
+    bench_quote_sum_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12103,6 +12111,12 @@ def _provenance(
         "freshqa_studies": bench_freshqa_studies_family,
         "ragas_lite_studies": bench_ragas_lite_studies_family,
         "rgb_eval_studies": bench_rgb_eval_studies_family,
+        "book_sum_studies": bench_book_sum_studies_family,
+        "fanout_qa_studies": bench_fanout_qa_studies_family,
+        "infinitesum_studies": bench_infinitesum_studies_family,
+        "marlense_studies": bench_marlense_studies_family,
+        "narra_sum_studies": bench_narra_sum_studies_family,
+        "quote_sum_studies": bench_quote_sum_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

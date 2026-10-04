@@ -1,3 +1,4 @@
+w1389 long-doc-sum canon: book_sum_studies, fanout_qa_studies, infinitesum_studies, marlense_studies, narra_sum_studies, quote_sum_studies (8283->8289)
 w1388 RAG-eval canon: corpus_qa_studies, crag_bench_studies, domain_rag_studies, freshqa_studies, ragas_lite_studies, rgb_eval_studies (8277->8283)
 w1387 tool-use canon: api_blend_studies, bfcl_v3_studies, gorilla_eval_studies, gta_bench_studies, seal_tools_studies, stabletoolbench_studies (8271->8277)
 w1386 embodied-game canon: alfworld_lite_studies, babyai_lite_studies, crafter_lite_studies, jericho_lite_studies, scienceworld_studies, textworld_lite_studies (8265->8271)
