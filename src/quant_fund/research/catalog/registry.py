@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1198 procedural-medicine canon.
+        "sleep_medicine",
+        "pain_management",
+        "wound_care",
+        "infusion_therapy",
+        "hyperbaric_medicine",
+        "electrodiagnostic_studies",
         # Wave-1197 counseling-neonatal canon.
         "addiction_counseling",
         "rehabilitation_counseling",
