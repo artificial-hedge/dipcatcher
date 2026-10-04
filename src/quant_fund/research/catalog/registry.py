@@ -5259,6 +5259,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dalis_qa_studies",
         "ghmerti_qa_studies",
         "kamar_qa_studies",
+        # Wave-1714 scythian-myth canon.
+        "argimpasa_qa_studies",
+        "arimasp_qa_studies",
+        "papaios_qa_studies",
+        "tabiti_qa_studies",
+        "tavrita_qa_studies",
+        "thagimasadas_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
