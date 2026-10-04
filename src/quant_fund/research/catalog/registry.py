@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1270 mech-interp-2 canon.
+        "attribution_graph_studies",
+        "causal_tracing_studies",
+        "circuit_discovery_studies",
+        "feature_geometry_studies",
+        "gated_sae_studies",
+        "transcoder_studies",
         # Wave-1269 post-training-2 canon.
         "best_of_n_studies",
         "cdpo_studies",
