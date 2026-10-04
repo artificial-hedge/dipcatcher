@@ -9327,6 +9327,14 @@ from quant_fund.research.benches_w1166 import (
     bench_landscape_architecture_2_family,
     bench_urban_planning_2_family,
 )
+from quant_fund.research.benches_w1167 import (
+    bench_art_history_2_family,
+    bench_dance_2_family,
+    bench_film_studies_3_family,
+    bench_music_2_family,
+    bench_performance_studies_2_family,
+    bench_theater_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9698,6 +9706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "music_2": bench_music_2_family,
+        "theater_2": bench_theater_2_family,
+        "dance_2": bench_dance_2_family,
+        "film_studies_3": bench_film_studies_3_family,
+        "art_history_2": bench_art_history_2_family,
+        "performance_studies_2": bench_performance_studies_2_family,
         "architecture_2": bench_architecture_2_family,
         "urban_planning_2": bench_urban_planning_2_family,
         "interior_design_2": bench_interior_design_2_family,
