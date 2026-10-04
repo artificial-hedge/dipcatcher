@@ -5861,6 +5861,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sarutahiko2_qa_studies",
         "susanoo2_qa_studies",
         "tsukuyomi2_qa_studies",
+        # Wave-1800 roman-hero canon.
+        "aeneas2_qa_studies",
+        "evander2_qa_studies",
+        "lavinia2_qa_studies",
+        "remus2_qa_studies",
+        "romulus2_qa_studies",
+        "turnus2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
