@@ -5665,6 +5665,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kamrusepa_qa_studies",
         "tarhunna_qa_studies",
         "telepinus_qa_studies",
+        # Wave-1772 greek-myth-7 canon.
+        "hecate_qa_studies",
+        "helios_qa_studies",
+        "hypnos_qa_studies",
+        "selene_qa_studies",
+        "thanatos_qa_studies",
+        "zephyrus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

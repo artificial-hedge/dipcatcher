@@ -14167,6 +14167,14 @@ from quant_fund.research.benches_w1771 import (
     bench_tarhunna_qa_studies_family,
     bench_telepinus_qa_studies_family,
 )
+from quant_fund.research.benches_w1772 import (
+    bench_hecate_qa_studies_family,
+    bench_helios_qa_studies_family,
+    bench_hypnos_qa_studies_family,
+    bench_selene_qa_studies_family,
+    bench_thanatos_qa_studies_family,
+    bench_zephyrus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
