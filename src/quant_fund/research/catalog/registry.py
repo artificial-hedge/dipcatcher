@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1306 GLUE-eval canon.
+        "glue_studies",
+        "mnli_studies",
+        "qnli_studies",
+        "rte_studies",
+        "super_glue_studies",
+        "wnli_studies",
         # Wave-1305 reading-comprehension canon.
         "coqa_studies",
         "drop_studies",
