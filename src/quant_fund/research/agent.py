@@ -10639,6 +10639,14 @@ from quant_fund.research.benches_w1330 import (
     bench_safe_rlhf_studies_family,
     bench_sos_bench_studies_family,
 )
+from quant_fund.research.benches_w1331 import (
+    bench_codescope_studies_family,
+    bench_concode_eval_studies_family,
+    bench_crosscodeeval_studies_family,
+    bench_mer_bench_studies_family,
+    bench_project_eval_studies_family,
+    bench_swe_bench_verified_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11379,6 +11387,12 @@ def _provenance(
         "beaver_safe_studies": bench_beaver_safe_studies_family,
         "do_not_answer_studies": bench_do_not_answer_studies_family,
         "hh_rlhf_studies": bench_hh_rlhf_studies_family,
+        "codescope_studies": bench_codescope_studies_family,
+        "concode_eval_studies": bench_concode_eval_studies_family,
+        "crosscodeeval_studies": bench_crosscodeeval_studies_family,
+        "mer_bench_studies": bench_mer_bench_studies_family,
+        "project_eval_studies": bench_project_eval_studies_family,
+        "swe_bench_verified_studies": bench_swe_bench_verified_studies_family,
         "honest_eval_studies": bench_honest_eval_studies_family,
         "safe_rlhf_studies": bench_safe_rlhf_studies_family,
         "sos_bench_studies": bench_sos_bench_studies_family,
