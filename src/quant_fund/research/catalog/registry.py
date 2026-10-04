@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1354 MC-eval canon.
+        "arc_easy2_studies",
+        "boolq_lite_studies",
+        "cosmos_qa_studies",
+        "race_lite_studies",
+        "sciq_lite_studies",
+        "social_qa_studies",
         # Wave-1353 NLI-eval-2 canon.
         "creak_lite_studies",
         "entailment_bn_studies",

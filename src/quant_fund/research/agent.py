@@ -10823,6 +10823,14 @@ from quant_fund.research.benches_w1353 import (
     bench_strategy_qa_studies_family,
     bench_sup_nli_studies_family,
 )
+from quant_fund.research.benches_w1354 import (
+    bench_arc_easy2_studies_family,
+    bench_boolq_lite_studies_family,
+    bench_cosmos_qa_studies_family,
+    bench_race_lite_studies_family,
+    bench_sciq_lite_studies_family,
+    bench_social_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11642,6 +11650,12 @@ def _provenance(
         "creak_lite_studies": bench_creak_lite_studies_family,
         "entailment_bn_studies": bench_entailment_bn_studies_family,
         "hans_lite_studies": bench_hans_lite_studies_family,
+        "arc_easy2_studies": bench_arc_easy2_studies_family,
+        "boolq_lite_studies": bench_boolq_lite_studies_family,
+        "cosmos_qa_studies": bench_cosmos_qa_studies_family,
+        "race_lite_studies": bench_race_lite_studies_family,
+        "sciq_lite_studies": bench_sciq_lite_studies_family,
+        "social_qa_studies": bench_social_qa_studies_family,
         "prove_it_studies": bench_prove_it_studies_family,
         "strategy_qa_studies": bench_strategy_qa_studies_family,
         "sup_nli_studies": bench_sup_nli_studies_family,
