@@ -4881,6 +4881,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "siyokoy_qa_studies",
         "tiyanak_qa_studies",
         "wakwak_qa_studies",
+        # Wave-1660 greek-myth canon.
+        "centaur_qa_studies",
+        "cyclops_qa_studies",
+        "griffin_qa_studies",
+        "hydra_qa_studies",
+        "medusa_qa_studies",
+        "sphinx_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
