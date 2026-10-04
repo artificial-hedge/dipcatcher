@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1197 counseling-neonatal canon.
+        "addiction_counseling",
+        "rehabilitation_counseling",
+        "genetic_screening",
+        "prenatal_studies",
+        "neonatology_studies",
+        "pediatric_therapeutics",
         # Wave-1196 emergency-safety canon.
         "emergency_medical_technician",
         "fire_science_studies",
