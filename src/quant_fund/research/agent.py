@@ -10095,6 +10095,14 @@ from quant_fund.research.benches_w1262 import (
     bench_target_trial_emulation_studies_family,
     bench_win_ratio_studies_family,
 )
+from quant_fund.research.benches_w1263 import (
+    bench_diagnostic_meta_studies_family,
+    bench_fragility_index_studies_family,
+    bench_individual_patient_meta_studies_family,
+    bench_network_meta_studies_family,
+    bench_trial_sequential_studies_family,
+    bench_umbrella_review_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10490,6 +10498,12 @@ def _provenance(
         "stepped_wedge_studies": bench_stepped_wedge_studies_family,
         "target_trial_emulation_studies": bench_target_trial_emulation_studies_family,
         "win_ratio_studies": bench_win_ratio_studies_family,
+        "diagnostic_meta_studies": bench_diagnostic_meta_studies_family,
+        "fragility_index_studies": bench_fragility_index_studies_family,
+        "individual_patient_meta_studies": bench_individual_patient_meta_studies_family,
+        "network_meta_studies": bench_network_meta_studies_family,
+        "trial_sequential_studies": bench_trial_sequential_studies_family,
+        "umbrella_review_studies": bench_umbrella_review_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
