@@ -9047,6 +9047,14 @@ from quant_fund.research.benches_w1131 import (
     bench_sociology_of_risk_family,
     bench_sociology_of_the_body_family,
 )
+from quant_fund.research.benches_w1132 import (
+    bench_history_of_capitalism_family,
+    bench_history_of_emotions_family,
+    bench_history_of_religions_family,
+    bench_history_of_sexuality_family,
+    bench_history_of_the_book_family,
+    bench_microhistory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9418,6 +9426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "history_of_emotions": bench_history_of_emotions_family,
+        "history_of_sexuality": bench_history_of_sexuality_family,
+        "history_of_the_book": bench_history_of_the_book_family,
+        "history_of_capitalism": bench_history_of_capitalism_family,
+        "history_of_religions": bench_history_of_religions_family,
+        "microhistory": bench_microhistory_family,
         "sociology_of_migration": bench_sociology_of_migration_family,
         "sociology_of_housing": bench_sociology_of_housing_family,
         "sociology_of_disaster": bench_sociology_of_disaster_family,
