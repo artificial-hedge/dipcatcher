@@ -8559,6 +8559,14 @@ from quant_fund.research.benches_w1070 import (
     bench_sports_psychology_family,
     bench_sports_science_family,
 )
+from quant_fund.research.benches_w1071 import (
+    bench_ethnomusicology_family,
+    bench_music_cognition_family,
+    bench_music_history_family,
+    bench_music_theory_family,
+    bench_musicology_family,
+    bench_organology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8930,6 +8938,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "musicology": bench_musicology_family,
+        "ethnomusicology": bench_ethnomusicology_family,
+        "music_theory": bench_music_theory_family,
+        "music_cognition": bench_music_cognition_family,
+        "organology": bench_organology_family,
+        "music_history": bench_music_history_family,
         "sports_science": bench_sports_science_family,
         "exercise_physiology": bench_exercise_physiology_family,
         "sports_biomechanics": bench_sports_biomechanics_family,
