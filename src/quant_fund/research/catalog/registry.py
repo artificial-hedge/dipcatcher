@@ -6540,6 +6540,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mukil_res_lemuttim_qa_studies",
         "nergal_demon_qa_studies",
         "rabisu_hursag_qa_studies",
+        # Wave-1897 european-vampire canon.
+        "lamia_qa_studies",
+        "mormo_qa_studies",
+        "nachzehrer_qa_studies",
+        "striga_qa_studies",
+        "strix_qa_studies",
+        "vrykolakas_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

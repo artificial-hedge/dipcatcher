@@ -15167,6 +15167,14 @@ from quant_fund.research.benches_w1896 import (
     bench_nergal_demon_qa_studies_family,
     bench_rabisu_hursag_qa_studies_family,
 )
+from quant_fund.research.benches_w1897 import (
+    bench_lamia_qa_studies_family,
+    bench_mormo_qa_studies_family,
+    bench_nachzehrer_qa_studies_family,
+    bench_striga_qa_studies_family,
+    bench_strix_qa_studies_family,
+    bench_vrykolakas_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
