@@ -3348,6 +3348,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "moss_qa_studies",
         "pine_qa_studies",
         "vine_qa_studies",
+        # Wave-1441 avian canon.
+        "crane_qa_studies",
+        "eagle_qa_studies",
+        "falcon_qa_studies",
+        "owl_qa_studies",
+        "raven_qa_studies",
+        "swan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
