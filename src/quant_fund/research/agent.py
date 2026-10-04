@@ -11535,6 +11535,14 @@ from quant_fund.research.benches_w1442 import (
     bench_cricket_qa_studies_family,
     bench_moth_qa_studies_family,
 )
+from quant_fund.research.benches_w1443 import (
+    bench_amber_qa_studies_family,
+    bench_amethyst_qa_studies_family,
+    bench_crystal_qa_studies_family,
+    bench_diamond_qa_studies_family,
+    bench_emerald_qa_studies_family,
+    bench_jade_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12853,6 +12861,12 @@ def _provenance(
         "butterfly_qa_studies": bench_butterfly_qa_studies_family,
         "cricket_qa_studies": bench_cricket_qa_studies_family,
         "moth_qa_studies": bench_moth_qa_studies_family,
+        "amber_qa_studies": bench_amber_qa_studies_family,
+        "amethyst_qa_studies": bench_amethyst_qa_studies_family,
+        "crystal_qa_studies": bench_crystal_qa_studies_family,
+        "diamond_qa_studies": bench_diamond_qa_studies_family,
+        "emerald_qa_studies": bench_emerald_qa_studies_family,
+        "jade_qa_studies": bench_jade_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

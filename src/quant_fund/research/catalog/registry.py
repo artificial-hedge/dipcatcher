@@ -3362,6 +3362,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "butterfly_qa_studies",
         "cricket_qa_studies",
         "moth_qa_studies",
+        # Wave-1443 gem canon.
+        "amber_qa_studies",
+        "amethyst_qa_studies",
+        "crystal_qa_studies",
+        "diamond_qa_studies",
+        "emerald_qa_studies",
+        "jade_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
