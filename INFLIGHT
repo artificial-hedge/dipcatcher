@@ -1,3 +1,4 @@
+w1302 privacy-inference canon: canary_infer_studies, deep_leak_studies, gradient_leak_studies, lira_studies, membership_infer_studies, shadow_model_studies (7761->7767)
 w1301 backdoor-eval canon: backdoor_studies, clean_label_studies, data_poison_studies, neural_cleanse_studies, spectral_signature_studies, trojan_studies (7755->7761)
 w1300 robustness-eval canon: adversarial_eval_studies, autoattack_studies, corruption_studies, imagenet_c_studies, imagenet_r_studies, robust_bench_studies (7749->7755)
 w1299 safety-eval canon: agent_harm_studies, harm_bench_studies, jailbreak_bench_studies, prompt_inject_studies, safety_bench_studies, xstest_studies (7743->7749)
