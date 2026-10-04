@@ -11375,6 +11375,14 @@ from quant_fund.research.benches_w1422 import (
     bench_epoch_qa_studies_family,
     bench_era_qa_studies_family,
 )
+from quant_fund.research.benches_w1423 import (
+    bench_class_qa_studies_family,
+    bench_course_qa_studies_family,
+    bench_exam_qa_studies_family,
+    bench_homework_qa_studies_family,
+    bench_lecture_qa_studies_family,
+    bench_seminar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12573,6 +12581,12 @@ def _provenance(
         "decade_qa_studies": bench_decade_qa_studies_family,
         "epoch_qa_studies": bench_epoch_qa_studies_family,
         "era_qa_studies": bench_era_qa_studies_family,
+        "class_qa_studies": bench_class_qa_studies_family,
+        "course_qa_studies": bench_course_qa_studies_family,
+        "exam_qa_studies": bench_exam_qa_studies_family,
+        "homework_qa_studies": bench_homework_qa_studies_family,
+        "lecture_qa_studies": bench_lecture_qa_studies_family,
+        "seminar_qa_studies": bench_seminar_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

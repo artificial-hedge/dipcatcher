@@ -3222,6 +3222,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "decade_qa_studies",
         "epoch_qa_studies",
         "era_qa_studies",
+        # Wave-1423 education canon.
+        "class_qa_studies",
+        "course_qa_studies",
+        "exam_qa_studies",
+        "homework_qa_studies",
+        "lecture_qa_studies",
+        "seminar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
