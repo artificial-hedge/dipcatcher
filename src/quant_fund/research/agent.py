@@ -4879,6 +4879,14 @@ from quant_fund.research.benches_w610 import (
     bench_semiuniversal_family,
     bench_versal_def_family,
 )
+from quant_fund.research.benches_w611 import (
+    bench_mate_dual_family,
+    bench_modification_family,
+    bench_pasting_diag_family,
+    bench_pseudo_naturality_family,
+    bench_two_adjoint_family,
+    bench_whisker_comp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5258,6 +5266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pasting_diag": bench_pasting_diag_family,
+        "mate_dual": bench_mate_dual_family,
+        "whisker_comp": bench_whisker_comp_family,
+        "pseudo_naturality": bench_pseudo_naturality_family,
+        "two_adjoint": bench_two_adjoint_family,
+        "modification": bench_modification_family,
         "schlessinger2": bench_schlessinger2_family,
         "prorepresent": bench_prorepresent_family,
         "versal_def": bench_versal_def_family,
