@@ -6435,6 +6435,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "micipsa_qa_studies",
         "naravas_qa_studies",
         "syphax_qa_studies",
+        # Wave-1882 numidian-3 canon.
+        "ammed_qa_studies",
+        "laadas_qa_studies",
+        "langomed_qa_studies",
+        "mezzen_qa_studies",
+        "segimer_qa_studies",
+        "vercina_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
