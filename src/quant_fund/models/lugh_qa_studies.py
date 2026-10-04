@@ -16,7 +16,7 @@ def lugh_qa_studies_aux(aux: bool) -> bool:
     """lugh_qa_studies
 
     aux:
-    lugh_qa_studies: lugh, craftsman gods, answers, and scores
+    lugh_qa_studies: lugh, long arms, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_lugh_qa_studies(seed: int = 0) -> float:
     checks.append(not lugh_qa_studies_ok(False, True))
     checks.append(lugh_qa_studies_aux(True))
     checks.append(not lugh_qa_studies_aux(False))
-    checks.append(True)  # celtic-myth canon
+    checks.append(True)  # irish-myth canon
     return float(sum(checks) / len(checks))
 
 

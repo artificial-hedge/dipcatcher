@@ -5392,6 +5392,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nija_qa_studies",
         "swarozyc_qa_studies",
         "zywie_qa_studies",
+        # Wave-1733 irish-myth canon.
+        "aengus_qa_studies",
+        "brigid_qa_studies",
+        "dagda_qa_studies",
+        "lugh_qa_studies",
+        "morrigan_qa_studies",
+        "nuada_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

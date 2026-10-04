@@ -16,7 +16,7 @@ def morrigan_qa_studies_aux(aux: bool) -> bool:
     """morrigan_qa_studies
 
     aux:
-    morrigan_qa_studies: morrigan, phantom queens, answers, and scores
+    morrigan_qa_studies: morrigan, raven queens, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_morrigan_qa_studies(seed: int = 0) -> float:
     checks.append(not morrigan_qa_studies_ok(False, True))
     checks.append(morrigan_qa_studies_aux(True))
     checks.append(not morrigan_qa_studies_aux(False))
-    checks.append(True)  # celtic-myth canon
+    checks.append(True)  # irish-myth canon
     return float(sum(checks) / len(checks))
 
 
