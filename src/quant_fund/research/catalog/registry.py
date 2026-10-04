@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-834 Markov-semigroup canon.
+        "dirichlet_form",
+        "markov_semigroup",
+        "poincare_semigroup",
+        "log_sobolev_sem",
+        "hypercontractive",
+        "spectral_gap_sem",
         # Wave-833 functional-limit-theory canon.
         "fclt_invariance",
         "donsker_invariance",
