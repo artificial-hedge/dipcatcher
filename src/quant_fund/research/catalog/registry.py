@@ -3257,6 +3257,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "field_qa_studies",
         "forest_qa_studies",
         "glacier_qa_studies",
+        # Wave-1428 governance canon.
+        "agency_qa_studies",
+        "bureau_qa_studies",
+        "cabinet_qa_studies",
+        "election_qa_studies",
+        "government_qa_studies",
+        "ministry_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

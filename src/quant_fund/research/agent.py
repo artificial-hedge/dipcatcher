@@ -11415,6 +11415,14 @@ from quant_fund.research.benches_w1427 import (
     bench_forest_qa_studies_family,
     bench_glacier_qa_studies_family,
 )
+from quant_fund.research.benches_w1428 import (
+    bench_agency_qa_studies_family,
+    bench_bureau_qa_studies_family,
+    bench_cabinet_qa_studies_family,
+    bench_election_qa_studies_family,
+    bench_government_qa_studies_family,
+    bench_ministry_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12643,6 +12651,12 @@ def _provenance(
         "field_qa_studies": bench_field_qa_studies_family,
         "forest_qa_studies": bench_forest_qa_studies_family,
         "glacier_qa_studies": bench_glacier_qa_studies_family,
+        "agency_qa_studies": bench_agency_qa_studies_family,
+        "bureau_qa_studies": bench_bureau_qa_studies_family,
+        "cabinet_qa_studies": bench_cabinet_qa_studies_family,
+        "election_qa_studies": bench_election_qa_studies_family,
+        "government_qa_studies": bench_government_qa_studies_family,
+        "ministry_qa_studies": bench_ministry_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
