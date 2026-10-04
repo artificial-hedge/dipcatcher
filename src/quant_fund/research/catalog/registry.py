@@ -5693,6 +5693,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shichifukujin_qa_studies",
         "takemikazuchi_qa_studies",
         "urashima_qa_studies",
+        # Wave-1776 korean-myth-2 canon.
+        "bari_qa_studies",
+        "kongjwi_qa_studies",
+        "ondal_qa_studies",
+        "pyonggang_qa_studies",
+        "samshin_qa_studies",
+        "shimchong_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

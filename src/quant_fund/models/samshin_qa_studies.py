@@ -16,7 +16,7 @@ def samshin_qa_studies_aux(aux: bool) -> bool:
     """samshin_qa_studies
 
     aux:
-    samshin_qa_studies: samshin, birth grandmothers, answers, and scores
+    samshin_qa_studies: samshin, birth mothers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_samshin_qa_studies(seed: int = 0) -> float:
     checks.append(not samshin_qa_studies_ok(False, True))
     checks.append(samshin_qa_studies_aux(True))
     checks.append(not samshin_qa_studies_aux(False))
-    checks.append(True)  # korean-myth canon
+    checks.append(True)  # korean-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
