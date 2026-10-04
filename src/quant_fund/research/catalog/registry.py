@@ -4587,6 +4587,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "red_bellied_qa_studies",
         "russet_qa_studies",
         "white_footed_qa_studies",
+        # Wave-1618 abyssal canon.
+        "anglerfish_qa_studies",
+        "bristlemouth_qa_studies",
+        "grenadier_qa_studies",
+        "hatchetfish_qa_studies",
+        "lanternfish_qa_studies",
+        "viperfish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
