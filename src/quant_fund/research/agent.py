@@ -9063,6 +9063,14 @@ from quant_fund.research.benches_w1133 import (
     bench_statistical_field_theory_family,
     bench_string_theory_math_family,
 )
+from quant_fund.research.benches_w1134 import (
+    bench_adaptive_method_theory_family,
+    bench_finite_element_theory_family,
+    bench_high_performance_numerics_family,
+    bench_reduced_order_modeling_family,
+    bench_spectral_theory_numerics_family,
+    bench_uncertainty_quantification_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9434,6 +9442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "finite_element_theory": bench_finite_element_theory_family,
+        "spectral_theory_numerics": bench_spectral_theory_numerics_family,
+        "adaptive_method_theory": bench_adaptive_method_theory_family,
+        "reduced_order_modeling": bench_reduced_order_modeling_family,
+        "uncertainty_quantification_2": bench_uncertainty_quantification_2_family,
+        "high_performance_numerics": bench_high_performance_numerics_family,
         "statistical_field_theory": bench_statistical_field_theory_family,
         "conformal_field_theory": bench_conformal_field_theory_family,
         "lattice_field_theory": bench_lattice_field_theory_family,
