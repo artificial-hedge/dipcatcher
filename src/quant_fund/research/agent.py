@@ -8975,6 +8975,14 @@ from quant_fund.research.benches_w1122 import (
     bench_paleoethnobotany_family,
     bench_zooarchaeology_family,
 )
+from quant_fund.research.benches_w1123 import (
+    bench_contact_linguistics_family,
+    bench_descriptive_linguistics_family,
+    bench_dialectometry_family,
+    bench_etymology_family,
+    bench_lexicography_family,
+    bench_philological_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9346,6 +9354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "contact_linguistics": bench_contact_linguistics_family,
+        "descriptive_linguistics": bench_descriptive_linguistics_family,
+        "philological_studies": bench_philological_studies_family,
+        "etymology": bench_etymology_family,
+        "dialectometry": bench_dialectometry_family,
+        "lexicography": bench_lexicography_family,
         "geoarchaeology": bench_geoarchaeology_family,
         "zooarchaeology": bench_zooarchaeology_family,
         "paleoethnobotany": bench_paleoethnobotany_family,
