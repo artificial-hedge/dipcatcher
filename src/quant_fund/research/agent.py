@@ -10759,6 +10759,14 @@ from quant_fund.research.benches_w1345 import (
     bench_trivia_qa_studies_family,
     bench_web_qa_studies_family,
 )
+from quant_fund.research.benches_w1346 import (
+    bench_grail_qa_studies_family,
+    bench_graph_questions_studies_family,
+    bench_kqa_pro_studies_family,
+    bench_lc_quad_studies_family,
+    bench_mintaka_qa_studies_family,
+    bench_spinach_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11542,6 +11550,12 @@ def _provenance(
         "boolq_qa_studies": bench_boolq_qa_studies_family,
         "complex_qa_studies": bench_complex_qa_studies_family,
         "entity_quests_studies": bench_entity_quests_studies_family,
+        "grail_qa_studies": bench_grail_qa_studies_family,
+        "graph_questions_studies": bench_graph_questions_studies_family,
+        "kqa_pro_studies": bench_kqa_pro_studies_family,
+        "lc_quad_studies": bench_lc_quad_studies_family,
+        "mintaka_qa_studies": bench_mintaka_qa_studies_family,
+        "spinach_qa_studies": bench_spinach_qa_studies_family,
         "freebase_qa_studies": bench_freebase_qa_studies_family,
         "nq_open_studies": bench_nq_open_studies_family,
         "trivia_qa_studies": bench_trivia_qa_studies_family,

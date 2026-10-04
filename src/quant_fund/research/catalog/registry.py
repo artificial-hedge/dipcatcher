@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1346 KB-QA canon.
+        "grail_qa_studies",
+        "graph_questions_studies",
+        "kqa_pro_studies",
+        "lc_quad_studies",
+        "mintaka_qa_studies",
+        "spinach_qa_studies",
         # Wave-1345 open-domain-QA canon.
         "complex_qa_studies",
         "entity_quests_studies",
