@@ -1,3 +1,4 @@
+feat(research): wave 927 — information-geometry-3 canon (fisher_metric2, expectation_param, potential_fn, ebanch_diverge, shannon_gibbs, renyi_div) (5511->5517 families)
 feat(research): wave 926 — information-geometry-2 canon (f_divergence, alpha_divergence, csiszar_div, amari_connection, dual_connection, tsallis_entropy) (5505->5511 families)
 feat(research): wave 925 — Bayesian-nonparametrics-3 canon (exchangeable_pf, normalized_rm, sigma_stable, nggp_process, bondesson_shot, kingman_paintbox) (5499->5505 families)
 feat(research): wave 924 — Bayesian-nonparametrics-2 canon (gem_distribution, dp_mm, crp_table, beta_bernoulli, neutral_process, gibbs_type) (5493->5499 families)
