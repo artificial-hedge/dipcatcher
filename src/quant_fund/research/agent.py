@@ -15087,6 +15087,14 @@ from quant_fund.research.benches_w1886 import (
     bench_nasnas_qa_studies_family,
     bench_shahmaran_qa_studies_family,
 )
+from quant_fund.research.benches_w1887 import (
+    bench_dakini_qa_studies_family,
+    bench_indra_hindu_qa_studies_family,
+    bench_jamshid_qa_studies_family,
+    bench_varuna_qa_studies_family,
+    bench_vritra_qa_studies_family,
+    bench_zurvan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
