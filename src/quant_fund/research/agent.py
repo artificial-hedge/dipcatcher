@@ -11455,6 +11455,14 @@ from quant_fund.research.benches_w1432 import (
     bench_fruit_qa_studies_family,
     bench_ingredient_qa_studies_family,
 )
+from quant_fund.research.benches_w1433 import (
+    bench_cloud_qa_studies_family,
+    bench_frost_qa_studies_family,
+    bench_hurricane_qa_studies_family,
+    bench_rain_qa_studies_family,
+    bench_storm_qa_studies_family,
+    bench_wind_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12713,6 +12721,12 @@ def _provenance(
         "dish_qa_studies": bench_dish_qa_studies_family,
         "fruit_qa_studies": bench_fruit_qa_studies_family,
         "ingredient_qa_studies": bench_ingredient_qa_studies_family,
+        "cloud_qa_studies": bench_cloud_qa_studies_family,
+        "frost_qa_studies": bench_frost_qa_studies_family,
+        "hurricane_qa_studies": bench_hurricane_qa_studies_family,
+        "rain_qa_studies": bench_rain_qa_studies_family,
+        "storm_qa_studies": bench_storm_qa_studies_family,
+        "wind_qa_studies": bench_wind_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
