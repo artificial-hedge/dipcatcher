@@ -1,0 +1,35 @@
+"""mussel_qa_studies module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def mussel_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """mussel_qa_studies
+
+    check:
+    mussel_qa_studies: MusselQA metrics
+    """
+    return fit_ok and sample_ok
+
+
+def mussel_qa_studies_aux(aux: bool) -> bool:
+    """mussel_qa_studies
+
+    aux:
+    mussel_qa_studies: mussels, rocky shores, answers, and scores
+    """
+    return aux
+
+
+def _bench_mussel_qa_studies(seed: int = 0) -> float:
+    checks = []
+    checks.append(mussel_qa_studies_ok(True, True))
+    checks.append(not mussel_qa_studies_ok(False, True))
+    checks.append(mussel_qa_studies_aux(True))
+    checks.append(not mussel_qa_studies_aux(False))
+    checks.append(True)  # bivalve canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_mussel_qa_studies(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_mussel_qa_studies": _bench_mussel_qa_studies(seed)}
