@@ -5231,6 +5231,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kamrusepa_qa_studies",
         "tarhunna_qa_studies",
         "telepinu_qa_studies",
+        # Wave-1710 canaanite-myth canon.
+        "anat_qa_studies",
+        "asherah_qa_studies",
+        "baal_qa_studies",
+        "lotan_qa_studies",
+        "mot_qa_studies",
+        "yam_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
