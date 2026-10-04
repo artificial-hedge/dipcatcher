@@ -8207,6 +8207,14 @@ from quant_fund.research.benches_w1026 import (
     bench_hydrology_family,
     bench_ocean_circulation_family,
 )
+from quant_fund.research.benches_w1027 import (
+    bench_ceramics_family,
+    bench_crystal_structure_family,
+    bench_metallurgy_family,
+    bench_nanomaterials_family,
+    bench_polymer_physics_family,
+    bench_superconductivity_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8578,6 +8586,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "crystal_structure": bench_crystal_structure_family,
+        "polymer_physics": bench_polymer_physics_family,
+        "metallurgy": bench_metallurgy_family,
+        "ceramics": bench_ceramics_family,
+        "nanomaterials": bench_nanomaterials_family,
+        "superconductivity": bench_superconductivity_family,
         "climate_model": bench_climate_model_family,
         "ocean_circulation": bench_ocean_circulation_family,
         "atmospheric_chem": bench_atmospheric_chem_family,
