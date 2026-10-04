@@ -13319,6 +13319,14 @@ from quant_fund.research.benches_w1665 import (
     bench_vargbroder_qa_studies_family,
     bench_vedrfolnir_qa_studies_family,
 )
+from quant_fund.research.benches_w1666 import (
+    bench_agta_qa_studies_family,
+    bench_berberoka_qa_studies_family,
+    bench_bungisngis_qa_studies_family,
+    bench_dalaketnon_qa_studies_family,
+    bench_ekek_qa_studies_family,
+    bench_engkanto_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
