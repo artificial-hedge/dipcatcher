@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1009 electrodynamics/optics canon.
+        "maxwell_equations",
+        "poynting_vector",
+        "fresnel_eq",
+        "wave_guides",
+        "dipole_radiation",
+        "lorentz_lorenz",
         # Wave-1008 thermodynamics canon.
         "carnot_cycle",
         "maxwell_relations",
