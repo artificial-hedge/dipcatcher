@@ -10575,6 +10575,14 @@ from quant_fund.research.benches_w1322 import (
     bench_truthfulqa_studies_family,
     bench_zebra_logic_studies_family,
 )
+from quant_fund.research.benches_w1323 import (
+    bench_bigcodebench_studies_family,
+    bench_ds1000_studies_family,
+    bench_humaneval_plus_studies_family,
+    bench_livecodebench_studies_family,
+    bench_mbpp_plus_studies_family,
+    bench_swe_perf_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11284,6 +11292,12 @@ def _provenance(
         "putnam_studies": bench_putnam_studies_family,
         "truthfulqa_studies": bench_truthfulqa_studies_family,
         "zebra_logic_studies": bench_zebra_logic_studies_family,
+        "bigcodebench_studies": bench_bigcodebench_studies_family,
+        "ds1000_studies": bench_ds1000_studies_family,
+        "humaneval_plus_studies": bench_humaneval_plus_studies_family,
+        "livecodebench_studies": bench_livecodebench_studies_family,
+        "mbpp_plus_studies": bench_mbpp_plus_studies_family,
+        "swe_perf_studies": bench_swe_perf_studies_family,
         "mmmlu_studies": bench_mmmlu_studies_family,
         "mmmu_studies": bench_mmmu_studies_family,
         "videomme_studies": bench_videomme_studies_family,

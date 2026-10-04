@@ -1,3 +1,4 @@
+w1323 code-eval canon: bigcodebench_studies, ds1000_studies, humaneval_plus_studies, livecodebench_studies, mbpp_plus_studies, swe_perf_studies (7887->7893)
 w1322 reasoning-eval canon: logic_bench_studies, minif2f_studies, olympiad_bench_studies, putnam_studies, truthfulqa_studies, zebra_logic_studies (7881->7887)
 w1321 multimodal-eval canon: chart_gqa_studies, mathvista_studies, mkqa_studies, mmmlu_studies, mmmu_studies, videomme_studies (7875->7881)
 w1320 agent-eval canon: gaia_bench_studies, mmbench_agent_studies, osworld_studies, screen_eval_studies, vsi_bench_studies, webvoyager_studies (7869->7875)
