@@ -11351,6 +11351,14 @@ from quant_fund.research.benches_w1419 import (
     bench_epic_qa_studies_family,
     bench_fable_qa_studies_family,
 )
+from quant_fund.research.benches_w1420 import (
+    bench_cause_qa_studies_family,
+    bench_claim_qa_studies_family,
+    bench_conclusion_qa_studies_family,
+    bench_deduction_qa_studies_family,
+    bench_effect_qa_studies_family,
+    bench_fallacy_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12531,6 +12539,12 @@ def _provenance(
         "chronicle_qa_studies": bench_chronicle_qa_studies_family,
         "epic_qa_studies": bench_epic_qa_studies_family,
         "fable_qa_studies": bench_fable_qa_studies_family,
+        "cause_qa_studies": bench_cause_qa_studies_family,
+        "claim_qa_studies": bench_claim_qa_studies_family,
+        "conclusion_qa_studies": bench_conclusion_qa_studies_family,
+        "deduction_qa_studies": bench_deduction_qa_studies_family,
+        "effect_qa_studies": bench_effect_qa_studies_family,
+        "fallacy_qa_studies": bench_fallacy_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

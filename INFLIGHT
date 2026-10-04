@@ -1,3 +1,4 @@
+w1420 reasoning-exotics canon: cause_qa_studies, claim_qa_studies, conclusion_qa_studies, deduction_qa_studies, effect_qa_studies, fallacy_qa_studies (8469->8475)
 w1419 narrative-genre canon: anecdote_qa_studies, ballad_qa_studies, biography_qa_studies, chronicle_qa_studies, epic_qa_studies, fable_qa_studies (8463->8469)
 w1418 lore-reference canon: almanac_qa_studies, atlas_qa_studies, idiom_qa_studies, jeopardy_qa_studies, misc_qa_studies, myth_qa_studies (8457->8463)
 w1417 instruction-task canon: checklist_qa_studies, flow_qa_studies, guide_qa_studies, howto_qa_studies, instruct_qa_studies, lesson_qa_studies (8451->8457)
