@@ -5812,6 +5812,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lugulbanda_qa_studies",
         "ninsun_qa_studies",
         "urukagina_qa_studies",
+        # Wave-1793 roman-minor-2 canon.
+        "cluentia_qa_studies",
+        "faunus_qa_studies",
+        "larunda_qa_studies",
+        "mutina_qa_studies",
+        "quirinus_qa_studies",
+        "tellus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
