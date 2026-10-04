@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1280 pretraining-data canon.
+        "data_mixture_studies",
+        "data_quality_studies",
+        "dedup_pipeline_studies",
+        "domain_filtering_studies",
+        "synthetic_data_studies",
+        "token_budget_studies",
         # Wave-1279 distributed-training canon.
         "activation_checkpoint_studies",
         "fsdp_sharding_studies",

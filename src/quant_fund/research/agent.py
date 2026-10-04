@@ -10231,6 +10231,14 @@ from quant_fund.research.benches_w1279 import (
     bench_sequence_parallel_studies_family,
     bench_zero_optimizer_studies_family,
 )
+from quant_fund.research.benches_w1280 import (
+    bench_data_mixture_studies_family,
+    bench_data_quality_studies_family,
+    bench_dedup_pipeline_studies_family,
+    bench_domain_filtering_studies_family,
+    bench_synthetic_data_studies_family,
+    bench_token_budget_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10728,6 +10736,12 @@ def _provenance(
         "pipeline_schedule_studies": bench_pipeline_schedule_studies_family,
         "sequence_parallel_studies": bench_sequence_parallel_studies_family,
         "zero_optimizer_studies": bench_zero_optimizer_studies_family,
+        "data_mixture_studies": bench_data_mixture_studies_family,
+        "data_quality_studies": bench_data_quality_studies_family,
+        "dedup_pipeline_studies": bench_dedup_pipeline_studies_family,
+        "domain_filtering_studies": bench_domain_filtering_studies_family,
+        "synthetic_data_studies": bench_synthetic_data_studies_family,
+        "token_budget_studies": bench_token_budget_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
