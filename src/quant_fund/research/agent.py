@@ -10191,6 +10191,14 @@ from quant_fund.research.benches_w1274 import (
     bench_skill_library_studies_family,
     bench_web_agent_studies_family,
 )
+from quant_fund.research.benches_w1275 import (
+    bench_deliberate_search_studies_family,
+    bench_latent_reasoning_studies_family,
+    bench_self_improvement_studies_family,
+    bench_test_time_scaling_studies_family,
+    bench_tree_thought_studies_family,
+    bench_verifier_gated_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10658,6 +10666,12 @@ def _provenance(
         "mcp_protocol_studies": bench_mcp_protocol_studies_family,
         "skill_library_studies": bench_skill_library_studies_family,
         "web_agent_studies": bench_web_agent_studies_family,
+        "deliberate_search_studies": bench_deliberate_search_studies_family,
+        "latent_reasoning_studies": bench_latent_reasoning_studies_family,
+        "self_improvement_studies": bench_self_improvement_studies_family,
+        "test_time_scaling_studies": bench_test_time_scaling_studies_family,
+        "tree_thought_studies": bench_tree_thought_studies_family,
+        "verifier_gated_studies": bench_verifier_gated_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

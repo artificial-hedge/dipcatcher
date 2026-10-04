@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1275 inference-scaling canon.
+        "deliberate_search_studies",
+        "latent_reasoning_studies",
+        "self_improvement_studies",
+        "test_time_scaling_studies",
+        "tree_thought_studies",
+        "verifier_gated_studies",
         # Wave-1274 agent-infrastructure canon.
         "agent_memory_studies",
         "code_agent_studies",
