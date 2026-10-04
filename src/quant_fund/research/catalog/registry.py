@@ -5763,6 +5763,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kushinadahime_qa_studies",
         "toyotamahime_qa_studies",
         "yamatotakeru_qa_studies",
+        # Wave-1786 mesopotamian-2 canon.
+        "ea_qa_studies",
+        "humbaba_qa_studies",
+        "pazuzu_qa_studies",
+        "sargon_qa_studies",
+        "semiramis_qa_studies",
+        "utnapishtim_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
