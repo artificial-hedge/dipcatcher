@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-723 Iwasawa/Euler-system canon.
+        "gross_zagier",
+        "kolyvagin_sys",
+        "euler_system",
+        "iwasawa_motive",
+        "rubin_main_conj",
+        "perrin_riou",
         # Wave-722 special-values canon.
         "period_poly",
         "specialization_motive",
