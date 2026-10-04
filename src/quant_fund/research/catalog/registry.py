@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1324 judge-eval canon.
+        "alpacaeval_studies",
+        "arena_hard_studies",
+        "judge_bench_studies",
+        "mt_bench_judge_studies",
+        "prometheus_eval_studies",
+        "reward_bench_studies",
         # Wave-1323 code-eval canon.
         "bigcodebench_studies",
         "ds1000_studies",
