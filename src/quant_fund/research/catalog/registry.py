@@ -4524,6 +4524,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rhino_qa_studies",
         "roan_qa_studies",
         "warthog_qa_studies",
+        # Wave-1609 lemur-2 canon.
+        "black_lemur_qa_studies",
+        "brown_lemur_qa_studies",
+        "dwarf_lemur_qa_studies",
+        "mongoose_lemur_qa_studies",
+        "ruffed_qa_studies",
+        "sportive_lemur_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
