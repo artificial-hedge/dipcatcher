@@ -11007,6 +11007,14 @@ from quant_fund.research.benches_w1376 import (
     bench_empathy_dialog_studies_family,
     bench_persona_chat_studies_family,
 )
+from quant_fund.research.benches_w1377 import (
+    bench_abduction_lite_studies_family,
+    bench_board_game_qa_studies_family,
+    bench_conv_finqa_studies_family,
+    bench_dream_lite_studies_family,
+    bench_equiv_lite_studies_family,
+    bench_wsc_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11935,6 +11943,12 @@ def _provenance(
         "dstc_lite_studies": bench_dstc_lite_studies_family,
         "empathy_dialog_studies": bench_empathy_dialog_studies_family,
         "persona_chat_studies": bench_persona_chat_studies_family,
+        "abduction_lite_studies": bench_abduction_lite_studies_family,
+        "board_game_qa_studies": bench_board_game_qa_studies_family,
+        "conv_finqa_studies": bench_conv_finqa_studies_family,
+        "dream_lite_studies": bench_dream_lite_studies_family,
+        "equiv_lite_studies": bench_equiv_lite_studies_family,
+        "wsc_lite_studies": bench_wsc_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
