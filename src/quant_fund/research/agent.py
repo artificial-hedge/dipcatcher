@@ -10383,6 +10383,14 @@ from quant_fund.research.benches_w1298 import (
     bench_tool_use_eval_studies_family,
     bench_web_arena_studies_family,
 )
+from quant_fund.research.benches_w1299 import (
+    bench_agent_harm_studies_family,
+    bench_harm_bench_studies_family,
+    bench_jailbreak_bench_studies_family,
+    bench_prompt_inject_studies_family,
+    bench_safety_bench_studies_family,
+    bench_xstest_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10994,6 +11002,12 @@ def _provenance(
         "terminal_bench_studies": bench_terminal_bench_studies_family,
         "tool_use_eval_studies": bench_tool_use_eval_studies_family,
         "web_arena_studies": bench_web_arena_studies_family,
+        "agent_harm_studies": bench_agent_harm_studies_family,
+        "harm_bench_studies": bench_harm_bench_studies_family,
+        "jailbreak_bench_studies": bench_jailbreak_bench_studies_family,
+        "prompt_inject_studies": bench_prompt_inject_studies_family,
+        "safety_bench_studies": bench_safety_bench_studies_family,
+        "xstest_studies": bench_xstest_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
