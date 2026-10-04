@@ -13183,6 +13183,14 @@ from quant_fund.research.benches_w1648 import (
     bench_viy_qa_studies_family,
     bench_zilant_qa_studies_family,
 )
+from quant_fund.research.benches_w1649 import (
+    bench_aswang_qa_studies_family,
+    bench_bakunawa_qa_studies_family,
+    bench_berbalang_qa_studies_family,
+    bench_kapre_qa_studies_family,
+    bench_sigbin_qa_studies_family,
+    bench_tikbalang_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15499,6 +15507,12 @@ def _provenance(
         "kudlak_qa_studies": bench_kudlak_qa_studies_family,
         "viy_qa_studies": bench_viy_qa_studies_family,
         "zilant_qa_studies": bench_zilant_qa_studies_family,
+        "aswang_qa_studies": bench_aswang_qa_studies_family,
+        "bakunawa_qa_studies": bench_bakunawa_qa_studies_family,
+        "berbalang_qa_studies": bench_berbalang_qa_studies_family,
+        "kapre_qa_studies": bench_kapre_qa_studies_family,
+        "sigbin_qa_studies": bench_sigbin_qa_studies_family,
+        "tikbalang_qa_studies": bench_tikbalang_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
