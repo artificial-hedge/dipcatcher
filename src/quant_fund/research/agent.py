@@ -15351,6 +15351,14 @@ from quant_fund.research.benches_w1919 import (
     bench_kilmoulis_qa_studies_family,
     bench_shellycoat_qa_studies_family,
 )
+from quant_fund.research.benches_w1920 import (
+    bench_iele_qa_studies_family,
+    bench_moroi_qa_studies_family,
+    bench_pricolici_qa_studies_family,
+    bench_samca_qa_studies_family,
+    bench_strigoi_qa_studies_family,
+    bench_varcolac_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

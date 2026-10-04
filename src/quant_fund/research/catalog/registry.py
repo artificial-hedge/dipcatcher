@@ -6701,6 +6701,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "geancanach_qa_studies",
         "kilmoulis_qa_studies",
         "shellycoat_qa_studies",
+        # Wave-1920 romanian-demon canon.
+        "iele_qa_studies",
+        "moroi_qa_studies",
+        "pricolici_qa_studies",
+        "samca_qa_studies",
+        "strigoi_qa_studies",
+        "varcolac_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
