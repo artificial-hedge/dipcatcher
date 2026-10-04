@@ -1,3 +1,4 @@
+w1307 winograd-eval canon: lambada_studies, record_studies, story_cloze_studies, winogender_studies, winograd_studies, wsc_studies (7791->7797)
 w1306 GLUE-eval canon: glue_studies, mnli_studies, qnli_studies, rte_studies, super_glue_studies, wnli_studies (7785->7791)
 w1305 reading-comprehension canon: coqa_studies, drop_studies, hotpotqa_studies, nq_studies, squad_studies, triviaqa_studies (7779->7785)
 w1304 commonsense-eval canon: boolq_studies, copa_studies, hellaswag_studies, openbookqa_studies, piqa_studies, siqa_studies (7773->7779)

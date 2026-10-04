@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1307 winograd-eval canon.
+        "lambada_studies",
+        "record_studies",
+        "story_cloze_studies",
+        "winogender_studies",
+        "winograd_studies",
+        "wsc_studies",
         # Wave-1306 GLUE-eval canon.
         "glue_studies",
         "mnli_studies",
