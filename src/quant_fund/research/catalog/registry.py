@@ -5063,6 +5063,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nokken_qa_studies",
         "seidr_qa_studies",
         "vette_qa_studies",
+        # Wave-1686 african-myth-2 canon.
+        "abada_qa_studies",
+        "adze_qa_studies",
+        "ilomba_qa_studies",
+        "nbanda_qa_studies",
+        "ninki_qa_studies",
+        "okubi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
