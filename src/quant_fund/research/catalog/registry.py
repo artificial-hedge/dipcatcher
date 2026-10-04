@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-616 tensor-category-2 canon.
+        "multifusion",
+        "premodular2",
+        "braided_functor",
+        "center_cat",
+        "fusion_ring",
+        "ds_category",
         # Wave-615 motivic-9 canon.
         "motivic_adams",
         "motivic_classifying",
