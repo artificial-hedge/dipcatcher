@@ -703,7 +703,56 @@ class Fx1Harness:
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
             "tokens_used": int(rec.get("tokens_used") or 0),
+            "rotated_from": rec.get("rotated_from"),
             "key": raw,
+        }
+
+    def key_rotate(
+        self,
+        key_id: str,
+        *,
+        revoke_old: bool = True,
+        name: str | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Atomic rotation — the in-process twin of
+        ``POST /harness/keys/{id}/rotate``: mints a successor under the
+        predecessor's declared policy (name/scopes/admin/rpm/budgets),
+        ``revoke_old`` (default) tombstones the predecessor in the same
+        store transaction, and without ``ttl_s`` the successor inherits
+        the predecessor's absolute expiry — rotation never extends a
+        credential's lifetime. Returns the ``key_rotation`` envelope with
+        the minted ``key`` (raw secret shown once). ``KeyError`` when
+        unknown; ``ValueError`` when the predecessor is already revoked
+        or ``ttl_s`` is invalid."""
+        from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
+
+        try:
+            raw, rec = self._key_store.rotate(key_id, revoke_old=revoke_old, name=name, ttl_s=ttl_s)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return {
+            "object": "key_rotation",
+            "key": {
+                "id": rec["key_id"],
+                "object": "key",
+                "name": rec["name"],
+                "prefix": rec["prefix"],
+                "admin": bool(rec.get("admin")),
+                "scopes": list(rec["scopes"]),
+                "rpm": rec.get("rpm"),
+                "max_requests": rec.get("max_requests"),
+                "max_tokens": rec.get("max_tokens"),
+                "expires_at": rec.get("expires_at"),
+                "created_at": rec["created_at"],
+                "tokens_used": int(rec.get("tokens_used") or 0),
+                "rotated_from": rec.get("rotated_from"),
+                "key": raw,
+            },
+            "rotated_from": key_id,
+            "revoked_previous": revoke_old,
         }
 
     def keys(self) -> list[dict[str, Any]]:
@@ -787,6 +836,7 @@ class Fx1Harness:
             "created_at": rec["created_at"],
             "expires_at": rec.get("expires_at"),
             "revoked_at": rec.get("revoked_at"),
+            "rotated_from": rec.get("rotated_from"),
             "uses": uses,
             "tokens_used": tokens_used,
             "last_used_at": rec.get("last_used_at"),
@@ -834,6 +884,7 @@ class Fx1Harness:
             "uses": rec["uses"],
             "tokens_used": int(rec.get("tokens_used") or 0),
             "last_used_at": rec["last_used_at"],
+            "rotated_from": rec.get("rotated_from"),
         }
 
     def completion_receipt(self, completion_id: str) -> dict[str, Any]:

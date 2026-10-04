@@ -2967,6 +2967,108 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["key_bootstrapped_works"] = (
         noenv_client.get("/harness/commands", headers={"X-API-Key": m_raw}).status_code == 200
     )
+    # --- key rotation ---------------------------------------------------
+    # POST /harness/keys/{id}/rotate mints a successor under the
+    # predecessor's declared policy and tombstones the old secret in the
+    # same transaction by default.
+    rt_mint = keys_client.post(
+        "/harness/keys",
+        json={
+            "name": "rot-src",
+            "rpm": 45,
+            "scopes": ["read"],
+            "max_requests": 50,
+            "max_tokens": 500,
+        },
+        headers=root_h,
+    )
+    rt_old_id = rt_mint.json()["id"]
+    rt_old_raw = str(rt_mint.json().get("key", ""))
+    rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    rotj = rot.json() if rot.status_code == 201 else {}
+    rtk = rotj.get("key", {})
+    out["key_rotate_201"] = (
+        rot.status_code == 201
+        and rotj.get("object") == "key_rotation"
+        and rotj.get("rotated_from") == rt_old_id
+        and rotj.get("revoked_previous") is True
+        and str(rtk.get("key", "")).startswith("fx1k_")
+    )
+    out["key_rotate_inherits_policy"] = (
+        rtk.get("name") == "rot-src"
+        and rtk.get("rpm") == 45
+        and rtk.get("scopes") == ["read"]
+        and rtk.get("admin") is False
+        and rtk.get("max_requests") == 50
+        and rtk.get("max_tokens") == 500
+        and rtk.get("rotated_from") == rt_old_id
+        and rtk.get("id") != rt_old_id
+    )
+    # the swap is atomic: the old secret fails closed immediately
+    out["key_rotate_old_fails_closed"] = (
+        keys_client.get("/harness/self", headers={"X-API-Key": rt_old_raw}).status_code == 401
+        and keys_client.get(
+            "/harness/self", headers={"X-API-Key": str(rtk.get("key", ""))}
+        ).status_code
+        == 200
+    )
+    # the record carries lineage on key_get
+    rot_get = keys_client.get(f"/harness/keys/{rtk.get('id', '')}", headers=root_h)
+    out["key_rotate_lineage_on_record"] = (
+        rot_get.status_code == 200 and rot_get.json().get("rotated_from") == rt_old_id
+    )
+    # keep-old: both secrets authenticate until the old key is revoked
+    rt2_mint = keys_client.post("/harness/keys", json={"name": "rot-keep"}, headers=root_h)
+    rt2_id = rt2_mint.json()["id"]
+    rt2_raw = str(rt2_mint.json().get("key", ""))
+    keep = keys_client.post(
+        f"/harness/keys/{rt2_id}/rotate", json={"revoke_old": False}, headers=root_h
+    )
+    keep_j = keep.json() if keep.status_code == 201 else {}
+    keep_rec = keys_client.get(f"/harness/keys/{rt2_id}", headers=root_h)
+    out["key_rotate_keep_old"] = (
+        keep.status_code == 201
+        and keep_j.get("revoked_previous") is False
+        and keys_client.get("/harness/self", headers={"X-API-Key": rt2_raw}).status_code == 200
+        and keep_rec.status_code == 200
+        and keep_rec.json().get("enabled") is True
+    )
+    # expiry: omitted ttl_s inherits the predecessor's absolute deadline;
+    # a declared ttl_s mints the successor a fresh lifetime
+    rt3_mint = keys_client.post(
+        "/harness/keys", json={"name": "rot-ttl", "ttl_s": 300}, headers=root_h
+    )
+    rt3_id = rt3_mint.json()["id"]
+    rt3_exp = rt3_mint.json()["expires_at"]
+    inher = keys_client.post(f"/harness/keys/{rt3_id}/rotate", json={}, headers=root_h)
+    inher_k = inher.json().get("key", {})
+    fresh = keys_client.post(
+        f"/harness/keys/{inher_k.get('id')}/rotate", json={"ttl_s": 7200}, headers=root_h
+    )
+    out["key_rotate_expiry"] = (
+        inher.status_code == 201
+        and abs(float(inher_k.get("expires_at") or 0.0) - float(rt3_exp)) < 1e-6
+        and fresh.status_code == 201
+        and float(fresh.json()["key"]["expires_at"]) > float(rt3_exp) + 3000
+    )
+    # scope binding: rotate is admin-plane — a read-scope key is refused
+    out["key_rotate_admin_scope"] = (
+        keys_client.post(
+            f"/harness/keys/{rt2_id}/rotate", json={}, headers={"X-API-Key": ro_raw}
+        ).status_code
+        == 403
+    )
+    out["key_rotate_404"] = (
+        keys_client.post(
+            "/harness/keys/0000000000000000/rotate", json={}, headers=root_h
+        ).status_code
+        == 404
+    )
+    # a revoked credential cannot mint a live successor
+    rev_rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    out["key_rotate_revoked_409"] = (
+        rev_rot.status_code == 409 and rev_rot.json().get("code") == "key_revoked"
+    )
     # the FIRST mint on a no-env deployment carries admin so the operator
     # keeps a control plane after provisioning turns auth on
     noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))

@@ -1291,6 +1291,28 @@ class HarnessClient:
         state, and the completion-ring spend split. Needs admin."""
         return dict(self._json("GET", f"/harness/keys/{key_id}/usage", idempotent=True))
 
+    def key_rotate(
+        self,
+        key_id: str,
+        *,
+        revoke_old: bool = True,
+        name: str | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """``POST /harness/keys/{id}/rotate`` — atomic rotation: the
+        successor mints under the predecessor's declared policy, the old
+        secret tombstones in the same transaction unless ``revoke_old``
+        is false, and the response's ``key.key`` is the only place the
+        new secret appears. Without ``ttl_s`` the successor inherits the
+        predecessor's absolute expiry — rotation never extends a
+        credential's lifetime."""
+        body: dict[str, Any] = {"revoke_old": revoke_old}
+        if name is not None:
+            body["name"] = name
+        if ttl_s is not None:
+            body["ttl_s"] = ttl_s
+        return dict(self._json("POST", f"/harness/keys/{key_id}/rotate", body))
+
     def self_usage(self) -> dict[str, Any]:
         """``GET /harness/self`` — the calling credential's own card:
         which class it is (``managed`` / ``env`` / ``none``) plus, for
