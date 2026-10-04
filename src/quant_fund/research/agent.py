@@ -15423,6 +15423,14 @@ from quant_fund.research.benches_w1928 import (
     bench_ponaturi_qa_studies_family,
     bench_taipo_qa_studies_family,
 )
+from quant_fund.research.benches_w1929 import (
+    bench_hotupuku_qa_studies_family,
+    bench_kahui_tipua_qa_studies_family,
+    bench_kataore_qa_studies_family,
+    bench_nuku_mai_tore_qa_studies_family,
+    bench_tipua_qa_studies_family,
+    bench_wheke_muturangi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
