@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1011 condensed-matter canon.
+        "bloch_theorem",
+        "tight_binding",
+        "phonon_spectrum",
+        "band_structure",
+        "hubbard_model",
+        "kondo_effect",
         # Wave-1010 quantum-field-theory canon.
         "klein_gordon",
         "dirac_equation",
