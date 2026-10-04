@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-592 tensor-category canon.
+        "tensor_cat",
+        "braided_cat",
+        "rigid_cat",
+        "fusion_cat",
+        "spherical_cat",
+        "premodular",
         # Wave-591 motivic-7 canon.
         "friedlander_voev",
         "motivic_eilenberg",
