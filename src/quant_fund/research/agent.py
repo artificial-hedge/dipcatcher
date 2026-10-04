@@ -13455,6 +13455,14 @@ from quant_fund.research.benches_w1682 import (
     bench_zhaba_qa_studies_family,
     bench_zmei_qa_studies_family,
 )
+from quant_fund.research.benches_w1683 import (
+    bench_danava_qa_studies_family,
+    bench_gana_qa_studies_family,
+    bench_gandharva_qa_studies_family,
+    bench_kalakeya_qa_studies_family,
+    bench_kimpurusha_qa_studies_family,
+    bench_rakshasa_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
