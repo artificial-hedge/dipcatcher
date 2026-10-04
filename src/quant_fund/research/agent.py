@@ -11079,6 +11079,14 @@ from quant_fund.research.benches_w1385 import (
     bench_screenqa_studies_family,
     bench_weblinx_studies_family,
 )
+from quant_fund.research.benches_w1386 import (
+    bench_alfworld_lite_studies_family,
+    bench_babyai_lite_studies_family,
+    bench_crafter_lite_studies_family,
+    bench_jericho_lite_studies_family,
+    bench_scienceworld_studies_family,
+    bench_textworld_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12061,6 +12069,12 @@ def _provenance(
         "mmind2web_studies": bench_mmind2web_studies_family,
         "screenqa_studies": bench_screenqa_studies_family,
         "weblinx_studies": bench_weblinx_studies_family,
+        "alfworld_lite_studies": bench_alfworld_lite_studies_family,
+        "babyai_lite_studies": bench_babyai_lite_studies_family,
+        "crafter_lite_studies": bench_crafter_lite_studies_family,
+        "jericho_lite_studies": bench_jericho_lite_studies_family,
+        "scienceworld_studies": bench_scienceworld_studies_family,
+        "textworld_lite_studies": bench_textworld_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
