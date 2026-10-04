@@ -5924,6 +5924,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "men2_qa_studies",
         "papas2_qa_studies",
         "sabazios2_qa_studies",
+        # Wave-1809 celtic-myth-5 canon.
+        "brigid2_qa_studies",
+        "dagda2_qa_studies",
+        "lugh2_qa_studies",
+        "manannan2_qa_studies",
+        "nuada2_qa_studies",
+        "ogma2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
