@@ -12799,6 +12799,14 @@ from quant_fund.research.benches_w1600 import (
     bench_limpet_qa_studies_family,
     bench_periwinkle_qa_studies_family,
 )
+from quant_fund.research.benches_w1601 import (
+    bench_blossom_bat_qa_studies_family,
+    bench_bulldog_bat_qa_studies_family,
+    bench_free_tailed_qa_studies_family,
+    bench_fruit_bat_qa_studies_family,
+    bench_mouse_eared_qa_studies_family,
+    bench_tent_bat_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14888,6 +14896,12 @@ def _provenance(
         "cowrie_qa_studies": bench_cowrie_qa_studies_family,
         "limpet_qa_studies": bench_limpet_qa_studies_family,
         "periwinkle_qa_studies": bench_periwinkle_qa_studies_family,
+        "blossom_bat_qa_studies": bench_blossom_bat_qa_studies_family,
+        "bulldog_bat_qa_studies": bench_bulldog_bat_qa_studies_family,
+        "free_tailed_qa_studies": bench_free_tailed_qa_studies_family,
+        "fruit_bat_qa_studies": bench_fruit_bat_qa_studies_family,
+        "mouse_eared_qa_studies": bench_mouse_eared_qa_studies_family,
+        "tent_bat_qa_studies": bench_tent_bat_qa_studies_family,
         "spider_monkey_qa_studies": bench_spider_monkey_qa_studies_family,
         "chamois_qa_studies": bench_chamois_qa_studies_family,
         "goral_qa_studies": bench_goral_qa_studies_family,

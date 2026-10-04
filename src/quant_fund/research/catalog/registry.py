@@ -4468,6 +4468,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cowrie_qa_studies",
         "limpet_qa_studies",
         "periwinkle_qa_studies",
+        # Wave-1601 bat-2 canon.
+        "blossom_bat_qa_studies",
+        "bulldog_bat_qa_studies",
+        "free_tailed_qa_studies",
+        "fruit_bat_qa_studies",
+        "mouse_eared_qa_studies",
+        "tent_bat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
