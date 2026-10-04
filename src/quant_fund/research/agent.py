@@ -15063,6 +15063,14 @@ from quant_fund.research.benches_w1883 import (
     bench_tissardal_qa_studies_family,
     bench_zilalsen_qa_studies_family,
 )
+from quant_fund.research.benches_w1884 import (
+    bench_argemm_qa_studies_family,
+    bench_arzew_qa_studies_family,
+    bench_cilteni_qa_studies_family,
+    bench_essuf_qa_studies_family,
+    bench_medghassen_qa_studies_family,
+    bench_tanezruft_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
