@@ -5151,6 +5151,14 @@ from quant_fund.research.benches_w644 import (
     bench_suslin_wagoner_family,
     bench_weibel_nil_family,
 )
+from quant_fund.research.benches_w645 import (
+    bench_balmer_k_family,
+    bench_hermitian_k3_family,
+    bench_schlichting_k_family,
+    bench_thomason_les_family,
+    bench_vishik_k_family,
+    bench_witt_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5530,6 +5538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "witt_k": bench_witt_k_family,
+        "schlichting_k": bench_schlichting_k_family,
+        "balmer_k": bench_balmer_k_family,
+        "hermitian_k3": bench_hermitian_k3_family,
+        "thomason_les": bench_thomason_les_family,
+        "vishik_k": bench_vishik_k_family,
         "s_multicat": bench_s_multicat_family,
         "allday_k": bench_allday_k_family,
         "residue_k": bench_residue_k_family,
