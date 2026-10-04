@@ -8951,6 +8951,14 @@ from quant_fund.research.benches_w1119 import (
     bench_military_history_family,
     bench_social_history_family,
 )
+from quant_fund.research.benches_w1120 import (
+    bench_applied_anthropology_family,
+    bench_digital_anthropology_family,
+    bench_environmental_anthropology_family,
+    bench_forensic_anthropology_family,
+    bench_psychological_anthropology_family,
+    bench_visual_anthropology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9322,6 +9330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "visual_anthropology": bench_visual_anthropology_family,
+        "applied_anthropology": bench_applied_anthropology_family,
+        "forensic_anthropology": bench_forensic_anthropology_family,
+        "digital_anthropology": bench_digital_anthropology_family,
+        "environmental_anthropology": bench_environmental_anthropology_family,
+        "psychological_anthropology": bench_psychological_anthropology_family,
         "social_history": bench_social_history_family,
         "cultural_history": bench_cultural_history_family,
         "military_history": bench_military_history_family,
