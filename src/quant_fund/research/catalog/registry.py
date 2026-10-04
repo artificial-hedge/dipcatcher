@@ -3453,6 +3453,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "salamander_qa_studies",
         "toad_qa_studies",
         "tree_frog_qa_studies",
+        # Wave-1456 fish canon.
+        "barracuda_qa_studies",
+        "catfish_qa_studies",
+        "cod_qa_studies",
+        "piranha_qa_studies",
+        "salmon_qa_studies",
+        "tuna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
