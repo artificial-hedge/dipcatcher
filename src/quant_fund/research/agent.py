@@ -4487,6 +4487,14 @@ from quant_fund.research.benches_w561 import (
     bench_simon_regularity_family,
     bench_stable_minimal_family,
 )
+from quant_fund.research.benches_w562 import (
+    bench_ekeland_hofer_family,
+    bench_gromov_width_family,
+    bench_hofer_metric_family,
+    bench_mcduff_polterovich_family,
+    bench_symplectic_capacity_family,
+    bench_symplectic_packing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4866,6 +4874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gromov_width": bench_gromov_width_family,
+        "hofer_metric": bench_hofer_metric_family,
+        "symplectic_capacity": bench_symplectic_capacity_family,
+        "symplectic_packing": bench_symplectic_packing_family,
+        "mcduff_polterovich": bench_mcduff_polterovich_family,
+        "ekeland_hofer": bench_ekeland_hofer_family,
         "minimal_surface": bench_minimal_surface_family,
         "plateau_problem": bench_plateau_problem_family,
         "brakke_flow": bench_brakke_flow_family,
