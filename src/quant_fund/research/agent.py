@@ -11767,6 +11767,14 @@ from quant_fund.research.benches_w1471 import (
     bench_iris_qa_studies_family,
     bench_poppy_qa_studies_family,
 )
+from quant_fund.research.benches_w1472 import (
+    bench_basil_qa_studies_family,
+    bench_cardamom_qa_studies_family,
+    bench_chervil_qa_studies_family,
+    bench_cinnamon_qa_studies_family,
+    bench_coriander_qa_studies_family,
+    bench_cumin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13259,6 +13267,12 @@ def _provenance(
         "foxglove_qa_studies": bench_foxglove_qa_studies_family,
         "iris_qa_studies": bench_iris_qa_studies_family,
         "poppy_qa_studies": bench_poppy_qa_studies_family,
+        "basil_qa_studies": bench_basil_qa_studies_family,
+        "cardamom_qa_studies": bench_cardamom_qa_studies_family,
+        "chervil_qa_studies": bench_chervil_qa_studies_family,
+        "cinnamon_qa_studies": bench_cinnamon_qa_studies_family,
+        "coriander_qa_studies": bench_coriander_qa_studies_family,
+        "cumin_qa_studies": bench_cumin_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

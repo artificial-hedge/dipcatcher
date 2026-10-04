@@ -3565,6 +3565,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "foxglove_qa_studies",
         "iris_qa_studies",
         "poppy_qa_studies",
+        # Wave-1472 herb canon.
+        "basil_qa_studies",
+        "cardamom_qa_studies",
+        "chervil_qa_studies",
+        "cinnamon_qa_studies",
+        "coriander_qa_studies",
+        "cumin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
