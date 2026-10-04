@@ -11487,6 +11487,14 @@ from quant_fund.research.benches_w1436 import (
     bench_planet_qa_studies_family,
     bench_star_qa_studies_family,
 )
+from quant_fund.research.benches_w1437 import (
+    bench_deity_qa_studies_family,
+    bench_dragon_qa_studies_family,
+    bench_hero_qa_studies_family,
+    bench_olympus_qa_studies_family,
+    bench_phoenix_qa_studies_family,
+    bench_titan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12769,6 +12777,12 @@ def _provenance(
         "nebula_qa_studies": bench_nebula_qa_studies_family,
         "planet_qa_studies": bench_planet_qa_studies_family,
         "star_qa_studies": bench_star_qa_studies_family,
+        "deity_qa_studies": bench_deity_qa_studies_family,
+        "dragon_qa_studies": bench_dragon_qa_studies_family,
+        "hero_qa_studies": bench_hero_qa_studies_family,
+        "olympus_qa_studies": bench_olympus_qa_studies_family,
+        "phoenix_qa_studies": bench_phoenix_qa_studies_family,
+        "titan_qa_studies": bench_titan_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
