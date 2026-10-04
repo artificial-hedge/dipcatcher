@@ -4601,6 +4601,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fangtooth_qa_studies",
         "gulper_qa_studies",
         "tripodfish_qa_studies",
+        # Wave-1620 venom-2 canon.
+        "boomslang_qa_studies",
+        "death_adder_qa_studies",
+        "gaboon_qa_studies",
+        "inland_taipan_qa_studies",
+        "saw_scaled_qa_studies",
+        "sea_krait_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

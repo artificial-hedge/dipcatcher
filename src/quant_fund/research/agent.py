@@ -12951,6 +12951,14 @@ from quant_fund.research.benches_w1619 import (
     bench_gulper_qa_studies_family,
     bench_tripodfish_qa_studies_family,
 )
+from quant_fund.research.benches_w1620 import (
+    bench_boomslang_qa_studies_family,
+    bench_death_adder_qa_studies_family,
+    bench_gaboon_qa_studies_family,
+    bench_inland_taipan_qa_studies_family,
+    bench_saw_scaled_qa_studies_family,
+    bench_sea_krait_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15097,6 +15105,12 @@ def _provenance(
         "blobfish_qa_studies": bench_blobfish_qa_studies_family,
         "dragonfish_qa_studies": bench_dragonfish_qa_studies_family,
         "dumbo_qa_studies": bench_dumbo_qa_studies_family,
+        "boomslang_qa_studies": bench_boomslang_qa_studies_family,
+        "death_adder_qa_studies": bench_death_adder_qa_studies_family,
+        "gaboon_qa_studies": bench_gaboon_qa_studies_family,
+        "inland_taipan_qa_studies": bench_inland_taipan_qa_studies_family,
+        "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
+        "sea_krait_qa_studies": bench_sea_krait_qa_studies_family,
         "fangtooth_qa_studies": bench_fangtooth_qa_studies_family,
         "gulper_qa_studies": bench_gulper_qa_studies_family,
         "tripodfish_qa_studies": bench_tripodfish_qa_studies_family,
