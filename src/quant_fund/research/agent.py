@@ -8735,6 +8735,14 @@ from quant_fund.research.benches_w1092 import (
     bench_iconology_family,
     bench_provenance_studies_family,
 )
+from quant_fund.research.benches_w1093 import (
+    bench_canon_law_family,
+    bench_civil_law_family,
+    bench_common_law_family,
+    bench_maritime_law_family,
+    bench_procedural_law_family,
+    bench_property_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9106,6 +9114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "civil_law": bench_civil_law_family,
+        "common_law": bench_common_law_family,
+        "canon_law": bench_canon_law_family,
+        "maritime_law": bench_maritime_law_family,
+        "property_law": bench_property_law_family,
+        "procedural_law": bench_procedural_law_family,
         "iconography": bench_iconography_family,
         "iconology": bench_iconology_family,
         "connoisseurship": bench_connoisseurship_family,

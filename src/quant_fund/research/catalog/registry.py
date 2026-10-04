@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1093 law-2 canon.
+        "civil_law",
+        "common_law",
+        "canon_law",
+        "maritime_law",
+        "property_law",
+        "procedural_law",
         # Wave-1092 art-historiography canon.
         "iconography",
         "iconology",
