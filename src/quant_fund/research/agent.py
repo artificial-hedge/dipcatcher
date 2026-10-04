@@ -13503,6 +13503,14 @@ from quant_fund.research.benches_w1688 import (
     bench_terminus_qa_studies_family,
     bench_vertumnus_qa_studies_family,
 )
+from quant_fund.research.benches_w1689 import (
+    bench_apsara_qa_studies_family,
+    bench_bhairava_qa_studies_family,
+    bench_bhuta_qa_studies_family,
+    bench_pretas_qa_studies_family,
+    bench_vetal_qa_studies_family,
+    bench_yaksha_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
