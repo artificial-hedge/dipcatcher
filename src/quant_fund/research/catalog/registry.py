@@ -4398,6 +4398,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pallas_qa_studies",
         "rusty_spotted_qa_studies",
         "sand_cat_qa_studies",
+        # Wave-1591 new-world-monkey canon.
+        "capuchin_qa_studies",
+        "saki_qa_studies",
+        "squirrel_monkey_qa_studies",
+        "titi_qa_studies",
+        "uakari_qa_studies",
+        "woolly_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

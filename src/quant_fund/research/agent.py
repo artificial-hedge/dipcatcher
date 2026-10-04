@@ -12719,6 +12719,14 @@ from quant_fund.research.benches_w1590 import (
     bench_rusty_spotted_qa_studies_family,
     bench_sand_cat_qa_studies_family,
 )
+from quant_fund.research.benches_w1591 import (
+    bench_capuchin_qa_studies_family,
+    bench_saki_qa_studies_family,
+    bench_squirrel_monkey_qa_studies_family,
+    bench_titi_qa_studies_family,
+    bench_uakari_qa_studies_family,
+    bench_woolly_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14769,6 +14777,12 @@ def _provenance(
         "river_dolphin_qa_studies": bench_river_dolphin_qa_studies_family,
         "spinner_qa_studies": bench_spinner_qa_studies_family,
         "black_footed_qa_studies": bench_black_footed_qa_studies_family,
+        "capuchin_qa_studies": bench_capuchin_qa_studies_family,
+        "saki_qa_studies": bench_saki_qa_studies_family,
+        "squirrel_monkey_qa_studies": bench_squirrel_monkey_qa_studies_family,
+        "titi_qa_studies": bench_titi_qa_studies_family,
+        "uakari_qa_studies": bench_uakari_qa_studies_family,
+        "woolly_qa_studies": bench_woolly_qa_studies_family,
         "fishing_cat_qa_studies": bench_fishing_cat_qa_studies_family,
         "jungle_cat_qa_studies": bench_jungle_cat_qa_studies_family,
         "pallas_qa_studies": bench_pallas_qa_studies_family,
