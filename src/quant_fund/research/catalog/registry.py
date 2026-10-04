@@ -5147,6 +5147,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wenchang_qa_studies",
         "yutu_qa_studies",
         "zao_qa_studies",
+        # Wave-1698 polynesian-myth canon.
+        "maui_qa_studies",
+        "menahune_qa_studies",
+        "pele_qa_studies",
+        "rangi_qa_studies",
+        "tane_qa_studies",
+        "tangaroa_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
