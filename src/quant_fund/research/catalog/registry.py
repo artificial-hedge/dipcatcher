@@ -4909,6 +4909,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "church_grim_qa_studies",
         "cwn_annwn_qa_studies",
         "grimalkin_qa_studies",
+        # Wave-1664 mythic-menagerie canon.
+        "kraken_qa_studies",
+        "krampus_qa_studies",
+        "roc_qa_studies",
+        "simurgh_qa_studies",
+        "siren_qa_studies",
+        "wyvern_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

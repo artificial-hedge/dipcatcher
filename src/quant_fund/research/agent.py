@@ -13303,6 +13303,14 @@ from quant_fund.research.benches_w1663 import (
     bench_cwn_annwn_qa_studies_family,
     bench_grimalkin_qa_studies_family,
 )
+from quant_fund.research.benches_w1664 import (
+    bench_kraken_qa_studies_family,
+    bench_krampus_qa_studies_family,
+    bench_roc_qa_studies_family,
+    bench_simurgh_qa_studies_family,
+    bench_siren_qa_studies_family,
+    bench_wyvern_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
