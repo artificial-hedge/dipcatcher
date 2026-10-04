@@ -8855,6 +8855,14 @@ from quant_fund.research.benches_w1107 import (
     bench_nephrology_family,
     bench_pulmonology_family,
 )
+from quant_fund.research.benches_w1108 import (
+    bench_cultural_sociology_family,
+    bench_environmental_sociology_family,
+    bench_industrial_sociology_family,
+    bench_political_sociology_family,
+    bench_sociology_of_education_family,
+    bench_sociology_of_religion_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9226,6 +9234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "industrial_sociology": bench_industrial_sociology_family,
+        "political_sociology": bench_political_sociology_family,
+        "sociology_of_education": bench_sociology_of_education_family,
+        "sociology_of_religion": bench_sociology_of_religion_family,
+        "environmental_sociology": bench_environmental_sociology_family,
+        "cultural_sociology": bench_cultural_sociology_family,
         "gastroenterology": bench_gastroenterology_family,
         "endocrinology": bench_endocrinology_family,
         "hematology": bench_hematology_family,
