@@ -3929,6 +3929,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pampas_qa_studies",
         "ryegrass_qa_studies",
         "switchgrass_qa_studies",
+        # Wave-1524 sedge canon.
+        "bulrush_qa_studies",
+        "carex_qa_studies",
+        "cattail_qa_studies",
+        "cottongrass_qa_studies",
+        "reed_qa_studies",
+        "rush_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
