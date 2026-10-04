@@ -5279,6 +5279,14 @@ from quant_fund.research.benches_w660 import (
     bench_picard_spec_family,
     bench_telescope_tower2_family,
 )
+from quant_fund.research.benches_w661 import (
+    bench_ambidexterity_family,
+    bench_dieudonne_module_family,
+    bench_higher_semiadditivity_family,
+    bench_honda_formal_family,
+    bench_raynaud_height_family,
+    bench_tate_height_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5658,6 +5666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ambidexterity": bench_ambidexterity_family,
+        "higher_semiadditivity": bench_higher_semiadditivity_family,
+        "tate_height": bench_tate_height_family,
+        "dieudonne_module": bench_dieudonne_module_family,
+        "honda_formal": bench_honda_formal_family,
+        "raynaud_height": bench_raynaud_height_family,
         "morava_k2": bench_morava_k2_family,
         "telescope_tower2": bench_telescope_tower2_family,
         "chromatic_l2": bench_chromatic_l2_family,
