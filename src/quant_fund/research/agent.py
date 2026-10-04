@@ -11503,6 +11503,14 @@ from quant_fund.research.benches_w1438 import (
     bench_turtle_qa_studies_family,
     bench_whale_qa_studies_family,
 )
+from quant_fund.research.benches_w1439 import (
+    bench_cliff_qa_studies_family,
+    bench_crater_qa_studies_family,
+    bench_dune_qa_studies_family,
+    bench_fjord_qa_studies_family,
+    bench_gorge_qa_studies_family,
+    bench_mesa_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12797,6 +12805,12 @@ def _provenance(
         "shark_qa_studies": bench_shark_qa_studies_family,
         "turtle_qa_studies": bench_turtle_qa_studies_family,
         "whale_qa_studies": bench_whale_qa_studies_family,
+        "cliff_qa_studies": bench_cliff_qa_studies_family,
+        "crater_qa_studies": bench_crater_qa_studies_family,
+        "dune_qa_studies": bench_dune_qa_studies_family,
+        "fjord_qa_studies": bench_fjord_qa_studies_family,
+        "gorge_qa_studies": bench_gorge_qa_studies_family,
+        "mesa_qa_studies": bench_mesa_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
