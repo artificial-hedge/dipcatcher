@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1030 electrical-engineering canon.
+        "circuit_analysis",
+        "power_systems",
+        "control_systems",
+        "signal_processing2",
+        "electromagnetics",
+        "semiconductor",
         # Wave-1029 mechanical-engineering canon.
         "solid_mechanics",
         "vibration_analysis",
