@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-839 approximation-theory canon.
+        "jackson_direct",
+        "chebyshev_alternation",
+        "kolmogorov_nwidth",
+        "bernstein_poly",
+        "markov_brothers",
+        "fourier_decay",
         # Wave-838 discrete-geometry canon.
         "radon_theorem",
         "caratheodory_thm",

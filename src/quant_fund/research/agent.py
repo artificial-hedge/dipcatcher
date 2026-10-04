@@ -6703,6 +6703,14 @@ from quant_fund.research.benches_w838 import (
     bench_separation_thm_family,
     bench_tverberg_thm_family,
 )
+from quant_fund.research.benches_w839 import (
+    bench_bernstein_poly_family,
+    bench_chebyshev_alternation_family,
+    bench_fourier_decay_family,
+    bench_jackson_direct_family,
+    bench_kolmogorov_nwidth_family,
+    bench_markov_brothers_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7074,6 +7082,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jackson_direct": bench_jackson_direct_family,
+        "chebyshev_alternation": bench_chebyshev_alternation_family,
+        "kolmogorov_nwidth": bench_kolmogorov_nwidth_family,
+        "bernstein_poly": bench_bernstein_poly_family,
+        "markov_brothers": bench_markov_brothers_family,
+        "fourier_decay": bench_fourier_decay_family,
         "radon_theorem": bench_radon_theorem_family,
         "caratheodory_thm": bench_caratheodory_thm_family,
         "farkas_lemma": bench_farkas_lemma_family,
