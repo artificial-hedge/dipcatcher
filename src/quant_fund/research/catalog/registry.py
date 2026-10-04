@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1338 math-reasoning-eval canon.
+        "arith_qa_studies",
+        "gsm_hard_studies",
+        "math_reason_studies",
+        "mini_f2f_studies",
+        "proof_pile_studies",
+        "theorem_qa_studies",
         # Wave-1337 agentic-eval-3 canon.
         "android_env_studies",
         "api_bank_studies",

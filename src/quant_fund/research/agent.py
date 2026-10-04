@@ -10695,6 +10695,14 @@ from quant_fund.research.benches_w1337 import (
     bench_voyager_minecraft_studies_family,
     bench_web_shopping_studies_family,
 )
+from quant_fund.research.benches_w1338 import (
+    bench_arith_qa_studies_family,
+    bench_gsm_hard_studies_family,
+    bench_math_reason_studies_family,
+    bench_mini_f2f_studies_family,
+    bench_proof_pile_studies_family,
+    bench_theorem_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11458,6 +11466,12 @@ def _provenance(
         "api_bank_studies": bench_api_bank_studies_family,
         "gaia_level_studies": bench_gaia_level_studies_family,
         "video_game_studies": bench_video_game_studies_family,
+        "arith_qa_studies": bench_arith_qa_studies_family,
+        "gsm_hard_studies": bench_gsm_hard_studies_family,
+        "math_reason_studies": bench_math_reason_studies_family,
+        "mini_f2f_studies": bench_mini_f2f_studies_family,
+        "proof_pile_studies": bench_proof_pile_studies_family,
+        "theorem_qa_studies": bench_theorem_qa_studies_family,
         "voyager_minecraft_studies": bench_voyager_minecraft_studies_family,
         "web_shopping_studies": bench_web_shopping_studies_family,
         "mind2web_studies": bench_mind2web_studies_family,
