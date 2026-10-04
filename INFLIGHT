@@ -1,3 +1,4 @@
+w1291 data-filtering/dedup canon: data_mix_studies, dedup_minhash_studies, dedup_studies, domain_classifier_studies, perplexity_filter_studies, quality_filter_studies (7695->7701)
 w1290 quantization/compression canon: awq_studies, entropy_code_quant_studies, gptq_studies, kv_cache_quant_studies, smoothquant_studies, weight_share_studies (7689->7695)
 w1289 reasoning/CoT canon: analogical_prompt_studies, cot_studies, reflexion_studies, scratchpad_studies, self_consistency_studies, stepwise_verify_studies (7683->7689)
 w1288 RL-imitation canon: adversarial_irl_studies, behavior_cloning_studies, dagger_studies, offline_distill_studies, preference_irl_studies, skill_extraction_studies (7677->7683)

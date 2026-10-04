@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1291 data-filtering/dedup canon.
+        "data_mix_studies",
+        "dedup_minhash_studies",
+        "dedup_studies",
+        "domain_classifier_studies",
+        "perplexity_filter_studies",
+        "quality_filter_studies",
         # Wave-1290 quantization/compression canon.
         "awq_studies",
         "entropy_code_quant_studies",

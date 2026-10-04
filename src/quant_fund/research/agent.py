@@ -10319,6 +10319,14 @@ from quant_fund.research.benches_w1290 import (
     bench_smoothquant_studies_family,
     bench_weight_share_studies_family,
 )
+from quant_fund.research.benches_w1291 import (
+    bench_data_mix_studies_family,
+    bench_dedup_minhash_studies_family,
+    bench_dedup_studies_family,
+    bench_domain_classifier_studies_family,
+    bench_perplexity_filter_studies_family,
+    bench_quality_filter_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10882,6 +10890,12 @@ def _provenance(
         "kv_cache_quant_studies": bench_kv_cache_quant_studies_family,
         "smoothquant_studies": bench_smoothquant_studies_family,
         "weight_share_studies": bench_weight_share_studies_family,
+        "data_mix_studies": bench_data_mix_studies_family,
+        "dedup_minhash_studies": bench_dedup_minhash_studies_family,
+        "dedup_studies": bench_dedup_studies_family,
+        "domain_classifier_studies": bench_domain_classifier_studies_family,
+        "perplexity_filter_studies": bench_perplexity_filter_studies_family,
+        "quality_filter_studies": bench_quality_filter_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
