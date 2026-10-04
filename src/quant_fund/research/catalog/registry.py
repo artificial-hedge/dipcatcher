@@ -3425,6 +3425,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lemon_qa_studies",
         "mango_qa_studies",
         "peach_qa_studies",
+        # Wave-1452 vegetable canon.
+        "carrot_qa_studies",
+        "cucumber_qa_studies",
+        "garlic_qa_studies",
+        "onion_qa_studies",
+        "potato_qa_studies",
+        "tomato_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -11607,6 +11607,14 @@ from quant_fund.research.benches_w1451 import (
     bench_mango_qa_studies_family,
     bench_peach_qa_studies_family,
 )
+from quant_fund.research.benches_w1452 import (
+    bench_carrot_qa_studies_family,
+    bench_cucumber_qa_studies_family,
+    bench_garlic_qa_studies_family,
+    bench_onion_qa_studies_family,
+    bench_potato_qa_studies_family,
+    bench_tomato_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12979,6 +12987,12 @@ def _provenance(
         "lemon_qa_studies": bench_lemon_qa_studies_family,
         "mango_qa_studies": bench_mango_qa_studies_family,
         "peach_qa_studies": bench_peach_qa_studies_family,
+        "carrot_qa_studies": bench_carrot_qa_studies_family,
+        "cucumber_qa_studies": bench_cucumber_qa_studies_family,
+        "garlic_qa_studies": bench_garlic_qa_studies_family,
+        "onion_qa_studies": bench_onion_qa_studies_family,
+        "potato_qa_studies": bench_potato_qa_studies_family,
+        "tomato_qa_studies": bench_tomato_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
