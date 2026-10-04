@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1115 economics-3 canon.
+        "labor_economics",
+        "public_economics",
+        "industrial_organization",
+        "international_economics",
+        "financial_economics",
+        "monetary_economics",
         # Wave-1114 physics-3 canon.
         "classical_mechanics",
         "quantum_mechanics_2",
