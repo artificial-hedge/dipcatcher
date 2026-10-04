@@ -14135,6 +14135,14 @@ from quant_fund.research.benches_w1767 import (
     bench_supay_qa_studies_family,
     bench_viracocha_qa_studies_family,
 )
+from quant_fund.research.benches_w1768 import (
+    bench_buluku_qa_studies_family,
+    bench_chukwu_qa_studies_family,
+    bench_eshu_qa_studies_family,
+    bench_mawu_qa_studies_family,
+    bench_nyambi_qa_studies_family,
+    bench_oshumare_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

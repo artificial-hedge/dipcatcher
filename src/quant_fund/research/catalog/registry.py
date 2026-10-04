@@ -5637,6 +5637,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pachacamac_qa_studies",
         "supay_qa_studies",
         "viracocha_qa_studies",
+        # Wave-1768 african-myth-4 canon.
+        "buluku_qa_studies",
+        "chukwu_qa_studies",
+        "eshu_qa_studies",
+        "mawu_qa_studies",
+        "nyambi_qa_studies",
+        "oshumare_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
