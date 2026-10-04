@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1297 eval-science canon.
+        "benchmark_gaming_studies",
+        "benchmark_saturate_studies",
+        "contamination_studies",
+        "eval_coverage_studies",
+        "eval_reliability_studies",
+        "lm_eval_harness_studies",
         # Wave-1296 reward-modeling-2 canon.
         "ensemble_rm_studies",
         "judge_reward_studies",
