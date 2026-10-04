@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1284 grounding/hallucination canon.
+        "citation_check_studies",
+        "claim_verifier_studies",
+        "entailment_studies",
+        "factuality_score_studies",
+        "grounding_verify_studies",
+        "self_reflect_studies",
         # Wave-1283 agent-memory canon.
         "context_compression_studies",
         "episodic_memory_studies",
