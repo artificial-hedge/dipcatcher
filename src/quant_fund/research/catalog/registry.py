@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1331 code-eval-3 canon.
+        "codescope_studies",
+        "concode_eval_studies",
+        "crosscodeeval_studies",
+        "mer_bench_studies",
+        "project_eval_studies",
+        "swe_bench_verified_studies",
         # Wave-1330 safety-alignment-2 canon.
         "beaver_safe_studies",
         "do_not_answer_studies",
