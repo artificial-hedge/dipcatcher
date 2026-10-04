@@ -4790,6 +4790,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nidhogg_qa_studies",
         "ratatoskr_qa_studies",
         "sleipnir_qa_studies",
+        # Wave-1647 egyptian-beast canon.
+        "akhekh_qa_studies",
+        "ammit_qa_studies",
+        "apophis_qa_studies",
+        "bes_qa_studies",
+        "sekhmet_qa_studies",
+        "sphairo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
