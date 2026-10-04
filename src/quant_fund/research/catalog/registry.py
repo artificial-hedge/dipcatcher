@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1183 music canon.
+        "music_theory_2",
+        "musicology_2",
+        "ethnomusicology_2",
+        "music_cognition_2",
+        "organology_2",
+        "composition_studies",
         # Wave-1182 dance canon.
         "ballet_studies",
         "choreography_2",

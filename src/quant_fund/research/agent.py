@@ -9455,6 +9455,14 @@ from quant_fund.research.benches_w1182 import (
     bench_movement_studies_family,
     bench_somatic_practices_family,
 )
+from quant_fund.research.benches_w1183 import (
+    bench_composition_studies_family,
+    bench_ethnomusicology_2_family,
+    bench_music_cognition_2_family,
+    bench_music_theory_2_family,
+    bench_musicology_2_family,
+    bench_organology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9826,6 +9834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "music_theory_2": bench_music_theory_2_family,
+        "musicology_2": bench_musicology_2_family,
+        "ethnomusicology_2": bench_ethnomusicology_2_family,
+        "music_cognition_2": bench_music_cognition_2_family,
+        "organology_2": bench_organology_2_family,
+        "composition_studies": bench_composition_studies_family,
         "ballet_studies": bench_ballet_studies_family,
         "choreography_2": bench_choreography_2_family,
         "dance_pedagogy": bench_dance_pedagogy_family,
