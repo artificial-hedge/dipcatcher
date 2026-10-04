@@ -4811,6 +4811,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kapre_qa_studies",
         "sigbin_qa_studies",
         "tikbalang_qa_studies",
+        # Wave-1650 african-beast canon.
+        "adjule_qa_studies",
+        "agogwe_qa_studies",
+        "biloko_qa_studies",
+        "kongamato_qa_studies",
+        "popobawa_qa_studies",
+        "rompo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
