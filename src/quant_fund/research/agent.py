@@ -6543,6 +6543,14 @@ from quant_fund.research.benches_w818 import (
     bench_stochastic_int2_family,
     bench_vector_mart_family,
 )
+from quant_fund.research.benches_w819 import (
+    bench_accessible_time_family,
+    bench_debuts_theorem_family,
+    bench_first_hitting_family,
+    bench_last_exit_family,
+    bench_progressive_set_family,
+    bench_stopping_sigma_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6914,6 +6922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "first_hitting": bench_first_hitting_family,
+        "last_exit": bench_last_exit_family,
+        "stopping_sigma": bench_stopping_sigma_family,
+        "progressive_set": bench_progressive_set_family,
+        "debuts_theorem": bench_debuts_theorem_family,
+        "accessible_time": bench_accessible_time_family,
         "ito_integral": bench_ito_integral_family,
         "mart_meas": bench_mart_meas_family,
         "vector_mart": bench_vector_mart_family,
