@@ -4132,6 +4132,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "slider_qa_studies",
         "snapping_turtle_qa_studies",
         "tortoise_qa_studies",
+        # Wave-1553 frog canon.
+        "dart_frog_qa_studies",
+        "horned_frog_qa_studies",
+        "leopard_frog_qa_studies",
+        "spring_peeper_qa_studies",
+        "treefrog_qa_studies",
+        "wood_frog_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
