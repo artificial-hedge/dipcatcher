@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1236 pain canon.
+        "chronic_pain_studies",
+        "fibromyalgia_studies",
+        "headache_studies",
+        "neuropathic_pain_studies",
+        "opioid_stewardship_studies",
+        "interventional_pain_studies",
         # Wave-1235 rheumatology canon.
         "rheumatology_medicine",
         "spondyloarthritis_studies",
