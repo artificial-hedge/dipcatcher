@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1131 sociology-5 canon.
+        "sociology_of_migration",
+        "sociology_of_housing",
+        "sociology_of_disaster",
+        "sociology_of_the_body",
+        "sociology_of_risk",
+        "digital_sociology",
         # Wave-1130 anthropology-5 canon.
         "social_anthropology",
         "cognitive_anthropology",
