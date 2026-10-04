@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1050 pharmacology canon.
+        "pharmacodynamics",
+        "pharmacokinetics_2",
+        "toxicology",
+        "clinical_pharmacology",
+        "neuropharmacology",
+        "drug_metabolism",
         # Wave-1049 dentistry canon.
         "dental_anatomy",
         "oral_pathology",
