@@ -5084,6 +5084,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "penates_qa_studies",
         "terminus_qa_studies",
         "vertumnus_qa_studies",
+        # Wave-1689 hindu-myth-4 canon.
+        "apsara_qa_studies",
+        "bhairava_qa_studies",
+        "bhuta_qa_studies",
+        "pretas_qa_studies",
+        "vetal_qa_studies",
+        "yaksha_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

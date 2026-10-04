@@ -16,7 +16,7 @@ def yaksha_qa_studies_aux(aux: bool) -> bool:
     """yaksha_qa_studies
 
     aux:
-    yaksha_qa_studies: yakshas, treasure wardens, answers, and scores
+    yaksha_qa_studies: yakshas, treasure spirits, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_yaksha_qa_studies(seed: int = 0) -> float:
     checks.append(not yaksha_qa_studies_ok(False, True))
     checks.append(yaksha_qa_studies_aux(True))
     checks.append(not yaksha_qa_studies_aux(False))
-    checks.append(True)  # hindu-myth canon
+    checks.append(True)  # hindu-myth-4 canon
     return float(sum(checks) / len(checks))
 
 
