@@ -7415,6 +7415,14 @@ from quant_fund.research.benches_w927 import (
     bench_renyi_div_family,
     bench_shannon_gibbs_family,
 )
+from quant_fund.research.benches_w928 import (
+    bench_beta_skeleton_family,
+    bench_convex_hull_3d_family,
+    bench_medial_axis_family,
+    bench_polygon_boolean_family,
+    bench_polygon_centroid_family,
+    bench_shape_context_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7786,6 +7794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "convex_hull_3d": bench_convex_hull_3d_family,
+        "polygon_boolean": bench_polygon_boolean_family,
+        "medial_axis": bench_medial_axis_family,
+        "polygon_centroid": bench_polygon_centroid_family,
+        "shape_context": bench_shape_context_family,
+        "beta_skeleton": bench_beta_skeleton_family,
         "fisher_metric2": bench_fisher_metric2_family,
         "expectation_param": bench_expectation_param_family,
         "potential_fn": bench_potential_fn_family,
