@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1117 sociology-3 canon.
+        "mathematical_sociology",
+        "historical_sociology",
+        "science_studies",
+        "sociology_of_knowledge",
+        "military_sociology",
+        "legal_sociology",
         # Wave-1116 psychology-3 canon.
         "experimental_psychology",
         "comparative_psychology",
