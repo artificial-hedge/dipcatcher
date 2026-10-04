@@ -6751,6 +6751,14 @@ from quant_fund.research.benches_w844 import (
     bench_steepest_descent_family,
     bench_wkb_approx_family,
 )
+from quant_fund.research.benches_w845 import (
+    bench_abel_transform_family,
+    bench_hankel_transform_family,
+    bench_hilbert_transform_family,
+    bench_laplace_transform_family,
+    bench_mellin_transform_family,
+    bench_z_transform_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7122,6 +7130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "laplace_transform": bench_laplace_transform_family,
+        "mellin_transform": bench_mellin_transform_family,
+        "hankel_transform": bench_hankel_transform_family,
+        "z_transform": bench_z_transform_family,
+        "hilbert_transform": bench_hilbert_transform_family,
+        "abel_transform": bench_abel_transform_family,
         "asymptotic_series": bench_asymptotic_series_family,
         "poincare_expansion": bench_poincare_expansion_family,
         "steepest_descent": bench_steepest_descent_family,
