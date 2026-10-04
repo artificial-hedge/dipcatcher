@@ -665,6 +665,39 @@ def sdk_audit() -> dict[str, bool]:
         and su["key"] is None
         and su["scopes"] == ["read", "write", "admin"]
     )
+    # rotate: the successor mints under the predecessor's declared
+    # policy, lineage stamps rotated_from, and the default tombstones
+    # the predecessor atomically
+    src = sdk.key_create("rot-src", rpm=9, ttl_s=120.0, scopes=["read"], max_requests=7)
+    rot = sdk.key_rotate(src["id"])
+    rk = rot["key"]
+    out["key_rotate_card"] = (
+        rot["object"] == "key_rotation"
+        and rot["rotated_from"] == src["id"]
+        and rot["revoked_previous"] is True
+        and rk["id"] != src["id"]
+        and rk["key"].startswith("fx1k_")
+        and rk["name"] == "rot-src"
+        and rk["rpm"] == 9
+        and rk["scopes"] == ["read"]
+        and rk["max_requests"] == 7
+        and rk["rotated_from"] == src["id"]
+        and rk["expires_at"] == src["expires_at"]
+    )
+    out["key_rotate_old_tombstoned"] = sdk.key_get(src["id"])["revoked_at"] is not None
+    keep_src = sdk.key_create("rot-keep")
+    kept = sdk.key_rotate(keep_src["id"], revoke_old=False, name="rot-keep-2", ttl_s=60.0)
+    out["key_rotate_keep_old"] = (
+        kept["revoked_previous"] is False
+        and sdk.key_get(keep_src["id"])["enabled"] is True
+        and kept["key"]["name"] == "rot-keep-2"
+        and kept["key"]["expires_at"] != keep_src["expires_at"]
+    )
+    out["key_rotate_unknown_raises"] = _raises(lambda: sdk.key_rotate("nope")) == "KeyError"
+    out["key_rotate_revoked_raises"] = _raises(lambda: sdk.key_rotate(src["id"])) == "ValueError"
+    out["key_rotate_bad_ttl"] = (
+        _raises(lambda: sdk.key_rotate(keep_src["id"], ttl_s=-1)) == "ValueError"
+    )
 
     # ---- /v1/vector_stores + file_search twin -------------------------------
     # in-process RAG: upload bytes → attach → search hits feed a

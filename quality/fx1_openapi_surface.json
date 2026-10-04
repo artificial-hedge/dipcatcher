@@ -445,6 +445,22 @@
         ]
       }
     },
+    "/harness/keys/{key_id}/rotate": {
+      "post": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
+      }
+    },
     "/harness/keys/{key_id}/usage": {
       "get": {
         "params": [
@@ -2128,5 +2144,5 @@
       }
     }
   },
-  "schema_sha256": "c59c6d2ba640b61b29f20b3d098e6626dae61aa330b8daf144ba660f4422ae62"
+  "schema_sha256": "e1764dea27e83802296be1495b0428d1e25b7c5a2467f2b2e08348443c333258"
 }

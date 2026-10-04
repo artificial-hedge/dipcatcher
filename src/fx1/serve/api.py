@@ -1325,6 +1325,7 @@ class ApiKeyMintResponse(_Model):
     expires_at: float | None
     created_at: float
     tokens_used: int
+    rotated_from: str | None
     key: str
 
 
@@ -1348,11 +1349,32 @@ class ApiKeyRecordModel(_Model):
     uses: int
     tokens_used: int
     last_used_at: float | None
+    rotated_from: str | None
 
 
 class ApiKeyListResponse(_Model):
     object: Literal["list"] = "list"
     data: list[ApiKeyRecordModel]
+
+
+class ApiKeyRotateRequest(_Model):
+    """Rotate body — every field optional; omitted fields inherit the
+    predecessor's declared policy verbatim."""
+
+    name: str | None = None
+    ttl_s: float | None = Field(default=None, gt=0)
+    revoke_old: bool = True
+
+
+class ApiKeyRotateResponse(_Model):
+    """Rotation response — ``key`` is the minted successor (raw secret
+    shown once); ``revoked_previous`` reports whether the predecessor
+    was tombstoned atomically with the mint."""
+
+    object: Literal["key_rotation"] = "key_rotation"
+    key: ApiKeyMintResponse
+    rotated_from: str
+    revoked_previous: bool
 
 
 class KeyUsageBackendSplit(_Model):
@@ -1387,6 +1409,7 @@ class ApiKeyUsageResponse(_Model):
     created_at: float
     expires_at: float | None
     revoked_at: float | None
+    rotated_from: str | None
     uses: int
     tokens_used: int
     last_used_at: float | None
@@ -1435,6 +1458,7 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
         uses=rec["uses"],
         tokens_used=int(rec.get("tokens_used") or 0),
         last_used_at=rec["last_used_at"],
+        rotated_from=rec.get("rotated_from"),
     )
 
 
@@ -8269,6 +8293,7 @@ def _key_usage_response(
         created_at=rec["created_at"],
         expires_at=rec.get("expires_at"),
         revoked_at=rec.get("revoked_at"),
+        rotated_from=rec.get("rotated_from"),
         uses=uses,
         tokens_used=tokens_used,
         last_used_at=rec.get("last_used_at"),
@@ -8285,15 +8310,68 @@ def _key_usage_response(
     )
 
 
-def _mount_key_introspection(
+def _mount_key_lifecycle(
     app: FastAPI,
     *,
     key_store: ApiKeyStore,
     completion_log: _CompletionLog,
 ) -> None:
-    """Per-key usage introspection: the admin card on
-    ``/harness/keys/{id}/usage`` and the caller's own card on
-    ``/harness/self`` (read scope — any credential watches itself)."""
+    """Key lifecycle routes beyond mint/get/revoke: the usage cards and
+    rotation. Lifted out of ``create_app`` for the ruff complexity
+    ceiling."""
+
+    @app.post(
+        "/harness/keys/{key_id}/rotate",
+        response_model=ApiKeyRotateResponse,
+        status_code=201,
+        tags=["ops"],
+        operation_id="key_rotate",
+    )
+    def key_rotate(
+        key_id: str, body: ApiKeyRotateRequest, request: Request
+    ) -> ApiKeyRotateResponse:
+        """Atomic rotation: mint a successor inheriting the predecessor's
+        declared policy (name/scopes/admin/rpm/budgets) and, by default,
+        tombstone the predecessor in the same store transaction. The new
+        raw secret is returned once; lineage (``rotated_from``) is
+        journaled with the successor record. Without ``ttl_s`` the
+        successor inherits the predecessor's absolute ``expires_at`` —
+        rotation never extends a credential's lifetime."""
+        _require_admin(request)
+        try:
+            raw, rec = key_store.rotate(
+                key_id,
+                revoke_old=body.revoke_old,
+                name=body.name,
+                ttl_s=body.ttl_s,
+            )
+        except KeyStoreError as exc:
+            raise ApiError(
+                404 if exc.code == "key_not_found" else 409,
+                str(exc),
+                code=exc.code,
+            ) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_rotation") from exc
+        return ApiKeyRotateResponse(
+            key=ApiKeyMintResponse(
+                id=rec["key_id"],
+                name=rec["name"],
+                prefix=rec["prefix"],
+                admin=bool(rec.get("admin")),
+                scopes=list(rec["scopes"]),
+                rpm=rec.get("rpm"),
+                max_requests=rec.get("max_requests"),
+                max_tokens=rec.get("max_tokens"),
+                expires_at=rec.get("expires_at"),
+                created_at=rec["created_at"],
+                tokens_used=int(rec.get("tokens_used") or 0),
+                rotated_from=rec.get("rotated_from"),
+                key=raw,
+            ),
+            rotated_from=key_id,
+            revoked_previous=body.revoke_old,
+        )
 
     @app.get(
         "/harness/keys/{key_id}/usage",
@@ -8881,6 +8959,7 @@ def create_app(
                 "key_scopes": True,
                 "key_quotas": True,
                 "key_usage": True,
+                "key_rotation": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -9055,6 +9134,7 @@ def create_app(
             expires_at=rec.get("expires_at"),
             created_at=rec["created_at"],
             tokens_used=int(rec.get("tokens_used") or 0),
+            rotated_from=rec.get("rotated_from"),
             key=raw,
         )
 
@@ -9184,7 +9264,7 @@ def create_app(
         return resp
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
-    _mount_key_introspection(app, key_store=key_store, completion_log=completion_log)
+    _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
 
     def _resolve_request_backend(
         backend_name: str,

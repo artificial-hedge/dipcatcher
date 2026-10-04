@@ -4021,6 +4021,29 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _su_sdk["metered"] is False
         and _su_sdk["key"] is None
     )
+    # rotation is identical on both legs — the successor inherits the
+    # declared policy, lineage stamps rotated_from, and the default
+    # tombstones the predecessor atomically
+    _rts = sdk.key_create("rot-par", rpm=12, scopes=["read"], max_requests=5)
+    _rtw = _admin_remote.key_create("rot-par", rpm=12, scopes=["read"], max_requests=5)
+    _rot_s = sdk.key_rotate(_rts["id"])
+    _rot_w = _admin_remote.key_rotate(_rtw["id"])
+    out["key_rotate_parity"] = (
+        _rot_s["object"] == _rot_w["object"] == "key_rotation"
+        and _rot_s["rotated_from"] == _rts["id"]
+        and _rot_w["rotated_from"] == _rtw["id"]
+        and _rot_s["revoked_previous"] == _rot_w["revoked_previous"] is True
+        and _rot_s["key"]["scopes"] == _rot_w["key"]["scopes"] == ["read"]
+        and _rot_s["key"]["rpm"] == _rot_w["key"]["rpm"] == 12
+        and _rot_s["key"]["max_requests"] == _rot_w["key"]["max_requests"] == 5
+        and _rot_s["key"]["name"] == _rot_w["key"]["name"] == "rot-par"
+        and _rot_s["key"]["key"].startswith("fx1k_")
+        and _rot_w["key"]["key"].startswith("fx1k_")
+        and sdk.key_get(_rts["id"])["revoked_at"] is not None
+        and _admin_remote.key_get(_rtw["id"])["revoked_at"] is not None
+        and _raises(lambda: sdk.key_rotate("nope"))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_rotate("nope"))[0] == "KeyError"
+    )
     # One translation module (fx1.serve.anthropic_compat) serves all
     # surfaces: the same request over the wire, in-process, and through
     # the typed remote client must produce the same message object, the

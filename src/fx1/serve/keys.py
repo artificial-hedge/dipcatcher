@@ -158,6 +158,7 @@ class ApiKeyStore:
                     rec.setdefault("max_requests", None)
                     rec.setdefault("max_tokens", None)
                     rec.setdefault("tokens_used", 0)
+                    rec.setdefault("rotated_from", None)
                     self._by_hash[rec["sha256"]] = rec
                     kid = rec.get("key_id")
                     if isinstance(kid, str):
@@ -237,6 +238,7 @@ class ApiKeyStore:
             "revoked_at": None,
             "uses": 0,
             "last_used_at": None,
+            "rotated_from": None,
             "sha256": sha,
         }
         with self._lock:
@@ -360,3 +362,72 @@ class ApiKeyStore:
             self._append(rec)
             self._by_hash[sha] = rec
             return _wire(rec)
+
+    def rotate(
+        self,
+        key_id: str,
+        *,
+        revoke_old: bool = True,
+        name: str | None = None,
+        ttl_s: float | None = None,
+    ) -> tuple[str, dict[str, Any]]:
+        """Mint a successor under the predecessor's declared policy —
+        same name, admin, scopes, rpm, and budgets — stamped
+        ``rotated_from`` on the journaled record so the lineage survives
+        a restart. ``revoke_old`` (default) tombstones the predecessor
+        inside the same lock, so the swap is atomic: the old secret dies
+        in the same instant the new one exists. With
+        ``revoke_old=False`` both secrets authenticate until the old key
+        is revoked or expires — the overlap is the operator's choice,
+        declared on the response.
+
+        Expiry: ``ttl_s`` mints the successor a fresh lifetime;
+        omitted, it inherits the predecessor's absolute ``expires_at``
+        verbatim — rotation changes the secret, never the declared
+        deadline. Unknown keys raise ``key_not_found``; rotating a
+        revoked credential raises ``key_revoked`` (a dead secret cannot
+        mint a live one); a full store raises ``keys_cap`` BEFORE the
+        predecessor is touched."""
+        if ttl_s is not None and ttl_s <= 0:
+            raise ValueError("ttl_s must be > 0")
+        with self._lock:
+            sha = self._by_id.get(key_id)
+            old = self._by_hash.get(sha) if sha is not None else None
+            if old is None:
+                raise KeyStoreError("key_not_found", f"unknown key {key_id!r}")
+            if not old.get("enabled", True):
+                raise KeyStoreError("key_revoked", f"key {key_id!r} is revoked")
+            if len(self._by_hash) >= self._max:
+                raise KeyStoreError("keys_cap", f"key store is full ({self._max} keys)")
+            raw = KEY_PREFIX + secrets.token_hex(20)
+            new_sha = _hash(raw)
+            created = self._clock()
+            rec: dict[str, Any] = {
+                "key_id": new_sha[:16],
+                "prefix": raw[:13],
+                "name": name if name is not None else old.get("name"),
+                "admin": bool(old.get("admin")),
+                "scopes": list(
+                    old.get("scopes") or (list(SCOPES) if old.get("admin") else ["read", "write"])
+                ),
+                "rpm": old.get("rpm"),
+                "max_requests": old.get("max_requests"),
+                "max_tokens": old.get("max_tokens"),
+                "tokens_used": 0,
+                "created_at": created,
+                "expires_at": ((created + ttl_s) if ttl_s is not None else old.get("expires_at")),
+                "enabled": True,
+                "revoked_at": None,
+                "uses": 0,
+                "last_used_at": None,
+                "rotated_from": key_id,
+                "sha256": new_sha,
+            }
+            self._append(rec)
+            self._by_hash[new_sha] = rec
+            self._by_id[rec["key_id"]] = new_sha
+            if revoke_old and sha is not None:
+                revoked = {**old, "enabled": False, "revoked_at": created}
+                self._append(revoked)
+                self._by_hash[sha] = revoked
+            return raw, _wire(rec)
