@@ -3474,6 +3474,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "caravan_qa_studies",
         "mirage_qa_studies",
         "oasis_qa_studies",
+        # Wave-1459 arctic canon.
+        "arctic_fox_qa_studies",
+        "caribou_qa_studies",
+        "musk_ox_qa_studies",
+        "penguin_qa_studies",
+        "polar_bear_qa_studies",
+        "reindeer_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

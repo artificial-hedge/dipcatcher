@@ -11663,6 +11663,14 @@ from quant_fund.research.benches_w1458 import (
     bench_mirage_qa_studies_family,
     bench_oasis_qa_studies_family,
 )
+from quant_fund.research.benches_w1459 import (
+    bench_arctic_fox_qa_studies_family,
+    bench_caribou_qa_studies_family,
+    bench_musk_ox_qa_studies_family,
+    bench_penguin_qa_studies_family,
+    bench_polar_bear_qa_studies_family,
+    bench_reindeer_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13077,6 +13085,12 @@ def _provenance(
         "caravan_qa_studies": bench_caravan_qa_studies_family,
         "mirage_qa_studies": bench_mirage_qa_studies_family,
         "oasis_qa_studies": bench_oasis_qa_studies_family,
+        "arctic_fox_qa_studies": bench_arctic_fox_qa_studies_family,
+        "caribou_qa_studies": bench_caribou_qa_studies_family,
+        "musk_ox_qa_studies": bench_musk_ox_qa_studies_family,
+        "penguin_qa_studies": bench_penguin_qa_studies_family,
+        "polar_bear_qa_studies": bench_polar_bear_qa_studies_family,
+        "reindeer_qa_studies": bench_reindeer_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
