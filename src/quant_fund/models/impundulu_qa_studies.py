@@ -16,7 +16,7 @@ def impundulu_qa_studies_aux(aux: bool) -> bool:
     """impundulu_qa_studies
 
     aux:
-    impundulu_qa_studies: impundulu, lightning bird, answers, and scores
+    impundulu_qa_studies: impundulu, lightning birds, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_impundulu_qa_studies(seed: int = 0) -> float:
     checks.append(not impundulu_qa_studies_ok(False, True))
     checks.append(impundulu_qa_studies_aux(True))
     checks.append(not impundulu_qa_studies_aux(False))
-    checks.append(True)  # african-myth canon
+    checks.append(True)  # zulu-myth canon
     return float(sum(checks) / len(checks))
 
 
