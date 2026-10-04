@@ -10199,6 +10199,14 @@ from quant_fund.research.benches_w1275 import (
     bench_tree_thought_studies_family,
     bench_verifier_gated_studies_family,
 )
+from quant_fund.research.benches_w1276 import (
+    bench_attribution_patching_studies_family,
+    bench_causal_scrubbing_studies_family,
+    bench_function_vector_studies_family,
+    bench_induction_head_studies_family,
+    bench_monosemantic_studies_family,
+    bench_superposition_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10672,6 +10680,12 @@ def _provenance(
         "test_time_scaling_studies": bench_test_time_scaling_studies_family,
         "tree_thought_studies": bench_tree_thought_studies_family,
         "verifier_gated_studies": bench_verifier_gated_studies_family,
+        "attribution_patching_studies": bench_attribution_patching_studies_family,
+        "causal_scrubbing_studies": bench_causal_scrubbing_studies_family,
+        "function_vector_studies": bench_function_vector_studies_family,
+        "induction_head_studies": bench_induction_head_studies_family,
+        "monosemantic_studies": bench_monosemantic_studies_family,
+        "superposition_studies": bench_superposition_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
