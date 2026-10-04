@@ -8807,6 +8807,14 @@ from quant_fund.research.benches_w1101 import (
     bench_molecular_biology_family,
     bench_zoology_family,
 )
+from quant_fund.research.benches_w1102 import (
+    bench_geophysics_applied_family,
+    bench_hydrogeology_family,
+    bench_mineralogy_family,
+    bench_sedimentology_family,
+    bench_tectonics_family,
+    bench_volcanology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9178,6 +9186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mineralogy": bench_mineralogy_family,
+        "volcanology": bench_volcanology_family,
+        "sedimentology": bench_sedimentology_family,
+        "tectonics": bench_tectonics_family,
+        "hydrogeology": bench_hydrogeology_family,
+        "geophysics_applied": bench_geophysics_applied_family,
         "molecular_biology": bench_molecular_biology_family,
         "cell_biology": bench_cell_biology_family,
         "genetics": bench_genetics_family,
