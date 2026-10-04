@@ -6582,6 +6582,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nurarihyon_qa_studies",
         "shuten_doji_qa_studies",
         "tsuchigumo_qa_studies",
+        # Wave-1903 slavic-demon canon.
+        "chert_qa_studies",
+        "likho_qa_studies",
+        "polevoy_qa_studies",
+        "rarog_qa_studies",
+        "vodyanoy_qa_studies",
+        "zmey_gorynych_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
