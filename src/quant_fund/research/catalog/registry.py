@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-742 random-matrix canon.
+        "soshnikov_rmt",
+        "erdos_yau",
+        "forrester_rmt",
+        "mehta_rmt",
+        "deift_rmt",
+        "johansson_rmt",
         # Wave-741 percolation-2 canon.
         "beffara_nolin",
         "hara_slade",
