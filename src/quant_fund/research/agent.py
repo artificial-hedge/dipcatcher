@@ -8863,6 +8863,14 @@ from quant_fund.research.benches_w1108 import (
     bench_sociology_of_education_family,
     bench_sociology_of_religion_family,
 )
+from quant_fund.research.benches_w1109 import (
+    bench_anthropological_linguistics_family,
+    bench_applied_linguistics_family,
+    bench_discourse_analysis_family,
+    bench_evolutionary_linguistics_family,
+    bench_forensic_linguistics_family,
+    bench_neurolinguistics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9234,6 +9242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "applied_linguistics": bench_applied_linguistics_family,
+        "anthropological_linguistics": bench_anthropological_linguistics_family,
+        "neurolinguistics": bench_neurolinguistics_family,
+        "evolutionary_linguistics": bench_evolutionary_linguistics_family,
+        "forensic_linguistics": bench_forensic_linguistics_family,
+        "discourse_analysis": bench_discourse_analysis_family,
         "industrial_sociology": bench_industrial_sociology_family,
         "political_sociology": bench_political_sociology_family,
         "sociology_of_education": bench_sociology_of_education_family,
