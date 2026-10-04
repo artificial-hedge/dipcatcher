@@ -6477,6 +6477,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "varuna_qa_studies",
         "vritra_qa_studies",
         "zurvan_qa_studies",
+        # Wave-1888 eddic-lore canon.
+        "grimnismal_qa_studies",
+        "havamal_qa_studies",
+        "lokasenna_qa_studies",
+        "skirnismal_qa_studies",
+        "vafthrudnir_qa_studies",
+        "voluspa_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

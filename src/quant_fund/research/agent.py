@@ -15095,6 +15095,14 @@ from quant_fund.research.benches_w1887 import (
     bench_vritra_qa_studies_family,
     bench_zurvan_qa_studies_family,
 )
+from quant_fund.research.benches_w1888 import (
+    bench_grimnismal_qa_studies_family,
+    bench_havamal_qa_studies_family,
+    bench_lokasenna_qa_studies_family,
+    bench_skirnismal_qa_studies_family,
+    bench_vafthrudnir_qa_studies_family,
+    bench_voluspa_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
