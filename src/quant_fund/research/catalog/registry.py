@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-853 spectral-element canon.
+        "sem_grid",
+        "gll_nodes",
+        "spectral_element",
+        "mortar_method",
+        "tensor_product_sem",
+        "hp_refinement",
         # Wave-852 boundary-element canon.
         "bem_kernel",
         "fredholm_solve",
