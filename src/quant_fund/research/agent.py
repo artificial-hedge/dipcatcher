@@ -9735,6 +9735,14 @@ from quant_fund.research.benches_w1217 import (
     bench_metabolic_medicine_family,
     bench_thyroid_medicine_family,
 )
+from quant_fund.research.benches_w1218 import (
+    bench_acid_base_medicine_family,
+    bench_dialysis_medicine_family,
+    bench_hypertension_medicine_family,
+    bench_nephrology_studies_family,
+    bench_renal_transplant_family,
+    bench_urology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10106,6 +10114,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nephrology_studies": bench_nephrology_studies_family,
+        "dialysis_medicine": bench_dialysis_medicine_family,
+        "renal_transplant": bench_renal_transplant_family,
+        "acid_base_medicine": bench_acid_base_medicine_family,
+        "hypertension_medicine": bench_hypertension_medicine_family,
+        "urology_studies": bench_urology_studies_family,
         "endocrinology_studies": bench_endocrinology_studies_family,
         "diabetes_medicine": bench_diabetes_medicine_family,
         "thyroid_medicine": bench_thyroid_medicine_family,
