@@ -14743,6 +14743,14 @@ from quant_fund.research.benches_w1843 import (
     bench_goliath_qa_studies_family,
     bench_samson_qa_studies_family,
 )
+from quant_fund.research.benches_w1844 import (
+    bench_aram2_qa_studies_family,
+    bench_ashima_qa_studies_family,
+    bench_baalshamin_qa_studies_family,
+    bench_resheph2_qa_studies_family,
+    bench_rimmon_qa_studies_family,
+    bench_sahr_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
