@@ -9975,6 +9975,14 @@ from quant_fund.research.benches_w1247 import (
     bench_stones_studies_family,
     bench_tubulointerstitial_studies_family,
 )
+from quant_fund.research.benches_w1248 import (
+    bench_cataract_studies_family,
+    bench_corneal_studies_family,
+    bench_glaucoma_studies_family,
+    bench_macular_studies_family,
+    bench_refractive_studies_family,
+    bench_retinal_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10346,6 +10354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "retinal_studies": bench_retinal_studies_family,
+        "corneal_studies": bench_corneal_studies_family,
+        "glaucoma_studies": bench_glaucoma_studies_family,
+        "cataract_studies": bench_cataract_studies_family,
+        "macular_studies": bench_macular_studies_family,
+        "refractive_studies": bench_refractive_studies_family,
         "glomerular_studies": bench_glomerular_studies_family,
         "tubulointerstitial_studies": bench_tubulointerstitial_studies_family,
         "ckd_studies": bench_ckd_studies_family,
