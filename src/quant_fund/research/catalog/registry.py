@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1138 economics-5 canon.
+        "behavioral_economics",
+        "econ_neuroscience",
+        "experimental_economics_2",
+        "institutional_economics",
+        "evolutionary_economics",
+        "political_economy_2",
         # Wave-1137 education-4 canon.
         "early_childhood_education",
         "bilingual_education",
