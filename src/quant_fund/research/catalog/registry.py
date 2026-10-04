@@ -4692,6 +4692,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pegasus_qa_studies",
         "phoenix_2_qa_studies",
         "unicorn_2_qa_studies",
+        # Wave-1633 elemental canon.
+        "air_sylph_qa_studies",
+        "earth_golem_qa_studies",
+        "fire_spirit_qa_studies",
+        "frost_wight_qa_studies",
+        "storm_jinn_qa_studies",
+        "water_sprite_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
