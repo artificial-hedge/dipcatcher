@@ -7799,6 +7799,14 @@ from quant_fund.research.benches_w975 import (
     bench_sobolev_trace_family,
     bench_temper_dist_family,
 )
+from quant_fund.research.benches_w976 import (
+    bench_diam_dim_family,
+    bench_frechet_nuclear_family,
+    bench_gelfand_triple_family,
+    bench_hilbert_schmidt_emb_family,
+    bench_nuclear_map_family,
+    bench_trace_duality_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8170,6 +8178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nuclear_map": bench_nuclear_map_family,
+        "frechet_nuclear": bench_frechet_nuclear_family,
+        "gelfand_triple": bench_gelfand_triple_family,
+        "hilbert_schmidt_emb": bench_hilbert_schmidt_emb_family,
+        "trace_duality": bench_trace_duality_family,
+        "diam_dim": bench_diam_dim_family,
         "schwartz_dist": bench_schwartz_dist_family,
         "temper_dist": bench_temper_dist_family,
         "dist_convolution": bench_dist_convolution_family,
