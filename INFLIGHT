@@ -1,3 +1,4 @@
+w1271 LLM-evaluation canon: arena_battle_studies, bigbench_studies, capability_elicitation_studies, contamination_detect_studies, helm_eval_studies, llm_judge_studies (7575->7581)
 w1270 mech-interp-2 canon: attribution_graph_studies, causal_tracing_studies, circuit_discovery_studies, feature_geometry_studies, gated_sae_studies, transcoder_studies (7569->7575)
 w1269 post-training-2 canon: best_of_n_studies, cdpo_studies, constitutional_ai_studies, orpo_studies, simpo_studies, sppo_studies (7563->7569)
 w1268 RL-skills/goal canon: curiosity_diversity_studies, hindsight_relabel_studies, occupancy_measure_studies, option_discovery_studies, skill_chain_studies, successor_feature_studies (7557->7563)
