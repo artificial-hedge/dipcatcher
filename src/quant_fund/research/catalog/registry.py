@@ -6659,6 +6659,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "navka_qa_studies",
         "perekus_qa_studies",
         "rugievit_qa_studies",
+        # Wave-1914 jinn canon.
+        "ghul_qa_studies",
+        "ifrit_qa_studies",
+        "jann_qa_studies",
+        "marid_qa_studies",
+        "nasnas_qa_studies",
+        "shaitan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

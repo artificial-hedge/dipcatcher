@@ -15303,6 +15303,14 @@ from quant_fund.research.benches_w1913 import (
     bench_perekus_qa_studies_family,
     bench_rugievit_qa_studies_family,
 )
+from quant_fund.research.benches_w1914 import (
+    bench_ghul_qa_studies_family,
+    bench_ifrit_qa_studies_family,
+    bench_jann_qa_studies_family,
+    bench_marid_qa_studies_family,
+    bench_nasnas_qa_studies_family,
+    bench_shaitan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

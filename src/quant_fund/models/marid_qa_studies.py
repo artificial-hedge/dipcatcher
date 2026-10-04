@@ -7,7 +7,7 @@ def marid_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
     """marid_qa_studies
 
     check:
-    marid_qa_studies: MaridQA metrics
+    marid_qa_studies: M
     """
     return fit_ok and sample_ok
 
@@ -16,7 +16,7 @@ def marid_qa_studies_aux(aux: bool) -> bool:
     """marid_qa_studies
 
     aux:
-    marid_qa_studies: marids, ocean depths, answers, and scores
+    marid_qa_studies: a
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_marid_qa_studies(seed: int = 0) -> float:
     checks.append(not marid_qa_studies_ok(False, True))
     checks.append(marid_qa_studies_aux(True))
     checks.append(not marid_qa_studies_aux(False))
-    checks.append(True)  # elemental-2 canon
+    checks.append(True)  # jinn canon
     return float(sum(checks) / len(checks))
 
 
