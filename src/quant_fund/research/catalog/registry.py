@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1027 materials-science canon.
+        "crystal_structure",
+        "polymer_physics",
+        "metallurgy",
+        "ceramics",
+        "nanomaterials",
+        "superconductivity",
         # Wave-1026 environmental-science canon.
         "climate_model",
         "ocean_circulation",
