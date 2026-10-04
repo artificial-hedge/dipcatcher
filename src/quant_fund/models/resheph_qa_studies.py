@@ -16,7 +16,7 @@ def resheph_qa_studies_aux(aux: bool) -> bool:
     """resheph_qa_studies
 
     aux:
-    resheph_qa_studies: resheph, plague archers, answers, and scores
+    resheph_qa_studies: resheph, plague arrows, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_resheph_qa_studies(seed: int = 0) -> float:
     checks.append(not resheph_qa_studies_ok(False, True))
     checks.append(resheph_qa_studies_aux(True))
     checks.append(not resheph_qa_studies_aux(False))
-    checks.append(True)  # phoenician-myth canon
+    checks.append(True)  # canaanite-2 canon
     return float(sum(checks) / len(checks))
 
 

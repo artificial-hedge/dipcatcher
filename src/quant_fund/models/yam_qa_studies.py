@@ -16,7 +16,7 @@ def yam_qa_studies_aux(aux: bool) -> bool:
     """yam_qa_studies
 
     aux:
-    yam_qa_studies: yam, ocean kings, answers, and scores
+    yam_qa_studies: yam, sea tyrants, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_yam_qa_studies(seed: int = 0) -> float:
     checks.append(not yam_qa_studies_ok(False, True))
     checks.append(yam_qa_studies_aux(True))
     checks.append(not yam_qa_studies_aux(False))
-    checks.append(True)  # canaanite-myth canon
+    checks.append(True)  # canaanite-2 canon
     return float(sum(checks) / len(checks))
 
 

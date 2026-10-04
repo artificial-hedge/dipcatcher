@@ -16,7 +16,7 @@ def mot_qa_studies_aux(aux: bool) -> bool:
     """mot_qa_studies
 
     aux:
-    mot_qa_studies: mot, death lords, answers, and scores
+    mot_qa_studies: mot, death devourers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_mot_qa_studies(seed: int = 0) -> float:
     checks.append(not mot_qa_studies_ok(False, True))
     checks.append(mot_qa_studies_aux(True))
     checks.append(not mot_qa_studies_aux(False))
-    checks.append(True)  # canaanite-myth canon
+    checks.append(True)  # canaanite-2 canon
     return float(sum(checks) / len(checks))
 
 
