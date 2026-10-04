@@ -12767,6 +12767,14 @@ from quant_fund.research.benches_w1596 import (
     bench_pygmy_whale_qa_studies_family,
     bench_sea_lion_qa_studies_family,
 )
+from quant_fund.research.benches_w1597 import (
+    bench_bharal_qa_studies_family,
+    bench_chamois_qa_studies_family,
+    bench_goral_qa_studies_family,
+    bench_ibex_qa_studies_family,
+    bench_serow_qa_studies_family,
+    bench_tahr_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14838,6 +14846,12 @@ def _provenance(
         "melon_head_qa_studies": bench_melon_head_qa_studies_family,
         "pygmy_whale_qa_studies": bench_pygmy_whale_qa_studies_family,
         "sea_lion_qa_studies": bench_sea_lion_qa_studies_family,
+        "bharal_qa_studies": bench_bharal_qa_studies_family,
+        "chamois_qa_studies": bench_chamois_qa_studies_family,
+        "goral_qa_studies": bench_goral_qa_studies_family,
+        "ibex_qa_studies": bench_ibex_qa_studies_family,
+        "serow_qa_studies": bench_serow_qa_studies_family,
+        "tahr_qa_studies": bench_tahr_qa_studies_family,
         "bay_cat_qa_studies": bench_bay_cat_qa_studies_family,
         "flat_headed_qa_studies": bench_flat_headed_qa_studies_family,
         "geoffroys_qa_studies": bench_geoffroys_qa_studies_family,
