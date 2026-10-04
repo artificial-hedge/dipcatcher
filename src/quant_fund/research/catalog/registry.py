@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1394 code-agent canon.
+        "api_eval_studies",
+        "apps_lite_studies",
+        "livecode_studies",
+        "mbpp_lite_studies",
+        "restbench_studies",
+        "swe_gym_studies",
         # Wave-1393 MCP-web canon.
         "hamming_mcp_studies",
         "mcp_bench_studies",
