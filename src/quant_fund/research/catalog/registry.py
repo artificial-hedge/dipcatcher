@@ -4580,6 +4580,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "isopod_qa_studies",
         "krill_qa_studies",
         "sandhopper_qa_studies",
+        # Wave-1617 mouse-lemur-2 canon.
+        "amber_mountain_qa_studies",
+        "anosy_qa_studies",
+        "daraina_qa_studies",
+        "red_bellied_qa_studies",
+        "russet_qa_studies",
+        "white_footed_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
