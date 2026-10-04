@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-745 KPZ-2 canon.
+        "dotsenko_kpz",
+        "hairer_kpz",
+        "bernard_nicola",
+        "imamura_sasamoto",
+        "tracy_widom_kpz",
+        "spohn_kpz",
         # Wave-744 KPZ canon.
         "kardar_parisi",
         "corwin_kpz",
