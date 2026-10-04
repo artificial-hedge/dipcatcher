@@ -16,7 +16,7 @@ def coatlicue_qa_studies_aux(aux: bool) -> bool:
     """coatlicue_qa_studies
 
     aux:
-    coatlicue_qa_studies: coatlicue, serpent-skirt mother, answers, and scores
+    coatlicue_qa_studies: coatlicue, serpent skirts, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_coatlicue_qa_studies(seed: int = 0) -> float:
     checks.append(not coatlicue_qa_studies_ok(False, True))
     checks.append(coatlicue_qa_studies_aux(True))
     checks.append(not coatlicue_qa_studies_aux(False))
-    checks.append(True)  # aztec-deity canon
+    checks.append(True)  # aztec-deity-3 canon
     return float(sum(checks) / len(checks))
 
 

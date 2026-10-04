@@ -16,7 +16,7 @@ def tonatiuh_qa_studies_aux(aux: bool) -> bool:
     """tonatiuh_qa_studies
 
     aux:
-    tonatiuh_qa_studies: tonatiuh, sun deity, answers, and scores
+    tonatiuh_qa_studies: tonatiuh, fifth suns, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tonatiuh_qa_studies(seed: int = 0) -> float:
     checks.append(not tonatiuh_qa_studies_ok(False, True))
     checks.append(tonatiuh_qa_studies_aux(True))
     checks.append(not tonatiuh_qa_studies_aux(False))
-    checks.append(True)  # aztec-deity canon
+    checks.append(True)  # aztec-deity-3 canon
     return float(sum(checks) / len(checks))
 
 
