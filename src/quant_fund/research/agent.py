@@ -13463,6 +13463,14 @@ from quant_fund.research.benches_w1683 import (
     bench_kimpurusha_qa_studies_family,
     bench_rakshasa_qa_studies_family,
 )
+from quant_fund.research.benches_w1684 import (
+    bench_cihuacoatl_qa_studies_family,
+    bench_mayahuel_qa_studies_family,
+    bench_oyohualli_qa_studies_family,
+    bench_quetzalli_qa_studies_family,
+    bench_teteoinnan_qa_studies_family,
+    bench_yaotl_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
