@@ -3845,6 +3845,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sapphire_qa_studies",
         "topaz_qa_studies",
         "woodstar_qa_studies",
+        # Wave-1512 shorebird-2 canon.
+        "dunlin_qa_studies",
+        "knot_qa_studies",
+        "oystercatcher_qa_studies",
+        "phalarope_qa_studies",
+        "stilt_qa_studies",
+        "whimbrel_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
