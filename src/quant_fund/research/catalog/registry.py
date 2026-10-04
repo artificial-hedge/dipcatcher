@@ -5448,6 +5448,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mot_qa_studies",
         "resheph_qa_studies",
         "yam_qa_studies",
+        # Wave-1741 hawaiian-myth canon.
+        "hina_qa_studies",
+        "kanaloa_qa_studies",
+        "kane_qa_studies",
+        "ku_qa_studies",
+        "lono_qa_studies",
+        "pele_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
