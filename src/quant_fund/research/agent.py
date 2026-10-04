@@ -10735,6 +10735,14 @@ from quant_fund.research.benches_w1342 import (
     bench_pronoun_bias_studies_family,
     bench_regard_metric_studies_family,
 )
+from quant_fund.research.benches_w1343 import (
+    bench_coqa_qa_studies_family,
+    bench_drop_qa_studies_family,
+    bench_news_qa_studies_family,
+    bench_quac_qa_studies_family,
+    bench_quail_qa_studies_family,
+    bench_quoref_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11514,6 +11522,12 @@ def _provenance(
         "jigsaw_tox_studies": bench_jigsaw_tox_studies_family,
         "nlp_bias_studies": bench_nlp_bias_studies_family,
         "pronoun_bias_studies": bench_pronoun_bias_studies_family,
+        "coqa_qa_studies": bench_coqa_qa_studies_family,
+        "drop_qa_studies": bench_drop_qa_studies_family,
+        "news_qa_studies": bench_news_qa_studies_family,
+        "quac_qa_studies": bench_quac_qa_studies_family,
+        "quail_qa_studies": bench_quail_qa_studies_family,
+        "quoref_qa_studies": bench_quoref_qa_studies_family,
         "regard_metric_studies": bench_regard_metric_studies_family,
         "real_toxicity_studies": bench_real_toxicity_studies_family,
         "stereo_set_studies": bench_stereo_set_studies_family,
