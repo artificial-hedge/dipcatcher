@@ -8727,6 +8727,14 @@ from quant_fund.research.benches_w1091 import (
     bench_special_education_family,
     bench_vocational_education_family,
 )
+from quant_fund.research.benches_w1092 import (
+    bench_connoisseurship_family,
+    bench_curation_practice_family,
+    bench_formal_analysis_family,
+    bench_iconography_family,
+    bench_iconology_family,
+    bench_provenance_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9098,6 +9106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "iconography": bench_iconography_family,
+        "iconology": bench_iconology_family,
+        "connoisseurship": bench_connoisseurship_family,
+        "provenance_studies": bench_provenance_studies_family,
+        "curation_practice": bench_curation_practice_family,
+        "formal_analysis": bench_formal_analysis_family,
         "higher_education": bench_higher_education_family,
         "vocational_education": bench_vocational_education_family,
         "special_education": bench_special_education_family,
