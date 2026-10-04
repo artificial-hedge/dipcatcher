@@ -9671,6 +9671,14 @@ from quant_fund.research.benches_w1209 import (
     bench_psychosomatic_medicine_family,
     bench_sleep_disorders_family,
 )
+from quant_fund.research.benches_w1210 import (
+    bench_anxiety_disorders_family,
+    bench_forensic_psychiatry_family,
+    bench_geriatric_psychiatry_family,
+    bench_mood_disorders_family,
+    bench_personality_disorders_family,
+    bench_psychotic_disorders_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10042,6 +10050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "forensic_psychiatry": bench_forensic_psychiatry_family,
+        "geriatric_psychiatry": bench_geriatric_psychiatry_family,
+        "mood_disorders": bench_mood_disorders_family,
+        "psychotic_disorders": bench_psychotic_disorders_family,
+        "personality_disorders": bench_personality_disorders_family,
+        "anxiety_disorders": bench_anxiety_disorders_family,
         "addiction_medicine": bench_addiction_medicine_family,
         "eating_disorders": bench_eating_disorders_family,
         "sleep_disorders": bench_sleep_disorders_family,

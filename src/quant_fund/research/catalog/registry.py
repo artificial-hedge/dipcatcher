@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1210 psychiatry canon.
+        "forensic_psychiatry",
+        "geriatric_psychiatry",
+        "mood_disorders",
+        "psychotic_disorders",
+        "personality_disorders",
+        "anxiety_disorders",
         # Wave-1209 behavioral-health canon.
         "addiction_medicine",
         "eating_disorders",
