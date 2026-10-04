@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-876 nonlinear-solver canon.
+        "moore_penrose",
+        "landweber_iter",
+        "conjugate_grad_ls",
+        "gauss_newton",
+        "levenberg_marq",
+        "anderson_mixing",
         # Wave-875 adaptive-marking canon.
         "adaptive_marking",
         "hierarchical_est",

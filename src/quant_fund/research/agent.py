@@ -6999,6 +6999,14 @@ from quant_fund.research.benches_w875 import (
     bench_goal_adaptive_family,
     bench_hierarchical_est_family,
 )
+from quant_fund.research.benches_w876 import (
+    bench_anderson_mixing_family,
+    bench_conjugate_grad_ls_family,
+    bench_gauss_newton_family,
+    bench_landweber_iter_family,
+    bench_levenberg_marq_family,
+    bench_moore_penrose_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7370,6 +7378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "moore_penrose": bench_moore_penrose_family,
+        "landweber_iter": bench_landweber_iter_family,
+        "conjugate_grad_ls": bench_conjugate_grad_ls_family,
+        "gauss_newton": bench_gauss_newton_family,
+        "levenberg_marq": bench_levenberg_marq_family,
+        "anderson_mixing": bench_anderson_mixing_family,
         "adaptive_marking": bench_adaptive_marking_family,
         "hierarchical_est": bench_hierarchical_est_family,
         "dorfler_marking": bench_dorfler_marking_family,
