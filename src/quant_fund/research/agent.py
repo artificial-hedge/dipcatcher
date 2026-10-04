@@ -9951,6 +9951,14 @@ from quant_fund.research.benches_w1244 import (
     bench_pet_imaging_studies_family,
     bench_ultrasound_studies_family,
 )
+from quant_fund.research.benches_w1245 import (
+    bench_breast_oncology_studies_family,
+    bench_gi_oncology_studies_family,
+    bench_immuno_oncology_studies_family,
+    bench_medical_oncology_studies_family,
+    bench_targeted_therapy_studies_family,
+    bench_thoracic_oncology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10322,6 +10330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medical_oncology_studies": bench_medical_oncology_studies_family,
+        "immuno_oncology_studies": bench_immuno_oncology_studies_family,
+        "targeted_therapy_studies": bench_targeted_therapy_studies_family,
+        "breast_oncology_studies": bench_breast_oncology_studies_family,
+        "thoracic_oncology_studies": bench_thoracic_oncology_studies_family,
+        "gi_oncology_studies": bench_gi_oncology_studies_family,
         "neuroradiology_studies": bench_neuroradiology_studies_family,
         "mammography_studies": bench_mammography_studies_family,
         "ultrasound_studies": bench_ultrasound_studies_family,
