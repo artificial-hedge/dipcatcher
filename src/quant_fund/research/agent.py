@@ -5271,6 +5271,14 @@ from quant_fund.research.benches_w659 import (
     bench_norimotive2_family,
     bench_tate_triple_family,
 )
+from quant_fund.research.benches_w660 import (
+    bench_chromatic_completion_family,
+    bench_chromatic_l2_family,
+    bench_morava_k2_family,
+    bench_periodicity_height_family,
+    bench_picard_spec_family,
+    bench_telescope_tower2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5650,6 +5658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "morava_k2": bench_morava_k2_family,
+        "telescope_tower2": bench_telescope_tower2_family,
+        "chromatic_l2": bench_chromatic_l2_family,
+        "picard_spec": bench_picard_spec_family,
+        "periodicity_height": bench_periodicity_height_family,
+        "chromatic_completion": bench_chromatic_completion_family,
         "norimotive2": bench_norimotive2_family,
         "motivic_tate2": bench_motivic_tate2_family,
         "absolute_cohom": bench_absolute_cohom_family,
