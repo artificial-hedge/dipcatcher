@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-626 stacks-3 canon.
+        "algebraic_stack2",
+        "artin_stack",
+        "quotient_stack2",
+        "stacky_point",
+        "orbifold_stack",
+        "gerbe_cohomology",
         # Wave-625 homotopy-15 canon.
         "stable_cohomology2",
         "woodward_op",
