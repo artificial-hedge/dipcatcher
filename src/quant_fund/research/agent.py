@@ -9407,6 +9407,14 @@ from quant_fund.research.benches_w1176 import (
     bench_religious_studies_3_family,
     bench_theology_3_family,
 )
+from quant_fund.research.benches_w1177 import (
+    bench_axiomatic_systems_family,
+    bench_formal_ontology_family,
+    bench_formal_sciences_family,
+    bench_mathematical_logic_family,
+    bench_model_checking_2_family,
+    bench_proof_calculus_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9778,6 +9786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "formal_sciences": bench_formal_sciences_family,
+        "mathematical_logic": bench_mathematical_logic_family,
+        "axiomatic_systems": bench_axiomatic_systems_family,
+        "proof_calculus": bench_proof_calculus_family,
+        "model_checking_2": bench_model_checking_2_family,
+        "formal_ontology": bench_formal_ontology_family,
         "theology_3": bench_theology_3_family,
         "religious_studies_3": bench_religious_studies_3_family,
         "comparative_religion_2": bench_comparative_religion_2_family,
