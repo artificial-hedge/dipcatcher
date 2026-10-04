@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1041 ocean-engineering canon.
+        "naval_architecture",
+        "offshore_engineering",
+        "marine_propulsion",
+        "ocean_waves",
+        "coastal_engineering",
+        "submarine_systems",
         # Wave-1040 robotics-engineering canon.
         "robot_kinematics",
         "robot_dynamics",
