@@ -16,7 +16,7 @@ def tane_qa_studies_aux(aux: bool) -> bool:
     """tane_qa_studies
 
     aux:
-    tane_qa_studies: tane, forest gods, answers, and scores
+    tane_qa_studies: tane, forest makers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tane_qa_studies(seed: int = 0) -> float:
     checks.append(not tane_qa_studies_ok(False, True))
     checks.append(tane_qa_studies_aux(True))
     checks.append(not tane_qa_studies_aux(False))
-    checks.append(True)  # polynesian-myth canon
+    checks.append(True)  # polynesian-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
