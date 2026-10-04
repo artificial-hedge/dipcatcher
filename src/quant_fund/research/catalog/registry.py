@@ -3992,6 +3992,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "motmot_qa_studies",
         "roller_qa_studies",
         "tody_qa_studies",
+        # Wave-1533 canopybird canon.
+        "aracari_qa_studies",
+        "barbet_qa_studies",
+        "honeyguide_qa_studies",
+        "hornbill_qa_studies",
+        "quetzal_qa_studies",
+        "trogon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

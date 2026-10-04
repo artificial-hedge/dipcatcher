@@ -12255,6 +12255,14 @@ from quant_fund.research.benches_w1532 import (
     bench_roller_qa_studies_family,
     bench_tody_qa_studies_family,
 )
+from quant_fund.research.benches_w1533 import (
+    bench_aracari_qa_studies_family,
+    bench_barbet_qa_studies_family,
+    bench_honeyguide_qa_studies_family,
+    bench_hornbill_qa_studies_family,
+    bench_quetzal_qa_studies_family,
+    bench_trogon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14064,6 +14072,12 @@ def _provenance(
         "motmot_qa_studies": bench_motmot_qa_studies_family,
         "roller_qa_studies": bench_roller_qa_studies_family,
         "tody_qa_studies": bench_tody_qa_studies_family,
+        "aracari_qa_studies": bench_aracari_qa_studies_family,
+        "barbet_qa_studies": bench_barbet_qa_studies_family,
+        "honeyguide_qa_studies": bench_honeyguide_qa_studies_family,
+        "hornbill_qa_studies": bench_hornbill_qa_studies_family,
+        "quetzal_qa_studies": bench_quetzal_qa_studies_family,
+        "trogon_qa_studies": bench_trogon_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
