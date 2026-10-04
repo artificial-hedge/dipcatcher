@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1381 dialogue-2 canon.
+        "begins_lite_studies",
+        "diamonds_lite_studies",
+        "faithful_dial_studies",
+        "multi_woz_studies",
+        "top_dialog_studies",
+        "wow_lite_studies",
         # Wave-1380 intent-paraphrase canon.
         "art_nli_studies",
         "para_paws_studies",
