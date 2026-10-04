@@ -9319,6 +9319,14 @@ from quant_fund.research.benches_w1165 import (
     bench_horticulture_2_family,
     bench_veterinary_science_2_family,
 )
+from quant_fund.research.benches_w1166 import (
+    bench_architecture_2_family,
+    bench_graphic_design_2_family,
+    bench_industrial_design_2_family,
+    bench_interior_design_2_family,
+    bench_landscape_architecture_2_family,
+    bench_urban_planning_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9690,6 +9698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "architecture_2": bench_architecture_2_family,
+        "urban_planning_2": bench_urban_planning_2_family,
+        "interior_design_2": bench_interior_design_2_family,
+        "landscape_architecture_2": bench_landscape_architecture_2_family,
+        "industrial_design_2": bench_industrial_design_2_family,
+        "graphic_design_2": bench_graphic_design_2_family,
         "agriculture_2": bench_agriculture_2_family,
         "food_science_2": bench_food_science_2_family,
         "forestry_2": bench_forestry_2_family,

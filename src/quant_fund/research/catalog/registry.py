@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1166 design canon.
+        "architecture_2",
+        "urban_planning_2",
+        "interior_design_2",
+        "landscape_architecture_2",
+        "industrial_design_2",
+        "graphic_design_2",
         # Wave-1165 agriculture canon.
         "agriculture_2",
         "food_science_2",
