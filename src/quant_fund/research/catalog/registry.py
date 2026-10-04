@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1333 multilingual-eval canon.
+        "fava_studies",
+        "polyglo_tox_studies",
+        "regard_eval_studies",
+        "unqover_studies",
+        "vlur_studies",
+        "xlsum_studies",
         # Wave-1332 eval-tooling canon.
         "decontaminate_studies",
         "eval_bias_studies",

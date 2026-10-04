@@ -1,3 +1,4 @@
+w1333 multilingual-eval canon: fava_studies, polyglo_tox_studies, regard_eval_studies, unqover_studies, vlur_studies, xlsum_studies (7947->7953)
 w1332 eval-tooling canon: decontaminate_studies, eval_bias_studies, fair_eval_studies, g_eval_studies, ngram_overlap_studies, pandalm_studies (7941->7947)
 w1331 code-eval-3 canon: codescope_studies, concode_eval_studies, crosscodeeval_studies, mer_bench_studies, project_eval_studies, swe_bench_verified_studies (7935->7941)
 w1330 safety-alignment-2 canon: beaver_safe_studies, do_not_answer_studies, hh_rlhf_studies, honest_eval_studies, safe_rlhf_studies, sos_bench_studies (7929->7935)
