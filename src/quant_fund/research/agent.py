@@ -13343,6 +13343,14 @@ from quant_fund.research.benches_w1668 import (
     bench_ulfhednar_qa_studies_family,
     bench_vargr_qa_studies_family,
 )
+from quant_fund.research.benches_w1669 import (
+    bench_ghouling_qa_studies_family,
+    bench_ikugan_qa_studies_family,
+    bench_kataw_qa_studies_family,
+    bench_lambana_qa_studies_family,
+    bench_sarimanok_qa_studies_family,
+    bench_tamahaling_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
