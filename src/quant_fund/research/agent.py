@@ -12543,6 +12543,14 @@ from quant_fund.research.benches_w1568 import (
     bench_moray_qa_studies_family,
     bench_ribbon_eel_qa_studies_family,
 )
+from quant_fund.research.benches_w1569 import (
+    bench_eagle_ray_qa_studies_family,
+    bench_guitarfish_qa_studies_family,
+    bench_manta_qa_studies_family,
+    bench_sawfish_qa_studies_family,
+    bench_thornback_qa_studies_family,
+    bench_torpedo_ray_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14512,6 +14520,12 @@ def _provenance(
         "garden_eel_qa_studies": bench_garden_eel_qa_studies_family,
         "hagfish_qa_studies": bench_hagfish_qa_studies_family,
         "lamprey_qa_studies": bench_lamprey_qa_studies_family,
+        "eagle_ray_qa_studies": bench_eagle_ray_qa_studies_family,
+        "guitarfish_qa_studies": bench_guitarfish_qa_studies_family,
+        "manta_qa_studies": bench_manta_qa_studies_family,
+        "sawfish_qa_studies": bench_sawfish_qa_studies_family,
+        "thornback_qa_studies": bench_thornback_qa_studies_family,
+        "torpedo_ray_qa_studies": bench_torpedo_ray_qa_studies_family,
         "moray_qa_studies": bench_moray_qa_studies_family,
         "ribbon_eel_qa_studies": bench_ribbon_eel_qa_studies_family,
         "pike_qa_studies": bench_pike_qa_studies_family,

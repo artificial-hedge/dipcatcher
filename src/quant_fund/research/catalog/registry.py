@@ -4244,6 +4244,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lamprey_qa_studies",
         "moray_qa_studies",
         "ribbon_eel_qa_studies",
+        # Wave-1569 ray canon.
+        "eagle_ray_qa_studies",
+        "guitarfish_qa_studies",
+        "manta_qa_studies",
+        "sawfish_qa_studies",
+        "thornback_qa_studies",
+        "torpedo_ray_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
