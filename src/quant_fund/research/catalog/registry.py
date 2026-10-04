@@ -4797,6 +4797,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bes_qa_studies",
         "sekhmet_qa_studies",
         "sphairo_qa_studies",
+        # Wave-1648 slavic-beast canon.
+        "aitvaras_qa_studies",
+        "bilwis_qa_studies",
+        "indus_qa_studies",
+        "kudlak_qa_studies",
+        "viy_qa_studies",
+        "zilant_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
