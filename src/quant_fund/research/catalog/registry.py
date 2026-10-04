@@ -4461,6 +4461,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "night_monkey_qa_studies",
         "ring_tailed_qa_studies",
         "spider_monkey_qa_studies",
+        # Wave-1600 mollusk canon.
+        "abalone_qa_studies",
+        "chiton_qa_studies",
+        "cockle_qa_studies",
+        "cowrie_qa_studies",
+        "limpet_qa_studies",
+        "periwinkle_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
