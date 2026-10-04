@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1098 anthropology-2 canon.
+        "biological_anthropology",
+        "paleoanthropology",
+        "medical_anthropology",
+        "economic_anthropology",
+        "political_anthropology",
+        "urban_anthropology",
         # Wave-1097 philosophy-3 canon.
         "moral_philosophy",
         "political_philosophy",
