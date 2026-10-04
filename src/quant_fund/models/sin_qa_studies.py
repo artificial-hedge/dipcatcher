@@ -16,7 +16,7 @@ def sin_qa_studies_aux(aux: bool) -> bool:
     """sin_qa_studies
 
     aux:
-    sin_qa_studies: sin, moon gods, answers, and scores
+    sin_qa_studies: sin, moon crowns, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_sin_qa_studies(seed: int = 0) -> float:
     checks.append(not sin_qa_studies_ok(False, True))
     checks.append(sin_qa_studies_aux(True))
     checks.append(not sin_qa_studies_aux(False))
-    checks.append(True)  # babylonian-myth canon
+    checks.append(True)  # babylonian-2 canon
     return float(sum(checks) / len(checks))
 
 

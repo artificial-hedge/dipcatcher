@@ -16,7 +16,7 @@ def tiamat_qa_studies_aux(aux: bool) -> bool:
     """tiamat_qa_studies
 
     aux:
-    tiamat_qa_studies: tiamat, primordial sea, answers, and scores
+    tiamat_qa_studies: tiamat, salt mothers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tiamat_qa_studies(seed: int = 0) -> float:
     checks.append(not tiamat_qa_studies_ok(False, True))
     checks.append(tiamat_qa_studies_aux(True))
     checks.append(not tiamat_qa_studies_aux(False))
-    checks.append(True)  # mesopotamian-myth canon
+    checks.append(True)  # babylonian-2 canon
     return float(sum(checks) / len(checks))
 
 
