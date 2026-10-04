@@ -10719,6 +10719,14 @@ from quant_fund.research.benches_w1340 import (
     bench_pubmed_qa_studies_family,
     bench_sci_q_studies_family,
 )
+from quant_fund.research.benches_w1341 import (
+    bench_bold_eval_studies_family,
+    bench_crow_s_pairs_studies_family,
+    bench_hate_speech_eval_studies_family,
+    bench_holo_bias_studies_family,
+    bench_real_toxicity_studies_family,
+    bench_stereo_set_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11489,6 +11497,12 @@ def _provenance(
         "aqua_rat_studies": bench_aqua_rat_studies_family,
         "arc_challenge_studies": bench_arc_challenge_studies_family,
         "bio_qa_studies": bench_bio_qa_studies_family,
+        "bold_eval_studies": bench_bold_eval_studies_family,
+        "crow_s_pairs_studies": bench_crow_s_pairs_studies_family,
+        "hate_speech_eval_studies": bench_hate_speech_eval_studies_family,
+        "holo_bias_studies": bench_holo_bias_studies_family,
+        "real_toxicity_studies": bench_real_toxicity_studies_family,
+        "stereo_set_studies": bench_stereo_set_studies_family,
         "med_qa_studies": bench_med_qa_studies_family,
         "openbook_qa_studies": bench_openbook_qa_studies_family,
         "pubmed_qa_studies": bench_pubmed_qa_studies_family,
