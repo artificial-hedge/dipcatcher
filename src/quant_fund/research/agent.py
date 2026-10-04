@@ -9103,6 +9103,14 @@ from quant_fund.research.benches_w1138 import (
     bench_institutional_economics_family,
     bench_political_economy_2_family,
 )
+from quant_fund.research.benches_w1139 import (
+    bench_dentistry_2_family,
+    bench_dietetics_family,
+    bench_occupational_therapy_family,
+    bench_optometry_family,
+    bench_physiotherapy_family,
+    bench_podiatry_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9474,6 +9482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "optometry": bench_optometry_family,
+        "dentistry_2": bench_dentistry_2_family,
+        "podiatry": bench_podiatry_family,
+        "dietetics": bench_dietetics_family,
+        "physiotherapy": bench_physiotherapy_family,
+        "occupational_therapy": bench_occupational_therapy_family,
         "behavioral_economics": bench_behavioral_economics_family,
         "econ_neuroscience": bench_econ_neuroscience_family,
         "experimental_economics_2": bench_experimental_economics_2_family,
