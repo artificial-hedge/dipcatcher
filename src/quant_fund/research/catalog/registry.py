@@ -4328,6 +4328,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pudu_qa_studies",
         "roe_qa_studies",
         "sika_qa_studies",
+        # Wave-1581 pinniped canon.
+        "elephant_seal_qa_studies",
+        "fur_seal_qa_studies",
+        "harp_seal_qa_studies",
+        "leopard_seal_qa_studies",
+        "monk_seal_qa_studies",
+        "weddell_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
