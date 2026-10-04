@@ -14823,6 +14823,14 @@ from quant_fund.research.benches_w1853 import (
     bench_sabios_qa_studies_family,
     bench_sebiumeker_qa_studies_family,
 )
+from quant_fund.research.benches_w1854 import (
+    bench_astarte_punic_qa_studies_family,
+    bench_baal_hammon_qa_studies_family,
+    bench_mekal_qa_studies_family,
+    bench_sid_qa_studies_family,
+    bench_tanit_punic_qa_studies_family,
+    bench_yamm_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

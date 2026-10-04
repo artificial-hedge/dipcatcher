@@ -6239,6 +6239,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dedun_qa_studies",
         "sabios_qa_studies",
         "sebiumeker_qa_studies",
+        # Wave-1854 carthaginian-myth canon.
+        "astarte_punic_qa_studies",
+        "baal_hammon_qa_studies",
+        "mekal_qa_studies",
+        "sid_qa_studies",
+        "tanit_punic_qa_studies",
+        "yamm_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
