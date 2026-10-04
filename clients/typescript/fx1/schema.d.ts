@@ -548,7 +548,20 @@ export interface paths {
         delete: operations["key_revoke"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Key Patch
+         * @description Mutable policy update on a live managed key — the patched
+         *     record returns, shaped like ``key_get``. Omitted fields keep
+         *     the declared policy; explicit ``null`` clears a nullable
+         *     bound (``name``/``rpm``/``max_requests``/``max_tokens``/
+         *     ``expires_at``); ``admin:true`` unions the admin scope the
+         *     mint way while ``admin:false`` never strips a declared scope.
+         *     Patching is in place — no new secret, no slot consumed — and
+         *     the updated record journals so a ``--state-dir`` restart
+         *     restores it. ``enabled``/live counters stay unpatchable:
+         *     revocation is permanent (rotate covers re-keying).
+         */
+        patch: operations["key_patch"];
         trace?: never;
     };
     "/harness/keys/{key_id}/rotate": {
@@ -2564,6 +2577,33 @@ export interface components {
             scopes: string[];
             /** Tokens Used */
             tokens_used: number;
+        };
+        /**
+         * ApiKeyPatchRequest
+         * @description Patch body — every field optional; the three states are
+         *     distinct: omitted keeps the declared policy, explicit ``null``
+         *     clears a nullable bound (``name``/``rpm``/``max_requests``/
+         *     ``max_tokens``/``expires_at`` — the unbounded default), and a
+         *     concrete value replaces it. ``scopes``/``admin`` take concrete
+         *     values when sent (``null`` clears nothing there — an explicit
+         *     list or flag instead). ``enabled`` and the live counters are
+         *     never patchable — revocation is permanent.
+         */
+        ApiKeyPatchRequest: {
+            /** Admin */
+            admin?: boolean | null;
+            /** Expires At */
+            expires_at?: number | null;
+            /** Max Requests */
+            max_requests?: number | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Rpm */
+            rpm?: number | null;
+            /** Scopes */
+            scopes?: string[] | null;
         };
         /**
          * ApiKeyRecordModel
@@ -7165,6 +7205,77 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyPatchRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

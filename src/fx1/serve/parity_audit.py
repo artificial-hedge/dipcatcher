@@ -382,6 +382,8 @@ def _tc_transport(client: TestClient) -> Any:
             resp = client.get(path, headers=headers)
         elif method == "DELETE":
             resp = client.delete(path, headers=headers)
+        elif method == "PATCH":
+            resp = client.patch(path, json=payload, headers=headers)
         elif isinstance(payload, bytes):
             resp = client.post(path, content=payload, headers=headers)
         else:
@@ -4043,6 +4045,23 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _admin_remote.key_get(_rtw["id"])["revoked_at"] is not None
         and _raises(lambda: sdk.key_rotate("nope"))[0] == "KeyError"
         and _raises(lambda: _admin_remote.key_rotate("nope"))[0] == "KeyError"
+    )
+    # patch is identical on both legs — the updated record envelope
+    # matches field for field, and an explicit None clears the bound
+    # back to unbounded on both
+    _pts = sdk.key_create("patch-par", rpm=15, scopes=["read"], max_requests=6)
+    _ptw = _admin_remote.key_create("patch-par", rpm=15, scopes=["read"], max_requests=6)
+    _up_s = sdk.key_update(_pts["id"], name="patch-par-2", rpm=None, max_tokens=33)
+    _up_w = _admin_remote.key_update(_ptw["id"], name="patch-par-2", rpm=None, max_tokens=33)
+    out["key_update_parity"] = (
+        _up_s["object"] == _up_w["object"] == "key"
+        and _up_s["name"] == _up_w["name"] == "patch-par-2"
+        and _up_s["rpm"] == _up_w["rpm"] is None
+        and _up_s["max_requests"] == _up_w["max_requests"] == 6
+        and _up_s["max_tokens"] == _up_w["max_tokens"] == 33
+        and _up_s["scopes"] == _up_w["scopes"] == ["read"]
+        and _raises(lambda: sdk.key_update("nope"))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_update("nope"))[0] == "KeyError"
     )
     # One translation module (fx1.serve.anthropic_compat) serves all
     # surfaces: the same request over the wire, in-process, and through

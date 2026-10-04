@@ -1056,6 +1056,17 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 },
             }
 
+        def key_update(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("update", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": key_id,
+                "object": "key",
+                "name": _kw.get("name"),
+                "rpm": _kw.get("rpm"),
+                "enabled": True,
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "env", "metered": False}
@@ -1585,6 +1596,53 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(rk.stdout)["revoked_previous"] is False
             and fake.last_key_kw == {"revoke_old": False, "name": "n2", "ttl_s": 30.0}
         )
+        kpu = runner.invoke(app, ["harness", "key-patch", "kfake"])
+        out["key_patch_json"] = (
+            kpu.exit_code == 0
+            and json.loads(kpu.stdout)["object"] == "key"
+            and json.loads(kpu.stdout)["id"] == "kfake"
+            and fake.last_key_call == ("update", "kfake")
+            and fake.last_key_kw == {}
+        )
+        kpf = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-patch",
+                "kfake",
+                "--name",
+                "np",
+                "--rpm",
+                "9",
+                "--scope",
+                "read",
+                "--scope",
+                "admin",
+                "--admin",
+                "--max-requests",
+                "5",
+                "--max-tokens",
+                "50",
+                "--expires-at",
+                "99.5",
+                "--clear",
+                "name",
+                "--clear",
+                "rpm",
+            ],
+        )
+        out["key_patch_flags_forward"] = kpf.exit_code == 0 and fake.last_key_kw == {
+            "name": "np",
+            "rpm": 9,
+            "scopes": ["read", "admin"],
+            "admin": True,
+            "max_requests": 5,
+            "max_tokens": 50,
+            "expires_at": 99.5,
+            "clear": ["name", "rpm"],
+        }
+        kpn = runner.invoke(app, ["harness", "key-patch", "kfake", "--no-admin"])
+        out["key_patch_no_admin_flag"] = kpn.exit_code == 0 and fake.last_key_kw == {"admin": False}
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -2554,6 +2612,17 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "key": {"id": "kremote2", "key": "fx1k_rraw"},
             }
 
+        def key_update(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("update", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": key_id,
+                "object": "key",
+                "name": _kw.get("name"),
+                "rpm": _kw.get("rpm"),
+                "enabled": True,
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "managed"}
@@ -2740,6 +2809,33 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "revoke_old": False,
             "name": "rn",
             "ttl_s": None,
+        }
+        pur = runner.invoke(app, ["harness", "key-patch", "krem", "--remote", "http://h.test"])
+        out["key_patch_remote"] = (
+            pur.exit_code == 0
+            and json.loads(pur.stdout)["object"] == "key"
+            and remotes[-1].last_key_call == ("update", "krem")
+            and remotes[-1].last_key_kw == {}
+        )
+        pfr = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-patch",
+                "krem",
+                "--name",
+                "rpn",
+                "--no-admin",
+                "--clear",
+                "max_requests",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["key_patch_remote_flags"] = pfr.exit_code == 0 and remotes[-1].last_key_kw == {
+            "name": "rpn",
+            "admin": False,
+            "clear": ["max_requests"],
         }
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()

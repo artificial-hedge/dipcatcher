@@ -160,7 +160,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
-from fx1.serve.keys import SCOPES, ApiKeyStore, KeyStoreError
+from fx1.serve.keys import CLEARABLE_KEY_FIELDS, SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -1375,6 +1375,32 @@ class ApiKeyRotateResponse(_Model):
     key: ApiKeyMintResponse
     rotated_from: str
     revoked_previous: bool
+
+
+class ApiKeyPatchRequest(_Model):
+    """Patch body — every field optional; the three states are
+    distinct: omitted keeps the declared policy, explicit ``null``
+    clears a nullable bound (``name``/``rpm``/``max_requests``/
+    ``max_tokens``/``expires_at`` — the unbounded default), and a
+    concrete value replaces it. ``scopes``/``admin`` take concrete
+    values when sent (``null`` clears nothing there — an explicit
+    list or flag instead). ``enabled`` and the live counters are
+    never patchable — revocation is permanent."""
+
+    name: str | None = Field(default=None, max_length=128)
+    rpm: int | None = Field(default=None, ge=1, le=1_000_000)
+    scopes: list[str] | None = None
+    admin: bool | None = None
+    max_requests: int | None = Field(default=None, ge=1, le=2_147_483_647)
+    max_tokens: int | None = Field(default=None, ge=1, le=9_223_372_036_854_775_807)
+    expires_at: float | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _concrete_when_sent(self) -> ApiKeyPatchRequest:
+        for field in ("scopes", "admin"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} must take a concrete value when sent")
+        return self
 
 
 class KeyUsageBackendSplit(_Model):
@@ -8378,6 +8404,45 @@ def _mount_key_lifecycle(
             revoked_previous=body.revoke_old,
         )
 
+    @app.patch(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_patch",
+    )
+    def key_patch(key_id: str, body: ApiKeyPatchRequest, request: Request) -> ApiKeyRecordModel:
+        """Mutable policy update on a live managed key — the patched
+        record returns, shaped like ``key_get``. Omitted fields keep
+        the declared policy; explicit ``null`` clears a nullable
+        bound (``name``/``rpm``/``max_requests``/``max_tokens``/
+        ``expires_at``); ``admin:true`` unions the admin scope the
+        mint way while ``admin:false`` never strips a declared scope.
+        Patching is in place — no new secret, no slot consumed — and
+        the updated record journals so a ``--state-dir`` restart
+        restores it. ``enabled``/live counters stay unpatchable:
+        revocation is permanent (rotate covers re-keying)."""
+        _require_admin(request)
+        sent = body.model_fields_set
+        clear = {f for f in CLEARABLE_KEY_FIELDS if f in sent and getattr(body, f) is None}
+        try:
+            rec = key_store.update(
+                key_id,
+                name=body.name,
+                rpm=body.rpm,
+                scopes=body.scopes,
+                admin=body.admin,
+                max_requests=body.max_requests,
+                max_tokens=body.max_tokens,
+                expires_at=body.expires_at,
+                clear=clear,
+            )
+        except KeyStoreError as exc:
+            status = {"key_not_found": 404, "key_revoked": 409}.get(exc.code, 422)
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_patch") from exc
+        return _key_wire(rec)
+
     @app.get(
         "/harness/keys/{key_id}/usage",
         response_model=ApiKeyUsageResponse,
@@ -8965,6 +9030,7 @@ def create_app(
                 "key_quotas": True,
                 "key_usage": True,
                 "key_rotation": True,
+                "key_patch": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,

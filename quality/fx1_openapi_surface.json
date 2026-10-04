@@ -443,6 +443,20 @@
           "200",
           "422"
         ]
+      },
+      "patch": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/harness/keys/{key_id}/rotate": {
@@ -2144,5 +2158,5 @@
       }
     }
   },
-  "schema_sha256": "e1764dea27e83802296be1495b0428d1e25b7c5a2467f2b2e08348443c333258"
+  "schema_sha256": "a38364592533e75580bafee9e923018e00385dafb34946ac72f1e31c099f6e5d"
 }

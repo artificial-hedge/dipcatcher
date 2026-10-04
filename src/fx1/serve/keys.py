@@ -56,7 +56,7 @@ import hashlib
 import secrets
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from fx1.serve.journal import JobJournal
@@ -69,6 +69,8 @@ _RATE_WINDOW_S = 60.0
 # The scope vocabulary — read covers safe methods anywhere, write the
 # data-plane mutations, admin the control plane (key management, drain).
 SCOPES = ("read", "write", "admin")
+# The nullable policy fields a PATCH may clear back to unbounded.
+CLEARABLE_KEY_FIELDS = frozenset({"name", "rpm", "max_requests", "max_tokens", "expires_at"})
 
 
 def _resolve_scopes(scopes: list[str] | tuple[str, ...] | None, admin: bool) -> list[str]:
@@ -454,3 +456,73 @@ class ApiKeyStore:
                 self._append(revoked)
                 self._by_hash[sha] = revoked
             return raw, _wire(rec)
+
+    def update(
+        self,
+        key_id: str,
+        *,
+        name: str | None = None,
+        rpm: int | None = None,
+        scopes: Iterable[str] | None = None,
+        admin: bool | None = None,
+        max_requests: int | None = None,
+        max_tokens: int | None = None,
+        expires_at: float | None = None,
+        clear: Iterable[str] = (),
+    ) -> dict[str, Any]:
+        """Patch a live key's declared policy in place — no new secret,
+        no slot consumed; the updated record journals like revoke's so
+        a ``--state-dir`` replay reconstructs it.
+
+        An omitted field keeps the record's value; a field named in
+        ``clear`` (``name``/``rpm``/``max_requests``/``max_tokens``/
+        ``expires_at``) reverts to ``None`` — the unbounded default.
+        ``scopes``/``admin`` resolve the mint way: ``admin=True``
+        unions the admin scope onto whichever list survives the patch
+        (an explicit ``scopes`` or the record's), ``admin=False``
+        never strips a scope the caller declared — the flag is purely
+        additive. ``enabled`` and the live counters
+        (``uses``/``tokens_used``) are not patchable — revocation is
+        permanent, and ``update`` never resurrects: a tombstoned key
+        raises ``key_revoked``, an unknown one ``key_not_found``."""
+        if rpm is not None and rpm < 1:
+            raise ValueError("rpm must be >= 1")
+        if max_requests is not None and max_requests < 1:
+            raise ValueError("max_requests must be >= 1")
+        if max_tokens is not None and max_tokens < 1:
+            raise ValueError("max_tokens must be >= 1")
+        if expires_at is not None and expires_at <= 0:
+            raise ValueError("expires_at must be > 0")
+        bad_clear = sorted(set(clear) - CLEARABLE_KEY_FIELDS)
+        if bad_clear:
+            raise ValueError(f"cannot clear non-nullable field {bad_clear[0]!r}")
+        clears = set(clear) & CLEARABLE_KEY_FIELDS
+        with self._lock:
+            sha = self._by_id.get(key_id)
+            old = self._by_hash.get(sha) if sha is not None else None
+            if sha is None or old is None:
+                raise KeyStoreError("key_not_found", f"unknown key {key_id!r}")
+            if not old.get("enabled", True):
+                raise KeyStoreError("key_revoked", f"key {key_id!r} is revoked")
+            rec = dict(old)
+            for field in clears:
+                rec[field] = None
+            for field, value in (
+                ("name", name),
+                ("rpm", rpm),
+                ("max_requests", max_requests),
+                ("max_tokens", max_tokens),
+                ("expires_at", expires_at),
+            ):
+                if value is not None:
+                    rec[field] = value
+            if scopes is not None or admin is not None:
+                resolved = _resolve_scopes(
+                    list(scopes) if scopes is not None else old.get("scopes"),
+                    bool(admin),
+                )
+                rec["scopes"] = resolved
+                rec["admin"] = "admin" in resolved
+            self._append(rec)
+            self._by_hash[sha] = rec
+            return _wire(rec)

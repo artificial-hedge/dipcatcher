@@ -40,7 +40,7 @@ import time
 import urllib.parse
 import uuid
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -281,6 +281,10 @@ class _CompletionLog:
 
 
 _BACKEND_NAMES = ("hosted_k3", "local_fx1", "byok")
+
+# Patch three-state: an omitted kwarg stays the declared policy while
+# an explicit ``None`` clears the bound — the wire's JSON-null.
+_UNSET: Any = object()
 
 
 def _fallback_chain(backend: str, fallbacks: list[str] | None) -> list[str]:
@@ -754,6 +758,66 @@ class Fx1Harness:
             "rotated_from": key_id,
             "revoked_previous": revoke_old,
         }
+
+    def key_update(
+        self,
+        key_id: str,
+        *,
+        name: str | None = _UNSET,
+        rpm: int | None = _UNSET,
+        scopes: list[str] | tuple[str, ...] | None = _UNSET,
+        admin: bool | None = _UNSET,
+        max_requests: int | None = _UNSET,
+        max_tokens: int | None = _UNSET,
+        expires_at: float | None = _UNSET,
+        clear: Iterable[str] = (),
+    ) -> dict[str, Any]:
+        """Mutable policy update on a live key — the in-process twin of
+        ``PATCH /harness/keys/{id}``: an omitted kwarg keeps the
+        declared policy, an explicit ``None`` clears the bound back to
+        unbounded (the wire's JSON-null; ``clear=`` names the same
+        fields), and a concrete value replaces it. ``admin=True``
+        unions the admin scope the mint way; ``admin=False`` never
+        strips a declared scope — ``scopes``/``admin`` take concrete
+        values when given (an explicit ``None`` is a ``ValueError``,
+        like the wire's 422). ``enabled`` and the live counters are
+        not patchable — revocation is permanent. Returns the updated
+        record. ``KeyError`` when unknown; ``ValueError`` when the key
+        is revoked, a constraint is violated, or ``clear`` names a
+        non-nullable field."""
+        from fx1.serve.keys import CLEARABLE_KEY_FIELDS, KeyStoreError  # noqa: PLC0415
+
+        clears = {f for f in clear}
+        patch: dict[str, Any] = {}
+        for fname, value in (
+            ("name", name),
+            ("rpm", rpm),
+            ("max_requests", max_requests),
+            ("max_tokens", max_tokens),
+            ("expires_at", expires_at),
+        ):
+            if value is _UNSET:
+                continue
+            if value is None:
+                clears.add(fname)
+            else:
+                patch[fname] = value
+        for fname, cval in (("scopes", scopes), ("admin", admin)):
+            if cval is _UNSET:
+                continue
+            if cval is None:
+                raise ValueError(f"{fname} must take a concrete value when given")
+            patch[fname] = cval
+        bad = sorted(clears - CLEARABLE_KEY_FIELDS)
+        if bad:
+            raise ValueError(f"cannot clear non-nullable field {bad[0]!r}")
+        try:
+            rec = self._key_store.update(key_id, clear=clears, **patch)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return self._key_wire(rec)
 
     def keys(self) -> list[dict[str, Any]]:
         """Every minted key's fingerprint + metadata — never secrets."""
