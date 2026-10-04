@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-528 thermodynamic-formalism canon.
+        "transfer_op",
+        "thermo_formal",
+        "pressure_thm",
+        "equilibrium_state",
+        "ruelle_zeta",
+        "lasota_yorke",
         # Wave-527 hyperbolic-dynamics canon.
         "anosov",
         "srb_measure",
