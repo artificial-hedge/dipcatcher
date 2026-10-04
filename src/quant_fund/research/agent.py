@@ -8687,6 +8687,14 @@ from quant_fund.research.benches_w1086 import (
     bench_ottoman_studies_family,
     bench_sinology_family,
 )
+from quant_fund.research.benches_w1087 import (
+    bench_diplomatics_family,
+    bench_epigraphy_family,
+    bench_genealogy_studies_family,
+    bench_heraldry_family,
+    bench_onomastics_family,
+    bench_sigillography_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9058,6 +9066,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "epigraphy": bench_epigraphy_family,
+        "diplomatics": bench_diplomatics_family,
+        "sigillography": bench_sigillography_family,
+        "heraldry": bench_heraldry_family,
+        "genealogy_studies": bench_genealogy_studies_family,
+        "onomastics": bench_onomastics_family,
         "assyriology": bench_assyriology_family,
         "egyptology": bench_egyptology_family,
         "sinology": bench_sinology_family,
