@@ -13351,6 +13351,14 @@ from quant_fund.research.benches_w1669 import (
     bench_sarimanok_qa_studies_family,
     bench_tamahaling_qa_studies_family,
 )
+from quant_fund.research.benches_w1670 import (
+    bench_alseid_qa_studies_family,
+    bench_gnome_volk_qa_studies_family,
+    bench_meliae_qa_studies_family,
+    bench_napaea_qa_studies_family,
+    bench_oread_qa_studies_family,
+    bench_sylph_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
