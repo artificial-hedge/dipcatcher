@@ -9799,6 +9799,14 @@ from quant_fund.research.benches_w1225 import (
     bench_surgical_oncology_studies_family,
     bench_trauma_surgery_family,
 )
+from quant_fund.research.benches_w1226 import (
+    bench_anatomical_pathology_family,
+    bench_clinical_pathology_family,
+    bench_cytopathology_family,
+    bench_histopathology_studies_family,
+    bench_molecular_pathology_family,
+    bench_pathology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10170,6 +10178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pathology_studies": bench_pathology_studies_family,
+        "anatomical_pathology": bench_anatomical_pathology_family,
+        "clinical_pathology": bench_clinical_pathology_family,
+        "histopathology_studies": bench_histopathology_studies_family,
+        "cytopathology": bench_cytopathology_family,
+        "molecular_pathology": bench_molecular_pathology_family,
         "general_surgery_studies": bench_general_surgery_studies_family,
         "trauma_surgery": bench_trauma_surgery_family,
         "colorectal_surgery": bench_colorectal_surgery_family,
