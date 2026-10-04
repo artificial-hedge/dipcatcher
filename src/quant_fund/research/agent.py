@@ -6895,6 +6895,14 @@ from quant_fund.research.benches_w862 import (
     bench_smolyak_grid_family,
     bench_sparse_tensor_family,
 )
+from quant_fund.research.benches_w863 import (
+    bench_bddc_lite_family,
+    bench_coarse_correction_family,
+    bench_feti_lite_family,
+    bench_mortar_dd_family,
+    bench_schwarz_add_family,
+    bench_schwarz_mult_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7266,6 +7274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "schwarz_add": bench_schwarz_add_family,
+        "schwarz_mult": bench_schwarz_mult_family,
+        "coarse_correction": bench_coarse_correction_family,
+        "mortar_dd": bench_mortar_dd_family,
+        "feti_lite": bench_feti_lite_family,
+        "bddc_lite": bench_bddc_lite_family,
         "smolyak_grid": bench_smolyak_grid_family,
         "sparse_tensor": bench_sparse_tensor_family,
         "anisotropic_quad": bench_anisotropic_quad_family,
