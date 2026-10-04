@@ -8623,6 +8623,14 @@ from quant_fund.research.benches_w1078 import (
     bench_stage_design_family,
     bench_theater_studies_family,
 )
+from quant_fund.research.benches_w1079 import (
+    bench_ancient_greek_family,
+    bench_classical_archaeology_family,
+    bench_classical_studies_family,
+    bench_latin_language_family,
+    bench_papyrology_family,
+    bench_philology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8994,6 +9002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "classical_studies": bench_classical_studies_family,
+        "latin_language": bench_latin_language_family,
+        "ancient_greek": bench_ancient_greek_family,
+        "classical_archaeology": bench_classical_archaeology_family,
+        "philology": bench_philology_family,
+        "papyrology": bench_papyrology_family,
         "theater_studies": bench_theater_studies_family,
         "dance_studies": bench_dance_studies_family,
         "performance_theory": bench_performance_theory_family,
