@@ -6099,6 +6099,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mher2_qa_studies",
         "tir2_qa_studies",
         "vahagn2_qa_studies",
+        # Wave-1834 hurrian-myth canon.
+        "hebat2_qa_studies",
+        "kusuh2_qa_studies",
+        "sarruma2_qa_studies",
+        "simige2_qa_studies",
+        "tasmisu2_qa_studies",
+        "tessub2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
