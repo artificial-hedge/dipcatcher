@@ -7631,6 +7631,14 @@ from quant_fund.research.benches_w954 import (
     bench_rank_estimate_family,
     bench_spectral_threshold_family,
 )
+from quant_fund.research.benches_w955 import (
+    bench_back_substitution_family,
+    bench_forward_substitution_family,
+    bench_givens_rotation_family,
+    bench_gram_determinant_family,
+    bench_gram_matrix_family,
+    bench_householder_reflect_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8002,6 +8010,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gram_matrix": bench_gram_matrix_family,
+        "gram_determinant": bench_gram_determinant_family,
+        "householder_reflect": bench_householder_reflect_family,
+        "givens_rotation": bench_givens_rotation_family,
+        "back_substitution": bench_back_substitution_family,
+        "forward_substitution": bench_forward_substitution_family,
         "low_rank_approx": bench_low_rank_approx_family,
         "nuclear_norm": bench_nuclear_norm_family,
         "spectral_threshold": bench_spectral_threshold_family,
