@@ -7175,6 +7175,14 @@ from quant_fund.research.benches_w897 import (
     bench_order_barrier_family,
     bench_trapezoid_rule_family,
 )
+from quant_fund.research.benches_w898 import (
+    bench_collocation_bvp_family,
+    bench_finite_diff_bvp_family,
+    bench_multiple_shooting_family,
+    bench_relaxation_bvp_family,
+    bench_riccati_bvp_family,
+    bench_shooting_bvp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7546,6 +7554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "shooting_bvp": bench_shooting_bvp_family,
+        "multiple_shooting": bench_multiple_shooting_family,
+        "collocation_bvp": bench_collocation_bvp_family,
+        "finite_diff_bvp": bench_finite_diff_bvp_family,
+        "relaxation_bvp": bench_relaxation_bvp_family,
+        "riccati_bvp": bench_riccati_bvp_family,
         "linear_multistep": bench_linear_multistep_family,
         "dahlquist_test": bench_dahlquist_test_family,
         "explicit_midpoint": bench_explicit_midpoint_family,
