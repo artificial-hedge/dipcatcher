@@ -5007,6 +5007,14 @@ from quant_fund.research.benches_w626 import (
     bench_quotient_stack2_family,
     bench_stacky_point_family,
 )
+from quant_fund.research.benches_w627 import (
+    bench_condensed_coh_family,
+    bench_condensed_ring_family,
+    bench_discrete_liquid_family,
+    bench_liquid_ring_family,
+    bench_scholze_trace_family,
+    bench_smith_project_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5386,6 +5394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "discrete_liquid": bench_discrete_liquid_family,
+        "smith_project": bench_smith_project_family,
+        "condensed_ring": bench_condensed_ring_family,
+        "liquid_ring": bench_liquid_ring_family,
+        "scholze_trace": bench_scholze_trace_family,
+        "condensed_coh": bench_condensed_coh_family,
         "algebraic_stack2": bench_algebraic_stack2_family,
         "artin_stack": bench_artin_stack_family,
         "quotient_stack2": bench_quotient_stack2_family,
