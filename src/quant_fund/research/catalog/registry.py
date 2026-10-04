@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1286 long-context canon.
+        "beacon_context_studies",
+        "hierarchical_context_studies",
+        "infini_attention_studies",
+        "landmark_attention_studies",
+        "ntk_scaling_studies",
+        "yarn_scaling_studies",
         # Wave-1285 multimodal-2 canon.
         "audio_lm_studies",
         "chart_reasoning_studies",

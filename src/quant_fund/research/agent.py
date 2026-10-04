@@ -10279,6 +10279,14 @@ from quant_fund.research.benches_w1285 import (
     bench_video_understanding_studies_family,
     bench_vision_pretraining_studies_family,
 )
+from quant_fund.research.benches_w1286 import (
+    bench_beacon_context_studies_family,
+    bench_hierarchical_context_studies_family,
+    bench_infini_attention_studies_family,
+    bench_landmark_attention_studies_family,
+    bench_ntk_scaling_studies_family,
+    bench_yarn_scaling_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10812,6 +10820,12 @@ def _provenance(
         "gui_agent_studies": bench_gui_agent_studies_family,
         "video_understanding_studies": bench_video_understanding_studies_family,
         "vision_pretraining_studies": bench_vision_pretraining_studies_family,
+        "beacon_context_studies": bench_beacon_context_studies_family,
+        "hierarchical_context_studies": bench_hierarchical_context_studies_family,
+        "infini_attention_studies": bench_infini_attention_studies_family,
+        "landmark_attention_studies": bench_landmark_attention_studies_family,
+        "ntk_scaling_studies": bench_ntk_scaling_studies_family,
+        "yarn_scaling_studies": bench_yarn_scaling_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
