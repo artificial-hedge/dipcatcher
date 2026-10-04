@@ -9367,6 +9367,14 @@ from quant_fund.research.benches_w1171 import (
     bench_regional_science_family,
     bench_urbanization_family,
 )
+from quant_fund.research.benches_w1172 import (
+    bench_accounting_3_family,
+    bench_entrepreneurship_3_family,
+    bench_finance_5_family,
+    bench_management_3_family,
+    bench_marketing_3_family,
+    bench_organizational_behavior_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9738,6 +9746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "management_3": bench_management_3_family,
+        "marketing_3": bench_marketing_3_family,
+        "accounting_3": bench_accounting_3_family,
+        "finance_5": bench_finance_5_family,
+        "entrepreneurship_3": bench_entrepreneurship_3_family,
+        "organizational_behavior": bench_organizational_behavior_family,
         "geography_2": bench_geography_2_family,
         "regional_science": bench_regional_science_family,
         "demography_2": bench_demography_2_family,

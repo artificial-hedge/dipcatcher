@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1172 business canon.
+        "management_3",
+        "marketing_3",
+        "accounting_3",
+        "finance_5",
+        "entrepreneurship_3",
+        "organizational_behavior",
         # Wave-1171 geography canon.
         "geography_2",
         "regional_science",
