@@ -1,0 +1,56 @@
+"""Wave-1734 bench adapters: welsh-myth canon (SYNTHETIC only)."""
+
+from quant_fund.models import (
+    arawn_qa_studies,
+    ceridwen_qa_studies,
+    gwydion_qa_studies,
+    llew_qa_studies,
+    rhiannon_qa_studies,
+    taliesin_qa_studies,
+)
+
+_FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
+_SEED = 17340
+
+
+def _finite_blob(blob):
+    assert isinstance(blob, dict) and blob
+    for k, v in blob.items():
+        assert k.startswith("synthetic_"), k
+        assert k not in _FORBIDDEN, k
+        assert isinstance(v, float) and 0.0 <= v <= 1.0, (k, v)
+    return blob
+
+
+def _floats(blob):
+    return sorted(v for _, v in _finite_blob(blob).items())
+
+
+def bench_arawn_qa_studies_family(seed: int = _SEED + 0):
+    """arawn_qa_studies: synthetic correctness bench."""
+    return _finite_blob(arawn_qa_studies.bench_arawn_qa_studies(seed))
+
+
+def bench_ceridwen_qa_studies_family(seed: int = _SEED + 1):
+    """ceridwen_qa_studies: synthetic correctness bench."""
+    return _finite_blob(ceridwen_qa_studies.bench_ceridwen_qa_studies(seed))
+
+
+def bench_gwydion_qa_studies_family(seed: int = _SEED + 2):
+    """gwydion_qa_studies: synthetic correctness bench."""
+    return _finite_blob(gwydion_qa_studies.bench_gwydion_qa_studies(seed))
+
+
+def bench_llew_qa_studies_family(seed: int = _SEED + 3):
+    """llew_qa_studies: synthetic correctness bench."""
+    return _finite_blob(llew_qa_studies.bench_llew_qa_studies(seed))
+
+
+def bench_rhiannon_qa_studies_family(seed: int = _SEED + 4):
+    """rhiannon_qa_studies: synthetic correctness bench."""
+    return _finite_blob(rhiannon_qa_studies.bench_rhiannon_qa_studies(seed))
+
+
+def bench_taliesin_qa_studies_family(seed: int = _SEED + 5):
+    """taliesin_qa_studies: synthetic correctness bench."""
+    return _finite_blob(taliesin_qa_studies.bench_taliesin_qa_studies(seed))
