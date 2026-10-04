@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1052 nutrition canon.
+        "nutritional_biochemistry",
+        "dietary_assessment",
+        "clinical_nutrition",
+        "sports_nutrition",
+        "nutritional_epidemiology",
+        "metabolic_health",
         # Wave-1051 public-health canon.
         "epidemiology_2",
         "biostatistics_2",
