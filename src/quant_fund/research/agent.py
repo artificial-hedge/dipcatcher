@@ -5527,6 +5527,14 @@ from quant_fund.research.benches_w691 import (
     bench_cat_semisimple_family,
     bench_cat_tannakian2_family,
 )
+from quant_fund.research.benches_w692 import (
+    bench_centralizer_alg2_family,
+    bench_e5_algebra_family,
+    bench_factorization_hom3_family,
+    bench_framed_discs_family,
+    bench_little_cubes2_family,
+    bench_swiss_cheese3_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5906,6 +5914,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e5_algebra": bench_e5_algebra_family,
+        "little_cubes2": bench_little_cubes2_family,
+        "swiss_cheese3": bench_swiss_cheese3_family,
+        "framed_discs": bench_framed_discs_family,
+        "factorization_hom3": bench_factorization_hom3_family,
+        "centralizer_alg2": bench_centralizer_alg2_family,
         "cat_pretopos": bench_cat_pretopos_family,
         "cat_semisimple": bench_cat_semisimple_family,
         "cat_fusion": bench_cat_fusion_family,
