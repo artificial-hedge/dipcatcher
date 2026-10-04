@@ -5415,6 +5415,14 @@ from quant_fund.research.benches_w677 import (
     bench_quillen_cat_family,
     bench_univalent_cat_family,
 )
+from quant_fund.research.benches_w678 import (
+    bench_equipment_cat_family,
+    bench_fibrant_cat_family,
+    bench_homotopical_cat_family,
+    bench_pointed_cat_family,
+    bench_relative_cat_family,
+    bench_simplicial_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5794,6 +5802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "simplicial_cat": bench_simplicial_cat_family,
+        "homotopical_cat": bench_homotopical_cat_family,
+        "relative_cat": bench_relative_cat_family,
+        "equipment_cat": bench_equipment_cat_family,
+        "fibrant_cat": bench_fibrant_cat_family,
+        "pointed_cat": bench_pointed_cat_family,
         "derivator_cat": bench_derivator_cat_family,
         "quillen_cat": bench_quillen_cat_family,
         "combinatorial_mc": bench_combinatorial_mc_family,
