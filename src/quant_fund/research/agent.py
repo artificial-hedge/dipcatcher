@@ -9639,6 +9639,14 @@ from quant_fund.research.benches_w1205 import (
     bench_space_physiology_family,
     bench_wilderness_medicine_family,
 )
+from quant_fund.research.benches_w1206 import (
+    bench_immunosuppression_family,
+    bench_organ_donation_family,
+    bench_regenerative_medicine_family,
+    bench_stem_cell_therapy_family,
+    bench_transplantation_medicine_family,
+    bench_xenotransplantation_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10010,6 +10018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transplantation_medicine": bench_transplantation_medicine_family,
+        "organ_donation": bench_organ_donation_family,
+        "immunosuppression": bench_immunosuppression_family,
+        "xenotransplantation": bench_xenotransplantation_family,
+        "stem_cell_therapy": bench_stem_cell_therapy_family,
+        "regenerative_medicine": bench_regenerative_medicine_family,
         "aerospace_medicine": bench_aerospace_medicine_family,
         "diving_medicine": bench_diving_medicine_family,
         "wilderness_medicine": bench_wilderness_medicine_family,

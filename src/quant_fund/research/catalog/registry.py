@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1206 transplantation canon.
+        "transplantation_medicine",
+        "organ_donation",
+        "immunosuppression",
+        "xenotransplantation",
+        "stem_cell_therapy",
+        "regenerative_medicine",
         # Wave-1205 extreme-environment canon.
         "aerospace_medicine",
         "diving_medicine",
