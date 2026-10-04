@@ -4958,6 +4958,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "napaea_qa_studies",
         "oread_qa_studies",
         "sylph_qa_studies",
+        # Wave-1671 scandinavian-folk canon.
+        "drakk_qa_studies",
+        "grimr_qa_studies",
+        "hildr_qa_studies",
+        "mare_qa_studies",
+        "nisse_qa_studies",
+        "sigrun_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

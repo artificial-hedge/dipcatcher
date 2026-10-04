@@ -13359,6 +13359,14 @@ from quant_fund.research.benches_w1670 import (
     bench_oread_qa_studies_family,
     bench_sylph_qa_studies_family,
 )
+from quant_fund.research.benches_w1671 import (
+    bench_drakk_qa_studies_family,
+    bench_grimr_qa_studies_family,
+    bench_hildr_qa_studies_family,
+    bench_mare_qa_studies_family,
+    bench_nisse_qa_studies_family,
+    bench_sigrun_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
