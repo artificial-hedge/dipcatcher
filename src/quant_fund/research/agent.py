@@ -12959,6 +12959,14 @@ from quant_fund.research.benches_w1620 import (
     bench_saw_scaled_qa_studies_family,
     bench_sea_krait_qa_studies_family,
 )
+from quant_fund.research.benches_w1621 import (
+    bench_cave_beetle_qa_studies_family,
+    bench_cave_cricket_qa_studies_family,
+    bench_cave_fish_qa_studies_family,
+    bench_mudpuppy_qa_studies_family,
+    bench_olm_qa_studies_family,
+    bench_troglobite_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15109,6 +15117,12 @@ def _provenance(
         "death_adder_qa_studies": bench_death_adder_qa_studies_family,
         "gaboon_qa_studies": bench_gaboon_qa_studies_family,
         "inland_taipan_qa_studies": bench_inland_taipan_qa_studies_family,
+        "cave_beetle_qa_studies": bench_cave_beetle_qa_studies_family,
+        "cave_cricket_qa_studies": bench_cave_cricket_qa_studies_family,
+        "cave_fish_qa_studies": bench_cave_fish_qa_studies_family,
+        "mudpuppy_qa_studies": bench_mudpuppy_qa_studies_family,
+        "olm_qa_studies": bench_olm_qa_studies_family,
+        "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
         "sea_krait_qa_studies": bench_sea_krait_qa_studies_family,
         "fangtooth_qa_studies": bench_fangtooth_qa_studies_family,

@@ -4608,6 +4608,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inland_taipan_qa_studies",
         "saw_scaled_qa_studies",
         "sea_krait_qa_studies",
+        # Wave-1621 cave-dwelling canon.
+        "cave_beetle_qa_studies",
+        "cave_cricket_qa_studies",
+        "cave_fish_qa_studies",
+        "mudpuppy_qa_studies",
+        "olm_qa_studies",
+        "troglobite_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
