@@ -11223,6 +11223,14 @@ from quant_fund.research.benches_w1403 import (
     bench_mmqa_lite_studies_family,
     bench_ocrvqa_lite_studies_family,
 )
+from quant_fund.research.benches_w1404 import (
+    bench_activitynet_qa_studies_family,
+    bench_how2qa_lite_studies_family,
+    bench_movie_qa_lite_studies_family,
+    bench_msrvtt_qa_studies_family,
+    bench_nextqa_lite_studies_family,
+    bench_star_qa_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12307,6 +12315,12 @@ def _provenance(
         "infovqa_lite_studies": bench_infovqa_lite_studies_family,
         "mmqa_lite_studies": bench_mmqa_lite_studies_family,
         "ocrvqa_lite_studies": bench_ocrvqa_lite_studies_family,
+        "activitynet_qa_studies": bench_activitynet_qa_studies_family,
+        "how2qa_lite_studies": bench_how2qa_lite_studies_family,
+        "movie_qa_lite_studies": bench_movie_qa_lite_studies_family,
+        "msrvtt_qa_studies": bench_msrvtt_qa_studies_family,
+        "nextqa_lite_studies": bench_nextqa_lite_studies_family,
+        "star_qa_lite_studies": bench_star_qa_lite_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
