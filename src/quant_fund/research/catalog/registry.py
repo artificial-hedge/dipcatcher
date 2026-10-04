@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1084 comparative-literature canon.
+        "comparative_literature",
+        "literary_theory",
+        "postcolonial_studies",
+        "world_literature",
+        "translation_studies",
+        "critical_theory",
         # Wave-1083 humanities-theory canon.
         "semiotics",
         "narratology",
