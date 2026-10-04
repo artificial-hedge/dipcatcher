@@ -1,3 +1,4 @@
+w1312 risk-domain canon: bio_risk_eval_studies, chem_risk_eval_studies, cyber_sec_eval_studies, lab_bench_studies, malicious_instruct_studies, wmdp_studies (7821->7827)
 w1311 safety-benchmark canon: aegis_studies, air_bench_studies, overkill_studies, salad_bench_studies, sorry_bench_studies, wildguard_studies (7815->7821)
 w1310 generation-quality canon: alpaca_eval_studies, attribution_eval_studies, citation_eval_studies, diversity_eval_studies, factscore_studies, self_bleu_studies (7809->7815)
 w1309 hard-benchmark canon: frontier_math_studies, gpqa_studies, hle_studies, mmlu_pro_studies, tau_bench_studies, workarena_studies (7803->7809)
