@@ -4118,6 +4118,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "monitor_lizard_qa_studies",
         "tegu_qa_studies",
         "uromastyx_qa_studies",
+        # Wave-1551 viper canon.
+        "bushmaster_qa_studies",
+        "copperhead_qa_studies",
+        "coral_snake_qa_studies",
+        "cottonmouth_qa_studies",
+        "fer_de_lance_qa_studies",
+        "rattlesnake_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
