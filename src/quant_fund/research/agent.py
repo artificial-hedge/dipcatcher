@@ -8167,6 +8167,14 @@ from quant_fund.research.benches_w1021 import (
     bench_sir_epidemic_family,
     bench_sis_epidemic_family,
 )
+from quant_fund.research.benches_w1022 import (
+    bench_auction_theory2_family,
+    bench_growth_theory_family,
+    bench_mechanism_design_family,
+    bench_overlapping_gens_family,
+    bench_real_business_family,
+    bench_search_matching_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8538,6 +8546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "growth_theory": bench_growth_theory_family,
+        "overlapping_gens": bench_overlapping_gens_family,
+        "real_business": bench_real_business_family,
+        "search_matching": bench_search_matching_family,
+        "mechanism_design": bench_mechanism_design_family,
+        "auction_theory2": bench_auction_theory2_family,
         "sir_epidemic": bench_sir_epidemic_family,
         "sis_epidemic": bench_sis_epidemic_family,
         "seir_epidemic": bench_seir_epidemic_family,
