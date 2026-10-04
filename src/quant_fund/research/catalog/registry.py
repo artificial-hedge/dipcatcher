@@ -4454,6 +4454,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lesser_kudu_qa_studies",
         "mountain_nyala_qa_studies",
         "sitatunga_qa_studies",
+        # Wave-1599 primate-3 canon.
+        "aye_aye_qa_studies",
+        "howler_qa_studies",
+        "mouse_lemur_qa_studies",
+        "night_monkey_qa_studies",
+        "ring_tailed_qa_studies",
+        "spider_monkey_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
