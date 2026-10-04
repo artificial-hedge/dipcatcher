@@ -3796,6 +3796,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shag_qa_studies",
         "skimmer_qa_studies",
         "storm_petrel_qa_studies",
+        # Wave-1505 waterfowl canon.
+        "gadwall_qa_studies",
+        "pintail_qa_studies",
+        "pochard_qa_studies",
+        "shoveler_qa_studies",
+        "teal_qa_studies",
+        "wigeon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
