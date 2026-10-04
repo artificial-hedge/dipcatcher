@@ -27,7 +27,7 @@ def _bench_kamrusepa_qa_studies(seed: int = 0) -> float:
     checks.append(not kamrusepa_qa_studies_ok(False, True))
     checks.append(kamrusepa_qa_studies_aux(True))
     checks.append(not kamrusepa_qa_studies_aux(False))
-    checks.append(True)  # hittite-myth canon
+    checks.append(True)  # hittite-2 canon
     return float(sum(checks) / len(checks))
 
 

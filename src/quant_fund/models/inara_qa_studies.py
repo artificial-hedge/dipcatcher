@@ -16,7 +16,7 @@ def inara_qa_studies_aux(aux: bool) -> bool:
     """inara_qa_studies
 
     aux:
-    inara_qa_studies: inara, dragon slayers, answers, and scores
+    inara_qa_studies: inara, festival ladies, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_inara_qa_studies(seed: int = 0) -> float:
     checks.append(not inara_qa_studies_ok(False, True))
     checks.append(inara_qa_studies_aux(True))
     checks.append(not inara_qa_studies_aux(False))
-    checks.append(True)  # hittite-myth canon
+    checks.append(True)  # hittite-2 canon
     return float(sum(checks) / len(checks))
 
 

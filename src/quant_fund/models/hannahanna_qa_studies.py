@@ -27,7 +27,7 @@ def _bench_hannahanna_qa_studies(seed: int = 0) -> float:
     checks.append(not hannahanna_qa_studies_ok(False, True))
     checks.append(hannahanna_qa_studies_aux(True))
     checks.append(not hannahanna_qa_studies_aux(False))
-    checks.append(True)  # hittite-myth canon
+    checks.append(True)  # hittite-2 canon
     return float(sum(checks) / len(checks))
 
 
