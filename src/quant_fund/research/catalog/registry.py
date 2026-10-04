@@ -4321,6 +4321,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rhebok_qa_studies",
         "steenbok_qa_studies",
         "suni_qa_studies",
+        # Wave-1580 deer canon.
+        "chital_qa_studies",
+        "fallow_qa_studies",
+        "muntjac_qa_studies",
+        "pudu_qa_studies",
+        "roe_qa_studies",
+        "sika_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

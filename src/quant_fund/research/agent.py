@@ -12631,6 +12631,14 @@ from quant_fund.research.benches_w1579 import (
     bench_steenbok_qa_studies_family,
     bench_suni_qa_studies_family,
 )
+from quant_fund.research.benches_w1580 import (
+    bench_chital_qa_studies_family,
+    bench_fallow_qa_studies_family,
+    bench_muntjac_qa_studies_family,
+    bench_pudu_qa_studies_family,
+    bench_roe_qa_studies_family,
+    bench_sika_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14646,6 +14654,12 @@ def _provenance(
         "rhebok_qa_studies": bench_rhebok_qa_studies_family,
         "steenbok_qa_studies": bench_steenbok_qa_studies_family,
         "suni_qa_studies": bench_suni_qa_studies_family,
+        "chital_qa_studies": bench_chital_qa_studies_family,
+        "fallow_qa_studies": bench_fallow_qa_studies_family,
+        "muntjac_qa_studies": bench_muntjac_qa_studies_family,
+        "pudu_qa_studies": bench_pudu_qa_studies_family,
+        "roe_qa_studies": bench_roe_qa_studies_family,
+        "sika_qa_studies": bench_sika_qa_studies_family,
         "markhor_qa_studies": bench_markhor_qa_studies_family,
         "nilgai_qa_studies": bench_nilgai_qa_studies_family,
         "okapi_qa_studies": bench_okapi_qa_studies_family,
