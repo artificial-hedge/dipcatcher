@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-720 derived-dimension canon.
+        "cluster_tilting",
+        "derived_morita",
+        "preprojective_alg",
+        "categorical_entropy",
+        "serre_dim",
+        "rouquier_dim",
         # Wave-719 Calabi-Yau/Gorenstein canon.
         "calabi_yau_tri",
         "d_calabi_yau",
