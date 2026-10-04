@@ -1,3 +1,4 @@
+w1354 MC-eval canon: arc_easy2_studies, boolq_lite_studies, cosmos_qa_studies, race_lite_studies, sciq_lite_studies, social_qa_studies (8073->8079)
 w1353 NLI-eval-2 canon: creak_lite_studies, entailment_bn_studies, hans_lite_studies, prove_it_studies, strategy_qa_studies, sup_nli_studies (8067->8073)
 w1352 social-bias-eval canon: bias_bench_studies, crowsp_lite_studies, honesty_lie_studies, social_iqa2_studies, stereo_lite_studies, wino_bias_studies (8061->8067)
 w1351 ethics-eval canon: ethic_jiminy_studies, moral_exc_studies, moral_found_studies, principlism_toy_studies, scruples_lite_studies, virtue_ethics_studies (8055->8061)
