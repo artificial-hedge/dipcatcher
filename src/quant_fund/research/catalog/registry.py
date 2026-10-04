@@ -6652,6 +6652,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mavka_qa_studies",
         "psoglav_qa_studies",
         "triglav_qa_studies",
+        # Wave-1913 slavic-demon-3 canon.
+        "berstuk_qa_studies",
+        "chuma_qa_studies",
+        "koshmar_qa_studies",
+        "navka_qa_studies",
+        "perekus_qa_studies",
+        "rugievit_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

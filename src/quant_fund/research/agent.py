@@ -15295,6 +15295,14 @@ from quant_fund.research.benches_w1912 import (
     bench_psoglav_qa_studies_family,
     bench_triglav_qa_studies_family,
 )
+from quant_fund.research.benches_w1913 import (
+    bench_berstuk_qa_studies_family,
+    bench_chuma_qa_studies_family,
+    bench_koshmar_qa_studies_family,
+    bench_navka_qa_studies_family,
+    bench_perekus_qa_studies_family,
+    bench_rugievit_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
