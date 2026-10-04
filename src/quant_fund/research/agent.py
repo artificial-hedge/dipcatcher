@@ -6111,6 +6111,14 @@ from quant_fund.research.benches_w764 import (
     bench_osj_metric_family,
     bench_wiener_measure_family,
 )
+from quant_fund.research.benches_w765 import (
+    bench_chung_lil_family,
+    bench_glivenko_cantelli_family,
+    bench_khintchine_lln_family,
+    bench_kolmogorov_3series_family,
+    bench_levy_convergence_family,
+    bench_strassen_lil_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6490,6 +6498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "strassen_lil": bench_strassen_lil_family,
+        "chung_lil": bench_chung_lil_family,
+        "kolmogorov_3series": bench_kolmogorov_3series_family,
+        "khintchine_lln": bench_khintchine_lln_family,
+        "levy_convergence": bench_levy_convergence_family,
+        "glivenko_cantelli": bench_glivenko_cantelli_family,
         "wiener_measure": bench_wiener_measure_family,
         "dz_invariance": bench_dz_invariance_family,
         "donsker_thm": bench_donsker_thm_family,
