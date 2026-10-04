@@ -9007,6 +9007,14 @@ from quant_fund.research.benches_w1126 import (
     bench_positive_psychology_family,
     bench_social_cognition_family,
 )
+from quant_fund.research.benches_w1127 import (
+    bench_digital_history_family,
+    bench_environmental_history_family,
+    bench_global_history_family,
+    bench_maritime_history_family,
+    bench_oral_history_family,
+    bench_public_history_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9378,6 +9386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "oral_history": bench_oral_history_family,
+        "public_history": bench_public_history_family,
+        "digital_history": bench_digital_history_family,
+        "environmental_history": bench_environmental_history_family,
+        "global_history": bench_global_history_family,
+        "maritime_history": bench_maritime_history_family,
         "social_cognition": bench_social_cognition_family,
         "positive_psychology": bench_positive_psychology_family,
         "cross_cultural_psychology": bench_cross_cultural_psychology_family,

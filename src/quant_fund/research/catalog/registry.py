@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1127 history-3 canon.
+        "oral_history",
+        "public_history",
+        "digital_history",
+        "environmental_history",
+        "global_history",
+        "maritime_history",
         # Wave-1126 psychology-4 canon.
         "social_cognition",
         "positive_psychology",
