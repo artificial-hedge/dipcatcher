@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1112 biology-2 canon.
+        "biophysics",
+        "evolutionary_biology",
+        "developmental_biology",
+        "neurobiology",
+        "ethology",
+        "comparative_anatomy",
         # Wave-1111 chemistry-2 canon.
         "quantum_chemistry",
         "spectroscopy",
