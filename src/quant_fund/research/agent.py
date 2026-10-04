@@ -10215,6 +10215,14 @@ from quant_fund.research.benches_w1277 import (
     bench_scalable_oversight_studies_family,
     bench_weak_to_strong_studies_family,
 )
+from quant_fund.research.benches_w1278 import (
+    bench_chunked_prefill_studies_family,
+    bench_continuous_batching_studies_family,
+    bench_disaggregated_serving_studies_family,
+    bench_early_exit_studies_family,
+    bench_prefix_caching_studies_family,
+    bench_tensor_parallel_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10700,6 +10708,12 @@ def _provenance(
         "recursive_reward_studies": bench_recursive_reward_studies_family,
         "scalable_oversight_studies": bench_scalable_oversight_studies_family,
         "weak_to_strong_studies": bench_weak_to_strong_studies_family,
+        "chunked_prefill_studies": bench_chunked_prefill_studies_family,
+        "continuous_batching_studies": bench_continuous_batching_studies_family,
+        "disaggregated_serving_studies": bench_disaggregated_serving_studies_family,
+        "early_exit_studies": bench_early_exit_studies_family,
+        "prefix_caching_studies": bench_prefix_caching_studies_family,
+        "tensor_parallel_studies": bench_tensor_parallel_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

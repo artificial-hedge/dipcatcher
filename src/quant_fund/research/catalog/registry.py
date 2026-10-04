@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1278 LLM-serving canon.
+        "chunked_prefill_studies",
+        "continuous_batching_studies",
+        "disaggregated_serving_studies",
+        "early_exit_studies",
+        "prefix_caching_studies",
+        "tensor_parallel_studies",
         # Wave-1277 scalable-oversight canon.
         "debate_alignment_studies",
         "deliberative_alignment_studies",
