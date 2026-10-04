@@ -4293,6 +4293,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hamster_qa_studies",
         "lemming_qa_studies",
         "vole_qa_studies",
+        # Wave-1576 mammal canon.
+        "binturong_qa_studies",
+        "fossa_qa_studies",
+        "honey_badger_qa_studies",
+        "kusimanse_qa_studies",
+        "maned_wolf_qa_studies",
+        "sun_bear_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
