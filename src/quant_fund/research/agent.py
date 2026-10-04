@@ -12447,6 +12447,14 @@ from quant_fund.research.benches_w1556 import (
     bench_velvet_worm_qa_studies_family,
     bench_woodlouse_qa_studies_family,
 )
+from quant_fund.research.benches_w1557 import (
+    bench_arapaima_qa_studies_family,
+    bench_electric_eel_qa_studies_family,
+    bench_knifefish_qa_studies_family,
+    bench_oscar_qa_studies_family,
+    bench_pacu_qa_studies_family,
+    bench_tetra_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14372,6 +14380,12 @@ def _provenance(
         "tick_qa_studies": bench_tick_qa_studies_family,
         "bristletail_qa_studies": bench_bristletail_qa_studies_family,
         "pillbug_qa_studies": bench_pillbug_qa_studies_family,
+        "arapaima_qa_studies": bench_arapaima_qa_studies_family,
+        "electric_eel_qa_studies": bench_electric_eel_qa_studies_family,
+        "knifefish_qa_studies": bench_knifefish_qa_studies_family,
+        "oscar_qa_studies": bench_oscar_qa_studies_family,
+        "pacu_qa_studies": bench_pacu_qa_studies_family,
+        "tetra_qa_studies": bench_tetra_qa_studies_family,
         "silverfish_qa_studies": bench_silverfish_qa_studies_family,
         "springtail_qa_studies": bench_springtail_qa_studies_family,
         "velvet_worm_qa_studies": bench_velvet_worm_qa_studies_family,
