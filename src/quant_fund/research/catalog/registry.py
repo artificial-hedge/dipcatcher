@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1174 recreation canon.
+        "recreation",
+        "leisure_studies",
+        "tourism",
+        "hospitality",
+        "sports_management",
+        "recreation_therapy",
         # Wave-1173 media canon.
         "communication_3",
         "journalism_3",
