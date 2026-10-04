@@ -13775,6 +13775,14 @@ from quant_fund.research.benches_w1722 import (
     bench_styr_qa_studies_family,
     bench_tulur_qa_studies_family,
 )
+from quant_fund.research.benches_w1723 import (
+    bench_honir_qa_studies_family,
+    bench_kvasir_qa_studies_family,
+    bench_lodurr_qa_studies_family,
+    bench_mimir_qa_studies_family,
+    bench_ve_qa_studies_family,
+    bench_vili_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
