@@ -8695,6 +8695,14 @@ from quant_fund.research.benches_w1087 import (
     bench_onomastics_family,
     bench_sigillography_family,
 )
+from quant_fund.research.benches_w1088 import (
+    bench_analytic_philosophy_family,
+    bench_ancient_philosophy_family,
+    bench_continental_philosophy_family,
+    bench_existentialism_family,
+    bench_medieval_philosophy_family,
+    bench_pragmatism_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9066,6 +9074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ancient_philosophy": bench_ancient_philosophy_family,
+        "medieval_philosophy": bench_medieval_philosophy_family,
+        "continental_philosophy": bench_continental_philosophy_family,
+        "analytic_philosophy": bench_analytic_philosophy_family,
+        "pragmatism": bench_pragmatism_family,
+        "existentialism": bench_existentialism_family,
         "epigraphy": bench_epigraphy_family,
         "diplomatics": bench_diplomatics_family,
         "sigillography": bench_sigillography_family,
