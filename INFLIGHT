@@ -1,3 +1,4 @@
+w1282 embodied-VLA canon: affordance_map_studies, embodied_agent_studies, spatial_reasoning_studies, video_diffusion_studies, vla_model_studies, world_sim_studies (7641->7647)
 w1281 reasoning-prompt canon: analogical_prompting_studies, graph_of_thought_studies, least_to_most_studies, plan_and_solve_studies, step_back_studies, tree_of_thought_studies (7635->7641)
 w1280 pretraining-data canon: data_mixture_studies, data_quality_studies, dedup_pipeline_studies, domain_filtering_studies, synthetic_data_studies, token_budget_studies (7629->7635)
 w1279 distributed-training canon: activation_checkpoint_studies, fsdp_sharding_studies, hybrid_parallel_studies, pipeline_schedule_studies, sequence_parallel_studies, zero_optimizer_studies (7623->7629)
