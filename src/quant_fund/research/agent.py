@@ -5127,6 +5127,14 @@ from quant_fund.research.benches_w641 import (
     bench_stable_stem2_family,
     bench_unstable_tower_family,
 )
+from quant_fund.research.benches_w642 import (
+    bench_bhatt_scholze_family,
+    bench_derived_prism_family,
+    bench_prismatic_dieudonne_family,
+    bench_prismatic_f_family,
+    bench_q_crystal_family,
+    bench_q_prism_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5506,6 +5514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "prismatic_f": bench_prismatic_f_family,
+        "bhatt_scholze": bench_bhatt_scholze_family,
+        "q_crystal": bench_q_crystal_family,
+        "prismatic_dieudonne": bench_prismatic_dieudonne_family,
+        "q_prism": bench_q_prism_family,
+        "derived_prism": bench_derived_prism_family,
         "smash_prod": bench_smash_prod_family,
         "stable_stem2": bench_stable_stem2_family,
         "homotopy_colim": bench_homotopy_colim_family,
