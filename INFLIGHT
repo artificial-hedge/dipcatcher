@@ -1,3 +1,4 @@
+feat(research): wave 804 — Malliavin canon (nualart_zakai, watanabe_map, malliavin_cov, density_bound, absolute_cont, smoothness_h) (4779->4785 families)
 feat(research): wave 803 — signature canon (signature_kernel, pde_signature, truncated_sig, signature_gan2, expected_sig, sig_inversion) (4773->4779 families)
 feat(research): wave 802 — neural-SDE canon (latent_sde, neural_cde, neural_rde, sde_gan, sde_matching, logsig_rde) (4767->4773 families)
 feat(research): wave 801 — rough-volatility canon (fractional_heston, rough_bergomi, rough_sabr, rough_variance, volterra_sde, multifactor_rough) (4761->4767 families)

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-804 Malliavin canon.
+        "nualart_zakai",
+        "watanabe_map",
+        "malliavin_cov",
+        "density_bound",
+        "absolute_cont",
+        "smoothness_h",
         # Wave-803 signature canon.
         "signature_kernel",
         "pde_signature",

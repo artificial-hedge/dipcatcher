@@ -6423,6 +6423,14 @@ from quant_fund.research.benches_w803 import (
     bench_signature_kernel_family,
     bench_truncated_sig_family,
 )
+from quant_fund.research.benches_w804 import (
+    bench_absolute_cont_family,
+    bench_density_bound_family,
+    bench_malliavin_cov_family,
+    bench_nualart_zakai_family,
+    bench_smoothness_h_family,
+    bench_watanabe_map_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6802,6 +6810,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nualart_zakai": bench_nualart_zakai_family,
+        "watanabe_map": bench_watanabe_map_family,
+        "malliavin_cov": bench_malliavin_cov_family,
+        "density_bound": bench_density_bound_family,
+        "absolute_cont": bench_absolute_cont_family,
+        "smoothness_h": bench_smoothness_h_family,
         "signature_kernel": bench_signature_kernel_family,
         "pde_signature": bench_pde_signature_family,
         "truncated_sig": bench_truncated_sig_family,
