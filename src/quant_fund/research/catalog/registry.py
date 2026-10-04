@@ -3908,6 +3908,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inkcap_qa_studies",
         "morel_qa_studies",
         "puffball_qa_studies",
+        # Wave-1521 orchid canon.
+        "cattleya_qa_studies",
+        "cymbidium_qa_studies",
+        "dendrobium_qa_studies",
+        "oncidium_qa_studies",
+        "paphiopedilum_qa_studies",
+        "phalaenopsis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
