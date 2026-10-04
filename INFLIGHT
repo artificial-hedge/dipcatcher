@@ -1,3 +1,4 @@
+feat(research): wave 991 — homogenization canon (homogenization, two_scale_conv, gamma_convergence, mosco_conv, bloch_decomp, h_convergence) (5895->5901 families)
 feat(research): wave 990 — calculus-of-variations canon (euler_lagrange, legendre_cond, jacobi_eq, geodesic_var, isoperimetric_var, soap_film) (5889->5895 families)
 feat(research): wave 989 — microlocal-2 canon (parametrix, wave_eq_group, propagation_thm, melrose_bdy, fbi_transform, sg_calculus) (5883->5889 families)
 feat(research): wave 988 — spectral-geometry canon (spectral_geometry, heat_invariants, weyl_law, isospectral, cheeger_ineq, nodal_domain) (5877->5883 families)
