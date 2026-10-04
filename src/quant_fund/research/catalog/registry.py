@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1061 law canon.
+        "constitutional_law",
+        "criminal_law",
+        "contract_law",
+        "tort_law",
+        "administrative_law",
+        "international_law",
         # Wave-1060 education canon.
         "curriculum_design",
         "pedagogy",
