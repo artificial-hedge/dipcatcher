@@ -11479,6 +11479,14 @@ from quant_fund.research.benches_w1435 import (
     bench_muscle_qa_studies_family,
     bench_nerve_qa_studies_family,
 )
+from quant_fund.research.benches_w1436 import (
+    bench_comet_qa_studies_family,
+    bench_galaxy_qa_studies_family,
+    bench_moon_qa_studies_family,
+    bench_nebula_qa_studies_family,
+    bench_planet_qa_studies_family,
+    bench_star_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12755,6 +12763,12 @@ def _provenance(
         "heart_qa_studies": bench_heart_qa_studies_family,
         "muscle_qa_studies": bench_muscle_qa_studies_family,
         "nerve_qa_studies": bench_nerve_qa_studies_family,
+        "comet_qa_studies": bench_comet_qa_studies_family,
+        "galaxy_qa_studies": bench_galaxy_qa_studies_family,
+        "moon_qa_studies": bench_moon_qa_studies_family,
+        "nebula_qa_studies": bench_nebula_qa_studies_family,
+        "planet_qa_studies": bench_planet_qa_studies_family,
+        "star_qa_studies": bench_star_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

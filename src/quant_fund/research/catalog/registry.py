@@ -3313,6 +3313,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "heart_qa_studies",
         "muscle_qa_studies",
         "nerve_qa_studies",
+        # Wave-1436 celestial canon.
+        "comet_qa_studies",
+        "galaxy_qa_studies",
+        "moon_qa_studies",
+        "nebula_qa_studies",
+        "planet_qa_studies",
+        "star_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
