@@ -1,3 +1,4 @@
+w1294 representation-engineering canon: activation_oracle_studies, concept_vector_studies, feature_ablation_studies, honesty_vector_studies, reading_vector_studies, refusal_vector_studies (7713->7719)
 w1293 constitutional-AI canon: cai_critique_studies, constitutional_studies, harmlessness_rl_studies, principle_eval_studies, rlaif_studies, sleeper_eval_studies (7707->7713)
 w1292 RLVR/verifiable-rewards canon: grpo_studies, math_reward_studies, outcome_reward_studies, process_reward_studies, rlvr_studies, verifiable_reward_studies (7701->7707)
 w1291 data-filtering/dedup canon: data_mix_studies, dedup_minhash_studies, dedup_studies, domain_classifier_studies, perplexity_filter_studies, quality_filter_studies (7695->7701)

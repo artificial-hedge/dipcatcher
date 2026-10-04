@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1294 representation-engineering canon.
+        "activation_oracle_studies",
+        "concept_vector_studies",
+        "feature_ablation_studies",
+        "honesty_vector_studies",
+        "reading_vector_studies",
+        "refusal_vector_studies",
         # Wave-1293 constitutional-AI canon.
         "cai_critique_studies",
         "constitutional_studies",
