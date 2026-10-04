@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1386 embodied-game canon.
+        "alfworld_lite_studies",
+        "babyai_lite_studies",
+        "crafter_lite_studies",
+        "jericho_lite_studies",
+        "scienceworld_studies",
+        "textworld_lite_studies",
         # Wave-1385 web-agent canon.
         "airtasks_studies",
         "browsergym_studies",
