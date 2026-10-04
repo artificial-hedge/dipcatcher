@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1187 fashion canon.
+        "fashion_studies",
+        "textile_studies",
+        "costume_design",
+        "jewelry_design",
+        "footwear_design",
+        "apparel_studies",
         # Wave-1186 ux canon.
         "ux_design",
         "hci_studies",

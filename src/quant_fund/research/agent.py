@@ -9487,6 +9487,14 @@ from quant_fund.research.benches_w1186 import (
     bench_service_design_family,
     bench_ux_design_family,
 )
+from quant_fund.research.benches_w1187 import (
+    bench_apparel_studies_family,
+    bench_costume_design_family,
+    bench_fashion_studies_family,
+    bench_footwear_design_family,
+    bench_jewelry_design_family,
+    bench_textile_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9858,6 +9866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fashion_studies": bench_fashion_studies_family,
+        "textile_studies": bench_textile_studies_family,
+        "costume_design": bench_costume_design_family,
+        "jewelry_design": bench_jewelry_design_family,
+        "footwear_design": bench_footwear_design_family,
+        "apparel_studies": bench_apparel_studies_family,
         "ux_design": bench_ux_design_family,
         "hci_studies": bench_hci_studies_family,
         "information_architecture": bench_information_architecture_family,
