@@ -6694,6 +6694,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "redcap_qa_studies",
         "seonaidh_qa_studies",
         "wraith_qa_studies",
+        # Wave-1919 celtic-demon-3 canon.
+        "bodach_qa_studies",
+        "caointeach_qa_studies",
+        "fachan_qa_studies",
+        "geancanach_qa_studies",
+        "kilmoulis_qa_studies",
+        "shellycoat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
