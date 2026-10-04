@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1022 economics canon.
+        "growth_theory",
+        "overlapping_gens",
+        "real_business",
+        "search_matching",
+        "mechanism_design",
+        "auction_theory2",
         # Wave-1021 epidemiology canon.
         "sir_epidemic",
         "sis_epidemic",
