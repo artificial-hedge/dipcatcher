@@ -1,3 +1,4 @@
+feat(research): wave 708 — category-21 canon (cat_pseudo_limit, cat_weak_eq, cat_reedy_cat, cat_dold_kan, cat_hoc, cat_enriched_lim) (4203->4209 families)
 feat(research): wave 707 — spectral-AG-9 canon (spectral_prime, spectral_residue, spectral_level, spectral_polynomial2, spectral_coord, spectral_ext_field) (4197->4203 families)
 feat(research): wave 706 — chromatic-9 canon (chromatic_layer, morava_maven, chromatic_square2, lubin_tate3, elliptic_morava, chromatic_base) (4191->4197 families)
 feat(research): wave 705 — derived-geometry-10 canon (derived_geometry7, derived_abelian2, derived_stack3, derived_morph, derived_cover, derived_topos) (4185->4191 families)
