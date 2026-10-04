@@ -16,7 +16,7 @@ def taliesin_qa_studies_aux(aux: bool) -> bool:
     """taliesin_qa_studies
 
     aux:
-    taliesin_qa_studies: taliesin, bard prophets, answers, and scores
+    taliesin_qa_studies: taliesin, bard songs, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_taliesin_qa_studies(seed: int = 0) -> float:
     checks.append(not taliesin_qa_studies_ok(False, True))
     checks.append(taliesin_qa_studies_aux(True))
     checks.append(not taliesin_qa_studies_aux(False))
-    checks.append(True)  # welsh-myth canon
+    checks.append(True)  # welsh-myth-2 canon
     return float(sum(checks) / len(checks))
 
 

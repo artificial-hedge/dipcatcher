@@ -16,7 +16,7 @@ def arawn_qa_studies_aux(aux: bool) -> bool:
     """arawn_qa_studies
 
     aux:
-    arawn_qa_studies: arawn, otherworld kings, answers, and scores
+    arawn_qa_studies: arawn, underworld hunts, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_arawn_qa_studies(seed: int = 0) -> float:
     checks.append(not arawn_qa_studies_ok(False, True))
     checks.append(arawn_qa_studies_aux(True))
     checks.append(not arawn_qa_studies_aux(False))
-    checks.append(True)  # welsh-myth canon
+    checks.append(True)  # welsh-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
