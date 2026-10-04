@@ -9223,6 +9223,14 @@ from quant_fund.research.benches_w1153 import (
     bench_physics_6_family,
     bench_thermodynamics_3_family,
 )
+from quant_fund.research.benches_w1154 import (
+    bench_electromagnetism_family,
+    bench_nuclear_physics_2_family,
+    bench_optics_4_family,
+    bench_particle_physics_family,
+    bench_quantum_physics_family,
+    bench_relativity_3_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9594,6 +9602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "electromagnetism": bench_electromagnetism_family,
+        "optics_4": bench_optics_4_family,
+        "nuclear_physics_2": bench_nuclear_physics_2_family,
+        "particle_physics": bench_particle_physics_family,
+        "quantum_physics": bench_quantum_physics_family,
+        "relativity_3": bench_relativity_3_family,
         "physics_6": bench_physics_6_family,
         "astrophysics_3": bench_astrophysics_3_family,
         "cosmology_3": bench_cosmology_3_family,
