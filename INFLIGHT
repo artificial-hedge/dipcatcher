@@ -1,3 +1,4 @@
+feat(research): wave 851 — discontinuous-Galerkin canon (dg_discretization, numerical_flux_dg, penalty_dg, modal_basis, limiter_tvb, rkdg_step) (5055->5061 families)
 feat(research): wave 850 — Riemann-solver canon (roe_solver, hllc_solver, ausm_flux, lax_friedrichs, godunov_exact, osher_solver) (5049->5055 families)
 feat(research): wave 849 — finite-volume canon (fdm_grid, compact_scheme, crank_nicholson2, upwind_scheme, muscl_reconstruct, flux_splitting) (5043->5049 families)
 feat(research): wave 848 — finite-element canon (fem_assembly, isoparametric_map, quadrature_rules, triangular_basis, edge_elements, dof_management) (5037->5043 families)
