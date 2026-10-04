@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1272 omni-modal canon.
+        "audio_encoder_studies",
+        "document_ai_studies",
+        "omni_modal_studies",
+        "unified_tokenizer_studies",
+        "video_llm_studies",
+        "visual_grounding_studies",
         # Wave-1271 LLM-evaluation canon.
         "arena_battle_studies",
         "bigbench_studies",
