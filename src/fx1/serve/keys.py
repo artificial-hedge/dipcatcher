@@ -40,6 +40,14 @@ Honesty rules:
   additive. Unset ``scopes`` keeps the pre-scope behavior:
   ``[read, write]`` (plus ``admin`` for admin keys). Scopes are
   journaled with the record — a restart restores the declared policy.
+- ``max_requests`` / ``max_tokens`` declare hard budgets: the key
+  refuses ``quota_exceeded`` once ``uses`` reaches ``max_requests``
+  authenticated calls, or once its reported token spend (charged out of
+  the completion log as providers report it) reaches ``max_tokens``.
+  Budgets are declared durably at mint but meter on live counters —
+  like ``uses``, they reset on restart; a budget gates the *next*
+  call, so the request that crosses the token line completes and only
+  then counts against the next one.
 """
 
 from __future__ import annotations
@@ -146,6 +154,10 @@ class ApiKeyStore:
                     # records journaled before scopes existed keep the
                     # old unrestricted contract
                     rec.setdefault("scopes", list(SCOPES) if rec["admin"] else ["read", "write"])
+                    # pre-quota records carried no budget declaration
+                    rec.setdefault("max_requests", None)
+                    rec.setdefault("max_tokens", None)
+                    rec.setdefault("tokens_used", 0)
                     self._by_hash[rec["sha256"]] = rec
                     kid = rec.get("key_id")
                     if isinstance(kid, str):
@@ -170,6 +182,8 @@ class ApiKeyStore:
         rpm: int | None = None,
         ttl_s: float | None = None,
         scopes: list[str] | tuple[str, ...] | None = None,
+        max_requests: int | None = None,
+        max_tokens: int | None = None,
     ) -> tuple[str, dict[str, Any]]:
         """Mint a key. Returns ``(raw, record)`` — the raw secret is shown
         once here and never stored.
@@ -187,11 +201,20 @@ class ApiKeyStore:
         ``rpm`` declares a per-key fixed-window request limit
         (refusals raise ``rate_limited``); ``ttl_s`` declares an expiry —
         both travel with the journaled record so a restart keeps the
-        declared policy."""
+        declared policy.
+
+        ``max_requests`` / ``max_tokens`` declare hard lifetime budgets
+        (refusals raise ``quota_exceeded``): the request budget counts
+        authenticated calls; the token budget counts provider-reported
+        usage charged by the wire after each served response."""
         if rpm is not None and rpm < 1:
             raise ValueError("rpm must be >= 1")
         if ttl_s is not None and ttl_s <= 0:
             raise ValueError("ttl_s must be > 0")
+        if max_requests is not None and max_requests < 1:
+            raise ValueError("max_requests must be >= 1")
+        if max_tokens is not None and max_tokens < 1:
+            raise ValueError("max_tokens must be >= 1")
         resolved = _resolve_scopes(scopes, admin)
         raw = KEY_PREFIX + secrets.token_hex(20)
         sha = _hash(raw)
@@ -203,6 +226,11 @@ class ApiKeyStore:
             "admin": "admin" in resolved,
             "scopes": resolved,
             "rpm": rpm,
+            "max_requests": max_requests,
+            "max_tokens": max_tokens,
+            # live meter for the token budget — journaled as 0 like
+            # ``uses`` and charged post-response off the completion log.
+            "tokens_used": 0,
             "created_at": created,
             "expires_at": (created + ttl_s) if ttl_s is not None else None,
             "enabled": True,
@@ -237,6 +265,22 @@ class ApiKeyStore:
             expires = rec.get("expires_at")
             if expires is not None and now >= expires:
                 return None
+            # hard budgets refuse before the rate window — an exhausted
+            # key never consumes a window slot
+            max_req = rec.get("max_requests")
+            if max_req is not None and rec["uses"] >= max_req:
+                raise KeyStoreError(
+                    "quota_exceeded",
+                    f"key exhausted its {max_req} request budget",
+                    key_id=rec["key_id"],
+                )
+            max_tok = rec.get("max_tokens")
+            if max_tok is not None and int(rec.get("tokens_used", 0)) >= max_tok:
+                raise KeyStoreError(
+                    "quota_exceeded",
+                    f"key exhausted its {max_tok} token budget",
+                    key_id=rec["key_id"],
+                )
             rpm = rec.get("rpm")
             if rpm is not None:
                 start = rec.get("_window_start")
@@ -278,6 +322,18 @@ class ApiKeyStore:
             count = int(rec.get("_window_count", 0))
             reset = max(0, int(round(_RATE_WINDOW_S - (now - start))))
             return (rpm, max(0, rpm - count), reset)
+
+    def charge_tokens(self, key_id: str, tokens: int) -> None:
+        """Add provider-reported token spend to the key's live meter.
+        Called by the wire after a served response — a tombstoned or
+        unknown key still records the spend (audit, not auth)."""
+        if tokens <= 0:
+            return
+        with self._lock:
+            sha = self._by_id.get(key_id)
+            rec = self._by_hash.get(sha) if sha is not None else None
+            if rec is not None:
+                rec["tokens_used"] = int(rec.get("tokens_used", 0)) + int(tokens)
 
     def get(self, key_id: str) -> dict[str, Any] | None:
         with self._lock:

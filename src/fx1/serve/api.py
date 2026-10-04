@@ -1303,6 +1303,11 @@ class ApiKeyCreateRequest(_Model):
     # revoked one.
     rpm: int | None = Field(default=None, ge=1, le=1_000_000)
     ttl_s: float | None = Field(default=None, gt=0, le=315_576_000)
+    # Hard budgets, declared at mint: max_requests counts authenticated
+    # calls, max_tokens counts provider-reported usage charged after each
+    # served response. An exhausted key answers 429 quota_exceeded.
+    max_requests: int | None = Field(default=None, ge=1, le=2_147_483_647)
+    max_tokens: int | None = Field(default=None, ge=1, le=9_223_372_036_854_775_807)
 
 
 class ApiKeyMintResponse(_Model):
@@ -1315,8 +1320,11 @@ class ApiKeyMintResponse(_Model):
     admin: bool
     scopes: list[str]
     rpm: int | None
+    max_requests: int | None
+    max_tokens: int | None
     expires_at: float | None
     created_at: float
+    tokens_used: int
     key: str
 
 
@@ -1331,11 +1339,14 @@ class ApiKeyRecordModel(_Model):
     admin: bool
     scopes: list[str]
     rpm: int | None
+    max_requests: int | None
+    max_tokens: int | None
     expires_at: float | None
     created_at: float
     enabled: bool
     revoked_at: float | None
     uses: int
+    tokens_used: int
     last_used_at: float | None
 
 
@@ -1355,11 +1366,14 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
             or (["read", "write", "admin"] if rec.get("admin") else ["read", "write"])
         ),
         rpm=rec.get("rpm"),
+        max_requests=rec.get("max_requests"),
+        max_tokens=rec.get("max_tokens"),
         expires_at=rec.get("expires_at"),
         created_at=rec["created_at"],
         enabled=rec["enabled"],
         revoked_at=rec["revoked_at"],
         uses=rec["uses"],
+        tokens_used=int(rec.get("tokens_used") or 0),
         last_used_at=rec["last_used_at"],
     )
 
@@ -3258,11 +3272,16 @@ class _CompletionLog:
     not a transcript. Probes stay out of it: they already carry their own
     surface (``probe:<name>`` metrics + the status-cache verdicts)."""
 
-    def __init__(self, cap: int = _COMPLETION_LOG_MAX) -> None:
+    def __init__(
+        self,
+        cap: int = _COMPLETION_LOG_MAX,
+        on_record: Callable[[CompletionRecord], None] | None = None,
+    ) -> None:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, CompletionRecord] = {}
         self._dropped = 0
+        self._on_record = on_record
 
     def append(self, rec: CompletionRecord) -> None:
         # Attribute to the authenticated credential: the key fingerprint
@@ -3279,6 +3298,11 @@ class _CompletionLog:
             while len(self._items) > self._cap:
                 self._items.pop(next(iter(self._items)))
                 self._dropped += 1
+        # Post-commit hook: the wire folds provider-reported usage into
+        # the credential's token-budget meter here, so every surface that
+        # records a call charges identically.
+        if self._on_record is not None:
+            self._on_record(rec)
 
     @property
     def cap(self) -> int:
@@ -3421,6 +3445,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     conv_store: OpenAIEnvelopeStore,
     eval_spec_store: EvalSpecStore,
     vs_store: VectorStoreStore,
+    key_store: ApiKeyStore,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -7454,6 +7479,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             }
         else:
             usage_total = None
+        # Batch items carry no per-call usage (shared endpoint can't
+        # attribute it) — charge the key the batch's aggregate delta so
+        # token budgets still meter batch traffic.
+        if req_key_id is not None and usage_total:
+            _tt = usage_total.get("total_tokens")
+            if not isinstance(_tt, int):
+                _pt = usage_total.get("prompt_tokens")
+                _ct = usage_total.get("completion_tokens")
+                _tt = (_pt if isinstance(_pt, int) else 0) + (_ct if isinstance(_ct, int) else 0)
+            key_store.charge_tokens(req_key_id, _tt)
         resp = CompleteBatchResponse(
             backend=serving,
             model=model_name if isinstance(model_name, str) else None,
@@ -8057,6 +8092,43 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
 
+def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
+    """Fold one served call's provider-reported usage into the key's
+    live token-budget meter. ``usage`` is None when the backend has no
+    usage channel — a silent provider never fabricates spend. Env-key
+    and loopback calls are unmetered."""
+    usage = rec.usage
+    if rec.key_id in (None, "env") or not usage:
+        return
+    total = usage.get("total_tokens")
+    if not isinstance(total, int):
+        pt = usage.get("prompt_tokens")
+        ct = usage.get("completion_tokens")
+        total = (pt if isinstance(pt, int) else 0) + (ct if isinstance(ct, int) else 0)
+    key_store.charge_tokens(rec.key_id or "", total)
+
+
+def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore) -> JSONResponse:
+    """429 shape for a managed-key refusal. ``quota_exceeded`` is a hard
+    budget — no ``Retry-After`` (it never clears inside a call, so
+    clients must not retry it); ``rate_limited`` is a window refusal —
+    an honest ``Retry-After`` plus the key's standing budget headers."""
+    if exc.code == "quota_exceeded":
+        msg = str(exc)
+        body: dict[str, Any] = {"detail": msg, "code": exc.code}
+        if is_openai_path(path):
+            body = _v1_error_body(path, msg, 429, exc.code)
+        return JSONResponse(status_code=429, content=body)
+    wait_s = max(1, math.ceil(exc.retry_after or 1.0))
+    rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
+    rl_body: dict[str, Any] = {"detail": rl_msg, "code": exc.code}
+    if is_openai_path(path):
+        rl_body = _v1_error_body(path, rl_msg, 429, exc.code)
+    headers = {"Retry-After": str(wait_s)}
+    headers.update(_key_budget_headers(key_store, exc.key_id))
+    return JSONResponse(status_code=429, content=rl_body, headers=headers)
+
+
 def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
     """OpenAI's standing rate-limit headers for a managed key with a
     declared rpm window — empty for env/loopback auth or unwindowed
@@ -8239,7 +8311,6 @@ def create_app(
     # scrapes read it off ``GET /harness/backends`` without re-probing.
     probe_cache: dict[str, BackendProbeVerdict] = {}
     probe_lock = threading.Lock()
-    completion_log = _CompletionLog()
     state_dir = state_dir or os.environ.get(_STATE_DIR_ENV) or None
     state_path = Path(state_dir) if state_dir is not None else None
 
@@ -8283,6 +8354,7 @@ def create_app(
     key_store = ApiKeyStore(
         journal=JobJournal(state_path / "keys.jsonl") if state_path is not None else None
     )
+    completion_log = _CompletionLog(on_record=lambda rec: _charge_key_tokens(rec, key_store))
     batch_store = _BatchStore(batch_max, journal=_journal("batches.jsonl"))
     abatch_store = _AnthropicBatchStore(batch_max, journal=_journal("abatches.jsonl"))
     # The OpenAI-shaped fine-tuning surface: bounded like the other job
@@ -8491,24 +8563,16 @@ def create_app(
         try:
             auth = _resolve_auth(request, api_key, key_store)
         except KeyStoreError as exc:
-            # a managed key past its declared rpm refuses 429 — same
-            # fail-closed shape as the global limiter, keyed to the
-            # credential's own window; the budget headers still answer so
-            # a client learns its declared limit, not just the refusal
+            # a managed key past its declared rpm/budget refuses 429 —
+            # same fail-closed shape as the global limiter, keyed to the
+            # credential's own window/budget
             metrics.record_rate_limited()
-            wait_s = max(1, math.ceil(exc.retry_after or 1.0))
-            key_rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
-            key_rl_body: dict[str, Any] = {"detail": key_rl_msg, "code": exc.code}
-            if is_openai_path(request.url.path):
-                key_rl_body = _v1_error_body(request.url.path, key_rl_msg, 429, exc.code)
-            over_headers = {"Retry-After": str(wait_s)}
-            over_headers.update(_key_budget_headers(key_store, exc.key_id))
-            response = JSONResponse(
-                status_code=429,
-                content=key_rl_body,
-                headers=over_headers,
+            return _finish(
+                request,
+                request_id,
+                _key_refusal_response(exc, request.url.path, key_store),
+                started,
             )
-            return _finish(request, request_id, response, started)
         if isinstance(auth, JSONResponse):
             response = auth
         else:
@@ -8619,6 +8683,7 @@ def create_app(
                 "anthropic_count_tokens": True,
                 "anthropic_models": True,
                 "key_scopes": True,
+                "key_quotas": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8779,7 +8844,13 @@ def create_app(
         _require_admin(request)
         try:
             raw, rec = key_store.mint(
-                body.name, admin=body.admin, rpm=body.rpm, ttl_s=body.ttl_s, scopes=body.scopes
+                body.name,
+                admin=body.admin,
+                rpm=body.rpm,
+                ttl_s=body.ttl_s,
+                scopes=body.scopes,
+                max_requests=body.max_requests,
+                max_tokens=body.max_tokens,
             )
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
@@ -8790,8 +8861,11 @@ def create_app(
             admin=bool(rec.get("admin")),
             scopes=list(rec["scopes"]),
             rpm=rec.get("rpm"),
+            max_requests=rec.get("max_requests"),
+            max_tokens=rec.get("max_tokens"),
             expires_at=rec.get("expires_at"),
             created_at=rec["created_at"],
+            tokens_used=int(rec.get("tokens_used") or 0),
             key=raw,
         )
 
@@ -8998,6 +9072,7 @@ def create_app(
         conv_store=conv_store,
         eval_spec_store=eval_spec_store,
         vs_store=vs_store,
+        key_store=key_store,
     )
 
     _mount_receipt_routes(app, receipt_index)

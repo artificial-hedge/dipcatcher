@@ -3950,6 +3950,44 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _u_sdk["admin"] is True
         and _u_wl["admin"] is True
     )
+    # hard budgets ride the mint on both legs — the wire enforces them
+    # (429 quota_exceeded, terminal: no Retry-After, never retried) while
+    # the SDK carries the journaled declaration + live meters
+    _qb_sdk = sdk.key_create("budget", max_requests=3, max_tokens=1000)
+    _qb_wl = _admin_remote.key_create("budget", max_requests=3, max_tokens=1000)
+    _qb_ro = HarnessClient(
+        "http://harness.test",
+        transport=_tc_transport(client),
+        api_key=str(_qb_wl.get("key", "")),
+    )
+    out["key_quota_parity"] = (
+        _qb_sdk["max_requests"] == _qb_wl["max_requests"] == 3
+        and _qb_sdk["max_tokens"] == _qb_wl["max_tokens"] == 1000
+        and sdk.key_get(_qb_sdk["id"])["tokens_used"] == 0
+        and _admin_remote.key_get(_qb_wl["id"])["tokens_used"] == 0
+        and _qb_ro.capabilities()["features"]["key_quotas"] is True
+        and _qb_ro.commands() is not None
+        and _qb_ro.commands() is not None
+        and _raises(lambda: _qb_ro.commands())[0] == "HarnessTransportError"
+        and _admin_remote.key_get(_qb_wl["id"])["uses"] == 3
+    )
+    # a terminal 429 without Retry-After is never retried — the budget
+    # cannot clear inside the call
+    _q429_tr, _q429_calls = _scripted(
+        [
+            (
+                429,
+                {},
+                _json_mod.dumps({"detail": "budget", "code": "quota_exceeded"}).encode(),
+            )
+        ]
+    )
+    _q429_cli = HarnessClient(
+        "http://h.test", transport=_q429_tr, max_retries=3, sleep=lambda s: None
+    )
+    out["key_quota_no_retry"] = (
+        _raises(lambda: _q429_cli.health())[0] == "HarnessTransportError" and _q429_calls["n"] == 1
+    )
 
     # --- Anthropic /v1/messages parity -----------------------------------
     # One translation module (fx1.serve.anthropic_compat) serves all

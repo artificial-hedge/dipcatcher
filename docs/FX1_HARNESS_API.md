@@ -201,8 +201,8 @@ same digested shape the job record embeds.
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
 | `GET /harness/usage` | usage accounting over the completion ring — totals + `by_backend`/`by_model`/`by_key` splits, `?backend=`/`?model=`/`?key_id=`/`?since=`/`?until=` filters; `records_dropped`+`ring_cap` disclose truncation; `Fx1Harness.usage()` / `HarnessClient.usage` / `fx1 harness usage [--key-id]` |
-| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?, rpm?, ttl_s?}`: `admin` keys may manage keys; `rpm` bounds the key to a fixed 60 s request window (over-limit → `429 rate_limited` + `Retry-After`) and every response to a rpm-declared key carries its standing budget as `X-RateLimit-Limit-Requests` / `X-RateLimit-Remaining-Requests` / `X-RateLimit-Reset-Requests` (OpenAI's header names — SDKs and dashboards read them unmodified; keys without `rpm`, the env credential, and loopback emit none — no false scarcity); `ttl_s` bakes an `expires_at` — a dead credential fails closed like a revoked one. `scopes` bounds the key to `read` (safe methods), `write` (data-plane mutations), and/or `admin` (key management + `/harness/drain`) — an out-of-scope call is refused `403 insufficient_scope` in the path's own error grammar; unset keeps `[read, write]` (plus `admin` for admin keys) and `admin:true` unions the admin scope onto an explicit list. Requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin] [--rpm] [--ttl-s] [--scope read|write|admin …]` |
-| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `scopes`, `rpm`, `expires_at`, `enabled`, `uses`, `last_used_at`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
+| `POST /harness/keys` | mint a managed API key → `201` mint record; the raw `key` (`fx1k_…`) is shown **only** in this response — the store keeps sha256 only. `{name?, admin?, rpm?, ttl_s?}`: `admin` keys may manage keys; `rpm` bounds the key to a fixed 60 s request window (over-limit → `429 rate_limited` + `Retry-After`) and every response to a rpm-declared key carries its standing budget as `X-RateLimit-Limit-Requests` / `X-RateLimit-Remaining-Requests` / `X-RateLimit-Reset-Requests` (OpenAI's header names — SDKs and dashboards read them unmodified; keys without `rpm`, the env credential, and loopback emit none — no false scarcity); `ttl_s` bakes an `expires_at` — a dead credential fails closed like a revoked one. `scopes` bounds the key to `read` (safe methods), `write` (data-plane mutations), and/or `admin` (key management + `/harness/drain`) — an out-of-scope call is refused `403 insufficient_scope` in the path's own error grammar; unset keeps `[read, write]` (plus `admin` for admin keys) and `admin:true` unions the admin scope onto an explicit list. `max_requests`/`max_tokens` declare hard budgets — an exhausted key answers `429 quota_exceeded` with **no** `Retry-After` (a budget never clears inside a call, so SDKs/TS client do not retry it; it maps to `HarnessTransportError`, not the auth-error class). `max_requests` counts authenticated calls; `max_tokens` is charged post-response off provider-reported usage (a budget gates the *next* call — the crossing call completes; the env credential and in-process SDK are unmetered). Requires the bootstrap credential or loopback. `Fx1Harness.key_create` / `HarnessClient.key_create` / `fx1 harness key-create [--admin] [--rpm] [--ttl-s] [--scope read|write|admin …] [--max-requests N] [--max-tokens N]` |
+| `GET /harness/keys` | every key's fingerprint id + metadata (`prefix`, `admin`, `scopes`, `rpm`, `expires_at`, `enabled`, `uses`, `last_used_at`, `max_requests`, `max_tokens`, `tokens_used`) — never secrets or hashes. `Fx1Harness.keys` / `HarnessClient.keys` / `fx1 harness keys` |
 | `GET /harness/keys/{id}` | one key's record → `404 key_not_found`. `Fx1Harness.key_get` / `HarnessClient.key_get` / `fx1 harness key-get` |
 | `DELETE /harness/keys/{id}` | tombstone a key (`enabled:false` + `revoked_at`) — auth with it fails closed immediately; the record survives for audit. `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_revoke` / `HarnessClient.key_revoke` / `fx1 harness key-revoke` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
@@ -948,14 +948,21 @@ stores fail closed `vector_store_not_found` (404 on the wire,
   itself, so a no-env-key deployment keeps a control plane. Revocation
   is a tombstone (`enabled:false`, fail-closed); records persist under
   `--state-dir` (journaled to `keys.jsonl`, replayed on restart —
-  `uses`/`last_used_at` are live counters, deliberately not journaled).
+  `uses`/`last_used_at`/`tokens_used` are live counters, deliberately
+  not journaled).
   Declared policy travels with the record: `rpm` bounds the key to a
   fixed 60 s request window — the over-limit refusal is `429
   rate_limited` with an honest `Retry-After`, and a refused request
-  never counts as a use — and `ttl_s` stamps an `expires_at` past
+  never counts as a use — `ttl_s` stamps an `expires_at` past
   which the key authenticates as dead (same 401 shape as revoked — no
-  oracle for which keys exist). Every completion record attributes its
-  caller's `key_id`
+  oracle for which keys exist), and `max_requests`/`max_tokens`
+  declare hard budgets — the exhausted-key refusal is `429
+  quota_exceeded` **without** `Retry-After` (a budget never clears
+  inside a call, so the SDKs/TS client do not retry it; it maps to a
+  terminal transport error, not the auth class). `max_tokens` charges
+  post-response off provider-reported usage — the crossing call
+  completes; the budget gates the next. Every completion record
+  attributes its caller's `key_id`
   fingerprint, so `GET /harness/usage?key_id=` reads per-key spend
   without ever exposing secrets.
 - Request bodies over 1 MiB are refused `413`; `/health` leaks only

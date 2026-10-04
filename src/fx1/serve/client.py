@@ -387,9 +387,11 @@ class HarnessClient:
 
     @staticmethod
     def _retryable_status(status: int, headers: Mapping[str, str]) -> bool:
-        """429 always retries; 503 retries only when it carries Retry-After
-        (the in-flight cap — an unconfigured-backend 503 never will be)."""
-        return status == 429 or (status == 503 and _retry_after_s(headers) is not None)
+        """429/503 retry only when they carry Retry-After — every
+        retryable refusal on this wire declares one (rate windows,
+        in-flight cap); a hard ``quota_exceeded`` 429 carries none and
+        must not be retried — the budget never clears inside a call."""
+        return status in (429, 503) and _retry_after_s(headers) is not None
 
     def _json(
         self,
@@ -1241,6 +1243,8 @@ class HarnessClient:
         rpm: int | None = None,
         ttl_s: float | None = None,
         scopes: list[str] | tuple[str, ...] | None = None,
+        max_requests: int | None = None,
+        max_tokens: int | None = None,
     ) -> dict[str, Any]:
         """``POST /harness/keys`` — mint a managed API key. The raw
         ``key`` appears once in the response; it is never stored
@@ -1248,8 +1252,9 @@ class HarnessClient:
         ``rpm`` bounds the key's request rate (over-limit answers 429),
         ``ttl_s`` bakes an expiry. ``scopes`` bounds the key to
         ``read``/``write``/``admin`` surface classes (out-of-scope calls
-        answer 403 ``insufficient_scope``). Requires the bootstrap
-        credential on the wire."""
+        answer 403 ``insufficient_scope``). ``max_requests``/``max_tokens``
+        declare hard budgets — an exhausted key answers 429
+        ``quota_exceeded``. Requires the bootstrap credential on the wire."""
         body: dict[str, Any] = {"admin": admin}
         if name is not None:
             body["name"] = name
@@ -1259,6 +1264,10 @@ class HarnessClient:
             body["ttl_s"] = ttl_s
         if scopes is not None:
             body["scopes"] = list(scopes)
+        if max_requests is not None:
+            body["max_requests"] = max_requests
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
         return dict(self._json("POST", "/harness/keys", body))
 
     def keys(self) -> list[dict[str, Any]]:

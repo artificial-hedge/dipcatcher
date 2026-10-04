@@ -626,6 +626,21 @@ def sdk_audit() -> dict[str, bool]:
         _raises(lambda: sdk.key_create("x", scopes=["bogus"])) == "ValueError"
         and _raises(lambda: sdk.key_create("x", scopes=[])) == "ValueError"
     )
+    # hard budgets ride the mint and read back on the record; unset stays
+    # None (unbounded) and sub-unit budgets fail closed
+    qto = sdk.key_create("budget", max_requests=10, max_tokens=5000)
+    out["key_quotas"] = (
+        qto["max_requests"] == 10
+        and qto["max_tokens"] == 5000
+        and sdk.key_get(qto["id"])["tokens_used"] == 0
+        and mint["max_requests"] is None
+        and mint["max_tokens"] is None
+        and mint["tokens_used"] == 0
+    )
+    out["key_quotas_bad_raises"] = (
+        _raises(lambda: sdk.key_create("x", max_requests=0)) == "ValueError"
+        and _raises(lambda: sdk.key_create("x", max_tokens=-1)) == "ValueError"
+    )
 
     # ---- /v1/vector_stores + file_search twin -------------------------------
     # in-process RAG: upload bytes → attach → search hits feed a

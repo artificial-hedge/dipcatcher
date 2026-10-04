@@ -2764,6 +2764,106 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["key_scope_drain_admin"] = (
         keys_client.post("/harness/drain", headers={"X-API-Key": ro_raw}).status_code == 403
     )
+    # --- per-key quota budgets ------------------------------------------
+    # max_requests counts authenticated calls; max_tokens counts
+    # provider-reported usage charged after each served response. An
+    # exhausted key refuses 429 quota_exceeded with NO Retry-After — a
+    # hard budget does not clear inside a window.
+    rq_mint = keys_client.post(
+        "/harness/keys", json={"name": "q-req", "max_requests": 2}, headers=root_h
+    )
+    rq_raw = str(rq_mint.json().get("key", ""))
+    rq_h = {"X-API-Key": rq_raw}
+    out["key_quota_mint_201"] = (
+        rq_mint.status_code == 201
+        and rq_mint.json()["max_requests"] == 2
+        and rq_mint.json()["max_tokens"] is None
+    )
+    out["key_quota_request_429"] = (
+        keys_client.get("/harness/commands", headers=rq_h).status_code == 200
+        and keys_client.get("/harness/commands", headers=rq_h).status_code == 200
+        and keys_client.get("/harness/commands", headers=rq_h).status_code == 429
+    )
+    rq_over = keys_client.get("/harness/commands", headers=rq_h)
+    out["key_quota_refusal_shape"] = (
+        rq_over.status_code == 429
+        and rq_over.json().get("code") == "quota_exceeded"
+        and "retry-after" not in {k.lower() for k in rq_over.headers}
+    )
+    # the refusal fires on the /v1 surface in OpenAI error grammar too
+    rq_v1 = keys_client.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        headers=rq_h,
+    )
+    out["key_quota_v1_shape"] = (
+        rq_v1.status_code == 429 and rq_v1.json()["error"]["code"] == "quota_exceeded"
+    )
+    rq_rec = keys_client.get(f"/harness/keys/{rq_mint.json()['id']}", headers=root_h)
+    out["key_quota_record_fields"] = (
+        rq_rec.status_code == 200
+        and rq_rec.json()["max_requests"] == 2
+        and rq_rec.json()["uses"] == 2
+        and rq_rec.json()["tokens_used"] == 0
+    )
+    out["key_quota_bad_422"] = (
+        keys_client.post("/harness/keys", json={"max_requests": 0}, headers=root_h).status_code
+        == 422
+        and keys_client.post("/harness/keys", json={"max_tokens": 0}, headers=root_h).status_code
+        == 422
+    )
+
+    # token budgets meter provider-reported usage — needs a backend that
+    # reports it; spin a second app under the same env-key pattern
+    class _MeterBackend:
+        def __init__(self) -> None:
+            self.last_usage: dict[str, int] | None = None
+            self._model = "meter-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.last_usage = {
+                "prompt_tokens": 4,
+                "completion_tokens": 6,
+                "total_tokens": 10,
+            }
+            return f"metered:{messages[-1]['content']}"
+
+    saved_api_key2 = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "k3y-material"
+    try:
+        tok_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _MeterBackend()))
+    finally:
+        if saved_api_key2 is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_api_key2
+    tok_mint = tok_app.post(
+        "/harness/keys", json={"name": "q-tok", "max_tokens": 10}, headers=root_h
+    )
+    tok_raw = str(tok_mint.json().get("key", ""))
+    tok_h = {"X-API-Key": tok_raw}
+    t_first = tok_app.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        headers=tok_h,
+    )
+    t_second = tok_app.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "y"}]},
+        headers=tok_h,
+    )
+    out["key_quota_token_429"] = t_first.status_code == 200 and t_second.status_code == 429
+    tok_rec = tok_app.get(f"/harness/keys/{tok_mint.json()['id']}", headers=root_h)
+    out["key_quota_token_metered"] = (
+        tok_rec.status_code == 200 and tok_rec.json()["tokens_used"] == 10
+    )
+    # the env key is unmetered — budgets bind managed keys only
+    out["key_quota_env_unmetered"] = (
+        tok_app.get("/harness/commands", headers=root_h).status_code == 200
+        and keys_client.get("/harness/commands", headers=root_h).status_code == 200
+    )
     # no env key + empty store → loopback dev (admin); minting turns auth on
     noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
     minted = noenv_client.post("/harness/keys", json={})
