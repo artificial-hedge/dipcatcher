@@ -3628,6 +3628,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mamba_qa_studies",
         "monitor_qa_studies",
         "taipan_qa_studies",
+        # Wave-1481 arthropod canon.
+        "earwig_qa_studies",
+        "katydid_qa_studies",
+        "mayfly_qa_studies",
+        "stonefly_qa_studies",
+        "wasp_qa_studies",
+        "weevil_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
