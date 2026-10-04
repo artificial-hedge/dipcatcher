@@ -4069,6 +4069,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "poorwill_qa_studies",
         "potoo_qa_studies",
         "whip_poor_will_qa_studies",
+        # Wave-1544 coraciiform canon.
+        "hoopoe_qa_studies",
+        "nunbird_qa_studies",
+        "nunlet_qa_studies",
+        "puffbird_qa_studies",
+        "toco_qa_studies",
+        "woodhoopoe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
