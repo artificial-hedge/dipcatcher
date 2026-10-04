@@ -11959,6 +11959,14 @@ from quant_fund.research.benches_w1495 import (
     bench_weasel_qa_studies_family,
     bench_zorilla_qa_studies_family,
 )
+from quant_fund.research.benches_w1496 import (
+    bench_jacana_qa_studies_family,
+    bench_lapwing_qa_studies_family,
+    bench_moorhen_qa_studies_family,
+    bench_railbird_qa_studies_family,
+    bench_snipe_qa_studies_family,
+    bench_turnstone_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13556,6 +13564,12 @@ def _provenance(
         "tayra_qa_studies": bench_tayra_qa_studies_family,
         "weasel_qa_studies": bench_weasel_qa_studies_family,
         "zorilla_qa_studies": bench_zorilla_qa_studies_family,
+        "jacana_qa_studies": bench_jacana_qa_studies_family,
+        "lapwing_qa_studies": bench_lapwing_qa_studies_family,
+        "moorhen_qa_studies": bench_moorhen_qa_studies_family,
+        "railbird_qa_studies": bench_railbird_qa_studies_family,
+        "snipe_qa_studies": bench_snipe_qa_studies_family,
+        "turnstone_qa_studies": bench_turnstone_qa_studies_family,
         "skink_qa_studies": bench_skink_qa_studies_family,
         "terrapin_qa_studies": bench_terrapin_qa_studies_family,
         "tuatara_qa_studies": bench_tuatara_qa_studies_family,
