@@ -12119,6 +12119,14 @@ from quant_fund.research.benches_w1515 import (
     bench_stag_beetle_qa_studies_family,
     bench_tiger_beetle_qa_studies_family,
 )
+from quant_fund.research.benches_w1516 import (
+    bench_atlas_moth_qa_studies_family,
+    bench_gypsy_moth_qa_studies_family,
+    bench_hawk_moth_qa_studies_family,
+    bench_luna_moth_qa_studies_family,
+    bench_tussock_moth_qa_studies_family,
+    bench_underwing_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13827,6 +13835,12 @@ def _provenance(
         "rhino_beetle_qa_studies": bench_rhino_beetle_qa_studies_family,
         "stag_beetle_qa_studies": bench_stag_beetle_qa_studies_family,
         "tiger_beetle_qa_studies": bench_tiger_beetle_qa_studies_family,
+        "atlas_moth_qa_studies": bench_atlas_moth_qa_studies_family,
+        "gypsy_moth_qa_studies": bench_gypsy_moth_qa_studies_family,
+        "hawk_moth_qa_studies": bench_hawk_moth_qa_studies_family,
+        "luna_moth_qa_studies": bench_luna_moth_qa_studies_family,
+        "tussock_moth_qa_studies": bench_tussock_moth_qa_studies_family,
+        "underwing_qa_studies": bench_underwing_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

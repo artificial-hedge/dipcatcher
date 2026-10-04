@@ -3873,6 +3873,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rhino_beetle_qa_studies",
         "stag_beetle_qa_studies",
         "tiger_beetle_qa_studies",
+        # Wave-1516 moth canon.
+        "atlas_moth_qa_studies",
+        "gypsy_moth_qa_studies",
+        "hawk_moth_qa_studies",
+        "luna_moth_qa_studies",
+        "tussock_moth_qa_studies",
+        "underwing_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
