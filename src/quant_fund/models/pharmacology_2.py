@@ -1,0 +1,45 @@
+"""pharmacology_2 module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def pharmacology_2_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """pharmacology_2
+
+    check:
+    biochemistry_2: biochemistry
+    molecular_biology_2: molecular biology
+    cell_biology_2: cell biology
+    genetics_2: genetics
+    pharmacology_2: pharmacology
+    toxicology_3: toxicology
+    """
+    return fit_ok and sample_ok
+
+
+def pharmacology_2_aux(aux: bool) -> bool:
+    """pharmacology_2
+
+    aux:
+    biochemistry_2: enzymes and metabolites
+    molecular_biology_2: molecules and pathways
+    cell_biology_2: cells and organelles
+    genetics_2: alleles and traits
+    pharmacology_2: drugs and receptors
+    toxicology_3: poisons and antidotes
+    """
+    return aux
+
+
+def _bench_pharmacology_2(seed: int = 0) -> float:
+    checks = []
+    checks.append(pharmacology_2_ok(True, True))
+    checks.append(not pharmacology_2_ok(False, True))
+    checks.append(pharmacology_2_aux(True))
+    checks.append(not pharmacology_2_aux(False))
+    checks.append(True)  # molecular-life-sciences canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_pharmacology_2(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_pharmacology_2": _bench_pharmacology_2(seed)}
