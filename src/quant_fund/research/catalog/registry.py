@@ -5196,6 +5196,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nabu_qa_studies",
         "shamash_qa_studies",
         "sin_qa_studies",
+        # Wave-1705 persian-myth canon.
+        "ahriman_qa_studies",
+        "ahuramazda_qa_studies",
+        "anahita_qa_studies",
+        "mithra_qa_studies",
+        "verethragna_qa_studies",
+        "yazata_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
