@@ -7303,6 +7303,14 @@ from quant_fund.research.benches_w913 import (
     bench_scattered_interp_family,
     bench_spline_interp_family,
 )
+from quant_fund.research.benches_w914 import (
+    bench_green_function_bvp_family,
+    bench_invariant_imbedding_family,
+    bench_ralston_rk_family,
+    bench_ralston_second_family,
+    bench_runge_kutta4_family,
+    bench_verner_rk_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7674,6 +7682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ralston_rk": bench_ralston_rk_family,
+        "verner_rk": bench_verner_rk_family,
+        "ralston_second": bench_ralston_second_family,
+        "runge_kutta4": bench_runge_kutta4_family,
+        "invariant_imbedding": bench_invariant_imbedding_family,
+        "green_function_bvp": bench_green_function_bvp_family,
         "scattered_interp": bench_scattered_interp_family,
         "spline_interp": bench_spline_interp_family,
         "monotone_interp": bench_monotone_interp_family,
