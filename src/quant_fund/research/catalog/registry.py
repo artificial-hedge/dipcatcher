@@ -6610,6 +6610,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kejoro_qa_studies",
         "nakisawame_qa_studies",
         "yama_waro_qa_studies",
+        # Wave-1907 african-demon canon.
+        "aigamuxa_qa_studies",
+        "dodo_spirit_qa_studies",
+        "emere_qa_studies",
+        "kishi_demon_qa_studies",
+        "obayifo_qa_studies",
+        "ogboni_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
