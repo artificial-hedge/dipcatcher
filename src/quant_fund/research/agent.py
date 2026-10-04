@@ -10727,6 +10727,14 @@ from quant_fund.research.benches_w1341 import (
     bench_real_toxicity_studies_family,
     bench_stereo_set_studies_family,
 )
+from quant_fund.research.benches_w1342 import (
+    bench_fairness_eval_studies_family,
+    bench_gender_bias_studies_family,
+    bench_jigsaw_tox_studies_family,
+    bench_nlp_bias_studies_family,
+    bench_pronoun_bias_studies_family,
+    bench_regard_metric_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11501,6 +11509,12 @@ def _provenance(
         "crow_s_pairs_studies": bench_crow_s_pairs_studies_family,
         "hate_speech_eval_studies": bench_hate_speech_eval_studies_family,
         "holo_bias_studies": bench_holo_bias_studies_family,
+        "fairness_eval_studies": bench_fairness_eval_studies_family,
+        "gender_bias_studies": bench_gender_bias_studies_family,
+        "jigsaw_tox_studies": bench_jigsaw_tox_studies_family,
+        "nlp_bias_studies": bench_nlp_bias_studies_family,
+        "pronoun_bias_studies": bench_pronoun_bias_studies_family,
+        "regard_metric_studies": bench_regard_metric_studies_family,
         "real_toxicity_studies": bench_real_toxicity_studies_family,
         "stereo_set_studies": bench_stereo_set_studies_family,
         "med_qa_studies": bench_med_qa_studies_family,
