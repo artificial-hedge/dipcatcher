@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1258 omics canon.
+        "transcriptome_studies",
+        "proteome_studies",
+        "metabolome_studies",
+        "microbiome_studies",
+        "methylome_studies",
+        "interactome_studies",
         # Wave-1257 clinical-lab canon.
         "immunoassay_studies",
         "pcr_studies",
