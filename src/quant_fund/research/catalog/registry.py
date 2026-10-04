@@ -5595,6 +5595,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nanna_qa_studies",
         "ninhursag_qa_studies",
         "utu_qa_studies",
+        # Wave-1762 norse-myth-8 canon.
+        "baldr_qa_studies",
+        "bragi_qa_studies",
+        "freya_qa_studies",
+        "heimdall_qa_studies",
+        "idunn_qa_studies",
+        "tyr_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
