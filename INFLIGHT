@@ -1,3 +1,4 @@
+w1380 intent-paraphrase canon: art_nli_studies, para_paws_studies, recast_lite_studies, snips_lite_studies, social_lite_studies, subj_lite_studies (8229->8235)
 w1379 metric-exotics canon: bary_score_studies, cider_lite_studies, gleu_lite_studies, kl_div_eval_studies, rouge_we_studies, wmt_metric_studies (8223->8229)
 w1378 numerical-reasoning canon: aqua_lite_studies, fin_qa_studies, math_qa_studies, num_glue_studies, tab_fact_studies, tat_qa_studies (8217->8223)
 w1377 NLU-exotics canon: abduction_lite_studies, board_game_qa_studies, conv_finqa_studies, dream_lite_studies, equiv_lite_studies, wsc_lite_studies (8211->8217)
