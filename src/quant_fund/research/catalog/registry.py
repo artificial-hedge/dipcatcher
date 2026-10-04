@@ -5357,6 +5357,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "otgon_qa_studies",
         "tenger_qa_studies",
         "ulgan_qa_studies",
+        # Wave-1728 hungarian-myth canon.
+        "boszorka_qa_studies",
+        "csaba_qa_studies",
+        "garabonci_qa_studies",
+        "isten_qa_studies",
+        "liderc_qa_studies",
+        "taltos_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
