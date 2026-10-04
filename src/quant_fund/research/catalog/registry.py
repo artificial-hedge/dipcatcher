@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-858 adaptive/oscillatory-quadrature canon.
+        "adaptive_simpsons",
+        "tanh_sinh",
+        "double_exp_quad",
+        "osc_singular",
+        "filon_quad",
+        "levin_quad",
         # Wave-857 classical-quadrature canon.
         "gauss_legendre",
         "gauss_chebyshev",
