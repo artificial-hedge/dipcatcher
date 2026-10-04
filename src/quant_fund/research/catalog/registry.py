@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1128 linguistics-6 canon.
+        "lexical_semantics",
+        "computational_stylistics",
+        "stylistics",
+        "corpus_phonology",
+        "language_documentation",
+        "translation_technology",
         # Wave-1127 history-3 canon.
         "oral_history",
         "public_history",
