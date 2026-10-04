@@ -1,3 +1,4 @@
+feat(research): wave 598 — algebraic-K-4 canon (borel_regulator, soul_elem, lichtenbaum_k, bloch_beilinson, etale_ktheory, thh_trace) (3543->3549 families)
 feat(research): wave 597 — chromatic-homotopy canon (curtis_lower, bousfield_kan, lannes_t, dror_smith, telescope_conj, periodicity_thm) (3537->3543 families)
 feat(research): wave 596 — p-adic-Hodge canon (breuil_mod, kisin_mod, galois_lattice, padic_hodge, finite_height, etale_phi) (3531->3537 families)
 feat(research): wave 595 — crystalline-cohomology canon (crys_cohom, syntomic, divided_power, pd_envelope, nygaard_filt, conjugate_fil) (3525->3531 families)

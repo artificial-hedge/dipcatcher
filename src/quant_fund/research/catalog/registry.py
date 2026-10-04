@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-598 algebraic-K-4 canon.
+        "borel_regulator",
+        "soul_elem",
+        "lichtenbaum_k",
+        "bloch_beilinson",
+        "etale_ktheory",
+        "thh_trace",
         # Wave-597 chromatic-homotopy canon.
         "curtis_lower",
         "bousfield_kan",

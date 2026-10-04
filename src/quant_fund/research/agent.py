@@ -4775,6 +4775,14 @@ from quant_fund.research.benches_w597 import (
     bench_periodicity_thm_family,
     bench_telescope_conj_family,
 )
+from quant_fund.research.benches_w598 import (
+    bench_bloch_beilinson_family,
+    bench_borel_regulator_family,
+    bench_etale_ktheory_family,
+    bench_lichtenbaum_k_family,
+    bench_soul_elem_family,
+    bench_thh_trace_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5154,6 +5162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "borel_regulator": bench_borel_regulator_family,
+        "soul_elem": bench_soul_elem_family,
+        "lichtenbaum_k": bench_lichtenbaum_k_family,
+        "bloch_beilinson": bench_bloch_beilinson_family,
+        "etale_ktheory": bench_etale_ktheory_family,
+        "thh_trace": bench_thh_trace_family,
         "curtis_lower": bench_curtis_lower_family,
         "bousfield_kan": bench_bousfield_kan_family,
         "lannes_t": bench_lannes_t_family,
