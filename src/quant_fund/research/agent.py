@@ -7647,6 +7647,14 @@ from quant_fund.research.benches_w956 import (
     bench_tensor_trace_family,
     bench_tucker_rank_family,
 )
+from quant_fund.research.benches_w957 import (
+    bench_fredholm_op_family,
+    bench_multiplication_op_family,
+    bench_normal_operator_family,
+    bench_selfadjoint_op_family,
+    bench_shift_operator_family,
+    bench_unitary_operator_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8018,6 +8026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "selfadjoint_op": bench_selfadjoint_op_family,
+        "unitary_operator": bench_unitary_operator_family,
+        "shift_operator": bench_shift_operator_family,
+        "fredholm_op": bench_fredholm_op_family,
+        "normal_operator": bench_normal_operator_family,
+        "multiplication_op": bench_multiplication_op_family,
         "tucker_rank": bench_tucker_rank_family,
         "cp_rank": bench_cp_rank_family,
         "tensor_norm": bench_tensor_norm_family,
