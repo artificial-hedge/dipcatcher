@@ -12535,6 +12535,14 @@ from quant_fund.research.benches_w1567 import (
     bench_roach_qa_studies_family,
     bench_tench_qa_studies_family,
 )
+from quant_fund.research.benches_w1568 import (
+    bench_conger_qa_studies_family,
+    bench_garden_eel_qa_studies_family,
+    bench_hagfish_qa_studies_family,
+    bench_lamprey_qa_studies_family,
+    bench_moray_qa_studies_family,
+    bench_ribbon_eel_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14500,6 +14508,12 @@ def _provenance(
         "minnow_qa_studies": bench_minnow_qa_studies_family,
         "roach_qa_studies": bench_roach_qa_studies_family,
         "tench_qa_studies": bench_tench_qa_studies_family,
+        "conger_qa_studies": bench_conger_qa_studies_family,
+        "garden_eel_qa_studies": bench_garden_eel_qa_studies_family,
+        "hagfish_qa_studies": bench_hagfish_qa_studies_family,
+        "lamprey_qa_studies": bench_lamprey_qa_studies_family,
+        "moray_qa_studies": bench_moray_qa_studies_family,
+        "ribbon_eel_qa_studies": bench_ribbon_eel_qa_studies_family,
         "pike_qa_studies": bench_pike_qa_studies_family,
         "sturgeon_qa_studies": bench_sturgeon_qa_studies_family,
         "walleye_qa_studies": bench_walleye_qa_studies_family,

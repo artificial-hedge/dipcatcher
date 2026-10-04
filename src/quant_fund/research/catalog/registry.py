@@ -4237,6 +4237,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "minnow_qa_studies",
         "roach_qa_studies",
         "tench_qa_studies",
+        # Wave-1568 eel canon.
+        "conger_qa_studies",
+        "garden_eel_qa_studies",
+        "hagfish_qa_studies",
+        "lamprey_qa_studies",
+        "moray_qa_studies",
+        "ribbon_eel_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
