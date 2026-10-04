@@ -6567,6 +6567,14 @@ from quant_fund.research.benches_w821 import (
     bench_random_measure_family,
     bench_sato_measure_family,
 )
+from quant_fund.research.benches_w822 import (
+    bench_enlargement_f_family,
+    bench_initial_enlarg_family,
+    bench_natural_filtration_family,
+    bench_progressive_enlarg_family,
+    bench_right_continuous_f_family,
+    bench_usual_aug_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6938,6 +6946,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "natural_filtration": bench_natural_filtration_family,
+        "right_continuous_f": bench_right_continuous_f_family,
+        "usual_aug": bench_usual_aug_family,
+        "enlargement_f": bench_enlargement_f_family,
+        "initial_enlarg": bench_initial_enlarg_family,
+        "progressive_enlarg": bench_progressive_enlarg_family,
         "random_measure": bench_random_measure_family,
         "integer_measure": bench_integer_measure_family,
         "poisson_rm": bench_poisson_rm_family,
