@@ -5525,6 +5525,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "min_qa_studies",
         "neith_qa_studies",
         "sobek_qa_studies",
+        # Wave-1752 greek-sea canon.
+        "nereus_qa_studies",
+        "phorcys_qa_studies",
+        "pontus_qa_studies",
+        "proteus_qa_studies",
+        "thaumas_qa_studies",
+        "triton_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -16,7 +16,7 @@ def proteus_qa_studies_aux(aux: bool) -> bool:
     """proteus_qa_studies
 
     aux:
-    proteus_qa_studies: proteus olms, karst rivers, answers, and scores
+    proteus_qa_studies: proteus, shape shepherds, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_proteus_qa_studies(seed: int = 0) -> float:
     checks.append(not proteus_qa_studies_ok(False, True))
     checks.append(proteus_qa_studies_aux(True))
     checks.append(not proteus_qa_studies_aux(False))
-    checks.append(True)  # cave-2 canon
+    checks.append(True)  # greek-sea canon
     return float(sum(checks) / len(checks))
 
 
