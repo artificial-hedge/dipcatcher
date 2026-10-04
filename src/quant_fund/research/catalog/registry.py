@@ -4818,6 +4818,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kongamato_qa_studies",
         "popobawa_qa_studies",
         "rompo_qa_studies",
+        # Wave-1651 australian-beast canon.
+        "awgy_qa_studies",
+        "kuritja_qa_studies",
+        "minka_qa_studies",
+        "papin_qa_studies",
+        "yara_qa_studies",
+        "yowie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

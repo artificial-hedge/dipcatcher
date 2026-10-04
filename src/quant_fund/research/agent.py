@@ -13199,6 +13199,14 @@ from quant_fund.research.benches_w1650 import (
     bench_popobawa_qa_studies_family,
     bench_rompo_qa_studies_family,
 )
+from quant_fund.research.benches_w1651 import (
+    bench_awgy_qa_studies_family,
+    bench_kuritja_qa_studies_family,
+    bench_minka_qa_studies_family,
+    bench_papin_qa_studies_family,
+    bench_yara_qa_studies_family,
+    bench_yowie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15527,6 +15535,12 @@ def _provenance(
         "kongamato_qa_studies": bench_kongamato_qa_studies_family,
         "popobawa_qa_studies": bench_popobawa_qa_studies_family,
         "rompo_qa_studies": bench_rompo_qa_studies_family,
+        "awgy_qa_studies": bench_awgy_qa_studies_family,
+        "kuritja_qa_studies": bench_kuritja_qa_studies_family,
+        "minka_qa_studies": bench_minka_qa_studies_family,
+        "papin_qa_studies": bench_papin_qa_studies_family,
+        "yara_qa_studies": bench_yara_qa_studies_family,
+        "yowie_qa_studies": bench_yowie_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
