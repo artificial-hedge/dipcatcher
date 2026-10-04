@@ -5367,6 +5367,14 @@ from quant_fund.research.benches_w671 import (
     bench_stunted_proj_family,
     bench_unstable_adams2_family,
 )
+from quant_fund.research.benches_w672 import (
+    bench_compact_cat_family,
+    bench_monoidal_derived_family,
+    bench_perverse_cat_family,
+    bench_smashing_cat_family,
+    bench_super_cat_family,
+    bench_tannakian_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5746,6 +5754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tannakian_cat": bench_tannakian_cat_family,
+        "super_cat": bench_super_cat_family,
+        "perverse_cat": bench_perverse_cat_family,
+        "smashing_cat": bench_smashing_cat_family,
+        "compact_cat": bench_compact_cat_family,
+        "monoidal_derived": bench_monoidal_derived_family,
         "gray_periodic": bench_gray_periodic_family,
         "stunted_proj": bench_stunted_proj_family,
         "adams_edge": bench_adams_edge_family,
