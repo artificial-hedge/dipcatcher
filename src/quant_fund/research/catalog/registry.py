@@ -3852,6 +3852,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "phalarope_qa_studies",
         "stilt_qa_studies",
         "whimbrel_qa_studies",
+        # Wave-1513 owl canon.
+        "barnowl_qa_studies",
+        "barred_owl_qa_studies",
+        "eagle_owl_qa_studies",
+        "screech_owl_qa_studies",
+        "snowy_owl_qa_studies",
+        "tawny_owl_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
