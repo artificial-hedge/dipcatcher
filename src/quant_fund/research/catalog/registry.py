@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1362 fake-news canon.
+        "check_that_studies",
+        "claim_buster_studies",
+        "emergent_lite_studies",
+        "fake_news_studies",
+        "snopes_lite_studies",
+        "stance_detect_studies",
         # Wave-1361 misinformation canon.
         "covid_lies_studies",
         "evidence_inf_studies",
