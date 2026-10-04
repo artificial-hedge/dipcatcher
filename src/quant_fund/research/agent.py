@@ -7759,6 +7759,14 @@ from quant_fund.research.benches_w970 import (
     bench_standard_invariant_family,
     bench_subfactor_family,
 )
+from quant_fund.research.benches_w971 import (
+    bench_connes_metric_family,
+    bench_differential_form_nc_family,
+    bench_geodesic_nc_family,
+    bench_hochschild_cycle_family,
+    bench_index_pairing_family,
+    bench_spectral_triple_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8130,6 +8138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_triple": bench_spectral_triple_family,
+        "connes_metric": bench_connes_metric_family,
+        "index_pairing": bench_index_pairing_family,
+        "hochschild_cycle": bench_hochschild_cycle_family,
+        "differential_form_nc": bench_differential_form_nc_family,
+        "geodesic_nc": bench_geodesic_nc_family,
         "subfactor": bench_subfactor_family,
         "standard_invariant": bench_standard_invariant_family,
         "planar_algebra": bench_planar_algebra_family,

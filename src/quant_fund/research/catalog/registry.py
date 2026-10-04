@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-971 noncommutative-geometry canon.
+        "spectral_triple",
+        "connes_metric",
+        "index_pairing",
+        "hochschild_cycle",
+        "differential_form_nc",
+        "geodesic_nc",
         # Wave-970 subfactor-theory canon.
         "subfactor",
         "standard_invariant",
