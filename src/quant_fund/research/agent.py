@@ -11839,6 +11839,14 @@ from quant_fund.research.benches_w1480 import (
     bench_monitor_qa_studies_family,
     bench_taipan_qa_studies_family,
 )
+from quant_fund.research.benches_w1481 import (
+    bench_earwig_qa_studies_family,
+    bench_katydid_qa_studies_family,
+    bench_mayfly_qa_studies_family,
+    bench_stonefly_qa_studies_family,
+    bench_wasp_qa_studies_family,
+    bench_weevil_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13380,6 +13388,12 @@ def _provenance(
         "mamba_qa_studies": bench_mamba_qa_studies_family,
         "monitor_qa_studies": bench_monitor_qa_studies_family,
         "taipan_qa_studies": bench_taipan_qa_studies_family,
+        "earwig_qa_studies": bench_earwig_qa_studies_family,
+        "katydid_qa_studies": bench_katydid_qa_studies_family,
+        "mayfly_qa_studies": bench_mayfly_qa_studies_family,
+        "stonefly_qa_studies": bench_stonefly_qa_studies_family,
+        "wasp_qa_studies": bench_wasp_qa_studies_family,
+        "weevil_qa_studies": bench_weevil_qa_studies_family,
         "impala_qa_studies": bench_impala_qa_studies_family,
         "kudu_qa_studies": bench_kudu_qa_studies_family,
         "oryx_qa_studies": bench_oryx_qa_studies_family,
