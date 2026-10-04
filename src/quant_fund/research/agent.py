@@ -8919,6 +8919,14 @@ from quant_fund.research.benches_w1115 import (
     bench_monetary_economics_family,
     bench_public_economics_family,
 )
+from quant_fund.research.benches_w1116 import (
+    bench_comparative_psychology_family,
+    bench_environmental_psychology_family,
+    bench_evolutionary_psychology_family,
+    bench_experimental_psychology_family,
+    bench_psychopathology_family,
+    bench_sport_psychology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9290,6 +9298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "experimental_psychology": bench_experimental_psychology_family,
+        "comparative_psychology": bench_comparative_psychology_family,
+        "evolutionary_psychology": bench_evolutionary_psychology_family,
+        "psychopathology": bench_psychopathology_family,
+        "environmental_psychology": bench_environmental_psychology_family,
+        "sport_psychology": bench_sport_psychology_family,
         "labor_economics": bench_labor_economics_family,
         "public_economics": bench_public_economics_family,
         "industrial_organization": bench_industrial_organization_family,
