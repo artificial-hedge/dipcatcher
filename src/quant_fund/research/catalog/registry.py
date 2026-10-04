@@ -3656,6 +3656,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quokka_qa_studies",
         "wallaby_qa_studies",
         "wombat_qa_studies",
+        # Wave-1485 shorebird canon.
+        "avocet_qa_studies",
+        "egret_qa_studies",
+        "heron_qa_studies",
+        "plover_qa_studies",
+        "sandpiper_qa_studies",
+        "tern_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
