@@ -3572,6 +3572,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cinnamon_qa_studies",
         "coriander_qa_studies",
         "cumin_qa_studies",
+        # Wave-1473 spice canon.
+        "clove_qa_studies",
+        "dill_qa_studies",
+        "fennel_qa_studies",
+        "lemongrass_qa_studies",
+        "mint_qa_studies",
+        "nutmeg_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
