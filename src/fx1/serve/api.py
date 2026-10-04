@@ -152,6 +152,7 @@ from fx1.serve.openai_compat import (
     batch_line_shape,
     batch_object,
     batch_output_line,
+    chained_response_input,
     chat_messages_for_store,
     embeddings_to_kwargs,
     file_object,
@@ -3630,9 +3631,30 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """The non-streaming ``/v1/responses`` completion core — shared by
         the route and the ``/v1/batches`` worker. Returns the envelope
         plus the completion-log id and raw usage (the caller decides what
-        rides the idempotency record)."""
+        rides the idempotency record).``previous_response_id`` chains the
+        turn onto a stored response — the parent must sit in the retrieval
+        index (a ``store=false`` or evicted parent fails closed)."""
+        eff_body = body
+        if body.previous_response_id is not None:
+            prev = envelope_store.get(body.previous_response_id)
+            if prev is None or prev.get("object") != "response":
+                raise OpenAICompatError(
+                    f"previous_response_id {body.previous_response_id!r} not found — "
+                    "the chain parent must be a stored response (store=true)",
+                    status=400,
+                    code="previous_response_not_found",
+                )
+            eff_body = body.model_copy(
+                update={
+                    "input": chained_response_input(
+                        prev,
+                        envelope_store.get_items(body.previous_response_id, "input_items") or [],
+                        body.input,
+                    )
+                }
+            )
         creq = CompleteRequest(
-            **response_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+            **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
         )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
@@ -3657,7 +3679,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 envelope,
                 items={
                     "input_items": response_input_items_for_store(
-                        body.input, rid=str(envelope["id"])
+                        eff_body.input, rid=str(envelope["id"])
                     )
                 },
             )
@@ -4044,7 +4066,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         the same tool channel as ``/v1/chat/completions`` under its own
         grammar (a link without the channel answers 501). Same fail-closed
         rule as chat completions for the rest: ``truncation``/``include``/
-        ``background``/``previous_response_id`` refuse at validation (422).
+        ``background`` refuse at validation (422).
+        ``previous_response_id`` chains the turn onto a stored ``response``
+        — the model runs on the parent's stored items + its output + this
+        request's input, and the child's ``input_items`` carry the whole
+        history. An unknown, deleted, or ``store=false`` parent fails
+        closed ``400 previous_response_not_found``.
         ``store`` governs the retrieval index — ``store=false`` keeps the
         call out of ``GET /v1/responses/{id}`` (the audit ledger still
         records it).

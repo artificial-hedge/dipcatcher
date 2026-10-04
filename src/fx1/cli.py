@@ -2079,6 +2079,11 @@ def harness_respond(
     stream: bool = typer.Option(
         False, "--stream", help="Emit Responses event deltas instead of one JSON block."
     ),
+    previous_response_id: str | None = typer.Option(
+        None,
+        "--previous-response-id",
+        help="Chain onto a stored response (resp_…) — the turn runs with the parent history.",
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2149,6 +2154,7 @@ def harness_respond(
                     text_format=tfmt,
                     tools=tool_list,
                     tool_choice=tchoice,
+                    previous_response_id=previous_response_id,
                 )
             )
             _emit_response_deltas(events)
@@ -2170,6 +2176,7 @@ def harness_respond(
                 text_format=tfmt,
                 tools=tool_list,
                 tool_choice=tchoice,
+                previous_response_id=previous_response_id,
             )
         )
         typer.echo(json.dumps(resp, indent=2))
@@ -2200,6 +2207,7 @@ def harness_respond(
         "metadata": meta,
         "tools": tool_list,
         "tool_choice": tchoice,
+        "previous_response_id": previous_response_id,
         "fx1": fx1 or None,
     }
     if tfmt is not None:

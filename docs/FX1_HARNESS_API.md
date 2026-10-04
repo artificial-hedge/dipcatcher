@@ -454,10 +454,17 @@ same OpenAI error taxonomy:
   stream: the keyed response replays byte-identically, frames ≤
   the cursor dropped.
 - **Fail-closed surface:** `truncation`, `background`,
-  `previous_response_id`, `include` members outside
+  `include` members outside
   `message.output_text.logprobs`, and every other unsupported
   field refuse 422 at validation; nothing is silently dropped.
   `store` is honored, not refused (retrieval section below).
+- **Stateful chains:** `previous_response_id` chains the turn onto
+  a stored `response` — the model runs on the parent's stored
+  input items + its output + this request's `input`, and the
+  child's `GET /v1/responses/{id}/input_items` returns the whole
+  history. Chains nest to arbitrary depth. An unknown, deleted,
+  or `store=false` parent fails closed
+  `400 previous_response_not_found` before the model runs.
 - **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`
   dedup space — same key + body replays the stored envelope (or the
   pinned stream) byte-identically; a key reused under a different

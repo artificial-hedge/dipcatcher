@@ -94,6 +94,8 @@ __all__ = [
     "openai_usage",
     "paged_item_list",
     "OpenAIEnvelopeStore",
+    "chained_response_input",
+    "response_input_item_dicts",
     "response_input_items_for_store",
     "response_input_to_messages",
     "response_text_format",
@@ -920,7 +922,6 @@ def openai_chunks(
 RESPONSES_UNSUPPORTED = (
     "truncation",
     "background",
-    "previous_response_id",
     # chat-completions fields that don't exist on this surface — refuse
     # rather than drop so a caller's intent never evaporates
     "n",
@@ -1007,6 +1008,7 @@ class OpenAIResponseRequest(_Model):
     parallel_tool_calls: bool | None = None
     include: list[str] | None = None
     top_logprobs: int | None = Field(default=None, ge=0, le=20)
+    previous_response_id: str | None = Field(default=None, max_length=512)
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -1217,6 +1219,20 @@ def chat_messages_for_store(
     return out
 
 
+def response_input_item_dicts(input_: str | list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """``input`` normalized to item dicts, no ids — a plain string wraps
+    as one user message item with an ``input_text`` part."""
+    if isinstance(input_, str):
+        return [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": input_}],
+            }
+        ]
+    return [dict(it) for it in input_]
+
+
 def response_input_items_for_store(
     input_: str | list[dict[str, Any]], *, rid: str
 ) -> list[dict[str, Any]]:
@@ -1224,21 +1240,29 @@ def response_input_items_for_store(
     ``GET /v1/responses/{id}/input_items`` — the items as submitted
     (a plain string wraps as one user message item with ``input_text``),
     each carrying a caller-supplied or digest ``msg_`` id."""
-    items: list[dict[str, Any]]
-    if isinstance(input_, str):
-        items = [
-            {
-                "type": "message",
-                "role": "user",
-                "content": [{"type": "input_text", "text": input_}],
-            }
-        ]
-    else:
-        items = [dict(it) for it in input_]
     out: list[dict[str, Any]] = []
-    for i, item in enumerate(items):
+    for i, item in enumerate(response_input_item_dicts(input_)):
         item.setdefault("id", _stored_item_id("msg", rid, i))
         out.append(item)
+    return out
+
+
+def chained_response_input(
+    prev_env: dict[str, Any],
+    prev_items: Sequence[dict[str, Any]],
+    new_input: str | list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """``previous_response_id`` chain semantics: the new response's
+    effective item list is the previous response's stored input items +
+    its ``output`` items + this request's ``input``. Item ``id`` fields
+    are dropped here — the new response's stored list re-mints them
+    deterministically off (new rid, index) inside
+    :func:`response_input_items_for_store`."""
+    out: list[dict[str, Any]] = []
+    for it in [*prev_items, *list(prev_env.get("output") or [])]:
+        if isinstance(it, dict):
+            out.append({k: v for k, v in it.items() if k != "id"})
+    out.extend(response_input_item_dicts(new_input))
     return out
 
 
@@ -1388,6 +1412,7 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "include": body.include or [],
         "top_logprobs": body.top_logprobs,
         "truncation": "disabled",
+        "previous_response_id": body.previous_response_id,
     }
 
 

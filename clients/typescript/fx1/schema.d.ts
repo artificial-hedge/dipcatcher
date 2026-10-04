@@ -1175,7 +1175,12 @@ export interface paths {
          *     the same tool channel as ``/v1/chat/completions`` under its own
          *     grammar (a link without the channel answers 501). Same fail-closed
          *     rule as chat completions for the rest: ``truncation``/``include``/
-         *     ``background``/``previous_response_id`` refuse at validation (422).
+         *     ``background`` refuse at validation (422).
+         *     ``previous_response_id`` chains the turn onto a stored ``response``
+         *     — the model runs on the parent's stored items + its output + this
+         *     request's input, and the child's ``input_items`` carry the whole
+         *     history. An unknown, deleted, or ``store=false`` parent fails
+         *     closed ``400 previous_response_not_found``.
          *     ``store`` governs the retrieval index — ``store=false`` keeps the
          *     call out of ``GET /v1/responses/{id}`` (the audit ledger still
          *     records it).
@@ -2784,6 +2789,8 @@ export interface components {
             model: string;
             /** Parallel Tool Calls */
             parallel_tool_calls?: boolean | null;
+            /** Previous Response Id */
+            previous_response_id?: string | null;
             /** Reasoning */
             reasoning?: {
                 [key: string]: unknown;
