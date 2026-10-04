@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1031 civil-engineering canon.
+        "structural_analysis",
+        "geotechnics",
+        "transportation_eng",
+        "water_resources",
+        "construction_mgmt",
+        "surveying",
         # Wave-1030 electrical-engineering canon.
         "circuit_analysis",
         "power_systems",
