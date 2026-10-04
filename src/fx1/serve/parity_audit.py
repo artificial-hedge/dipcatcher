@@ -256,6 +256,14 @@ class _ParityEmbedBackend(_ParityBackend):
         )
 
 
+class _ParityCountBackend(_ParityBackend):
+    """Tokenize-capable parity stub — deterministic provider-side
+    count: 3 per message so the system fold is visible in the total."""
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+        return 3 * len(messages)
+
+
 class _CallFailBackend(_ParityBackend):
     """Availability fault on every call — the retriable link."""
 
@@ -4073,6 +4081,112 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         ).status_code
         == 422
         and _raises(lambda: sdk.anthropic_batch(_ab_dup))[0] == "ValidationError"
+    )
+
+    # --- /v1/messages/count_tokens parity ------------------------------
+    # the provider's own count reaches all three legs identically: wire
+    # route, SDK in-process, and the remote client. The system fold is
+    # observable — 2 messages + system = 9 with the 3-per-message stub.
+    _ct_sdk, _ct_wire = _surfaces(_ParityCountBackend)
+    _ct_remote = HarnessClient("http://harness.test", transport=_tc_transport(_ct_wire))
+    _ct_req: dict[str, Any] = {
+        "model": "fx1",
+        "system": "be terse",
+        "messages": [{"role": "user", "content": "ping"}],
+        "fx1": {"backend": "byok"},
+    }
+    _ct_w = _ct_wire.post(f"{_MESSAGES_PATH}/count_tokens", json=_ct_req)
+    out["anthropic_count_parity"] = (
+        _ct_w.status_code == 200
+        and _ct_w.json() == {"input_tokens": 6}
+        and _ct_sdk.anthropic_count_tokens(dict(_ct_req)) == 6
+        and _ct_remote.count_message_tokens(dict(_ct_req)) == 6
+    )
+    # a backend without the channel: identical honest refusal on all
+    # three legs — 501 {type: error, api_error} on the wire and
+    # NotImplementedError on SDK + remote client.
+    _ct_no = client.post(
+        f"{_MESSAGES_PATH}/count_tokens",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "ping"}]},
+        headers=_am_auth,
+    )
+    out["anthropic_count_501_parity"] = (
+        _ct_no.status_code == 501
+        and _ct_no.json().get("error", {}).get("type") == "api_error"
+        and _raises(
+            lambda: sdk.anthropic_count_tokens(
+                {"model": "fx1", "messages": [{"role": "user", "content": "ping"}]}
+            )
+        )[0]
+        == "NotImplementedError"
+        and _raises(
+            lambda: _am_keyed.count_message_tokens(
+                {"model": "fx1", "messages": [{"role": "user", "content": "ping"}]}
+            )
+        )[0]
+        == "NotImplementedError"
+    )
+    # tools refuse identically — 400 invalid_request_error on the wire,
+    # ValueError in-process and through the client (400 → HarnessApiError
+    # → the client's generic-error class surfaces the status).
+    _ct_tool = {
+        "model": "fx1",
+        "messages": [{"role": "user", "content": "ping"}],
+        "tools": [{"name": "t", "input_schema": {"type": "object"}}],
+    }
+    _ct_tool_w = client.post(f"{_MESSAGES_PATH}/count_tokens", json=_ct_tool, headers=_am_auth)
+    out["anthropic_count_tools_parity"] = (
+        _ct_tool_w.status_code == 400
+        and _ct_tool_w.json().get("error", {}).get("type") == "invalid_request_error"
+        and _raises(lambda: sdk.anthropic_count_tokens(dict(_ct_tool)))[0] == "ValueError"
+    )
+
+    # --- anthropic-version models parity -------------------------------
+    # the anthropic-version projection of /v1/models{,/{id}} agrees
+    # across wire and in-process: same ids, same cards, same cursor
+    # semantics, same not_found grammar.
+    _am_list_w = client.get("/v1/models", headers={**_am_auth, "anthropic-version": "2023-06-01"})
+    _am_list_s = sdk.anthropic_models()
+    _am_list_r = _am_keyed.anthropic_models()
+    out["anthropic_models_parity"] = (
+        _am_list_w.status_code == 200
+        and [m["id"] for m in _am_list_w.json()["data"]]
+        == [m["id"] for m in _am_list_s["data"]]
+        == [m["id"] for m in _am_list_r["data"]]
+        and _am_list_w.json()["has_more"] is False
+        and _am_list_s["has_more"] is False
+        and _am_list_r["has_more"] is False
+        and _am_list_w.json()["first_id"] == _am_list_s["first_id"] == "fx1"
+        and all(
+            m["type"] == "model" and str(m["created_at"]).endswith("Z") for m in _am_list_s["data"]
+        )
+    )
+    # cursor + card parity — limit/after_id behave the same on both legs
+    _am_pg_w = client.get(
+        "/v1/models?limit=2&after_id=fx1",
+        headers={**_am_auth, "anthropic-version": "2023-06-01"},
+    ).json()
+    _am_pg_s = sdk.anthropic_models(limit=2, after_id="fx1")
+    _am_card_w = client.get(
+        "/v1/models/local_fx1",
+        headers={**_am_auth, "anthropic-version": "2023-06-01"},
+    ).json()
+    _am_404_w = client.get(
+        "/v1/models/nope", headers={**_am_auth, "anthropic-version": "2023-06-01"}
+    )
+    out["anthropic_models_cursor_parity"] = (
+        [m["id"] for m in _am_pg_w["data"]]
+        == [m["id"] for m in _am_pg_s["data"]]
+        == ["hosted_k3", "local_fx1"]
+        and _am_pg_w["has_more"] is True
+        and {k: _am_card_w[k] for k in ("type", "id", "display_name")}
+        == {k: sdk.anthropic_model("local_fx1")[k] for k in ("type", "id", "display_name")}
+        and str(sdk.anthropic_model("local_fx1")["created_at"]).endswith("Z")
+        and _am_card_w["type"] == "model"
+        and _am_404_w.status_code == 404
+        and _am_404_w.json().get("error", {}).get("type") == "not_found_error"
+        and _raises(lambda: sdk.anthropic_model("nope"))[0] == "OpenAICompatError"
+        and _raises(lambda: _am_keyed.anthropic_model("nope"))[0] == "KeyError"
     )
 
     # --- legacy /v1/completions parity ---------------------------------

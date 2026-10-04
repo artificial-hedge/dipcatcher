@@ -310,6 +310,48 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         out["harness_model_unknown_2"] = (
             runner.invoke(app, ["harness", "model", "nope-model"]).exit_code == 2
         )
+        # the anthropic-version projections in-process: --anthropic on
+        # models/model answers the {data, first_id, last_id, has_more}
+        # envelope / {type: model} card; message-tokens fails closed 2
+        # without a live backend.
+        _aml_i = runner.invoke(
+            app,
+            ["harness", "models", "--anthropic", "--limit", "1", "--after-id", "fx1"],
+        )
+        _aml_ij = json.loads(_aml_i.stdout) if _aml_i.exit_code == 0 else {}
+        out["harness_models_anthropic_inprocess"] = (
+            _aml_i.exit_code == 0
+            and [m.get("id") for m in _aml_ij.get("data", [])] == ["hosted_k3"]
+            and _aml_ij.get("has_more") is True
+        )
+        _amc_i = runner.invoke(app, ["harness", "model", "fx1", "--anthropic"])
+        _amc_ij = json.loads(_amc_i.stdout) if _amc_i.exit_code == 0 else {}
+        out["harness_model_anthropic_inprocess"] = (
+            _amc_i.exit_code == 0
+            and _amc_ij.get("type") == "model"
+            and _amc_ij.get("id") == "fx1"
+            and str(_amc_ij.get("created_at", "")).endswith("Z")
+        )
+        _mt_bad = _P(_td) / "bad.json"
+        _mt_bad.write_text("{oops")
+        _mt_ok = _P(_td) / "req.json"
+        _mt_ok.write_text(
+            json.dumps({"model": "fx1", "messages": [{"role": "user", "content": "x"}]})
+        )
+        _mt_d = runner.invoke(
+            app,
+            ["harness", "message-tokens", str(_mt_ok), "--backend", "no-such"],
+        )
+        out["message_tokens_inprocess_deadlink_2"] = (
+            _mt_d.exit_code == 2 and _mt_d.stderr.startswith(_ERR_PREFIX)
+        )
+        out["message_tokens_bad_json_2"] = (
+            runner.invoke(app, ["harness", "message-tokens", str(_mt_bad)]).exit_code == 2
+        )
+        out["message_tokens_missing_file_2"] = (
+            runner.invoke(app, ["harness", "message-tokens", str(_P(_td) / "nope.json")]).exit_code
+            == 2
+        )
 
         # respond/embed/moderate: in-process legs — bad JSON flags are arg
         # faults, a dead link is a clean 2 (never a traceback), and the
@@ -2011,6 +2053,35 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"delete": model_id}
             return {"id": model_id, "object": "model", "deleted": True}
 
+        def anthropic_models(self, **kw: Any) -> dict[str, Any]:
+            self.last_models_query = dict(kw)
+            return {
+                "data": [
+                    {
+                        "type": "model",
+                        "id": "fx1",
+                        "display_name": "fx1",
+                        "created_at": "2026-01-01T00:00:00Z",
+                    }
+                ],
+                "first_id": "fx1",
+                "last_id": "fx1",
+                "has_more": False,
+            }
+
+        def anthropic_model(self, model_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"anthropic_model": model_id}
+            return {
+                "type": "model",
+                "id": model_id,
+                "display_name": model_id,
+                "created_at": "2026-01-01T00:00:00Z",
+            }
+
+        def count_message_tokens(self, body: dict[str, Any], **kw: Any) -> int:
+            self.last_count = {"body": body, **kw}
+            return 17
+
         def responses_create(
             self,
             input: Any,
@@ -3460,6 +3531,52 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         )
         out["model_delete_inproc_400"] = (
             runner.invoke(app, ["harness", "model-delete", "fx1"]).exit_code == 2
+        )
+        # the anthropic-version projections: --anthropic + cursors reach
+        # the remote client; the envelope the wire sends prints verbatim.
+        _aml = runner.invoke(
+            app,
+            [
+                "harness",
+                "models",
+                "--anthropic",
+                "--limit",
+                "2",
+                "--after-id",
+                "fx1",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        _aml_j = json.loads(_aml.stdout) if _aml.exit_code == 0 else {}
+        out["remote_models_anthropic"] = (
+            _aml.exit_code == 0
+            and [m.get("id") for m in _aml_j.get("data", [])] == ["fx1"]
+            and _aml_j.get("data", [{}])[0].get("type") == "model"
+            and remotes[-1].last_models_query == {"limit": 2, "after_id": "fx1", "before_id": None}
+        )
+        out["remote_model_anthropic"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    ["harness", "model", "fx1", "--anthropic", "--remote", "http://h.test"],
+                ).stdout
+            ).get("type")
+            == "model"
+        )
+        with tempfile.TemporaryDirectory() as _ctd:
+            _mtf = _P(_ctd) / "req.json"
+            _mtf.write_text(
+                json.dumps({"model": "fx1", "messages": [{"role": "user", "content": "ping"}]})
+            )
+            _mt = runner.invoke(
+                app,
+                ["harness", "message-tokens", str(_mtf), "--remote", "http://h.test"],
+            )
+        out["remote_message_tokens"] = (
+            _mt.exit_code == 0
+            and json.loads(_mt.stdout) == {"input_tokens": 17}
+            and remotes[-1].last_count["body"]["messages"] == [{"role": "user", "content": "ping"}]
         )
         # ft-checkpoints is wire-only — --remote forwards job id + paging.
         out["remote_ft_checkpoints"] = (

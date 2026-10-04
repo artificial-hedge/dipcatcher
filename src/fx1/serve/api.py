@@ -95,12 +95,15 @@ from fx1.serve.anthropic_compat import (
     AnthropicBatchCounts,
     AnthropicBatchCreate,
     AnthropicBatchItem,
+    AnthropicCountTokensRequest,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
     anthropic_batch_object,
     anthropic_batch_result,
+    anthropic_count_messages,
     anthropic_envelope,
     anthropic_error_body,
+    anthropic_model_object,
     anthropic_sse,
     anthropic_to_openai,
 )
@@ -114,6 +117,8 @@ from fx1.serve.backends import (
     EmbeddingBackend,
     SamplingParams,
     StreamingBackend,
+    TokenCountingBackend,
+    TokenCountUnavailableError,
     get_backend,
     truncate_chunks,
 )
@@ -184,6 +189,8 @@ from fx1.serve.openai_compat import (
     OpenAIVectorStoreFileCreate,
     OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
+    _resolve_openai_link,
+    _resolve_timeout,
     batch_line_body,
     batch_line_shape,
     batch_object,
@@ -4909,34 +4916,83 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         "/v1/models",
         tags=["openai"],
         operation_id="openai_list_models",
+        response_model=OpenAIModelList,
     )
-    def openai_models() -> OpenAIModelList:
+    def openai_models(
+        request: Request,
+        limit: int = Query(default=20, ge=1, le=1000),
+        before_id: str | None = Query(default=None),
+        after_id: str | None = Query(default=None),
+    ) -> Response:
         """Model inventory — the backend names a `model` field may carry,
-        plus the `fx1` alias for the default link (hosted_k3)."""
-        return OpenAIModelList(
-            data=[
-                OpenAIModel(id=m, created=_openai_created)
-                for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in ft_store.models()))
-            ]
+        plus the `fx1` alias for the default link (hosted_k3).
+
+        One route, two envelopes: an ``anthropic-version`` header (the
+        stock anthropic SDK sends it on every call) switches the payload
+        to Anthropic's ``{data: [{type: \"model\", id, display_name,
+        created_at}], first_id, last_id, has_more}`` grammar with its
+        ``limit``/``after_id``/``before_id`` cursors —
+        ``client.models.list()`` works unmodified. Without the header the
+        OpenAI ``{object: \"list\"}`` shape answers; the cursor params
+        are Anthropic's and ignored on the OpenAI branch."""
+        ids = [m for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in ft_store.models()))]
+        if "anthropic-version" not in request.headers:
+            return JSONResponse(
+                OpenAIModelList(
+                    data=[OpenAIModel(id=m, created=_openai_created) for m in ids]
+                ).model_dump(mode="json")
+            )
+        if after_id is not None:
+            idx = next((i for i, x in enumerate(ids) if x == after_id), None)
+            ids = ids[idx + 1 :] if idx is not None else []
+        if before_id is not None:
+            idx = next((i for i, x in enumerate(ids) if x == before_id), None)
+            ids = ids[:idx] if idx is not None else []
+        # ``before_id`` pages *backward* — the tail of the remaining
+        # window, so first_id chains through the list the way after_id
+        # chains forward through last_id.
+        page = ids[-limit:] if before_id is not None else ids[:limit]
+        return JSONResponse(
+            {
+                "data": [anthropic_model_object(mid, created=_openai_created) for mid in page],
+                "first_id": page[0] if page else None,
+                "last_id": page[-1] if page else None,
+                "has_more": len(ids) > limit,
+            }
         )
 
     @app.get(
         "/v1/models/{model}",
         tags=["openai"],
         operation_id="openai_retrieve_model",
+        response_model=OpenAIModel,
     )
-    def openai_retrieve_model(model: str) -> OpenAIModel:
+    def openai_retrieve_model(model: str, request: Request) -> Response:
         """OpenAI's models.retrieve — one card for a listed id; unknown
         ids fail closed 404 in the OpenAI error shape, never a
-        fabricated card. Registered ``ft:`` fine-tunes resolve too."""
+        fabricated card. Registered ``ft:`` fine-tunes resolve too.
+
+        Under ``anthropic-version`` the same route answers Anthropic's
+        ``{type: \"model\", id, display_name, created_at}`` card (the
+        stock SDK's ``client.models.retrieve``), with unknown ids in the
+        ``not_found_error`` grammar."""
+        anthropic = "anthropic-version" in request.headers
         try:
-            return openai_model(
+            card = openai_model(
                 model,
                 created=_openai_created,
                 extra_ids=(r["id"] for r in ft_store.models()),
             )
         except OpenAICompatError as exc:
+            if anthropic:
+                return JSONResponse(
+                    anthropic_error_body(f"model {model!r} not found", exc.status),
+                    status_code=exc.status,
+                )
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        if anthropic:
+            return JSONResponse(anthropic_model_object(model, created=_openai_created))
+        return JSONResponse(card.model_dump(mode="json"))
 
     @app.delete(
         "/v1/models/{model}",
@@ -5492,6 +5548,66 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         content = ("\n".join(batch.result_lines) + "\n") if batch.result_lines else ""
         return Response(content=content, media_type="application/jsonl")
+
+    # ------------------------------------------------------------------
+    # Anthropic count_tokens — POST /v1/messages/count_tokens
+    # ------------------------------------------------------------------
+
+    @app.post(
+        "/v1/messages/count_tokens",
+        tags=["anthropic"],
+        operation_id="anthropic_count_tokens",
+    )
+    def anthropic_count_tokens_route(
+        body: AnthropicCountTokensRequest,
+        request: Request,
+    ) -> JSONResponse:
+        """Anthropic's ``POST /v1/messages/count_tokens`` — the provider's
+        own tokenizer count over the message channel, ``{input_tokens: N}``.
+
+        The request validates the same contract as ``/v1/messages``
+        (user-first alternation, system shape, unsupported knobs refuse),
+        then the resolved backend answers through its own tokenize route
+        — vLLM/SGLang-style ``/tokenize`` on BYOK and local engines,
+        Moonshot's ``tokenizers/estimate-token-count`` on the hosted link.
+        A backend or endpoint without the channel fails closed 501
+        ``api_error`` — the harness never estimates. ``tools`` /
+        ``tool_choice`` refuse 400: provider tokenize routes see only the
+        message channel, so counting a toolful request would undercount.
+        ``X-Fx1-*`` headers and the ``fx1`` extension pick the link
+        exactly like the create path; ``X-Fx1-Timeout`` caps the call."""
+        if body.tools is not None or body.tool_choice is not None:
+            raise ApiError(
+                400,
+                "count_tokens covers the message channel — tools/tool_choice "
+                "have no tokenize route to honor them",
+                code="invalid_request",
+            )
+        hdrs = {str(k).lower(): str(v) for k, v in request.headers.items()}
+        try:
+            backend_name, _fb, checkpoint_dir, byok = _resolve_openai_link(
+                body.model, body.fx1, hdrs, ft_resolver=ft_store.checkpoint_for
+            )
+            timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        backend = resolve_backend(
+            backend_name,
+            checkpoint_dir,
+            byok.model_dump() if byok is not None else None,
+            timeout_s,
+        )
+        if not isinstance(backend, TokenCountingBackend):
+            raise ApiError(
+                501,
+                f"backend {backend_name!r} has no tokenize channel",
+                code="not_implemented",
+            )
+        try:
+            n = backend.count_tokens(anthropic_count_messages(body))
+        except TokenCountUnavailableError as exc:
+            raise ApiError(501, str(exc), code="not_implemented") from exc
+        return JSONResponse({"input_tokens": n})
 
     @app.post(
         "/v1/completions",
@@ -8450,6 +8566,8 @@ def create_app(
                 "anthropic_messages": True,
                 "legacy_completions": True,
                 "anthropic_message_batches": True,
+                "anthropic_count_tokens": True,
+                "anthropic_models": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,

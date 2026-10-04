@@ -52,13 +52,16 @@ from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
 from fx1.serve.anthropic_compat import (
     AnthropicBatchCounts,
     AnthropicBatchCreate,
+    AnthropicCountTokensRequest,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
     anthropic_batch_object,
     anthropic_batch_result,
+    anthropic_count_messages,
     anthropic_envelope,
     anthropic_error_body,
     anthropic_events,
+    anthropic_model_object,
     anthropic_to_openai,
 )
 from fx1.serve.backends import (
@@ -67,6 +70,7 @@ from fx1.serve.backends import (
     InferenceBackend,
     SamplingParams,
     StreamingBackend,
+    TokenCountingBackend,
     get_backend,
     truncate_chunks,
 )
@@ -109,6 +113,8 @@ from fx1.serve.openai_compat import (
     OpenAIResponseRequest,
     OpenAIVectorStoreFileBatchCreate,
     OpenAIVectorStoreSearch,
+    _resolve_openai_link,
+    _resolve_timeout,
     batch_line_body,
     batch_line_shape,
     batch_output_line,
@@ -2360,6 +2366,93 @@ class Fx1Harness:
         if last_event_id is not None:
             events = events[last_event_id + 1 :]
         return events, cid
+
+    def anthropic_count_tokens(
+        self,
+        request: AnthropicCountTokensRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> int:
+        """``POST /v1/messages/count_tokens`` in-process — the provider's
+        own tokenizer count over the message channel, returned as the
+        ``input_tokens`` int.
+
+        Same contract as the wire: the body validates like
+        ``/v1/messages`` (strict alternation, unsupported knobs refuse),
+        ``tools``/``tool_choice`` raise ``ValueError`` (a provider
+        ``/tokenize`` route sees only messages — counting them would
+        undercount), and the resolved backend answers through its own
+        tokenize route — never an estimate. A backend without the
+        channel raises ``NotImplementedError`` (the 501 class); the
+        endpoint refusing raises :class:`TokenCountUnavailableError`'s
+        wire twin — a ``RuntimeError`` chain surfaces as
+        ``OpenAICompatError``/``ValueError`` like every other SDK fault.
+        ``headers`` accepts the ``X-Fx1-*`` link knobs exactly like
+        :meth:`anthropic_message`.
+        """
+        body = (
+            request
+            if isinstance(request, AnthropicCountTokensRequest)
+            else AnthropicCountTokensRequest.model_validate(request)
+        )
+        if body.tools is not None or body.tool_choice is not None:
+            raise ValueError(
+                "count_tokens covers the message channel — tools/tool_choice "
+                "have no tokenize route to honor them"
+            )
+        hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+        backend_name, _fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+            body.model, body.fx1, hdrs, ft_resolver=self._ft_store.checkpoint_for
+        )
+        timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
+        backend = self._resolve_completion_backend(
+            backend_name,
+            checkpoint_dir,
+            None,
+            byok.model_dump() if byok is not None else None,
+            timeout_s,
+        )
+        if not isinstance(backend, TokenCountingBackend):
+            raise NotImplementedError(f"backend {backend_name!r} has no tokenize channel")
+        return backend.count_tokens(anthropic_count_messages(body))
+
+    def anthropic_models(
+        self,
+        *,
+        limit: int | None = None,
+        after_id: str | None = None,
+        before_id: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/models`` under ``anthropic-version``, in-process —
+        the ``{data, first_id, last_id, has_more}`` envelope over the
+        same inventory :meth:`openai_models` serves, with Anthropic's
+        ``limit``/cursor contract (unknown cursors page to empty)."""
+        if limit is not None and not 1 <= limit <= 1000:
+            raise ValueError(f"limit must be 1–1000, got {limit}")
+        cards = list(self.openai_models().data)
+        if after_id is not None:
+            idx = next((i for i, m in enumerate(cards) if m.id == after_id), None)
+            cards = cards[idx + 1 :] if idx is not None else []
+        if before_id is not None:
+            idx = next((i for i, m in enumerate(cards) if m.id == before_id), None)
+            cards = cards[:idx] if idx is not None else []
+        lim = limit or 20
+        # back-pagination returns the window's tail — mirroring the
+        # wire's before_id contract
+        page = cards[-lim:] if before_id is not None else cards[:lim]
+        return {
+            "data": [anthropic_model_object(m.id, created=m.created) for m in page],
+            "first_id": page[0].id if page else None,
+            "last_id": page[-1].id if page else None,
+            "has_more": len(cards) > len(page),
+        }
+
+    def anthropic_model(self, model_id: str) -> dict[str, Any]:
+        """``GET /v1/models/{id}`` under ``anthropic-version``, in-process
+        — the ``{type: \"model\"}`` card for a listed id; unknown ids
+        raise :class:`OpenAICompatError` with the wire's 404 code."""
+        card = self.openai_model(model_id)
+        return anthropic_model_object(card.id, created=card.created)
 
     def openai_completion(
         self,

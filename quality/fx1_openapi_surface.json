@@ -1546,12 +1546,39 @@
         ]
       }
     },
+    "/v1/messages/count_tokens": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
-        "params": [],
+        "params": [
+          {
+            "name": "after_id",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before_id",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
         "request_body_required": null,
         "responses": [
-          "200"
+          "200",
+          "422"
         ]
       }
     },
@@ -2076,5 +2103,5 @@
       }
     }
   },
-  "schema_sha256": "b8df6e8bbf82aeb2701c0af58e20fc82bd88fb8960cb8acff37041c9b77316c5"
+  "schema_sha256": "08c72ce05ce769436a78b902c024ac52981b5dbfca6ae80281b028bfea2a74e6"
 }

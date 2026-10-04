@@ -63,6 +63,83 @@
         "title": "AnthropicBatchItem",
         "type": "object"
       },
+      "AnthropicCountTokensRequest": {
+        "additionalProperties": true,
+        "description": "``POST /v1/messages/count_tokens`` body \u2014 Anthropic's estimate\ncontract: the create-message shape minus ``max_tokens`` (the input\nchannel alone is measured). Extra fields tolerate SDK bookkeeping\nkeys; the documented-but-unsupported knobs in ``ANTHROPIC_UNSUPPORTED``\nrefuse identically to ``/v1/messages``.\n\n``tools``/``tool_choice`` validate here (the wire shape is legal)\nbut the route refuses them \u2014 a provider's ``/tokenize`` sees only\nthe message channel, so counting a toolful request would undercount.\nRefusing beats lying.",
+        "properties": {
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/AnthropicMessage"
+            },
+            "maxItems": 512,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "system": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnthropicToolChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnthropicTool"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "AnthropicCountTokensRequest",
+        "type": "object"
+      },
       "AnthropicMessage": {
         "additionalProperties": false,
         "description": "One Anthropic transcript turn \u2014 ``role`` is ``user`` or\n``assistant``; ``content`` is a string or a block list. Supported\nblock types: ``text`` (any turn), ``tool_use`` (assistant turns \u2014\na prior round's calls), ``tool_result`` (user turns \u2014 the tool's\nanswer). Every other declared block type is refused, not dropped.",
@@ -22291,10 +22368,208 @@
         ]
       }
     },
+    "/v1/messages/count_tokens": {
+      "post": {
+        "description": "Anthropic's ``POST /v1/messages/count_tokens`` \u2014 the provider's\nown tokenizer count over the message channel, ``{input_tokens: N}``.\n\nThe request validates the same contract as ``/v1/messages``\n(user-first alternation, system shape, unsupported knobs refuse),\nthen the resolved backend answers through its own tokenize route\n\u2014 vLLM/SGLang-style ``/tokenize`` on BYOK and local engines,\nMoonshot's ``tokenizers/estimate-token-count`` on the hosted link.\nA backend or endpoint without the channel fails closed 501\n``api_error`` \u2014 the harness never estimates. ``tools`` /\n``tool_choice`` refuse 400: provider tokenize routes see only the\nmessage channel, so counting a toolful request would undercount.\n``X-Fx1-*`` headers and the ``fx1`` extension pick the link\nexactly like the create path; ``X-Fx1-Timeout`` caps the call.",
+        "operationId": "anthropic_count_tokens",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnthropicCountTokensRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Anthropic Count Tokens Route",
+        "tags": [
+          "anthropic"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
-        "description": "Model inventory \u2014 the backend names a `model` field may carry,\nplus the `fx1` alias for the default link (hosted_k3).",
+        "description": "Model inventory \u2014 the backend names a `model` field may carry,\nplus the `fx1` alias for the default link (hosted_k3).\n\nOne route, two envelopes: an ``anthropic-version`` header (the\nstock anthropic SDK sends it on every call) switches the payload\nto Anthropic's ``{data: [{type: \"model\", id, display_name,\ncreated_at}], first_id, last_id, has_more}`` grammar with its\n``limit``/``after_id``/``before_id`` cursors \u2014\n``client.models.list()`` works unmodified. Without the header the\nOpenAI ``{object: \"list\"}`` shape answers; the cursor params\nare Anthropic's and ignored on the OpenAI branch.",
         "operationId": "openai_list_models",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -22305,6 +22580,72 @@
               }
             },
             "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
             "headers": {
               "Cache-Control": {
                 "description": "Always `no-store`.",
@@ -22524,7 +22865,7 @@
         ]
       },
       "get": {
-        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.",
+        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.\n\nUnder ``anthropic-version`` the same route answers Anthropic's\n``{type: \"model\", id, display_name, created_at}`` card (the\nstock SDK's ``client.models.retrieve``), with unknown ids in the\n``not_found_error`` grammar.",
         "operationId": "openai_retrieve_model",
         "parameters": [
           {

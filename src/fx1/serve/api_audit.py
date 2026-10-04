@@ -37,7 +37,7 @@ from __future__ import annotations
 import os
 import threading
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 _MESSAGES_PATH = "/v1/messages"
 _LEGACY_PATH = "/v1/completions"
@@ -9905,6 +9905,132 @@ def _probe_backend_probes(  # NOSONAR
         ab_rexp["processing_status"] == "ended"
         and ab_rexp["request_counts"]["expired"] == 1
         and ab_rexp["ended_at"] is not None
+    )
+
+    # ---- /v1/messages/count_tokens — the provider's own tokenizer count
+    # over the message channel; honest 501 when the backend has no
+    # tokenize route, 400 on tools (counting them would undercount).
+    class _CountBackend(_OiBackend):
+        """A backend WITH the tokenize channel — the route resolves
+        through TokenCountingBackend, so this answers a real count."""
+
+        last_msgs: ClassVar[list[dict[str, Any]] | None] = None
+
+        def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+            _CountBackend.last_msgs = messages
+            return 42
+
+    ct_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CountBackend()))
+    ct_ok = ct_app.post(
+        f"{_MESSAGES_PATH}/count_tokens",
+        json={
+            "model": "fx1",
+            "system": "You are terse.",
+            "messages": [{"role": "user", "content": "ping"}],
+        },
+    )
+    ct_msgs = _CountBackend.last_msgs or []
+    out["anthropic_count_200"] = (
+        ct_ok.status_code == 200
+        and ct_ok.json() == {"input_tokens": 42}
+        and [m.get("role") for m in ct_msgs] == ["system", "user"]
+        and ct_msgs[0].get("content") == "You are terse."
+    )
+    ct_tools = ct_app.post(
+        f"{_MESSAGES_PATH}/count_tokens",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ping"}],
+            "tools": [{"name": "t", "input_schema": {"type": "object"}}],
+        },
+    )
+    ct_tools_b = ct_tools.json()
+    out["anthropic_count_tools_refused"] = (
+        ct_tools.status_code == 400
+        and ct_tools_b.get("type") == "error"
+        and ct_tools_b.get("error", {}).get("type") == "invalid_request_error"
+    )
+    # the shared message contract applies: assistant-first rejects at
+    # validation (422 invalid_request_error in the Anthropic envelope)
+    ct_bad = ct_app.post(
+        f"{_MESSAGES_PATH}/count_tokens",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "assistant", "content": "hi"}],
+        },
+    )
+    out["anthropic_count_contract"] = (
+        ct_bad.status_code == 422
+        and ct_bad.json().get("error", {}).get("type") == "invalid_request_error"
+    )
+    # a backend without the channel: honest 501, Anthropic envelope
+    ct_501 = oi_clean.post(
+        f"{_MESSAGES_PATH}/count_tokens",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ping"}],
+        },
+    )
+    ct_501_b = ct_501.json()
+    out["anthropic_count_501"] = (
+        ct_501.status_code == 501
+        and ct_501_b.get("type") == "error"
+        and ct_501_b.get("error", {}).get("type") == "api_error"
+    )
+
+    # ---- anthropic-version on /v1/models{,/{id}} — the stock anthropic
+    # SDK's models.list/retrieve grammar over the same inventory.
+    a_models = oi_clean.get("/v1/models", headers={"anthropic-version": "2023-06-01"})
+    a_models_b = a_models.json()
+    out["anthropic_models_list"] = (
+        a_models.status_code == 200
+        and [m["id"] for m in a_models_b["data"]] == ["fx1", "hosted_k3", "local_fx1", "byok"]
+        and all(
+            m.get("type") == "model" and isinstance(m.get("display_name"), str)
+            for m in a_models_b["data"]
+        )
+        and all(str(m.get("created_at", "")).endswith("Z") for m in a_models_b["data"])
+        and a_models_b["first_id"] == "fx1"
+        and a_models_b["last_id"] == "byok"
+        and a_models_b["has_more"] is False
+    )
+    a_p1 = oi_clean.get("/v1/models?limit=1", headers={"anthropic-version": "2023-06-01"}).json()
+    a_p2 = oi_clean.get(
+        "/v1/models?limit=2&after_id=hosted_k3",
+        headers={"anthropic-version": "2023-06-01"},
+    ).json()
+    a_none = oi_clean.get(
+        "/v1/models?after_id=nope", headers={"anthropic-version": "2023-06-01"}
+    ).json()
+    # before_id pages backward — the *tail* of the window before the
+    # cursor, so first_id chains backward the way last_id chains forward
+    a_back = oi_clean.get(
+        "/v1/models?limit=2&before_id=byok",
+        headers={"anthropic-version": "2023-06-01"},
+    ).json()
+    out["anthropic_models_pagination"] = (
+        [m["id"] for m in a_p1["data"]] == ["fx1"]
+        and a_p1["has_more"] is True
+        and a_p1["first_id"] == a_p1["last_id"] == "fx1"
+        and [m["id"] for m in a_p2["data"]] == ["local_fx1", "byok"]
+        and [m["id"] for m in a_back["data"]] == ["hosted_k3", "local_fx1"]
+        and a_back["has_more"] is True
+        and a_none["data"] == []
+        and a_none["first_id"] is None
+        and a_none["has_more"] is False
+    )
+    a_card = oi_clean.get("/v1/models/fx1", headers={"anthropic-version": "2023-06-01"}).json()
+    a_404 = oi_clean.get("/v1/models/nope", headers={"anthropic-version": "2023-06-01"})
+    out["anthropic_model_get"] = (
+        a_card.get("type") == "model"
+        and a_card.get("id") == "fx1"
+        and a_card.get("display_name") == "fx1"
+        and str(a_card.get("created_at", "")).endswith("Z")
+    )
+    out["anthropic_model_404"] = (
+        a_404.status_code == 404
+        and a_404.json().get("type") == "error"
+        and a_404.json().get("error", {}).get("type") == "not_found_error"
     )
 
     # ---- legacy /v1/completions drop-in ------------------------------------
