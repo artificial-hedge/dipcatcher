@@ -12647,6 +12647,14 @@ from quant_fund.research.benches_w1581 import (
     bench_monk_seal_qa_studies_family,
     bench_weddell_qa_studies_family,
 )
+from quant_fund.research.benches_w1582 import (
+    bench_flying_fox_qa_studies_family,
+    bench_horseshoe_bat_qa_studies_family,
+    bench_leaf_nosed_qa_studies_family,
+    bench_noctule_qa_studies_family,
+    bench_pipistrelle_qa_studies_family,
+    bench_vampire_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14669,6 +14677,12 @@ def _provenance(
         "leopard_seal_qa_studies": bench_leopard_seal_qa_studies_family,
         "monk_seal_qa_studies": bench_monk_seal_qa_studies_family,
         "weddell_qa_studies": bench_weddell_qa_studies_family,
+        "flying_fox_qa_studies": bench_flying_fox_qa_studies_family,
+        "horseshoe_bat_qa_studies": bench_horseshoe_bat_qa_studies_family,
+        "leaf_nosed_qa_studies": bench_leaf_nosed_qa_studies_family,
+        "noctule_qa_studies": bench_noctule_qa_studies_family,
+        "pipistrelle_qa_studies": bench_pipistrelle_qa_studies_family,
+        "vampire_qa_studies": bench_vampire_qa_studies_family,
         "fallow_qa_studies": bench_fallow_qa_studies_family,
         "muntjac_qa_studies": bench_muntjac_qa_studies_family,
         "pudu_qa_studies": bench_pudu_qa_studies_family,
