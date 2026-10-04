@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-671 homotopy-24 canon.
+        "gray_periodic",
+        "stunted_proj",
+        "adams_edge",
+        "periodic_family",
+        "unstable_adams2",
+        "homotopy_exponent",
         # Wave-670 chromatic-7 canon.
         "morava_k3",
         "morava_e2",

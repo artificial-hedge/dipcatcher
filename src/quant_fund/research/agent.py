@@ -5359,6 +5359,14 @@ from quant_fund.research.benches_w670 import (
     bench_red_shift2_family,
     bench_telescope_tower3_family,
 )
+from quant_fund.research.benches_w671 import (
+    bench_adams_edge_family,
+    bench_gray_periodic_family,
+    bench_homotopy_exponent_family,
+    bench_periodic_family_family,
+    bench_stunted_proj_family,
+    bench_unstable_adams2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5738,6 +5746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gray_periodic": bench_gray_periodic_family,
+        "stunted_proj": bench_stunted_proj_family,
+        "adams_edge": bench_adams_edge_family,
+        "periodic_family": bench_periodic_family_family,
+        "unstable_adams2": bench_unstable_adams2_family,
+        "homotopy_exponent": bench_homotopy_exponent_family,
         "morava_k3": bench_morava_k3_family,
         "morava_e2": bench_morava_e2_family,
         "chromatic_l3": bench_chromatic_l3_family,
