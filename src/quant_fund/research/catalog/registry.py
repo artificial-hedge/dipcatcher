@@ -4111,6 +4111,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ostrich_qa_studies",
         "rhea_qa_studies",
         "tinamou_qa_studies",
+        # Wave-1550 lizard canon.
+        "agama_qa_studies",
+        "chuckwalla_qa_studies",
+        "frilled_lizard_qa_studies",
+        "monitor_lizard_qa_studies",
+        "tegu_qa_studies",
+        "uromastyx_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -12391,6 +12391,14 @@ from quant_fund.research.benches_w1549 import (
     bench_rhea_qa_studies_family,
     bench_tinamou_qa_studies_family,
 )
+from quant_fund.research.benches_w1550 import (
+    bench_agama_qa_studies_family,
+    bench_chuckwalla_qa_studies_family,
+    bench_frilled_lizard_qa_studies_family,
+    bench_monitor_lizard_qa_studies_family,
+    bench_tegu_qa_studies_family,
+    bench_uromastyx_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14291,6 +14299,12 @@ def _provenance(
         "ostrich_qa_studies": bench_ostrich_qa_studies_family,
         "rhea_qa_studies": bench_rhea_qa_studies_family,
         "tinamou_qa_studies": bench_tinamou_qa_studies_family,
+        "agama_qa_studies": bench_agama_qa_studies_family,
+        "chuckwalla_qa_studies": bench_chuckwalla_qa_studies_family,
+        "frilled_lizard_qa_studies": bench_frilled_lizard_qa_studies_family,
+        "monitor_lizard_qa_studies": bench_monitor_lizard_qa_studies_family,
+        "tegu_qa_studies": bench_tegu_qa_studies_family,
+        "uromastyx_qa_studies": bench_uromastyx_qa_studies_family,
         "emerald_dove_qa_studies": bench_emerald_dove_qa_studies_family,
         "fruit_dove_qa_studies": bench_fruit_dove_qa_studies_family,
         "ground_dove_qa_studies": bench_ground_dove_qa_studies_family,
