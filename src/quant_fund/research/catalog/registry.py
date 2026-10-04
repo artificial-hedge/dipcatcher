@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1090 history-of-science canon.
+        "history_of_science",
+        "sts_studies",
+        "philosophy_of_technology",
+        "media_archaeology",
+        "information_history",
+        "technology_studies",
         # Wave-1089 linguistics-2 canon.
         "sociolinguistics",
         "psycholinguistics",
