@@ -9039,6 +9039,14 @@ from quant_fund.research.benches_w1130 import (
     bench_museum_anthropology_family,
     bench_social_anthropology_family,
 )
+from quant_fund.research.benches_w1131 import (
+    bench_digital_sociology_family,
+    bench_sociology_of_disaster_family,
+    bench_sociology_of_housing_family,
+    bench_sociology_of_migration_family,
+    bench_sociology_of_risk_family,
+    bench_sociology_of_the_body_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9410,6 +9418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sociology_of_migration": bench_sociology_of_migration_family,
+        "sociology_of_housing": bench_sociology_of_housing_family,
+        "sociology_of_disaster": bench_sociology_of_disaster_family,
+        "sociology_of_the_body": bench_sociology_of_the_body_family,
+        "sociology_of_risk": bench_sociology_of_risk_family,
+        "digital_sociology": bench_digital_sociology_family,
         "social_anthropology": bench_social_anthropology_family,
         "cognitive_anthropology": bench_cognitive_anthropology_family,
         "anthropology_of_religion": bench_anthropology_of_religion_family,
