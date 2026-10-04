@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1105 behavioral-econ-2 canon.
+        "prospect_theory",
+        "bounded_rationality",
+        "nudge_theory",
+        "neuroeconomics",
+        "experimental_economics",
+        "financial_behavior",
         # Wave-1104 political-science-2 canon.
         "american_politics",
         "political_behavior",
