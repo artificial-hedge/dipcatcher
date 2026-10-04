@@ -4972,6 +4972,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "polevik_qa_studies",
         "rusalka_qa_studies",
         "vodianoi_qa_studies",
+        # Wave-1673 hindu-myth canon.
+        "apsara_qa_studies",
+        "asura_qa_studies",
+        "gandharva_qa_studies",
+        "naga_qa_studies",
+        "rakshasa_qa_studies",
+        "yaksha_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
