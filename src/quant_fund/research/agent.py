@@ -8703,6 +8703,14 @@ from quant_fund.research.benches_w1088 import (
     bench_medieval_philosophy_family,
     bench_pragmatism_family,
 )
+from quant_fund.research.benches_w1089 import (
+    bench_computational_linguistics_family,
+    bench_corpus_linguistics_family,
+    bench_dialectology_family,
+    bench_historical_linguistics_family,
+    bench_psycholinguistics_family,
+    bench_sociolinguistics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9074,6 +9082,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sociolinguistics": bench_sociolinguistics_family,
+        "psycholinguistics": bench_psycholinguistics_family,
+        "computational_linguistics": bench_computational_linguistics_family,
+        "corpus_linguistics": bench_corpus_linguistics_family,
+        "dialectology": bench_dialectology_family,
+        "historical_linguistics": bench_historical_linguistics_family,
         "ancient_philosophy": bench_ancient_philosophy_family,
         "medieval_philosophy": bench_medieval_philosophy_family,
         "continental_philosophy": bench_continental_philosophy_family,
