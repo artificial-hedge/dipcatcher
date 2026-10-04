@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-769 Stein-method canon.
+        "stein_method",
+        "stein_equation",
+        "barbour_stein",
+        "chen_stein",
+        "ross_stein",
+        "chatt_stein",
         # Wave-768 large-deviation canon.
         "varadhan_ldp",
         "freidlin_wentzell",
