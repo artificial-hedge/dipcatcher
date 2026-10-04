@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1301 backdoor-eval canon.
+        "backdoor_studies",
+        "clean_label_studies",
+        "data_poison_studies",
+        "neural_cleanse_studies",
+        "spectral_signature_studies",
+        "trojan_studies",
         # Wave-1300 robustness-eval canon.
         "adversarial_eval_studies",
         "autoattack_studies",
