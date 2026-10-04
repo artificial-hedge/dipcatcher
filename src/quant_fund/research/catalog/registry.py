@@ -5056,6 +5056,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quetzalli_qa_studies",
         "teteoinnan_qa_studies",
         "yaotl_qa_studies",
+        # Wave-1685 norse-spirit canon.
+        "ettin_qa_studies",
+        "fylgja_qa_studies",
+        "landvaettir_qa_studies",
+        "nokken_qa_studies",
+        "seidr_qa_studies",
+        "vette_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
