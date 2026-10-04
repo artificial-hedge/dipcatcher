@@ -6309,6 +6309,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "marhaus_qa_studies",
         "pellinor_qa_studies",
         "uther_qa_studies",
+        # Wave-1864 arthurian-5 canon.
+        "bors_qa_studies",
+        "culhwch_qa_studies",
+        "dinadan_qa_studies",
+        "palamedes_qa_studies",
+        "safir_qa_studies",
+        "segwarides_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
