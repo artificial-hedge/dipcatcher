@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1120 anthropology-4 canon.
+        "visual_anthropology",
+        "applied_anthropology",
+        "forensic_anthropology",
+        "digital_anthropology",
+        "environmental_anthropology",
+        "psychological_anthropology",
         # Wave-1119 history-2 canon.
         "social_history",
         "cultural_history",
