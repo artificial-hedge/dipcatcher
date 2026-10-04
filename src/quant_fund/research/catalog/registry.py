@@ -4041,6 +4041,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "night_heron_qa_studies",
         "purple_heron_qa_studies",
         "tiger_heron_qa_studies",
+        # Wave-1540 egret canon.
+        "cattle_egret_qa_studies",
+        "glossy_ibis_qa_studies",
+        "great_egret_qa_studies",
+        "sacred_ibis_qa_studies",
+        "snowy_egret_qa_studies",
+        "squacco_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
