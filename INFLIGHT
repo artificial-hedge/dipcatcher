@@ -1,3 +1,4 @@
+w1266 LLM-inference-2 canon: diffusion_lm_studies, kv_compression_studies, medusa_speculation_studies, moe_shared_expert_studies, rope_scaling_studies, sparse_attention_studies (7545->7551)
 w1265 genetic-epidemiology/MR canon: colocalization_studies, genetic_correlation_studies, heritability_ldscore_studies, mendelian_randomization_studies, pleiotropy_robust_studies, polygenic_score_studies (7539->7545)
 w1264 causal-RWE-2 canon: external_control_studies, negative_control_studies, probabilistic_bias_studies, self_controlled_studies, structural_nested_studies, transportability_studies (7533->7539)
 w1263 evidence-synthesis canon: diagnostic_meta_studies, fragility_index_studies, individual_patient_meta_studies, network_meta_studies, trial_sequential_studies, umbrella_review_studies (7527->7533)

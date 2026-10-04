@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1266 LLM-inference-2 canon.
+        "diffusion_lm_studies",
+        "kv_compression_studies",
+        "medusa_speculation_studies",
+        "moe_shared_expert_studies",
+        "rope_scaling_studies",
+        "sparse_attention_studies",
         # Wave-1265 genetic-epidemiology/MR canon.
         "colocalization_studies",
         "genetic_correlation_studies",
