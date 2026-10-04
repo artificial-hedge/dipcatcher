@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-539 diophantine-approximation canon.
+        "dirichlet_approx",
+        "roth_thm2",
+        "continued_frac2",
+        "kronecker_thm",
+        "liouville_number",
+        "subspace_thm",
         # Wave-538 elliptic-PDE canon.
         "sobolev_space",
         "poincare_ineq",

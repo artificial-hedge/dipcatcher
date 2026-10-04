@@ -1,3 +1,4 @@
+feat(research): wave 539 — diophantine-approximation canon (dirichlet_approx, roth_thm2, continued_frac2, kronecker_thm, liouville_number, subspace_thm) (3189->3195 families)
 feat(research): wave 538 — elliptic-PDE canon (sobolev_space, poincare_ineq, trace_thm, harnack_thm, schauder_est, degiorgi_nash) (3183->3189 families)
 feat(research): wave 537 — Riemannian-geometry canon (riemann_metric, levi_civita, riemann_curvature, ricci_scalar, jacobi_field, comparison_thm) (3177->3183 families)
 feat(research): wave 536 — symplectic-geometry canon (symplectic_form, lagrangian_mfd, hamiltonian_flow, poisson_bracket, contact_geom, gromov_nonsq) (3171->3177 families)
