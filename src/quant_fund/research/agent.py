@@ -12783,6 +12783,14 @@ from quant_fund.research.benches_w1598 import (
     bench_mountain_nyala_qa_studies_family,
     bench_sitatunga_qa_studies_family,
 )
+from quant_fund.research.benches_w1599 import (
+    bench_aye_aye_qa_studies_family,
+    bench_howler_qa_studies_family,
+    bench_mouse_lemur_qa_studies_family,
+    bench_night_monkey_qa_studies_family,
+    bench_ring_tailed_qa_studies_family,
+    bench_spider_monkey_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14861,6 +14869,12 @@ def _provenance(
         "lesser_kudu_qa_studies": bench_lesser_kudu_qa_studies_family,
         "mountain_nyala_qa_studies": bench_mountain_nyala_qa_studies_family,
         "sitatunga_qa_studies": bench_sitatunga_qa_studies_family,
+        "aye_aye_qa_studies": bench_aye_aye_qa_studies_family,
+        "howler_qa_studies": bench_howler_qa_studies_family,
+        "mouse_lemur_qa_studies": bench_mouse_lemur_qa_studies_family,
+        "night_monkey_qa_studies": bench_night_monkey_qa_studies_family,
+        "ring_tailed_qa_studies": bench_ring_tailed_qa_studies_family,
+        "spider_monkey_qa_studies": bench_spider_monkey_qa_studies_family,
         "chamois_qa_studies": bench_chamois_qa_studies_family,
         "goral_qa_studies": bench_goral_qa_studies_family,
         "ibex_qa_studies": bench_ibex_qa_studies_family,
