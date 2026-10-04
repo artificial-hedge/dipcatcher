@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1371 social-reasoning canon.
+        "ethos_lite_studies",
+        "moral_stories_studies",
+        "mutual_lite_studies",
+        "prosocial_lite_studies",
+        "scruples_studies",
+        "siqa_lite_studies",
         # Wave-1370 challenge-benchmark canon.
         "bbh_lite_studies",
         "gpqa_lite_studies",

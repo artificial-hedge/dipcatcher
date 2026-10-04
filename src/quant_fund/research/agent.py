@@ -10959,6 +10959,14 @@ from quant_fund.research.benches_w1370 import (
     bench_olympic_bench_studies_family,
     bench_trivia_qa_lite_studies_family,
 )
+from quant_fund.research.benches_w1371 import (
+    bench_ethos_lite_studies_family,
+    bench_moral_stories_studies_family,
+    bench_mutual_lite_studies_family,
+    bench_prosocial_lite_studies_family,
+    bench_scruples_studies_family,
+    bench_siqa_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11851,6 +11859,12 @@ def _provenance(
         "live_bench_studies": bench_live_bench_studies_family,
         "olympic_bench_studies": bench_olympic_bench_studies_family,
         "trivia_qa_lite_studies": bench_trivia_qa_lite_studies_family,
+        "ethos_lite_studies": bench_ethos_lite_studies_family,
+        "moral_stories_studies": bench_moral_stories_studies_family,
+        "mutual_lite_studies": bench_mutual_lite_studies_family,
+        "prosocial_lite_studies": bench_prosocial_lite_studies_family,
+        "scruples_studies": bench_scruples_studies_family,
+        "siqa_lite_studies": bench_siqa_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
