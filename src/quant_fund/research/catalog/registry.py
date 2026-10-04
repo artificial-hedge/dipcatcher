@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-659 motivic-14 canon.
+        "norimotive2",
+        "motivic_tate2",
+        "absolute_cohom",
+        "motivic_weight",
+        "tate_triple",
+        "motivic_pairing",
         # Wave-658 motivic-13 canon.
         "motivic_galois",
         "tannakian_motive",
