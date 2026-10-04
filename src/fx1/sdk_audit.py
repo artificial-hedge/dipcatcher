@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -347,6 +348,457 @@ def sdk_audit() -> dict[str, bool]:
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+    # ---- /v1/evals spec+run twins ------------------------------------------
+    sdk_e = Fx1Harness(backend_resolver=lambda *a, **k: fake)
+    spec = sdk_e.eval_spec_create("spec-a", suite="tooluse", seed=0, metadata={"lane": "audit"})
+    out["evalspec_create"] = (
+        spec["id"].startswith("eval_")
+        and spec["object"] == "eval"
+        and spec["name"] == "spec-a"
+        and spec["data_source_config"]["item_schema"]["suite"] == "tooluse"
+        and spec["metadata"] == {"lane": "audit"}
+    )
+    out["evalspec_bad_suite_rejected"] = (
+        _raises(lambda: sdk_e.eval_spec_create("x", suite="nope")) == "ValidationError"
+    )
+    out["evalspec_list_get"] = (
+        sdk_e.eval_specs(limit=5)[0]["id"] == spec["id"]
+        and sdk_e.eval_spec_get(spec["id"])["id"] == spec["id"]
+        and _raises(lambda: sdk_e.eval_spec_get("eval_nope")) == "KeyError"
+    )
+    out["evalspec_update"] = (
+        sdk_e.eval_spec_update(spec["id"], name="renamed")["name"] == "renamed"
+        and _raises(lambda: sdk_e.eval_spec_update(spec["id"])) == "ValueError"
+    )
+    run = sdk_e.eval_run_create(spec["id"], model="byok")
+    out["evalrun_completed"] = (
+        run["object"] == "eval.run"
+        and run["id"].startswith("evalrun_")
+        and run["eval_id"] == spec["id"]
+        and run["model"] == "byok"
+        and run["status"] == "completed"
+        and "result_counts" in run
+    )
+    items = sdk_e.eval_run_items(spec["id"], run["id"])
+    out["evalrun_items"] = (
+        len(items) > 0
+        and all(it["object"] == "eval.run.output_item" for it in items)
+        and all(any("name" in r and "passed" in r for r in it["results"]) for it in items)
+    )
+    out["evalrun_list_get"] = (
+        sdk_e.eval_runs(spec["id"])[0]["id"] == run["id"]
+        and sdk_e.eval_run_get(spec["id"], run["id"])["id"] == run["id"]
+    )
+    out["evalrun_cross_spec_404"] = (
+        _raises(lambda: sdk_e.eval_run_get("eval_nope", run["id"])) == "KeyError"
+    )
+    sdk_e.eval_run_delete(spec["id"], run["id"])
+    sdk_e.eval_spec_delete(spec["id"])
+    out["evalspec_run_delete"] = (
+        _raises(lambda: sdk_e.eval_run_get(spec["id"], run["id"])) == "KeyError"
+        and _raises(lambda: sdk_e.eval_spec_get(spec["id"])) == "KeyError"
+        and _raises(lambda: sdk_e.eval_spec_delete(spec["id"])) == "KeyError"
+    )
+
+    # ---- /v1/uploads twin: chunked intent→parts→complete mints a file
+    # in-process; md5 prechecked; terminal + bounds fail closed.
+    import hashlib as _hashul  # noqa: PLC0415
+
+    _ub = b'{"u":1}\n{"u":2}\n'
+    _ucr = sdk.upload_create(bytes=len(_ub))
+    _up1 = sdk.upload_part(_ucr["id"], _ub[:8])
+    _up2 = sdk.upload_part(_ucr["id"], _ub[8:])
+    _udone = sdk.upload_complete(
+        _ucr["id"],
+        [_up2["id"], _up1["id"]],
+        md5=_hashul.md5(_ub[8:] + _ub[:8], usedforsecurity=False).hexdigest(),
+    )
+    out["upload_lifecycle"] = (
+        _ucr["object"] == "upload"
+        and _ucr["status"] == "pending"
+        and _up1["object"] == "upload.part"
+        and _udone["status"] == "completed"
+        and _udone["file"]["bytes"] == len(_ub)
+        and sdk.file_content(_udone["file"]["id"]) == _ub[8:] + _ub[:8]
+        and "_content" not in sdk.file_card(_udone["file"]["id"])
+    )
+    out["upload_fail_closed"] = (
+        _raises(lambda: sdk.upload_create(bytes=0)) == "UploadStoreError"
+        and _raises(lambda: sdk.upload_part("upload_ghost", b"ab")) == "UploadStoreError"
+        and _raises(lambda: sdk.upload_complete(sdk.upload_create(bytes=9)["id"], ["part_ghost"]))
+        == "UploadStoreError"
+        and sdk.upload_cancel(sdk.upload_create(bytes=4)["id"])["status"] == "cancelled"
+    )
+
+    # ---- harness bench: the perf gate times gated completes on either
+    # leg and seals its record; prompts are digested, errors counted by
+    # class, bounds fail closed before any token is spent.
+    from fx1.harness_bench import run_bench as _run_bench  # noqa: PLC0415
+    from fx1.sdk import CompletionResult as _CR  # noqa: PLC0415
+    from fx1.serve.ops_receipt import bench_receipt as _bench_rcpt  # noqa: PLC0415
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        verify_receipt_payload as _vrp,
+    )
+
+    class _BenchStub:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: Any, **kw: Any) -> Any:
+            _ = messages
+            self.calls += 1
+            return _CR(
+                backend=str(kw.get("backend")),
+                model="stub-v0",
+                content="ok",
+                usage={"prompt_tokens": 5, "completion_tokens": 7},
+            )
+
+    class _BenchDead:
+        def complete(self, messages: Any, **kw: Any) -> Any:
+            raise ConnectionError("down")
+
+    _bs = _BenchStub()
+    _brec = _run_bench(
+        _bs, n=4, concurrency=2, warmup=1, prompt="probe", backend="byok", mode="remote"
+    )
+    _bm = _brec["metrics"]
+    out["bench_record_metrics"] = (
+        _bm["measured_requests"] == 4
+        and _bm["error_count"] == 0
+        and _bm["prompt_tokens_total"] == 20
+        and _bm["completion_tokens_total"] == 28
+        and _bm["usage_reported"] == 4
+        and _bm["models"] == ["stub-v0"]
+        and _bm["backends"] == ["byok"]
+        and _bs.calls == 5  # warmup + measured
+        and _brec["mode"] == "remote"
+        and "probe" not in repr(_brec)
+        and bool(_brec["params"]["prompt_sha256"])
+    )
+    _bdead = _run_bench(_BenchDead(), n=3, concurrency=1, warmup=0)
+    out["bench_error_histogram"] = (
+        _bdead["metrics"]["error_count"] == 3
+        and _bdead["metrics"]["errors"] == {"ConnectionError": 3}
+        and abs(_bdead["metrics"]["error_rate"] - 1.0) < 1e-9
+    )
+    out["bench_bounds_fail_closed"] = (
+        _raises(lambda: _run_bench(sdk, n=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, concurrency=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, warmup=-1)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, max_tokens=0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, timeout_s=0.0)) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, prompt="  ")) == "ValueError"
+        and _raises(lambda: _run_bench(sdk, mode="sideways")) == "ValueError"
+    )
+    out["bench_receipt_verifies"] = _vrp(_bench_rcpt(_brec))["valid"] is True
+
+    # ---- usage accounting — the in-process twin of /harness/usage ---------
+    # a usage-reporting backend + a dead link: totals, splits, filters, and
+    # the truncation honesty fields all assert.
+    class _UsageBackend(_FakeBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.last_usage = {
+                "prompt_tokens": 4,
+                "completion_tokens": 6,
+                "total_tokens": 10,
+                "cached_tokens": 1,
+            }
+            return super().complete(messages, sampling=sampling)
+
+    u_ok = _UsageBackend()
+
+    class _DeadBackend:
+        def complete(self, messages: Any, **kw: Any) -> str:
+            raise RuntimeError("dead")
+
+        def close(self) -> None:
+            pass
+
+    def _u_resolve(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return u_ok
+        return _DeadBackend()
+
+    sdk_u = Fx1Harness(backend_resolver=_u_resolve)
+    sdk_u.complete(
+        [{"role": "user", "content": "hi"}],
+        backend="byok",
+        byok={"base_url": "http://u.test", "api_key": "k", "model": "m"},
+    )
+    sdk_u.complete(
+        [{"role": "user", "content": "hi"}],
+        backend="byok",
+        byok={"base_url": "http://u.test", "api_key": "k", "model": "m"},
+    )
+    out["usage_failed_call_logged"] = (
+        _raises(
+            lambda: sdk_u.complete(
+                [{"role": "user", "content": "hi"}],
+                backend="hosted_k3",
+            )
+        )
+        == "RuntimeError"
+    )
+    rep = sdk_u.usage()
+    out["usage_totals"] = (
+        rep.totals.requests == 3
+        and rep.totals.ok == 2
+        and rep.totals.errors == 1
+        and rep.totals.prompt_tokens == 8
+        and rep.totals.completion_tokens == 12
+        and rep.totals.total_tokens == 20
+        and rep.totals.other_usage == {"cached_tokens": 2}
+        and rep.totals.usage_reported == 2
+        and rep.records_dropped == 0
+        and rep.by_backend["byok"].requests == 2
+        and rep.by_backend["hosted_k3"].errors == 1
+        and rep.by_model["fake-0"].requests == 2
+    )
+    out["usage_filters"] = (
+        sdk_u.usage(backend="byok").totals.requests == 2
+        and sdk_u.usage(model="fake-0").totals.requests == 2
+        and sdk_u.usage(model="nope").totals.requests == 0
+        and sdk_u.usage(since=time.time() + 60).records_seen == 0
+        and sdk_u.usage(until=1.0).records_seen == 0
+    )
+    out["usage_bad_window_raises"] = (
+        _raises(lambda: sdk_u.usage(since=2.0, until=1.0)) == "ValueError"
+        and _raises(lambda: sdk_u.usage(backend="nope")) == "ValueError"
+    )
+    out["usage_key_id_filter"] = sdk_u.usage(key_id="nobody").records_seen == 0
+
+    # ---- managed keys — the in-process twin of /harness/keys --------------
+    mint = sdk.key_create("svc")
+    out["key_create_raw_once"] = (
+        mint["key"].startswith("fx1k_") and bool(mint["id"]) and mint["object"] == "key"
+    )
+    listed_keys = sdk.keys()
+    out["key_list_no_secret"] = (
+        len(listed_keys) == 1
+        and listed_keys[0]["prefix"] == mint["key"][:13]
+        and mint["key"] not in str(listed_keys)
+        and "sha256" not in str(listed_keys)
+    )
+    out["key_get_roundtrip"] = sdk.key_get(mint["id"])["name"] == "svc"
+    out["key_revoke_tombstone"] = sdk.key_revoke(mint["id"])["enabled"] is False
+    out["key_fail_closed"] = (
+        _raises(lambda: sdk.key_get("0" * 16)) == "KeyError"
+        and _raises(lambda: sdk.key_revoke("0" * 16)) == "KeyError"
+        and _raises(lambda: sdk.key_revoke(mint["id"])) == "ValueError"
+    )
+    # declared policy rides the mint: rpm + the stamped expires_at
+    pol = sdk.key_create("policed", rpm=5, ttl_s=600.0)
+    out["key_policy_fields"] = (
+        pol["rpm"] == 5
+        and pol["expires_at"] is not None
+        and sdk.key_get(pol["id"])["rpm"] == 5
+        and "_window_start" not in str(sdk.keys())
+    )
+    out["key_policy_bad_raises"] = (
+        _raises(lambda: sdk.key_create("x", rpm=0)) == "ValueError"
+        and _raises(lambda: sdk.key_create("x", ttl_s=-1)) == "ValueError"
+    )
+
+    # ---- /v1/vector_stores + file_search twin -------------------------------
+    # in-process RAG: upload bytes → attach → search hits feed a
+    # file_search_call + developer-context injection on openai_response.
+    _vs_be = _FakeBackend("sdk rag answer")
+    sdk_vs = Fx1Harness(backend_resolver=lambda *a, **k: _vs_be)
+    _f = sdk_vs.openai_file_create(
+        b"epsilon transitions carry the drift signature\n", filename="kb.jsonl"
+    )
+    out["file_create_shape"] = (
+        _f["id"].startswith("file-")
+        and _f["object"] == "file"
+        and _f["filename"] == "kb.jsonl"
+        and "_content" not in _f
+    )
+    _vs = sdk_vs.vector_store_create(name="kb", metadata={"team": "q"})
+    out["vs_create_shape"] = (
+        _vs["id"].startswith("vs_")
+        and _vs["object"] == "vector_store"
+        and _vs["status"] == "completed"
+        and _vs["metadata"] == {"team": "q"}
+        and _vs["file_counts"]["total"] == 0
+    )
+    _vf = sdk_vs.vector_store_file_create(_vs["id"], _f["id"])
+    out["vs_file_attach"] = (
+        _vf["id"] == _f["id"]
+        and _vf["object"] == "vector_store.file"
+        and _vf["vector_store_id"] == _vs["id"]
+        and _vf["status"] == "completed"
+        and sdk_vs.vector_store_get(_vs["id"])["file_counts"]["total"] == 1
+    )
+    _vfc = sdk_vs.vector_store_file_content(_vs["id"], _f["id"])
+    out["vs_file_content_page"] = (
+        _vfc["object"] == "vector_store.file_content.page"
+        and _vfc["data"][0]["type"] == "text"
+        and "epsilon" in _vfc["data"][0]["text"]
+        and _vfc["has_more"] is False
+    )
+    out["vs_list_filter"] = (
+        sdk_vs.vector_store_file_list(_vs["id"], filter="completed")["data"][0]["id"] == _f["id"]
+        and sdk_vs.vector_store_file_list(_vs["id"], filter="cancelled")["data"] == []
+        and sdk_vs.vector_store_list()["data"][0]["id"] == _vs["id"]
+    )
+    out["vs_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_get("vs_ghost")) == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_create(_vs["id"], _f["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_create("vs_ghost", _f["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_file_list(_vs["id"], filter="bogus"))
+        == "VectorStoreError"
+    )
+    _resp, _cid = sdk_vs.openai_response(
+        {
+            "model": "fx1",
+            "input": "what drives drift?",
+            "tools": [{"type": "file_search", "vector_store_ids": [_vs["id"]]}],
+            "include": ["file_search_call.results"],
+        }
+    )
+    _fscalls = [o for o in _resp["output"] if o["type"] == "file_search_call"]
+    out["file_search_turn"] = (
+        _resp["status"] == "completed"
+        and len(_fscalls) == 1
+        and _fscalls[0]["queries"] == ["what drives drift?"]
+        and _fscalls[0]["results"][0]["file_id"] == _f["id"]
+        and "epsilon" in _fscalls[0]["results"][0]["text"]
+        and _resp["output"][-1]["type"] == "message"
+        and any(
+            "epsilon" in m.get("content", "") and "file_search results" in m.get("content", "")
+            for m in _vs_be.seen_messages
+            if m["role"] == "system"
+        )
+    )
+    _resp2, _ = sdk_vs.openai_response(
+        {
+            "model": "fx1",
+            "input": "again",
+            "tools": [{"type": "file_search", "vector_store_ids": [_vs["id"]]}],
+        }
+    )
+    out["file_search_include_gate"] = all(
+        o.get("results") is None for o in _resp2["output"] if o["type"] == "file_search_call"
+    )
+    out["file_search_fail_closed"] = (
+        _raises(
+            lambda: sdk_vs.openai_response(
+                {
+                    "model": "fx1",
+                    "input": "x",
+                    "tools": [{"type": "file_search", "vector_store_ids": ["vs_ghost"]}],
+                }
+            )
+        )
+        == "OpenAICompatError"
+    )
+    # direct store search — the ranked page without spending a turn
+    _vss = sdk_vs.vector_store_search(_vs["id"], "epsilon")
+    out["vs_search"] = (
+        _vss["object"] == "vector_store.search_results.page"
+        and _vss["search_query"] == "epsilon"
+        and _vss["data"][0]["file_id"] == _f["id"]
+        and "epsilon" in _vss["data"][0]["content"][0]["text"]
+        and _vss["has_more"] is False
+        and _vss["next_page"] is None
+    )
+    out["vs_search_list_query"] = (
+        sdk_vs.vector_store_search(_vs["id"], ["epsilon", "alpha"], max_num_results=5)[
+            "search_query"
+        ]
+        == "epsilon alpha"
+    )
+    out["vs_search_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_search("vs_ghost", "x")) == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs["id"], "x", rewrite_query=True))
+        == "ValidationError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs["id"], "x", filters={"bad": "shape"}))
+        == "OpenAICompatError"
+    )
+    # file_batches twin — bulk attach, per-file verdicts, terminal status
+    # (own store so the lifecycle probe below still sees a single member)
+    _vs_b = sdk_vs.vector_store_create(name="kb-batches")
+    _f2 = sdk_vs.openai_file_create(b"theta iota kappa\n", filename="kb2.jsonl")
+    _fb = sdk_vs.vector_store_file_batch_create(_vs_b["id"], [_f2["id"], "file-ghost"])
+    out["vs_batch"] = (
+        _fb["object"] == "vector_store.files_batch"
+        and _fb["id"].startswith("vsfb_")
+        and _fb["vector_store_id"] == _vs_b["id"]
+        and _fb["status"] == "completed"
+        and _fb["file_counts"]
+        == {"in_progress": 0, "completed": 1, "failed": 1, "cancelled": 0, "total": 2}
+        and sdk_vs.vector_store_file_batch_get(_vs_b["id"], _fb["id"])["id"] == _fb["id"]
+        and [
+            r["id"]
+            for r in sdk_vs.vector_store_file_batch_files(_vs_b["id"], _fb["id"], filter="failed")[
+                "data"
+            ]
+        ]
+        == ["file-ghost"]
+    )
+    out["vs_batch_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_file_batch_cancel(_vs_b["id"], _fb["id"]))
+        == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_get(_vs_b["id"], "vsfb_x"))
+        == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_create(_vs_b["id"], []))
+        == "ValidationError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_create("vs_ghost", ["f"]))
+        == "OpenAICompatError"
+    )
+    # expires_after / standing expiry — the in-process twin enforces the
+    # same anchor policy, expiry flip, and read/write split
+    _vs_e = sdk_vs.vector_store_create(
+        name="ephemeral", expires_after={"anchor": "last_active_at", "days": 1}
+    )
+    out["vs_expires_after"] = (
+        _vs_e["expires_after"] == {"anchor": "last_active_at", "days": 1}
+        and _vs_e["expires_at"] == _vs_e["last_active_at"] + 86400
+        and _vs_e["status"] == "completed"
+        and _vs_e["last_active_at"] >= _vs_e["created_at"]
+    )
+    sdk_vs._vs_store._stores[_vs_e["id"]].expires_at = 1
+    out["vs_expired_refusal"] = (
+        sdk_vs.vector_store_get(_vs_e["id"])["status"] == "expired"
+        and _raises(lambda: sdk_vs.vector_store_file_create(_vs_e["id"], _f2["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs_e["id"], "x")) == "OpenAICompatError"
+        and sdk_vs.vector_store_file_list(_vs_e["id"])["object"] == "list"
+    )
+    _vs_er = sdk_vs.vector_store_update(
+        _vs_e["id"], expires_after={"anchor": "last_active_at", "days": 3}
+    )
+    out["vs_expiry_revive"] = (
+        _vs_er["status"] == "completed"
+        and _vs_er["expires_at"] == _vs_er["last_active_at"] + 3 * 86400
+    )
+    sdk_vs.vector_store_delete(_vs_e["id"])
+    out["vs_expires_after_400"] = (
+        _raises(
+            lambda: sdk_vs.vector_store_create(expires_after={"anchor": "created_at", "days": 1})
+        )
+        == "VectorStoreError"
+        and _raises(
+            lambda: sdk_vs.vector_store_create(
+                expires_after={"anchor": "last_active_at", "days": 999}
+            )
+        )
+        == "VectorStoreError"
+    )
+    out["vs_delete_lifecycle"] = (
+        sdk_vs.vector_store_file_delete(_vs["id"], _f["id"])
+        == {"id": _f["id"], "object": "vector_store.file.deleted", "deleted": True}
+        and sdk_vs.vector_store_file_list(_vs["id"])["data"] == []
+        and sdk_vs.vector_store_delete(_vs["id"])
+        == {"id": _vs["id"], "object": "vector_store.deleted", "deleted": True}
+        and _raises(lambda: sdk_vs.vector_store_get(_vs["id"])) == "VectorStoreError"
+    )
 
     return out
 

@@ -57,7 +57,8 @@ class SamplingParams:
     Decode knobs (``temperature``/``top_p``/``max_tokens``/``seed``/
     ``stop``/the penalty pair/``logit_bias``) shape generation; provider
     hints (``reasoning_effort``/``service_tier``/``prompt_cache_key``/
-    ``user``) pass through verbatim — the upstream decides whether each
+    ``prompt_cache_retention``/``verbosity``/``user``) pass through
+    verbatim — the upstream decides whether each
     is meaningful; the harness records that they were requested.
     ``stop`` is additionally enforced harness-side
     (:func:`truncate_at_stops`) so providers that ignore it still ship
@@ -75,6 +76,8 @@ class SamplingParams:
     reasoning_effort: str | None = None
     service_tier: str | None = None
     prompt_cache_key: str | None = None
+    prompt_cache_retention: str | None = None
+    verbosity: str | None = None
     user: str | None = None
 
     def body_fields(self) -> dict[str, Any]:
@@ -102,6 +105,10 @@ class SamplingParams:
             fields["service_tier"] = self.service_tier
         if self.prompt_cache_key is not None:
             fields["prompt_cache_key"] = self.prompt_cache_key
+        if self.prompt_cache_retention is not None:
+            fields["prompt_cache_retention"] = self.prompt_cache_retention
+        if self.verbosity is not None:
+            fields["verbosity"] = self.verbosity
         if self.user is not None:
             fields["user"] = self.user
         return fields

@@ -28,7 +28,7 @@
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 20,
+      "n_modules": 28,
       "status": "audited"
     },
     "train": {
@@ -67,6 +67,10 @@
       "status": "audited"
     },
     "harness_audit.py": {
+      "status": "audited"
+    },
+    "harness_bench.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
     "honesty.py": {
@@ -123,6 +127,9 @@
     },
     "sdk_audit.py": {
       "status": "audited"
+    },
+    "selftest.py": {
+      "status": "pending"
     },
     "tail_audit.py": {
       "status": "audited"

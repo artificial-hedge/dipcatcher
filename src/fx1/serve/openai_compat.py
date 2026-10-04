@@ -25,16 +25,21 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import math
 import threading
 import time
 import urllib.parse
 import uuid
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from typing import Any, Literal
 
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from fx1.serve.receipt_store import SHA256_HEX
+from fx1.serve.webhooks import check_callback_url
 
 __all__ = [
     "OPENAI_BACKENDS",
@@ -50,24 +55,38 @@ __all__ = [
     "OpenAIChatMessage",
     "OpenAIChatResponse",
     "OpenAIChatChoice",
+    "OpenAIChatUpdate",
     "OpenAICompatError",
     "OpenAIEmbeddingItem",
     "OpenAIEmbeddingRequest",
     "OpenAIEmbeddingResponse",
     "OpenAIFx1",
     "OpenAIModel",
+    "OpenAIModelDelete",
     "OpenAIModelList",
+    "OpenAIConversationCreate",
+    "OpenAIConversationItemsAdd",
+    "OpenAIConversationUpdate",
+    "OpenAIFileSearchTool",
     "OpenAIResponseRequest",
     "OpenAIResponseTool",
     "OpenAITool",
     "OpenAIToolFunction",
+    "OpenAIVectorStoreCreate",
+    "OpenAIVectorStoreFileBatchCreate",
+    "OpenAIVectorStoreFileCreate",
+    "OpenAIVectorStoreSearch",
+    "OpenAIVectorStoreUpdate",
     "OPENAI_BATCH_ENDPOINTS",
     "OPENAI_BATCH_LINE_MAX",
     "OPENAI_FILE_BYTES_MAX",
     "OPENAI_FILE_PURPOSE_ACCEPT",
     "OpenAIBatchRequest",
+    "OpenAIUploadCompleteRequest",
+    "OpenAIUploadCreateRequest",
     "batch_line_body",
     "batch_line_shape",
+    "chat_messages_for_store",
     "embeddings_to_kwargs",
     "openai_embedding_envelope",
     "batch_object",
@@ -75,6 +94,7 @@ __all__ = [
     "file_object",
     "is_openai_path",
     "openai_chunks",
+    "openai_conversation_object",
     "openai_envelope",
     "openai_error_body",
     "openai_messages",
@@ -85,7 +105,16 @@ __all__ = [
     "openai_response_object",
     "openai_to_kwargs",
     "openai_usage",
+    "file_search_call_item",
+    "paged_item_list",
+    "response_query_text",
     "OpenAIEnvelopeStore",
+    "OPENAI_RESPONSE_TERMINAL",
+    "chained_response_input",
+    "conversation_id_of",
+    "response_cap_call_items",
+    "response_input_item_dicts",
+    "response_input_items_for_store",
     "response_input_to_messages",
     "response_text_format",
     "response_to_kwargs",
@@ -274,7 +303,9 @@ class OpenAIChatRequest(_Model):
     metadata: dict[str, str] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
     response_format: dict[str, Any] | None = None
     store: bool | None = None
     tools: list[OpenAITool] | None = None
@@ -384,6 +415,15 @@ class OpenAIModelList(_Model):
     data: list[OpenAIModel]
 
 
+class OpenAIModelDelete(_Model):
+    """DELETE /v1/models/{id} — OpenAI's delete verdict: the removed id
+    plus the boolean tombstone."""
+
+    id: str
+    object: Literal["model"] = "model"
+    deleted: bool = True
+
+
 class OpenAIChatChoice(_Model):
     """One choice of a `chat.completion` — the gated text lands here.
     ``message`` may carry ``tool_calls`` (content then null);
@@ -409,23 +449,32 @@ class OpenAIChatResponse(_Model):
     system_fingerprint: str
     choices: list[OpenAIChatChoice]
     usage: dict[str, int] | None = None
+    metadata: dict[str, str] | None = None
 
 
-def openai_models(*, created: int | None = None) -> OpenAIModelList:
+def openai_models(*, created: int | None = None, extra_ids: Iterable[str] = ()) -> OpenAIModelList:
     """The model inventory — `fx1` plus the backend names `model` may
     carry. ``created`` defaults to call time."""
     ts = int(time.time()) if created is None else created
-    return OpenAIModelList(data=[OpenAIModel(id=m, created=ts) for m in OPENAI_MODEL_IDS])
+    extra = [m for m in dict.fromkeys(extra_ids) if m not in OPENAI_MODEL_IDS]
+    return OpenAIModelList(
+        data=[OpenAIModel(id=m, created=ts) for m in (*OPENAI_MODEL_IDS, *sorted(extra))]
+    )
 
 
-def openai_model(model_id: str, *, created: int | None = None) -> OpenAIModel:
+def openai_model(
+    model_id: str,
+    *,
+    created: int | None = None,
+    extra_ids: Iterable[str] = (),
+) -> OpenAIModel:
     """One model card — ``GET /v1/models/{id}`` retrieve semantics.
 
     Unknown ids fail closed 404 (OpenAI's ``invalid_request_error`` /
     ``model_not_found``) — an SDK's ``models.retrieve`` never gets a
-    fabricated card.
+    fabricated card. ``extra_ids`` admits registered ``ft:`` models.
     """
-    if model_id not in OPENAI_MODEL_IDS:
+    if model_id not in OPENAI_MODEL_IDS and model_id not in frozenset(extra_ids):
         raise OpenAICompatError(
             f"The model '{model_id}' does not exist", status=404, code="model_not_found"
         )
@@ -509,16 +558,43 @@ def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
 
 
 def _resolve_openai_link(
-    model: str, ext: OpenAIFx1 | None, hdrs: dict[str, str]
+    model: str,
+    ext: OpenAIFx1 | None,
+    hdrs: dict[str, str],
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> tuple[str, list[str], str | None, ByokOverride | None]:
     """Backend resolution shared by the chat and responses translators —
     ``fx1.backend`` > ``X-Fx1-Backend`` > a ``model`` naming a backend >
     ``byok`` when BYOK headers are present > ``hosted_k3``. Returns
-    ``(backend, fallbacks, checkpoint_dir, byok)``."""
+    ``(backend, fallbacks, checkpoint_dir, byok)``.
+
+    A ``model`` of the form ``ft:*`` names a registered fine-tuned model:
+    when no explicit backend was chosen (no ext/backend header and no
+    BYOK headers), it resolves to the ``local_fx1`` lane pinned at the
+    producing job's checkpoint. An unregistered ``ft:`` name is a
+    fail-closed 404 ``model_not_found`` — never a silent default link."""
     byok_headers = hdrs.get("x-fx1-byok-base-url")
+    explicit = (ext.backend if ext is not None else None) or hdrs.get("x-fx1-backend")
+    if (
+        explicit is None
+        and model not in OPENAI_BACKENDS
+        and not byok_headers
+        and model.startswith("ft:")
+    ):
+        checkpoint = ft_resolver(model) if ft_resolver is not None else None
+        if checkpoint is None:
+            raise OpenAICompatError(
+                f"The model '{model}' does not exist",
+                status=404,
+                code="model_not_found",
+            )
+        fallbacks_ft: list[str] = list(ext.fallbacks) if ext is not None else []
+        if not fallbacks_ft and hdrs.get("x-fx1-fallbacks"):
+            fallbacks_ft = [f.strip() for f in hdrs["x-fx1-fallbacks"].split(",") if f.strip()]
+        return "local_fx1", fallbacks_ft, checkpoint, None
     backend = (
-        (ext.backend if ext is not None else None)
-        or hdrs.get("x-fx1-backend")
+        explicit
         or (model if model in OPENAI_BACKENDS else None)
         # BYOK headers present and no explicit backend → the model string is
         # the upstream model (e.g. "gpt-4o"), the link is byok.
@@ -546,8 +622,46 @@ def _resolve_openai_link(
     return backend, fallbacks, checkpoint_dir, byok
 
 
+def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
+    """Per-request backend timeout: ``fx1.timeout_s`` > ``X-Fx1-Timeout``
+    header (seconds). A malformed header is a fail-closed 400 — never a
+    silent default."""
+    if ext_timeout is not None:
+        return ext_timeout
+    raw = hdrs.get("x-fx1-timeout")
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except ValueError as exc:
+        raise OpenAICompatError("X-Fx1-Timeout must be seconds as a number") from exc
+    if not math.isfinite(val) or val <= 0.0 or val > 3600.0:
+        raise OpenAICompatError("X-Fx1-Timeout must be in (0, 3600] seconds")
+    return val
+
+
+def _resolve_receipt_hashes(ext_hashes: list[str] | None, hdrs: dict[str, str]) -> list[str] | None:
+    """Evidence citations: ``fx1.receipt_hashes`` > ``X-Fx1-Receipt-Hashes``
+    header (comma-separated sha256 digests — the knob for clients that
+    can't edit the JSON body, same channel as ``X-Fx1-Fallbacks``). A
+    malformed digest is a fail-closed 400; resolvability stays with the
+    mounted store's check downstream."""
+    if ext_hashes:
+        return list(ext_hashes)
+    raw = hdrs.get("x-fx1-receipt-hashes")
+    if raw is None:
+        return None
+    out = [h.strip() for h in raw.split(",") if h.strip()]
+    if any(SHA256_HEX.fullmatch(h) is None for h in out):
+        raise OpenAICompatError("X-Fx1-Receipt-Hashes must be comma-separated sha256 digests")
+    return out or None
+
+
 def openai_to_kwargs(
-    body: OpenAIChatRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIChatRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate an OpenAI request into ``complete`` kwargs.
 
@@ -565,13 +679,17 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     return {
         "backend": backend,
         "messages": openai_messages(body.messages),
         "checkpoint_dir": checkpoint_dir,
-        "receipt_hashes": ext.receipt_hashes if ext is not None else None,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "receipt_hashes": _resolve_receipt_hashes(
+            ext.receipt_hashes if ext is not None else None, hdrs
+        ),
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "temperature": body.temperature,
@@ -596,7 +714,9 @@ def openai_to_kwargs(
         "metadata": body.metadata,
         "service_tier": body.service_tier,
         "reasoning_effort": body.reasoning_effort,
+        "verbosity": body.verbosity,
         "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         "tools": ([t.model_dump(exclude_none=True) for t in body.tools] if body.tools else None),
         "tool_choice": body.tool_choice,
         "parallel_tool_calls": body.parallel_tool_calls,
@@ -672,6 +792,7 @@ def openai_envelope(
     finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
     logprobs: Sequence[dict[str, Any] | None] | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the `chat.completion` envelope. `model` reports
     the serving link's own model id (or the backend name); the completion
@@ -714,6 +835,7 @@ def openai_envelope(
         "system_fingerprint": backend,
         "choices": choices,
         "usage": openai_usage(usage),
+        "metadata": metadata,
     }
 
 
@@ -821,8 +943,6 @@ def openai_chunks(
 # the evidence).
 RESPONSES_UNSUPPORTED = (
     "truncation",
-    "background",
-    "previous_response_id",
     # chat-completions fields that don't exist on this surface — refuse
     # rather than drop so a caller's intent never evaporates
     "n",
@@ -848,12 +968,14 @@ RESPONSES_UNSUPPORTED = (
 )
 
 # Item types inside ``input[]`` that a text-only gated pipeline cannot honor.
+# ``file_search_call`` is NOT refused: the server-side retrieval surface
+# emits them as output items, and a chained/conv turn may re-feed one —
+# it flattens into a context message carrying its prior results.
 RESPONSE_ITEM_TYPES_REFUSED = frozenset(
     {
         "item_reference",
         "reasoning",
         "web_search_call",
-        "file_search_call",
         "computer_call",
         "computer_call_output",
         "code_interpreter_call",
@@ -871,6 +993,10 @@ RESPONSE_PART_TYPES = frozenset({"input_text", "output_text"})
 
 RESPONSE_ROLES = frozenset({"user", "assistant", "system", "developer"})
 
+# ``status`` values a response stops moving at — cancel refuses these and a
+# background worker never overwrites them.
+OPENAI_RESPONSE_TERMINAL = frozenset({"completed", "failed", "cancelled", "incomplete"})
+
 
 class OpenAIResponseTool(OpenAIToolFunction):
     """One ``tools[]`` entry on the Responses surface — the flattened
@@ -878,6 +1004,24 @@ class OpenAIResponseTool(OpenAIToolFunction):
     than under a ``function`` key). Same bounds as the chat spec."""
 
     type: Literal["function"] = "function"
+
+
+class OpenAIFileSearchTool(_Model):
+    """``tools[]`` entry — the server-side ``file_search`` tool against
+    ``/v1/vector_stores``. ``vector_store_ids`` bounds the corpus (≤8
+    stores per OpenAI's own cap); ``max_num_results`` bounds hits (≤50);
+    ``filters`` evaluates the file-attributes comparison grammar;
+    ``ranking_options`` accepts ``score_threshold`` (cosine, 0..1) —
+    ``ranker`` is echoed but the harness ranker is lexical, not
+    embedding-based (documented in FX1_HARNESS_API)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: Literal["file_search"]
+    vector_store_ids: list[str] = Field(min_length=1, max_length=8)
+    max_num_results: int | None = Field(default=None, ge=1, le=50)
+    filters: dict[str, Any] | None = None
+    ranking_options: dict[str, Any] | None = None
 
 
 class OpenAIResponseRequest(_Model):
@@ -896,6 +1040,13 @@ class OpenAIResponseRequest(_Model):
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
     max_output_tokens: int | None = Field(default=None, gt=0, le=262144)
+    # ``max_tool_calls`` bounds the function calls one response may carry —
+    # a turn whose model emits more than the cap truncates at the bound and
+    # lands ``status: 'incomplete'`` with ``incomplete_details.reason``
+    # ``'max_tool_calls'`` (OpenAI's own semantics); 0 refuses calls outright.
+    max_tool_calls: int | None = Field(default=None, ge=0)
+    prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
     stream: bool = False
     store: bool | None = None
     metadata: dict[str, str] | None = None
@@ -904,11 +1055,19 @@ class OpenAIResponseRequest(_Model):
     safety_identifier: str | None = Field(default=None, max_length=512)
     reasoning: dict[str, Any] | None = None
     text: dict[str, Any] | None = None
-    tools: list[OpenAIResponseTool] | None = None
+    tools: list[OpenAIResponseTool | OpenAIFileSearchTool] | None = None
     tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
     parallel_tool_calls: bool | None = None
     include: list[str] | None = None
     top_logprobs: int | None = Field(default=None, ge=0, le=20)
+    previous_response_id: str | None = Field(default=None, max_length=512)
+    # ``conversation`` is the named-container twin of
+    # ``previous_response_id`` — a conv id (or ``{"id": "conv_*"}``
+    # object) the turn joins; the conv's accumulated items are the
+    # context. The two chain surfaces are mutually exclusive per OpenAI's
+    # contract.
+    conversation: str | dict[str, Any] | None = None
+    background: bool = Field(default=False)
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -968,31 +1127,75 @@ class OpenAIResponseRequest(_Model):
                         raise ValueError(
                             f"text.format json_schema is not a valid schema: {exc.message}"
                         ) from exc
+            vb = self.text.get("verbosity")
+            if vb is not None and vb not in ("low", "medium", "high"):
+                raise ValueError(f"text.verbosity must be low|medium|high, got {vb!r}")
         if self.tools is not None and len(self.tools) > 128:
             raise ValueError("tools accepts at most 128 entries")
-        if isinstance(self.tool_choice, dict) and (
-            self.tool_choice.get("type") != "function"
-            or not isinstance(self.tool_choice.get("name"), str)
-        ):
-            raise ValueError(
-                "tool_choice must be 'none'|'auto'|'required' or "
-                "{type: 'function', name: 'fn_name'}"
-            )
+        if isinstance(self.tool_choice, dict):
+            tc_type = self.tool_choice.get("type")
+            if tc_type == "function":
+                if not isinstance(self.tool_choice.get("name"), str):
+                    raise ValueError("tool_choice {type: 'function'} needs a string 'name'")
+            elif tc_type == "file_search":
+                # forcing the server-side retrieval tool is meaningful —
+                # the tool always runs when advertised; a bare
+                # {type: 'file_search'} choice just asserts it exists
+                if not any(t.type == "file_search" for t in self.tools or []):
+                    raise ValueError(
+                        "tool_choice {type: 'file_search'} requires a file_search tool"
+                    )
+            else:
+                raise ValueError(
+                    "tool_choice must be 'none'|'auto'|'required', "
+                    "{type: 'function', name: 'fn_name'}, or "
+                    "{type: 'file_search'}"
+                )
         if not self.tools and (
             self.tool_choice is not None or self.parallel_tool_calls is not None
         ):
             raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
+        for t in self.tools or []:
+            if t.type == "file_search":
+                ro = t.ranking_options
+                if ro is not None:
+                    extra_ro = set(ro) - {"ranker", "score_threshold"}
+                    if extra_ro:
+                        raise ValueError(
+                            f"ranking_options keys must be ranker|score_threshold; "
+                            f"got {sorted(extra_ro)}"
+                        )
+                    st = ro.get("score_threshold")
+                    if st is not None and (
+                        not isinstance(st, (int, float))
+                        or isinstance(st, bool)
+                        or not 0.0 <= st <= 1.0
+                    ):
+                        raise ValueError("score_threshold must be a number in [0, 1]")
         if self.include is not None:
-            bad_inc = sorted(set(self.include) - {"message.output_text.logprobs"})
+            bad_inc = sorted(
+                set(self.include) - {"message.output_text.logprobs", "file_search_call.results"}
+            )
             if bad_inc:
                 raise ValueError(
-                    f"include accepts only 'message.output_text.logprobs' on this "
-                    f"surface; got {bad_inc}"
+                    "include accepts only 'message.output_text.logprobs' and "
+                    f"'file_search_call.results' on this surface; got {bad_inc}"
                 )
         if self.top_logprobs is not None and (
             not self.include or "message.output_text.logprobs" not in self.include
         ):
             raise ValueError("top_logprobs requires include: ['message.output_text.logprobs']")
+        if isinstance(self.conversation, dict):
+            cid = self.conversation.get("id")
+            if not isinstance(cid, str) or not cid.strip():
+                raise ValueError("conversation must be an id string or {id: 'conv_*'}")
+        if self.conversation is not None and self.previous_response_id is not None:
+            raise ValueError(
+                "conversation and previous_response_id are mutually exclusive — "
+                "a turn anchors to one context surface"
+            )
+        if isinstance(self.conversation, str) and not self.conversation.strip():
+            raise ValueError("conversation must be a non-empty id")
         present = [f for f in RESPONSES_UNSUPPORTED if getattr(self, f, None) is not None]
         extra_bad = sorted(f for f in RESPONSES_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
         bad = sorted(set(present) | set(extra_bad))
@@ -1063,6 +1266,24 @@ def response_input_to_messages(
                 raise OpenAICompatError(f"input[{i}]: function_call_output needs a string output")
             msgs.append({"role": "tool", "content": output, "tool_call_id": call_id})
             continue
+        if itype == "file_search_call":
+            # a prior turn's retrieval item re-fed as input flattens to a
+            # system context message carrying its recorded results — the
+            # same text the model originally saw
+            results = item.get("results")
+            if isinstance(results, list) and results:
+                texts: list[str] = []
+                for r in results:
+                    if isinstance(r, dict) and isinstance(r.get("text"), str):
+                        texts.append(r["text"][:4096])
+                if texts:
+                    msgs.append(
+                        {
+                            "role": "system",
+                            "content": "[prior file_search results]\n" + "\n\n".join(texts),
+                        }
+                    )
+            continue
         if itype in RESPONSE_ITEM_TYPES_REFUSED:
             raise OpenAICompatError(f"input[{i}]: {itype!r} items are not supported")
         role = item.get("role")
@@ -1097,6 +1318,130 @@ def response_input_to_messages(
     return msgs
 
 
+def _stored_item_id(prefix: str, envelope_id: str, i: int) -> str:
+    """Deterministic item id for the stored-request subresources —
+    ``<prefix>_<sha256(envelope_id:i)[:24]>`` so ``after``/``before``
+    cursors stay stable across retrieval calls without extra state."""
+    digest = hashlib.sha256(f"{envelope_id}:{i}".encode()).hexdigest()[:24]
+    return f"{prefix}_{digest}"
+
+
+def chat_messages_for_store(
+    messages: Sequence[OpenAIChatMessage], *, envelope_id: str
+) -> list[dict[str, Any]]:
+    """Request messages in retrieval shape for
+    ``GET /v1/chat/completions/{id}/messages`` — verbatim as submitted
+    (``extra="allow"`` fields survive), each carrying the digest id."""
+    out: list[dict[str, Any]] = []
+    for i, msg in enumerate(messages):
+        item = msg.model_dump(mode="json", exclude_none=True)
+        item.setdefault("id", _stored_item_id("msg", envelope_id, i))
+        out.append(item)
+    return out
+
+
+def response_input_item_dicts(input_: str | list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """``input`` normalized to item dicts, no ids — a plain string wraps
+    as one user message item with an ``input_text`` part."""
+    if isinstance(input_, str):
+        return [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": input_}],
+            }
+        ]
+    return [dict(it) for it in input_]
+
+
+def response_input_items_for_store(
+    input_: str | list[dict[str, Any]], *, rid: str
+) -> list[dict[str, Any]]:
+    """``input`` in retrieval shape for
+    ``GET /v1/responses/{id}/input_items`` — the items as submitted
+    (a plain string wraps as one user message item with ``input_text``),
+    each carrying a caller-supplied or digest ``msg_`` id."""
+    out: list[dict[str, Any]] = []
+    for i, item in enumerate(response_input_item_dicts(input_)):
+        item.setdefault("id", _stored_item_id("msg", rid, i))
+        out.append(item)
+    return out
+
+
+def conversation_id_of(
+    conversation: str | dict[str, Any] | None,
+) -> str | None:
+    """``conversation`` request field → the bare conv id (a string passes
+    through; ``{id: 'conv_*'}`` unwraps; ``None`` stays ``None``)."""
+    if conversation is None:
+        return None
+    if isinstance(conversation, str):
+        return conversation
+    cid = conversation.get("id")
+    return cid if isinstance(cid, str) else None
+
+
+def chained_response_input(
+    prev_env: dict[str, Any],
+    prev_items: Sequence[dict[str, Any]],
+    new_input: str | list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """``previous_response_id`` chain semantics: the new response's
+    effective item list is the previous response's stored input items +
+    its ``output`` items + this request's ``input``. Item ``id`` fields
+    are dropped here — the new response's stored list re-mints them
+    deterministically off (new rid, index) inside
+    :func:`response_input_items_for_store`."""
+    out: list[dict[str, Any]] = []
+    for it in [*prev_items, *list(prev_env.get("output") or [])]:
+        if isinstance(it, dict):
+            out.append({k: v for k, v in it.items() if k != "id"})
+    out.extend(response_input_item_dicts(new_input))
+    return out
+
+
+def paged_item_list(
+    items: Sequence[dict[str, Any]],
+    *,
+    limit: int,
+    after: str | None = None,
+    before: str | None = None,
+    order: str = "asc",
+) -> dict[str, Any]:
+    """The shared ``{object: list, data, first_id, last_id, has_more}``
+    page shape the stored-request subresources return — ``after`` /
+    ``before`` are id cursors into the ordered list; an unknown cursor
+    fails closed ``400 invalid_cursor`` rather than silently restarting."""
+    if order not in ("asc", "desc"):
+        raise OpenAICompatError(
+            f"order must be 'asc' or 'desc', got {order!r}",
+            status=400,
+            code="invalid_cursor",
+        )
+    ordered = list(items)
+    if order == "desc":
+        ordered.reverse()
+    for cursor, keep_after in ((after, True), (before, False)):
+        if cursor is None:
+            continue
+        idx = next((k for k, it in enumerate(ordered) if it.get("id") == cursor), None)
+        if idx is None:
+            raise OpenAICompatError(
+                f"cursor {cursor!r} is not an item id in this stored request",
+                status=400,
+                code="invalid_cursor",
+            )
+        ordered = ordered[idx + 1 :] if keep_after else ordered[:idx]
+    page = ordered[:limit]
+    return {
+        "object": "list",
+        "data": page,
+        "first_id": page[0].get("id") if page else None,
+        "last_id": page[-1].get("id") if page else None,
+        "has_more": len(ordered) > limit,
+    }
+
+
 def response_text_format(body: OpenAIResponseRequest) -> dict[str, Any] | None:
     """``text.format`` → the chat-shape ``response_format`` dict
     :func:`validate_response_format` consumes (or ``None``)."""
@@ -1115,7 +1460,10 @@ def response_text_format(body: OpenAIResponseRequest) -> dict[str, Any] | None:
 
 
 def response_to_kwargs(
-    body: OpenAIResponseRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIResponseRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate a Responses request into ``complete`` kwargs — the same
     backend-resolution order and the same extension/headers as the chat
@@ -1124,14 +1472,18 @@ def response_to_kwargs(
     ``user`` or ``safety_identifier``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     effort = (body.reasoning or {}).get("effort")
     return {
         "backend": backend,
         "messages": response_input_to_messages(body.input, body.instructions),
         "checkpoint_dir": checkpoint_dir,
-        "receipt_hashes": ext.receipt_hashes if ext is not None else None,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "receipt_hashes": _resolve_receipt_hashes(
+            ext.receipt_hashes if ext is not None else None, hdrs
+        ),
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "temperature": body.temperature,
@@ -1141,8 +1493,14 @@ def response_to_kwargs(
         "metadata": body.metadata,
         "service_tier": body.service_tier,
         "reasoning_effort": effort,
+        "verbosity": body.text.get("verbosity") if body.text else None,
+        "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         # the flattened Responses spec nests under ``function`` for the
-        # shared tool channel; a dict tool_choice folds the same way
+        # shared tool channel; ``file_search`` entries are server-side —
+        # they never reach the backend's tool list (retrieval ran in the
+        # harness and lands as context). A dict tool_choice folds the
+        # same way; {type: 'file_search'} carries no function name.
         "tools": (
             [
                 {
@@ -1150,16 +1508,28 @@ def response_to_kwargs(
                     "function": t.model_dump(exclude_none=True, exclude={"type"}),
                 }
                 for t in body.tools
+                if t.type == "function"
             ]
-            if body.tools
+            if body.tools and any(t.type == "function" for t in body.tools)
             else None
         ),
+        # tool_choice only carries on the model channel when function
+        # tools are advertised — a choice over server-side tools
+        # ({type: 'file_search'}) or a string choice with a file-only
+        # list has nothing to bind (CompleteRequest refuses a bare
+        # tool_choice).
         "tool_choice": (
             {"type": "function", "function": {"name": body.tool_choice["name"]}}
-            if isinstance(body.tool_choice, dict)
-            else body.tool_choice
+            if isinstance(body.tool_choice, dict) and body.tool_choice.get("type") == "function"
+            else (body.tool_choice if not isinstance(body.tool_choice, dict) else None)
+            if body.tools and any(t.type == "function" for t in body.tools)
+            else None
         ),
-        "parallel_tool_calls": body.parallel_tool_calls,
+        "parallel_tool_calls": (
+            body.parallel_tool_calls
+            if body.tools and any(t.type == "function" for t in body.tools)
+            else None
+        ),
         "logprobs": (True if _wants_response_logprobs(body) else None),
         "top_logprobs": body.top_logprobs,
     }
@@ -1193,7 +1563,67 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "parallel_tool_calls": bool(body.parallel_tool_calls),
         "include": body.include or [],
         "top_logprobs": body.top_logprobs,
+        "max_tool_calls": body.max_tool_calls,
+        "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         "truncation": "disabled",
+        "background": body.background,
+        "previous_response_id": body.previous_response_id,
+        # OpenAI echoes ``conversation: {id}`` on the response when set
+        "conversation": (
+            {"id": conversation_id_of(body.conversation)} if body.conversation is not None else None
+        ),
+    }
+
+
+def response_query_text(input_: str | list[dict[str, Any]]) -> str:
+    """The retrieval query for ``file_search`` — the last user-role
+    message's text (a bare string input is itself the query). Falls back
+    to the last message item's text when no user item exists; "" when
+    the input carries no message at all."""
+    if isinstance(input_, str):
+        return input_
+    user_text: str | None = None
+    last_text: str | None = None
+    for item in input_:
+        if not isinstance(item, dict):
+            continue
+        itype = item.get("type")
+        role = item.get("role")
+        if itype not in (None, "message") or not isinstance(role, str):
+            continue
+        content = item.get("content")
+        if isinstance(content, str):
+            text = content
+        elif isinstance(content, list):
+            text = "".join(
+                str(p.get("text", ""))
+                for p in content
+                if isinstance(p, dict) and p.get("type") in ("input_text", "output_text")
+            )
+        else:
+            continue
+        last_text = text
+        if role == "user":
+            user_text = text
+    return user_text if user_text is not None else (last_text or "")
+
+
+def file_search_call_item(
+    *,
+    queries: list[str],
+    results: list[dict[str, Any]] | None,
+) -> dict[str, Any]:
+    """One ``file_search_call`` output item — the transcript record of
+    the server-side retrieval run. ``results`` is ``None`` unless the
+    request's ``include`` listed ``file_search_call.results`` (OpenAI's
+    own field contract)."""
+    return {
+        "type": "file_search_call",
+        "id": f"fs_{uuid.uuid4().hex}",
+        "status": "completed",
+        "queries": list(queries),
+        "results": results,
     }
 
 
@@ -1223,6 +1653,29 @@ def openai_response_call_items(
     return items
 
 
+def response_cap_call_items(
+    body: OpenAIResponseRequest,
+    tool_calls: Iterable[dict[str, Any]],
+) -> tuple[list[dict[str, Any]] | None, dict[str, str] | None]:
+    """Apply ``body.max_tool_calls`` — the cap on the calls one response
+    may carry. Over the cap the emitted items truncate at the bound and
+    the response lands ``status: 'incomplete'`` with
+    ``{'reason': 'max_tool_calls'}`` — OpenAI's own truncation semantics,
+    never a silent drop.
+
+    Returns ``(items, incomplete_details)`` where ``items`` is ``None``
+    when the model emitted no calls at all (a prose turn) and a list —
+    possibly empty when the cap truncated everything — when it did, so a
+    calls-only turn capped at zero ships no phantom empty message item."""
+    calls = list(tool_calls)
+    if not calls:
+        return None, None
+    items = openai_response_call_items(calls)
+    if body.max_tool_calls is not None and len(items) > body.max_tool_calls:
+        return items[: body.max_tool_calls], {"reason": "max_tool_calls"}
+    return items, None
+
+
 def openai_response_object(
     *,
     rid: str,
@@ -1234,7 +1687,10 @@ def openai_response_object(
     status: str = "completed",
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    error: dict[str, Any] | None = None,
+    incomplete_details: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the ``response`` object. ``output`` carries one
     ``message`` item with one ``output_text`` part — plus one
@@ -1244,8 +1700,13 @@ def openai_response_object(
     (``None`` when the backend reports nothing — never fabricated).
     ``logprobs`` is the provider's per-token array — it lands verbatim
     on the ``output_text`` part's ``logprobs`` field (the key is emitted
-    only when the provider reported scores). ``status`` is
-    ``in_progress`` only inside the pre-completion stream events."""
+    only when the provider reported scores). ``status`` is ``in_progress``
+    inside the pre-completion stream events, and ``queued``/``failed``/
+    ``cancelled`` on the background lifecycle (non-``completed`` ships an
+    empty ``output``; ``error`` carries the failure record when set).
+    ``incomplete`` is the exception — it carries the partial ``output``
+    OpenAI ships on a truncated turn (``incomplete_details`` records the
+    reason, e.g. ``{'reason': 'max_tool_calls'}``)."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
         it = usage.get("prompt_tokens")
@@ -1260,8 +1721,14 @@ def openai_response_object(
                 "total_tokens": tt if isinstance(tt, int) else i_v + o_v,
             }
     output: list[dict[str, Any]] = []
-    if status == "completed":
-        if content or not call_items:
+    if status in ("completed", "incomplete"):
+        # ``file_search_call`` items precede the message — retrieval
+        # runs before the model answers, so the transcript orders them
+        # first (OpenAI's own ordering)
+        output.extend(search_items or [])
+        # ``call_items is None`` marks a prose turn; a calls turn —
+        # including one the cap truncated to zero — is a non-None list
+        if content or call_items is None:
             part: dict[str, Any] = {
                 "type": "output_text",
                 "text": content,
@@ -1273,7 +1740,7 @@ def openai_response_object(
                 {
                     "type": "message",
                     "id": item_id,
-                    "status": "completed",
+                    "status": status,
                     "role": "assistant",
                     "content": [part],
                 }
@@ -1287,10 +1754,213 @@ def openai_response_object(
         "model": model or body.model,
         "output": output,
         "usage": resp_usage,
-        "error": None,
-        "incomplete_details": None,
+        "error": error,
+        "incomplete_details": incomplete_details,
         **_response_echoes(body),
     }
+
+
+def openai_conversation_object(
+    *,
+    cid: str,
+    metadata: dict[str, str] | None = None,
+    created: int | None = None,
+) -> dict[str, Any]:
+    """A ``conversation`` object — the named container a response turn
+    can join via ``conversation``. ``items`` never ride the object; they
+    live in the store's subitems under ``"items"`` and page through
+    ``GET /v1/conversations/{id}/items``."""
+    return {
+        "id": cid,
+        "object": "conversation",
+        "created_at": int(time.time()) if created is None else created,
+        "metadata": metadata or {},
+    }
+
+
+class OpenAIConversationCreate(_Model):
+    """``POST /v1/conversations`` body — ``items`` seeds the conv's item
+    list (same item dicts a response's ``input`` accepts); ``metadata``
+    follows the same bounds as every other stamped surface."""
+
+    model_config = ConfigDict(extra="allow")
+
+    items: list[dict[str, Any]] | None = None
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationCreate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        if self.items is not None:
+            for it in self.items:
+                if not isinstance(it, dict):
+                    raise ValueError("items must be message-item dicts")
+        return self
+
+
+class OpenAIChatUpdate(_Model):
+    """``POST /v1/chat/completions/{id}`` body — ``metadata`` replaces
+    the stored completion's metadata wholesale (OpenAI's update
+    semantics; the only mutable field on a stored completion)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIChatUpdate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        return self
+
+
+class OpenAIConversationUpdate(_Model):
+    """``POST /v1/conversations/{id}`` body — ``metadata`` replaces the
+    conv's metadata wholesale (OpenAI's update semantics)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationUpdate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        return self
+
+
+class OpenAIConversationItemsAdd(_Model):
+    """``POST /v1/conversations/{id}/items`` body — input items to
+    append. ``item_ids`` (reference existing stored items) is refused:
+    the harness's items are minted per turn, never aliased."""
+
+    model_config = ConfigDict(extra="allow")
+
+    items: list[dict[str, Any]] | None = None
+    item_ids: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIConversationItemsAdd:
+        if self.item_ids is not None:
+            raise ValueError(
+                "item_ids (alias by reference) is not supported — pass full item dicts"
+            )
+        if not self.items:
+            raise ValueError("items must be a non-empty list of item dicts")
+        for it in self.items:
+            if not isinstance(it, dict):
+                raise ValueError("items must be message-item dicts")
+        return self
+
+
+class OpenAIVectorStoreCreate(_Model):
+    """``POST /v1/vector_stores`` body — ``name``/``metadata`` are free
+    labels; ``file_ids`` attaches existing ``file-*`` records at create
+    time (a bogus id fails the attach honestly)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = Field(default=None, max_length=512)
+    file_ids: list[str] | None = Field(default=None, max_length=64)
+    metadata: dict[str, str] | None = None
+    expires_after: dict[str, Any] | None = None
+
+
+class OpenAIVectorStoreUpdate(_Model):
+    """``POST /v1/vector_stores/{id}`` body — ``name``/``metadata``
+    replace wholesale when present; ``expires_after`` re-anchors the
+    expiry window from ``last_active_at``."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
+    expires_after: dict[str, Any] | None = None
+
+
+class OpenAIVectorStoreFileCreate(_Model):
+    """``POST /v1/vector_stores/{id}/files`` body — attach a ``file-*``
+    record. ``attributes`` are the keys ``filters`` evaluate against;
+    ``chunking_strategy`` is ``{"type": "auto"}`` or ``{"type":
+    "static", "static": {max_chunk_size_tokens, chunk_overlap_tokens}}``
+    (the word-window index maps token bounds ~0.75×)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    file_id: str = Field(min_length=1, max_length=128)
+    attributes: dict[str, Any] | None = None
+    chunking_strategy: dict[str, Any] | None = None
+
+
+class OpenAIVectorStoreSearch(_Model):
+    """``POST /v1/vector_stores/{id}/search`` body — query the store
+    directly without spending a response turn. ``query`` accepts a
+    string or a list of strings (joined with spaces). ``rewrite_query``
+    is refused: the store never rewrites the caller's query —
+    ``filters`` apply to file attributes (OpenAI's comparison grammar)
+    and ``ranking_options.score_threshold`` bounds the cosine floor
+    (``ranker`` accepts only ``"auto"`` — no other ranker exists)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    query: str | list[str]
+    max_num_results: int | None = Field(default=None, ge=1, le=50)
+    filters: dict[str, Any] | None = None
+    ranking_options: dict[str, Any] | None = None
+    rewrite_query: bool | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIVectorStoreSearch:
+        if isinstance(self.query, list) and (
+            not self.query or any(not isinstance(q, str) for q in self.query)
+        ):
+            raise ValueError("query must be a string or a list of strings")
+        if self.rewrite_query:
+            raise ValueError("rewrite_query is not supported")
+        ro = self.ranking_options or {}
+        if not isinstance(ro, dict):
+            raise ValueError("ranking_options must be an object")
+        unknown = set(ro) - {"ranker", "score_threshold"}
+        if unknown:
+            raise ValueError(f"ranking_options keys unknown: {sorted(unknown)}")
+        if ro.get("ranker", "auto") != "auto":
+            raise ValueError("ranking_options.ranker accepts only 'auto'")
+        st = ro.get("score_threshold")
+        if st is not None and not isinstance(st, (int, float)):
+            raise ValueError("ranking_options.score_threshold must be a number")
+        return self
+
+
+class OpenAIVectorStoreFileBatchCreate(_Model):
+    """``POST /v1/vector_stores/{id}/file_batches`` body — attach up to
+    500 ``file-*`` records in one call (OpenAI's cap). Members attach
+    synchronously; per-file failures count, never abort the batch.
+    ``attributes``/``chunking_strategy`` apply to every member."""
+
+    model_config = ConfigDict(extra="allow")
+
+    file_ids: list[str] = Field(min_length=1, max_length=500)
+    attributes: dict[str, Any] | None = None
+    chunking_strategy: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _ids_valid(self) -> OpenAIVectorStoreFileBatchCreate:
+        if any(not fid or len(fid) > 128 for fid in self.file_ids):
+            raise ValueError("file_ids entries must be non-empty strings ≤128 chars")
+        return self
 
 
 def openai_response_events(
@@ -1303,13 +1973,19 @@ def openai_response_events(
     usage: dict[str, int] | None,
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    search_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    final_status: str = "completed",
+    incomplete_details: dict[str, Any] | None = None,
 ) -> Iterator[tuple[str, dict[str, Any]]]:
     """The Responses SSE event sequence over gated text — the core grammar
     a streaming client needs: ``response.created``/``in_progress``, the
     output-item lifecycle, ``output_text.delta`` frames (the shared
-    ~64-char splitter), and ``response.completed`` carrying the full
-    response object with usage. ``logprobs`` lands on the terminal
+    ~64-char splitter), and the terminal frame carrying the full response
+    object with usage. ``final_status`` selects that terminal event —
+    ``response.completed`` normally, ``response.incomplete`` when the turn
+    truncated (``incomplete_details`` rides the terminal object, e.g.
+    ``{'reason': 'max_tool_calls'}``). ``logprobs`` lands on the terminal
     ``content_part.done`` / ``output_item.done`` payloads' ``output_text``
     part and inside ``response.completed`` — provider token boundaries
     don't align with the text deltas, so the array ships whole at
@@ -1335,12 +2011,49 @@ def openai_response_events(
         },
     )
     next_index = 0
-    if text or not call_items:
+    # ``file_search_call`` items lead the output — each emits its
+    # output_item lifecycle plus the file_search_call-specific events
+    # (in_progress → searching → completed); there is no arguments delta
+    # channel for a server-side tool
+    for item in search_items or []:
+        idx = next_index
+        next_index += 1
+        fs_id = str(item["id"])
         yield (
             "response.output_item.added",
             {
                 "type": "response.output_item.added",
-                "output_index": 0,
+                "output_index": idx,
+                "item": {**item, "status": "in_progress"},
+            },
+        )
+        for ev in (
+            "response.file_search_call.in_progress",
+            "response.file_search_call.searching",
+            "response.file_search_call.completed",
+        ):
+            yield (
+                ev,
+                {"type": ev, "output_index": idx, "item_id": fs_id},
+            )
+        yield (
+            "response.output_item.done",
+            {
+                "type": "response.output_item.done",
+                "output_index": idx,
+                "item": item,
+            },
+        )
+    # ``call_items is None`` marks a prose turn — a calls turn truncated
+    # to zero by ``max_tool_calls`` ships no phantom empty message item
+    if text or call_items is None:
+        msg_index = next_index
+        next_index += 1
+        yield (
+            "response.output_item.added",
+            {
+                "type": "response.output_item.added",
+                "output_index": msg_index,
                 "item": {
                     "type": "message",
                     "id": item_id,
@@ -1355,7 +2068,7 @@ def openai_response_events(
             {
                 "type": "response.content_part.added",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "part": {"type": "output_text", "text": "", "annotations": []},
             },
@@ -1366,7 +2079,7 @@ def openai_response_events(
                 {
                     "type": "response.output_text.delta",
                     "item_id": item_id,
-                    "output_index": 0,
+                    "output_index": msg_index,
                     "content_index": 0,
                     "delta": piece,
                 },
@@ -1376,7 +2089,7 @@ def openai_response_events(
             {
                 "type": "response.output_text.done",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "text": text,
             },
@@ -1393,7 +2106,7 @@ def openai_response_events(
             {
                 "type": "response.content_part.done",
                 "item_id": item_id,
-                "output_index": 0,
+                "output_index": msg_index,
                 "content_index": 0,
                 "part": done_part,
             },
@@ -1402,17 +2115,16 @@ def openai_response_events(
             "response.output_item.done",
             {
                 "type": "response.output_item.done",
-                "output_index": 0,
+                "output_index": msg_index,
                 "item": {
                     "type": "message",
                     "id": item_id,
-                    "status": "completed",
+                    "status": "incomplete" if final_status == "incomplete" else "completed",
                     "role": "assistant",
                     "content": [done_part],
                 },
             },
         )
-        next_index = 1
     # one output_item lifecycle per function call — arguments stream as
     # function_call_arguments.delta chunks inside it
     for k, item in enumerate(call_items or []):
@@ -1453,10 +2165,11 @@ def openai_response_events(
                 "item": item,
             },
         )
+    terminal = "response.incomplete" if final_status == "incomplete" else "response.completed"
     yield (
-        "response.completed",
+        terminal,
         {
-            "type": "response.completed",
+            "type": terminal,
             "response": openai_response_object(
                 rid=rid,
                 item_id=item_id,
@@ -1464,10 +2177,12 @@ def openai_response_events(
                 body=body,
                 model=model,
                 usage=usage,
-                status="completed",
+                status=final_status,
                 created=created,
                 call_items=call_items,
+                search_items=search_items,
                 logprobs=logprobs,
+                incomplete_details=incomplete_details,
             ),
         },
     )
@@ -1556,7 +2271,10 @@ def openai_embedding_envelope(
 
 
 def embeddings_to_kwargs(
-    body: OpenAIEmbeddingRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIEmbeddingRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate an embeddings request into call kwargs — same link
     resolution as chat (``fx1.backend`` > header > model > hosted_k3);
@@ -1565,13 +2283,15 @@ def embeddings_to_kwargs(
     ``encoding_format``, ``dimensions``, ``user``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     return {
         "backend": backend,
         "fallbacks": fallbacks,
         "byok": byok.model_dump() if byok is not None else None,
         "checkpoint_dir": checkpoint_dir,
-        "timeout_s": ext.timeout_s if ext is not None else None,
+        "timeout_s": _resolve_timeout(ext.timeout_s if ext is not None else None, hdrs),
         "model": body.model,
         "input": body.input,
         "encoding_format": body.encoding_format,
@@ -1597,8 +2317,9 @@ OPENAI_BATCH_LINE_MAX = 1024
 OPENAI_FILE_BYTES_MAX = 8 << 20
 """Max upload size (8 MiB)."""
 
-OPENAI_FILE_PURPOSE_ACCEPT = "batch"
-"""The only upload purpose the harness serves — batch input JSONL."""
+OPENAI_FILE_PURPOSE_ACCEPT = frozenset({"batch", "fine-tune"})
+"""The upload purposes the harness serves — batch input JSONL and
+fine-tuning corpora (consumed by ``POST /v1/fine_tuning/jobs``)."""
 
 
 class OpenAIBatchRequest(_Model):
@@ -1610,6 +2331,12 @@ class OpenAIBatchRequest(_Model):
     # only "24h" exists on the real surface; anything else refuses (422)
     completion_window: Literal["24h"] = "24h"
     metadata: dict[str, str] | None = None
+    # fx1 extension: terminal-state webhook — the finished batch envelope
+    # is POSTed to ``callback_url`` on completed/failed/expired/cancelled,
+    # signed with ``callback_secret`` via the X-Fx1-Webhook-* headers
+    # (never echoed on the record).
+    callback_url: str | None = None
+    callback_secret: str | None = None
 
     @field_validator("metadata")
     @classmethod
@@ -1617,6 +2344,37 @@ class OpenAIBatchRequest(_Model):
         if v is not None and len(v) > 16:
             raise ValueError("metadata must have <= 16 keys")
         return v
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _callback_secret_needs_url(self) -> OpenAIBatchRequest:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
+
+
+class OpenAIUploadCreateRequest(_Model):
+    """``POST /v1/uploads`` body — the upload intent record."""
+
+    model_config = ConfigDict(extra="forbid")
+    purpose: str = Field(min_length=1, max_length=32)
+    filename: str = Field(min_length=1, max_length=256)
+    bytes: int = Field(gt=0)
+    mime_type: str = Field(min_length=1, max_length=128)
+
+
+class OpenAIUploadCompleteRequest(_Model):
+    """``POST /v1/uploads/{id}/complete`` body — the part order to
+    concatenate, plus an optional content md5 the store checks before
+    the file is minted."""
+
+    model_config = ConfigDict(extra="forbid")
+    part_ids: list[str] = Field(min_length=1, max_length=64)
+    md5: str | None = Field(default=None, min_length=32, max_length=32)
 
 
 def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]:
@@ -1698,6 +2456,12 @@ def batch_object(rec: Mapping[str, Any]) -> dict[str, Any]:
         "cancelled_at": rec.get("cancelled_at"),
         "request_counts": dict(rec["request_counts"]),
         "metadata": rec.get("metadata"),
+        # fx1 extension — terminal webhook bookkeeping (the same fields
+        # the /harness/* jobs surface); absent keys read as null.
+        "callback_url": rec.get("callback_url"),
+        "callback_status": rec.get("callback_status"),
+        "callback_attempts": rec.get("callback_attempts", 0),
+        "callback_error": rec.get("callback_error"),
     }
 
 
@@ -1738,25 +2502,67 @@ class OpenAIEnvelopeStore:
         self._cap = cap
         self._lock = threading.Lock()
         self._items: dict[str, dict[str, Any]] = {}
+        # Request items backing the stored-request subresources
+        # (``/messages``, ``/input_items``). Kept OUT of the envelope dict:
+        # the envelope doubles as the POST response body, batch output
+        # line, and SSE replay source — a stash key would serialize onto
+        # the wire. Items share their envelope's lifetime.
+        self._subitems: dict[str, dict[str, list[dict[str, Any]]]] = {}
 
-    def put(self, envelope: dict[str, Any]) -> None:
+    def put(
+        self,
+        envelope: dict[str, Any],
+        *,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> None:
         eid = envelope.get("id")
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         with self._lock:
             self._items.pop(eid, None)
             self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
             while len(self._items) > self._cap:
-                self._items.pop(next(iter(self._items)))
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
 
     def get(self, envelope_id: str) -> dict[str, Any] | None:
         with self._lock:
             env = self._items.get(envelope_id)
             return dict(env) if env is not None else None
 
+    def get_items(self, envelope_id: str, key: str) -> list[dict[str, Any]] | None:
+        """The request items stored under ``key`` for ``envelope_id`` —
+        None when the envelope is gone, [] when it never carried them."""
+        with self._lock:
+            if envelope_id not in self._items:
+                return None
+            its = self._subitems.get(envelope_id, {}).get(key)
+            return [dict(it) for it in its] if its is not None else []
+
+    def list_envelopes(self, object_: str) -> list[dict[str, Any]]:
+        """All stored envelopes of one ``object`` type, oldest first."""
+        with self._lock:
+            return [dict(env) for env in self._items.values() if env.get("object") == object_]
+
     def delete(self, envelope_id: str) -> bool:
         with self._lock:
+            self._subitems.pop(envelope_id, None)
             return self._items.pop(envelope_id, None) is not None
+
+    def update_metadata(self, envelope_id: str, metadata: dict[str, str]) -> dict[str, Any] | None:
+        """Replace a stored envelope's ``metadata`` atomically — the wire
+        model already bounds the mapping (≤16 pairs / ≤64-char keys /
+        ≤512-char values); a re-put keeps the envelope's slot. None when
+        the id is gone (evicted, deleted, never stored)."""
+        with self._lock:
+            env = self._items.get(envelope_id)
+            if env is None:
+                return None
+            env["metadata"] = dict(metadata)
+            return dict(env)
 
     def __len__(self) -> int:
         with self._lock:
