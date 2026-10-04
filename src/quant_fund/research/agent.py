@@ -10183,6 +10183,14 @@ from quant_fund.research.benches_w1273 import (
     bench_red_team_studies_family,
     bench_sleeper_agent_studies_family,
 )
+from quant_fund.research.benches_w1274 import (
+    bench_agent_memory_studies_family,
+    bench_code_agent_studies_family,
+    bench_computer_use_studies_family,
+    bench_mcp_protocol_studies_family,
+    bench_skill_library_studies_family,
+    bench_web_agent_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10644,6 +10652,12 @@ def _provenance(
         "jailbreak_defense_studies": bench_jailbreak_defense_studies_family,
         "red_team_studies": bench_red_team_studies_family,
         "sleeper_agent_studies": bench_sleeper_agent_studies_family,
+        "agent_memory_studies": bench_agent_memory_studies_family,
+        "code_agent_studies": bench_code_agent_studies_family,
+        "computer_use_studies": bench_computer_use_studies_family,
+        "mcp_protocol_studies": bench_mcp_protocol_studies_family,
+        "skill_library_studies": bench_skill_library_studies_family,
+        "web_agent_studies": bench_web_agent_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

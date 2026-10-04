@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1274 agent-infrastructure canon.
+        "agent_memory_studies",
+        "code_agent_studies",
+        "computer_use_studies",
+        "mcp_protocol_studies",
+        "skill_library_studies",
+        "web_agent_studies",
         # Wave-1273 AI-safety canon.
         "alignment_eval_studies",
         "guardrail_studies",
