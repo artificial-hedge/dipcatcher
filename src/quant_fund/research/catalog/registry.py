@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1377 NLU-exotics canon.
+        "abduction_lite_studies",
+        "board_game_qa_studies",
+        "conv_finqa_studies",
+        "dream_lite_studies",
+        "equiv_lite_studies",
+        "wsc_lite_studies",
         # Wave-1376 dialogue-system canon.
         "blender_bot_studies",
         "conv_ai2_studies",
