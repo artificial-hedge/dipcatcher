@@ -5098,6 +5098,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "morozko_qa_studies",
         "vedmak_qa_studies",
         "yarilo_qa_studies",
+        # Wave-1691 mesopotamian-myth canon.
+        "abzu_qa_studies",
+        "enki_qa_studies",
+        "enlil_qa_studies",
+        "nanna_qa_studies",
+        "tiamat_qa_studies",
+        "utu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
