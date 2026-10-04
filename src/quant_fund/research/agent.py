@@ -11031,6 +11031,14 @@ from quant_fund.research.benches_w1379 import (
     bench_rouge_we_studies_family,
     bench_wmt_metric_studies_family,
 )
+from quant_fund.research.benches_w1380 import (
+    bench_art_nli_studies_family,
+    bench_para_paws_studies_family,
+    bench_recast_lite_studies_family,
+    bench_snips_lite_studies_family,
+    bench_social_lite_studies_family,
+    bench_subj_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11977,6 +11985,12 @@ def _provenance(
         "kl_div_eval_studies": bench_kl_div_eval_studies_family,
         "rouge_we_studies": bench_rouge_we_studies_family,
         "wmt_metric_studies": bench_wmt_metric_studies_family,
+        "art_nli_studies": bench_art_nli_studies_family,
+        "para_paws_studies": bench_para_paws_studies_family,
+        "recast_lite_studies": bench_recast_lite_studies_family,
+        "snips_lite_studies": bench_snips_lite_studies_family,
+        "social_lite_studies": bench_social_lite_studies_family,
+        "subj_lite_studies": bench_subj_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

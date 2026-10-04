@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1380 intent-paraphrase canon.
+        "art_nli_studies",
+        "para_paws_studies",
+        "recast_lite_studies",
+        "snips_lite_studies",
+        "social_lite_studies",
+        "subj_lite_studies",
         # Wave-1379 metric-exotics canon.
         "bary_score_studies",
         "cider_lite_studies",
