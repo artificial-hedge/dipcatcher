@@ -6351,6 +6351,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mari_morgen_qa_studies",
         "tangi_qa_studies",
         "yeun_elez_qa_studies",
+        # Wave-1870 cornish-myth canon.
+        "bucca_qa_studies",
+        "knocker_qa_studies",
+        "morgawr_qa_studies",
+        "piskie_qa_studies",
+        "spriggan_qa_studies",
+        "tregeagle_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
