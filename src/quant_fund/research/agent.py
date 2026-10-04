@@ -9255,6 +9255,14 @@ from quant_fund.research.benches_w1157 import (
     bench_machine_learning_2_family,
     bench_software_engineering_family,
 )
+from quant_fund.research.benches_w1158 import (
+    bench_anthropology_6_family,
+    bench_economics_6_family,
+    bench_linguistics_7_family,
+    bench_political_science_3_family,
+    bench_psychology_5_family,
+    bench_sociology_6_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9626,6 +9634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sociology_6": bench_sociology_6_family,
+        "economics_6": bench_economics_6_family,
+        "political_science_3": bench_political_science_3_family,
+        "psychology_5": bench_psychology_5_family,
+        "anthropology_6": bench_anthropology_6_family,
+        "linguistics_7": bench_linguistics_7_family,
         "computer_science_2": bench_computer_science_2_family,
         "software_engineering": bench_software_engineering_family,
         "machine_learning_2": bench_machine_learning_2_family,
