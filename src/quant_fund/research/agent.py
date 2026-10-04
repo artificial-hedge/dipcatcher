@@ -7703,6 +7703,14 @@ from quant_fund.research.benches_w963 import (
     bench_riesz_schauder_family,
     bench_weyl_theorem_family,
 )
+from quant_fund.research.benches_w964 import (
+    bench_adjoint_unbounded_family,
+    bench_closed_operator_family,
+    bench_domain_dense_family,
+    bench_resolvent_op_family,
+    bench_spectral_measure_family,
+    bench_unbounded_operator_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8074,6 +8082,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "unbounded_operator": bench_unbounded_operator_family,
+        "closed_operator": bench_closed_operator_family,
+        "domain_dense": bench_domain_dense_family,
+        "adjoint_unbounded": bench_adjoint_unbounded_family,
+        "resolvent_op": bench_resolvent_op_family,
+        "spectral_measure": bench_spectral_measure_family,
         "fredholm_index": bench_fredholm_index_family,
         "weyl_theorem": bench_weyl_theorem_family,
         "essential_spectrum": bench_essential_spectrum_family,
