@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1261 trial-statistics/HEOR canon.
+        "biostatistics_methods_studies",
+        "epidemiology_methods_studies",
+        "heor_studies",
+        "regulatory_science_studies",
+        "survival_trial_studies",
+        "translational_studies",
         # Wave-1260 clinical-research-methods canon.
         "adaptive_trial_studies",
         "clinical_trial_studies",
