@@ -7855,6 +7855,14 @@ from quant_fund.research.benches_w982 import (
     bench_equilibrium_measure_family,
     bench_thin_set_family,
 )
+from quant_fund.research.benches_w983 import (
+    bench_atoms_decomp_family,
+    bench_besov_embed_family,
+    bench_besov_space_family,
+    bench_hardy_littlewood_max_family,
+    bench_triebel_lizorkin_family,
+    bench_wavelet_char_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8226,6 +8234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "besov_space": bench_besov_space_family,
+        "triebel_lizorkin": bench_triebel_lizorkin_family,
+        "atoms_decomp": bench_atoms_decomp_family,
+        "wavelet_char": bench_wavelet_char_family,
+        "besov_embed": bench_besov_embed_family,
+        "hardy_littlewood_max": bench_hardy_littlewood_max_family,
         "dirichlet_problem": bench_dirichlet_problem_family,
         "energy_principle": bench_energy_principle_family,
         "equilibrium_measure": bench_equilibrium_measure_family,

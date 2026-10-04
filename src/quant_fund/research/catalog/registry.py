@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-983 Besov/Triebel-Lizorkin canon.
+        "besov_space",
+        "triebel_lizorkin",
+        "atoms_decomp",
+        "wavelet_char",
+        "besov_embed",
+        "hardy_littlewood_max",
         # Wave-982 potential-theory-2 canon.
         "dirichlet_problem",
         "energy_principle",
