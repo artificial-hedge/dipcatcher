@@ -9191,6 +9191,14 @@ from quant_fund.research.benches_w1149 import (
     bench_pulmonology_2_family,
     bench_toxicology_2_family,
 )
+from quant_fund.research.benches_w1150 import (
+    bench_bacteriology_family,
+    bench_epigenetics_family,
+    bench_immunogenetics_family,
+    bench_microbiology_2_family,
+    bench_molecular_genetics_family,
+    bench_virology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9562,6 +9570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "microbiology_2": bench_microbiology_2_family,
+        "bacteriology": bench_bacteriology_family,
+        "virology_2": bench_virology_2_family,
+        "immunogenetics": bench_immunogenetics_family,
+        "molecular_genetics": bench_molecular_genetics_family,
+        "epigenetics": bench_epigenetics_family,
         "toxicology_2": bench_toxicology_2_family,
         "dermatology_2": bench_dermatology_2_family,
         "hematology_2": bench_hematology_2_family,

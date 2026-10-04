@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1150 microbial-genetics canon.
+        "microbiology_2",
+        "bacteriology",
+        "virology_2",
+        "immunogenetics",
+        "molecular_genetics",
+        "epigenetics",
         # Wave-1149 clinical-medicine canon.
         "toxicology_2",
         "dermatology_2",
