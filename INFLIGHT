@@ -1,3 +1,4 @@
+w1368 translation-metric canon: chr_f_studies, mover_score_studies, nist_metric_studies, prism_mt_studies, sacrebleu_lite_studies, ter_lite_studies (8157->8163)
 w1367 generation-metric canon: bert_score_studies, bleu_rouge_studies, bleurt_lite_studies, comet_mt_studies, meteor_lite_studies, rouge_lite_studies (8151->8157)
 w1366 faithfulness-eval canon: align_score_studies, dice_eval_studies, factcc_lite_studies, faith_eval_studies, quest_eval_studies, summa_eval_studies (8145->8151)
 w1365 summarization canon: arxiv_sum_studies, cnn_dailymail_studies, dialogsum_lite_studies, multi_news_studies, pubmed_sum_studies, samsum_lite_studies (8139->8145)
