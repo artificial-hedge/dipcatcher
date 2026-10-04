@@ -8311,6 +8311,14 @@ from quant_fund.research.benches_w1039 import (
     bench_wastewater_engineering_family,
     bench_water_treatment_family,
 )
+from quant_fund.research.benches_w1040 import (
+    bench_actuator_design_family,
+    bench_motion_control_family,
+    bench_path_planning_family,
+    bench_robot_dynamics_family,
+    bench_robot_kinematics_family,
+    bench_sensor_fusion_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8682,6 +8690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "robot_kinematics": bench_robot_kinematics_family,
+        "robot_dynamics": bench_robot_dynamics_family,
+        "motion_control": bench_motion_control_family,
+        "sensor_fusion": bench_sensor_fusion_family,
+        "path_planning": bench_path_planning_family,
+        "actuator_design": bench_actuator_design_family,
         "water_treatment": bench_water_treatment_family,
         "air_pollution_control": bench_air_pollution_control_family,
         "waste_management": bench_waste_management_family,
