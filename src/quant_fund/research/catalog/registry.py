@@ -6190,6 +6190,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "athtar_qa_studies",
         "haubas_qa_studies",
         "nasr2_qa_studies",
+        # Wave-1847 himyarite-myth canon.
+        "dhatanwat_qa_studies",
+        "dhatzahran_qa_studies",
+        "hawl_qa_studies",
+        "khalasah_qa_studies",
+        "raymah_qa_studies",
+        "shams_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
