@@ -8319,6 +8319,14 @@ from quant_fund.research.benches_w1040 import (
     bench_robot_kinematics_family,
     bench_sensor_fusion_family,
 )
+from quant_fund.research.benches_w1041 import (
+    bench_coastal_engineering_family,
+    bench_marine_propulsion_family,
+    bench_naval_architecture_family,
+    bench_ocean_waves_family,
+    bench_offshore_engineering_family,
+    bench_submarine_systems_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8690,6 +8698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "naval_architecture": bench_naval_architecture_family,
+        "offshore_engineering": bench_offshore_engineering_family,
+        "marine_propulsion": bench_marine_propulsion_family,
+        "ocean_waves": bench_ocean_waves_family,
+        "coastal_engineering": bench_coastal_engineering_family,
+        "submarine_systems": bench_submarine_systems_family,
         "robot_kinematics": bench_robot_kinematics_family,
         "robot_dynamics": bench_robot_dynamics_family,
         "motion_control": bench_motion_control_family,
