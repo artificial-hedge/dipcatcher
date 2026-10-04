@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-551 foliation-theory canon.
+        "foliation",
+        "holonomy_grp",
+        "godbillon_vey",
+        "haefliger_struct",
+        "novikov_thm",
+        "thurston_fol",
         # Wave-550 characteristic-classes canon.
         "chern_class",
         "pontryagin_class",
