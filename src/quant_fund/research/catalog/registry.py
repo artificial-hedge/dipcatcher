@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1352 social-bias-eval canon.
+        "bias_bench_studies",
+        "crowsp_lite_studies",
+        "honesty_lie_studies",
+        "social_iqa2_studies",
+        "stereo_lite_studies",
+        "wino_bias_studies",
         # Wave-1351 ethics-eval canon.
         "ethic_jiminy_studies",
         "moral_exc_studies",

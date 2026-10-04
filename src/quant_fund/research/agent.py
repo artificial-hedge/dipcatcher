@@ -10807,6 +10807,14 @@ from quant_fund.research.benches_w1351 import (
     bench_scruples_lite_studies_family,
     bench_virtue_ethics_studies_family,
 )
+from quant_fund.research.benches_w1352 import (
+    bench_bias_bench_studies_family,
+    bench_crowsp_lite_studies_family,
+    bench_honesty_lie_studies_family,
+    bench_social_iqa2_studies_family,
+    bench_stereo_lite_studies_family,
+    bench_wino_bias_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11620,6 +11628,12 @@ def _provenance(
         "principlism_toy_studies": bench_principlism_toy_studies_family,
         "scruples_lite_studies": bench_scruples_lite_studies_family,
         "virtue_ethics_studies": bench_virtue_ethics_studies_family,
+        "bias_bench_studies": bench_bias_bench_studies_family,
+        "crowsp_lite_studies": bench_crowsp_lite_studies_family,
+        "honesty_lie_studies": bench_honesty_lie_studies_family,
+        "social_iqa2_studies": bench_social_iqa2_studies_family,
+        "stereo_lite_studies": bench_stereo_lite_studies_family,
+        "wino_bias_studies": bench_wino_bias_studies_family,
         "snli_lite_studies": bench_snli_lite_studies_family,
         "conseq_log_studies": bench_conseq_log_studies_family,
         "logiqa_log_studies": bench_logiqa_log_studies_family,
