@@ -6750,6 +6750,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "furts_qa_studies",
         "gorgogosh_qa_studies",
         "rukhi_qa_studies",
+        # Wave-1927 inuit-demon canon.
+        "amautalik_qa_studies",
+        "ijiraq_qa_studies",
+        "mahaha_qa_studies",
+        "qivittoq_qa_studies",
+        "tornit_qa_studies",
+        "tupilaq_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
