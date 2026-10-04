@@ -443,11 +443,11 @@ def _probe_byok_smuggle() -> dict[str, bool]:
     out: dict[str, bool] = {}
     client = _client()
     bad_urls = [
-        "http://user:pass@evil.example.com/v1",
+        "http://user:pass@evil.example.com/v1",  # NOSONAR — deliberately insecure probe data
         "file:///etc/passwd",
-        "javascript:alert(1)",
-        "ftp://x.example.com",
-        "http://",
+        "javascript:alert(1)",  # NOSONAR — deliberately insecure probe data
+        "ftp://x.example.com",  # NOSONAR — deliberately insecure probe data
+        "http://",  # NOSONAR — deliberately insecure probe data
         "https://api.example.com/v1?key=abc",
         "",
     ]
