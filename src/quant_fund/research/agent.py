@@ -13543,6 +13543,14 @@ from quant_fund.research.benches_w1693 import (
     bench_shedu_qa_studies_family,
     bench_utukku_qa_studies_family,
 )
+from quant_fund.research.benches_w1694 import (
+    bench_duwende_qa_studies_family,
+    bench_karibusa_qa_studies_family,
+    bench_mambabarang_qa_studies_family,
+    bench_mangkukulam_qa_studies_family,
+    bench_sokoy_qa_studies_family,
+    bench_tiktik_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
