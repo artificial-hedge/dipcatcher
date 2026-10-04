@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1092 art-historiography canon.
+        "iconography",
+        "iconology",
+        "connoisseurship",
+        "provenance_studies",
+        "curation_practice",
+        "formal_analysis",
         # Wave-1091 education-2 canon.
         "higher_education",
         "vocational_education",
