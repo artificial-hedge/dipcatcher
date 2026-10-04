@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1223 anesthesia canon.
+        "anesthesiology_studies",
+        "perioperative_medicine",
+        "pain_medicine_studies",
+        "regional_anesthesia",
+        "sedation_medicine",
+        "airway_management",
         # Wave-1222 ortho canon.
         "orthopedics_studies",
         "sports_medicine_orthopedics",

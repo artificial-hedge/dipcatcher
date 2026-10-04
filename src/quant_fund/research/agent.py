@@ -9775,6 +9775,14 @@ from quant_fund.research.benches_w1222 import (
     bench_spine_surgery_family,
     bench_sports_medicine_orthopedics_family,
 )
+from quant_fund.research.benches_w1223 import (
+    bench_airway_management_family,
+    bench_anesthesiology_studies_family,
+    bench_pain_medicine_studies_family,
+    bench_perioperative_medicine_family,
+    bench_regional_anesthesia_family,
+    bench_sedation_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10146,6 +10154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "anesthesiology_studies": bench_anesthesiology_studies_family,
+        "perioperative_medicine": bench_perioperative_medicine_family,
+        "pain_medicine_studies": bench_pain_medicine_studies_family,
+        "regional_anesthesia": bench_regional_anesthesia_family,
+        "sedation_medicine": bench_sedation_medicine_family,
+        "airway_management": bench_airway_management_family,
         "orthopedics_studies": bench_orthopedics_studies_family,
         "sports_medicine_orthopedics": bench_sports_medicine_orthopedics_family,
         "musculoskeletal_medicine": bench_musculoskeletal_medicine_family,
