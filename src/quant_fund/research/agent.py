@@ -13167,6 +13167,14 @@ from quant_fund.research.benches_w1646 import (
     bench_ratatoskr_qa_studies_family,
     bench_sleipnir_qa_studies_family,
 )
+from quant_fund.research.benches_w1647 import (
+    bench_akhekh_qa_studies_family,
+    bench_ammit_qa_studies_family,
+    bench_apophis_qa_studies_family,
+    bench_bes_qa_studies_family,
+    bench_sekhmet_qa_studies_family,
+    bench_sphairo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15471,6 +15479,12 @@ def _provenance(
         "nidhogg_qa_studies": bench_nidhogg_qa_studies_family,
         "ratatoskr_qa_studies": bench_ratatoskr_qa_studies_family,
         "sleipnir_qa_studies": bench_sleipnir_qa_studies_family,
+        "akhekh_qa_studies": bench_akhekh_qa_studies_family,
+        "ammit_qa_studies": bench_ammit_qa_studies_family,
+        "apophis_qa_studies": bench_apophis_qa_studies_family,
+        "bes_qa_studies": bench_bes_qa_studies_family,
+        "sekhmet_qa_studies": bench_sekhmet_qa_studies_family,
+        "sphairo_qa_studies": bench_sphairo_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
