@@ -6279,6 +6279,14 @@ from quant_fund.research.benches_w785 import (
     bench_strong_sol_family,
     bench_usual_cond_family,
 )
+from quant_fund.research.benches_w786 import (
+    bench_area_mart_family,
+    bench_controlled_path_family,
+    bench_hairspring_map_family,
+    bench_lyons_lift_family,
+    bench_rough_path_family,
+    bench_signature_transform2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6658,6 +6666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rough_path": bench_rough_path_family,
+        "signature_transform2": bench_signature_transform2_family,
+        "controlled_path": bench_controlled_path_family,
+        "lyons_lift": bench_lyons_lift_family,
+        "hairspring_map": bench_hairspring_map_family,
+        "area_mart": bench_area_mart_family,
         "usual_cond": bench_usual_cond_family,
         "dolean_mart": bench_dolean_mart_family,
         "strong_sol": bench_strong_sol_family,
