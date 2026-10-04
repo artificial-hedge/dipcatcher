@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1176 theology canon.
+        "theology_3",
+        "religious_studies_3",
+        "comparative_religion_2",
+        "biblical_studies_2",
+        "islamic_studies_2",
+        "buddhist_studies_2",
         # Wave-1175 trades canon.
         "electrical_trades",
         "plumbing_hvac",

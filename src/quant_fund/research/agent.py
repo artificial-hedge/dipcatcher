@@ -9399,6 +9399,14 @@ from quant_fund.research.benches_w1175 import (
     bench_refrigeration_technology_family,
     bench_welding_technology_family,
 )
+from quant_fund.research.benches_w1176 import (
+    bench_biblical_studies_2_family,
+    bench_buddhist_studies_2_family,
+    bench_comparative_religion_2_family,
+    bench_islamic_studies_2_family,
+    bench_religious_studies_3_family,
+    bench_theology_3_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9770,6 +9778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "theology_3": bench_theology_3_family,
+        "religious_studies_3": bench_religious_studies_3_family,
+        "comparative_religion_2": bench_comparative_religion_2_family,
+        "biblical_studies_2": bench_biblical_studies_2_family,
+        "islamic_studies_2": bench_islamic_studies_2_family,
+        "buddhist_studies_2": bench_buddhist_studies_2_family,
         "electrical_trades": bench_electrical_trades_family,
         "plumbing_hvac": bench_plumbing_hvac_family,
         "welding_technology": bench_welding_technology_family,
