@@ -10839,6 +10839,14 @@ from quant_fund.research.benches_w1355 import (
     bench_prost_lite_studies_family,
     bench_swag_lite_studies_family,
 )
+from quant_fund.research.benches_w1356 import (
+    bench_bigbench_lite_studies_family,
+    bench_entity_qa_studies_family,
+    bench_mmlu_lite_studies_family,
+    bench_natural_qa_studies_family,
+    bench_pop_qa_studies_family,
+    bench_triviaqa_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11668,6 +11676,12 @@ def _provenance(
         "hellaswag_lite_studies": bench_hellaswag_lite_studies_family,
         "piqa_lite_studies": bench_piqa_lite_studies_family,
         "prost_lite_studies": bench_prost_lite_studies_family,
+        "bigbench_lite_studies": bench_bigbench_lite_studies_family,
+        "entity_qa_studies": bench_entity_qa_studies_family,
+        "mmlu_lite_studies": bench_mmlu_lite_studies_family,
+        "natural_qa_studies": bench_natural_qa_studies_family,
+        "pop_qa_studies": bench_pop_qa_studies_family,
+        "triviaqa_lite_studies": bench_triviaqa_lite_studies_family,
         "swag_lite_studies": bench_swag_lite_studies_family,
         "social_qa_studies": bench_social_qa_studies_family,
         "prove_it_studies": bench_prove_it_studies_family,
