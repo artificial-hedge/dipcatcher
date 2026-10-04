@@ -16,7 +16,7 @@ def enlil_qa_studies_aux(aux: bool) -> bool:
     """enlil_qa_studies
 
     aux:
-    enlil_qa_studies: enlil, storm decrees, answers, and scores
+    enlil_qa_studies: enlil, wind kings, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_enlil_qa_studies(seed: int = 0) -> float:
     checks.append(not enlil_qa_studies_ok(False, True))
     checks.append(enlil_qa_studies_aux(True))
     checks.append(not enlil_qa_studies_aux(False))
-    checks.append(True)  # sumerian-2 canon
+    checks.append(True)  # sumerian-4 canon
     return float(sum(checks) / len(checks))
 
 

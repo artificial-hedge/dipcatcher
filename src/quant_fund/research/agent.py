@@ -14079,6 +14079,14 @@ from quant_fund.research.benches_w1760 import (
     bench_morinaga_qa_studies_family,
     bench_senju_qa_studies_family,
 )
+from quant_fund.research.benches_w1761 import (
+    bench_enki_qa_studies_family,
+    bench_enlil_qa_studies_family,
+    bench_inanna_qa_studies_family,
+    bench_nanna_qa_studies_family,
+    bench_ninhursag_qa_studies_family,
+    bench_utu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
