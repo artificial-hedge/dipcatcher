@@ -6183,6 +6183,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "manat_qa_studies",
         "uzza_qa_studies",
         "wadd_qa_studies",
+        # Wave-1846 sabaean-myth canon.
+        "almaqah_qa_studies",
+        "anbay_qa_studies",
+        "aranyada_qa_studies",
+        "athtar_qa_studies",
+        "haubas_qa_studies",
+        "nasr2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
