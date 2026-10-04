@@ -6975,6 +6975,14 @@ from quant_fund.research.benches_w872 import (
     bench_polynomial_precond_family,
     bench_ssor_precond_family,
 )
+from quant_fund.research.benches_w873 import (
+    bench_asm_precond_family,
+    bench_baldding_dd_family,
+    bench_dd_partition_family,
+    bench_feti_dp_family,
+    bench_neumann_dd_family,
+    bench_subspace_dd_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7346,6 +7354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dd_partition": bench_dd_partition_family,
+        "baldding_dd": bench_baldding_dd_family,
+        "neumann_dd": bench_neumann_dd_family,
+        "feti_dp": bench_feti_dp_family,
+        "subspace_dd": bench_subspace_dd_family,
+        "asm_precond": bench_asm_precond_family,
         "jacobi_precond": bench_jacobi_precond_family,
         "ilut_precond": bench_ilut_precond_family,
         "ssor_precond": bench_ssor_precond_family,
