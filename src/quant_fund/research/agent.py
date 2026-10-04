@@ -14807,6 +14807,14 @@ from quant_fund.research.benches_w1851 import (
     bench_magec_qa_studies_family,
     bench_tibicena_qa_studies_family,
 )
+from quant_fund.research.benches_w1852 import (
+    bench_aulisua_qa_studies_family,
+    bench_gurzil_qa_studies_family,
+    bench_iguc_qa_studies_family,
+    bench_lallus_qa_studies_family,
+    bench_macurgum_qa_studies_family,
+    bench_melyakina_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

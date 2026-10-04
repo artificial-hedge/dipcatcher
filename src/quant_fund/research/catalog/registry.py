@@ -6225,6 +6225,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "guayota_qa_studies",
         "magec_qa_studies",
         "tibicena_qa_studies",
+        # Wave-1852 numidian-myth canon.
+        "aulisua_qa_studies",
+        "gurzil_qa_studies",
+        "iguc_qa_studies",
+        "lallus_qa_studies",
+        "macurgum_qa_studies",
+        "melyakina_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
