@@ -1,3 +1,4 @@
+feat(research): wave 1219 — hem-onc canon (hematology_studies, oncology_studies, hematologic_malignancies, solid_tumor_oncology, transfusion_medicine, radiation_oncology) (7263->7269 families)
 feat(research): wave 1218 — nephrology canon (nephrology_studies, dialysis_medicine, renal_transplant, acid_base_medicine, hypertension_medicine, urology_studies) (7257->7263 families)
 feat(research): wave 1217 — endocrinology canon (endocrinology_studies, diabetes_medicine, thyroid_medicine, metabolic_medicine, bone_metabolism, adrenal_medicine) (7251->7257 families)
 feat(research): wave 1216 — internal-medicine canon (internal_medicine, hospital_medicine, critical_care_medicine, pulmonary_medicine, gastroenterology_studies, hepatology_studies) (7245->7251 families)

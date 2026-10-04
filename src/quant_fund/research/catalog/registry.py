@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1219 hem-onc canon.
+        "hematology_studies",
+        "oncology_studies",
+        "hematologic_malignancies",
+        "solid_tumor_oncology",
+        "transfusion_medicine",
+        "radiation_oncology",
         # Wave-1218 nephrology canon.
         "nephrology_studies",
         "dialysis_medicine",
