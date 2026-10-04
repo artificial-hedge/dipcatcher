@@ -5035,6 +5035,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mamiwata_qa_studies",
         "sasabonsam_qa_studies",
         "tokoloshe_qa_studies",
+        # Wave-1682 slavic-wild canon.
+        "alkonost_qa_studies",
+        "gamayun_qa_studies",
+        "sirin_qa_studies",
+        "veles_qa_studies",
+        "zhaba_qa_studies",
+        "zmei_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
