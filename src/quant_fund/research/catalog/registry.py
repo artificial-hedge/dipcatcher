@@ -4678,6 +4678,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rougarou_qa_studies",
         "skinwalker_qa_studies",
         "wendigo_qa_studies",
+        # Wave-1631 legendary-beast canon.
+        "basilisk_qa_studies",
+        "chimera_qa_studies",
+        "gorgon_qa_studies",
+        "griffin_2_qa_studies",
+        "hydra_2_qa_studies",
+        "manticore_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

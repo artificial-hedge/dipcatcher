@@ -13039,6 +13039,14 @@ from quant_fund.research.benches_w1630 import (
     bench_skinwalker_qa_studies_family,
     bench_wendigo_qa_studies_family,
 )
+from quant_fund.research.benches_w1631 import (
+    bench_basilisk_qa_studies_family,
+    bench_chimera_qa_studies_family,
+    bench_gorgon_qa_studies_family,
+    bench_griffin_2_qa_studies_family,
+    bench_hydra_2_qa_studies_family,
+    bench_manticore_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15247,6 +15255,12 @@ def _provenance(
         "rougarou_qa_studies": bench_rougarou_qa_studies_family,
         "skinwalker_qa_studies": bench_skinwalker_qa_studies_family,
         "wendigo_qa_studies": bench_wendigo_qa_studies_family,
+        "basilisk_qa_studies": bench_basilisk_qa_studies_family,
+        "chimera_qa_studies": bench_chimera_qa_studies_family,
+        "gorgon_qa_studies": bench_gorgon_qa_studies_family,
+        "griffin_2_qa_studies": bench_griffin_2_qa_studies_family,
+        "hydra_2_qa_studies": bench_hydra_2_qa_studies_family,
+        "manticore_qa_studies": bench_manticore_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
