@@ -5021,6 +5021,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "huldra_qa_studies",
         "troll_qa_studies",
         "vaetter_qa_studies",
+        # Wave-1680 aztec-deity canon.
+        "coatlicue_qa_studies",
+        "mictlan_qa_studies",
+        "mixcoatl_qa_studies",
+        "tlaloc_qa_studies",
+        "tonatiuh_qa_studies",
+        "xipe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
