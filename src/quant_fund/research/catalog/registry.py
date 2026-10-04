@@ -6148,6 +6148,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "haddad2_qa_studies",
         "mot2_qa_studies",
         "qos2_qa_studies",
+        # Wave-1841 moabite-myth canon.
+        "ashtar2_qa_studies",
+        "baalpeor_qa_studies",
+        "chemosh3_qa_studies",
+        "dibon2_qa_studies",
+        "kiriath2_qa_studies",
+        "nebo2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
