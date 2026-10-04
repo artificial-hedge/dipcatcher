@@ -9167,6 +9167,14 @@ from quant_fund.research.benches_w1146 import (
     bench_virology_family,
     bench_wildlife_biology_family,
 )
+from quant_fund.research.benches_w1147 import (
+    bench_anatomy_family,
+    bench_cardiology_2_family,
+    bench_endocrinology_2_family,
+    bench_immunology_2_family,
+    bench_neuroscience_2_family,
+    bench_physiology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9538,6 +9546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "anatomy": bench_anatomy_family,
+        "physiology_2": bench_physiology_2_family,
+        "endocrinology_2": bench_endocrinology_2_family,
+        "neuroscience_2": bench_neuroscience_2_family,
+        "cardiology_2": bench_cardiology_2_family,
+        "immunology_2": bench_immunology_2_family,
         "virology": bench_virology_family,
         "parasitology": bench_parasitology_family,
         "mycology": bench_mycology_family,
