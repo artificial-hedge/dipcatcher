@@ -4314,6 +4314,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "okapi_qa_studies",
         "saiga_qa_studies",
         "takin_qa_studies",
+        # Wave-1579 dwarf-antelope canon.
+        "dikdik_qa_studies",
+        "grysbok_qa_studies",
+        "klipspringer_qa_studies",
+        "rhebok_qa_studies",
+        "steenbok_qa_studies",
+        "suni_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
