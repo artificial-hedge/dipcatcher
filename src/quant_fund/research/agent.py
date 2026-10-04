@@ -7639,6 +7639,14 @@ from quant_fund.research.benches_w955 import (
     bench_gram_matrix_family,
     bench_householder_reflect_family,
 )
+from quant_fund.research.benches_w956 import (
+    bench_cp_rank_family,
+    bench_mode_n_product_family,
+    bench_tensor_norm_family,
+    bench_tensor_symmetry_family,
+    bench_tensor_trace_family,
+    bench_tucker_rank_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8010,6 +8018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tucker_rank": bench_tucker_rank_family,
+        "cp_rank": bench_cp_rank_family,
+        "tensor_norm": bench_tensor_norm_family,
+        "tensor_trace": bench_tensor_trace_family,
+        "mode_n_product": bench_mode_n_product_family,
+        "tensor_symmetry": bench_tensor_symmetry_family,
         "gram_matrix": bench_gram_matrix_family,
         "gram_determinant": bench_gram_determinant_family,
         "householder_reflect": bench_householder_reflect_family,
