@@ -1,3 +1,4 @@
+feat(research): wave 820 — semimartingale-decomp canon (doom_decomp, pcdt, special_sem, canonical_decomp, sem_loc_char, triplet_char) (4869->4875 families)
 feat(research): wave 819 — stopping-time canon (first_hitting, last_exit, stopping_sigma, progressive_set, debuts_theorem, accessible_time) (4863->4869 families)
 feat(research): wave 818 — stochastic-integration canon (ito_integral, mart_meas, vector_mart, bounded_var, stochastic_int2, covariation) (4857->4863 families)
 feat(research): wave 817 — Levy-fluctuation canon (wiener_hopf_f, ladder_height, renewal_measure, overshoot_levy, levy_fluct, spitzer_levy) (4851->4857 families)
