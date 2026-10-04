@@ -1,3 +1,4 @@
+feat(research): wave 572 — abelian-varieties canon (abelian_variety, isogeny_av, tate_module, shafarevich_conj, faltings_thm, mordell_weil_av) (3387->3393 families)
 feat(research): wave 571 — singularity-theory canon (du_val_sing, rational_sing, log_canonical, multiplier_ideal, bernstein_sato, milnor_fiber) (3381->3387 families)
 feat(research): wave 570 — positivity/moduli canon (hodge_index, kodaira_vanishing, kollar_mori, boundedness_moduli, stability_sheaf, bogomolov_ineq) (3375->3381 families)
 feat(research): wave 569 — geometric-PDE canon (yamabe_problem, prescribed_curvature, nirenberg_problem, kazdan_warner, aubin_thm, trudinger_thm) (3369->3375 families)
