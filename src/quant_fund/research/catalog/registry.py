@@ -3201,6 +3201,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "chronicle_qa_studies",
         "epic_qa_studies",
         "fable_qa_studies",
+        # Wave-1420 reasoning-exotics canon.
+        "cause_qa_studies",
+        "claim_qa_studies",
+        "conclusion_qa_studies",
+        "deduction_qa_studies",
+        "effect_qa_studies",
+        "fallacy_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
