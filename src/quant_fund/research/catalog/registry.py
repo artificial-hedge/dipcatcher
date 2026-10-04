@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1109 linguistics-3 canon.
+        "applied_linguistics",
+        "anthropological_linguistics",
+        "neurolinguistics",
+        "evolutionary_linguistics",
+        "forensic_linguistics",
+        "discourse_analysis",
         # Wave-1108 sociology-3 canon.
         "industrial_sociology",
         "political_sociology",
