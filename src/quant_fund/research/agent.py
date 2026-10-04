@@ -8079,6 +8079,14 @@ from quant_fund.research.benches_w1010 import (
     bench_path_integral_qm_family,
     bench_renormalization_group_family,
 )
+from quant_fund.research.benches_w1011 import (
+    bench_band_structure_family,
+    bench_bloch_theorem_family,
+    bench_hubbard_model_family,
+    bench_kondo_effect_family,
+    bench_phonon_spectrum_family,
+    bench_tight_binding_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8450,6 +8458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bloch_theorem": bench_bloch_theorem_family,
+        "tight_binding": bench_tight_binding_family,
+        "phonon_spectrum": bench_phonon_spectrum_family,
+        "band_structure": bench_band_structure_family,
+        "hubbard_model": bench_hubbard_model_family,
+        "kondo_effect": bench_kondo_effect_family,
         "klein_gordon": bench_klein_gordon_family,
         "dirac_equation": bench_dirac_equation_family,
         "feynman_rules": bench_feynman_rules_family,
