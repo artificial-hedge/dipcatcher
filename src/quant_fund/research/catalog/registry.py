@@ -4517,6 +4517,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pale_titi_qa_studies",
         "uakari_2_qa_studies",
         "woolly_lemur_qa_studies",
+        # Wave-1608 savanna-herd canon.
+        "buffalo_qa_studies",
+        "kob_qa_studies",
+        "lechwe_qa_studies",
+        "rhino_qa_studies",
+        "roan_qa_studies",
+        "warthog_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
