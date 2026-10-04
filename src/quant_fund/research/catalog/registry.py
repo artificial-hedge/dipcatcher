@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-882 preconditioner/domain-decomposition canon.
+        "spai_precond",
+        "diagonal_scale",
+        "nonoverlap_dd",
+        "overlap_dd",
+        "restrictive_dd",
+        "balanced_dd",
         # Wave-881 Krylov-solver canon.
         "minres_solver",
         "cgs_solver",
