@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-981 convex-geometry-2 canon.
+        "john_ellipsoid",
+        "loewner_ellipsoid",
+        "milman_rev_thm",
+        "grothendieck_const",
+        "kadison_singer",
+        "milman_isotropic",
         # Wave-980 approximation-theory-2 canon.
         "walsh_series",
         "haar_system",
