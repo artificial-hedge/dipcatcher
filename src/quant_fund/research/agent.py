@@ -11127,6 +11127,14 @@ from quant_fund.research.benches_w1391 import (
     bench_musique_lite_studies_family,
     bench_wiki2_qa_studies_family,
 )
+from quant_fund.research.benches_w1392 import (
+    bench_meta_tool_studies_family,
+    bench_nest_tools_studies_family,
+    bench_toolbench2_studies_family,
+    bench_toolqa_lite_studies_family,
+    bench_ultra_tool_studies_family,
+    bench_work_plus_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12145,6 +12153,12 @@ def _provenance(
         "mintaka_lite_studies": bench_mintaka_lite_studies_family,
         "musique_lite_studies": bench_musique_lite_studies_family,
         "wiki2_qa_studies": bench_wiki2_qa_studies_family,
+        "meta_tool_studies": bench_meta_tool_studies_family,
+        "nest_tools_studies": bench_nest_tools_studies_family,
+        "toolbench2_studies": bench_toolbench2_studies_family,
+        "toolqa_lite_studies": bench_toolqa_lite_studies_family,
+        "ultra_tool_studies": bench_ultra_tool_studies_family,
+        "work_plus_studies": bench_work_plus_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

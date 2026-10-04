@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1392 toolbench canon.
+        "meta_tool_studies",
+        "nest_tools_studies",
+        "toolbench2_studies",
+        "toolqa_lite_studies",
+        "ultra_tool_studies",
+        "work_plus_studies",
         # Wave-1391 QA-exotics-2 canon.
         "archer_qa_studies",
         "argue_eval_studies",
