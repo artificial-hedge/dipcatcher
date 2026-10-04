@@ -10327,6 +10327,14 @@ from quant_fund.research.benches_w1291 import (
     bench_perplexity_filter_studies_family,
     bench_quality_filter_studies_family,
 )
+from quant_fund.research.benches_w1292 import (
+    bench_grpo_studies_family,
+    bench_math_reward_studies_family,
+    bench_outcome_reward_studies_family,
+    bench_process_reward_studies_family,
+    bench_rlvr_studies_family,
+    bench_verifiable_reward_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10896,6 +10904,12 @@ def _provenance(
         "domain_classifier_studies": bench_domain_classifier_studies_family,
         "perplexity_filter_studies": bench_perplexity_filter_studies_family,
         "quality_filter_studies": bench_quality_filter_studies_family,
+        "grpo_studies": bench_grpo_studies_family,
+        "math_reward_studies": bench_math_reward_studies_family,
+        "outcome_reward_studies": bench_outcome_reward_studies_family,
+        "process_reward_studies": bench_process_reward_studies_family,
+        "rlvr_studies": bench_rlvr_studies_family,
+        "verifiable_reward_studies": bench_verifiable_reward_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,

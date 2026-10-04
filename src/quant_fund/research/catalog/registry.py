@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1292 RLVR/verifiable-rewards canon.
+        "grpo_studies",
+        "math_reward_studies",
+        "outcome_reward_studies",
+        "process_reward_studies",
+        "rlvr_studies",
+        "verifiable_reward_studies",
         # Wave-1291 data-filtering/dedup canon.
         "data_mix_studies",
         "dedup_minhash_studies",
