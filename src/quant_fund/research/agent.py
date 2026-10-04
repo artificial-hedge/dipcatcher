@@ -10287,6 +10287,14 @@ from quant_fund.research.benches_w1286 import (
     bench_ntk_scaling_studies_family,
     bench_yarn_scaling_studies_family,
 )
+from quant_fund.research.benches_w1287 import (
+    bench_capability_eval_studies_family,
+    bench_control_eval_studies_family,
+    bench_deception_eval_studies_family,
+    bench_prompt_injection_studies_family,
+    bench_sandbox_escape_studies_family,
+    bench_tool_call_verify_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10826,6 +10834,12 @@ def _provenance(
         "landmark_attention_studies": bench_landmark_attention_studies_family,
         "ntk_scaling_studies": bench_ntk_scaling_studies_family,
         "yarn_scaling_studies": bench_yarn_scaling_studies_family,
+        "capability_eval_studies": bench_capability_eval_studies_family,
+        "control_eval_studies": bench_control_eval_studies_family,
+        "deception_eval_studies": bench_deception_eval_studies_family,
+        "prompt_injection_studies": bench_prompt_injection_studies_family,
+        "sandbox_escape_studies": bench_sandbox_escape_studies_family,
+        "tool_call_verify_studies": bench_tool_call_verify_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
