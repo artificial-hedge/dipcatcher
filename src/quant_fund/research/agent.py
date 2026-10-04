@@ -9791,6 +9791,14 @@ from quant_fund.research.benches_w1224 import (
     bench_obstetrics_studies_family,
     bench_reproductive_endocrinology_family,
 )
+from quant_fund.research.benches_w1225 import (
+    bench_colorectal_surgery_family,
+    bench_general_surgery_studies_family,
+    bench_hepatobiliary_surgery_family,
+    bench_minimally_invasive_surgery_family,
+    bench_surgical_oncology_studies_family,
+    bench_trauma_surgery_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10162,6 +10170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "general_surgery_studies": bench_general_surgery_studies_family,
+        "trauma_surgery": bench_trauma_surgery_family,
+        "colorectal_surgery": bench_colorectal_surgery_family,
+        "hepatobiliary_surgery": bench_hepatobiliary_surgery_family,
+        "surgical_oncology_studies": bench_surgical_oncology_studies_family,
+        "minimally_invasive_surgery": bench_minimally_invasive_surgery_family,
         "obstetrics_studies": bench_obstetrics_studies_family,
         "gynecology_studies": bench_gynecology_studies_family,
         "maternal_fetal_medicine": bench_maternal_fetal_medicine_family,
