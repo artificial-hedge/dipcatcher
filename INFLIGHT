@@ -1,3 +1,4 @@
+feat(research): wave 913 — interpolation-3 canon (scattered_interp, spline_interp, monotone_interp, akima_interp, pchip_interp, makima_interp) (5427->5433 families)
 feat(research): wave 912 — spatial-index-2 canon (octree_index, range_tree, hilbert_curve, z_curve, morton_order, rstar_tree) (5421->5427 families)
 feat(research): wave 911 — computational-geometry-2 canon (monotone_chain, gift_wrap, chan_hull, liang_barsky, cohen_sutherland, bezier_eval) (5415->5421 families)
 feat(research): wave 910 — b-tree family canon (b_tree, b_plus_tree, b_star_tree, weight_balanced_tree, wavl_tree, tango_tree) (5409->5415 families)
