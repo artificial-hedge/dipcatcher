@@ -5455,6 +5455,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ku_qa_studies",
         "lono_qa_studies",
         "pele_qa_studies",
+        # Wave-1742 maori-myth canon.
+        "haumia_qa_studies",
+        "rongo_qa_studies",
+        "tane_qa_studies",
+        "tangaroa_qa_studies",
+        "tawhirimatea_qa_studies",
+        "tumatauenga_qa_studies",
+        # Wave-1743 zulu-myth canon.
+        "impundulu_qa_studies",
+        "inkanyamba_qa_studies",
+        "mamlambo_qa_studies",
+        "tikoloshe_qa_studies",
+        "unkulunkulu_qa_studies",
+        "usilosimapundu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
