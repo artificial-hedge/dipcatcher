@@ -1,3 +1,4 @@
+w1373 commonsense-reasoning canon: commonsense_lite_studies, logi_qa_studies, mr_lite_studies, muin_lite_studies, qasc_sci2_studies, winogrande_lite_studies (8187->8193)
 w1372 long-doc-summarization canon: billsum_lite_studies, booksum_lite_studies, elm_lite_studies, govreport_lite_studies, qmsum_lite_studies, wikisum_lite_studies (8181->8187)
 w1371 social-reasoning canon: ethos_lite_studies, moral_stories_studies, mutual_lite_studies, prosocial_lite_studies, scruples_studies, siqa_lite_studies (8175->8181)
 w1370 challenge-benchmark canon: bbh_lite_studies, gpqa_lite_studies, if_eval_studies, live_bench_studies, olympic_bench_studies, trivia_qa_lite_studies (8169->8175)
