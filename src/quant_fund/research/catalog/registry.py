@@ -6057,6 +6057,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kyys2_qa_studies",
         "naa2_qa_studies",
         "num2_qa_studies",
+        # Wave-1828 finno-ugric-myth-2 canon.
+        "ajatar2_qa_studies",
+        "ilmatar2_qa_studies",
+        "jumala2_qa_studies",
+        "metsanhiisi2_qa_studies",
+        "otso2_qa_studies",
+        "peikko2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
