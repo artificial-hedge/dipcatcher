@@ -4762,6 +4762,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "manticore_2_qa_studies",
         "sphinx_2_qa_studies",
         "wyvern_2_qa_studies",
+        # Wave-1643 greek-beast canon.
+        "centaur_2_qa_studies",
+        "gryphon_qa_studies",
+        "harpy_2_qa_studies",
+        "hippogryph_qa_studies",
+        "minotaur_2_qa_studies",
+        "satyr_2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

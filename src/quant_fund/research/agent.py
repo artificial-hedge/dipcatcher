@@ -13135,6 +13135,14 @@ from quant_fund.research.benches_w1642 import (
     bench_sphinx_2_qa_studies_family,
     bench_wyvern_2_qa_studies_family,
 )
+from quant_fund.research.benches_w1643 import (
+    bench_centaur_2_qa_studies_family,
+    bench_gryphon_qa_studies_family,
+    bench_harpy_2_qa_studies_family,
+    bench_hippogryph_qa_studies_family,
+    bench_minotaur_2_qa_studies_family,
+    bench_satyr_2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15415,6 +15423,12 @@ def _provenance(
         "manticore_2_qa_studies": bench_manticore_2_qa_studies_family,
         "sphinx_2_qa_studies": bench_sphinx_2_qa_studies_family,
         "wyvern_2_qa_studies": bench_wyvern_2_qa_studies_family,
+        "centaur_2_qa_studies": bench_centaur_2_qa_studies_family,
+        "gryphon_qa_studies": bench_gryphon_qa_studies_family,
+        "harpy_2_qa_studies": bench_harpy_2_qa_studies_family,
+        "hippogryph_qa_studies": bench_hippogryph_qa_studies_family,
+        "minotaur_2_qa_studies": bench_minotaur_2_qa_studies_family,
+        "satyr_2_qa_studies": bench_satyr_2_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
