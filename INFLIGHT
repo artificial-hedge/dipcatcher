@@ -1,3 +1,4 @@
+w1338 math-reasoning-eval canon: arith_qa_studies, gsm_hard_studies, math_reason_studies, mini_f2f_studies, proof_pile_studies, theorem_qa_studies (7977->7983)
 w1337 agentic-eval-3 canon: android_env_studies, api_bank_studies, gaia_level_studies, video_game_studies, voyager_minecraft_studies, web_shopping_studies (7971->7977)
 w1336 agentic-eval-2 canon: assistantbench_studies, mind2web_studies, miniwob_studies, visual_web_studies, web_nav_studies, webarena_studies (7965->7971)
 w1335 code-eval-4 canon: code_rag_studies, codegen_universal_studies, long_code_bench_studies, odex_eval_studies, swe_dev_studies, swe_multimodal_studies (7959->7965)
