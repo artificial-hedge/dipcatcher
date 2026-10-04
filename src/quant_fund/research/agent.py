@@ -10663,6 +10663,14 @@ from quant_fund.research.benches_w1333 import (
     bench_vlur_studies_family,
     bench_xlsum_studies_family,
 )
+from quant_fund.research.benches_w1334 import (
+    bench_books_qa_studies_family,
+    bench_lcc_codebase_studies_family,
+    bench_multi_news_eval_studies_family,
+    bench_narrative_qa_studies_family,
+    bench_needle_multi_studies_family,
+    bench_qmsum_eval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11416,6 +11424,12 @@ def _provenance(
         "regard_eval_studies": bench_regard_eval_studies_family,
         "unqover_studies": bench_unqover_studies_family,
         "vlur_studies": bench_vlur_studies_family,
+        "books_qa_studies": bench_books_qa_studies_family,
+        "lcc_codebase_studies": bench_lcc_codebase_studies_family,
+        "multi_news_eval_studies": bench_multi_news_eval_studies_family,
+        "narrative_qa_studies": bench_narrative_qa_studies_family,
+        "needle_multi_studies": bench_needle_multi_studies_family,
+        "qmsum_eval_studies": bench_qmsum_eval_studies_family,
         "xlsum_studies": bench_xlsum_studies_family,
         "crosscodeeval_studies": bench_crosscodeeval_studies_family,
         "mer_bench_studies": bench_mer_bench_studies_family,
