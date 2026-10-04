@@ -12439,6 +12439,14 @@ from quant_fund.research.benches_w1555 import (
     bench_vinegaroon_qa_studies_family,
     bench_whip_scorpion_qa_studies_family,
 )
+from quant_fund.research.benches_w1556 import (
+    bench_bristletail_qa_studies_family,
+    bench_pillbug_qa_studies_family,
+    bench_silverfish_qa_studies_family,
+    bench_springtail_qa_studies_family,
+    bench_velvet_worm_qa_studies_family,
+    bench_woodlouse_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14362,6 +14370,12 @@ def _provenance(
         "pseudoscorpion_qa_studies": bench_pseudoscorpion_qa_studies_family,
         "solifuge_qa_studies": bench_solifuge_qa_studies_family,
         "tick_qa_studies": bench_tick_qa_studies_family,
+        "bristletail_qa_studies": bench_bristletail_qa_studies_family,
+        "pillbug_qa_studies": bench_pillbug_qa_studies_family,
+        "silverfish_qa_studies": bench_silverfish_qa_studies_family,
+        "springtail_qa_studies": bench_springtail_qa_studies_family,
+        "velvet_worm_qa_studies": bench_velvet_worm_qa_studies_family,
+        "woodlouse_qa_studies": bench_woodlouse_qa_studies_family,
         "vinegaroon_qa_studies": bench_vinegaroon_qa_studies_family,
         "whip_scorpion_qa_studies": bench_whip_scorpion_qa_studies_family,
         "jumping_spider_qa_studies": bench_jumping_spider_qa_studies_family,
