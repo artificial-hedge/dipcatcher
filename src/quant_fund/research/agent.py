@@ -8871,6 +8871,14 @@ from quant_fund.research.benches_w1109 import (
     bench_forensic_linguistics_family,
     bench_neurolinguistics_family,
 )
+from quant_fund.research.benches_w1110 import (
+    bench_phenomenology_2_family,
+    bench_philosophy_of_biology_family,
+    bench_philosophy_of_history_family,
+    bench_philosophy_of_mathematics_family,
+    bench_philosophy_of_religion_family,
+    bench_process_philosophy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9242,6 +9250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "philosophy_of_biology": bench_philosophy_of_biology_family,
+        "philosophy_of_mathematics": bench_philosophy_of_mathematics_family,
+        "philosophy_of_religion": bench_philosophy_of_religion_family,
+        "phenomenology_2": bench_phenomenology_2_family,
+        "philosophy_of_history": bench_philosophy_of_history_family,
+        "process_philosophy": bench_process_philosophy_family,
         "applied_linguistics": bench_applied_linguistics_family,
         "anthropological_linguistics": bench_anthropological_linguistics_family,
         "neurolinguistics": bench_neurolinguistics_family,
