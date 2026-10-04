@@ -8343,6 +8343,14 @@ from quant_fund.research.benches_w1043 import (
     bench_timber_harvesting_family,
     bench_wildfire_management_family,
 )
+from quant_fund.research.benches_w1044 import (
+    bench_blasting_engineering_family,
+    bench_mine_design_family,
+    bench_mine_ventilation_family,
+    bench_mineral_processing_family,
+    bench_ore_reserve_estimation_family,
+    bench_rock_mechanics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8714,6 +8722,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mine_design": bench_mine_design_family,
+        "rock_mechanics": bench_rock_mechanics_family,
+        "mineral_processing": bench_mineral_processing_family,
+        "blasting_engineering": bench_blasting_engineering_family,
+        "mine_ventilation": bench_mine_ventilation_family,
+        "ore_reserve_estimation": bench_ore_reserve_estimation_family,
         "silviculture": bench_silviculture_family,
         "forest_ecology": bench_forest_ecology_family,
         "timber_harvesting": bench_timber_harvesting_family,
