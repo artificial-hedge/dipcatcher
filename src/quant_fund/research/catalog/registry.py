@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-918 data-structures-4/geometry-3 canon.
+        "fractional_cascade",
+        "range_min_query",
+        "free_list",
+        "object_pool",
+        "welzl_circle",
+        "halfplane_isect",
         # Wave-917 data-structures-3 canon.
         "chained_hash",
         "linear_probe",
