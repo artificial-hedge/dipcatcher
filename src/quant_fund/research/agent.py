@@ -11615,6 +11615,14 @@ from quant_fund.research.benches_w1452 import (
     bench_potato_qa_studies_family,
     bench_tomato_qa_studies_family,
 )
+from quant_fund.research.benches_w1453 import (
+    bench_condor_qa_studies_family,
+    bench_harrier_qa_studies_family,
+    bench_kestrel_qa_studies_family,
+    bench_kite_qa_studies_family,
+    bench_osprey_qa_studies_family,
+    bench_vulture_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12993,6 +13001,12 @@ def _provenance(
         "onion_qa_studies": bench_onion_qa_studies_family,
         "potato_qa_studies": bench_potato_qa_studies_family,
         "tomato_qa_studies": bench_tomato_qa_studies_family,
+        "condor_qa_studies": bench_condor_qa_studies_family,
+        "harrier_qa_studies": bench_harrier_qa_studies_family,
+        "kestrel_qa_studies": bench_kestrel_qa_studies_family,
+        "kite_qa_studies": bench_kite_qa_studies_family,
+        "osprey_qa_studies": bench_osprey_qa_studies_family,
+        "vulture_qa_studies": bench_vulture_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
