@@ -16,7 +16,7 @@ def kinnara_qa_studies_aux(aux: bool) -> bool:
     """kinnara_qa_studies
 
     aux:
-    kinnara_qa_studies: kinnaras, celestial musicians, answers, and scores
+    kinnara_qa_studies: kinnara, bird singers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_kinnara_qa_studies(seed: int = 0) -> float:
     checks.append(not kinnara_qa_studies_ok(False, True))
     checks.append(kinnara_qa_studies_aux(True))
     checks.append(not kinnara_qa_studies_aux(False))
-    checks.append(True)  # hindu-myth-2 canon
+    checks.append(True)  # hindu-myth-5 canon
     return float(sum(checks) / len(checks))
 
 

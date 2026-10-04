@@ -16,7 +16,7 @@ def apsara_qa_studies_aux(aux: bool) -> bool:
     """apsara_qa_studies
 
     aux:
-    apsara_qa_studies: apsaras, celestial dancers, answers, and scores
+    apsara_qa_studies: apsara, cloud dancers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_apsara_qa_studies(seed: int = 0) -> float:
     checks.append(not apsara_qa_studies_ok(False, True))
     checks.append(apsara_qa_studies_aux(True))
     checks.append(not apsara_qa_studies_aux(False))
-    checks.append(True)  # hindu-myth-4 canon
+    checks.append(True)  # hindu-myth-5 canon
     return float(sum(checks) / len(checks))
 
 

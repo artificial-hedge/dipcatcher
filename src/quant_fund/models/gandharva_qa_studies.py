@@ -16,7 +16,7 @@ def gandharva_qa_studies_aux(aux: bool) -> bool:
     """gandharva_qa_studies
 
     aux:
-    gandharva_qa_studies: gandharvas, celestial musicians, answers, and scores
+    gandharva_qa_studies: gandharva, celestial lutes, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_gandharva_qa_studies(seed: int = 0) -> float:
     checks.append(not gandharva_qa_studies_ok(False, True))
     checks.append(gandharva_qa_studies_aux(True))
     checks.append(not gandharva_qa_studies_aux(False))
-    checks.append(True)  # hindu-myth-3 canon
+    checks.append(True)  # hindu-myth-5 canon
     return float(sum(checks) / len(checks))
 
 
