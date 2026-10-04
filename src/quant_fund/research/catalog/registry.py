@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1263 evidence-synthesis canon.
+        "diagnostic_meta_studies",
+        "fragility_index_studies",
+        "individual_patient_meta_studies",
+        "network_meta_studies",
+        "trial_sequential_studies",
+        "umbrella_review_studies",
         # Wave-1262 target-trial/RWE canon.
         "dynamic_borrowing_studies",
         "e_value_studies",
