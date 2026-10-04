@@ -13655,6 +13655,14 @@ from quant_fund.research.benches_w1707 import (
     bench_tapio_qa_studies_family,
     bench_ukko_qa_studies_family,
 )
+from quant_fund.research.benches_w1708 import (
+    bench_metsik_qa_studies_family,
+    bench_naveluz_qa_studies_family,
+    bench_numishi_qa_studies_family,
+    bench_numit_qa_studies_family,
+    bench_piryani_qa_studies_family,
+    bench_yejmun_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
