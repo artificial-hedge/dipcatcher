@@ -6267,6 +6267,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nemetona_qa_studies",
         "rigisamus_qa_studies",
         "sulis_qa_studies",
+        # Wave-1858 lusitanian-myth canon.
+        "aracus_qa_studies",
+        "cosus_qa_studies",
+        "cronia_qa_studies",
+        "munidis_qa_studies",
+        "quangeio_qa_studies",
+        "reo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
