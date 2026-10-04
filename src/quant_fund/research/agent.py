@@ -12903,6 +12903,14 @@ from quant_fund.research.benches_w1613 import (
     bench_tamaraw_qa_studies_family,
     bench_yak_qa_studies_family,
 )
+from quant_fund.research.benches_w1614 import (
+    bench_hog_deer_qa_studies_family,
+    bench_kouprey_qa_studies_family,
+    bench_mule_qa_studies_family,
+    bench_pere_david_qa_studies_family,
+    bench_red_deer_qa_studies_family,
+    bench_wapiti_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15036,6 +15044,12 @@ def _provenance(
         "dall_qa_studies": bench_dall_qa_studies_family,
         "llama_qa_studies": bench_llama_qa_studies_family,
         "aurochs_qa_studies": bench_aurochs_qa_studies_family,
+        "hog_deer_qa_studies": bench_hog_deer_qa_studies_family,
+        "kouprey_qa_studies": bench_kouprey_qa_studies_family,
+        "mule_qa_studies": bench_mule_qa_studies_family,
+        "pere_david_qa_studies": bench_pere_david_qa_studies_family,
+        "red_deer_qa_studies": bench_red_deer_qa_studies_family,
+        "wapiti_qa_studies": bench_wapiti_qa_studies_family,
         "banteng_qa_studies": bench_banteng_qa_studies_family,
         "gaur_qa_studies": bench_gaur_qa_studies_family,
         "saola_qa_studies": bench_saola_qa_studies_family,
