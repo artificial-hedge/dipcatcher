@@ -1,3 +1,4 @@
+feat(research): wave 608 — sheaf-4 canon (etale_descent, etale_morphism, fppf_site, fpqc_site, ladic_sheaf, lisse_sheaf) (3603->3609 families)
 feat(research): wave 607 — infinity-categories-3 canon (kan_complex, horn_filler, nerve_cat, mapping_space, homotopy_cat, cocartesian) (3597->3603 families)
 feat(research): wave 606 — algebraic-K-5 canon (connective_k, higher_k, k_spectrum, nil_k, karoubi_k, pedersen_weibel) (3591->3597 families)
 feat(research): wave 605 — motivic-8 canon (motivic_steenrod, motivic_adem, power_operations, simplicial_motive, dk_motive, motivic_transfer) (3585->3591 families)
