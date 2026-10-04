@@ -11975,6 +11975,14 @@ from quant_fund.research.benches_w1497 import (
     bench_potoroo_qa_studies_family,
     bench_woylie_qa_studies_family,
 )
+from quant_fund.research.benches_w1498 import (
+    bench_auklet_qa_studies_family,
+    bench_booby_qa_studies_family,
+    bench_frigatebird_qa_studies_family,
+    bench_guillemot_qa_studies_family,
+    bench_murrelet_qa_studies_family,
+    bench_razorbill_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13576,6 +13584,12 @@ def _provenance(
         "lapwing_qa_studies": bench_lapwing_qa_studies_family,
         "bettong_qa_studies": bench_bettong_qa_studies_family,
         "cuscus_qa_studies": bench_cuscus_qa_studies_family,
+        "auklet_qa_studies": bench_auklet_qa_studies_family,
+        "booby_qa_studies": bench_booby_qa_studies_family,
+        "frigatebird_qa_studies": bench_frigatebird_qa_studies_family,
+        "guillemot_qa_studies": bench_guillemot_qa_studies_family,
+        "murrelet_qa_studies": bench_murrelet_qa_studies_family,
+        "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
         "potoroo_qa_studies": bench_potoroo_qa_studies_family,

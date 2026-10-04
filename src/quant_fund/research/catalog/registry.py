@@ -3747,6 +3747,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pademelon_qa_studies",
         "potoroo_qa_studies",
         "woylie_qa_studies",
+        # Wave-1498 seabird-3 canon.
+        "auklet_qa_studies",
+        "booby_qa_studies",
+        "frigatebird_qa_studies",
+        "guillemot_qa_studies",
+        "murrelet_qa_studies",
+        "razorbill_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
