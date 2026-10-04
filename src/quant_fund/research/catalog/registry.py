@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1316 cue-conflict canon.
+        "backgrounds_studies",
+        "cue_conflict_studies",
+        "geirhos_studies",
+        "imagenet_bg_studies",
+        "shape_bias_studies",
+        "texture_bias_studies",
         # Wave-1315 OOD-robustness canon.
         "imagenet_a_studies",
         "imagenet_e_studies",
