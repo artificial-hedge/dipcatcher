@@ -9015,6 +9015,14 @@ from quant_fund.research.benches_w1127 import (
     bench_oral_history_family,
     bench_public_history_family,
 )
+from quant_fund.research.benches_w1128 import (
+    bench_computational_stylistics_family,
+    bench_corpus_phonology_family,
+    bench_language_documentation_family,
+    bench_lexical_semantics_family,
+    bench_stylistics_family,
+    bench_translation_technology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9386,6 +9394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "lexical_semantics": bench_lexical_semantics_family,
+        "computational_stylistics": bench_computational_stylistics_family,
+        "stylistics": bench_stylistics_family,
+        "corpus_phonology": bench_corpus_phonology_family,
+        "language_documentation": bench_language_documentation_family,
+        "translation_technology": bench_translation_technology_family,
         "oral_history": bench_oral_history_family,
         "public_history": bench_public_history_family,
         "digital_history": bench_digital_history_family,
