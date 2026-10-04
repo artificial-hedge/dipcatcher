@@ -4903,6 +4903,14 @@ from quant_fund.research.benches_w613 import (
     bench_witt_teich_family,
     bench_witt_vector_family,
 )
+from quant_fund.research.benches_w614 import (
+    bench_finite_spectra_family,
+    bench_moore_spec_family,
+    bench_peterson_stein_family,
+    bench_primary_op_family,
+    bench_secondary_op_family,
+    bench_steenrod_sq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5282,6 +5290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "primary_op": bench_primary_op_family,
+        "secondary_op": bench_secondary_op_family,
+        "steenrod_sq": bench_steenrod_sq_family,
+        "peterson_stein": bench_peterson_stein_family,
+        "moore_spec": bench_moore_spec_family,
+        "finite_spectra": bench_finite_spectra_family,
         "witt_vector": bench_witt_vector_family,
         "witt_teich": bench_witt_teich_family,
         "verschiebung_witt": bench_verschiebung_witt_family,

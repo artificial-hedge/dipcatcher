@@ -1,3 +1,4 @@
+feat(research): wave 614 — homotopy-13 canon (primary_op, secondary_op, steenrod_sq, peterson_stein, moore_spec, finite_spectra) (3639->3645 families)
 feat(research): wave 613 — arithmetic-geometry-2 canon (witt_vector, witt_teich, verschiebung_witt, perfect_witt, neron_smooth, semistable_reduction) (3633->3639 families)
 feat(research): wave 612 — commutative-algebra-4 canon (regular_ring, gorenstein_ring, normal_ring, factorial_ring, jacobson_ring, discrete_valuation) (3627->3633 families)
 feat(research): wave 611 — category-8 canon (pasting_diag, mate_dual, whisker_comp, pseudo_naturality, two_adjoint, modification) (3621->3627 families)
