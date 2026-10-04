@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-669 motivic-16 canon.
+        "slice_filtration2",
+        "milnor_operations2",
+        "motivic_bordism",
+        "motivic_eilenberg2",
+        "f_motive2",
+        "motivic_ss2",
         # Wave-668 motivic-15 canon.
         "norimotive3",
         "motivic_galois2",
