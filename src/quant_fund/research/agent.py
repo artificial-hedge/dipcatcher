@@ -12679,6 +12679,14 @@ from quant_fund.research.benches_w1585 import (
     bench_solenodon_qa_studies_family,
     bench_tenrec_qa_studies_family,
 )
+from quant_fund.research.benches_w1586 import (
+    bench_beira_qa_studies_family,
+    bench_gemsbok_qa_studies_family,
+    bench_madoqua_qa_studies_family,
+    bench_oribi_qa_studies_family,
+    bench_reedbuck_qa_studies_family,
+    bench_tsessebe_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14712,6 +14720,12 @@ def _provenance(
         "aardvark_qa_studies": bench_aardvark_qa_studies_family,
         "elephant_shrew_qa_studies": bench_elephant_shrew_qa_studies_family,
         "golden_mole_qa_studies": bench_golden_mole_qa_studies_family,
+        "beira_qa_studies": bench_beira_qa_studies_family,
+        "gemsbok_qa_studies": bench_gemsbok_qa_studies_family,
+        "madoqua_qa_studies": bench_madoqua_qa_studies_family,
+        "oribi_qa_studies": bench_oribi_qa_studies_family,
+        "reedbuck_qa_studies": bench_reedbuck_qa_studies_family,
+        "tsessebe_qa_studies": bench_tsessebe_qa_studies_family,
         "gymnure_qa_studies": bench_gymnure_qa_studies_family,
         "solenodon_qa_studies": bench_solenodon_qa_studies_family,
         "tenrec_qa_studies": bench_tenrec_qa_studies_family,
