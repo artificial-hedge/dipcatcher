@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1014 astrophysics/cosmology canon.
+        "jeans_instability",
+        "stellar_structure",
+        "stellar_evolution",
+        "hubble_law",
+        "cmb_anisotropy",
+        "dark_matter",
         # Wave-1013 atomic/molecular-physics canon.
         "hartree_fock",
         "born_oppenheimer",

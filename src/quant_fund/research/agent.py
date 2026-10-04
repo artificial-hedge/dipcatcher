@@ -8103,6 +8103,14 @@ from quant_fund.research.benches_w1013 import (
     bench_vibrational_spectra_family,
     bench_zeeman_effect_family,
 )
+from quant_fund.research.benches_w1014 import (
+    bench_cmb_anisotropy_family,
+    bench_dark_matter_family,
+    bench_hubble_law_family,
+    bench_jeans_instability_family,
+    bench_stellar_evolution_family,
+    bench_stellar_structure_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8474,6 +8482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jeans_instability": bench_jeans_instability_family,
+        "stellar_structure": bench_stellar_structure_family,
+        "stellar_evolution": bench_stellar_evolution_family,
+        "hubble_law": bench_hubble_law_family,
+        "cmb_anisotropy": bench_cmb_anisotropy_family,
+        "dark_matter": bench_dark_matter_family,
         "hartree_fock": bench_hartree_fock_family,
         "born_oppenheimer": bench_born_oppenheimer_family,
         "molecular_orbitals": bench_molecular_orbitals_family,
