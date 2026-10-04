@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1067 library/information science canon.
+        "library_science",
+        "information_science",
+        "archival_studies",
+        "museum_studies",
+        "digital_humanities",
+        "knowledge_organization",
         # Wave-1066 area studies canon.
         "latin_american_studies",
         "asian_studies",
