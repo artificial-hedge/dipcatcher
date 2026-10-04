@@ -13159,6 +13159,14 @@ from quant_fund.research.benches_w1645 import (
     bench_pegasus_2_qa_studies_family,
     bench_typhon_qa_studies_family,
 )
+from quant_fund.research.benches_w1646 import (
+    bench_fenrir_2_qa_studies_family,
+    bench_garm_qa_studies_family,
+    bench_jormungandr_qa_studies_family,
+    bench_nidhogg_qa_studies_family,
+    bench_ratatoskr_qa_studies_family,
+    bench_sleipnir_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15457,6 +15465,12 @@ def _provenance(
         "orthrus_qa_studies": bench_orthrus_qa_studies_family,
         "pegasus_2_qa_studies": bench_pegasus_2_qa_studies_family,
         "typhon_qa_studies": bench_typhon_qa_studies_family,
+        "fenrir_2_qa_studies": bench_fenrir_2_qa_studies_family,
+        "garm_qa_studies": bench_garm_qa_studies_family,
+        "jormungandr_qa_studies": bench_jormungandr_qa_studies_family,
+        "nidhogg_qa_studies": bench_nidhogg_qa_studies_family,
+        "ratatoskr_qa_studies": bench_ratatoskr_qa_studies_family,
+        "sleipnir_qa_studies": bench_sleipnir_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
