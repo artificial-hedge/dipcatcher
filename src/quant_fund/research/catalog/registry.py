@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1170 justice canon.
+        "criminology_3",
+        "forensic_science_2",
+        "penology_2",
+        "victimology_2",
+        "security_studies_2",
+        "intelligence_studies_2",
         # Wave-1169 social-policy canon.
         "social_work_2",
         "public_policy_2",
