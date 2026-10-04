@@ -13143,6 +13143,14 @@ from quant_fund.research.benches_w1643 import (
     bench_minotaur_2_qa_studies_family,
     bench_satyr_2_qa_studies_family,
 )
+from quant_fund.research.benches_w1644 import (
+    bench_charybdis_qa_studies_family,
+    bench_cyclops_2_qa_studies_family,
+    bench_hydra_3_qa_studies_family,
+    bench_medusa_2_qa_studies_family,
+    bench_scylla_qa_studies_family,
+    bench_siren_2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15429,6 +15437,12 @@ def _provenance(
         "hippogryph_qa_studies": bench_hippogryph_qa_studies_family,
         "minotaur_2_qa_studies": bench_minotaur_2_qa_studies_family,
         "satyr_2_qa_studies": bench_satyr_2_qa_studies_family,
+        "charybdis_qa_studies": bench_charybdis_qa_studies_family,
+        "cyclops_2_qa_studies": bench_cyclops_2_qa_studies_family,
+        "hydra_3_qa_studies": bench_hydra_3_qa_studies_family,
+        "medusa_2_qa_studies": bench_medusa_2_qa_studies_family,
+        "scylla_qa_studies": bench_scylla_qa_studies_family,
+        "siren_2_qa_studies": bench_siren_2_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
