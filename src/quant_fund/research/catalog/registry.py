@@ -5938,6 +5938,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "osun2_qa_studies",
         "oya2_qa_studies",
         "shango2_qa_studies",
+        # Wave-1811 egyptian-8 canon.
+        "bes2_qa_studies",
+        "geb2_qa_studies",
+        "nephthys2_qa_studies",
+        "ptah2_qa_studies",
+        "sekhmet2_qa_studies",
+        "thoth2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
