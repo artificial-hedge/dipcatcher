@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1125 economics-4 canon.
+        "development_economics",
+        "environmental_economics",
+        "health_economics",
+        "urban_economics",
+        "agricultural_economics",
+        "energy_economics",
         # Wave-1124 sociology-4 canon.
         "sociology_of_work",
         "sociology_of_emotions",
