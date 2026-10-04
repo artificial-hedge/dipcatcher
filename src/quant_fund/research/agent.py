@@ -9887,6 +9887,14 @@ from quant_fund.research.benches_w1236 import (
     bench_neuropathic_pain_studies_family,
     bench_opioid_stewardship_studies_family,
 )
+from quant_fund.research.benches_w1237 import (
+    bench_clinical_pharmacy_studies_family,
+    bench_compounding_pharmacy_family,
+    bench_hospital_pharmacy_studies_family,
+    bench_medication_therapy_mgmt_family,
+    bench_pharmacovigilance_studies_family,
+    bench_pharmacy_practice_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10258,6 +10266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "clinical_pharmacy_studies": bench_clinical_pharmacy_studies_family,
+        "pharmacy_practice_studies": bench_pharmacy_practice_studies_family,
+        "medication_therapy_mgmt": bench_medication_therapy_mgmt_family,
+        "compounding_pharmacy": bench_compounding_pharmacy_family,
+        "pharmacovigilance_studies": bench_pharmacovigilance_studies_family,
+        "hospital_pharmacy_studies": bench_hospital_pharmacy_studies_family,
         "chronic_pain_studies": bench_chronic_pain_studies_family,
         "fibromyalgia_studies": bench_fibromyalgia_studies_family,
         "headache_studies": bench_headache_studies_family,

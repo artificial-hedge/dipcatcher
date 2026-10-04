@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1237 clinical-pharmacy canon.
+        "clinical_pharmacy_studies",
+        "pharmacy_practice_studies",
+        "medication_therapy_mgmt",
+        "compounding_pharmacy",
+        "pharmacovigilance_studies",
+        "hospital_pharmacy_studies",
         # Wave-1236 pain canon.
         "chronic_pain_studies",
         "fibromyalgia_studies",
