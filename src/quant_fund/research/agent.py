@@ -9119,6 +9119,14 @@ from quant_fund.research.benches_w1140 import (
     bench_seismology_family,
     bench_volcanology_2_family,
 )
+from quant_fund.research.benches_w1141 import (
+    bench_astrobiology_family,
+    bench_astrochemistry_family,
+    bench_cosmology_2_family,
+    bench_exoplanet_science_family,
+    bench_galactic_dynamics_family,
+    bench_helio_seismology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9490,6 +9498,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cosmology_2": bench_cosmology_2_family,
+        "astrobiology": bench_astrobiology_family,
+        "astrochemistry": bench_astrochemistry_family,
+        "helio_seismology": bench_helio_seismology_family,
+        "exoplanet_science": bench_exoplanet_science_family,
+        "galactic_dynamics": bench_galactic_dynamics_family,
         "oceanography": bench_oceanography_family,
         "hydrology_2": bench_hydrology_2_family,
         "seismology": bench_seismology_family,
