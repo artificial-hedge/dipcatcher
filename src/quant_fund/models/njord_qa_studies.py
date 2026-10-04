@@ -16,7 +16,7 @@ def njord_qa_studies_aux(aux: bool) -> bool:
     """njord_qa_studies
 
     aux:
-    njord_qa_studies: njord, sea fathers, answers, and scores
+    njord_qa_studies: njord, calm harbors, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_njord_qa_studies(seed: int = 0) -> float:
     checks.append(not njord_qa_studies_ok(False, True))
     checks.append(njord_qa_studies_aux(True))
     checks.append(not njord_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-10 canon
+    checks.append(True)  # norse-myth-12 canon
     return float(sum(checks) / len(checks))
 
 

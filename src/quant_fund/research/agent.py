@@ -14319,6 +14319,14 @@ from quant_fund.research.benches_w1790 import (
     bench_ptah_qa_studies_family,
     bench_seth_qa_studies_family,
 )
+from quant_fund.research.benches_w1791 import (
+    bench_frey_qa_studies_family,
+    bench_freya2_qa_studies_family,
+    bench_magni_qa_studies_family,
+    bench_modi_qa_studies_family,
+    bench_njord_qa_studies_family,
+    bench_tyr2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
