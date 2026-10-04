@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1265 genetic-epidemiology/MR canon.
+        "colocalization_studies",
+        "genetic_correlation_studies",
+        "heritability_ldscore_studies",
+        "mendelian_randomization_studies",
+        "pleiotropy_robust_studies",
+        "polygenic_score_studies",
         # Wave-1264 causal-RWE-2 canon.
         "external_control_studies",
         "negative_control_studies",
