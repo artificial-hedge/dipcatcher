@@ -9895,6 +9895,14 @@ from quant_fund.research.benches_w1237 import (
     bench_pharmacovigilance_studies_family,
     bench_pharmacy_practice_studies_family,
 )
+from quant_fund.research.benches_w1238 import (
+    bench_aortic_medicine_studies_family,
+    bench_lymphatic_medicine_family,
+    bench_peripheral_artery_studies_family,
+    bench_phlebology_studies_family,
+    bench_vascular_lab_studies_family,
+    bench_vascular_medicine_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10266,6 +10274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "vascular_medicine_studies": bench_vascular_medicine_studies_family,
+        "phlebology_studies": bench_phlebology_studies_family,
+        "lymphatic_medicine": bench_lymphatic_medicine_family,
+        "vascular_lab_studies": bench_vascular_lab_studies_family,
+        "peripheral_artery_studies": bench_peripheral_artery_studies_family,
+        "aortic_medicine_studies": bench_aortic_medicine_studies_family,
         "clinical_pharmacy_studies": bench_clinical_pharmacy_studies_family,
         "pharmacy_practice_studies": bench_pharmacy_practice_studies_family,
         "medication_therapy_mgmt": bench_medication_therapy_mgmt_family,
