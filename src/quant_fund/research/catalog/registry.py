@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-935 convex-optimization canon.
+        "kkt_solve",
+        "cvx_reform",
+        "self_concordant",
+        "logbarrier_fn",
+        "analytic_center",
+        "dik_ellipsoid",
         # Wave-934 convex-analysis-2 canon.
         "inf_convolution",
         "legendre_transform",
