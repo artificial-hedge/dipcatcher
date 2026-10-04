@@ -14015,6 +14015,14 @@ from quant_fund.research.benches_w1752 import (
     bench_thaumas_qa_studies_family,
     bench_triton_qa_studies_family,
 )
+from quant_fund.research.benches_w1753 import (
+    bench_changxi_qa_studies_family,
+    bench_chiyou_qa_studies_family,
+    bench_gonggong_qa_studies_family,
+    bench_xihe_qa_studies_family,
+    bench_yinglong_qa_studies_family,
+    bench_zhurong_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

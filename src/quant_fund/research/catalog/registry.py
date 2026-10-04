@@ -5532,6 +5532,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "proteus_qa_studies",
         "thaumas_qa_studies",
         "triton_qa_studies",
+        # Wave-1753 chinese-myth-4 canon.
+        "changxi_qa_studies",
+        "chiyou_qa_studies",
+        "gonggong_qa_studies",
+        "xihe_qa_studies",
+        "yinglong_qa_studies",
+        "zhurong_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
