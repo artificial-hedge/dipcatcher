@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1235 rheumatology canon.
+        "rheumatology_medicine",
+        "spondyloarthritis_studies",
+        "inflammatory_arthritis_studies",
+        "connective_tissue_studies",
+        "osteoarthritis_studies",
+        "myositis_studies",
         # Wave-1234 womens-health canon.
         "menopause_medicine",
         "urogynecology_studies",
