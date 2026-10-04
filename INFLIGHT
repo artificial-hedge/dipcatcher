@@ -1,3 +1,4 @@
+feat(research): wave 519 — modular-forms canon (modular_form, hecke_op2, eisenstein_srs2, cusp_form, theta_func, dedekind_eta) (3069->3075 families)
 feat(research): wave 518 — Yang-Baxter/braid canon (yang_baxter, braid_rep, yangian, rtt_formalism, quantum_double, ribbon_cat) (3063->3069 families)
 feat(research): wave 517 — quantum-groups canon (quantum_group, crystal_base, quantum_rmatrix, jimbo_drin, lusztig_can, quantum_schur) (3057->3063 families)
 feat(research): wave 516 — Kac-Moody/VOA canon (kac_moody, weyl_kac, vertex_alg, moonshine_module, affine_lie, zhu_algebra) (3051->3057 families)

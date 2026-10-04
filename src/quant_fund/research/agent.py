@@ -4143,6 +4143,14 @@ from quant_fund.research.benches_w518 import (
     bench_yang_baxter_family,
     bench_yangian_family,
 )
+from quant_fund.research.benches_w519 import (
+    bench_cusp_form_family,
+    bench_dedekind_eta_family,
+    bench_eisenstein_srs2_family,
+    bench_hecke_op2_family,
+    bench_modular_form_family,
+    bench_theta_func_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4522,6 +4530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "modular_form": bench_modular_form_family,
+        "hecke_op2": bench_hecke_op2_family,
+        "eisenstein_srs2": bench_eisenstein_srs2_family,
+        "cusp_form": bench_cusp_form_family,
+        "theta_func": bench_theta_func_family,
+        "dedekind_eta": bench_dedekind_eta_family,
         "yang_baxter": bench_yang_baxter_family,
         "braid_rep": bench_braid_rep_family,
         "yangian": bench_yangian_family,
