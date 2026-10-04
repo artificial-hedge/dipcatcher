@@ -8991,6 +8991,14 @@ from quant_fund.research.benches_w1124 import (
     bench_sociology_of_sport_family,
     bench_sociology_of_work_family,
 )
+from quant_fund.research.benches_w1125 import (
+    bench_agricultural_economics_family,
+    bench_development_economics_family,
+    bench_energy_economics_family,
+    bench_environmental_economics_family,
+    bench_health_economics_family,
+    bench_urban_economics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9362,6 +9370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "development_economics": bench_development_economics_family,
+        "environmental_economics": bench_environmental_economics_family,
+        "health_economics": bench_health_economics_family,
+        "urban_economics": bench_urban_economics_family,
+        "agricultural_economics": bench_agricultural_economics_family,
+        "energy_economics": bench_energy_economics_family,
         "sociology_of_work": bench_sociology_of_work_family,
         "sociology_of_emotions": bench_sociology_of_emotions_family,
         "sociology_of_food": bench_sociology_of_food_family,
