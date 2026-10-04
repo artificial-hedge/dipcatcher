@@ -1,3 +1,4 @@
+feat(research): wave 833 — functional-limit-theory canon (fclt_invariance, donsker_invariance, martingale_fclt, stable_limit, brownian_approx, strassen_flln) (4947->4953 families)
 feat(research): wave 832 — weak-convergence-2 canon (porte_manteau, continuous_map, delta_method, skorohod_embed, kmt_approx, empirical_bridge) (4941->4947 families)
 feat(research): wave 831 — empirical-process-3 canon (entropy_integral, uniform_clt, symmetrization, rademacher_cplx, covering_number, metric_entropy) (4935->4941 families)
 feat(research): wave 830 — concentration canon (azuma_ineq, mcdiarmid_ineq, talagrand_ineq, efron_stein, bounded_diff, hoeffding_ineq) (4929->4935 families)

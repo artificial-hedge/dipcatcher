@@ -6655,6 +6655,14 @@ from quant_fund.research.benches_w832 import (
     bench_porte_manteau_family,
     bench_skorohod_embed_family,
 )
+from quant_fund.research.benches_w833 import (
+    bench_brownian_approx_family,
+    bench_donsker_invariance_family,
+    bench_fclt_invariance_family,
+    bench_martingale_fclt_family,
+    bench_stable_limit_family,
+    bench_strassen_flln_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7026,6 +7034,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fclt_invariance": bench_fclt_invariance_family,
+        "donsker_invariance": bench_donsker_invariance_family,
+        "martingale_fclt": bench_martingale_fclt_family,
+        "stable_limit": bench_stable_limit_family,
+        "brownian_approx": bench_brownian_approx_family,
+        "strassen_flln": bench_strassen_flln_family,
         "porte_manteau": bench_porte_manteau_family,
         "continuous_map": bench_continuous_map_family,
         "delta_method": bench_delta_method_family,
