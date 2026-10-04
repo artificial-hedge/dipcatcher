@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-911 computational-geometry-2 canon.
+        "monotone_chain",
+        "gift_wrap",
+        "chan_hull",
+        "liang_barsky",
+        "cohen_sutherland",
+        "bezier_eval",
         # Wave-910 b-tree family canon.
         "b_tree",
         "b_plus_tree",
