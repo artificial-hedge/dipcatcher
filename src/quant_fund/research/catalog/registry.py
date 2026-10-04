@@ -3194,6 +3194,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "jeopardy_qa_studies",
         "misc_qa_studies",
         "myth_qa_studies",
+        # Wave-1419 narrative-genre canon.
+        "anecdote_qa_studies",
+        "ballad_qa_studies",
+        "biography_qa_studies",
+        "chronicle_qa_studies",
+        "epic_qa_studies",
+        "fable_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

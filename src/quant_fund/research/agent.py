@@ -11343,6 +11343,14 @@ from quant_fund.research.benches_w1418 import (
     bench_misc_qa_studies_family,
     bench_myth_qa_studies_family,
 )
+from quant_fund.research.benches_w1419 import (
+    bench_anecdote_qa_studies_family,
+    bench_ballad_qa_studies_family,
+    bench_biography_qa_studies_family,
+    bench_chronicle_qa_studies_family,
+    bench_epic_qa_studies_family,
+    bench_fable_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12517,6 +12525,12 @@ def _provenance(
         "jeopardy_qa_studies": bench_jeopardy_qa_studies_family,
         "misc_qa_studies": bench_misc_qa_studies_family,
         "myth_qa_studies": bench_myth_qa_studies_family,
+        "anecdote_qa_studies": bench_anecdote_qa_studies_family,
+        "ballad_qa_studies": bench_ballad_qa_studies_family,
+        "biography_qa_studies": bench_biography_qa_studies_family,
+        "chronicle_qa_studies": bench_chronicle_qa_studies_family,
+        "epic_qa_studies": bench_epic_qa_studies_family,
+        "fable_qa_studies": bench_fable_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
