@@ -16,7 +16,7 @@ def tlaloc_qa_studies_aux(aux: bool) -> bool:
     """tlaloc_qa_studies
 
     aux:
-    tlaloc_qa_studies: tlaloc, rain deity, answers, and scores
+    tlaloc_qa_studies: tlaloc, rain lords, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tlaloc_qa_studies(seed: int = 0) -> float:
     checks.append(not tlaloc_qa_studies_ok(False, True))
     checks.append(tlaloc_qa_studies_aux(True))
     checks.append(not tlaloc_qa_studies_aux(False))
-    checks.append(True)  # aztec-deity canon
+    checks.append(True)  # aztec-deity-3 canon
     return float(sum(checks) / len(checks))
 
 
