@@ -4146,6 +4146,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orb_weaver_qa_studies",
         "tarantula_qa_studies",
         "wolf_spider_qa_studies",
+        # Wave-1555 arachnid-2 canon.
+        "harvestman_qa_studies",
+        "pseudoscorpion_qa_studies",
+        "solifuge_qa_studies",
+        "tick_qa_studies",
+        "vinegaroon_qa_studies",
+        "whip_scorpion_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

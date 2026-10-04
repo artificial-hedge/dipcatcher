@@ -12431,6 +12431,14 @@ from quant_fund.research.benches_w1554 import (
     bench_tarantula_qa_studies_family,
     bench_wolf_spider_qa_studies_family,
 )
+from quant_fund.research.benches_w1555 import (
+    bench_harvestman_qa_studies_family,
+    bench_pseudoscorpion_qa_studies_family,
+    bench_solifuge_qa_studies_family,
+    bench_tick_qa_studies_family,
+    bench_vinegaroon_qa_studies_family,
+    bench_whip_scorpion_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14350,6 +14358,12 @@ def _provenance(
         "wood_frog_qa_studies": bench_wood_frog_qa_studies_family,
         "black_widow_qa_studies": bench_black_widow_qa_studies_family,
         "huntsman_qa_studies": bench_huntsman_qa_studies_family,
+        "harvestman_qa_studies": bench_harvestman_qa_studies_family,
+        "pseudoscorpion_qa_studies": bench_pseudoscorpion_qa_studies_family,
+        "solifuge_qa_studies": bench_solifuge_qa_studies_family,
+        "tick_qa_studies": bench_tick_qa_studies_family,
+        "vinegaroon_qa_studies": bench_vinegaroon_qa_studies_family,
+        "whip_scorpion_qa_studies": bench_whip_scorpion_qa_studies_family,
         "jumping_spider_qa_studies": bench_jumping_spider_qa_studies_family,
         "orb_weaver_qa_studies": bench_orb_weaver_qa_studies_family,
         "tarantula_qa_studies": bench_tarantula_qa_studies_family,
