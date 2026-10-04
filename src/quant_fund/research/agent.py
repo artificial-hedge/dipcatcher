@@ -9519,6 +9519,14 @@ from quant_fund.research.benches_w1190 import (
     bench_typography_studies_family,
     bench_web_design_family,
 )
+from quant_fund.research.benches_w1191 import (
+    bench_advertising_studies_family,
+    bench_broadcasting_studies_family,
+    bench_journalism_studies_family,
+    bench_news_media_family,
+    bench_public_relations_studies_family,
+    bench_publishing_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9890,6 +9898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "journalism_studies": bench_journalism_studies_family,
+        "advertising_studies": bench_advertising_studies_family,
+        "broadcasting_studies": bench_broadcasting_studies_family,
+        "news_media": bench_news_media_family,
+        "public_relations_studies": bench_public_relations_studies_family,
+        "publishing_studies": bench_publishing_studies_family,
         "graphic_design": bench_graphic_design_family,
         "typography_studies": bench_typography_studies_family,
         "photography_studies": bench_photography_studies_family,

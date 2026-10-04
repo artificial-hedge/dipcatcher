@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1191 media canon.
+        "journalism_studies",
+        "advertising_studies",
+        "broadcasting_studies",
+        "news_media",
+        "public_relations_studies",
+        "publishing_studies",
         # Wave-1190 visual-design canon.
         "graphic_design",
         "typography_studies",
