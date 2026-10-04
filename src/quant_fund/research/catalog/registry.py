@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1020 ecology/evolution canon.
+        "predator_prey",
+        "lotka_volterra",
+        "logistic_growth",
+        "island_biogeography",
+        "neutral_theory",
+        "food_web",
         # Wave-1019 geophysics-3 canon.
         "seismic_waves",
         "earthquake_magnitude",
