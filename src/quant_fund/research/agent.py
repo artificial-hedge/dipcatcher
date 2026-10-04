@@ -12855,6 +12855,14 @@ from quant_fund.research.benches_w1607 import (
     bench_uakari_2_qa_studies_family,
     bench_woolly_lemur_qa_studies_family,
 )
+from quant_fund.research.benches_w1608 import (
+    bench_buffalo_qa_studies_family,
+    bench_kob_qa_studies_family,
+    bench_lechwe_qa_studies_family,
+    bench_rhino_qa_studies_family,
+    bench_roan_qa_studies_family,
+    bench_warthog_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14965,6 +14973,12 @@ def _provenance(
         "fiddler_qa_studies": bench_fiddler_qa_studies_family,
         "alpaca_qa_studies": bench_alpaca_qa_studies_family,
         "bamboo_lemur_qa_studies": bench_bamboo_lemur_qa_studies_family,
+        "buffalo_qa_studies": bench_buffalo_qa_studies_family,
+        "kob_qa_studies": bench_kob_qa_studies_family,
+        "lechwe_qa_studies": bench_lechwe_qa_studies_family,
+        "rhino_qa_studies": bench_rhino_qa_studies_family,
+        "roan_qa_studies": bench_roan_qa_studies_family,
+        "warthog_qa_studies": bench_warthog_qa_studies_family,
         "bearded_saki_qa_studies": bench_bearded_saki_qa_studies_family,
         "owl_monkey_qa_studies": bench_owl_monkey_qa_studies_family,
         "pale_titi_qa_studies": bench_pale_titi_qa_studies_family,
