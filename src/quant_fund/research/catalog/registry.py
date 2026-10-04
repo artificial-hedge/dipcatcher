@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-892 adaptive-mesh canon.
+        "space_time_adapt",
+        "greedy_marking",
+        "form_analysis",
+        "hp_adaptive",
+        "wavelet_adapt",
+        "residual_marking",
         # Wave-891 optimization/IGA canon.
         "trust_region_dogleg",
         "bfgs_update",
