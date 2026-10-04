@@ -9143,6 +9143,14 @@ from quant_fund.research.benches_w1143 import (
     bench_optics_3_family,
     bench_thermodynamics_2_family,
 )
+from quant_fund.research.benches_w1144 import (
+    bench_asteroid_science_family,
+    bench_astrophotonics_family,
+    bench_comet_science_family,
+    bench_grav_waves_2_family,
+    bench_planetology_family,
+    bench_space_weather_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9514,6 +9522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "space_weather": bench_space_weather_family,
+        "planetology": bench_planetology_family,
+        "asteroid_science": bench_asteroid_science_family,
+        "comet_science": bench_comet_science_family,
+        "astrophotonics": bench_astrophotonics_family,
+        "grav_waves_2": bench_grav_waves_2_family,
         "nanotechnology": bench_nanotechnology_family,
         "biophysics_2": bench_biophysics_2_family,
         "condensed_matter_3": bench_condensed_matter_3_family,
