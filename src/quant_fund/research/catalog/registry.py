@@ -4370,6 +4370,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oribi_qa_studies",
         "reedbuck_qa_studies",
         "tsessebe_qa_studies",
+        # Wave-1587 forest-deer canon.
+        "barasingha_qa_studies",
+        "brocket_qa_studies",
+        "huemul_qa_studies",
+        "mule_deer_qa_studies",
+        "sambar_qa_studies",
+        "taruca_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
