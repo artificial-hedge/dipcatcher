@@ -5014,6 +5014,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ovinnik_qa_studies",
         "poludnica_qa_studies",
         "vila_qa_studies",
+        # Wave-1679 norse-realm-2 canon.
+        "alfheim_qa_studies",
+        "bergrisi_qa_studies",
+        "geirahod_qa_studies",
+        "huldra_qa_studies",
+        "troll_qa_studies",
+        "vaetter_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
