@@ -4545,6 +4545,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "needle_clawed_qa_studies",
         "ringtail_qa_studies",
         "sifaka_qa_studies",
+        # Wave-1612 highland-grazer canon.
+        "argali_qa_studies",
+        "bighorn_qa_studies",
+        "dall_qa_studies",
+        "llama_qa_studies",
+        "mouflon_qa_studies",
+        "urial_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
