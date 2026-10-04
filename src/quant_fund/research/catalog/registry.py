@@ -6512,6 +6512,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mithra_iran_qa_studies",
         "mitra_persian_qa_studies",
         "perangal_qa_studies",
+        # Wave-1893 mesopotamian-demon canon.
+        "alu_demon_qa_studies",
+        "ardat_lili_qa_studies",
+        "galla_demon_qa_studies",
+        "lamashtu_qa_studies",
+        "lilitu_qa_studies",
+        "rabisu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
