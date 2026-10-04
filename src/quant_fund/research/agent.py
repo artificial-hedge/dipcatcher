@@ -6167,6 +6167,14 @@ from quant_fund.research.benches_w771 import (
     bench_gumbel_copula_family,
     bench_joe_copula_family,
 )
+from quant_fund.research.benches_w772 import (
+    bench_branching_imm_family,
+    bench_crump_mode_family,
+    bench_galton_watson_family,
+    bench_kimmel_branch_family,
+    bench_multi_type_branch_family,
+    bench_sevastyanov_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6546,6 +6554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "galton_watson": bench_galton_watson_family,
+        "branching_imm": bench_branching_imm_family,
+        "multi_type_branch": bench_multi_type_branch_family,
+        "crump_mode": bench_crump_mode_family,
+        "kimmel_branch": bench_kimmel_branch_family,
+        "sevastyanov": bench_sevastyanov_family,
         "copula_gauss": bench_copula_gauss_family,
         "copula_t": bench_copula_t_family,
         "clayton_copula": bench_clayton_copula_family,

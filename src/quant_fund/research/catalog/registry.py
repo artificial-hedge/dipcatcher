@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-772 branching-process canon.
+        "galton_watson",
+        "branching_imm",
+        "multi_type_branch",
+        "crump_mode",
+        "kimmel_branch",
+        "sevastyanov",
         # Wave-771 copula canon.
         "copula_gauss",
         "copula_t",
