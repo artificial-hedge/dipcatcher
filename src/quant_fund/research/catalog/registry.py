@@ -5756,6 +5756,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hestia_qa_studies",
         "poseidon_qa_studies",
         "zeus_qa_studies",
+        # Wave-1785 japanese-myth-6 canon.
+        "benzaiten_qa_studies",
+        "hoori_qa_studies",
+        "jurojin_qa_studies",
+        "kushinadahime_qa_studies",
+        "toyotamahime_qa_studies",
+        "yamatotakeru_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -14271,6 +14271,14 @@ from quant_fund.research.benches_w1784 import (
     bench_poseidon_qa_studies_family,
     bench_zeus_qa_studies_family,
 )
+from quant_fund.research.benches_w1785 import (
+    bench_benzaiten_qa_studies_family,
+    bench_hoori_qa_studies_family,
+    bench_jurojin_qa_studies_family,
+    bench_kushinadahime_qa_studies_family,
+    bench_toyotamahime_qa_studies_family,
+    bench_yamatotakeru_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
