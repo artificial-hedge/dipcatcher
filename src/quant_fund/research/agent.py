@@ -9279,6 +9279,14 @@ from quant_fund.research.benches_w1160 import (
     bench_philosophy_6_family,
     bench_religious_studies_2_family,
 )
+from quant_fund.research.benches_w1161 import (
+    bench_dentistry_3_family,
+    bench_medicine_7_family,
+    bench_nursing_2_family,
+    bench_pharmacy_2_family,
+    bench_public_health_2_family,
+    bench_veterinary_medicine_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9650,6 +9658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "medicine_7": bench_medicine_7_family,
+        "dentistry_3": bench_dentistry_3_family,
+        "nursing_2": bench_nursing_2_family,
+        "public_health_2": bench_public_health_2_family,
+        "veterinary_medicine_2": bench_veterinary_medicine_2_family,
+        "pharmacy_2": bench_pharmacy_2_family,
         "philosophy_6": bench_philosophy_6_family,
         "history_5": bench_history_5_family,
         "religious_studies_2": bench_religious_studies_2_family,
