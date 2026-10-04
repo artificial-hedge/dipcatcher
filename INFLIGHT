@@ -1,3 +1,4 @@
+feat(research): wave 658 — motivic-13 canon (motivic_galois, tannakian_motive, period_realization, beilinson_regulator, hodge_motive, f_motive) (3903->3909 families)
 feat(research): wave 657 — homotopy-22 canon (ravenel_htpy, bousfield_period, snake_constr, homotopy_cartesian, p_local_htpy, completion_htpy) (3897->3903 families)
 feat(research): wave 656 — category-12 canon (essentially_small, finitely_accessible, admissible_cat, definable_cat, cocomplete_cat, cartesian_cat2) (3891->3897 families)
 feat(research): wave 655 — homotopy-21 canon (devinatz_htpy, hopkins_smith, morava_stab, chromatic_square, telescope_tower, bo_htpy) (3885->3891 families)
