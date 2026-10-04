@@ -4860,6 +4860,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "akhlut_qa_studies",
         "amarok_qa_studies",
         "eachuisge_qa_studies",
+        # Wave-1657 french-beast canon.
+        "gargoyle_qa_studies",
+        "guivre_qa_studies",
+        "melusine_qa_studies",
+        "quinotaur_qa_studies",
+        "tarascon_qa_studies",
+        "tarrasque_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
