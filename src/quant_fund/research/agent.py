@@ -9615,6 +9615,14 @@ from quant_fund.research.benches_w1202 import (
     bench_public_health_microbiology_family,
     bench_vector_borne_diseases_family,
 )
+from quant_fund.research.benches_w1203 import (
+    bench_genomic_medicine_family,
+    bench_laboratory_medicine_family,
+    bench_molecular_diagnostics_family,
+    bench_precision_medicine_family,
+    bench_travel_medicine_family,
+    bench_tropical_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9986,6 +9994,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tropical_medicine": bench_tropical_medicine_family,
+        "travel_medicine": bench_travel_medicine_family,
+        "genomic_medicine": bench_genomic_medicine_family,
+        "precision_medicine": bench_precision_medicine_family,
+        "molecular_diagnostics": bench_molecular_diagnostics_family,
+        "laboratory_medicine": bench_laboratory_medicine_family,
         "public_health_microbiology": bench_public_health_microbiology_family,
         "medical_microbiology": bench_medical_microbiology_family,
         "parasitology_studies": bench_parasitology_studies_family,
