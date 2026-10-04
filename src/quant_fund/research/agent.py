@@ -8175,6 +8175,14 @@ from quant_fund.research.benches_w1022 import (
     bench_real_business_family,
     bench_search_matching_family,
 )
+from quant_fund.research.benches_w1023 import (
+    bench_arbitrage_pricing_family,
+    bench_black_scholes_family,
+    bench_capm_model_family,
+    bench_corporate_finance_family,
+    bench_default_risk_family,
+    bench_yield_curve_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8546,6 +8554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "capm_model": bench_capm_model_family,
+        "arbitrage_pricing": bench_arbitrage_pricing_family,
+        "black_scholes": bench_black_scholes_family,
+        "yield_curve": bench_yield_curve_family,
+        "default_risk": bench_default_risk_family,
+        "corporate_finance": bench_corporate_finance_family,
         "growth_theory": bench_growth_theory_family,
         "overlapping_gens": bench_overlapping_gens_family,
         "real_business": bench_real_business_family,
