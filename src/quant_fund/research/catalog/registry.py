@@ -6085,6 +6085,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kothar3_qa_studies",
         "lotan3_qa_studies",
         "mot3_qa_studies",
+        # Wave-1832 phoenician-2 canon.
+        "baalat2_qa_studies",
+        "eshmun2_qa_studies",
+        "melqart2_qa_studies",
+        "reshef2_qa_studies",
+        "tanit2_qa_studies",
+        "yam2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
