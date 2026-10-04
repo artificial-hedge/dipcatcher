@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1249 dermatology-clinical canon.
+        "skin_cancer_studies",
+        "psoriasis_studies",
+        "eczema_studies",
+        "acne_studies",
+        "vitiligo_studies",
+        "alopecia_studies",
         # Wave-1248 ophthalmology-vision canon.
         "retinal_studies",
         "corneal_studies",
