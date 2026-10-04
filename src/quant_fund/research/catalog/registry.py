@@ -5154,6 +5154,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rangi_qa_studies",
         "tane_qa_studies",
         "tangaroa_qa_studies",
+        # Wave-1699 japanese-myth canon.
+        "amaterasu_qa_studies",
+        "hachiman_qa_studies",
+        "inari_qa_studies",
+        "raijin_qa_studies",
+        "susanoo_qa_studies",
+        "tsukuyomi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
