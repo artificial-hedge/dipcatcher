@@ -1,3 +1,4 @@
+feat(research): wave 929 — information-geometry-4 canon (mahalanobis_div, bhat_distance, hellinger_dist, jeffreys_div, d_total_var, chi_square_div) (5523->5529 families)
 feat(research): wave 928 — computational-geometry-6 canon (convex_hull_3d, polygon_boolean, medial_axis, polygon_centroid, shape_context, beta_skeleton) (5517->5523 families)
 feat(research): wave 927 — information-geometry-3 canon (fisher_metric2, expectation_param, potential_fn, ebanch_diverge, shannon_gibbs, renyi_div) (5511->5517 families)
 feat(research): wave 926 — information-geometry-2 canon (f_divergence, alpha_divergence, csiszar_div, amari_connection, dual_connection, tsallis_entropy) (5505->5511 families)
