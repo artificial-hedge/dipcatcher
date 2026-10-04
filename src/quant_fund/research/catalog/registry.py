@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1076 archaeology canon.
+        "field_archaeology",
+        "archaeometry",
+        "bioarchaeology",
+        "underwater_archaeology",
+        "landscape_archaeology",
+        "experimental_archaeology",
         # Wave-1075 architecture/design canon.
         "architecture_theory",
         "urban_design",
