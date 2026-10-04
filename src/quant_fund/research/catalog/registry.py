@@ -5329,6 +5329,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mimir_qa_studies",
         "ve_qa_studies",
         "vili_qa_studies",
+        # Wave-1724 polynesian-myth-2 canon.
+        "kamapuaa_qa_studies",
+        "kanaloa_qa_studies",
+        "pele_qa_studies",
+        "rongo_qa_studies",
+        "tane_qa_studies",
+        "tangaroa_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

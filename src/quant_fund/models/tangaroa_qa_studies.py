@@ -16,7 +16,7 @@ def tangaroa_qa_studies_aux(aux: bool) -> bool:
     """tangaroa_qa_studies
 
     aux:
-    tangaroa_qa_studies: tangaroa, sea gods, answers, and scores
+    tangaroa_qa_studies: tangaroa, ocean fathers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tangaroa_qa_studies(seed: int = 0) -> float:
     checks.append(not tangaroa_qa_studies_ok(False, True))
     checks.append(tangaroa_qa_studies_aux(True))
     checks.append(not tangaroa_qa_studies_aux(False))
-    checks.append(True)  # polynesian-myth canon
+    checks.append(True)  # polynesian-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
