@@ -4552,6 +4552,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "llama_qa_studies",
         "mouflon_qa_studies",
         "urial_qa_studies",
+        # Wave-1613 bovine canon.
+        "aurochs_qa_studies",
+        "banteng_qa_studies",
+        "gaur_qa_studies",
+        "saola_qa_studies",
+        "tamaraw_qa_studies",
+        "yak_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
