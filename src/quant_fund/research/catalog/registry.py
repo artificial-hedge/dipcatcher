@@ -4594,6 +4594,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hatchetfish_qa_studies",
         "lanternfish_qa_studies",
         "viperfish_qa_studies",
+        # Wave-1619 abyssal-2 canon.
+        "blobfish_qa_studies",
+        "dragonfish_qa_studies",
+        "dumbo_qa_studies",
+        "fangtooth_qa_studies",
+        "gulper_qa_studies",
+        "tripodfish_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
