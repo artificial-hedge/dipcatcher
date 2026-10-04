@@ -6281,6 +6281,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "manawydan_qa_studies",
         "matholwch_qa_studies",
         "pwll_qa_studies",
+        # Wave-1860 arthurian-myth canon.
+        "arthur_qa_studies",
+        "elaine_qa_studies",
+        "gorlois_qa_studies",
+        "igraine_qa_studies",
+        "morgan_qa_studies",
+        "vivien_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
