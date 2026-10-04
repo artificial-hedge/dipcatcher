@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1075 architecture/design canon.
+        "architecture_theory",
+        "urban_design",
+        "landscape_architecture",
+        "interior_design",
+        "industrial_design",
+        "building_science",
         # Wave-1074 culinary arts canon.
         "culinary_arts",
         "gastronomy",
