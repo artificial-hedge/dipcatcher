@@ -4287,6 +4287,14 @@ from quant_fund.research.benches_w536 import (
     bench_poisson_bracket_family,
     bench_symplectic_form_family,
 )
+from quant_fund.research.benches_w537 import (
+    bench_comparison_thm_family,
+    bench_jacobi_field_family,
+    bench_levi_civita_family,
+    bench_ricci_scalar_family,
+    bench_riemann_curvature_family,
+    bench_riemann_metric_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4666,6 +4674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "riemann_metric": bench_riemann_metric_family,
+        "levi_civita": bench_levi_civita_family,
+        "riemann_curvature": bench_riemann_curvature_family,
+        "ricci_scalar": bench_ricci_scalar_family,
+        "jacobi_field": bench_jacobi_field_family,
+        "comparison_thm": bench_comparison_thm_family,
         "symplectic_form": bench_symplectic_form_family,
         "lagrangian_mfd": bench_lagrangian_mfd_family,
         "hamiltonian_flow": bench_hamiltonian_flow_family,
