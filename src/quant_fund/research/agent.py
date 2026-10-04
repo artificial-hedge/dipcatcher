@@ -12183,6 +12183,14 @@ from quant_fund.research.benches_w1523 import (
     bench_ryegrass_qa_studies_family,
     bench_switchgrass_qa_studies_family,
 )
+from quant_fund.research.benches_w1524 import (
+    bench_bulrush_qa_studies_family,
+    bench_carex_qa_studies_family,
+    bench_cattail_qa_studies_family,
+    bench_cottongrass_qa_studies_family,
+    bench_reed_qa_studies_family,
+    bench_rush_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13939,6 +13947,12 @@ def _provenance(
         "pampas_qa_studies": bench_pampas_qa_studies_family,
         "ryegrass_qa_studies": bench_ryegrass_qa_studies_family,
         "switchgrass_qa_studies": bench_switchgrass_qa_studies_family,
+        "bulrush_qa_studies": bench_bulrush_qa_studies_family,
+        "carex_qa_studies": bench_carex_qa_studies_family,
+        "cattail_qa_studies": bench_cattail_qa_studies_family,
+        "cottongrass_qa_studies": bench_cottongrass_qa_studies_family,
+        "reed_qa_studies": bench_reed_qa_studies_family,
+        "rush_qa_studies": bench_rush_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
