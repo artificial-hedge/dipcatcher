@@ -10599,6 +10599,14 @@ from quant_fund.research.benches_w1325 import (
     bench_ruler_bench_studies_family,
     bench_zero_scrolls_studies_family,
 )
+from quant_fund.research.benches_w1326 import (
+    bench_attribute_inference_studies_family,
+    bench_canary_memorization_studies_family,
+    bench_extraction_attack_studies_family,
+    bench_membership_inference_studies_family,
+    bench_model_inversion_studies_family,
+    bench_privacy_meter_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11317,6 +11325,12 @@ def _provenance(
         "infinitebench_studies": bench_infinitebench_studies_family,
         "longbench_studies": bench_longbench_studies_family,
         "lv_eval_studies": bench_lv_eval_studies_family,
+        "attribute_inference_studies": bench_attribute_inference_studies_family,
+        "canary_memorization_studies": bench_canary_memorization_studies_family,
+        "extraction_attack_studies": bench_extraction_attack_studies_family,
+        "membership_inference_studies": bench_membership_inference_studies_family,
+        "model_inversion_studies": bench_model_inversion_studies_family,
+        "privacy_meter_studies": bench_privacy_meter_studies_family,
         "ruler_bench_studies": bench_ruler_bench_studies_family,
         "zero_scrolls_studies": bench_zero_scrolls_studies_family,
         "mt_bench_judge_studies": bench_mt_bench_judge_studies_family,

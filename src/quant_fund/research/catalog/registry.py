@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1326 privacy-inference-2 canon.
+        "attribute_inference_studies",
+        "canary_memorization_studies",
+        "extraction_attack_studies",
+        "membership_inference_studies",
+        "model_inversion_studies",
+        "privacy_meter_studies",
         # Wave-1325 long-context-eval canon.
         "babilong_studies",
         "infinitebench_studies",
