@@ -9719,6 +9719,14 @@ from quant_fund.research.benches_w1215 import (
     bench_transplant_cardiology_family,
     bench_vascular_surgery_family,
 )
+from quant_fund.research.benches_w1216 import (
+    bench_critical_care_medicine_family,
+    bench_gastroenterology_studies_family,
+    bench_hepatology_studies_family,
+    bench_hospital_medicine_family,
+    bench_internal_medicine_family,
+    bench_pulmonary_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10090,6 +10098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "internal_medicine": bench_internal_medicine_family,
+        "hospital_medicine": bench_hospital_medicine_family,
+        "critical_care_medicine": bench_critical_care_medicine_family,
+        "pulmonary_medicine": bench_pulmonary_medicine_family,
+        "gastroenterology_studies": bench_gastroenterology_studies_family,
+        "hepatology_studies": bench_hepatology_studies_family,
         "vascular_surgery": bench_vascular_surgery_family,
         "cardiac_surgery": bench_cardiac_surgery_family,
         "thoracic_surgery": bench_thoracic_surgery_family,
