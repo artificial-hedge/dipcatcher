@@ -27,7 +27,7 @@ def _bench_brigid_qa_studies(seed: int = 0) -> float:
     checks.append(not brigid_qa_studies_ok(False, True))
     checks.append(brigid_qa_studies_aux(True))
     checks.append(not brigid_qa_studies_aux(False))
-    checks.append(True)  # irish-myth canon
+    checks.append(True)  # celtic-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
