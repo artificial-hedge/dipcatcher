@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-808 filtering canon.
+        "zakai_eq",
+        "kushner_strat",
+        "kalman_bucy",
+        "bene_filter",
+        "hidden_markov_filter",
+        "particle_filter2",
         # Wave-807 optimal-stopping canon.
         "snell_envelope",
         "secretary_dp",
