@@ -4216,6 +4216,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nudibranch_qa_studies",
         "sea_slug_qa_studies",
         "vampire_squid_qa_studies",
+        # Wave-1565 annelid canon.
+        "earthworm_qa_studies",
+        "feather_duster_qa_studies",
+        "leech_qa_studies",
+        "lugworm_qa_studies",
+        "polychaete_qa_studies",
+        "ragworm_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
