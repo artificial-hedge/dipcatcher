@@ -13879,6 +13879,14 @@ from quant_fund.research.benches_w1735 import (
     bench_saulute_qa_studies_family,
     bench_velnias_qa_studies_family,
 )
+from quant_fund.research.benches_w1736 import (
+    bench_ilmarinen_qa_studies_family,
+    bench_joukahainen_qa_studies_family,
+    bench_lemminkainen_qa_studies_family,
+    bench_marjatta_qa_studies_family,
+    bench_tuoni_qa_studies_family,
+    bench_vainamoinen_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

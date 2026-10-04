@@ -5413,6 +5413,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ragana_qa_studies",
         "saulute_qa_studies",
         "velnias_qa_studies",
+        # Wave-1736 finnish-myth-2 canon.
+        "ilmarinen_qa_studies",
+        "joukahainen_qa_studies",
+        "lemminkainen_qa_studies",
+        "marjatta_qa_studies",
+        "tuoni_qa_studies",
+        "vainamoinen_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
