@@ -4391,6 +4391,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "river_dolphin_qa_studies",
         "spinner_qa_studies",
         "vaquita_qa_studies",
+        # Wave-1590 small-cat canon.
+        "black_footed_qa_studies",
+        "fishing_cat_qa_studies",
+        "jungle_cat_qa_studies",
+        "pallas_qa_studies",
+        "rusty_spotted_qa_studies",
+        "sand_cat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
