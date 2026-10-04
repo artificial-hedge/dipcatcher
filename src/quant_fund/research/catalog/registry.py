@@ -3901,6 +3901,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orchid_mantis_qa_studies",
         "praying_mantis_qa_studies",
         "shield_mantis_qa_studies",
+        # Wave-1520 fungi canon.
+        "agaric_qa_studies",
+        "bolete_qa_studies",
+        "chanterelle_qa_studies",
+        "inkcap_qa_studies",
+        "morel_qa_studies",
+        "puffball_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
