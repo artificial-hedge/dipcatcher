@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1129 philosophy-5 canon.
+        "bioethics",
+        "philosophy_of_education",
+        "feminist_philosophy",
+        "african_philosophy",
+        "environmental_philosophy",
+        "philosophy_of_medicine",
         # Wave-1128 linguistics-6 canon.
         "lexical_semantics",
         "computational_stylistics",

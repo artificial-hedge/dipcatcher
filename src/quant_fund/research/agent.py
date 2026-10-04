@@ -9023,6 +9023,14 @@ from quant_fund.research.benches_w1128 import (
     bench_stylistics_family,
     bench_translation_technology_family,
 )
+from quant_fund.research.benches_w1129 import (
+    bench_african_philosophy_family,
+    bench_bioethics_family,
+    bench_environmental_philosophy_family,
+    bench_feminist_philosophy_family,
+    bench_philosophy_of_education_family,
+    bench_philosophy_of_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9394,6 +9402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bioethics": bench_bioethics_family,
+        "philosophy_of_education": bench_philosophy_of_education_family,
+        "feminist_philosophy": bench_feminist_philosophy_family,
+        "african_philosophy": bench_african_philosophy_family,
+        "environmental_philosophy": bench_environmental_philosophy_family,
+        "philosophy_of_medicine": bench_philosophy_of_medicine_family,
         "lexical_semantics": bench_lexical_semantics_family,
         "computational_stylistics": bench_computational_stylistics_family,
         "stylistics": bench_stylistics_family,
