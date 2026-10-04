@@ -4713,6 +4713,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tanuki_2_qa_studies",
         "tengu_qa_studies",
         "tsukumogami_qa_studies",
+        # Wave-1636 yokai-2 canon.
+        "gashadokuro_qa_studies",
+        "jorogumo_qa_studies",
+        "kodama_qa_studies",
+        "namahage_qa_studies",
+        "nue_2_qa_studies",
+        "tsuchinoko_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
