@@ -16,7 +16,7 @@ def kamrusepa2_qa_studies_aux(aux: bool) -> bool:
     """kamrusepa2_qa_studies
 
     aux:
-    kamrusepa2_qa_studies: kamrusepa2, spell weavers, answers, and scores
+    kamrusepa2_qa_studies: kamrusepa2, healing witches, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_kamrusepa2_qa_studies(seed: int = 0) -> float:
     checks.append(not kamrusepa2_qa_studies_ok(False, True))
     checks.append(kamrusepa2_qa_studies_aux(True))
     checks.append(not kamrusepa2_qa_studies_aux(False))
-    checks.append(True)  # hittite-3 canon
+    checks.append(True)  # luwian-myth canon
     return float(sum(checks) / len(checks))
 
 

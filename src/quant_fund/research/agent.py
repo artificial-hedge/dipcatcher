@@ -14671,6 +14671,14 @@ from quant_fund.research.benches_w1834 import (
     bench_tasmisu2_qa_studies_family,
     bench_tessub2_qa_studies_family,
 )
+from quant_fund.research.benches_w1835 import (
+    bench_hannahanna2_qa_studies_family,
+    bench_istanuwa2_qa_studies_family,
+    bench_iyarri2_qa_studies_family,
+    bench_kamrusepa2_qa_studies_family,
+    bench_runtija2_qa_studies_family,
+    bench_tarhunza2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
