@@ -5983,6 +5983,14 @@ from quant_fund.research.benches_w748 import (
     bench_gowers_knot_family,
     bench_reshetikhin_vertex_family,
 )
+from quant_fund.research.benches_w749 import (
+    bench_borodin_bufetov_family,
+    bench_borodin_wheeler_family,
+    bench_bufetov_sixv_family,
+    bench_dimitrov_sixv_family,
+    bench_kuan_sixv_family,
+    bench_wheeler_zinn_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6362,6 +6370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bufetov_sixv": bench_bufetov_sixv_family,
+        "borodin_bufetov": bench_borodin_bufetov_family,
+        "kuan_sixv": bench_kuan_sixv_family,
+        "dimitrov_sixv": bench_dimitrov_sixv_family,
+        "borodin_wheeler": bench_borodin_wheeler_family,
+        "wheeler_zinn": bench_wheeler_zinn_family,
         "borodin_sixv": bench_borodin_sixv_family,
         "gowers_knot": bench_gowers_knot_family,
         "baxter_vertex": bench_baxter_vertex_family,
