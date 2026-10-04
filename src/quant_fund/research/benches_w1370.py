@@ -1,0 +1,56 @@
+"""Wave-1370 bench adapters: challenge-benchmark canon (SYNTHETIC only)."""
+
+from quant_fund.models import (
+    bbh_lite_studies,
+    gpqa_lite_studies,
+    if_eval_studies,
+    live_bench_studies,
+    olympic_bench_studies,
+    trivia_qa_lite_studies,
+)
+
+_FORBIDDEN = {"sharpe", "sortino", "calmar", "pnl", "nav"}
+_SEED = 13700
+
+
+def _finite_blob(blob):
+    assert isinstance(blob, dict) and blob
+    for k, v in blob.items():
+        assert k.startswith("synthetic_"), k
+        assert k not in _FORBIDDEN, k
+        assert isinstance(v, float) and 0.0 <= v <= 1.0, (k, v)
+    return blob
+
+
+def _floats(blob):
+    return sorted(v for _, v in _finite_blob(blob).items())
+
+
+def bench_bbh_lite_studies_family(seed: int = _SEED + 0):
+    """bbh_lite_studies: synthetic correctness bench."""
+    return _finite_blob(bbh_lite_studies.bench_bbh_lite_studies(seed))
+
+
+def bench_gpqa_lite_studies_family(seed: int = _SEED + 1):
+    """gpqa_lite_studies: synthetic correctness bench."""
+    return _finite_blob(gpqa_lite_studies.bench_gpqa_lite_studies(seed))
+
+
+def bench_if_eval_studies_family(seed: int = _SEED + 2):
+    """if_eval_studies: synthetic correctness bench."""
+    return _finite_blob(if_eval_studies.bench_if_eval_studies(seed))
+
+
+def bench_live_bench_studies_family(seed: int = _SEED + 3):
+    """live_bench_studies: synthetic correctness bench."""
+    return _finite_blob(live_bench_studies.bench_live_bench_studies(seed))
+
+
+def bench_olympic_bench_studies_family(seed: int = _SEED + 4):
+    """olympic_bench_studies: synthetic correctness bench."""
+    return _finite_blob(olympic_bench_studies.bench_olympic_bench_studies(seed))
+
+
+def bench_trivia_qa_lite_studies_family(seed: int = _SEED + 5):
+    """trivia_qa_lite_studies: synthetic correctness bench."""
+    return _finite_blob(trivia_qa_lite_studies.bench_trivia_qa_lite_studies(seed))
