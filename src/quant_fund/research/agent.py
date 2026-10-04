@@ -9983,6 +9983,14 @@ from quant_fund.research.benches_w1248 import (
     bench_refractive_studies_family,
     bench_retinal_studies_family,
 )
+from quant_fund.research.benches_w1249 import (
+    bench_acne_studies_family,
+    bench_alopecia_studies_family,
+    bench_eczema_studies_family,
+    bench_psoriasis_studies_family,
+    bench_skin_cancer_studies_family,
+    bench_vitiligo_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10354,6 +10362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "skin_cancer_studies": bench_skin_cancer_studies_family,
+        "psoriasis_studies": bench_psoriasis_studies_family,
+        "eczema_studies": bench_eczema_studies_family,
+        "acne_studies": bench_acne_studies_family,
+        "vitiligo_studies": bench_vitiligo_studies_family,
+        "alopecia_studies": bench_alopecia_studies_family,
         "retinal_studies": bench_retinal_studies_family,
         "corneal_studies": bench_corneal_studies_family,
         "glaucoma_studies": bench_glaucoma_studies_family,
