@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1004 kinetic-theory canon.
+        "boltzmann_eq",
+        "vlasov_eq",
+        "bgk_model",
+        "chapman_enskog",
+        "h_theorem",
+        "landau_damping",
         # Wave-1003 MHD/plasma canon.
         "mhd_equations",
         "alfven_waves",

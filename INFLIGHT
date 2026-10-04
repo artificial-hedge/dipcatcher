@@ -1,3 +1,4 @@
+feat(research): wave 1004 — kinetic-theory canon (boltzmann_eq, vlasov_eq, bgk_model, chapman_enskog, h_theorem, landau_damping) (5973->5979 families)
 feat(research): wave 1003 — MHD/plasma canon (mhd_equations, alfven_waves, parker_solar_wind, magnetic_reconnection, frozen_flux, elsaesser_vars) (5967->5973 families)
 feat(research): wave 1002 — turbulence canon (kolmogorov_theory, reynolds_decomp, energy_spectrum, intermittency_models, wall_turbulence, taylor_series_hyp) (5961->5967 families)
 feat(research): wave 1001 — fluid-dynamics canon (euler_equations, navier_stokes, vorticity_form, beale_kato_majda, ladyzhenskaya_weak, leray_theory) (5955->5961 families)
