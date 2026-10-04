@@ -7511,6 +7511,14 @@ from quant_fund.research.benches_w939 import (
     bench_parallel_prox_family,
     bench_split_feasibility_family,
 )
+from quant_fund.research.benches_w940 import (
+    bench_forward_reflected_family,
+    bench_korpelevich_eg_family,
+    bench_popov_alg_family,
+    bench_reflected_golden_family,
+    bench_subgradient_extragradient_family,
+    bench_tseng_fb_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7882,6 +7890,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "subgradient_extragradient": bench_subgradient_extragradient_family,
+        "korpelevich_eg": bench_korpelevich_eg_family,
+        "popov_alg": bench_popov_alg_family,
+        "tseng_fb": bench_tseng_fb_family,
+        "forward_reflected": bench_forward_reflected_family,
+        "reflected_golden": bench_reflected_golden_family,
         "split_feasibility": bench_split_feasibility_family,
         "cq_algorithm": bench_cq_algorithm_family,
         "dykstra_proj": bench_dykstra_proj_family,
