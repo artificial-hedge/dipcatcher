@@ -8255,6 +8255,14 @@ from quant_fund.research.benches_w1032 import (
     bench_propulsion_family,
     bench_spacecraft_design_family,
 )
+from quant_fund.research.benches_w1033 import (
+    bench_bioinstrumentation_family,
+    bench_biomechanics_family,
+    bench_biomedical_imaging2_family,
+    bench_medical_devices_family,
+    bench_physiological_modeling_family,
+    bench_tissue_engineering_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8626,6 +8634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "biomechanics": bench_biomechanics_family,
+        "medical_devices": bench_medical_devices_family,
+        "tissue_engineering": bench_tissue_engineering_family,
+        "bioinstrumentation": bench_bioinstrumentation_family,
+        "physiological_modeling": bench_physiological_modeling_family,
+        "biomedical_imaging2": bench_biomedical_imaging2_family,
         "aerodynamics": bench_aerodynamics_family,
         "propulsion": bench_propulsion_family,
         "orbital_mechanics2": bench_orbital_mechanics2_family,
