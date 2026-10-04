@@ -9847,6 +9847,14 @@ from quant_fund.research.benches_w1231 import (
     bench_immunology_medicine_family,
     bench_transplant_medicine_studies_family,
 )
+from quant_fund.research.benches_w1232 import (
+    bench_caregiver_medicine_family,
+    bench_falls_prevention_studies_family,
+    bench_frailty_medicine_family,
+    bench_geriatrics_studies_family,
+    bench_memory_clinic_studies_family,
+    bench_polypharmacy_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10218,6 +10226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "geriatrics_studies": bench_geriatrics_studies_family,
+        "frailty_medicine": bench_frailty_medicine_family,
+        "memory_clinic_studies": bench_memory_clinic_studies_family,
+        "falls_prevention_studies": bench_falls_prevention_studies_family,
+        "polypharmacy_studies": bench_polypharmacy_studies_family,
+        "caregiver_medicine": bench_caregiver_medicine_family,
         "transplant_medicine_studies": bench_transplant_medicine_studies_family,
         "immunology_medicine": bench_immunology_medicine_family,
         "allergy_studies": bench_allergy_studies_family,
