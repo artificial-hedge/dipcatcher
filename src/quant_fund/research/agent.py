@@ -6479,6 +6479,14 @@ from quant_fund.research.benches_w810 import (
     bench_regime_eval,
     bench_ts_conformal,
 )
+from quant_fund.research.benches_w811 import (
+    bench_cambrian_pp_family,
+    bench_ergodic_pp_family,
+    bench_gneding_metric_family,
+    bench_j_function_family,
+    bench_papangelou_family,
+    bench_void_prob_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6850,6 +6858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cambrian_pp": bench_cambrian_pp_family,
+        "papangelou": bench_papangelou_family,
+        "gneding_metric": bench_gneding_metric_family,
+        "void_prob": bench_void_prob_family,
+        "j_function": bench_j_function_family,
+        "ergodic_pp": bench_ergodic_pp_family,
         "doeblin_coupling": bench_doeblin_coupling_family,
         "harris_recurrent": bench_harris_recurrent_family,
         "ergodic_markov": bench_ergodic_markov_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-811 point-process canon.
+        "cambrian_pp",
+        "papangelou",
+        "gneding_metric",
+        "void_prob",
+        "j_function",
+        "ergodic_pp",
         # Wave-809 Markov-chain canon.
         "doeblin_coupling",
         "harris_recurrent",
