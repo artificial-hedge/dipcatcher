@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1279 distributed-training canon.
+        "activation_checkpoint_studies",
+        "fsdp_sharding_studies",
+        "hybrid_parallel_studies",
+        "pipeline_schedule_studies",
+        "sequence_parallel_studies",
+        "zero_optimizer_studies",
         # Wave-1278 LLM-serving canon.
         "chunked_prefill_studies",
         "continuous_batching_studies",

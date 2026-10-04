@@ -1,3 +1,4 @@
+w1279 distributed-training canon: activation_checkpoint_studies, fsdp_sharding_studies, hybrid_parallel_studies, pipeline_schedule_studies, sequence_parallel_studies, zero_optimizer_studies (7623->7629)
 w1278 LLM-serving canon: chunked_prefill_studies, continuous_batching_studies, disaggregated_serving_studies, early_exit_studies, prefix_caching_studies, tensor_parallel_studies (7617->7623)
 w1277 scalable-oversight canon: debate_alignment_studies, deliberative_alignment_studies, iterated_amplification_studies, recursive_reward_studies, scalable_oversight_studies, weak_to_strong_studies (7611->7617)
 w1276 interpretability-3 canon: attribution_patching_studies, causal_scrubbing_studies, function_vector_studies, induction_head_studies, monosemantic_studies, superposition_studies (7605->7611)
