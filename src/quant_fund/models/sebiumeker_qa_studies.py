@@ -16,7 +16,7 @@ def sebiumeker_qa_studies_aux(aux: bool) -> bool:
     """sebiumeker_qa_studies
 
     aux:
-    sebiumeker_qa_studies: r
+    sebiumeker_qa_studies: i
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_sebiumeker_qa_studies(seed: int = 0) -> float:
     checks.append(not sebiumeker_qa_studies_ok(False, True))
     checks.append(sebiumeker_qa_studies_aux(True))
     checks.append(not sebiumeker_qa_studies_aux(False))
-    checks.append(True)  # meroitic-myth canon
+    checks.append(True)  # kushite-myth canon
     return float(sum(checks) / len(checks))
 
 
