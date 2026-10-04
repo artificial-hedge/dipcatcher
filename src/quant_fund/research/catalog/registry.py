@@ -5875,6 +5875,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pacamama2_qa_studies",
         "supay2_qa_studies",
         "viracocha2_qa_studies",
+        # Wave-1802 maori-myth-3 canon.
+        "awhi2_qa_studies",
+        "hine3_qa_studies",
+        "kaikoura_qa_studies",
+        "moana2_qa_studies",
+        "ranginui2_qa_studies",
+        "tanemahuta2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
