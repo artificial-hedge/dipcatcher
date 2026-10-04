@@ -10495,6 +10495,14 @@ from quant_fund.research.benches_w1312 import (
     bench_malicious_instruct_studies_family,
     bench_wmdp_studies_family,
 )
+from quant_fund.research.benches_w1313 import (
+    bench_abs_scan_studies_family,
+    bench_activation_cluster_studies_family,
+    bench_fine_pruning_studies_family,
+    bench_sleepless_studies_family,
+    bench_strip_defense_studies_family,
+    bench_watermark_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11166,6 +11174,12 @@ def _provenance(
         "cyber_sec_eval_studies": bench_cyber_sec_eval_studies_family,
         "lab_bench_studies": bench_lab_bench_studies_family,
         "malicious_instruct_studies": bench_malicious_instruct_studies_family,
+        "abs_scan_studies": bench_abs_scan_studies_family,
+        "activation_cluster_studies": bench_activation_cluster_studies_family,
+        "fine_pruning_studies": bench_fine_pruning_studies_family,
+        "sleepless_studies": bench_sleepless_studies_family,
+        "strip_defense_studies": bench_strip_defense_studies_family,
+        "watermark_studies": bench_watermark_studies_family,
         "wmdp_studies": bench_wmdp_studies_family,
         "salad_bench_studies": bench_salad_bench_studies_family,
         "sorry_bench_studies": bench_sorry_bench_studies_family,
