@@ -3635,6 +3635,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "stonefly_qa_studies",
         "wasp_qa_studies",
         "weevil_qa_studies",
+        # Wave-1482 mustelid canon.
+        "ermine_qa_studies",
+        "fisher_qa_studies",
+        "marten_qa_studies",
+        "mink_qa_studies",
+        "polecat_qa_studies",
+        "wolverine_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
