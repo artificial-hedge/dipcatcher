@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1182 dance canon.
+        "ballet_studies",
+        "choreography_2",
+        "dance_pedagogy",
+        "somatic_practices",
+        "dance_science",
+        "movement_studies",
         # Wave-1181 performing-arts canon.
         "performing_arts_2",
         "theater_arts",

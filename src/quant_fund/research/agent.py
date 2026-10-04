@@ -9447,6 +9447,14 @@ from quant_fund.research.benches_w1181 import (
     bench_scenography_family,
     bench_theater_arts_family,
 )
+from quant_fund.research.benches_w1182 import (
+    bench_ballet_studies_family,
+    bench_choreography_2_family,
+    bench_dance_pedagogy_family,
+    bench_dance_science_family,
+    bench_movement_studies_family,
+    bench_somatic_practices_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9818,6 +9826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ballet_studies": bench_ballet_studies_family,
+        "choreography_2": bench_choreography_2_family,
+        "dance_pedagogy": bench_dance_pedagogy_family,
+        "somatic_practices": bench_somatic_practices_family,
+        "dance_science": bench_dance_science_family,
+        "movement_studies": bench_movement_studies_family,
         "performing_arts_2": bench_performing_arts_2_family,
         "theater_arts": bench_theater_arts_family,
         "acting_studies": bench_acting_studies_family,
