@@ -1,3 +1,4 @@
+w1286 long-context canon: beacon_context_studies, hierarchical_context_studies, infini_attention_studies, landmark_attention_studies, ntk_scaling_studies, yarn_scaling_studies (7665->7671)
 w1285 multimodal-2 canon: audio_lm_studies, chart_reasoning_studies, doc_vqa_studies, gui_agent_studies, video_understanding_studies, vision_pretraining_studies (7659->7665)
 w1284 grounding/hallucination canon: citation_check_studies, claim_verifier_studies, entailment_studies, factuality_score_studies, grounding_verify_studies, self_reflect_studies (7653->7659)
 w1283 agent-memory canon: context_compression_studies, episodic_memory_studies, memory_bank_studies, retrieval_memory_studies, semantic_memory_studies, working_memory_studies (7647->7653)
