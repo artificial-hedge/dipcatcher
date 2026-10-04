@@ -15183,6 +15183,14 @@ from quant_fund.research.benches_w1898 import (
     bench_pontianak_qa_studies_family,
     bench_toyol_qa_studies_family,
 )
+from quant_fund.research.benches_w1899 import (
+    bench_aghasura_qa_studies_family,
+    bench_bakasura_qa_studies_family,
+    bench_daitya_qa_studies_family,
+    bench_diti_qa_studies_family,
+    bench_pishacha_qa_studies_family,
+    bench_putana_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
