@@ -1,3 +1,4 @@
+feat(research): wave 583 — motivic-6 canon (motivic_base_change, six_op_motivic, motivic_smooth, motivic_proper, fulton_mclarty, motivic_homotopy2) (3453->3459 families)
 feat(research): wave 582 — geometric-Langlands-2 canon (arinkin_gaitsgory, derived_satake, spectral_bung, nilp_cone, geometric_satake2, fusion_product) (3447->3453 families)
 feat(research): wave 581 — spectral-sequences-4 canon (serre_ss4, bockstein_ss, eilenberg_moore, bousfield_ss, lyndon_ss, cartan_ss) (3441->3447 families)
 feat(research): wave 580 — enumerative-combinatorics canon (species_theory, cycle_index, lagrange_inversion, transfer_matrix, matrix_tree, exponential_gf) (3435->3441 families)
