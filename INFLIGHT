@@ -1,3 +1,4 @@
+feat(research): wave 832 — weak-convergence-2 canon (porte_manteau, continuous_map, delta_method, skorohod_embed, kmt_approx, empirical_bridge) (4941->4947 families)
 feat(research): wave 831 — empirical-process-3 canon (entropy_integral, uniform_clt, symmetrization, rademacher_cplx, covering_number, metric_entropy) (4935->4941 families)
 feat(research): wave 830 — concentration canon (azuma_ineq, mcdiarmid_ineq, talagrand_ineq, efron_stein, bounded_diff, hoeffding_ineq) (4929->4935 families)
 feat(research): wave 829 — continuous-martingale canon (local_time_process, bounded_mart, fv_mart, cadlag_mart, locator_proc, decomp_mart) (4923->4929 families)

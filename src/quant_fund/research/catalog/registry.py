@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-832 weak-convergence-2 canon.
+        "porte_manteau",
+        "continuous_map",
+        "delta_method",
+        "skorohod_embed",
+        "kmt_approx",
+        "empirical_bridge",
         # Wave-831 empirical-process-3 canon.
         "entropy_integral",
         "uniform_clt",
