@@ -5553,6 +5553,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mani_qa_studies",
         "sigyn_qa_studies",
         "sol_qa_studies",
+        # Wave-1756 hindu-myth-5 canon.
+        "apsara_qa_studies",
+        "gandharva_qa_studies",
+        "kinnara_qa_studies",
+        "ratri_qa_studies",
+        "rudra_qa_studies",
+        "ushas_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
