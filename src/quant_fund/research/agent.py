@@ -7751,6 +7751,14 @@ from quant_fund.research.benches_w969 import (
     bench_pimsner_voicul_family,
     bench_six_term_exact_family,
 )
+from quant_fund.research.benches_w970 import (
+    bench_fusion_algebra_family,
+    bench_paragroup_family,
+    bench_planar_algebra_family,
+    bench_principal_graph_family,
+    bench_standard_invariant_family,
+    bench_subfactor_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8122,6 +8130,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "subfactor": bench_subfactor_family,
+        "standard_invariant": bench_standard_invariant_family,
+        "planar_algebra": bench_planar_algebra_family,
+        "paragroup": bench_paragroup_family,
+        "principal_graph": bench_principal_graph_family,
+        "fusion_algebra": bench_fusion_algebra_family,
         "k0_algebra": bench_k0_algebra_family,
         "k1_algebra": bench_k1_algebra_family,
         "bott_periodicity_k": bench_bott_periodicity_k_family,
