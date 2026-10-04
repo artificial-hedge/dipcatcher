@@ -6120,6 +6120,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "labrandeus2_qa_studies",
         "panamara2_qa_studies",
         "stratios2_qa_studies",
+        # Wave-1837 lycian-myth canon.
+        "apollopatara2_qa_studies",
+        "eliyana2_qa_studies",
+        "erbbina2_qa_studies",
+        "leto2_qa_studies",
+        "trqqiz2_qa_studies",
+        "xssentimi2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
