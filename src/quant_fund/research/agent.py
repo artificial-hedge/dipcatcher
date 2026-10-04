@@ -8983,6 +8983,14 @@ from quant_fund.research.benches_w1123 import (
     bench_lexicography_family,
     bench_philological_studies_family,
 )
+from quant_fund.research.benches_w1124 import (
+    bench_sociology_of_aging_family,
+    bench_sociology_of_emotions_family,
+    bench_sociology_of_food_family,
+    bench_sociology_of_media_family,
+    bench_sociology_of_sport_family,
+    bench_sociology_of_work_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9354,6 +9362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sociology_of_work": bench_sociology_of_work_family,
+        "sociology_of_emotions": bench_sociology_of_emotions_family,
+        "sociology_of_food": bench_sociology_of_food_family,
+        "sociology_of_media": bench_sociology_of_media_family,
+        "sociology_of_sport": bench_sociology_of_sport_family,
+        "sociology_of_aging": bench_sociology_of_aging_family,
         "contact_linguistics": bench_contact_linguistics_family,
         "descriptive_linguistics": bench_descriptive_linguistics_family,
         "philological_studies": bench_philological_studies_family,

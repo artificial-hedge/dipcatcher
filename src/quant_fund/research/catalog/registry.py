@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1124 sociology-4 canon.
+        "sociology_of_work",
+        "sociology_of_emotions",
+        "sociology_of_food",
+        "sociology_of_media",
+        "sociology_of_sport",
+        "sociology_of_aging",
         # Wave-1123 linguistics-5 canon.
         "contact_linguistics",
         "descriptive_linguistics",
