@@ -13943,6 +13943,14 @@ from quant_fund.research.benches_w1743 import (
     bench_unkulunkulu_qa_studies_family,
     bench_usilosimapundu_qa_studies_family,
 )
+from quant_fund.research.benches_w1744 import (
+    bench_agloolik_qa_studies_family,
+    bench_aumanil_qa_studies_family,
+    bench_nuktessien_qa_studies_family,
+    bench_sedna_qa_studies_family,
+    bench_tekkeitsertok_qa_studies_family,
+    bench_torngarsuk_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

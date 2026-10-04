@@ -5469,6 +5469,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tikoloshe_qa_studies",
         "unkulunkulu_qa_studies",
         "usilosimapundu_qa_studies",
+        # Wave-1744 inuit-myth canon.
+        "agloolik_qa_studies",
+        "aumanil_qa_studies",
+        "nuktessien_qa_studies",
+        "sedna_qa_studies",
+        "tekkeitsertok_qa_studies",
+        "torngarsuk_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
