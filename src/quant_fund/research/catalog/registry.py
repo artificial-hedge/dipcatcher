@@ -3789,6 +3789,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mockviper_qa_studies",
         "racer_qa_studies",
         "sidewinder_qa_studies",
+        # Wave-1504 seabird-4 canon.
+        "murre_qa_studies",
+        "noddie_qa_studies",
+        "prion_qa_studies",
+        "shag_qa_studies",
+        "skimmer_qa_studies",
+        "storm_petrel_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
