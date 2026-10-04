@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1372 long-doc-summarization canon.
+        "billsum_lite_studies",
+        "booksum_lite_studies",
+        "elm_lite_studies",
+        "govreport_lite_studies",
+        "qmsum_lite_studies",
+        "wikisum_lite_studies",
         # Wave-1371 social-reasoning canon.
         "ethos_lite_studies",
         "moral_stories_studies",

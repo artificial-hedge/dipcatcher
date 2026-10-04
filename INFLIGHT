@@ -1,3 +1,4 @@
+w1372 long-doc-summarization canon: billsum_lite_studies, booksum_lite_studies, elm_lite_studies, govreport_lite_studies, qmsum_lite_studies, wikisum_lite_studies (8181->8187)
 w1371 social-reasoning canon: ethos_lite_studies, moral_stories_studies, mutual_lite_studies, prosocial_lite_studies, scruples_studies, siqa_lite_studies (8175->8181)
 w1370 challenge-benchmark canon: bbh_lite_studies, gpqa_lite_studies, if_eval_studies, live_bench_studies, olympic_bench_studies, trivia_qa_lite_studies (8169->8175)
 w1369 math-word-problem canon: aime_eval_studies, asdiv_lite_studies, math500_lite_studies, mgsm_lite_studies, minerva_math_studies, svamp_lite_studies (8163->8169)
