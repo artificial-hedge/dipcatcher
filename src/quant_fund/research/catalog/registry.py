@@ -4937,6 +4937,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hamadryad_qa_studies",
         "nereid_qa_studies",
         "nymph_qa_studies",
+        # Wave-1668 norse-warrior canon.
+        "berserkr_qa_studies",
+        "fafnir_qa_studies",
+        "jotun_qa_studies",
+        "regin_qa_studies",
+        "ulfhednar_qa_studies",
+        "vargr_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
