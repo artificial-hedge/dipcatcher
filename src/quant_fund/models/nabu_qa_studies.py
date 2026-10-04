@@ -16,7 +16,7 @@ def nabu_qa_studies_aux(aux: bool) -> bool:
     """nabu_qa_studies
 
     aux:
-    nabu_qa_studies: nabu, scribe gods, answers, and scores
+    nabu_qa_studies: nabu, tablet scribes, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_nabu_qa_studies(seed: int = 0) -> float:
     checks.append(not nabu_qa_studies_ok(False, True))
     checks.append(nabu_qa_studies_aux(True))
     checks.append(not nabu_qa_studies_aux(False))
-    checks.append(True)  # babylonian-myth canon
+    checks.append(True)  # babylonian-2 canon
     return float(sum(checks) / len(checks))
 
 
