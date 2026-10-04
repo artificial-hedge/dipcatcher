@@ -3481,6 +3481,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "penguin_qa_studies",
         "polar_bear_qa_studies",
         "reindeer_qa_studies",
+        # Wave-1460 savanna canon.
+        "baboon_qa_studies",
+        "elephant_qa_studies",
+        "gazelle_qa_studies",
+        "giraffe_qa_studies",
+        "wildebeest_qa_studies",
+        "zebra_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
