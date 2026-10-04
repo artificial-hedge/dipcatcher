@@ -8607,6 +8607,14 @@ from quant_fund.research.benches_w1076 import (
     bench_landscape_archaeology_family,
     bench_underwater_archaeology_family,
 )
+from quant_fund.research.benches_w1077 import (
+    bench_art_conservation_family,
+    bench_art_history_family,
+    bench_painting_techniques_family,
+    bench_printmaking_family,
+    bench_sculpture_methods_family,
+    bench_visual_culture_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8978,6 +8986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "painting_techniques": bench_painting_techniques_family,
+        "sculpture_methods": bench_sculpture_methods_family,
+        "printmaking": bench_printmaking_family,
+        "art_conservation": bench_art_conservation_family,
+        "art_history": bench_art_history_family,
+        "visual_culture": bench_visual_culture_family,
         "field_archaeology": bench_field_archaeology_family,
         "archaeometry": bench_archaeometry_family,
         "bioarchaeology": bench_bioarchaeology_family,
