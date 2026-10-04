@@ -8967,6 +8967,14 @@ from quant_fund.research.benches_w1121 import (
     bench_population_geography_family,
     bench_regional_geography_family,
 )
+from quant_fund.research.benches_w1122 import (
+    bench_archaeogenetics_family,
+    bench_ceramic_analysis_family,
+    bench_geoarchaeology_family,
+    bench_lithic_analysis_family,
+    bench_paleoethnobotany_family,
+    bench_zooarchaeology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9338,6 +9346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "geoarchaeology": bench_geoarchaeology_family,
+        "zooarchaeology": bench_zooarchaeology_family,
+        "paleoethnobotany": bench_paleoethnobotany_family,
+        "ceramic_analysis": bench_ceramic_analysis_family,
+        "lithic_analysis": bench_lithic_analysis_family,
+        "archaeogenetics": bench_archaeogenetics_family,
         "regional_geography": bench_regional_geography_family,
         "health_geography": bench_health_geography_family,
         "population_geography": bench_population_geography_family,

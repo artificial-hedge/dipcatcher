@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1122 archaeology-2 canon.
+        "geoarchaeology",
+        "zooarchaeology",
+        "paleoethnobotany",
+        "ceramic_analysis",
+        "lithic_analysis",
+        "archaeogenetics",
         # Wave-1121 geography-3 canon.
         "regional_geography",
         "health_geography",
