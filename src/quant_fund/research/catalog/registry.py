@@ -4223,6 +4223,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lugworm_qa_studies",
         "polychaete_qa_studies",
         "ragworm_qa_studies",
+        # Wave-1566 freshwater-fish canon.
+        "bluegill_qa_studies",
+        "crappie_qa_studies",
+        "perch_qa_studies",
+        "pike_qa_studies",
+        "sturgeon_qa_studies",
+        "walleye_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -12519,6 +12519,14 @@ from quant_fund.research.benches_w1565 import (
     bench_polychaete_qa_studies_family,
     bench_ragworm_qa_studies_family,
 )
+from quant_fund.research.benches_w1566 import (
+    bench_bluegill_qa_studies_family,
+    bench_crappie_qa_studies_family,
+    bench_perch_qa_studies_family,
+    bench_pike_qa_studies_family,
+    bench_sturgeon_qa_studies_family,
+    bench_walleye_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14475,6 +14483,12 @@ def _provenance(
         "earthworm_qa_studies": bench_earthworm_qa_studies_family,
         "feather_duster_qa_studies": bench_feather_duster_qa_studies_family,
         "leech_qa_studies": bench_leech_qa_studies_family,
+        "bluegill_qa_studies": bench_bluegill_qa_studies_family,
+        "crappie_qa_studies": bench_crappie_qa_studies_family,
+        "perch_qa_studies": bench_perch_qa_studies_family,
+        "pike_qa_studies": bench_pike_qa_studies_family,
+        "sturgeon_qa_studies": bench_sturgeon_qa_studies_family,
+        "walleye_qa_studies": bench_walleye_qa_studies_family,
         "lugworm_qa_studies": bench_lugworm_qa_studies_family,
         "polychaete_qa_studies": bench_polychaete_qa_studies_family,
         "ragworm_qa_studies": bench_ragworm_qa_studies_family,
