@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-722 special-values canon.
+        "period_poly",
+        "specialization_motive",
+        "borel_motivic",
+        "zagier_polylog",
+        "deligne_period",
+        "motivic_multiple_zeta",
         # Wave-721 mixed-motives canon.
         "brown_motives",
         "mzc_motive",
