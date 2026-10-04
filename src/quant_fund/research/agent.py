@@ -8479,6 +8479,14 @@ from quant_fund.research.benches_w1060 import (
     bench_learning_sciences_family,
     bench_pedagogy_family,
 )
+from quant_fund.research.benches_w1061 import (
+    bench_administrative_law_family,
+    bench_constitutional_law_family,
+    bench_contract_law_family,
+    bench_criminal_law_family,
+    bench_international_law_family,
+    bench_tort_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8850,6 +8858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "constitutional_law": bench_constitutional_law_family,
+        "criminal_law": bench_criminal_law_family,
+        "contract_law": bench_contract_law_family,
+        "tort_law": bench_tort_law_family,
+        "administrative_law": bench_administrative_law_family,
+        "international_law": bench_international_law_family,
         "curriculum_design": bench_curriculum_design_family,
         "pedagogy": bench_pedagogy_family,
         "educational_psychology": bench_educational_psychology_family,
