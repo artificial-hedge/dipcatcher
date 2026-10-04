@@ -7719,6 +7719,14 @@ from quant_fund.research.benches_w965 import (
     bench_singular_value_op_family,
     bench_trace_class_op_family,
 )
+from quant_fund.research.benches_w966 import (
+    bench_cb_map_family,
+    bench_complete_contraction_family,
+    bench_injective_space_family,
+    bench_noncommutative_lp_family,
+    bench_oh_emb_family,
+    bench_operator_space_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8090,6 +8098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "operator_space": bench_operator_space_family,
+        "cb_map": bench_cb_map_family,
+        "complete_contraction": bench_complete_contraction_family,
+        "injective_space": bench_injective_space_family,
+        "noncommutative_lp": bench_noncommutative_lp_family,
+        "oh_emb": bench_oh_emb_family,
         "hilbert_schmidt_op": bench_hilbert_schmidt_op_family,
         "trace_class_op": bench_trace_class_op_family,
         "singular_value_op": bench_singular_value_op_family,
