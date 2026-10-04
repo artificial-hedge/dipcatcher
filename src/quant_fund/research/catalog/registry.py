@@ -5350,6 +5350,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hwanin_qa_studies",
         "hwanung_qa_studies",
         "samshin_qa_studies",
+        # Wave-1727 mongolian-myth canon.
+        "erlug_qa_studies",
+        "etseg_qa_studies",
+        "manzan_qa_studies",
+        "otgon_qa_studies",
+        "tenger_qa_studies",
+        "ulgan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
