@@ -16,7 +16,7 @@ def hunab_qa_studies_aux(aux: bool) -> bool:
     """hunab_qa_studies
 
     aux:
-    hunab_qa_studies: hunab, supreme gods, answers, and scores
+    hunab_qa_studies: hunab, one makers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_hunab_qa_studies(seed: int = 0) -> float:
     checks.append(not hunab_qa_studies_ok(False, True))
     checks.append(hunab_qa_studies_aux(True))
     checks.append(not hunab_qa_studies_aux(False))
-    checks.append(True)  # mayan-myth canon
+    checks.append(True)  # mayan-myth-2 canon
     return float(sum(checks) / len(checks))
 
 
