@@ -5651,6 +5651,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "simurgh_qa_studies",
         "spenta_qa_studies",
         "zal_qa_studies",
+        # Wave-1770 assyrian-myth canon.
+        "enkidu_qa_studies",
+        "etana_qa_studies",
+        "gilgamesh_qa_studies",
+        "kingu_qa_studies",
+        "nabu_qa_studies",
+        "tiamat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

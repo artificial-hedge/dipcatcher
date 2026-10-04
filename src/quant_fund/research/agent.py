@@ -14151,6 +14151,14 @@ from quant_fund.research.benches_w1769 import (
     bench_spenta_qa_studies_family,
     bench_zal_qa_studies_family,
 )
+from quant_fund.research.benches_w1770 import (
+    bench_enkidu_qa_studies_family,
+    bench_etana_qa_studies_family,
+    bench_gilgamesh_qa_studies_family,
+    bench_kingu_qa_studies_family,
+    bench_nabu_qa_studies_family,
+    bench_tiamat_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
