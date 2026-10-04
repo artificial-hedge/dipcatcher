@@ -10047,6 +10047,14 @@ from quant_fund.research.benches_w1256 import (
     bench_surveillance_studies_family,
     bench_vaccination_studies_family,
 )
+from quant_fund.research.benches_w1257 import (
+    bench_culture_studies_family,
+    bench_flow_cytometry_studies_family,
+    bench_immunoassay_studies_family,
+    bench_microscopy_studies_family,
+    bench_pcr_studies_family,
+    bench_serology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10418,6 +10426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "immunoassay_studies": bench_immunoassay_studies_family,
+        "pcr_studies": bench_pcr_studies_family,
+        "serology_studies": bench_serology_studies_family,
+        "culture_studies": bench_culture_studies_family,
+        "microscopy_studies": bench_microscopy_studies_family,
+        "flow_cytometry_studies": bench_flow_cytometry_studies_family,
         "screening_studies": bench_screening_studies_family,
         "vaccination_studies": bench_vaccination_studies_family,
         "outbreak_studies": bench_outbreak_studies_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1257 clinical-lab canon.
+        "immunoassay_studies",
+        "pcr_studies",
+        "serology_studies",
+        "culture_studies",
+        "microscopy_studies",
+        "flow_cytometry_studies",
         # Wave-1256 public-health-2 canon.
         "screening_studies",
         "vaccination_studies",
