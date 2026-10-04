@@ -6615,6 +6615,14 @@ from quant_fund.research.benches_w827 import (
     bench_salem_zygmund_family,
     bench_three_series_family,
 )
+from quant_fund.research.benches_w828 import (
+    bench_cross_section_family,
+    bench_dellacherie_section_family,
+    bench_maharam_lift_family,
+    bench_projection_theorem_family,
+    bench_uniform_section_family,
+    bench_von_neumann_sel_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6986,6 +6994,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "projection_theorem": bench_projection_theorem_family,
+        "uniform_section": bench_uniform_section_family,
+        "dellacherie_section": bench_dellacherie_section_family,
+        "cross_section": bench_cross_section_family,
+        "maharam_lift": bench_maharam_lift_family,
+        "von_neumann_sel": bench_von_neumann_sel_family,
         "three_series": bench_three_series_family,
         "kolmogorov_two": bench_kolmogorov_two_family,
         "ito_nisio": bench_ito_nisio_family,

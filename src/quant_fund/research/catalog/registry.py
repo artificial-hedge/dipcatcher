@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-828 projection/section canon.
+        "projection_theorem",
+        "uniform_section",
+        "dellacherie_section",
+        "cross_section",
+        "maharam_lift",
+        "von_neumann_sel",
         # Wave-827 random-series canon.
         "three_series",
         "kolmogorov_two",
