@@ -8895,6 +8895,14 @@ from quant_fund.research.benches_w1112 import (
     bench_evolutionary_biology_family,
     bench_neurobiology_family,
 )
+from quant_fund.research.benches_w1113 import (
+    bench_anesthesiology_family,
+    bench_emergency_medicine_family,
+    bench_family_medicine_family,
+    bench_obstetrics_gynecology_family,
+    bench_pediatrics_family,
+    bench_surgery_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9266,6 +9274,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "surgery": bench_surgery_family,
+        "anesthesiology": bench_anesthesiology_family,
+        "obstetrics_gynecology": bench_obstetrics_gynecology_family,
+        "pediatrics": bench_pediatrics_family,
+        "emergency_medicine": bench_emergency_medicine_family,
+        "family_medicine": bench_family_medicine_family,
         "biophysics": bench_biophysics_family,
         "evolutionary_biology": bench_evolutionary_biology_family,
         "developmental_biology": bench_developmental_biology_family,
