@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1269 post-training-2 canon.
+        "best_of_n_studies",
+        "cdpo_studies",
+        "constitutional_ai_studies",
+        "orpo_studies",
+        "simpo_studies",
+        "sppo_studies",
         # Wave-1268 RL-skills/goal canon.
         "curiosity_diversity_studies",
         "hindsight_relabel_studies",

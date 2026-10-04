@@ -10143,6 +10143,14 @@ from quant_fund.research.benches_w1268 import (
     bench_skill_chain_studies_family,
     bench_successor_feature_studies_family,
 )
+from quant_fund.research.benches_w1269 import (
+    bench_best_of_n_studies_family,
+    bench_cdpo_studies_family,
+    bench_constitutional_ai_studies_family,
+    bench_orpo_studies_family,
+    bench_simpo_studies_family,
+    bench_sppo_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10574,6 +10582,12 @@ def _provenance(
         "option_discovery_studies": bench_option_discovery_studies_family,
         "skill_chain_studies": bench_skill_chain_studies_family,
         "successor_feature_studies": bench_successor_feature_studies_family,
+        "best_of_n_studies": bench_best_of_n_studies_family,
+        "cdpo_studies": bench_cdpo_studies_family,
+        "constitutional_ai_studies": bench_constitutional_ai_studies_family,
+        "orpo_studies": bench_orpo_studies_family,
+        "simpo_studies": bench_simpo_studies_family,
+        "sppo_studies": bench_sppo_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
