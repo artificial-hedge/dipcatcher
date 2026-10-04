@@ -4706,6 +4706,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "salamander_2_qa_studies",
         "sylph_2_qa_studies",
         "undine_qa_studies",
+        # Wave-1635 yokai canon.
+        "kappa_qa_studies",
+        "kitsune_2_qa_studies",
+        "oni_qa_studies",
+        "tanuki_2_qa_studies",
+        "tengu_qa_studies",
+        "tsukumogami_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
