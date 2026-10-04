@@ -8335,6 +8335,14 @@ from quant_fund.research.benches_w1042 import (
     bench_nutrition_science_family,
     bench_sensory_evaluation_family,
 )
+from quant_fund.research.benches_w1043 import (
+    bench_dendrology_family,
+    bench_forest_ecology_family,
+    bench_forest_economics_family,
+    bench_silviculture_family,
+    bench_timber_harvesting_family,
+    bench_wildfire_management_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8706,6 +8714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "silviculture": bench_silviculture_family,
+        "forest_ecology": bench_forest_ecology_family,
+        "timber_harvesting": bench_timber_harvesting_family,
+        "forest_economics": bench_forest_economics_family,
+        "dendrology": bench_dendrology_family,
+        "wildfire_management": bench_wildfire_management_family,
         "food_chemistry": bench_food_chemistry_family,
         "food_microbiology": bench_food_microbiology_family,
         "food_processing": bench_food_processing_family,
