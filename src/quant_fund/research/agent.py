@@ -10799,6 +10799,14 @@ from quant_fund.research.benches_w1350 import (
     bench_scan_cfsp_studies_family,
     bench_shuffle_expr_studies_family,
 )
+from quant_fund.research.benches_w1351 import (
+    bench_ethic_jiminy_studies_family,
+    bench_moral_exc_studies_family,
+    bench_moral_found_studies_family,
+    bench_principlism_toy_studies_family,
+    bench_scruples_lite_studies_family,
+    bench_virtue_ethics_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11606,6 +11614,12 @@ def _provenance(
         "mco_lite_studies": bench_mco_lite_studies_family,
         "scan_cfsp_studies": bench_scan_cfsp_studies_family,
         "shuffle_expr_studies": bench_shuffle_expr_studies_family,
+        "ethic_jiminy_studies": bench_ethic_jiminy_studies_family,
+        "moral_exc_studies": bench_moral_exc_studies_family,
+        "moral_found_studies": bench_moral_found_studies_family,
+        "principlism_toy_studies": bench_principlism_toy_studies_family,
+        "scruples_lite_studies": bench_scruples_lite_studies_family,
+        "virtue_ethics_studies": bench_virtue_ethics_studies_family,
         "snli_lite_studies": bench_snli_lite_studies_family,
         "conseq_log_studies": bench_conseq_log_studies_family,
         "logiqa_log_studies": bench_logiqa_log_studies_family,
