@@ -1,3 +1,4 @@
+feat(research): wave 602 — cyclic-homology canon (cyclotomic_spec, tr_structure, tc_spec, negative_cyclic, periodic_cyclic, tate_construction) (3567->3573 families)
 feat(research): wave 601 — derived-geometry-4 canon (dg_algebra, derived_loop, derived_tangent, virtual_fund, structured_space, e_infinity_ring) (3561->3567 families)
 feat(research): wave 600 — operad-theory canon (a_infty_alg, l_infty_alg, koszul_duality, minimal_model_op, operadic_bar, operad_cobar) (3555->3561 families)
 feat(research): wave 599 — monad-theory canon (monad_theorem, klesli_cat, codensity_monad, monadicity, distributive_law, algebra_cat) (3549->3555 families)
