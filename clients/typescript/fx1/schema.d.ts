@@ -2436,6 +2436,8 @@ export interface components {
             name?: string | null;
             /** Rpm */
             rpm?: number | null;
+            /** Scopes */
+            scopes?: string[] | null;
             /** Ttl S */
             ttl_s?: number | null;
         };
@@ -2477,6 +2479,8 @@ export interface components {
             prefix: string;
             /** Rpm */
             rpm: number | null;
+            /** Scopes */
+            scopes: string[];
         };
         /**
          * ApiKeyRecordModel
@@ -2510,6 +2514,8 @@ export interface components {
             revoked_at: number | null;
             /** Rpm */
             rpm: number | null;
+            /** Scopes */
+            scopes: string[];
             /** Uses */
             uses: number;
         };

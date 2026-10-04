@@ -31,6 +31,15 @@ Honesty rules:
   fields (declared at mint, durable policy); the live window counters
   are not journaled, like ``uses``. A refused request — over-limit or
   expired — never bumps the use counter.
+- ``scopes`` declares which surface classes the key may touch:
+  ``read`` (safe methods anywhere), ``write`` (mutating calls outside
+  the control plane), and ``admin`` (key management + drain). The wire
+  refuses out-of-scope calls 403 ``insufficient_scope`` — a refused
+  scope never counts as a use either. ``admin=True`` at mint unions the
+  admin scope onto whatever ``scopes`` declares, so the flag is purely
+  additive. Unset ``scopes`` keeps the pre-scope behavior:
+  ``[read, write]`` (plus ``admin`` for admin keys). Scopes are
+  journaled with the record — a restart restores the declared policy.
 """
 
 from __future__ import annotations
@@ -44,11 +53,34 @@ from typing import Any
 
 from fx1.serve.journal import JobJournal
 
-__all__ = ["KEY_PREFIX", "ApiKeyStore", "KeyStoreError"]
+__all__ = ["KEY_PREFIX", "SCOPES", "ApiKeyStore", "KeyStoreError"]
 
 KEY_PREFIX = "fx1k_"
 _MAX_KEYS = 4096
 _RATE_WINDOW_S = 60.0
+# The scope vocabulary — read covers safe methods anywhere, write the
+# data-plane mutations, admin the control plane (key management, drain).
+SCOPES = ("read", "write", "admin")
+
+
+def _resolve_scopes(scopes: list[str] | tuple[str, ...] | None, admin: bool) -> list[str]:
+    """Resolve a mint's scope declaration into the journaled list.
+
+    Unset keeps the pre-scope contract — ``[read, write]``, plus
+    ``admin`` on an admin key. ``admin=True`` unions the admin scope
+    into an explicit list, never silently drops it. Empty lists and
+    unknown names refuse at mint, not first use."""
+    if scopes is None:
+        return list(SCOPES) if admin else ["read", "write"]
+    seen = {s for s in scopes}
+    bad = sorted(s for s in seen if not isinstance(s, str) or s not in SCOPES)
+    if bad:
+        raise KeyStoreError("scopes_invalid", f"unknown key scope {bad[0]!r}")
+    if not seen:
+        raise KeyStoreError("scopes_empty", "scopes must name at least one of read/write/admin")
+    if admin:
+        seen.add("admin")
+    return [s for s in SCOPES if s in seen]
 
 
 def _wire(rec: dict[str, Any]) -> dict[str, Any]:
@@ -111,6 +143,9 @@ class ApiKeyStore:
                 rec = payload.get("record")
                 if isinstance(rec, dict) and isinstance(rec.get("sha256"), str):
                     rec.setdefault("admin", False)
+                    # records journaled before scopes existed keep the
+                    # old unrestricted contract
+                    rec.setdefault("scopes", list(SCOPES) if rec["admin"] else ["read", "write"])
                     self._by_hash[rec["sha256"]] = rec
                     kid = rec.get("key_id")
                     if isinstance(kid, str):
@@ -134,6 +169,7 @@ class ApiKeyStore:
         admin: bool = False,
         rpm: int | None = None,
         ttl_s: float | None = None,
+        scopes: list[str] | tuple[str, ...] | None = None,
     ) -> tuple[str, dict[str, Any]]:
         """Mint a key. Returns ``(raw, record)`` — the raw secret is shown
         once here and never stored.
@@ -143,6 +179,11 @@ class ApiKeyStore:
         key so deployments without ``FX1_API_KEY`` keep a manageable
         control plane after provisioning turns auth on.
 
+        ``scopes`` bounds which surface classes the key may call —
+        ``read``, ``write``, ``admin`` — journaled with the record so a
+        restart restores the declared policy; the flag ``admin`` unions
+        the admin scope in.
+
         ``rpm`` declares a per-key fixed-window request limit
         (refusals raise ``rate_limited``); ``ttl_s`` declares an expiry —
         both travel with the journaled record so a restart keeps the
@@ -151,6 +192,7 @@ class ApiKeyStore:
             raise ValueError("rpm must be >= 1")
         if ttl_s is not None and ttl_s <= 0:
             raise ValueError("ttl_s must be > 0")
+        resolved = _resolve_scopes(scopes, admin)
         raw = KEY_PREFIX + secrets.token_hex(20)
         sha = _hash(raw)
         created = self._clock()
@@ -158,7 +200,8 @@ class ApiKeyStore:
             "key_id": sha[:16],
             "prefix": raw[:13],
             "name": name,
-            "admin": admin,
+            "admin": "admin" in resolved,
+            "scopes": resolved,
             "rpm": rpm,
             "created_at": created,
             "expires_at": (created + ttl_s) if ttl_s is not None else None,

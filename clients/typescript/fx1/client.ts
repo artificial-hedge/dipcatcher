@@ -725,24 +725,29 @@ export class HarnessApiClient {
    * once in the response; the server stores only its sha256. `admin`
    * keys may manage keys on the wire; `rpm` bounds the key to a fixed
    * 60 s request window (over-limit answers 429 + Retry-After) and
-   * `ttlS` bakes an expiry. Needs the bootstrap credential on the wire.
+   * `ttlS` bakes an expiry. `scopes` bounds the key to "read" /
+   * "write" / "admin" surface classes — out-of-scope calls answer 403
+   * `insufficient_scope`. Needs the bootstrap credential on the wire.
    */
   async keyCreate(
     name?: string,
     admin?: boolean,
     rpm?: number,
     ttlS?: number,
+    scopes?: string[],
   ): Promise<ApiKeyMintResponse> {
     const body: {
       name?: string;
       admin?: boolean;
       rpm?: number;
       ttl_s?: number;
+      scopes?: string[];
     } = {};
     if (name !== undefined) body.name = name;
     if (admin !== undefined) body.admin = admin;
     if (rpm !== undefined) body.rpm = rpm;
     if (ttlS !== undefined) body.ttl_s = ttlS;
+    if (scopes !== undefined) body.scopes = scopes;
     const res = await this.send({
       method: "POST",
       path: "/harness/keys",

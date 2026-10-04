@@ -663,19 +663,28 @@ class Fx1Harness:
         *,
         rpm: int | None = None,
         ttl_s: float | None = None,
+        scopes: list[str] | tuple[str, ...] | None = None,
     ) -> dict[str, Any]:
         """Mint a managed key — returns the wire mint shape including the
         raw ``key`` (shown once, never stored). ``admin=True`` keys may
         manage keys on the wire surface; ``rpm`` bounds the key to a
         fixed-window request rate and ``ttl_s`` bakes an expiry into the
-        journaled record."""
-        raw, rec = self._key_store.mint(name, admin=admin, rpm=rpm, ttl_s=ttl_s)
+        journaled record. ``scopes`` bounds the key to ``read``/``write``/
+        ``admin`` surface classes — journaled with the record so the
+        wire enforces the declared policy across restarts."""
+        from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
+
+        try:
+            raw, rec = self._key_store.mint(name, admin=admin, rpm=rpm, ttl_s=ttl_s, scopes=scopes)
+        except KeyStoreError as exc:
+            raise ValueError(str(exc)) from exc
         return {
             "id": rec["key_id"],
             "object": "key",
             "name": rec["name"],
             "prefix": rec["prefix"],
-            "admin": admin,
+            "admin": bool(rec.get("admin")),
+            "scopes": list(rec["scopes"]),
             "rpm": rec.get("rpm"),
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
@@ -713,6 +722,10 @@ class Fx1Harness:
             "name": rec["name"],
             "prefix": rec["prefix"],
             "admin": bool(rec.get("admin")),
+            "scopes": list(
+                rec.get("scopes")
+                or (["read", "write", "admin"] if rec.get("admin") else ["read", "write"])
+            ),
             "rpm": rec.get("rpm"),
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],

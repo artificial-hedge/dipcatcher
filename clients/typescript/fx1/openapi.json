@@ -556,6 +556,20 @@
             ],
             "title": "Rpm"
           },
+          "scopes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scopes"
+          },
           "ttl_s": {
             "anyOf": [
               {
@@ -658,6 +672,13 @@
               }
             ],
             "title": "Rpm"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
           }
         },
         "required": [
@@ -665,6 +686,7 @@
           "name",
           "prefix",
           "admin",
+          "scopes",
           "rpm",
           "expires_at",
           "created_at",
@@ -758,6 +780,13 @@
             ],
             "title": "Rpm"
           },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Scopes",
+            "type": "array"
+          },
           "uses": {
             "title": "Uses",
             "type": "integer"
@@ -768,6 +797,7 @@
           "name",
           "prefix",
           "admin",
+          "scopes",
           "rpm",
           "expires_at",
           "created_at",

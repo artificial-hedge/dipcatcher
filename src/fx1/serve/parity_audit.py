@@ -3918,6 +3918,39 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _raises(lambda: remote.key_create("x"))[0] == "HarnessAuthError"
     )
 
+    # declared scopes ride the mint on both legs; the wire enforces the
+    # declared surface classes (403 insufficient_scope) while the SDK —
+    # in-process, no wire — carries the journaled declaration.
+    _sc_sdk = sdk.key_create("scoped", scopes=["read"])
+    _sc_wl = _admin_remote.key_create("scoped", scopes=["read"])
+    _sc_ro = HarnessClient(
+        "http://harness.test",
+        transport=_tc_transport(client),
+        api_key=str(_sc_wl.get("key", "")),
+    )
+    out["key_scope_parity"] = (
+        _sc_sdk["scopes"] == _sc_wl["scopes"] == ["read"]
+        and _sc_sdk["admin"] is False
+        and _sc_wl["admin"] is False
+        and sdk.key_get(_sc_sdk["id"])["scopes"] == ["read"]
+        and _admin_remote.key_get(_sc_wl["id"])["scopes"] == ["read"]
+        and _sc_ro.capabilities()["features"]["key_scopes"] is True
+        and _raises(lambda: _sc_ro.complete([{"role": "user", "content": "x"}]))[0]
+        == "HarnessAuthError"
+        and _raises(lambda: _sc_ro.keys())[0] == "HarnessAuthError"
+        and _raises(lambda: sdk.key_create("bad", scopes=["bogus"]))[0] == "ValueError"
+        and _raises(lambda: _admin_remote.key_create("bad", scopes=["bogus"]))[0]
+        == "HarnessTransportError"
+    )
+    # the admin flag unions its scope — additive, identical on both legs
+    _u_sdk = sdk.key_create("union", admin=True, scopes=["read"])
+    _u_wl = _admin_remote.key_create("union", admin=True, scopes=["read"])
+    out["key_scope_union_parity"] = (
+        _u_sdk["scopes"] == _u_wl["scopes"] == ["read", "admin"]
+        and _u_sdk["admin"] is True
+        and _u_wl["admin"] is True
+    )
+
     # --- Anthropic /v1/messages parity -----------------------------------
     # One translation module (fx1.serve.anthropic_compat) serves all
     # surfaces: the same request over the wire, in-process, and through
