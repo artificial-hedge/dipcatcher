@@ -15415,6 +15415,14 @@ from quant_fund.research.benches_w1927 import (
     bench_tornit_qa_studies_family,
     bench_tupilaq_qa_studies_family,
 )
+from quant_fund.research.benches_w1928 import (
+    bench_kehua_qa_studies_family,
+    bench_maero_qa_studies_family,
+    bench_ngarara_qa_studies_family,
+    bench_patupaiarehe_qa_studies_family,
+    bench_ponaturi_qa_studies_family,
+    bench_taipo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
