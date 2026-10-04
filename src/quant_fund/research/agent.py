@@ -13999,6 +13999,14 @@ from quant_fund.research.benches_w1750 import (
     bench_sin_qa_studies_family,
     bench_tiamat_qa_studies_family,
 )
+from quant_fund.research.benches_w1751 import (
+    bench_anubis_qa_studies_family,
+    bench_bastet_qa_studies_family,
+    bench_khonsu_qa_studies_family,
+    bench_min_qa_studies_family,
+    bench_neith_qa_studies_family,
+    bench_sobek_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
