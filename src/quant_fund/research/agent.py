@@ -8223,6 +8223,14 @@ from quant_fund.research.benches_w1028 import (
     bench_separation_proc_family,
     bench_thermo_props_family,
 )
+from quant_fund.research.benches_w1029 import (
+    bench_fatigue_life_family,
+    bench_kinematics_family,
+    bench_machine_design_family,
+    bench_solid_mechanics_family,
+    bench_tribology_family,
+    bench_vibration_analysis_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8594,6 +8602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "solid_mechanics": bench_solid_mechanics_family,
+        "vibration_analysis": bench_vibration_analysis_family,
+        "fatigue_life": bench_fatigue_life_family,
+        "tribology": bench_tribology_family,
+        "machine_design": bench_machine_design_family,
+        "kinematics": bench_kinematics_family,
         "reaction_kinetics": bench_reaction_kinetics_family,
         "thermo_props": bench_thermo_props_family,
         "separation_proc": bench_separation_proc_family,
