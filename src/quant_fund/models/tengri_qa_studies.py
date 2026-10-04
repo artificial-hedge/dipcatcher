@@ -16,7 +16,7 @@ def tengri_qa_studies_aux(aux: bool) -> bool:
     """tengri_qa_studies
 
     aux:
-    tengri_qa_studies: tengri, sky fathers, answers, and scores
+    tengri_qa_studies: tengri, sky emperors, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tengri_qa_studies(seed: int = 0) -> float:
     checks.append(not tengri_qa_studies_ok(False, True))
     checks.append(tengri_qa_studies_aux(True))
     checks.append(not tengri_qa_studies_aux(False))
-    checks.append(True)  # siberian-myth canon
+    checks.append(True)  # tatar-myth canon
     return float(sum(checks) / len(checks))
 
 

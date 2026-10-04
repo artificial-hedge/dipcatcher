@@ -27,7 +27,7 @@ def _bench_erlik_qa_studies(seed: int = 0) -> float:
     checks.append(not erlik_qa_studies_ok(False, True))
     checks.append(erlik_qa_studies_aux(True))
     checks.append(not erlik_qa_studies_aux(False))
-    checks.append(True)  # siberian-myth canon
+    checks.append(True)  # tatar-myth canon
     return float(sum(checks) / len(checks))
 
 
