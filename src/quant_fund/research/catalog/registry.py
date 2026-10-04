@@ -4440,6 +4440,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "melon_head_qa_studies",
         "pygmy_whale_qa_studies",
         "sea_lion_qa_studies",
+        # Wave-1597 caprine canon.
+        "bharal_qa_studies",
+        "chamois_qa_studies",
+        "goral_qa_studies",
+        "ibex_qa_studies",
+        "serow_qa_studies",
+        "tahr_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
