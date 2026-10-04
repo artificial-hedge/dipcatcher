@@ -5182,6 +5182,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ixchel_qa_studies",
         "kukulcan_qa_studies",
         "yumkaax_qa_studies",
+        # Wave-1703 sumerian-myth canon.
+        "dumuzi_qa_studies",
+        "inanna_qa_studies",
+        "marduk_qa_studies",
+        "namtar_qa_studies",
+        "nergal_qa_studies",
+        "ninhursag_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
