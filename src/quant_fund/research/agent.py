@@ -14311,6 +14311,14 @@ from quant_fund.research.benches_w1789 import (
     bench_momus_qa_studies_family,
     bench_oneiros_qa_studies_family,
 )
+from quant_fund.research.benches_w1790 import (
+    bench_amun_qa_studies_family,
+    bench_atum_qa_studies_family,
+    bench_khepri_qa_studies_family,
+    bench_mut_qa_studies_family,
+    bench_ptah_qa_studies_family,
+    bench_seth_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
