@@ -1,3 +1,4 @@
+feat(research): wave 543 — Riemann-surfaces canon (riemann_surface, branched_cover, abel_jacobi, riemann_hurwitz, fuchsian_group, teichmuller_space) (3213->3219 families)
 feat(research): wave 542 — several-complex-variables canon (hartogs_thm, domain_holo, pseudoconvex, levi_problem, oka_coherence, d_bar_neumann) (3207->3213 families)
 feat(research): wave 541 — complex-analysis-2 canon (riemann_mapping, schwarz_lemma, picard_thm, montel_normal, runge_approx, jensen_formula) (3201->3207 families)
 feat(research): wave 540 — transcendence-theory canon (hermite_lindemann, gelfond_schneider, baker_thm, lindemann_weier, schanuel_conj, siegel_shidlovskii) (3195->3201 families)
