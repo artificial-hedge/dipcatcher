@@ -6127,6 +6127,14 @@ from quant_fund.research.benches_w766 import (
     bench_varadarajan_thm_family,
     bench_vc_class_family,
 )
+from quant_fund.research.benches_w767 import (
+    bench_borell_tis_family,
+    bench_fernique_thm_family,
+    bench_gordon_thm_family,
+    bench_slepian_lemma_family,
+    bench_sudakov_min_family,
+    bench_talagrand_conc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6506,6 +6514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "slepian_lemma": bench_slepian_lemma_family,
+        "fernique_thm": bench_fernique_thm_family,
+        "borell_tis": bench_borell_tis_family,
+        "sudakov_min": bench_sudakov_min_family,
+        "talagrand_conc": bench_talagrand_conc_family,
+        "gordon_thm": bench_gordon_thm_family,
         "dudley_theorem": bench_dudley_theorem_family,
         "varadarajan_thm": bench_varadarajan_thm_family,
         "dvoretzky_thm": bench_dvoretzky_thm_family,
