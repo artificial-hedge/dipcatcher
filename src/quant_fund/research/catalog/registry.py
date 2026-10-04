@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1058 philosophy canon.
+        "metaphysics",
+        "epistemology",
+        "ethics_philosophy",
+        "logic_philosophy",
+        "philosophy_of_science",
+        "aesthetics",
         # Wave-1057 linguistics canon.
         "phonetics",
         "phonology",
