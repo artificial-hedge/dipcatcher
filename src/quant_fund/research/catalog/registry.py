@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1080 medieval studies canon.
+        "medieval_studies",
+        "paleography",
+        "codicology",
+        "hagiography",
+        "byzantine_studies",
+        "numismatics",
         # Wave-1079 classics canon.
         "classical_studies",
         "latin_language",
