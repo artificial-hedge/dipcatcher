@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1384 live-eval canon.
+        "aider_polyglot_studies",
+        "hum_eval_studies",
+        "livebench_arena_studies",
+        "mbti_eval_studies",
+        "olmes_lite_studies",
+        "plus_eval_studies",
         # Wave-1383 frontier-eval canon.
         "aime24_studies",
         "gpqa_diamond_studies",
