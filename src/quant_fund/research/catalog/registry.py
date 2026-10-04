@@ -6036,6 +6036,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sarkany2_qa_studies",
         "tatros2_qa_studies",
         "turul2_qa_studies",
+        # Wave-1825 baltic-myth-2 canon.
+        "aitvaras2_qa_studies",
+        "kaukas2_qa_studies",
+        "laime2_qa_studies",
+        "perkunas2_qa_studies",
+        "velnias2_qa_studies",
+        "zemyna2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
