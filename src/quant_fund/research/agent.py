@@ -8655,6 +8655,14 @@ from quant_fund.research.benches_w1082 import (
     bench_rabbinics_family,
     bench_talmudic_studies_family,
 )
+from quant_fund.research.benches_w1083 import (
+    bench_hermeneutics_family,
+    bench_narratology_family,
+    bench_phenomenology_family,
+    bench_poststructuralism_family,
+    bench_semiotics_family,
+    bench_structuralism_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9026,6 +9034,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "semiotics": bench_semiotics_family,
+        "narratology": bench_narratology_family,
+        "hermeneutics": bench_hermeneutics_family,
+        "phenomenology": bench_phenomenology_family,
+        "structuralism": bench_structuralism_family,
+        "poststructuralism": bench_poststructuralism_family,
         "jewish_studies": bench_jewish_studies_family,
         "talmudic_studies": bench_talmudic_studies_family,
         "hebrew_language": bench_hebrew_language_family,
