@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1203 molecular-medicine canon.
+        "tropical_medicine",
+        "travel_medicine",
+        "genomic_medicine",
+        "precision_medicine",
+        "molecular_diagnostics",
+        "laboratory_medicine",
         # Wave-1202 infectious-disease canon.
         "public_health_microbiology",
         "medical_microbiology",
