@@ -14455,6 +14455,14 @@ from quant_fund.research.benches_w1807 import (
     bench_pirinkir2_qa_studies_family,
     bench_tesub2_qa_studies_family,
 )
+from quant_fund.research.benches_w1808 import (
+    bench_agdistis2_qa_studies_family,
+    bench_attis2_qa_studies_family,
+    bench_cybele2_qa_studies_family,
+    bench_men2_qa_studies_family,
+    bench_papas2_qa_studies_family,
+    bench_sabazios2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

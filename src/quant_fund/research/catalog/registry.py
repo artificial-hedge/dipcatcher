@@ -5917,6 +5917,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kumarbi2_qa_studies",
         "pirinkir2_qa_studies",
         "tesub2_qa_studies",
+        # Wave-1808 phrygian-myth canon.
+        "agdistis2_qa_studies",
+        "attis2_qa_studies",
+        "cybele2_qa_studies",
+        "men2_qa_studies",
+        "papas2_qa_studies",
+        "sabazios2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
