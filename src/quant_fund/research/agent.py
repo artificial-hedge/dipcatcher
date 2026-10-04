@@ -10055,23 +10055,6 @@ from quant_fund.research.benches_w1257 import (
     bench_pcr_studies_family,
     bench_serology_studies_family,
 )
-from quant_fund.research.benches_w1259 import (
-    bench_qsar_studies_family,
-    bench_docking_studies_family,
-    bench_admet_studies_family,
-    bench_lead_optimization_studies_family,
-    bench_virtual_screening_studies_family,
-    bench_de_novo_design_studies_family,
-)
-
-from quant_fund.research.benches_w1260 import (
-    bench_adaptive_trial_studies_family,
-    bench_clinical_trial_studies_family,
-    bench_comparative_effectiveness_studies_family,
-    bench_meta_analysis_studies_family,
-    bench_outcomes_research_studies_family,
-    bench_rwe_studies_family,
-)
 from quant_fund.research.benches_w1258 import (
     bench_interactome_studies_family,
     bench_metabolome_studies_family,
@@ -10079,6 +10062,22 @@ from quant_fund.research.benches_w1258 import (
     bench_microbiome_studies_family,
     bench_proteome_studies_family,
     bench_transcriptome_studies_family,
+)
+from quant_fund.research.benches_w1259 import (
+    bench_admet_studies_family,
+    bench_de_novo_design_studies_family,
+    bench_docking_studies_family,
+    bench_lead_optimization_studies_family,
+    bench_qsar_studies_family,
+    bench_virtual_screening_studies_family,
+)
+from quant_fund.research.benches_w1260 import (
+    bench_adaptive_trial_studies_family,
+    bench_clinical_trial_studies_family,
+    bench_comparative_effectiveness_studies_family,
+    bench_meta_analysis_studies_family,
+    bench_outcomes_research_studies_family,
+    bench_rwe_studies_family,
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
@@ -10457,6 +10456,12 @@ def _provenance(
         "lead_optimization_studies": bench_lead_optimization_studies_family,
         "virtual_screening_studies": bench_virtual_screening_studies_family,
         "de_novo_design_studies": bench_de_novo_design_studies_family,
+        "adaptive_trial_studies": bench_adaptive_trial_studies_family,
+        "clinical_trial_studies": bench_clinical_trial_studies_family,
+        "comparative_effectiveness_studies": bench_comparative_effectiveness_studies_family,
+        "meta_analysis_studies": bench_meta_analysis_studies_family,
+        "outcomes_research_studies": bench_outcomes_research_studies_family,
+        "rwe_studies": bench_rwe_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
