@@ -12311,6 +12311,14 @@ from quant_fund.research.benches_w1539 import (
     bench_purple_heron_qa_studies_family,
     bench_tiger_heron_qa_studies_family,
 )
+from quant_fund.research.benches_w1540 import (
+    bench_cattle_egret_qa_studies_family,
+    bench_glossy_ibis_qa_studies_family,
+    bench_great_egret_qa_studies_family,
+    bench_sacred_ibis_qa_studies_family,
+    bench_snowy_egret_qa_studies_family,
+    bench_squacco_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14162,6 +14170,12 @@ def _provenance(
         "night_heron_qa_studies": bench_night_heron_qa_studies_family,
         "purple_heron_qa_studies": bench_purple_heron_qa_studies_family,
         "tiger_heron_qa_studies": bench_tiger_heron_qa_studies_family,
+        "cattle_egret_qa_studies": bench_cattle_egret_qa_studies_family,
+        "glossy_ibis_qa_studies": bench_glossy_ibis_qa_studies_family,
+        "great_egret_qa_studies": bench_great_egret_qa_studies_family,
+        "sacred_ibis_qa_studies": bench_sacred_ibis_qa_studies_family,
+        "snowy_egret_qa_studies": bench_snowy_egret_qa_studies_family,
+        "squacco_qa_studies": bench_squacco_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
