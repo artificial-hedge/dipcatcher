@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-706 chromatic-9 canon.
+        "chromatic_layer",
+        "morava_maven",
+        "chromatic_square2",
+        "lubin_tate3",
+        "elliptic_morava",
+        "chromatic_base",
         # Wave-705 derived-geometry-10 canon.
         "derived_geometry7",
         "derived_abelian2",
