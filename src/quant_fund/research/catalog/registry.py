@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1168 logistics canon.
+        "transportation_2",
+        "logistics_2",
+        "supply_chain_2",
+        "warehousing_2",
+        "maritime_studies_2",
+        "aviation_2",
         # Wave-1167 performing-arts canon.
         "music_2",
         "theater_2",
