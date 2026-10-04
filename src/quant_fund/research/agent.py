@@ -12231,6 +12231,14 @@ from quant_fund.research.benches_w1529 import (
     bench_tanzanite_qa_studies_family,
     bench_tourmaline_qa_studies_family,
 )
+from quant_fund.research.benches_w1530 import (
+    bench_amalgam_qa_studies_family,
+    bench_brass_qa_studies_family,
+    bench_bronze_qa_studies_family,
+    bench_nichrome_qa_studies_family,
+    bench_pewter_qa_studies_family,
+    bench_solder_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14022,6 +14030,12 @@ def _provenance(
         "opal_qa_studies": bench_opal_qa_studies_family,
         "ruby_qa_studies": bench_ruby_qa_studies_family,
         "tanzanite_qa_studies": bench_tanzanite_qa_studies_family,
+        "amalgam_qa_studies": bench_amalgam_qa_studies_family,
+        "brass_qa_studies": bench_brass_qa_studies_family,
+        "bronze_qa_studies": bench_bronze_qa_studies_family,
+        "nichrome_qa_studies": bench_nichrome_qa_studies_family,
+        "pewter_qa_studies": bench_pewter_qa_studies_family,
+        "solder_qa_studies": bench_solder_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
