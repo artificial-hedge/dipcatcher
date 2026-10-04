@@ -3838,6 +3838,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "jay_qa_studies",
         "magpie_qa_studies",
         "rook_qa_studies",
+        # Wave-1511 hummingbird canon.
+        "brilliant_qa_studies",
+        "hermit_qa_studies",
+        "hummingbird_qa_studies",
+        "sapphire_qa_studies",
+        "topaz_qa_studies",
+        "woodstar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

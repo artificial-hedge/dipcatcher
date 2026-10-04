@@ -12079,6 +12079,14 @@ from quant_fund.research.benches_w1510 import (
     bench_magpie_qa_studies_family,
     bench_rook_qa_studies_family,
 )
+from quant_fund.research.benches_w1511 import (
+    bench_brilliant_qa_studies_family,
+    bench_hermit_qa_studies_family,
+    bench_hummingbird_qa_studies_family,
+    bench_sapphire_qa_studies_family,
+    bench_topaz_qa_studies_family,
+    bench_woodstar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13757,6 +13765,12 @@ def _provenance(
         "jay_qa_studies": bench_jay_qa_studies_family,
         "magpie_qa_studies": bench_magpie_qa_studies_family,
         "rook_qa_studies": bench_rook_qa_studies_family,
+        "brilliant_qa_studies": bench_brilliant_qa_studies_family,
+        "hermit_qa_studies": bench_hermit_qa_studies_family,
+        "hummingbird_qa_studies": bench_hummingbird_qa_studies_family,
+        "sapphire_qa_studies": bench_sapphire_qa_studies_family,
+        "topaz_qa_studies": bench_topaz_qa_studies_family,
+        "woodstar_qa_studies": bench_woodstar_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
