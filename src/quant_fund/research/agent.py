@@ -12399,6 +12399,14 @@ from quant_fund.research.benches_w1550 import (
     bench_tegu_qa_studies_family,
     bench_uromastyx_qa_studies_family,
 )
+from quant_fund.research.benches_w1551 import (
+    bench_bushmaster_qa_studies_family,
+    bench_copperhead_qa_studies_family,
+    bench_coral_snake_qa_studies_family,
+    bench_cottonmouth_qa_studies_family,
+    bench_fer_de_lance_qa_studies_family,
+    bench_rattlesnake_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14305,6 +14313,12 @@ def _provenance(
         "monitor_lizard_qa_studies": bench_monitor_lizard_qa_studies_family,
         "tegu_qa_studies": bench_tegu_qa_studies_family,
         "uromastyx_qa_studies": bench_uromastyx_qa_studies_family,
+        "bushmaster_qa_studies": bench_bushmaster_qa_studies_family,
+        "copperhead_qa_studies": bench_copperhead_qa_studies_family,
+        "coral_snake_qa_studies": bench_coral_snake_qa_studies_family,
+        "cottonmouth_qa_studies": bench_cottonmouth_qa_studies_family,
+        "fer_de_lance_qa_studies": bench_fer_de_lance_qa_studies_family,
+        "rattlesnake_qa_studies": bench_rattlesnake_qa_studies_family,
         "emerald_dove_qa_studies": bench_emerald_dove_qa_studies_family,
         "fruit_dove_qa_studies": bench_fruit_dove_qa_studies_family,
         "ground_dove_qa_studies": bench_ground_dove_qa_studies_family,
