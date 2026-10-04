@@ -5223,6 +5223,14 @@ from quant_fund.research.benches_w653 import (
     bench_integral_padic2_family,
     bench_period_ring_family,
 )
+from quant_fund.research.benches_w654 import (
+    bench_accessible_cat2_family,
+    bench_compactly_generated_family,
+    bench_flat_monad_family,
+    bench_locally_presentable_family,
+    bench_presentable_cat2_family,
+    bench_regular_cat2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5602,6 +5610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "compactly_generated": bench_compactly_generated_family,
+        "presentable_cat2": bench_presentable_cat2_family,
+        "accessible_cat2": bench_accessible_cat2_family,
+        "flat_monad": bench_flat_monad_family,
+        "locally_presentable": bench_locally_presentable_family,
+        "regular_cat2": bench_regular_cat2_family,
         "fargues_scholze3": bench_fargues_scholze3_family,
         "integral_padic2": bench_integral_padic2_family,
         "ainf_cohom": bench_ainf_cohom_family,
