@@ -1,3 +1,4 @@
+w1319 benchmark-eval canon: math_bench_studies, multirc_studies, ninco_studies, objectnet_studies, ood_bench_studies, wild_bench_studies (7863->7869)
 w1318 NLP-eval-2 canon: cb_studies, cola_studies, qqp_studies, squad_v2_studies, sst2_studies, wic_studies (7857->7863)
 w1317 eval-science-2 canon: arc_eval_studies, do_anything_studies, step_eval_studies, strong_reject_studies, verifier_reward_studies, winogrande_studies (7851->7857)
 w1316 cue-conflict canon: backgrounds_studies, cue_conflict_studies, geirhos_studies, imagenet_bg_studies, shape_bias_studies, texture_bias_studies (7845->7851)
