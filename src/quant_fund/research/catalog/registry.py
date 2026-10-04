@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1339 math-eval-2 canon.
+        "aqua_rat_studies",
+        "geo_qa_studies",
+        "hol_step_studies",
+        "math_odyssey_studies",
+        "tab_math_studies",
+        "uni_math_studies",
         # Wave-1338 math-reasoning-eval canon.
         "arith_qa_studies",
         "gsm_hard_studies",
