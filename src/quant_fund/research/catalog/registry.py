@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1317 eval-science-2 canon.
+        "arc_eval_studies",
+        "do_anything_studies",
+        "step_eval_studies",
+        "strong_reject_studies",
+        "verifier_reward_studies",
+        "winogrande_studies",
         # Wave-1316 cue-conflict canon.
         "backgrounds_studies",
         "cue_conflict_studies",

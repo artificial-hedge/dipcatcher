@@ -10527,6 +10527,14 @@ from quant_fund.research.benches_w1316 import (
     bench_shape_bias_studies_family,
     bench_texture_bias_studies_family,
 )
+from quant_fund.research.benches_w1317 import (
+    bench_arc_eval_studies_family,
+    bench_do_anything_studies_family,
+    bench_step_eval_studies_family,
+    bench_strong_reject_studies_family,
+    bench_verifier_reward_studies_family,
+    bench_winogrande_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11212,6 +11220,12 @@ def _provenance(
         "imagenet_v2_studies": bench_imagenet_v2_studies_family,
         "stylized_studies": bench_stylized_studies_family,
         "backgrounds_studies": bench_backgrounds_studies_family,
+        "arc_eval_studies": bench_arc_eval_studies_family,
+        "do_anything_studies": bench_do_anything_studies_family,
+        "step_eval_studies": bench_step_eval_studies_family,
+        "strong_reject_studies": bench_strong_reject_studies_family,
+        "verifier_reward_studies": bench_verifier_reward_studies_family,
+        "winogrande_studies": bench_winogrande_studies_family,
         "cue_conflict_studies": bench_cue_conflict_studies_family,
         "geirhos_studies": bench_geirhos_studies_family,
         "imagenet_bg_studies": bench_imagenet_bg_studies_family,
