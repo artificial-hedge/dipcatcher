@@ -5126,6 +5126,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mangkukulam_qa_studies",
         "sokoy_qa_studies",
         "tiktik_qa_studies",
+        # Wave-1695 chinese-myth canon.
+        "dijiang_qa_studies",
+        "huli_qa_studies",
+        "jiangshi_qa_studies",
+        "mogwai_qa_studies",
+        "yaoguai_qa_studies",
+        "zhuyin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
