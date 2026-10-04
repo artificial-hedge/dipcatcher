@@ -12247,6 +12247,14 @@ from quant_fund.research.benches_w1531 import (
     bench_woodpecker_qa_studies_family,
     bench_wryneck_qa_studies_family,
 )
+from quant_fund.research.benches_w1532 import (
+    bench_bee_eater_qa_studies_family,
+    bench_jacamar_qa_studies_family,
+    bench_kookaburra_qa_studies_family,
+    bench_motmot_qa_studies_family,
+    bench_roller_qa_studies_family,
+    bench_tody_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14050,6 +14058,12 @@ def _provenance(
         "sapsucker_qa_studies": bench_sapsucker_qa_studies_family,
         "woodpecker_qa_studies": bench_woodpecker_qa_studies_family,
         "wryneck_qa_studies": bench_wryneck_qa_studies_family,
+        "bee_eater_qa_studies": bench_bee_eater_qa_studies_family,
+        "jacamar_qa_studies": bench_jacamar_qa_studies_family,
+        "kookaburra_qa_studies": bench_kookaburra_qa_studies_family,
+        "motmot_qa_studies": bench_motmot_qa_studies_family,
+        "roller_qa_studies": bench_roller_qa_studies_family,
+        "tody_qa_studies": bench_tody_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
