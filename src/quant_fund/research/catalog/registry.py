@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1029 mechanical-engineering canon.
+        "solid_mechanics",
+        "vibration_analysis",
+        "fatigue_life",
+        "tribology",
+        "machine_design",
+        "kinematics",
         # Wave-1028 chemical-engineering canon.
         "reaction_kinetics",
         "thermo_props",
