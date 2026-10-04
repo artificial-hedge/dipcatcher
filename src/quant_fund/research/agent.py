@@ -10399,6 +10399,14 @@ from quant_fund.research.benches_w1300 import (
     bench_imagenet_r_studies_family,
     bench_robust_bench_studies_family,
 )
+from quant_fund.research.benches_w1301 import (
+    bench_backdoor_studies_family,
+    bench_clean_label_studies_family,
+    bench_data_poison_studies_family,
+    bench_neural_cleanse_studies_family,
+    bench_spectral_signature_studies_family,
+    bench_trojan_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11022,6 +11030,12 @@ def _provenance(
         "imagenet_c_studies": bench_imagenet_c_studies_family,
         "imagenet_r_studies": bench_imagenet_r_studies_family,
         "robust_bench_studies": bench_robust_bench_studies_family,
+        "backdoor_studies": bench_backdoor_studies_family,
+        "clean_label_studies": bench_clean_label_studies_family,
+        "data_poison_studies": bench_data_poison_studies_family,
+        "neural_cleanse_studies": bench_neural_cleanse_studies_family,
+        "spectral_signature_studies": bench_spectral_signature_studies_family,
+        "trojan_studies": bench_trojan_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
