@@ -5161,6 +5161,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "raijin_qa_studies",
         "susanoo_qa_studies",
         "tsukuyomi_qa_studies",
+        # Wave-1700 celtic-myth canon.
+        "brigid_qa_studies",
+        "dagda_qa_studies",
+        "danu_qa_studies",
+        "lugh_qa_studies",
+        "manannan_qa_studies",
+        "morrigan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
