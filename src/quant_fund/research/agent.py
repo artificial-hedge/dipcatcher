@@ -10655,6 +10655,14 @@ from quant_fund.research.benches_w1332 import (
     bench_ngram_overlap_studies_family,
     bench_pandalm_studies_family,
 )
+from quant_fund.research.benches_w1333 import (
+    bench_fava_studies_family,
+    bench_polyglo_tox_studies_family,
+    bench_regard_eval_studies_family,
+    bench_unqover_studies_family,
+    bench_vlur_studies_family,
+    bench_xlsum_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11403,6 +11411,12 @@ def _provenance(
         "g_eval_studies": bench_g_eval_studies_family,
         "ngram_overlap_studies": bench_ngram_overlap_studies_family,
         "pandalm_studies": bench_pandalm_studies_family,
+        "fava_studies": bench_fava_studies_family,
+        "polyglo_tox_studies": bench_polyglo_tox_studies_family,
+        "regard_eval_studies": bench_regard_eval_studies_family,
+        "unqover_studies": bench_unqover_studies_family,
+        "vlur_studies": bench_vlur_studies_family,
+        "xlsum_studies": bench_xlsum_studies_family,
         "crosscodeeval_studies": bench_crosscodeeval_studies_family,
         "mer_bench_studies": bench_mer_bench_studies_family,
         "project_eval_studies": bench_project_eval_studies_family,
