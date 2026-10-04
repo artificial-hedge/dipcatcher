@@ -6365,6 +6365,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "moddey_dhoo_qa_studies",
         "phynnodderee_qa_studies",
         "tarroo_ushtey_qa_studies",
+        # Wave-1872 celtic-myth-6 canon.
+        "bugul_noz_qa_studies",
+        "cabyll_qa_studies",
+        "each_uisge_qa_studies",
+        "mooinjer_qa_studies",
+        "morveren_qa_studies",
+        "nuckelavee_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
