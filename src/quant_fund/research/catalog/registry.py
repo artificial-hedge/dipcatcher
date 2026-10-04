@@ -3369,6 +3369,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "diamond_qa_studies",
         "emerald_qa_studies",
         "jade_qa_studies",
+        # Wave-1444 wetland canon.
+        "brook_qa_studies",
+        "creek_qa_studies",
+        "delta_qa_studies",
+        "estuary_qa_studies",
+        "marsh_qa_studies",
+        "pond_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
