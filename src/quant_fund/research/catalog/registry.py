@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1025 social-science canon.
+        "game_theory2",
+        "behavioral_econ",
+        "political_science",
+        "sociology_net",
+        "cognitive_science",
+        "linguistics",
         # Wave-1024 computational-biology canon.
         "protein_folding",
         "dna_sequencing",

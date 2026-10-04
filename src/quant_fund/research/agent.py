@@ -8191,6 +8191,14 @@ from quant_fund.research.benches_w1024 import (
     bench_protein_folding_family,
     bench_systems_biology_family,
 )
+from quant_fund.research.benches_w1025 import (
+    bench_behavioral_econ_family,
+    bench_cognitive_science_family,
+    bench_game_theory2_family,
+    bench_linguistics_family,
+    bench_political_science_family,
+    bench_sociology_net_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8562,6 +8570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "game_theory2": bench_game_theory2_family,
+        "behavioral_econ": bench_behavioral_econ_family,
+        "political_science": bench_political_science_family,
+        "sociology_net": bench_sociology_net_family,
+        "cognitive_science": bench_cognitive_science_family,
+        "linguistics": bench_linguistics_family,
         "protein_folding": bench_protein_folding_family,
         "dna_sequencing": bench_dna_sequencing_family,
         "phylogenetics": bench_phylogenetics_family,
