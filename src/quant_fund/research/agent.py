@@ -10607,6 +10607,14 @@ from quant_fund.research.benches_w1326 import (
     bench_model_inversion_studies_family,
     bench_privacy_meter_studies_family,
 )
+from quant_fund.research.benches_w1327 import (
+    bench_bbq_bias_studies_family,
+    bench_bold_bias_studies_family,
+    bench_crowspairs_studies_family,
+    bench_holist_bias_studies_family,
+    bench_realtoxicity_studies_family,
+    bench_toxigen_eval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11331,6 +11339,12 @@ def _provenance(
         "membership_inference_studies": bench_membership_inference_studies_family,
         "model_inversion_studies": bench_model_inversion_studies_family,
         "privacy_meter_studies": bench_privacy_meter_studies_family,
+        "bbq_bias_studies": bench_bbq_bias_studies_family,
+        "bold_bias_studies": bench_bold_bias_studies_family,
+        "crowspairs_studies": bench_crowspairs_studies_family,
+        "holist_bias_studies": bench_holist_bias_studies_family,
+        "realtoxicity_studies": bench_realtoxicity_studies_family,
+        "toxigen_eval_studies": bench_toxigen_eval_studies_family,
         "ruler_bench_studies": bench_ruler_bench_studies_family,
         "zero_scrolls_studies": bench_zero_scrolls_studies_family,
         "mt_bench_judge_studies": bench_mt_bench_judge_studies_family,
