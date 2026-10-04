@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1225 surgery canon.
+        "general_surgery_studies",
+        "trauma_surgery",
+        "colorectal_surgery",
+        "hepatobiliary_surgery",
+        "surgical_oncology_studies",
+        "minimally_invasive_surgery",
         # Wave-1224 obgyn canon.
         "obstetrics_studies",
         "gynecology_studies",
