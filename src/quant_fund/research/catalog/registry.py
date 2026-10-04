@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-553 mirror-symmetry canon.
+        "mirror_symmetry",
+        "givental_j",
+        "quantum_cohomology",
+        "quintic_invariants",
+        "toric_mirror",
+        "frobenius_mfd",
         # Wave-552 contact-topology canon.
         "contact_form",
         "legendrian_knot",
