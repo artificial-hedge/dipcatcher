@@ -6596,6 +6596,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mikoshi_nyudo_qa_studies",
         "sunakake_babaa_qa_studies",
         "umibozu_qa_studies",
+        # Wave-1905 yokai-9 canon.
+        "betobeto_qa_studies",
+        "buruburu_qa_studies",
+        "hyakume_qa_studies",
+        "shachihoko_qa_studies",
+        "uwan_qa_studies",
+        "waira_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
