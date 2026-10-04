@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1247 nephro-renal canon.
+        "glomerular_studies",
+        "tubulointerstitial_studies",
+        "ckd_studies",
+        "aki_studies",
+        "electrolyte_studies",
+        "stones_studies",
         # Wave-1246 surgical-subspecialty canon.
         "bariatric_surgery_studies",
         "pediatric_surgery_studies",

@@ -9967,6 +9967,14 @@ from quant_fund.research.benches_w1246 import (
     bench_plastic_surgery_studies_family,
     bench_transplant_surgery_studies_family,
 )
+from quant_fund.research.benches_w1247 import (
+    bench_aki_studies_family,
+    bench_ckd_studies_family,
+    bench_electrolyte_studies_family,
+    bench_glomerular_studies_family,
+    bench_stones_studies_family,
+    bench_tubulointerstitial_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10338,6 +10346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "glomerular_studies": bench_glomerular_studies_family,
+        "tubulointerstitial_studies": bench_tubulointerstitial_studies_family,
+        "ckd_studies": bench_ckd_studies_family,
+        "aki_studies": bench_aki_studies_family,
+        "electrolyte_studies": bench_electrolyte_studies_family,
+        "stones_studies": bench_stones_studies_family,
         "bariatric_surgery_studies": bench_bariatric_surgery_studies_family,
         "pediatric_surgery_studies": bench_pediatric_surgery_studies_family,
         "plastic_surgery_studies": bench_plastic_surgery_studies_family,
