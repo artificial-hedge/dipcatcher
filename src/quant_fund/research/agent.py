@@ -10303,6 +10303,14 @@ from quant_fund.research.benches_w1288 import (
     bench_preference_irl_studies_family,
     bench_skill_extraction_studies_family,
 )
+from quant_fund.research.benches_w1289 import (
+    bench_analogical_prompt_studies_family,
+    bench_cot_studies_family,
+    bench_reflexion_studies_family,
+    bench_scratchpad_studies_family,
+    bench_self_consistency_studies_family,
+    bench_stepwise_verify_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10854,6 +10862,12 @@ def _provenance(
         "offline_distill_studies": bench_offline_distill_studies_family,
         "preference_irl_studies": bench_preference_irl_studies_family,
         "skill_extraction_studies": bench_skill_extraction_studies_family,
+        "analogical_prompt_studies": bench_analogical_prompt_studies_family,
+        "cot_studies": bench_cot_studies_family,
+        "reflexion_studies": bench_reflexion_studies_family,
+        "scratchpad_studies": bench_scratchpad_studies_family,
+        "self_consistency_studies": bench_self_consistency_studies_family,
+        "stepwise_verify_studies": bench_stepwise_verify_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
