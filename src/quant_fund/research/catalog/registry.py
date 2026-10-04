@@ -4783,6 +4783,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orthrus_qa_studies",
         "pegasus_2_qa_studies",
         "typhon_qa_studies",
+        # Wave-1646 norse-beast canon.
+        "fenrir_2_qa_studies",
+        "garm_qa_studies",
+        "jormungandr_qa_studies",
+        "nidhogg_qa_studies",
+        "ratatoskr_qa_studies",
+        "sleipnir_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
