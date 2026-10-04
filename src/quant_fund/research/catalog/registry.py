@@ -3887,6 +3887,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "forktail_qa_studies",
         "hawker_qa_studies",
         "spreadwing_qa_studies",
+        # Wave-1518 hummingbird-2 canon.
+        "coquette_qa_studies",
+        "fairy_qa_studies",
+        "jacobin_qa_studies",
+        "lancebill_qa_studies",
+        "sabrewing_qa_studies",
+        "sheartail_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
