@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-604 homotopy-12 canon.
+        "unstable_cohomology",
+        "may_ss",
+        "bokstedt_periodicity",
+        "topo_k_theory",
+        "elliptic_k",
+        "equivariant_cohomology2",
         # Wave-603 topos-4 canon.
         "slice_topos",
         "logical_morph",
