@@ -8711,6 +8711,14 @@ from quant_fund.research.benches_w1089 import (
     bench_psycholinguistics_family,
     bench_sociolinguistics_family,
 )
+from quant_fund.research.benches_w1090 import (
+    bench_history_of_science_family,
+    bench_information_history_family,
+    bench_media_archaeology_family,
+    bench_philosophy_of_technology_family,
+    bench_sts_studies_family,
+    bench_technology_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9082,6 +9090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "history_of_science": bench_history_of_science_family,
+        "sts_studies": bench_sts_studies_family,
+        "philosophy_of_technology": bench_philosophy_of_technology_family,
+        "media_archaeology": bench_media_archaeology_family,
+        "information_history": bench_information_history_family,
+        "technology_studies": bench_technology_studies_family,
         "sociolinguistics": bench_sociolinguistics_family,
         "psycholinguistics": bench_psycholinguistics_family,
         "computational_linguistics": bench_computational_linguistics_family,
