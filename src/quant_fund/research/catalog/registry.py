@@ -4097,6 +4097,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fruit_dove_qa_studies",
         "ground_dove_qa_studies",
         "quail_dove_qa_studies",
+        # Wave-1548 cuckoo-turaco canon.
+        "ani_qa_studies",
+        "coua_qa_studies",
+        "guira_qa_studies",
+        "hoatzin_qa_studies",
+        "malkoha_qa_studies",
+        "turaco_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
