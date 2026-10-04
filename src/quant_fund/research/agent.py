@@ -4239,6 +4239,14 @@ from quant_fund.research.benches_w530 import (
     bench_osceledets_reg_family,
     bench_pesin_theory_family,
 )
+from quant_fund.research.benches_w531 import (
+    bench_bogdanov_takens_family,
+    bench_homoclinic_bif_family,
+    bench_hopf_bif_family,
+    bench_neimark_sacker_family,
+    bench_period_doubling_family,
+    bench_saddle_node_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4618,6 +4626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "saddle_node": bench_saddle_node_family,
+        "hopf_bif": bench_hopf_bif_family,
+        "period_doubling": bench_period_doubling_family,
+        "neimark_sacker": bench_neimark_sacker_family,
+        "bogdanov_takens": bench_bogdanov_takens_family,
+        "homoclinic_bif": bench_homoclinic_bif_family,
         "pesin_theory": bench_pesin_theory_family,
         "nonuniform_hyp": bench_nonuniform_hyp_family,
         "dominated_split": bench_dominated_split_family,

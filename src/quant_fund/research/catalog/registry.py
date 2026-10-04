@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-531 bifurcation-theory canon.
+        "saddle_node",
+        "hopf_bif",
+        "period_doubling",
+        "neimark_sacker",
+        "bogdanov_takens",
+        "homoclinic_bif",
         # Wave-530 nonuniform-hyperbolicity canon.
         "pesin_theory",
         "nonuniform_hyp",
