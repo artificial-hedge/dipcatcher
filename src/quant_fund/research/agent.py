@@ -8431,6 +8431,14 @@ from quant_fund.research.benches_w1054 import (
     bench_social_stratification_family,
     bench_urban_sociology_family,
 )
+from quant_fund.research.benches_w1055 import (
+    bench_archaeology_family,
+    bench_cultural_anthropology_family,
+    bench_ethnography_family,
+    bench_linguistic_anthropology_family,
+    bench_physical_anthropology_family,
+    bench_primatology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8802,6 +8810,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "physical_anthropology": bench_physical_anthropology_family,
+        "cultural_anthropology": bench_cultural_anthropology_family,
+        "archaeology": bench_archaeology_family,
+        "linguistic_anthropology": bench_linguistic_anthropology_family,
+        "primatology": bench_primatology_family,
+        "ethnography": bench_ethnography_family,
         "social_networks": bench_social_networks_family,
         "demography": bench_demography_family,
         "criminology": bench_criminology_family,

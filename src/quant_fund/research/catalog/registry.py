@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1055 anthropology canon.
+        "physical_anthropology",
+        "cultural_anthropology",
+        "archaeology",
+        "linguistic_anthropology",
+        "primatology",
+        "ethnography",
         # Wave-1054 sociology canon.
         "social_networks",
         "demography",
