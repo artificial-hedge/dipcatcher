@@ -5581,6 +5581,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tepoz_qa_studies",
         "tonaca_qa_studies",
         "xochipilli_qa_studies",
+        # Wave-1760 japanese-myth-4 canon.
+        "ebisu_qa_studies",
+        "hiruko_qa_studies",
+        "kikuzuki_qa_studies",
+        "kisshoten_qa_studies",
+        "morinaga_qa_studies",
+        "senju_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
