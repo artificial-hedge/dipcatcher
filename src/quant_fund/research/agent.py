@@ -5959,6 +5959,14 @@ from quant_fund.research.benches_w745 import (
     bench_spohn_kpz_family,
     bench_tracy_widom_kpz_family,
 )
+from quant_fund.research.benches_w746 import (
+    bench_derrida_tasep_family,
+    bench_ferrari_tasep_family,
+    bench_liggett_exclusion_family,
+    bench_sasamoto_tasep_family,
+    bench_spitzer_exclusion_family,
+    bench_tracy_widom_tasep_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6338,6 +6346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "liggett_exclusion": bench_liggett_exclusion_family,
+        "spitzer_exclusion": bench_spitzer_exclusion_family,
+        "sasamoto_tasep": bench_sasamoto_tasep_family,
+        "tracy_widom_tasep": bench_tracy_widom_tasep_family,
+        "derrida_tasep": bench_derrida_tasep_family,
+        "ferrari_tasep": bench_ferrari_tasep_family,
         "dotsenko_kpz": bench_dotsenko_kpz_family,
         "hairer_kpz": bench_hairer_kpz_family,
         "bernard_nicola": bench_bernard_nicola_family,
