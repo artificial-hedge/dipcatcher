@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1230 emergency-medicine canon.
+        "emergency_medicine_studies",
+        "trauma_medicine",
+        "toxicology_medicine",
+        "disaster_medicine",
+        "acute_care_studies",
+        "resuscitation_medicine",
         # Wave-1229 pediatrics canon.
         "pediatrics_studies",
         "neonatal_medicine_studies",
