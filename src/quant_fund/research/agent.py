@@ -9471,6 +9471,14 @@ from quant_fund.research.benches_w1184 import (
     bench_film_production_family,
     bench_sound_design_family,
 )
+from quant_fund.research.benches_w1185 import (
+    bench_esports_studies_family,
+    bench_game_design_family,
+    bench_game_development_family,
+    bench_game_studies_family,
+    bench_interactive_media_family,
+    bench_ludology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9842,6 +9850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "game_design": bench_game_design_family,
+        "esports_studies": bench_esports_studies_family,
+        "interactive_media": bench_interactive_media_family,
+        "game_studies": bench_game_studies_family,
+        "ludology": bench_ludology_family,
+        "game_development": bench_game_development_family,
         "film_production": bench_film_production_family,
         "cinematography_studies": bench_cinematography_studies_family,
         "film_editing": bench_film_editing_family,
