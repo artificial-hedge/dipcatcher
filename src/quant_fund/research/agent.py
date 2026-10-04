@@ -12095,6 +12095,14 @@ from quant_fund.research.benches_w1512 import (
     bench_stilt_qa_studies_family,
     bench_whimbrel_qa_studies_family,
 )
+from quant_fund.research.benches_w1513 import (
+    bench_barnowl_qa_studies_family,
+    bench_barred_owl_qa_studies_family,
+    bench_eagle_owl_qa_studies_family,
+    bench_screech_owl_qa_studies_family,
+    bench_snowy_owl_qa_studies_family,
+    bench_tawny_owl_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13785,6 +13793,12 @@ def _provenance(
         "phalarope_qa_studies": bench_phalarope_qa_studies_family,
         "stilt_qa_studies": bench_stilt_qa_studies_family,
         "whimbrel_qa_studies": bench_whimbrel_qa_studies_family,
+        "barnowl_qa_studies": bench_barnowl_qa_studies_family,
+        "barred_owl_qa_studies": bench_barred_owl_qa_studies_family,
+        "eagle_owl_qa_studies": bench_eagle_owl_qa_studies_family,
+        "screech_owl_qa_studies": bench_screech_owl_qa_studies_family,
+        "snowy_owl_qa_studies": bench_snowy_owl_qa_studies_family,
+        "tawny_owl_qa_studies": bench_tawny_owl_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
