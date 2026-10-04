@@ -10015,6 +10015,14 @@ from quant_fund.research.benches_w1252 import (
     bench_parathyroid_studies_family,
     bench_pituitary_studies_family,
 )
+from quant_fund.research.benches_w1253 import (
+    bench_antibody_studies_family,
+    bench_chemokine_studies_family,
+    bench_complement_studies_family,
+    bench_cytokine_studies_family,
+    bench_interferon_studies_family,
+    bench_lymphocyte_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10386,6 +10394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cytokine_studies": bench_cytokine_studies_family,
+        "chemokine_studies": bench_chemokine_studies_family,
+        "interferon_studies": bench_interferon_studies_family,
+        "complement_studies": bench_complement_studies_family,
+        "antibody_studies": bench_antibody_studies_family,
+        "lymphocyte_studies": bench_lymphocyte_studies_family,
         "pituitary_studies": bench_pituitary_studies_family,
         "parathyroid_studies": bench_parathyroid_studies_family,
         "lipid_studies": bench_lipid_studies_family,
