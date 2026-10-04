@@ -5427,6 +5427,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mictlantecuhtli_qa_studies",
         "tlaloc_qa_studies",
         "tonatiuh_qa_studies",
+        # Wave-1738 sumerian-2 canon.
+        "enlil_qa_studies",
+        "ereshkigal_qa_studies",
+        "nanna_qa_studies",
+        "nergal_qa_studies",
+        "ninhursag_qa_studies",
+        "utu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

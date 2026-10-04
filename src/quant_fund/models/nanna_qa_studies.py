@@ -16,7 +16,7 @@ def nanna_qa_studies_aux(aux: bool) -> bool:
     """nanna_qa_studies
 
     aux:
-    nanna_qa_studies: nanna, moon god, answers, and scores
+    nanna_qa_studies: nanna, moon fathers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_nanna_qa_studies(seed: int = 0) -> float:
     checks.append(not nanna_qa_studies_ok(False, True))
     checks.append(nanna_qa_studies_aux(True))
     checks.append(not nanna_qa_studies_aux(False))
-    checks.append(True)  # mesopotamian-myth canon
+    checks.append(True)  # sumerian-2 canon
     return float(sum(checks) / len(checks))
 
 
