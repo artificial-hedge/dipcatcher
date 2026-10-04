@@ -6095,6 +6095,14 @@ from quant_fund.research.benches_w762 import (
     bench_skohorod_metric_family,
     bench_tightness_check_family,
 )
+from quant_fund.research.benches_w763 import (
+    bench_boneschi_boal_family,
+    bench_bradley_mixing_family,
+    bench_hopf_chain_family,
+    bench_ibagimov_mixing_family,
+    bench_polya_urn_family,
+    bench_rosenthal_mom_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6474,6 +6482,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "polya_urn": bench_polya_urn_family,
+        "hopf_chain": bench_hopf_chain_family,
+        "boneschi_boal": bench_boneschi_boal_family,
+        "bradley_mixing": bench_bradley_mixing_family,
+        "rosenthal_mom": bench_rosenthal_mom_family,
+        "ibagimov_mixing": bench_ibagimov_mixing_family,
         "martin_boundary": bench_martin_boundary_family,
         "doob_meyer": bench_doob_meyer_family,
         "cadlag_space": bench_cadlag_space_family,
