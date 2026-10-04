@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1156 mathematical-sciences canon.
+        "applied_mathematics",
+        "statistics_2",
+        "probability_4",
+        "computational_science",
+        "data_science",
+        "bioinformatics_5",
         # Wave-1155 earth-systems canon.
         "earth_system_science",
         "oceanography_2",
