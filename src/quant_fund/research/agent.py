@@ -11159,6 +11159,14 @@ from quant_fund.research.benches_w1395 import (
     bench_quest_qa_studies_family,
     bench_tatqa2_studies_family,
 )
+from quant_fund.research.benches_w1396 import (
+    bench_agnews_lite_studies_family,
+    bench_dialsum_lite_studies_family,
+    bench_facet_lite_studies_family,
+    bench_medsum_lite_studies_family,
+    bench_oposum_lite_studies_family,
+    bench_qsum_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12201,6 +12209,12 @@ def _provenance(
         "kwik_qa_studies": bench_kwik_qa_studies_family,
         "quest_qa_studies": bench_quest_qa_studies_family,
         "tatqa2_studies": bench_tatqa2_studies_family,
+        "agnews_lite_studies": bench_agnews_lite_studies_family,
+        "dialsum_lite_studies": bench_dialsum_lite_studies_family,
+        "facet_lite_studies": bench_facet_lite_studies_family,
+        "medsum_lite_studies": bench_medsum_lite_studies_family,
+        "oposum_lite_studies": bench_oposum_lite_studies_family,
+        "qsum_lite_studies": bench_qsum_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
