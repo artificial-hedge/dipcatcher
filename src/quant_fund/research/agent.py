@@ -13423,6 +13423,14 @@ from quant_fund.research.benches_w1678 import (
     bench_poludnica_qa_studies_family,
     bench_vila_qa_studies_family,
 )
+from quant_fund.research.benches_w1679 import (
+    bench_alfheim_qa_studies_family,
+    bench_bergrisi_qa_studies_family,
+    bench_geirahod_qa_studies_family,
+    bench_huldra_qa_studies_family,
+    bench_troll_qa_studies_family,
+    bench_vaetter_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
