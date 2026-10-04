@@ -8799,6 +8799,14 @@ from quant_fund.research.benches_w1100 import (
     bench_organic_chemistry_family,
     bench_physical_chemistry_family,
 )
+from quant_fund.research.benches_w1101 import (
+    bench_botany_family,
+    bench_cell_biology_family,
+    bench_genetics_family,
+    bench_microbiology_family,
+    bench_molecular_biology_family,
+    bench_zoology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9170,6 +9178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "molecular_biology": bench_molecular_biology_family,
+        "cell_biology": bench_cell_biology_family,
+        "genetics": bench_genetics_family,
+        "microbiology": bench_microbiology_family,
+        "zoology": bench_zoology_family,
+        "botany": bench_botany_family,
         "organic_chemistry": bench_organic_chemistry_family,
         "inorganic_chemistry": bench_inorganic_chemistry_family,
         "physical_chemistry": bench_physical_chemistry_family,
