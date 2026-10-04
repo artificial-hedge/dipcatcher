@@ -14295,6 +14295,14 @@ from quant_fund.research.benches_w1787 import (
     bench_thor_qa_studies_family,
     bench_valkyrie_qa_studies_family,
 )
+from quant_fund.research.benches_w1788 import (
+    bench_ceres_qa_studies_family,
+    bench_flora_qa_studies_family,
+    bench_janus_qa_studies_family,
+    bench_pomona_qa_studies_family,
+    bench_silvanus_qa_studies_family,
+    bench_solinvictus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

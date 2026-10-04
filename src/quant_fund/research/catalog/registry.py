@@ -5777,6 +5777,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "odin_qa_studies",
         "thor_qa_studies",
         "valkyrie_qa_studies",
+        # Wave-1788 roman-rural canon.
+        "ceres_qa_studies",
+        "flora_qa_studies",
+        "janus_qa_studies",
+        "pomona_qa_studies",
+        "silvanus_qa_studies",
+        "solinvictus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
