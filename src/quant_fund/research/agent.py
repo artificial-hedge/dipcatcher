@@ -10815,6 +10815,14 @@ from quant_fund.research.benches_w1352 import (
     bench_stereo_lite_studies_family,
     bench_wino_bias_studies_family,
 )
+from quant_fund.research.benches_w1353 import (
+    bench_creak_lite_studies_family,
+    bench_entailment_bn_studies_family,
+    bench_hans_lite_studies_family,
+    bench_prove_it_studies_family,
+    bench_strategy_qa_studies_family,
+    bench_sup_nli_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11631,6 +11639,12 @@ def _provenance(
         "bias_bench_studies": bench_bias_bench_studies_family,
         "crowsp_lite_studies": bench_crowsp_lite_studies_family,
         "honesty_lie_studies": bench_honesty_lie_studies_family,
+        "creak_lite_studies": bench_creak_lite_studies_family,
+        "entailment_bn_studies": bench_entailment_bn_studies_family,
+        "hans_lite_studies": bench_hans_lite_studies_family,
+        "prove_it_studies": bench_prove_it_studies_family,
+        "strategy_qa_studies": bench_strategy_qa_studies_family,
+        "sup_nli_studies": bench_sup_nli_studies_family,
         "social_iqa2_studies": bench_social_iqa2_studies_family,
         "stereo_lite_studies": bench_stereo_lite_studies_family,
         "wino_bias_studies": bench_wino_bias_studies_family,
