@@ -1,3 +1,4 @@
+feat(research): wave 771 — copula canon (copula_gauss, copula_t, clayton_copula, gumbel_copula, frank_copula, joe_copula) (4581->4587 families)
 feat(research): wave 770 — extreme-value canon (gumbel_domain, weibull_domain, frechet_domain, peak_over, hill_est, pickands_est) (4575->4581 families)
 feat(research): wave 769 — Stein-method canon (stein_method, stein_equation, barbour_stein, chen_stein, ross_stein, chatt_stein) (4569->4575 families)
 feat(research): wave 768 — large-deviation canon (varadhan_ldp, freidlin_wentzell, dw_ldp, sanov_thm, mogulskii_thm, schider_thm) (4563->4569 families)
