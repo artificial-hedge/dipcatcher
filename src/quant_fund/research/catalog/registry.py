@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1234 womens-health canon.
+        "menopause_medicine",
+        "urogynecology_studies",
+        "breast_medicine",
+        "infertility_studies",
+        "contraception_studies",
+        "pelvic_health_studies",
         # Wave-1233 clinical-genetics canon.
         "medical_genetics_studies",
         "genetic_diagnostics",
