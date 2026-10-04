@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1389 long-doc-sum canon.
+        "book_sum_studies",
+        "fanout_qa_studies",
+        "infinitesum_studies",
+        "marlense_studies",
+        "narra_sum_studies",
+        "quote_sum_studies",
         # Wave-1388 RAG-eval canon.
         "corpus_qa_studies",
         "crag_bench_studies",
