@@ -3404,6 +3404,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "iguana_qa_studies",
         "python_qa_studies",
         "viper_qa_studies",
+        # Wave-1449 marine mammal canon.
+        "beluga_qa_studies",
+        "manatee_qa_studies",
+        "narwhal_qa_studies",
+        "orca_qa_studies",
+        "otter_qa_studies",
+        "walrus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
