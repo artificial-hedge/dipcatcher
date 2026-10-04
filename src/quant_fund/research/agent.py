@@ -11303,6 +11303,14 @@ from quant_fund.research.benches_w1413 import (
     bench_hedge_qa_studies_family,
     bench_implicit_qa_studies_family,
 )
+from quant_fund.research.benches_w1414 import (
+    bench_afford_qa_studies_family,
+    bench_counter_qa_studies_family,
+    bench_custom_qa_studies_family,
+    bench_everyday_qa_studies_family,
+    bench_folk_qa_studies_family,
+    bench_moral_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12447,6 +12455,12 @@ def _provenance(
         "discourse_qa_studies": bench_discourse_qa_studies_family,
         "hedge_qa_studies": bench_hedge_qa_studies_family,
         "implicit_qa_studies": bench_implicit_qa_studies_family,
+        "afford_qa_studies": bench_afford_qa_studies_family,
+        "counter_qa_studies": bench_counter_qa_studies_family,
+        "custom_qa_studies": bench_custom_qa_studies_family,
+        "everyday_qa_studies": bench_everyday_qa_studies_family,
+        "folk_qa_studies": bench_folk_qa_studies_family,
+        "moral_qa_studies": bench_moral_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
