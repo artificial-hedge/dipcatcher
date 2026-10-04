@@ -4615,6 +4615,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mudpuppy_qa_studies",
         "olm_qa_studies",
         "troglobite_qa_studies",
+        # Wave-1622 alpine-ridgeline canon.
+        "barbary_qa_studies",
+        "blue_sheep_qa_studies",
+        "himalayan_qa_studies",
+        "nilgiri_qa_studies",
+        "snow_leopard_qa_studies",
+        "snowcock_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
