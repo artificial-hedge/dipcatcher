@@ -13983,6 +13983,14 @@ from quant_fund.research.benches_w1748 import (
     bench_tsen_god_qa_studies_family,
     bench_tsiu_marpo_qa_studies_family,
 )
+from quant_fund.research.benches_w1749 import (
+    bench_belobog_qa_studies_family,
+    bench_chernobog_qa_studies_family,
+    bench_dazhbog_qa_studies_family,
+    bench_hors_qa_studies_family,
+    bench_semargl_qa_studies_family,
+    bench_stribog_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

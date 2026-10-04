@@ -5504,6 +5504,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pehar_qa_studies",
         "tsen_god_qa_studies",
         "tsiu_marpo_qa_studies",
+        # Wave-1749 slavic-myth-4 canon.
+        "belobog_qa_studies",
+        "chernobog_qa_studies",
+        "dazhbog_qa_studies",
+        "hors_qa_studies",
+        "semargl_qa_studies",
+        "stribog_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
