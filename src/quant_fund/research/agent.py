@@ -12687,6 +12687,14 @@ from quant_fund.research.benches_w1586 import (
     bench_reedbuck_qa_studies_family,
     bench_tsessebe_qa_studies_family,
 )
+from quant_fund.research.benches_w1587 import (
+    bench_barasingha_qa_studies_family,
+    bench_brocket_qa_studies_family,
+    bench_huemul_qa_studies_family,
+    bench_mule_deer_qa_studies_family,
+    bench_sambar_qa_studies_family,
+    bench_taruca_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14721,6 +14729,12 @@ def _provenance(
         "elephant_shrew_qa_studies": bench_elephant_shrew_qa_studies_family,
         "golden_mole_qa_studies": bench_golden_mole_qa_studies_family,
         "beira_qa_studies": bench_beira_qa_studies_family,
+        "barasingha_qa_studies": bench_barasingha_qa_studies_family,
+        "brocket_qa_studies": bench_brocket_qa_studies_family,
+        "huemul_qa_studies": bench_huemul_qa_studies_family,
+        "mule_deer_qa_studies": bench_mule_deer_qa_studies_family,
+        "sambar_qa_studies": bench_sambar_qa_studies_family,
+        "taruca_qa_studies": bench_taruca_qa_studies_family,
         "gemsbok_qa_studies": bench_gemsbok_qa_studies_family,
         "madoqua_qa_studies": bench_madoqua_qa_studies_family,
         "oribi_qa_studies": bench_oribi_qa_studies_family,
