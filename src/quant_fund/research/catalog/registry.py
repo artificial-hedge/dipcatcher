@@ -4027,6 +4027,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gallinule_qa_studies",
         "rail_qa_studies",
         "waterhen_qa_studies",
+        # Wave-1538 wetland canon.
+        "crowned_crane_qa_studies",
+        "demoiselle_qa_studies",
+        "finfoot_qa_studies",
+        "limpkin_qa_studies",
+        "trumpeter_qa_studies",
+        "whooping_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
