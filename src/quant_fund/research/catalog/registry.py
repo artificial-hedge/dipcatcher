@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1268 RL-skills/goal canon.
+        "curiosity_diversity_studies",
+        "hindsight_relabel_studies",
+        "occupancy_measure_studies",
+        "option_discovery_studies",
+        "skill_chain_studies",
+        "successor_feature_studies",
         # Wave-1267 neuro-symbolic canon.
         "alpha_tensor_studies",
         "differentiable_sat_studies",

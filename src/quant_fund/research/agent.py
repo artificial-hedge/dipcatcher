@@ -10135,6 +10135,14 @@ from quant_fund.research.benches_w1267 import (
     bench_sketch_programming_studies_family,
     bench_symbolic_regression_dl_studies_family,
 )
+from quant_fund.research.benches_w1268 import (
+    bench_curiosity_diversity_studies_family,
+    bench_hindsight_relabel_studies_family,
+    bench_occupancy_measure_studies_family,
+    bench_option_discovery_studies_family,
+    bench_skill_chain_studies_family,
+    bench_successor_feature_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10560,6 +10568,12 @@ def _provenance(
         "program_synthesis_studies": bench_program_synthesis_studies_family,
         "sketch_programming_studies": bench_sketch_programming_studies_family,
         "symbolic_regression_dl_studies": bench_symbolic_regression_dl_studies_family,
+        "curiosity_diversity_studies": bench_curiosity_diversity_studies_family,
+        "hindsight_relabel_studies": bench_hindsight_relabel_studies_family,
+        "occupancy_measure_studies": bench_occupancy_measure_studies_family,
+        "option_discovery_studies": bench_option_discovery_studies_family,
+        "skill_chain_studies": bench_skill_chain_studies_family,
+        "successor_feature_studies": bench_successor_feature_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
