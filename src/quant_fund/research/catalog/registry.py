@@ -5189,6 +5189,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "namtar_qa_studies",
         "nergal_qa_studies",
         "ninhursag_qa_studies",
+        # Wave-1704 babylonian-myth canon.
+        "adad_qa_studies",
+        "ashur_qa_studies",
+        "ishtar_qa_studies",
+        "nabu_qa_studies",
+        "shamash_qa_studies",
+        "sin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
