@@ -4335,6 +4335,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leopard_seal_qa_studies",
         "monk_seal_qa_studies",
         "weddell_qa_studies",
+        # Wave-1582 bat canon.
+        "flying_fox_qa_studies",
+        "horseshoe_bat_qa_studies",
+        "leaf_nosed_qa_studies",
+        "noctule_qa_studies",
+        "pipistrelle_qa_studies",
+        "vampire_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
