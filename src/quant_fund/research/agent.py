@@ -10999,6 +10999,14 @@ from quant_fund.research.benches_w1375 import (
     bench_scitldr_lite_studies_family,
     bench_spectrum_sum_studies_family,
 )
+from quant_fund.research.benches_w1376 import (
+    bench_blender_bot_studies_family,
+    bench_conv_ai2_studies_family,
+    bench_daily_dialog_studies_family,
+    bench_dstc_lite_studies_family,
+    bench_empathy_dialog_studies_family,
+    bench_persona_chat_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11921,6 +11929,12 @@ def _provenance(
         "sci_lay_studies": bench_sci_lay_studies_family,
         "scitldr_lite_studies": bench_scitldr_lite_studies_family,
         "spectrum_sum_studies": bench_spectrum_sum_studies_family,
+        "blender_bot_studies": bench_blender_bot_studies_family,
+        "conv_ai2_studies": bench_conv_ai2_studies_family,
+        "daily_dialog_studies": bench_daily_dialog_studies_family,
+        "dstc_lite_studies": bench_dstc_lite_studies_family,
+        "empathy_dialog_studies": bench_empathy_dialog_studies_family,
+        "persona_chat_studies": bench_persona_chat_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
