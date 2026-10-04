@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1202 infectious-disease canon.
+        "public_health_microbiology",
+        "medical_microbiology",
+        "parasitology_studies",
+        "mycology_studies",
+        "entomology_medical",
+        "vector_borne_diseases",
         # Wave-1201 health-informatics canon.
         "health_informatics",
         "medical_records",
