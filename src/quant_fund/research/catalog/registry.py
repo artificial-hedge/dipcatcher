@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1264 causal-RWE-2 canon.
+        "external_control_studies",
+        "negative_control_studies",
+        "probabilistic_bias_studies",
+        "self_controlled_studies",
+        "structural_nested_studies",
+        "transportability_studies",
         # Wave-1263 evidence-synthesis canon.
         "diagnostic_meta_studies",
         "fragility_index_studies",

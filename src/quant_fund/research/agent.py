@@ -10103,6 +10103,14 @@ from quant_fund.research.benches_w1263 import (
     bench_trial_sequential_studies_family,
     bench_umbrella_review_studies_family,
 )
+from quant_fund.research.benches_w1264 import (
+    bench_external_control_studies_family,
+    bench_negative_control_studies_family,
+    bench_probabilistic_bias_studies_family,
+    bench_self_controlled_studies_family,
+    bench_structural_nested_studies_family,
+    bench_transportability_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10504,6 +10512,12 @@ def _provenance(
         "network_meta_studies": bench_network_meta_studies_family,
         "trial_sequential_studies": bench_trial_sequential_studies_family,
         "umbrella_review_studies": bench_umbrella_review_studies_family,
+        "external_control_studies": bench_external_control_studies_family,
+        "negative_control_studies": bench_negative_control_studies_family,
+        "probabilistic_bias_studies": bench_probabilistic_bias_studies_family,
+        "self_controlled_studies": bench_self_controlled_studies_family,
+        "structural_nested_studies": bench_structural_nested_studies_family,
+        "transportability_studies": bench_transportability_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
