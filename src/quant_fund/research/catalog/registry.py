@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-518 Yang-Baxter/braid canon.
+        "yang_baxter",
+        "braid_rep",
+        "yangian",
+        "rtt_formalism",
+        "quantum_double",
+        "ribbon_cat",
         # Wave-517 quantum-groups canon.
         "quantum_group",
         "crystal_base",
