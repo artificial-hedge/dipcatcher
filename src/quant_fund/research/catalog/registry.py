@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1277 scalable-oversight canon.
+        "debate_alignment_studies",
+        "deliberative_alignment_studies",
+        "iterated_amplification_studies",
+        "recursive_reward_studies",
+        "scalable_oversight_studies",
+        "weak_to_strong_studies",
         # Wave-1276 interpretability-3 canon.
         "attribution_patching_studies",
         "causal_scrubbing_studies",

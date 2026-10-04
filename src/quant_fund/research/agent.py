@@ -10207,6 +10207,14 @@ from quant_fund.research.benches_w1276 import (
     bench_monosemantic_studies_family,
     bench_superposition_studies_family,
 )
+from quant_fund.research.benches_w1277 import (
+    bench_debate_alignment_studies_family,
+    bench_deliberative_alignment_studies_family,
+    bench_iterated_amplification_studies_family,
+    bench_recursive_reward_studies_family,
+    bench_scalable_oversight_studies_family,
+    bench_weak_to_strong_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10686,6 +10694,12 @@ def _provenance(
         "induction_head_studies": bench_induction_head_studies_family,
         "monosemantic_studies": bench_monosemantic_studies_family,
         "superposition_studies": bench_superposition_studies_family,
+        "debate_alignment_studies": bench_debate_alignment_studies_family,
+        "deliberative_alignment_studies": bench_deliberative_alignment_studies_family,
+        "iterated_amplification_studies": bench_iterated_amplification_studies_family,
+        "recursive_reward_studies": bench_recursive_reward_studies_family,
+        "scalable_oversight_studies": bench_scalable_oversight_studies_family,
+        "weak_to_strong_studies": bench_weak_to_strong_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
