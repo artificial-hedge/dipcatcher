@@ -3131,6 +3131,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ensem_qa_studies",
         "fanqa_lite_studies",
         "hops_qa_studies",
+        # Wave-1410 event-causality canon.
+        "causal_qa_studies",
+        "ecare_lite_studies",
+        "event2mind_lite_studies",
+        "event_qa_studies",
+        "hippo_qa_studies",
+        "intent_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
