@@ -11991,6 +11991,14 @@ from quant_fund.research.benches_w1499 import (
     bench_tarragon_qa_studies_family,
     bench_turmeric_qa_studies_family,
 )
+from quant_fund.research.benches_w1500 import (
+    bench_caddisfly_qa_studies_family,
+    bench_centipede_qa_studies_family,
+    bench_horntail_qa_studies_family,
+    bench_lacewing_qa_studies_family,
+    bench_millipede_qa_studies_family,
+    bench_spider_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13603,6 +13611,12 @@ def _provenance(
         "saffron_qa_studies": bench_saffron_qa_studies_family,
         "tarragon_qa_studies": bench_tarragon_qa_studies_family,
         "turmeric_qa_studies": bench_turmeric_qa_studies_family,
+        "caddisfly_qa_studies": bench_caddisfly_qa_studies_family,
+        "centipede_qa_studies": bench_centipede_qa_studies_family,
+        "horntail_qa_studies": bench_horntail_qa_studies_family,
+        "lacewing_qa_studies": bench_lacewing_qa_studies_family,
+        "millipede_qa_studies": bench_millipede_qa_studies_family,
+        "spider_qa_studies": bench_spider_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

@@ -3761,6 +3761,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "saffron_qa_studies",
         "tarragon_qa_studies",
         "turmeric_qa_studies",
+        # Wave-1500 invertebrate-2 canon.
+        "caddisfly_qa_studies",
+        "centipede_qa_studies",
+        "horntail_qa_studies",
+        "lacewing_qa_studies",
+        "millipede_qa_studies",
+        "spider_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
