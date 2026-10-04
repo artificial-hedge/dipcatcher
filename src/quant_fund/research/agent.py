@@ -14055,6 +14055,14 @@ from quant_fund.research.benches_w1757 import (
     bench_manannan_qa_studies_family,
     bench_morgen_qa_studies_family,
 )
+from quant_fund.research.benches_w1758 import (
+    bench_abiku_qa_studies_family,
+    bench_anansi_qa_studies_family,
+    bench_ifa_qa_studies_family,
+    bench_obatala_qa_studies_family,
+    bench_oya_qa_studies_family,
+    bench_shango_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

@@ -5567,6 +5567,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "danu_qa_studies",
         "manannan_qa_studies",
         "morgen_qa_studies",
+        # Wave-1758 african-myth-3 canon.
+        "abiku_qa_studies",
+        "anansi_qa_studies",
+        "ifa_qa_studies",
+        "obatala_qa_studies",
+        "oya_qa_studies",
+        "shango_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -16,7 +16,7 @@ def anansi_qa_studies_aux(aux: bool) -> bool:
     """anansi_qa_studies
 
     aux:
-    anansi_qa_studies: anansi, the spider trickster, answers, and scores
+    anansi_qa_studies: anansi, spider tricksters, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_anansi_qa_studies(seed: int = 0) -> float:
     checks.append(not anansi_qa_studies_ok(False, True))
     checks.append(anansi_qa_studies_aux(True))
     checks.append(not anansi_qa_studies_aux(False))
-    checks.append(True)  # african-myth canon
+    checks.append(True)  # african-myth-3 canon
     return float(sum(checks) / len(checks))
 
 
