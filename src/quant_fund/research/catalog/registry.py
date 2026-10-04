@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-648 algebraic-K-10 canon.
+        "kodaira_k",
+        "lindenstrauss_k",
+        "tsukada_k",
+        "guin_k",
+        "dupont_k",
+        "suslin_k2",
         # Wave-647 homotopy-19 canon.
         "selick_htpy",
         "arkowitz_htpy",

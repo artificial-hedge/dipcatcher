@@ -5175,6 +5175,14 @@ from quant_fund.research.benches_w647 import (
     bench_selick_htpy_family,
     bench_tits_building_family,
 )
+from quant_fund.research.benches_w648 import (
+    bench_dupont_k_family,
+    bench_guin_k_family,
+    bench_kodaira_k_family,
+    bench_lindenstrauss_k_family,
+    bench_suslin_k2_family,
+    bench_tsukada_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5554,6 +5562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kodaira_k": bench_kodaira_k_family,
+        "lindenstrauss_k": bench_lindenstrauss_k_family,
+        "tsukada_k": bench_tsukada_k_family,
+        "guin_k": bench_guin_k_family,
+        "dupont_k": bench_dupont_k_family,
+        "suslin_k2": bench_suslin_k2_family,
         "selick_htpy": bench_selick_htpy_family,
         "arkowitz_htpy": bench_arkowitz_htpy_family,
         "lin_htpy": bench_lin_htpy_family,
