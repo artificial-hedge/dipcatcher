@@ -3649,6 +3649,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "marmot_qa_studies",
         "moose_qa_studies",
         "raccoon_qa_studies",
+        # Wave-1484 marsupial canon.
+        "bandicoot_qa_studies",
+        "koala_qa_studies",
+        "numbat_qa_studies",
+        "quokka_qa_studies",
+        "wallaby_qa_studies",
+        "wombat_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
