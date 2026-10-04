@@ -11871,6 +11871,14 @@ from quant_fund.research.benches_w1484 import (
     bench_wallaby_qa_studies_family,
     bench_wombat_qa_studies_family,
 )
+from quant_fund.research.benches_w1485 import (
+    bench_avocet_qa_studies_family,
+    bench_egret_qa_studies_family,
+    bench_heron_qa_studies_family,
+    bench_plover_qa_studies_family,
+    bench_sandpiper_qa_studies_family,
+    bench_tern_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13430,6 +13438,12 @@ def _provenance(
         "moose_qa_studies": bench_moose_qa_studies_family,
         "raccoon_qa_studies": bench_raccoon_qa_studies_family,
         "bandicoot_qa_studies": bench_bandicoot_qa_studies_family,
+        "avocet_qa_studies": bench_avocet_qa_studies_family,
+        "egret_qa_studies": bench_egret_qa_studies_family,
+        "heron_qa_studies": bench_heron_qa_studies_family,
+        "plover_qa_studies": bench_plover_qa_studies_family,
+        "sandpiper_qa_studies": bench_sandpiper_qa_studies_family,
+        "tern_qa_studies": bench_tern_qa_studies_family,
         "koala_qa_studies": bench_koala_qa_studies_family,
         "numbat_qa_studies": bench_numbat_qa_studies_family,
         "quokka_qa_studies": bench_quokka_qa_studies_family,
