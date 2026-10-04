@@ -4265,6 +4265,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oyster_qa_studies",
         "scallop_qa_studies",
         "whelk_qa_studies",
+        # Wave-1572 wildflower canon.
+        "aster_qa_studies",
+        "bluebell_qa_studies",
+        "buttercup_qa_studies",
+        "columbine_qa_studies",
+        "cornflower_qa_studies",
+        "lupine_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

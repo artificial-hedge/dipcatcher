@@ -12567,6 +12567,14 @@ from quant_fund.research.benches_w1571 import (
     bench_scallop_qa_studies_family,
     bench_whelk_qa_studies_family,
 )
+from quant_fund.research.benches_w1572 import (
+    bench_aster_qa_studies_family,
+    bench_bluebell_qa_studies_family,
+    bench_buttercup_qa_studies_family,
+    bench_columbine_qa_studies_family,
+    bench_cornflower_qa_studies_family,
+    bench_lupine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14549,6 +14557,12 @@ def _provenance(
         "porcelain_qa_studies": bench_porcelain_qa_studies_family,
         "clam_qa_studies": bench_clam_qa_studies_family,
         "conch_qa_studies": bench_conch_qa_studies_family,
+        "aster_qa_studies": bench_aster_qa_studies_family,
+        "bluebell_qa_studies": bench_bluebell_qa_studies_family,
+        "buttercup_qa_studies": bench_buttercup_qa_studies_family,
+        "columbine_qa_studies": bench_columbine_qa_studies_family,
+        "cornflower_qa_studies": bench_cornflower_qa_studies_family,
+        "lupine_qa_studies": bench_lupine_qa_studies_family,
         "mussel_qa_studies": bench_mussel_qa_studies_family,
         "oyster_qa_studies": bench_oyster_qa_studies_family,
         "scallop_qa_studies": bench_scallop_qa_studies_family,
