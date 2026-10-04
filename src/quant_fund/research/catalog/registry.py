@@ -3292,6 +3292,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dish_qa_studies",
         "fruit_qa_studies",
         "ingredient_qa_studies",
+        # Wave-1433 weather canon.
+        "cloud_qa_studies",
+        "frost_qa_studies",
+        "hurricane_qa_studies",
+        "rain_qa_studies",
+        "storm_qa_studies",
+        "wind_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
