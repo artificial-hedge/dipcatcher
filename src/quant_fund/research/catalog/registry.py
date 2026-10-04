@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-926 information-geometry-2 canon.
+        "f_divergence",
+        "alpha_divergence",
+        "csiszar_div",
+        "amari_connection",
+        "dual_connection",
+        "tsallis_entropy",
         # Wave-925 Bayesian-nonparametrics-3 canon.
         "exchangeable_pf",
         "normalized_rm",
