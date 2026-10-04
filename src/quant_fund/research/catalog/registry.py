@@ -5140,6 +5140,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nuwa_qa_studies",
         "shennong_qa_studies",
         "xiwangmu_qa_studies",
+        # Wave-1697 chinese-myth-3 canon.
+        "aoqin_qa_studies",
+        "guandi_qa_studies",
+        "houyi_qa_studies",
+        "wenchang_qa_studies",
+        "yutu_qa_studies",
+        "zao_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
