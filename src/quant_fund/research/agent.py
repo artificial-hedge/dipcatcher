@@ -8487,6 +8487,14 @@ from quant_fund.research.benches_w1061 import (
     bench_international_law_family,
     bench_tort_law_family,
 )
+from quant_fund.research.benches_w1062 import (
+    bench_biblical_studies_family,
+    bench_buddhist_studies_family,
+    bench_comparative_religion_family,
+    bench_islamic_studies_family,
+    bench_religious_ethics_family,
+    bench_theology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8858,6 +8866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "theology": bench_theology_family,
+        "comparative_religion": bench_comparative_religion_family,
+        "biblical_studies": bench_biblical_studies_family,
+        "islamic_studies": bench_islamic_studies_family,
+        "buddhist_studies": bench_buddhist_studies_family,
+        "religious_ethics": bench_religious_ethics_family,
         "constitutional_law": bench_constitutional_law_family,
         "criminal_law": bench_criminal_law_family,
         "contract_law": bench_contract_law_family,
