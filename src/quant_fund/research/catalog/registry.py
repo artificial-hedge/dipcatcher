@@ -3278,6 +3278,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fish_qa_studies",
         "habitat_qa_studies",
         "insect_qa_studies",
+        # Wave-1431 vehicle canon.
+        "aircraft_qa_studies",
+        "bike_qa_studies",
+        "bus_qa_studies",
+        "car_qa_studies",
+        "engine_qa_studies",
+        "plane_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
