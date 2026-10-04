@@ -9647,6 +9647,14 @@ from quant_fund.research.benches_w1206 import (
     bench_transplantation_medicine_family,
     bench_xenotransplantation_family,
 )
+from quant_fund.research.benches_w1207 import (
+    bench_art_therapy_family,
+    bench_behavioral_therapy_cognitive_family,
+    bench_music_therapy_family,
+    bench_play_therapy_family,
+    bench_psychoanalysis_studies_family,
+    bench_psychotherapy_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10018,6 +10026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "psychoanalysis_studies": bench_psychoanalysis_studies_family,
+        "psychotherapy_studies": bench_psychotherapy_studies_family,
+        "behavioral_therapy_cognitive": bench_behavioral_therapy_cognitive_family,
+        "art_therapy": bench_art_therapy_family,
+        "music_therapy": bench_music_therapy_family,
+        "play_therapy": bench_play_therapy_family,
         "transplantation_medicine": bench_transplantation_medicine_family,
         "organ_donation": bench_organ_donation_family,
         "immunosuppression": bench_immunosuppression_family,

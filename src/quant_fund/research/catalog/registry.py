@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1207 psychotherapy canon.
+        "psychoanalysis_studies",
+        "psychotherapy_studies",
+        "behavioral_therapy_cognitive",
+        "art_therapy",
+        "music_therapy",
+        "play_therapy",
         # Wave-1206 transplantation canon.
         "transplantation_medicine",
         "organ_donation",
