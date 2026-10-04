@@ -5224,6 +5224,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "numit_qa_studies",
         "piryani_qa_studies",
         "yejmun_qa_studies",
+        # Wave-1709 hittite-myth canon.
+        "arinniti_qa_studies",
+        "hannahanna_qa_studies",
+        "inara_qa_studies",
+        "kamrusepa_qa_studies",
+        "tarhunna_qa_studies",
+        "telepinu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
