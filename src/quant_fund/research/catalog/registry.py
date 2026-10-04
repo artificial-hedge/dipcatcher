@@ -4846,6 +4846,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leucrotta_qa_studies",
         "parandrus_qa_studies",
         "questing_qa_studies",
+        # Wave-1655 heraldic-beast canon.
+        "basiliskcock_qa_studies",
+        "calygreyhound_qa_studies",
+        "cocatrix_qa_studies",
+        "gryps_qa_studies",
+        "mantygre_qa_studies",
+        "opinicus_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

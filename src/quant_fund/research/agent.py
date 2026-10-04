@@ -13231,6 +13231,14 @@ from quant_fund.research.benches_w1654 import (
     bench_parandrus_qa_studies_family,
     bench_questing_qa_studies_family,
 )
+from quant_fund.research.benches_w1655 import (
+    bench_basiliskcock_qa_studies_family,
+    bench_calygreyhound_qa_studies_family,
+    bench_cocatrix_qa_studies_family,
+    bench_gryps_qa_studies_family,
+    bench_mantygre_qa_studies_family,
+    bench_opinicus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15583,6 +15591,12 @@ def _provenance(
         "leucrotta_qa_studies": bench_leucrotta_qa_studies_family,
         "parandrus_qa_studies": bench_parandrus_qa_studies_family,
         "questing_qa_studies": bench_questing_qa_studies_family,
+        "basiliskcock_qa_studies": bench_basiliskcock_qa_studies_family,
+        "calygreyhound_qa_studies": bench_calygreyhound_qa_studies_family,
+        "cocatrix_qa_studies": bench_cocatrix_qa_studies_family,
+        "gryps_qa_studies": bench_gryps_qa_studies_family,
+        "mantygre_qa_studies": bench_mantygre_qa_studies_family,
+        "opinicus_qa_studies": bench_opinicus_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
