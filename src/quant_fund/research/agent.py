@@ -8935,6 +8935,14 @@ from quant_fund.research.benches_w1117 import (
     bench_science_studies_family,
     bench_sociology_of_knowledge_family,
 )
+from quant_fund.research.benches_w1118 import (
+    bench_field_linguistics_family,
+    bench_language_acquisition_family,
+    bench_linguistic_typology_family,
+    bench_sign_linguistics_family,
+    bench_theoretical_linguistics_family,
+    bench_translation_theory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9306,6 +9314,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "theoretical_linguistics": bench_theoretical_linguistics_family,
+        "field_linguistics": bench_field_linguistics_family,
+        "translation_theory": bench_translation_theory_family,
+        "sign_linguistics": bench_sign_linguistics_family,
+        "linguistic_typology": bench_linguistic_typology_family,
+        "language_acquisition": bench_language_acquisition_family,
         "mathematical_sociology": bench_mathematical_sociology_family,
         "historical_sociology": bench_historical_sociology_family,
         "science_studies": bench_science_studies_family,
