@@ -4895,6 +4895,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hraesvelgr_qa_studies",
         "huginn_qa_studies",
         "muninn_qa_studies",
+        # Wave-1662 celtic-beast canon.
+        "banshee_qa_studies",
+        "dullahan_qa_studies",
+        "kelpie_qa_studies",
+        "leprechaun_qa_studies",
+        "puca_qa_studies",
+        "selkie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
