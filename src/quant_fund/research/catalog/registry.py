@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-758 GFF-2 canon.
+        "powell_gff",
+        "aru_gff",
+        "ding_zeitouni",
+        "chatterjee_gff",
+        "bolthausen_gff",
+        "najafi_gff",
         # Wave-757 CLE canon.
         "sheffield_werner_cle",
         "miller_watson_cle",
