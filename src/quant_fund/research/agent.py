@@ -11271,6 +11271,14 @@ from quant_fund.research.benches_w1409 import (
     bench_fanqa_lite_studies_family,
     bench_hops_qa_studies_family,
 )
+from quant_fund.research.benches_w1410 import (
+    bench_causal_qa_studies_family,
+    bench_ecare_lite_studies_family,
+    bench_event2mind_lite_studies_family,
+    bench_event_qa_studies_family,
+    bench_hippo_qa_studies_family,
+    bench_intent_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12391,6 +12399,12 @@ def _provenance(
         "ensem_qa_studies": bench_ensem_qa_studies_family,
         "fanqa_lite_studies": bench_fanqa_lite_studies_family,
         "hops_qa_studies": bench_hops_qa_studies_family,
+        "causal_qa_studies": bench_causal_qa_studies_family,
+        "ecare_lite_studies": bench_ecare_lite_studies_family,
+        "event2mind_lite_studies": bench_event2mind_lite_studies_family,
+        "event_qa_studies": bench_event_qa_studies_family,
+        "hippo_qa_studies": bench_hippo_qa_studies_family,
+        "intent_qa_studies": bench_intent_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
