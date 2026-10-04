@@ -8111,6 +8111,14 @@ from quant_fund.research.benches_w1014 import (
     bench_stellar_evolution_family,
     bench_stellar_structure_family,
 )
+from quant_fund.research.benches_w1015 import (
+    bench_acoustic_wave_eq_family,
+    bench_doppler_effect_family,
+    bench_helmholtz_eq_family,
+    bench_rayleigh_scattering_family,
+    bench_room_acoustics_family,
+    bench_sound_absorption_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8482,6 +8490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "acoustic_wave_eq": bench_acoustic_wave_eq_family,
+        "helmholtz_eq": bench_helmholtz_eq_family,
+        "sound_absorption": bench_sound_absorption_family,
+        "room_acoustics": bench_room_acoustics_family,
+        "rayleigh_scattering": bench_rayleigh_scattering_family,
+        "doppler_effect": bench_doppler_effect_family,
         "jeans_instability": bench_jeans_instability_family,
         "stellar_structure": bench_stellar_structure_family,
         "stellar_evolution": bench_stellar_evolution_family,
