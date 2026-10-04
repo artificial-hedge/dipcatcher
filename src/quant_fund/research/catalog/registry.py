@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-768 large-deviation canon.
+        "varadhan_ldp",
+        "freidlin_wentzell",
+        "dw_ldp",
+        "sanov_thm",
+        "mogulskii_thm",
+        "schider_thm",
         # Wave-767 Gaussian-process canon.
         "slepian_lemma",
         "fernique_thm",
