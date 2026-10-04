@@ -207,7 +207,9 @@ class AnthropicMessage(_Model):
     content: str | list[dict[str, Any]]
 
     @model_validator(mode="after")
-    def _blocks_valid(self) -> AnthropicMessage:
+    def _blocks_valid(
+        self,
+    ) -> AnthropicMessage:  # NOSONAR(S3776) — per-block shape dispatch is inherently branchy
         if isinstance(self.content, str):
             return self
         if not self.content:
@@ -272,7 +274,9 @@ class AnthropicMessagesRequest(_Model):
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
-    def _anthropic_valid(self) -> AnthropicMessagesRequest:
+    def _anthropic_valid(
+        self,
+    ) -> AnthropicMessagesRequest:  # NOSONAR(S3776) — contract validator walks every field
         if self.stop_sequences is not None and any(
             not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop_sequences
         ):
@@ -353,7 +357,9 @@ def _tool_result_content(block: dict[str, Any]) -> str:
     )
 
 
-def _messages_to_openai(messages: list[AnthropicMessage]) -> list[dict[str, Any]]:
+def _messages_to_openai(
+    messages: list[AnthropicMessage],
+) -> list[dict[str, Any]]:  # NOSONAR(S3776) — one branch per Anthropic block type
     """Anthropic turns → OpenAI chat messages.
 
     A ``user`` turn's ``tool_result`` blocks each become a ``role: tool``
@@ -423,7 +429,9 @@ def _messages_to_openai(messages: list[AnthropicMessage]) -> list[dict[str, Any]
     return out
 
 
-def anthropic_to_openai(body: AnthropicMessagesRequest) -> dict[str, Any]:
+def anthropic_to_openai(
+    body: AnthropicMessagesRequest,
+) -> dict[str, Any]:  # NOSONAR(S3776) — field-by-field wire translation
     """Translate ``AnthropicMessagesRequest`` → ``OpenAIChatRequest``
     kwargs — the shared gated path then validates, backends, gates, and
     meters exactly as ``/v1/chat/completions``.
@@ -481,7 +489,9 @@ def anthropic_to_openai(body: AnthropicMessagesRequest) -> dict[str, Any]:
     return {k: v for k, v in req.items() if v is not None}
 
 
-def anthropic_envelope(env: dict[str, Any], *, model: str | None = None) -> dict[str, Any]:
+def anthropic_envelope(
+    env: dict[str, Any], *, model: str | None = None
+) -> dict[str, Any]:  # NOSONAR(S3776) — envelope builder fans out per content block
     """``chat.completion`` envelope → Anthropic ``message`` object.
 
     The id is derived, not minted fresh — ``msg_<hex>`` carries the

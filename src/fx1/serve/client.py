@@ -142,6 +142,53 @@ def _retry_after_s(headers: Mapping[str, str]) -> float | None:
     return None
 
 
+def _fx1_opts(
+    *,
+    backend: str | None,
+    byok: dict[str, str] | None,
+    checkpoint_dir: str | Path | None,
+    fallbacks: list[str] | None,
+    receipt_hashes: list[str] | None,
+    timeout_s: float | None,
+) -> dict[str, Any]:
+    """Assemble the ``fx1`` extension object every completion-surface
+    method merges into its payload: backend link name, BYOK endpoint
+    override, checkpoint dir, ordered fallbacks, evidence seals, and the
+    backend deadline — only the knobs the caller actually set."""
+    fx1: dict[str, Any] = {}
+    if backend is not None:
+        fx1["backend"] = backend
+    if byok is not None:
+        fx1["byok"] = byok
+    if checkpoint_dir is not None:
+        fx1["checkpoint_dir"] = str(checkpoint_dir)
+    if fallbacks:
+        fx1["fallbacks"] = list(fallbacks)
+    if receipt_hashes:
+        fx1["receipt_hashes"] = list(receipt_hashes)
+    if timeout_s is not None:
+        fx1["timeout_s"] = timeout_s
+    return fx1
+
+
+def _openai_sse_chunks(body: bytes) -> list[dict[str, Any]]:
+    """Parse the OpenAI SSE grammar — ``data: <json>`` frames up to the
+    terminal ``[DONE]``. Fails closed when the stream ends unterminated."""
+    chunks: list[dict[str, Any]] = []
+    saw_done = False
+    for line in body.decode().splitlines():
+        if not line.startswith("data: "):
+            continue
+        frame = line[len("data: ") :].strip()
+        if frame == "[DONE]":
+            saw_done = True
+            break
+        chunks.append(json.loads(frame))
+    if not saw_done:
+        raise HarnessTransportError("stream ended without [DONE]")
+    return chunks
+
+
 def _hget(headers: Mapping[str, str], name: str) -> str | None:
     """Case-insensitive header lookup — transports differ in casing
     (urllib preserves the wire casing; test clients lowercase)."""
@@ -1508,19 +1555,14 @@ class HarnessClient:
         Returns ``(chat_completion_envelope, completion_id)`` — the id
         links the call to ``completion()``/``completion_receipt()``. Call
         :meth:`chat_completion_stream` for SSE deltas."""
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if receipt_hashes:
-            fx1["receipt_hashes"] = receipt_hashes
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -1614,19 +1656,14 @@ class HarnessClient:
         ``idempotency_key`` + ``last_event_id=k - 1`` and gets the
         byte-identical suffix. Resume without a key fails closed 400; a
         key with no pinned stream 409s."""
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if receipt_hashes:
-            fx1["receipt_hashes"] = receipt_hashes
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -1672,18 +1709,161 @@ class HarnessClient:
             idempotent=idempotency_key is not None,
             extra_headers=extra_headers,
         )
-        chunks: list[dict[str, Any]] = []
-        saw_done = False
-        for line in body.decode().splitlines():
-            if not line.startswith("data: "):
-                continue
-            frame = line[len("data: ") :].strip()
-            if frame == "[DONE]":
-                saw_done = True
-                break
-            chunks.append(json.loads(frame))
-        if not saw_done:
-            raise HarnessTransportError("stream ended without [DONE]")
+        chunks = _openai_sse_chunks(body)
+        return chunks, _hget(headers, "X-Fx1-Completion-Id")
+
+    def create_completion(
+        self,
+        prompt: str | list[str],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        echo: bool = False,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/completions`` — the legacy ``text_completion``
+        surface (what ``client.completions.create`` and pre-chat tooling
+        call). ``prompt`` accepts a string or a list — each element runs
+        the gated pipeline independently and ``n`` repeats within an
+        element; ``echo`` prepends the prompt to each choice's text.
+        ``suffix``/``best_of``/``logprobs`` refuse server-side 422.
+
+        Returns ``(text_completion_envelope, completion_id)`` — the id
+        links the call to ``completion()``/``completion_receipt()``;
+        ``idempotency_key`` rides ``Idempotency-Key``."""
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
+        payload: dict[str, Any] = {
+            "model": model,
+            "prompt": prompt,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "echo": echo,
+            "stream": False,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        envelope = json.loads(body)
+        return envelope, _hget(headers, "X-Fx1-Completion-Id")
+
+    def create_completion_stream(
+        self,
+        prompt: str | list[str],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        echo: bool = False,
+        include_usage: bool = False,
+        idempotency_key: str | None = None,
+        last_event_id: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`create_completion` — returns
+        ``(chunks, completion_id)`` where chunks are the parsed
+        ``text_completion`` frames (per-choice ``text`` deltas + the
+        ``finish_reason`` terminal frame; ``include_usage`` adds the
+        ``choices: []`` usage chunk). ``last_event_id`` resumes a dropped
+        keyed stream exactly like the chat surface."""
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
+        payload: dict[str, Any] = {
+            "model": model,
+            "prompt": prompt,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "echo": echo,
+            "stream": True,
+            "stream_options": {"include_usage": True} if include_usage else None,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        chunks = _openai_sse_chunks(body)
         return chunks, _hget(headers, "X-Fx1-Completion-Id")
 
     def create_message(
@@ -1725,19 +1905,14 @@ class HarnessClient:
         call to ``completion()``/``completion_receipt()``;
         ``idempotency_key`` rides ``Idempotency-Key`` (same-key+body
         replays byte-identically)."""
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if receipt_hashes:
-            fx1["receipt_hashes"] = receipt_hashes
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -1793,19 +1968,14 @@ class HarnessClient:
         ``message_delta``/``message_stop`` frames). ``last_event_id``
         resumes a dropped keyed stream — frames carry ``id: <index>``
         like the OpenAI surface."""
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if receipt_hashes:
-            fx1["receipt_hashes"] = receipt_hashes
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -2020,19 +2190,14 @@ class HarnessClient:
         background: bool = False,
         stream: bool = False,
     ) -> dict[str, Any]:
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if receipt_hashes:
-            fx1["receipt_hashes"] = receipt_hashes
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "input": input,
@@ -2103,17 +2268,14 @@ class HarnessClient:
         Returns ``(list envelope, completion_id)`` — the envelope's
         ``data[]`` is the provider's verbatim answer; the id links the
         completion-log record."""
-        fx1: dict[str, Any] = {}
-        if byok is not None:
-            fx1["byok"] = byok
-        if checkpoint_dir is not None:
-            fx1["checkpoint_dir"] = str(checkpoint_dir)
-        if fallbacks:
-            fx1["fallbacks"] = fallbacks
-        if timeout_s is not None:
-            fx1["timeout_s"] = timeout_s
-        if backend is not None:
-            fx1["backend"] = backend
+        fx1 = _fx1_opts(
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=None,
+            timeout_s=timeout_s,
+        )
         payload: dict[str, Any] = {
             "model": model,
             "input": input,

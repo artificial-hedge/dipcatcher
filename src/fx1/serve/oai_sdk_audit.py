@@ -271,6 +271,43 @@ async def _probe_chat(cl: Any, out: dict[str, Any]) -> None:
         out["sdk_chat_deleted_404"] = True
 
 
+async def _probe_completions(cl: Any, out: dict[str, Any]) -> None:
+    import openai
+
+    # the legacy text surface — what `client.completions.create` and
+    # pre-chat tooling drive
+    cm = await cl.completions.create(model="fx1", prompt="hi")
+    out["sdk_completion_create"] = (
+        cm.object == "text_completion"
+        and cm.id.startswith("cmpl-")
+        and cm.choices[0].text == "stub:hi"
+        and cm.choices[0].finish_reason == "stop"
+    )
+    multi = await cl.completions.create(model="fx1", prompt=["a", "b"], n=2)
+    out["sdk_completion_multi_prompt"] = (
+        len(multi.choices) == 4
+        and [c.index for c in multi.choices] == [0, 1, 2, 3]
+        and multi.choices[0].text == "stub:a"
+        and multi.choices[2].text == "stub:b"
+    )
+    echoed = await cl.completions.create(model="fx1", prompt="hi", echo=True)
+    out["sdk_completion_echo"] = echoed.choices[0].text == "hi" + "stub:hi"
+    schunks = [c async for c in await cl.completions.create(model="fx1", prompt="hi", stream=True)]
+    out["sdk_completion_stream"] = (
+        bool(schunks)
+        and all(c.object == "text_completion" for c in schunks)
+        and "".join(c.choices[0].text for c in schunks if c.choices) == "stub:hi"
+        and schunks[-1].choices[0].finish_reason == "stop"
+    )
+    # legacy-only fields refuse typed — the SDK maps our 422 to
+    # UnprocessableEntityError with the openai-shaped body
+    try:
+        await cl.completions.create(model="fx1", prompt="x", extra_body={"suffix": "s"})
+        out["sdk_completion_suffix_422"] = False
+    except openai.UnprocessableEntityError as exc:
+        out["sdk_completion_suffix_422"] = exc.status_code == 422
+
+
 async def _probe_responses(cl: Any, out: dict[str, Any]) -> None:
     import openai
 
@@ -563,6 +600,7 @@ def oai_sdk_audit() -> dict[str, Any]:
         with _sdk_client() as cl:
             loop.run_until_complete(_probe_models(cl, out))
             loop.run_until_complete(_probe_chat(cl, out))
+            loop.run_until_complete(_probe_completions(cl, out))
             loop.run_until_complete(_probe_responses(cl, out))
             loop.run_until_complete(_probe_files_batches_ft(cl, out))
             loop.run_until_complete(_probe_vector_stores(cl, out))

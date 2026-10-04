@@ -946,6 +946,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Completions
+         * @description Legacy ``/v1/completions`` — the ``text_completion`` surface
+         *     ``client.completions.create`` and pre-chat agents still target.
+         *
+         *     Each ``prompt`` element becomes one user turn through the shared
+         *     gated pipeline (same honesty gate, fail-closed validation, and
+         *     completion-log metering as ``/v1/chat/completions``); ``n`` repeats
+         *     within an element, so ``prompt=[a,b]`` with ``n=2`` lands four
+         *     flat choices. ``echo`` prepends the prompt to each choice's text.
+         *     ``suffix``, ``best_of`` and ``logprobs`` refuse 422 — the
+         *     pipeline has no FIM head and no token-logprob scorer.
+         *
+         *     ``store`` is tolerated and ignored (legacy completions have no
+         *     retrieval twin); ``Idempotency-Key`` replay and ``Last-Event-ID``
+         *     stream resume work exactly like the chat surface — a pinned call
+         *     replays byte-identically (JSON or SSE) and a resumed keyed stream
+         *     drops frames at or below the delivered index.
+         */
+        post: operations["openai_completions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations": {
         parameters: {
             query?: never;
@@ -4001,6 +4036,79 @@ export interface components {
             metadata?: {
                 [key: string]: string;
             } | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAICompletionRequest
+         * @description POST /v1/completions body — the legacy ``text_completion`` surface
+         *     that ``client.completions.create`` and older agents still target.
+         *
+         *     ``prompt`` is a string or a list of strings — one completion chain
+         *     per element; ``n`` repeats within each element, so a list of ``k``
+         *     prompts with ``n`` repeats produces ``k * n`` flat choices. ``echo``
+         *     prepends the prompt to each choice's ``text`` (the one legacy flag
+         *     the surface honors verbatim). ``max_tokens`` defaults to 16 at
+         *     translation, matching OpenAI's legacy default; ``suffix``,
+         *     ``best_of`` and ``logprobs`` refuse — the pipeline cannot honor
+         *     them. ``store`` is tolerated and ignored: completions have no
+         *     retrieval twin (there is no ``GET /v1/completions/{id}`` — a pinned
+         *     ``Idempotency-Key`` replay is the retrieval path).
+         */
+        OpenAICompletionRequest: {
+            /**
+             * Echo
+             * @default false
+             */
+            echo: boolean;
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /**
+             * N
+             * @default 1
+             */
+            n: number;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /** Prompt */
+            prompt: string | string[];
+            /** Seed */
+            seed?: number | null;
+            /** Stop */
+            stop?: string | string[] | null;
+            /** Store */
+            store?: boolean | null;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+            /** Stream Options */
+            stream_options?: {
+                [key: string]: unknown;
+            } | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Top P */
+            top_p?: number | null;
+            /** User */
+            user?: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -7909,6 +8017,78 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_completions: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "Last-Event-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAICompletionRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

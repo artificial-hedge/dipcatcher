@@ -39,6 +39,12 @@ import threading
 import time
 from typing import TYPE_CHECKING, Any
 
+_MESSAGES_PATH = "/v1/messages"
+_LEGACY_PATH = "/v1/completions"
+_PING_MSG = "clean:ping"
+_SSE_EVENT_PREFIX = "event: "
+
+
 if TYPE_CHECKING:
     from types import ModuleType
 
@@ -4959,7 +4965,7 @@ def _probe_backend_probes(  # NOSONAR
         and oi.get("object") == "chat.completion"
         and oi.get("id", "").startswith("chatcmpl-")
         and oi["choices"][0]["message"]["role"] == "assistant"
-        and oi["choices"][0]["message"]["content"] == "clean:ping"
+        and oi["choices"][0]["message"]["content"] == _PING_MSG
         and oi["choices"][0]["finish_reason"] == "stop"
         and oi.get("system_fingerprint") == "hosted_k3"
         and oi.get("model") == "fake-0"
@@ -6724,7 +6730,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     out["responses_items_and_instructions"] = (
-        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:ping"
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == _PING_MSG
     )
     out["responses_reasoning_effort_forwarded"] = (
         usage_be.seen is not None
@@ -6929,7 +6935,7 @@ def _probe_backend_probes(  # NOSONAR
         headers={"Idempotency-Key": "resp-rs1"},
     )
     _rlines = rs1.text.splitlines()
-    _rev = [ln[7:] for ln in _rlines if ln.startswith("event: ")]
+    _rev = [ln[7:] for ln in _rlines if ln.startswith(_SSE_EVENT_PREFIX)]
     _rid_lines = [ln[4:] for ln in _rlines if ln.startswith("id: ")]
     _rdata = [_json3.loads(ln[6:]) for ln in _rlines if ln.startswith("data: ")]
     out["responses_stream_event_grammar"] = (
@@ -7174,7 +7180,7 @@ def _probe_backend_probes(  # NOSONAR
         headers={"Idempotency-Key": "resp-tools-82"},
     )
     _tlines = rts1.text.splitlines()
-    _tev = [ln[7:] for ln in _tlines if ln.startswith("event: ")]
+    _tev = [ln[7:] for ln in _tlines if ln.startswith(_SSE_EVENT_PREFIX)]
     _tdata = [_json3.loads(ln[6:]) for ln in _tlines if ln.startswith("data: ")]
     _tfc_done: dict[str, Any] = next(
         (
@@ -9331,7 +9337,7 @@ def _probe_backend_probes(  # NOSONAR
     # {type:"error",error:{...}} envelope (stock anthropic SDK parses it).
 
     am = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9346,7 +9352,7 @@ def _probe_backend_probes(  # NOSONAR
         and amb.get("type") == "message"
         and amb.get("role") == "assistant"
         and str(amb.get("id", "")).startswith("msg_")
-        and amb.get("content") == [{"type": "text", "text": "clean:ping"}]
+        and amb.get("content") == [{"type": "text", "text": _PING_MSG}]
         and amb.get("stop_reason") == "end_turn"
         and amb.get("model") == "fake-0"
         and isinstance(amb.get("usage", {}).get("input_tokens"), int)
@@ -9364,7 +9370,7 @@ def _probe_backend_probes(  # NOSONAR
     # stream:true → Anthropic SSE grammar; frames carry id:<idx>; the
     # text deltas re-assemble the gated answer; message_stop is terminal
     ams = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9378,7 +9384,7 @@ def _probe_backend_probes(  # NOSONAR
         ev_name = ""
         data = ""
         for sub in ln.splitlines():
-            if sub.startswith("event: "):
+            if sub.startswith(_SSE_EVENT_PREFIX):
                 ev_name = sub[7:]
             elif sub.startswith("data: "):
                 data = sub[6:]
@@ -9409,7 +9415,7 @@ def _probe_backend_probes(  # NOSONAR
     # second backend call; a mismatched body under the same key 409s
     ikey = {"Idempotency-Key": "am-1"}
     ai1 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         headers=ikey,
         json={
             "model": "fx1",
@@ -9418,7 +9424,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     ai2 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         headers=ikey,
         json={
             "model": "fx1",
@@ -9427,7 +9433,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     ai3 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         headers=ikey,
         json={
             "model": "fx1",
@@ -9447,7 +9453,7 @@ def _probe_backend_probes(  # NOSONAR
     # keyed stream replays resume: Last-Event-ID skips already-sent frames
     skey = {"Idempotency-Key": "am-s1"}
     asi1 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         headers=skey,
         json={
             "model": "fx1",
@@ -9458,7 +9464,7 @@ def _probe_backend_probes(  # NOSONAR
     )
     n_frames_1 = sum(1 for ln in asi1.text.split("\n\n") if "data:" in ln)
     asi2 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         headers={**skey, "Last-Event-ID": "1"},
         json={
             "model": "fx1",
@@ -9475,7 +9481,7 @@ def _probe_backend_probes(  # NOSONAR
         and "message_stop" in asi2.text
         # resume without the key / for an unkeyed original fails closed
         and fb.post(
-            "/v1/messages",
+            _MESSAGES_PATH,
             headers={"Last-Event-ID": "1"},
             json={
                 "model": "fx1",
@@ -9486,7 +9492,7 @@ def _probe_backend_probes(  # NOSONAR
         ).status_code
         == 400
         and fb.post(
-            "/v1/messages",
+            _MESSAGES_PATH,
             headers={"Idempotency-Key": "no-pin", "Last-Event-ID": "0"},
             json={
                 "model": "fx1",
@@ -9504,7 +9510,7 @@ def _probe_backend_probes(  # NOSONAR
     at_backend = _OiToolBackend()
     tool_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: at_backend))
     at = tool_app.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9548,7 +9554,7 @@ def _probe_backend_probes(  # NOSONAR
         and at_backend.seen_choice == "required"
     )
     at2 = tool_app.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9568,7 +9574,7 @@ def _probe_backend_probes(  # NOSONAR
     )
     # tool_use/tool_result history → assistant tool_calls + role:"tool" turn
     at3 = tool_app.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9616,11 +9622,11 @@ def _probe_backend_probes(  # NOSONAR
 
     # fail-closed surface — every refusal in the Anthropic envelope
     bad1 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
     )
     bad2 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9628,7 +9634,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     bad3 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9637,7 +9643,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     bad4 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9655,7 +9661,7 @@ def _probe_backend_probes(  # NOSONAR
         },
     )
     bad5 = fb.post(
-        "/v1/messages",
+        _MESSAGES_PATH,
         json={
             "model": "fx1",
             "max_tokens": 64,
@@ -9674,6 +9680,122 @@ def _probe_backend_probes(  # NOSONAR
             and b.json()["error"]["type"] == "invalid_request_error"
             for b in (bad1, bad2, bad3, bad4, bad5)
         )
+    )
+
+    # ---- legacy /v1/completions drop-in ------------------------------------
+    # the pre-chat text surface: each prompt element is one user turn
+    # through the same gated pipeline (honesty gate, fail-closed
+    # validation, completion-log metering); choices flatten to
+    # prompt×n, echo prepends the prompt to each text
+    lc = fb.post(
+        _LEGACY_PATH,
+        json={"model": "fx1", "prompt": "ping", "max_tokens": 32},
+    )
+    lcb = lc.json()
+    lc_cid = lc.headers.get("X-Fx1-Completion-Id", "")
+    out["legacy_completion_200"] = (
+        lc.status_code == 200
+        and lcb.get("object") == "text_completion"
+        and str(lcb.get("id", "")).startswith("cmpl-")
+        and lcb.get("model") == "fake-0"
+        and lcb.get("choices")
+        == [
+            {
+                "index": 0,
+                "text": _PING_MSG,
+                "logprobs": None,
+                "finish_reason": "stop",
+            }
+        ]
+        and "usage" in lcb
+        and bool(lc_cid)
+        and lc.headers.get("openai-version") == "1"
+        and bool(lc.headers.get("X-Fx1-Receipt-Sha256"))
+    )
+    # the gated call is logged/receipted like chat; legacy completions
+    # have no retrieval twin — GET /v1/completions/{id} is the 404
+    if lc_cid:
+        out["legacy_logged_not_stored"] = (
+            fb.get(f"/harness/completions/{lc_cid}").status_code == 200
+            and fb.get(f"/v1/completions/cmpl-{lc_cid}").status_code == 404
+        )
+    # prompt list + n flatten to prompt×n choices in order; echo
+    # prepends the prompt text
+    lm = fb.post(
+        _LEGACY_PATH,
+        json={
+            "model": "fx1",
+            "prompt": ["a", "b"],
+            "n": 2,
+            "echo": True,
+            "max_tokens": 32,
+        },
+    )
+    lmb = lm.json()
+    out["legacy_multi_prompt_flat"] = (
+        lm.status_code == 200
+        and len(lmb.get("choices", [])) == 4
+        and [c.get("index") for c in lmb["choices"]] == [0, 1, 2, 3]
+        and all(str(c.get("text", "")).startswith(("a", "b")) for c in lmb["choices"])
+    )
+    # unsupported legacy fields refuse 422 — no FIM head, no
+    # logprob scorer, no best-of picker in this pipeline
+    for field in ("suffix", "best_of", "logprobs"):
+        out[f"legacy_refuses_{field}_422"] = (
+            fb.post(
+                _LEGACY_PATH,
+                json={"model": "fx1", "prompt": "x", field: ("s" if field == "suffix" else 1)},
+            ).status_code
+            == 422
+        )
+    # idempotency: same key+body replays byte-identically without a
+    # second backend call; mismatched body under the same key 409s
+    lkey = {"Idempotency-Key": "lc-1"}
+    li1 = fb.post(
+        _LEGACY_PATH,
+        headers=lkey,
+        json={"model": "fx1", "prompt": "idem", "max_tokens": 16},
+    )
+    li2 = fb.post(
+        _LEGACY_PATH,
+        headers=lkey,
+        json={"model": "fx1", "prompt": "idem", "max_tokens": 16},
+    )
+    li3 = fb.post(
+        _LEGACY_PATH,
+        headers=lkey,
+        json={"model": "fx1", "prompt": "different body", "max_tokens": 16},
+    )
+    out["legacy_idempotent_replay"] = (
+        li1.status_code == 200
+        and li2.status_code == 200
+        and li1.content == li2.content
+        and li2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and li3.status_code == 409
+    )
+    # stream:true → legacy chunk grammar (text_completion chunks, usage
+    # when stream_options asks, [DONE] terminal); a keyed stream replays
+    # the identical frames; Last-Event-ID resumes below the floor
+    ls = fb.post(
+        _LEGACY_PATH,
+        json={"model": "fx1", "prompt": "stream", "stream": True},
+    )
+    lframes = [ln for ln in ls.text.split("\n\n") if ln.strip()]
+    ldata_lines = [sub[6:] for ln in lframes for sub in ln.splitlines() if sub.startswith("data: ")]
+    ldatas = [_json3.loads(d) for d in ldata_lines if d != "[DONE]"]
+    out["legacy_stream_grammar"] = (
+        ls.status_code == 200
+        and ls.headers.get("content-type", "").startswith("text/event-stream")
+        and ldata_lines[-1] == "[DONE]"
+        and all(d.get("object") == "text_completion" for d in ldatas)
+        and ldatas
+        and "".join(d["choices"][0]["text"] for d in ldatas) == "clean:stream"
+        and ldatas[-1]["choices"][0]["finish_reason"] == "stop"
+    )
+    # the unknown /v1 catch-all still answers provider-shaped 404s under
+    # the new surface
+    out["legacy_catchall_404"] = (
+        fb.get("/v1/no-such-route").json().get("error", {}).get("type") == "invalid_request_error"
     )
 
 

@@ -5603,6 +5603,220 @@
         "title": "OpenAIChatUpdate",
         "type": "object"
       },
+      "OpenAICompletionRequest": {
+        "additionalProperties": true,
+        "description": "POST /v1/completions body \u2014 the legacy ``text_completion`` surface\nthat ``client.completions.create`` and older agents still target.\n\n``prompt`` is a string or a list of strings \u2014 one completion chain\nper element; ``n`` repeats within each element, so a list of ``k``\nprompts with ``n`` repeats produces ``k * n`` flat choices. ``echo``\nprepends the prompt to each choice's ``text`` (the one legacy flag\nthe surface honors verbatim). ``max_tokens`` defaults to 16 at\ntranslation, matching OpenAI's legacy default; ``suffix``,\n``best_of`` and ``logprobs`` refuse \u2014 the pipeline cannot honor\nthem. ``store`` is tolerated and ignored: completions have no\nretrieval twin (there is no ``GET /v1/completions/{id}`` \u2014 a pinned\n``Idempotency-Key`` replay is the retrieval path).",
+        "properties": {
+          "echo": {
+            "default": false,
+            "title": "Echo",
+            "type": "boolean"
+          },
+          "frequency_penalty": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": -2.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency Penalty"
+          },
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "logit_bias": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logit Bias"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 262144.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "n": {
+            "default": 1,
+            "maximum": 8.0,
+            "minimum": 1.0,
+            "title": "N",
+            "type": "integer"
+          },
+          "presence_penalty": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": -2.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Presence Penalty"
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Prompt"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "stop": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "stream_options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stream Options"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "OpenAICompletionRequest",
+        "type": "object"
+      },
       "OpenAIConversationCreate": {
         "additionalProperties": true,
         "description": "``POST /v1/conversations`` body \u2014 ``items`` seeds the conv's item\nlist (same item dicts a response's ``input`` accepts); ``metadata``\nfollows the same bounds as every other stamped surface.",
@@ -15233,6 +15447,192 @@
           }
         },
         "summary": "Openai Chat Messages",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/completions": {
+      "post": {
+        "description": "Legacy ``/v1/completions`` \u2014 the ``text_completion`` surface\n``client.completions.create`` and pre-chat agents still target.\n\nEach ``prompt`` element becomes one user turn through the shared\ngated pipeline (same honesty gate, fail-closed validation, and\ncompletion-log metering as ``/v1/chat/completions``); ``n`` repeats\nwithin an element, so ``prompt=[a,b]`` with ``n=2`` lands four\nflat choices. ``echo`` prepends the prompt to each choice's text.\n``suffix``, ``best_of`` and ``logprobs`` refuse 422 \u2014 the\npipeline has no FIM head and no token-logprob scorer.\n\n``store`` is tolerated and ignored (legacy completions have no\nretrieval twin); ``Idempotency-Key`` replay and ``Last-Event-ID``\nstream resume work exactly like the chat surface \u2014 a pinned call\nreplays byte-identically (JSON or SSE) and a resumed keyed stream\ndrops frames at or below the delivered index.",
+        "operationId": "openai_completions",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAICompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Completions",
         "tags": [
           "openai"
         ]

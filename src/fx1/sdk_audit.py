@@ -907,6 +907,59 @@ def sdk_audit() -> dict[str, bool]:
         == "ValueError"
     )
 
+    # ---- legacy /v1/completions SDK surface ------------------------------
+    # openai_completion/openai_completion_stream run the same gated
+    # pipeline in-process — the answer is the text_completion envelope,
+    # the stream is the legacy chunk grammar, and the legacy-only fields
+    # refuse the same ValidationError the wire turns into its 422 body.
+    sdk_lc = Fx1Harness(backend_resolver=lambda *a, **k: _FakeBackend("clean answer"))
+    _lc_env, _lc_cid = sdk_lc.openai_completion(
+        {"model": "fx1", "prompt": "ping", "max_tokens": 16}
+    )
+    out["legacy_completion_sdk"] = (
+        _lc_env["object"] == "text_completion"
+        and _lc_env["id"].startswith("cmpl-")
+        and _lc_env["choices"]
+        == [{"index": 0, "text": "clean answer", "logprobs": None, "finish_reason": "stop"}]
+        and bool(_lc_cid)
+    )
+    _lc_multi, _ = sdk_lc.openai_completion(
+        {"model": "fx1", "prompt": ["a", "b"], "n": 2, "echo": True}
+    )
+    out["legacy_completion_multi_sdk"] = (
+        len(_lc_multi["choices"]) == 4
+        and [c["index"] for c in _lc_multi["choices"]] == [0, 1, 2, 3]
+        and _lc_multi["choices"][0]["text"] == "aclean answer"
+        and _lc_multi["choices"][2]["text"] == "bclean answer"
+    )
+    _lc_chunks, _lc_scid = sdk_lc.openai_completion_stream(
+        {"model": "fx1", "prompt": "hi", "max_tokens": 16}
+    )
+    out["legacy_stream_sdk"] = (
+        all(c["object"] == "text_completion" for c in _lc_chunks)
+        and "".join(c["choices"][0]["text"] for c in _lc_chunks) == "clean answer"
+        and _lc_chunks[-1]["choices"][0]["finish_reason"] == "stop"
+        and bool(_lc_scid)
+    )
+    _lc_resumed, _ = sdk_lc.openai_completion_stream(
+        {"model": "fx1", "prompt": "hi", "max_tokens": 16}, last_event_id=0
+    )
+    out["legacy_stream_resume_sdk"] = len(_lc_resumed) == len(_lc_chunks) - 1 and [
+        (c["choices"][0]["text"], c["choices"][0]["finish_reason"]) for c in _lc_resumed
+    ] == [(c["choices"][0]["text"], c["choices"][0]["finish_reason"]) for c in _lc_chunks[1:]]
+    out["legacy_failclosed_sdk"] = (
+        _raises(lambda: sdk_lc.openai_completion({"model": "fx1", "prompt": "x", "suffix": "s"}))
+        == "ValidationError"
+        and _raises(lambda: sdk_lc.openai_completion({"model": "fx1", "prompt": "x", "best_of": 2}))
+        == "ValidationError"
+        and _raises(
+            lambda: sdk_lc.openai_completion_stream(
+                {"model": "fx1", "prompt": "x"}, last_event_id=-1
+            )
+        )
+        == "ValueError"
+    )
+
     return out
 
 

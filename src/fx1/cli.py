@@ -36,6 +36,24 @@ _EVAL_ID_HELP = "eval_ id."
 _EVAL_ID_CREATE_HELP = "eval_ id from eval-spec-create."
 _EVALRUN_ID_HELP = "evalrun_ id."
 _FTJOB_ID_HELP = "ftjob- id from ft-create."
+_BACKEND_OVERRIDE_HELP = "Backend link override."
+_FALLBACK_HELP = "Alternate backend on availability faults (repeatable)."
+_CHAT_ID_HELP = "Stored chat.completion id (chatcmpl-*)."
+_RESPONSE_ID_HELP = "Stored response id (resp_*)."
+_CONV_ID_HELP = "Conversation id (conv_*)."
+_VS_ID_HELP = "Vector store id (vs_*)."
+_FILE_ID_HELP = "File record id (file-*)."
+_VSFB_ID_HELP = "Batch id (vsfb_*)."
+_ORDER_HELP = "asc | desc"
+_ITEM_CURSOR_HELP = "Page cursor — an item id."
+_METADATA_PAIRS_HELP = "JSON object of string pairs."
+_ITEMS_JSON_ERR = "--items must be a JSON array of item dicts"
+_METADATA_PAIRS_ERR = "--metadata must be a JSON object of string pairs"
+_EVAL_ID_REMOTE_HELP = "Eval id returned by harness eval --remote."
+_CALLBACK_SECRET_HELP = "HMAC key signing the webhook delivery."
+
+_POLL_HELP = "Status poll interval, seconds."
+_BATCH_ID_HELP = "batch_ id from batch-submit."
 
 
 def _byok_opts(
@@ -49,6 +67,29 @@ def _byok_opts(
         typer.echo("--byok-base-url, --byok-api-key and --byok-model go together", err=True)
         raise typer.Exit(2)
     return {k: str(v) for k, v in parts.items()}
+
+
+def _fx1_headers(
+    backend: str | None,
+    checkpoint_dir: Path | None,
+    byok: dict[str, str] | None,
+    fallbacks: list[str],
+) -> dict[str, str]:
+    """Pack the link override flags into the X-Fx1-* header set the
+    in-process SDK path sends — the remote client packs them into the
+    ``fx1`` extension object instead, same semantics."""
+    headers: dict[str, str] = {}
+    if backend is not None:
+        headers["x-fx1-backend"] = backend
+    if checkpoint_dir is not None:
+        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
+    if byok is not None:
+        headers["x-fx1-byok-base-url"] = byok["base_url"]
+        headers["x-fx1-byok-api-key"] = byok["api_key"]
+        headers["x-fx1-byok-model"] = byok["model"]
+    if fallbacks:
+        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    return headers
 
 
 def _surface(
@@ -92,13 +133,13 @@ def _json_meta(raw: str | None) -> dict[str, str] | None:
     try:
         meta = json.loads(raw)
     except json.JSONDecodeError:
-        _bad_arg("--metadata must be a JSON object of string pairs")
+        _bad_arg(_METADATA_PAIRS_ERR)
         raise AssertionError("unreachable") from None
     if not (
         isinstance(meta, dict)
         and all(isinstance(k, str) and isinstance(v, str) for k, v in meta.items())
     ):
-        _bad_arg("--metadata must be a JSON object of string pairs")
+        _bad_arg(_METADATA_PAIRS_ERR)
     return meta
 
 
@@ -729,10 +770,11 @@ def harness_commands(
     """``GET /harness/commands`` — registered command names; anything
     unlisted is unreachable on that role."""
     surface = _surface(remote, api_key, timeout_s)
+    # lazy: keeps the fx1.harness import out of CLI startup
+    from fx1.harness import HarnessRole
+
     role_val: HarnessRole | None = None
     if role is not None:
-        from fx1.harness import HarnessRole
-
         # bogus role names are an arg fault, same as the wire's 422.
         role_val = _or_exit(lambda: HarnessRole(role))
     names = _or_exit(lambda: surface.commands(role=role_val))
@@ -1443,7 +1485,7 @@ def harness_wait(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    poll_s: float = typer.Option(0.5, "--poll", help=_POLL_HELP),
     wait_timeout_s: float | None = typer.Option(
         None, "--wait-timeout", help="Give up waiting after N seconds (job keeps running)."
     ),
@@ -1626,7 +1668,7 @@ def harness_evals(
 
 @harness_app.command("eval-status")
 def harness_eval_status(
-    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_REMOTE_HELP),
     receipt: bool = typer.Option(
         False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc instead."
     ),
@@ -1649,7 +1691,7 @@ def harness_eval_status(
 
 @harness_app.command("eval-cancel")
 def harness_eval_cancel(
-    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_REMOTE_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -1662,11 +1704,11 @@ def harness_eval_cancel(
 
 @harness_app.command("eval-wait")
 def harness_eval_wait(
-    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    eval_id: str = typer.Argument(..., help=_EVAL_ID_REMOTE_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    poll_s: float = typer.Option(0.5, "--poll", help=_POLL_HELP),
     wait_timeout_s: float | None = typer.Option(
         None, "--wait-timeout", help="Give up waiting after N seconds (eval keeps running)."
     ),
@@ -2035,7 +2077,7 @@ def harness_ft_create(
         None, "--callback-url", help="Terminal webhook URL (POSTs the job record once)."
     ),
     callback_secret: str | None = typer.Option(
-        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+        None, "--callback-secret", help=_CALLBACK_SECRET_HELP
     ),
 ) -> None:
     """Create a gated fine-tuning job on the /v1/fine_tuning/jobs surface:
@@ -2197,7 +2239,7 @@ def harness_ft_wait(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    poll_s: float = typer.Option(0.5, "--poll", help=_POLL_HELP),
     wait_timeout_s: float | None = typer.Option(
         None, "--wait-timeout", help="Give up waiting after N seconds (job keeps running)."
     ),
@@ -2412,7 +2454,7 @@ def harness_batch_submit(
         None, "--callback-url", help="Terminal webhook URL (POSTs the batch once)."
     ),
     callback_secret: str | None = typer.Option(
-        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+        None, "--callback-secret", help=_CALLBACK_SECRET_HELP
     ),
     no_wait: bool = typer.Option(
         False, "--no-wait", help="Submit and return immediately (don't poll)."
@@ -2476,7 +2518,7 @@ def harness_batches(
 
 @harness_app.command("batch-status")
 def harness_batch_status(
-    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2489,11 +2531,11 @@ def harness_batch_status(
 
 @harness_app.command("batch-wait")
 def harness_batch_wait(
-    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
-    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    poll_s: float = typer.Option(0.5, "--poll", help=_POLL_HELP),
     wait_timeout_s: float | None = typer.Option(
         None, "--wait-timeout", help="Give up waiting after N seconds (batch keeps running)."
     ),
@@ -2511,7 +2553,7 @@ def harness_batch_wait(
 
 @harness_app.command("batch-cancel")
 def harness_batch_cancel(
-    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2525,7 +2567,7 @@ def harness_batch_cancel(
 
 @harness_app.command("batch-output")
 def harness_batch_output(
-    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    batch_id: str = typer.Argument(..., help=_BATCH_ID_HELP),
     out: Path | None = typer.Option(
         None, "--out", help="Write output JSONL bytes to this path instead of stdout."
     ),
@@ -2587,7 +2629,7 @@ def harness_batch_run(
         None, "--callback-url", help="Terminal webhook URL (POSTs the batch once)."
     ),
     callback_secret: str | None = typer.Option(
-        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+        None, "--callback-secret", help=_CALLBACK_SECRET_HELP
     ),
     out: Path | None = typer.Option(
         None, "--out", help="Write output JSONL lines to this path (default: batch object only)."
@@ -2614,17 +2656,7 @@ def harness_batch_run(
         typer.echo("error: every line must be a JSON object", err=True)
         raise typer.Exit(code=2)
     byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
-    headers = {}
-    if backend is not None:
-        headers["x-fx1-backend"] = backend
-    if checkpoint_dir is not None:
-        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
-    if byok is not None:
-        headers["x-fx1-byok-base-url"] = byok["base_url"]
-        headers["x-fx1-byok-api-key"] = byok["api_key"]
-        headers["x-fx1-byok-model"] = byok["model"]
-    if fallbacks:
-        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    headers = _fx1_headers(backend, checkpoint_dir, byok, fallbacks)
 
     from fx1.sdk import Fx1Harness
 
@@ -2708,20 +2740,18 @@ def harness_respond(  # NOSONAR
     instructions: str | None = typer.Option(
         None, "--instructions", help="Prepended system-level instructions."
     ),
-    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
-    fallbacks: list[str] = typer.Option(
-        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
-    ),
+    fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
     temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature."),
     top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
     max_output_tokens: int | None = typer.Option(
         None, "--max-output-tokens", help="Output token cap."
     ),
-    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    metadata: str | None = typer.Option(None, "--metadata", help=_METADATA_PAIRS_HELP),
     text_format: str | None = typer.Option(
         None, "--format", help='text.format JSON, e.g. \'{"type":"json_object"}\'.'
     ),
@@ -2798,7 +2828,7 @@ def harness_respond(  # NOSONAR
         isinstance(meta, dict)
         and all(isinstance(k, str) and isinstance(v, str) for k, v in meta.items())
     ):
-        _bad_arg("--metadata must be a JSON object of string pairs")
+        _bad_arg(_METADATA_PAIRS_ERR)
     tfmt = _json_opt(text_format, "format")
     tool_list = _json_opt(tools, "tools")
     if tool_list is not None and not isinstance(tool_list, list):
@@ -2873,17 +2903,7 @@ def harness_respond(  # NOSONAR
         return
     from fx1.sdk import Fx1Harness
 
-    headers: dict[str, str] = {}
-    if backend is not None:
-        headers["x-fx1-backend"] = backend
-    if checkpoint_dir is not None:
-        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
-    if byok is not None:
-        headers["x-fx1-byok-base-url"] = byok["base_url"]
-        headers["x-fx1-byok-api-key"] = byok["api_key"]
-        headers["x-fx1-byok-model"] = byok["model"]
-    if fallbacks:
-        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    headers = _fx1_headers(backend, checkpoint_dir, byok, fallbacks)
     fx1: dict[str, Any] = {}
     if backend_timeout is not None:
         fx1["timeout_s"] = backend_timeout
@@ -2950,14 +2970,12 @@ def harness_message(  # NOSONAR
     stream: bool = typer.Option(
         False, "--stream", help="Emit Anthropic SSE event deltas instead of one JSON block."
     ),
-    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
-    fallbacks: list[str] = typer.Option(
-        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
-    ),
+    fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3057,17 +3075,7 @@ def harness_message(  # NOSONAR
         return
     from fx1.sdk import Fx1Harness
 
-    headers: dict[str, str] = {}
-    if backend is not None:
-        headers["x-fx1-backend"] = backend
-    if checkpoint_dir is not None:
-        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
-    if byok is not None:
-        headers["x-fx1-byok-base-url"] = byok["base_url"]
-        headers["x-fx1-byok-api-key"] = byok["api_key"]
-        headers["x-fx1-byok-model"] = byok["model"]
-    if fallbacks:
-        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    headers = _fx1_headers(backend, checkpoint_dir, byok, fallbacks)
     fx1: dict[str, Any] = {}
     if backend_timeout is not None:
         fx1["timeout_s"] = backend_timeout
@@ -3094,18 +3102,153 @@ def harness_message(  # NOSONAR
     typer.echo(json.dumps(amsg.model_dump(mode="json"), indent=2))
 
 
-@harness_app.command("embed")
-def harness_embed(
-    inputs: list[str] = typer.Argument(..., help="Text to embed (repeatable)."),
-    model: str = typer.Option("fx1", "--model", help="Embedding model id."),
-    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+def _emit_completion_deltas(chunks: list[dict[str, Any]]) -> None:
+    """Print the legacy text deltas — the terminal frame carries no text,
+    so ordering is by frame emission, not ``choices[i].index``."""
+    for chunk in chunks:
+        for choice in cast(list[dict[str, Any]], chunk.get("choices") or []):
+            text = choice.get("text")
+            if isinstance(text, str) and text:
+                typer.echo(text, nl=False)
+    typer.echo()
+
+
+@harness_app.command("text-completion")
+def harness_text_completion(  # NOSONAR
+    prompt: str = typer.Argument(
+        ...,
+        help="Prompt text, or a JSON array of prompt strings.",
+    ),
+    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", help="Output token cap (server default 16)."
+    ),
+    temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature 0–1."),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    n: int = typer.Option(1, "--n", help="Choice count per prompt element (≤8)."),
+    stop: list[str] = typer.Option([], "--stop", help="Stop sequence (repeatable, at most 4)."),
+    seed: int | None = typer.Option(None, "--seed", help="Deterministic decode seed."),
+    echo: bool = typer.Option(
+        False, "--echo", help="Prepend the prompt text to each choice (legacy FIM-style echo)."
+    ),
+    stream: bool = typer.Option(
+        False, "--stream", help="Emit legacy text-completion SSE deltas instead of one JSON block."
+    ),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
-    fallbacks: list[str] = typer.Option(
-        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
+    fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
     ),
+) -> None:
+    """``POST /v1/completions`` — the legacy ``text_completion`` surface
+    (what ``client.completions.create`` and pre-chat agents target).
+
+    ``prompt`` takes a string or a JSON array of prompt strings; each
+    element runs the gated pipeline independently and ``--n`` repeats
+    within an element — a two-prompt ``--n 2`` call lands four flat
+    choices. ``--stream`` prints the legacy chunk grammar's text deltas.
+    ``suffix``/``best_of``/``logprobs`` are unsupported — the server
+    fails them closed 422 rather than silently dropping them.
+    """
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    try:
+        parsed = json.loads(prompt)
+        prompt_val: str | list[str] = (
+            cast(list[str], parsed)
+            if isinstance(parsed, list) and all(isinstance(p, str) for p in parsed)
+            else prompt
+        )
+    except json.JSONDecodeError:
+        prompt_val = prompt
+
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        if stream:
+            chunks, _cid = _or_exit(
+                lambda: client.create_completion_stream(
+                    prompt_val,
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    n=n,
+                    stop=stop or None,
+                    seed=seed,
+                    echo=echo,
+                    backend=backend,
+                    byok=byok,
+                    checkpoint_dir=checkpoint_dir,
+                    fallbacks=fallbacks or None,
+                    timeout_s=backend_timeout,
+                )
+            )
+            _emit_completion_deltas(chunks)
+            return
+        env, _cid = _or_exit(
+            lambda: client.create_completion(
+                prompt_val,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                n=n,
+                stop=stop or None,
+                seed=seed,
+                echo=echo,
+                backend=backend,
+                byok=byok,
+                checkpoint_dir=checkpoint_dir,
+                fallbacks=fallbacks or None,
+                timeout_s=backend_timeout,
+            )
+        )
+        typer.echo(json.dumps(env, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    headers = _fx1_headers(backend, checkpoint_dir, byok, fallbacks)
+    fx1: dict[str, Any] = {}
+    if backend_timeout is not None:
+        fx1["timeout_s"] = backend_timeout
+    body: dict[str, Any] = {
+        "model": model,
+        "prompt": prompt_val,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "n": n,
+        "stop": stop or None,
+        "seed": seed,
+        "echo": echo,
+        "fx1": fx1 or None,
+    }
+    if stream:
+        schunks, _cid = _or_exit(
+            lambda: Fx1Harness().openai_completion_stream({**body, "stream": True}, headers=headers)
+        )
+        _emit_completion_deltas(schunks)
+        return
+    cenv, _cid = _or_exit(lambda: Fx1Harness().openai_completion(body, headers=headers))
+    typer.echo(json.dumps(cenv, indent=2))
+
+
+@harness_app.command("embed")
+def harness_embed(
+    inputs: list[str] = typer.Argument(..., help="Text to embed (repeatable)."),
+    model: str = typer.Option("fx1", "--model", help="Embedding model id."),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option([], "--fallback", help=_FALLBACK_HELP),
     encoding_format: str | None = typer.Option(None, "--encoding", help='"float" | "base64".'),
     dimensions: int | None = typer.Option(None, "--dimensions", help="Output dimensions."),
     user: str | None = typer.Option(None, "--user", help="End-user tag."),
@@ -3140,17 +3283,7 @@ def harness_embed(
         return
     from fx1.sdk import Fx1Harness
 
-    headers: dict[str, str] = {}
-    if backend is not None:
-        headers["x-fx1-backend"] = backend
-    if checkpoint_dir is not None:
-        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
-    if byok is not None:
-        headers["x-fx1-byok-base-url"] = byok["base_url"]
-        headers["x-fx1-byok-api-key"] = byok["api_key"]
-        headers["x-fx1-byok-model"] = byok["model"]
-    if fallbacks:
-        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    headers = _fx1_headers(backend, checkpoint_dir, byok, fallbacks)
     fx1: dict[str, Any] = {}
     if backend_timeout is not None:
         fx1["timeout_s"] = backend_timeout
@@ -3189,7 +3322,7 @@ def harness_moderate(
 
 @harness_app.command("chat-get")
 def harness_chat_get(
-    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    completion_id: str = typer.Argument(..., help=_CHAT_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3212,7 +3345,7 @@ def harness_chat_get(
 
 @harness_app.command("chat-update")
 def harness_chat_update(
-    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    completion_id: str = typer.Argument(..., help=_CHAT_ID_HELP),
     metadata_json: str | None = typer.Option(
         None, "--metadata", help="Replacement metadata as a JSON object of string pairs."
     ),
@@ -3259,7 +3392,7 @@ def harness_chat_delete(
 
 @harness_app.command("response-get")
 def harness_response_get(
-    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    response_id: str = typer.Argument(..., help=_RESPONSE_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3280,7 +3413,7 @@ def harness_response_get(
 
 @harness_app.command("response-delete")
 def harness_response_delete(
-    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    response_id: str = typer.Argument(..., help=_RESPONSE_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3329,7 +3462,7 @@ def harness_chat_list(
     limit: int = typer.Option(20, "--limit", min=1, max=100),
     after: str | None = typer.Option(None, "--after", help="Page cursor — a completion id."),
     before: str | None = typer.Option(None, "--before", help="Page cursor — a completion id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3373,11 +3506,11 @@ def harness_chat_list(
 
 @harness_app.command("chat-messages")
 def harness_chat_messages(
-    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    completion_id: str = typer.Argument(..., help=_CHAT_ID_HELP),
     limit: int = typer.Option(20, "--limit", min=1, max=100),
-    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
-    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    after: str | None = typer.Option(None, "--after", help=_ITEM_CURSOR_HELP),
+    before: str | None = typer.Option(None, "--before", help=_ITEM_CURSOR_HELP),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3404,11 +3537,11 @@ def harness_chat_messages(
 
 @harness_app.command("response-input-items")
 def harness_response_input_items(
-    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    response_id: str = typer.Argument(..., help=_RESPONSE_ID_HELP),
     limit: int = typer.Option(20, "--limit", min=1, max=100),
-    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
-    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    after: str | None = typer.Option(None, "--after", help=_ITEM_CURSOR_HELP),
+    before: str | None = typer.Option(None, "--before", help=_ITEM_CURSOR_HELP),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3438,7 +3571,7 @@ def harness_conv_create(
     items: str | None = typer.Option(
         None, "--items", help="JSON array of seed item dicts (message items)."
     ),
-    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    metadata: str | None = typer.Option(None, "--metadata", help=_METADATA_PAIRS_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3451,10 +3584,10 @@ def harness_conv_create(
         try:
             parsed = json.loads(items)
         except json.JSONDecodeError:
-            _bad_arg("--items must be a JSON array of item dicts")
+            _bad_arg(_ITEMS_JSON_ERR)
             raise AssertionError("unreachable") from None
         if not isinstance(parsed, list):
-            _bad_arg("--items must be a JSON array of item dicts")
+            _bad_arg(_ITEMS_JSON_ERR)
         seed = parsed
     meta = _json_meta(metadata)
     if remote is not None:
@@ -3473,7 +3606,7 @@ def harness_conv_create(
 
 @harness_app.command("conv-get")
 def harness_conv_get(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3494,7 +3627,7 @@ def harness_conv_get(
 
 @harness_app.command("conv-update")
 def harness_conv_update(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     metadata: str | None = typer.Option(
         None, "--metadata", help="JSON object of string pairs — replaces wholesale."
     ),
@@ -3521,7 +3654,7 @@ def harness_conv_update(
 
 @harness_app.command("conv-delete")
 def harness_conv_delete(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3542,11 +3675,11 @@ def harness_conv_delete(
 
 @harness_app.command("conv-items")
 def harness_conv_items(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     limit: int = typer.Option(20, "--limit", min=1, max=100),
-    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
-    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    after: str | None = typer.Option(None, "--after", help=_ITEM_CURSOR_HELP),
+    before: str | None = typer.Option(None, "--before", help=_ITEM_CURSOR_HELP),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3573,7 +3706,7 @@ def harness_conv_items(
 
 @harness_app.command("conv-items-add")
 def harness_conv_items_add(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     items: str = typer.Option(..., "--items", help="JSON array of item dicts to append."),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
@@ -3584,10 +3717,10 @@ def harness_conv_items_add(
     try:
         parsed = json.loads(items)
     except json.JSONDecodeError:
-        _bad_arg("--items must be a JSON array of item dicts")
+        _bad_arg(_ITEMS_JSON_ERR)
         raise AssertionError("unreachable") from None
     if not isinstance(parsed, list):
-        _bad_arg("--items must be a JSON array of item dicts")
+        _bad_arg(_ITEMS_JSON_ERR)
     if remote is not None:
         out = _or_exit(
             lambda: _remote_client(remote, api_key, timeout_s).conversation_items_add(
@@ -3604,7 +3737,7 @@ def harness_conv_items_add(
 
 @harness_app.command("conv-item")
 def harness_conv_item(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     item_id: str = typer.Argument(..., help="Item id inside the conv."),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
@@ -3628,7 +3761,7 @@ def harness_conv_item(
 
 @harness_app.command("conv-items-delete")
 def harness_conv_item_delete(
-    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    conversation_id: str = typer.Argument(..., help=_CONV_ID_HELP),
     item_id: str = typer.Argument(..., help="Item id inside the conv."),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
@@ -3656,7 +3789,7 @@ def harness_vs_create(
     file_ids: str | None = typer.Option(
         None, "--file-ids", help="JSON array of file-* ids to attach at create."
     ),
-    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    metadata: str | None = typer.Option(None, "--metadata", help=_METADATA_PAIRS_HELP),
     expires_after: str | None = typer.Option(
         None,
         "--expires-after",
@@ -3700,7 +3833,7 @@ def harness_vs_create(
 
 @harness_app.command("vs-get")
 def harness_vs_get(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3721,7 +3854,7 @@ def harness_vs_get(
 
 @harness_app.command("vs-update")
 def harness_vs_update(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     name: str | None = typer.Option(None, "--name", help="New name (omitted keeps current)."),
     metadata: str | None = typer.Option(
         None, "--metadata", help="JSON object of string pairs — replaces wholesale."
@@ -3760,7 +3893,7 @@ def harness_vs_update(
 
 @harness_app.command("vs-delete")
 def harness_vs_delete(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3784,7 +3917,7 @@ def harness_vs_list(
     limit: int = typer.Option(20, "--limit", min=1, max=100),
     after: str | None = typer.Option(None, "--after", help="Page cursor — a vs_* id."),
     before: str | None = typer.Option(None, "--before", help="Page cursor — a vs_* id."),
-    order: str = typer.Option("desc", "--order", help="asc | desc"),
+    order: str = typer.Option("desc", "--order", help=_ORDER_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3808,8 +3941,8 @@ def harness_vs_list(
 
 @harness_app.command("vs-file-add")
 def harness_vs_file_add(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    file_id: str = typer.Argument(..., help=_FILE_ID_HELP),
     attributes: str | None = typer.Option(
         None, "--attributes", help="JSON object — filter keys for file_search."
     ),
@@ -3846,11 +3979,11 @@ def harness_vs_file_add(
 
 @harness_app.command("vs-files")
 def harness_vs_files(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     limit: int = typer.Option(20, "--limit", min=1, max=100),
     after: str | None = typer.Option(None, "--after", help="Page cursor — a file id."),
     before: str | None = typer.Option(None, "--before", help="Page cursor — a file id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     filter: str | None = typer.Option(
         None, "--filter", help="in_progress | completed | cancelled | failed"
     ),
@@ -3885,8 +4018,8 @@ def harness_vs_files(
 
 @harness_app.command("vs-file-get")
 def harness_vs_file_get(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    file_id: str = typer.Argument(..., help=_FILE_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3909,8 +4042,8 @@ def harness_vs_file_get(
 
 @harness_app.command("vs-file-delete")
 def harness_vs_file_delete(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    file_id: str = typer.Argument(..., help=_FILE_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3933,8 +4066,8 @@ def harness_vs_file_delete(
 
 @harness_app.command("vs-file-content")
 def harness_vs_file_content(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    file_id: str = typer.Argument(..., help="File record id (file-*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    file_id: str = typer.Argument(..., help=_FILE_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3957,7 +4090,7 @@ def harness_vs_file_content(
 
 @harness_app.command("vs-search")
 def harness_vs_search(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     query: str = typer.Option(..., "--query", "-q", help="Search query text."),
     max_num_results: int | None = typer.Option(
         None, "--max-results", help="Cap on returned hits (≤50)."
@@ -4004,7 +4137,7 @@ def harness_vs_search(
 
 @harness_app.command("vs-batch-create")
 def harness_vs_batch_create(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
     file_ids: list[str] = typer.Argument(..., help="file-* ids to attach (1..500)."),
     attributes: str | None = typer.Option(
         None, "--attributes", help="JSON object applied to every member."
@@ -4046,8 +4179,8 @@ def harness_vs_batch_create(
 
 @harness_app.command("vs-batch-get")
 def harness_vs_batch_get(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    batch_id: str = typer.Argument(..., help=_VSFB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -4070,8 +4203,8 @@ def harness_vs_batch_get(
 
 @harness_app.command("vs-batch-cancel")
 def harness_vs_batch_cancel(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    batch_id: str = typer.Argument(..., help=_VSFB_ID_HELP),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -4095,12 +4228,12 @@ def harness_vs_batch_cancel(
 
 @harness_app.command("vs-batch-files")
 def harness_vs_batch_files(
-    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
-    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    vector_store_id: str = typer.Argument(..., help=_VS_ID_HELP),
+    batch_id: str = typer.Argument(..., help=_VSFB_ID_HELP),
     limit: int = typer.Option(20, "--limit", min=1, max=100),
     after: str | None = typer.Option(None, "--after", help="Page cursor — a file-* id."),
     before: str | None = typer.Option(None, "--before", help="Page cursor — a file-* id."),
-    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    order: str = typer.Option("asc", "--order", help=_ORDER_HELP),
     filter: str | None = typer.Option(
         None, "--filter", help="in_progress | completed | cancelled | failed"
     ),

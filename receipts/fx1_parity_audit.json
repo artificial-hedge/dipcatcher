@@ -141,6 +141,9 @@
       "key_parity": true,
       "keyed_batch_retries": true,
       "keyed_complete_retries": true,
+      "legacy_envelope_parity": true,
+      "legacy_failclosed_parity": true,
+      "legacy_stream_parity": true,
       "list_chat_parity": true,
       "moderate_guard_parity": true,
       "moderate_parity": true,
@@ -253,11 +256,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "b8a74ee7704cd51f34b095d395833a9e92b182a1",
+  "git_revision": "ad5ca79b25036146626f1526330e53476bf689b4",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Fine-tuning parity holds: the SDK's synchronous create_finetune_job produces the same terminal job fields (status, ft:-name grammar, result_files, event feed) as the wire route under the same runner, and guards map ValueError\u2194HarnessTransportError / KeyError\u2194KeyError. The model registry holds on both surfaces: a succeeded job's ft: name lists and retrieves, completions naming it resolve to local_fx1 at the job's checkpoint, and unregistered ft: names fail closed (OpenAICompatError in-process, 404 on the wire). Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "b45b7e9b7bcfac75c5a7eb3d32173c40f2761342e7714aef1ea59e455923ad22",
+  "receipt_sha256": "bcccba8564cbd25653932ce469117729f58dc8aea8bf376d3238df8a9071d63d",
   "research_only": true,
   "schema": "parity_audit.v1"
 }
