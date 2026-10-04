@@ -5714,6 +5714,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rama_qa_studies",
         "sita_qa_studies",
         "vishnu_qa_studies",
+        # Wave-1779 chinese-myth-5 canon.
+        "fuxi_qa_studies",
+        "huangdi_qa_studies",
+        "nuwa_qa_studies",
+        "shennong_qa_studies",
+        "xihe_qa_studies",
+        "yandi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

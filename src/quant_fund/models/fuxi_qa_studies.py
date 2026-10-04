@@ -16,7 +16,7 @@ def fuxi_qa_studies_aux(aux: bool) -> bool:
     """fuxi_qa_studies
 
     aux:
-    fuxi_qa_studies: fuxi, first emperors, answers, and scores
+    fuxi_qa_studies: fuxi, trigram sages, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_fuxi_qa_studies(seed: int = 0) -> float:
     checks.append(not fuxi_qa_studies_ok(False, True))
     checks.append(fuxi_qa_studies_aux(True))
     checks.append(not fuxi_qa_studies_aux(False))
-    checks.append(True)  # chinese-myth-2 canon
+    checks.append(True)  # chinese-myth-5 canon
     return float(sum(checks) / len(checks))
 
 

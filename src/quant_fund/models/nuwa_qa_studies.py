@@ -16,7 +16,7 @@ def nuwa_qa_studies_aux(aux: bool) -> bool:
     """nuwa_qa_studies
 
     aux:
-    nuwa_qa_studies: nuwa, creation goddesses, answers, and scores
+    nuwa_qa_studies: nuwa, sky menders, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_nuwa_qa_studies(seed: int = 0) -> float:
     checks.append(not nuwa_qa_studies_ok(False, True))
     checks.append(nuwa_qa_studies_aux(True))
     checks.append(not nuwa_qa_studies_aux(False))
-    checks.append(True)  # chinese-myth-2 canon
+    checks.append(True)  # chinese-myth-5 canon
     return float(sum(checks) / len(checks))
 
 

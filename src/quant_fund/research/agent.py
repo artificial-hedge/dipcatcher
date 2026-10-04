@@ -14223,6 +14223,14 @@ from quant_fund.research.benches_w1778 import (
     bench_sita_qa_studies_family,
     bench_vishnu_qa_studies_family,
 )
+from quant_fund.research.benches_w1779 import (
+    bench_fuxi_qa_studies_family,
+    bench_huangdi_qa_studies_family,
+    bench_nuwa_qa_studies_family,
+    bench_shennong_qa_studies_family,
+    bench_xihe_qa_studies_family,
+    bench_yandi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
