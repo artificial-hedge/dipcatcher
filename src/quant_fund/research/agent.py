@@ -6887,6 +6887,14 @@ from quant_fund.research.benches_w861 import (
     bench_rosenbrock_w_family,
     bench_ssp_rk_family,
 )
+from quant_fund.research.benches_w862 import (
+    bench_anisotropic_quad_family,
+    bench_combination_technique_family,
+    bench_dimension_adaptive_family,
+    bench_gerstner_griebel_family,
+    bench_smolyak_grid_family,
+    bench_sparse_tensor_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7258,6 +7266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "smolyak_grid": bench_smolyak_grid_family,
+        "sparse_tensor": bench_sparse_tensor_family,
+        "anisotropic_quad": bench_anisotropic_quad_family,
+        "gerstner_griebel": bench_gerstner_griebel_family,
+        "combination_technique": bench_combination_technique_family,
+        "dimension_adaptive": bench_dimension_adaptive_family,
         "imex_rk": bench_imex_rk_family,
         "ssp_rk": bench_ssp_rk_family,
         "exponential_euler": bench_exponential_euler_family,
