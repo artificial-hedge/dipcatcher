@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-538 elliptic-PDE canon.
+        "sobolev_space",
+        "poincare_ineq",
+        "trace_thm",
+        "harnack_thm",
+        "schauder_est",
+        "degiorgi_nash",
         # Wave-537 Riemannian-geometry canon.
         "riemann_metric",
         "levi_civita",

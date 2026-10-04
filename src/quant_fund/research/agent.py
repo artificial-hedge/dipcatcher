@@ -4295,6 +4295,14 @@ from quant_fund.research.benches_w537 import (
     bench_riemann_curvature_family,
     bench_riemann_metric_family,
 )
+from quant_fund.research.benches_w538 import (
+    bench_degiorgi_nash_family,
+    bench_harnack_thm_family,
+    bench_poincare_ineq_family,
+    bench_schauder_est_family,
+    bench_sobolev_space_family,
+    bench_trace_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4674,6 +4682,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sobolev_space": bench_sobolev_space_family,
+        "poincare_ineq": bench_poincare_ineq_family,
+        "trace_thm": bench_trace_thm_family,
+        "harnack_thm": bench_harnack_thm_family,
+        "schauder_est": bench_schauder_est_family,
+        "degiorgi_nash": bench_degiorgi_nash_family,
         "riemann_metric": bench_riemann_metric_family,
         "levi_civita": bench_levi_civita_family,
         "riemann_curvature": bench_riemann_curvature_family,
