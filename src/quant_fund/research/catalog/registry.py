@@ -6064,6 +6064,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "metsanhiisi2_qa_studies",
         "otso2_qa_studies",
         "peikko2_qa_studies",
+        # Wave-1829 nenets-myth-2 canon.
+        "iljang2_qa_studies",
+        "nemlert2_qa_studies",
+        "numgum2_qa_studies",
+        "otysi2_qa_studies",
+        "parnae2_qa_studies",
+        "xiberi2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
