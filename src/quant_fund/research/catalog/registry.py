@@ -4258,6 +4258,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mud_crab_qa_studies",
         "porcelain_qa_studies",
         "spider_crab_qa_studies",
+        # Wave-1571 bivalve canon.
+        "clam_qa_studies",
+        "conch_qa_studies",
+        "mussel_qa_studies",
+        "oyster_qa_studies",
+        "scallop_qa_studies",
+        "whelk_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
