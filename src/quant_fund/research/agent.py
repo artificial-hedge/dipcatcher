@@ -8519,6 +8519,14 @@ from quant_fund.research.benches_w1065 import (
     bench_physical_geography_family,
     bench_remote_sensing_family,
 )
+from quant_fund.research.benches_w1066 import (
+    bench_african_studies_family,
+    bench_asian_studies_family,
+    bench_european_studies_family,
+    bench_latin_american_studies_family,
+    bench_middle_eastern_studies_family,
+    bench_slavic_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8890,6 +8898,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "latin_american_studies": bench_latin_american_studies_family,
+        "asian_studies": bench_asian_studies_family,
+        "european_studies": bench_european_studies_family,
+        "middle_eastern_studies": bench_middle_eastern_studies_family,
+        "african_studies": bench_african_studies_family,
+        "slavic_studies": bench_slavic_studies_family,
         "physical_geography": bench_physical_geography_family,
         "human_geography": bench_human_geography_family,
         "cartography": bench_cartography_family,
