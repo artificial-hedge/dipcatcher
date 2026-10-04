@@ -11999,6 +11999,14 @@ from quant_fund.research.benches_w1500 import (
     bench_millipede_qa_studies_family,
     bench_spider_qa_studies_family,
 )
+from quant_fund.research.benches_w1501 import (
+    bench_acacia_qa_studies_family,
+    bench_alder_qa_studies_family,
+    bench_baobab_qa_studies_family,
+    bench_olive_qa_studies_family,
+    bench_palm_qa_studies_family,
+    bench_sycamore_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13617,6 +13625,12 @@ def _provenance(
         "lacewing_qa_studies": bench_lacewing_qa_studies_family,
         "millipede_qa_studies": bench_millipede_qa_studies_family,
         "spider_qa_studies": bench_spider_qa_studies_family,
+        "acacia_qa_studies": bench_acacia_qa_studies_family,
+        "alder_qa_studies": bench_alder_qa_studies_family,
+        "baobab_qa_studies": bench_baobab_qa_studies_family,
+        "olive_qa_studies": bench_olive_qa_studies_family,
+        "palm_qa_studies": bench_palm_qa_studies_family,
+        "sycamore_qa_studies": bench_sycamore_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

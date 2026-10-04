@@ -3768,6 +3768,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lacewing_qa_studies",
         "millipede_qa_studies",
         "spider_qa_studies",
+        # Wave-1501 tree-2 canon.
+        "acacia_qa_studies",
+        "alder_qa_studies",
+        "baobab_qa_studies",
+        "olive_qa_studies",
+        "palm_qa_studies",
+        "sycamore_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
