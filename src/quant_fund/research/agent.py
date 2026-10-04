@@ -9663,6 +9663,14 @@ from quant_fund.research.benches_w1208 import (
     bench_marriage_family_therapy_family,
     bench_trauma_therapy_family,
 )
+from quant_fund.research.benches_w1209 import (
+    bench_addiction_medicine_family,
+    bench_community_psychiatry_family,
+    bench_consultation_liaison_family,
+    bench_eating_disorders_family,
+    bench_psychosomatic_medicine_family,
+    bench_sleep_disorders_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10034,6 +10042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "addiction_medicine": bench_addiction_medicine_family,
+        "eating_disorders": bench_eating_disorders_family,
+        "sleep_disorders": bench_sleep_disorders_family,
+        "psychosomatic_medicine": bench_psychosomatic_medicine_family,
+        "consultation_liaison": bench_consultation_liaison_family,
+        "community_psychiatry": bench_community_psychiatry_family,
         "marriage_family_therapy": bench_marriage_family_therapy_family,
         "group_therapy": bench_group_therapy_family,
         "couples_therapy": bench_couples_therapy_family,
