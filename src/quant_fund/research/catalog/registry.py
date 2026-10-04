@@ -4853,6 +4853,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gryps_qa_studies",
         "mantygre_qa_studies",
         "opinicus_qa_studies",
+        # Wave-1656 celtic-beast canon.
+        "aatxe_qa_studies",
+        "achiyalabopa_qa_studies",
+        "afanc_qa_studies",
+        "akhlut_qa_studies",
+        "amarok_qa_studies",
+        "eachuisge_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
