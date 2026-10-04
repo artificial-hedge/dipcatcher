@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1062 religious-studies canon.
+        "theology",
+        "comparative_religion",
+        "biblical_studies",
+        "islamic_studies",
+        "buddhist_studies",
+        "religious_ethics",
         # Wave-1061 law canon.
         "constitutional_law",
         "criminal_law",
