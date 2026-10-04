@@ -13695,6 +13695,14 @@ from quant_fund.research.benches_w1712 import (
     bench_tir_qa_studies_family,
     bench_vahagn_qa_studies_family,
 )
+from quant_fund.research.benches_w1713 import (
+    bench_amirani_qa_studies_family,
+    bench_apsat_qa_studies_family,
+    bench_barbale_qa_studies_family,
+    bench_dalis_qa_studies_family,
+    bench_ghmerti_qa_studies_family,
+    bench_kamar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
