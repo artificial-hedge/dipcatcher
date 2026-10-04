@@ -4433,6 +4433,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "geoffroys_qa_studies",
         "marbled_cat_qa_studies",
         "pampas_cat_qa_studies",
+        # Wave-1596 ocean-mammal canon.
+        "bottlenose_qa_studies",
+        "dusky_dolphin_qa_studies",
+        "false_killer_qa_studies",
+        "melon_head_qa_studies",
+        "pygmy_whale_qa_studies",
+        "sea_lion_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

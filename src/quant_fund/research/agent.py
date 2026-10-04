@@ -12759,6 +12759,14 @@ from quant_fund.research.benches_w1595 import (
     bench_marbled_cat_qa_studies_family,
     bench_pampas_cat_qa_studies_family,
 )
+from quant_fund.research.benches_w1596 import (
+    bench_bottlenose_qa_studies_family,
+    bench_dusky_dolphin_qa_studies_family,
+    bench_false_killer_qa_studies_family,
+    bench_melon_head_qa_studies_family,
+    bench_pygmy_whale_qa_studies_family,
+    bench_sea_lion_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14824,6 +14832,12 @@ def _provenance(
         "chimpanzee_qa_studies": bench_chimpanzee_qa_studies_family,
         "douc_qa_studies": bench_douc_qa_studies_family,
         "andean_cat_qa_studies": bench_andean_cat_qa_studies_family,
+        "bottlenose_qa_studies": bench_bottlenose_qa_studies_family,
+        "dusky_dolphin_qa_studies": bench_dusky_dolphin_qa_studies_family,
+        "false_killer_qa_studies": bench_false_killer_qa_studies_family,
+        "melon_head_qa_studies": bench_melon_head_qa_studies_family,
+        "pygmy_whale_qa_studies": bench_pygmy_whale_qa_studies_family,
+        "sea_lion_qa_studies": bench_sea_lion_qa_studies_family,
         "bay_cat_qa_studies": bench_bay_cat_qa_studies_family,
         "flat_headed_qa_studies": bench_flat_headed_qa_studies_family,
         "geoffroys_qa_studies": bench_geoffroys_qa_studies_family,
