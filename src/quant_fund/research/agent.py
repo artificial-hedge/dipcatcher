@@ -10007,6 +10007,14 @@ from quant_fund.research.benches_w1251 import (
     bench_incontinence_studies_family,
     bench_prostate_studies_family,
 )
+from quant_fund.research.benches_w1252 import (
+    bench_hypothalamic_studies_family,
+    bench_lipid_studies_family,
+    bench_metabolic_syndrome_studies_family,
+    bench_obesity_studies_family,
+    bench_parathyroid_studies_family,
+    bench_pituitary_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10378,6 +10386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pituitary_studies": bench_pituitary_studies_family,
+        "parathyroid_studies": bench_parathyroid_studies_family,
+        "lipid_studies": bench_lipid_studies_family,
+        "obesity_studies": bench_obesity_studies_family,
+        "metabolic_syndrome_studies": bench_metabolic_syndrome_studies_family,
+        "hypothalamic_studies": bench_hypothalamic_studies_family,
         "prostate_studies": bench_prostate_studies_family,
         "bladder_studies": bench_bladder_studies_family,
         "andrology_studies": bench_andrology_studies_family,
