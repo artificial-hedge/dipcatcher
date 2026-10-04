@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1130 anthropology-5 canon.
+        "social_anthropology",
+        "cognitive_anthropology",
+        "anthropology_of_religion",
+        "kinship_studies",
+        "material_culture",
+        "museum_anthropology",
         # Wave-1129 philosophy-5 canon.
         "bioethics",
         "philosophy_of_education",
