@@ -4230,6 +4230,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pike_qa_studies",
         "sturgeon_qa_studies",
         "walleye_qa_studies",
+        # Wave-1567 cyprinid canon.
+        "barbel_qa_studies",
+        "bream_qa_studies",
+        "carp_qa_studies",
+        "minnow_qa_studies",
+        "roach_qa_studies",
+        "tench_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
