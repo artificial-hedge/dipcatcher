@@ -9287,6 +9287,14 @@ from quant_fund.research.benches_w1161 import (
     bench_public_health_2_family,
     bench_veterinary_medicine_2_family,
 )
+from quant_fund.research.benches_w1162 import (
+    bench_criminology_2_family,
+    bench_international_relations_2_family,
+    bench_law_5_family,
+    bench_military_science_2_family,
+    bench_political_science_4_family,
+    bench_public_administration_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9658,6 +9666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "law_5": bench_law_5_family,
+        "political_science_4": bench_political_science_4_family,
+        "public_administration_2": bench_public_administration_2_family,
+        "international_relations_2": bench_international_relations_2_family,
+        "criminology_2": bench_criminology_2_family,
+        "military_science_2": bench_military_science_2_family,
         "medicine_7": bench_medicine_7_family,
         "dentistry_3": bench_dentistry_3_family,
         "nursing_2": bench_nursing_2_family,
