@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1325 long-context-eval canon.
+        "babilong_studies",
+        "infinitebench_studies",
+        "longbench_studies",
+        "lv_eval_studies",
+        "ruler_bench_studies",
+        "zero_scrolls_studies",
         # Wave-1324 judge-eval canon.
         "alpacaeval_studies",
         "arena_hard_studies",
