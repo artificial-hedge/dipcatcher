@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1282 embodied-VLA canon.
+        "affordance_map_studies",
+        "embodied_agent_studies",
+        "spatial_reasoning_studies",
+        "video_diffusion_studies",
+        "vla_model_studies",
+        "world_sim_studies",
         # Wave-1281 reasoning-prompt canon.
         "analogical_prompting_studies",
         "graph_of_thought_studies",

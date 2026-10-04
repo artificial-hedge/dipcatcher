@@ -10247,6 +10247,14 @@ from quant_fund.research.benches_w1281 import (
     bench_step_back_studies_family,
     bench_tree_of_thought_studies_family,
 )
+from quant_fund.research.benches_w1282 import (
+    bench_affordance_map_studies_family,
+    bench_embodied_agent_studies_family,
+    bench_spatial_reasoning_studies_family,
+    bench_video_diffusion_studies_family,
+    bench_vla_model_studies_family,
+    bench_world_sim_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10756,6 +10764,12 @@ def _provenance(
         "plan_and_solve_studies": bench_plan_and_solve_studies_family,
         "step_back_studies": bench_step_back_studies_family,
         "tree_of_thought_studies": bench_tree_of_thought_studies_family,
+        "affordance_map_studies": bench_affordance_map_studies_family,
+        "embodied_agent_studies": bench_embodied_agent_studies_family,
+        "spatial_reasoning_studies": bench_spatial_reasoning_studies_family,
+        "video_diffusion_studies": bench_video_diffusion_studies_family,
+        "vla_model_studies": bench_vla_model_studies_family,
+        "world_sim_studies": bench_world_sim_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
