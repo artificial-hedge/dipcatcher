@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-986 Calderon-Zygmund canon.
+        "calderon_zygmund",
+        "cz_decomp",
+        "cotlar_ineq",
+        "good_lambda",
+        "ap_weight",
+        "reverse_holder",
         # Wave-985 Hardy-space/BMO canon.
         "hardy_h1",
         "bmo_space",
