@@ -12135,6 +12135,14 @@ from quant_fund.research.benches_w1517 import (
     bench_hawker_qa_studies_family,
     bench_spreadwing_qa_studies_family,
 )
+from quant_fund.research.benches_w1518 import (
+    bench_coquette_qa_studies_family,
+    bench_fairy_qa_studies_family,
+    bench_jacobin_qa_studies_family,
+    bench_lancebill_qa_studies_family,
+    bench_sabrewing_qa_studies_family,
+    bench_sheartail_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13855,6 +13863,12 @@ def _provenance(
         "forktail_qa_studies": bench_forktail_qa_studies_family,
         "hawker_qa_studies": bench_hawker_qa_studies_family,
         "spreadwing_qa_studies": bench_spreadwing_qa_studies_family,
+        "coquette_qa_studies": bench_coquette_qa_studies_family,
+        "fairy_qa_studies": bench_fairy_qa_studies_family,
+        "jacobin_qa_studies": bench_jacobin_qa_studies_family,
+        "lancebill_qa_studies": bench_lancebill_qa_studies_family,
+        "sabrewing_qa_studies": bench_sabrewing_qa_studies_family,
+        "sheartail_qa_studies": bench_sheartail_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
