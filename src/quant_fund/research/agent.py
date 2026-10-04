@@ -10711,6 +10711,14 @@ from quant_fund.research.benches_w1339 import (
     bench_tab_math_studies_family,
     bench_uni_math_studies_family,
 )
+from quant_fund.research.benches_w1340 import (
+    bench_arc_challenge_studies_family,
+    bench_bio_qa_studies_family,
+    bench_med_qa_studies_family,
+    bench_openbook_qa_studies_family,
+    bench_pubmed_qa_studies_family,
+    bench_sci_q_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11479,6 +11487,12 @@ def _provenance(
         "math_reason_studies": bench_math_reason_studies_family,
         "mini_f2f_studies": bench_mini_f2f_studies_family,
         "aqua_rat_studies": bench_aqua_rat_studies_family,
+        "arc_challenge_studies": bench_arc_challenge_studies_family,
+        "bio_qa_studies": bench_bio_qa_studies_family,
+        "med_qa_studies": bench_med_qa_studies_family,
+        "openbook_qa_studies": bench_openbook_qa_studies_family,
+        "pubmed_qa_studies": bench_pubmed_qa_studies_family,
+        "sci_q_studies": bench_sci_q_studies_family,
         "geo_qa_studies": bench_geo_qa_studies_family,
         "hol_step_studies": bench_hol_step_studies_family,
         "math_odyssey_studies": bench_math_odyssey_studies_family,
