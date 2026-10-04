@@ -14975,6 +14975,14 @@ from quant_fund.research.benches_w1872 import (
     bench_morveren_qa_studies_family,
     bench_nuckelavee_qa_studies_family,
 )
+from quant_fund.research.benches_w1873 import (
+    bench_ar_marzh_qa_studies_family,
+    bench_darkman_qa_studies_family,
+    bench_kaier_qa_studies_family,
+    bench_noz_vat_qa_studies_family,
+    bench_paotr_bugel_qa_studies_family,
+    bench_santez_nonna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
