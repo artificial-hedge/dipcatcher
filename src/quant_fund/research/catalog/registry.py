@@ -3866,6 +3866,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "monarch_qa_studies",
         "painted_lady_qa_studies",
         "swallowtail_qa_studies",
+        # Wave-1515 beetle canon.
+        "click_beetle_qa_studies",
+        "dung_beetle_qa_studies",
+        "ground_beetle_qa_studies",
+        "rhino_beetle_qa_studies",
+        "stag_beetle_qa_studies",
+        "tiger_beetle_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
