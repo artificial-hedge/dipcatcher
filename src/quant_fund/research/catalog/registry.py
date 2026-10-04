@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1214 cardiology canon.
+        "cardiology_studies",
+        "interventional_cardiology",
+        "electrophysiology_studies",
+        "heart_failure_medicine",
+        "preventive_cardiology",
+        "cardiovascular_imaging",
         # Wave-1213 neurology-3 canon.
         "neurosurgery_studies",
         "neurotrauma",
