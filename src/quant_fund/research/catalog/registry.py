@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1385 web-agent canon.
+        "airtasks_studies",
+        "browsergym_studies",
+        "maze_eval_studies",
+        "mmind2web_studies",
+        "screenqa_studies",
+        "weblinx_studies",
         # Wave-1384 live-eval canon.
         "aider_polyglot_studies",
         "hum_eval_studies",
