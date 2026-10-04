@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1110 philosophy-4 canon.
+        "philosophy_of_biology",
+        "philosophy_of_mathematics",
+        "philosophy_of_religion",
+        "phenomenology_2",
+        "philosophy_of_history",
+        "process_philosophy",
         # Wave-1109 linguistics-3 canon.
         "applied_linguistics",
         "anthropological_linguistics",
