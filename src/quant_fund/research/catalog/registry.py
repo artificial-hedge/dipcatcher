@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1360 fact-check canon.
+        "bioasq_lite_studies",
+        "cite_worth_studies",
+        "climate_fever_studies",
+        "fever_lite_studies",
+        "touch_e_studies",
+        "verdict_qa_studies",
         # Wave-1359 QA-exotics canon.
         "argu_ana_studies",
         "babi_lite_studies",
