@@ -10879,6 +10879,14 @@ from quant_fund.research.benches_w1360 import (
     bench_touch_e_studies_family,
     bench_verdict_qa_studies_family,
 )
+from quant_fund.research.benches_w1361 import (
+    bench_covid_lies_studies_family,
+    bench_evidence_inf_studies_family,
+    bench_hoax_detect_studies_family,
+    bench_liar_lite_studies_family,
+    bench_rumor_eval_studies_family,
+    bench_scidtb_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11717,6 +11725,12 @@ def _provenance(
         "adver_qa_studies": bench_adver_qa_studies_family,
         "argu_ana_studies": bench_argu_ana_studies_family,
         "bioasq_lite_studies": bench_bioasq_lite_studies_family,
+        "covid_lies_studies": bench_covid_lies_studies_family,
+        "evidence_inf_studies": bench_evidence_inf_studies_family,
+        "hoax_detect_studies": bench_hoax_detect_studies_family,
+        "liar_lite_studies": bench_liar_lite_studies_family,
+        "rumor_eval_studies": bench_rumor_eval_studies_family,
+        "scidtb_lite_studies": bench_scidtb_lite_studies_family,
         "cite_worth_studies": bench_cite_worth_studies_family,
         "climate_fever_studies": bench_climate_fever_studies_family,
         "fever_lite_studies": bench_fever_lite_studies_family,
