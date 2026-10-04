@@ -2679,37 +2679,84 @@ def harness_batch_run(
 
 @harness_app.command("models")
 def harness_models(
+    anthropic: bool = typer.Option(
+        False,
+        "--anthropic",
+        help="Answer in Anthropic's model-list envelope (the anthropic-version projection).",
+    ),
+    limit: int | None = typer.Option(
+        None, "--limit", help="Anthropic page size (1–1000, default 20)."
+    ),
+    after_id: str | None = typer.Option(
+        None, "--after-id", help="Anthropic cursor: page after this model id."
+    ),
+    before_id: str | None = typer.Option(
+        None, "--before-id", help="Anthropic cursor: page before this model id."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
     """``GET /v1/models`` — the OpenAI list envelope: backend names a
     ``model`` field may carry, the ``fx1`` alias, and every registered
-    ``ft:`` fine-tune. In-process by default (SDK twin)."""
+    ``ft:`` fine-tune. ``--anthropic`` answers the anthropic-version
+    projection instead (``{data, first_id, last_id, has_more}``) with
+    its ``--limit``/cursor contract. In-process by default (SDK twin)."""
     if remote is not None:
-        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).list_models())
+        client = _remote_client(remote, api_key, timeout_s)
+        if anthropic:
+            out = _or_exit(
+                lambda: client.anthropic_models(limit=limit, after_id=after_id, before_id=before_id)
+            )
+        else:
+            out = _or_exit(client.list_models)
         typer.echo(json.dumps(out, indent=2))
         return
     from fx1.sdk import Fx1Harness
 
+    if anthropic:
+        out = _or_exit(
+            lambda: Fx1Harness().anthropic_models(
+                limit=limit, after_id=after_id, before_id=before_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
     typer.echo(Fx1Harness().openai_models().model_dump_json(indent=2))
 
 
 @harness_app.command("model")
 def harness_model(
     model_id: str = typer.Argument(..., help="Model id — backend name, 'fx1', or ft:name."),
+    anthropic: bool = typer.Option(
+        False,
+        "--anthropic",
+        help="Answer in Anthropic's model-card shape (the anthropic-version projection).",
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
     """``GET /v1/models/{id}`` — one card for a listed id; unknown ids
-    fail closed (exit 2, the wire's 404). In-process by default."""
+    fail closed (exit 2, the wire's 404). ``--anthropic`` answers the
+    anthropic-version projection — ``{type: \"model\", id,
+    display_name, created_at}`` — with the wire's ``not_found_error``.
+    In-process by default."""
     if remote is not None:
-        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).retrieve_model(model_id))
+        client = _remote_client(remote, api_key, timeout_s)
+        if anthropic:
+            out = _or_exit(lambda: client.anthropic_model(model_id))
+            typer.echo(json.dumps(out, indent=2))
+            return
+        out = _or_exit(lambda: client.retrieve_model(model_id))
         typer.echo(json.dumps(out, indent=2))
         return
     from fx1.sdk import Fx1Harness
 
+    if anthropic:
+        out = _or_exit(lambda: Fx1Harness().anthropic_model(model_id))
+        typer.echo(json.dumps(out, indent=2))
+        return
     card = _or_exit(lambda: Fx1Harness().openai_model(model_id))
     typer.echo(card.model_dump_json(indent=2))
 
@@ -3300,6 +3347,57 @@ def harness_message_batch_delete(
         lambda: _remote_client(remote or "", api_key, timeout_s).delete_message_batch(batch_id)
     )
     typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("message-tokens")
+def harness_message_tokens(
+    request_file: Path = typer.Argument(
+        ..., help="JSON file: a /v1/messages-count_tokens body — {model?, messages, system?}."
+    ),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_OVERRIDE_HELP),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(60.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/messages/count_tokens`` — the provider's own input
+    count, ``{"input_tokens": N}``.
+
+    The request body is the ``/v1/messages`` shape minus ``max_tokens``
+    (and minus ``stream``); ``tools``/``tool_choice`` refuse — the
+    tokenize channel sees only messages, so counting a toolful request
+    would undercount. A backend without a tokenize route fails closed
+    (exit 2, the wire's 501) — the harness never estimates."""
+    body_text = request_file.read_text(encoding="utf-8") if request_file.exists() else None
+    if body_text is None:
+        typer.echo(f"error: {request_file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    try:
+        body = json.loads(body_text)
+    except json.JSONDecodeError as exc:
+        typer.echo(f"error: {request_file} is not valid JSON: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    if not isinstance(body, dict):
+        typer.echo(f"error: {request_file} must hold one JSON object", err=True)
+        raise typer.Exit(code=2)
+    headers = _fx1_headers(
+        backend, checkpoint_dir, _byok_opts(byok_base_url, byok_api_key, byok_model), []
+    )
+    if remote is not None:
+        n = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).count_message_tokens(
+                body, extra_headers=headers or None
+            )
+        )
+        typer.echo(json.dumps({"input_tokens": n}, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    n = _or_exit(lambda: Fx1Harness().anthropic_count_tokens(body, headers=headers or None))
+    typer.echo(json.dumps({"input_tokens": n}, indent=2))
 
 
 def _emit_completion_deltas(chunks: list[dict[str, Any]]) -> None:

@@ -160,6 +160,14 @@ class BackendNotConfiguredError(RuntimeError):
         self.code = code
 
 
+class TokenCountUnavailableError(RuntimeError):
+    """The provider has no token-counting route — a 501-class capability gap.
+
+    Token counts come only from the provider's own tokenizer endpoint;
+    when it refuses the route outright (404/405/501 or a rejected chat
+    shape) the honest verdict is "unavailable", never an estimate."""
+
+
 def _chat_completions_url(base_url: str) -> str:
     """Normalize a BYOK base to the chat-completions route.
 
@@ -282,6 +290,75 @@ def _openai_chat_complete(
             f"malformed {label} completion payload: content is {type(content).__name__}, not str"
         )
     return content, _extract_usage(payload)
+
+
+def _openai_tokenize_count(
+    url: str,
+    *,
+    model: str,
+    messages: list[dict[str, Any]],
+    timeout_s: float,
+    api_key: str | None,
+    label: str,
+) -> int:
+    """POST one chat-shaped tokenize call; the provider's own count.
+
+    ``url`` is the provider's tokenize route (``{base}/tokenize`` on
+    vLLM/SGLang-style engines, ``.../tokenizers/estimate-token-count``
+    on Moonshot). The body is the chat shape ``{model, messages,
+    add_generation_prompt}`` — the prompt the completion would consume.
+    The response's own count wins: ``count`` (vLLM), ``data.total_tokens``
+    (Moonshot), or the length of a returned ``tokens``/``token_ids`` list
+    (llama.cpp-style). A provider without the route raises
+    ``TokenCountUnavailableError`` (HTTP 400/404/405/501 — a refused or
+    unknown shape is a capability gap); anything else malformed or
+    unreachable raises ``RuntimeError``. Nothing is ever estimated
+    harness-side."""
+    body = json.dumps(
+        {"model": model, "messages": messages, "add_generation_prompt": True}
+    ).encode()
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+            payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        if exc.code in (400, 404, 405, 501):
+            raise TokenCountUnavailableError(
+                f"{label} endpoint refuses chat tokenization (HTTP {exc.code})"
+            ) from exc
+        raise RuntimeError(f"{label} tokenize failed: HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+    count = _extract_token_count(payload)
+    if count is None:
+        raise RuntimeError(
+            f"malformed {label} tokenize payload: needs count / data.total_tokens / a tokens list"
+        )
+    return count
+
+
+def _extract_token_count(payload: Any) -> int | None:
+    """The provider's reported input count — ``count`` (vLLM),
+    ``data.total_tokens`` (Moonshot estimate), or the length of a
+    ``tokens``/``token_ids`` list. ``None`` when none of those exist."""
+    if not isinstance(payload, dict):
+        return None
+    count = payload.get("count")
+    if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+        return count
+    data = payload.get("data")
+    if isinstance(data, dict):
+        total = data.get("total_tokens")
+        if isinstance(total, int) and not isinstance(total, bool) and total >= 0:
+            return total
+    for key in ("tokens", "token_ids"):
+        seq = payload.get(key)
+        if isinstance(seq, list):
+            return len(seq)
+    return None
 
 
 def _tool_call_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
@@ -687,6 +764,28 @@ class StreamingBackend(Protocol):
     ) -> Iterator[str]: ...
 
 
+@runtime_checkable
+class TokenCountingBackend(Protocol):
+    """Backends with a real input-tokenizer channel.
+
+    ``count_tokens`` is the optional capability: the provider's own
+    tokenizer answers the count (vLLM/SGLang's ``/tokenize``, Moonshot's
+    ``tokenizers/estimate-token-count``), never a harness-side estimate.
+    Consumers capability-check via ``isinstance`` so a resolver-supplied
+    backend without the channel fails closed (501) rather than guessing —
+    a fabricated token count is worse than a refusal.
+    """
+
+    def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str: ...
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int: ...
+
+
 class HostedK3Backend(_UsageTracker):
     """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps)."""
 
@@ -819,6 +918,19 @@ class HostedK3Backend(_UsageTracker):
         )
         self._record_usage(result.usage)
         return result
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+        """Moonshot's own input count — ``tokenizers/estimate-token-count``
+        on the sibling route of the chat URL. The provider's tokenizer
+        answers; a malformed or refused reply raises, never an estimate."""
+        return _openai_tokenize_count(
+            _openai_sibling_url(self._api_url, "tokenizers/estimate-token-count"),
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="hosted_k3",
+        )
 
 
 class OpenAICompatBackend(_UsageTracker):
@@ -973,6 +1085,20 @@ class OpenAICompatBackend(_UsageTracker):
         )
         self._record_usage(result.usage)
         return result
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+        """The BYOK provider's own input count via the ``/tokenize``
+        sibling route (vLLM/SGLang-style chat shape). A provider without
+        the route raises ``TokenCountUnavailableError`` — the honest 501,
+        never a guessed count."""
+        return _openai_tokenize_count(
+            _openai_sibling_url(self._url, "tokenize"),
+            model=self._model,
+            messages=messages,
+            timeout_s=float(self._timeout_s),
+            api_key=self._api_key,
+            label="BYOK",
+        )
 
 
 class LocalFx1Backend(_UsageTracker):
@@ -1192,6 +1318,27 @@ class LocalFx1Backend(_UsageTracker):
             yield tok
         if box:
             self._record_usage(box[-1])
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+        """The serving engine's own input count via its ``/tokenize``
+        sibling route — same configured check + spawn contract as
+        ``complete``. An engine without the route raises
+        ``TokenCountUnavailableError`` (honest 501, never an estimate)."""
+        if not self._url:
+            raise BackendNotConfiguredError(
+                "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
+                "OpenAI-compatible engine serving the checkpoint (fx-1 never "
+                "hardcodes endpoints); FX1_LOCAL_SERVE_CMD may spawn one"
+            )
+        self._ensure_engine()
+        return _openai_tokenize_count(
+            _openai_sibling_url(self._url, "tokenize"),
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key or None,
+            label="local_fx1",
+        )
 
     def close(self) -> None:
         """Terminate a spawned engine; a no-op when only attaching."""

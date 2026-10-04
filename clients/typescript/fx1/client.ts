@@ -1151,6 +1151,74 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/messages/count_tokens — Anthropic's input-token estimate:
+   * resolves `input_tokens`, the provider's own count over the message
+   * channel. `tools`/`tool_choice` fail closed 400 (a tokenize route
+   * sees only messages — counting a toolful request would undercount);
+   * a backend without the channel fails closed 501 — never an estimate.
+   * `headers` carries `X-Fx1-*` link picks exactly like
+   * `messagesCreate`.
+   */
+  async countMessageTokens(
+    request: Record<string, unknown>,
+    headers?: Record<string, string>,
+  ): Promise<number> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/messages/count_tokens",
+      body: request,
+      headers: { "Content-Type": "application/json", ...headers },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    const out = (await res.json()) as { input_tokens: number };
+    return out.input_tokens;
+  }
+
+  /**
+   * GET /v1/models with the `anthropic-version` header — Anthropic's
+   * `{data: [{type: "model", id, display_name, created_at}], first_id,
+   * last_id, has_more}` envelope over the same inventory `listModels`
+   * serves (the stock anthropic SDK's `client.models.list()` grammar).
+   * `afterId`/`beforeId` are the positional id cursors; unknown cursors
+   * page to empty.
+   */
+  async anthropicModels(filter?: {
+    limit?: number;
+    afterId?: string;
+    beforeId?: string;
+  }): Promise<Record<string, unknown>> {
+    const params = new URLSearchParams();
+    if (filter?.limit !== undefined) params.set("limit", String(filter.limit));
+    if (filter?.afterId !== undefined) params.set("after_id", filter.afterId);
+    if (filter?.beforeId !== undefined) params.set("before_id", filter.beforeId);
+    const qs = params.toString();
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/models${qs ? `?${qs}` : ""}`,
+      idempotent: true,
+      headers: { "anthropic-version": "2023-06-01" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * GET /v1/models/{id} with the `anthropic-version` header — the
+   * `{type: "model", id, display_name, created_at}` card; unknown ids
+   * throw the 404-class `not_found_error`, never a fabricated card.
+   */
+  async anthropicModel(model: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/models/${encodeURIComponent(model)}`,
+      idempotent: true,
+      headers: { "anthropic-version": "2023-06-01" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
    * POST /v1/completions — the legacy `text_completion` surface (what
    * the stock OpenAI SDK's `client.completions.create` and pre-chat
    * agents target). `request` uses the legacy wire shape: `prompt` is a

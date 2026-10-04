@@ -2121,6 +2121,60 @@ class HarnessClient:
                 )
             time.sleep(poll_s)
 
+    def count_message_tokens(
+        self, body: dict[str, Any], *, extra_headers: dict[str, str] | None = None
+    ) -> int:
+        """``POST /v1/messages/count_tokens`` — the provider's own input
+        count for a ``/v1/messages``-shaped body, returned as the
+        ``input_tokens`` int. ``tools``/``tool_choice`` refuse 400 (the
+        tokenize channel sees only messages); a backend without a
+        tokenize route fails closed 501 — the server never estimates.
+        ``extra_headers`` carries ``X-Fx1-*`` link picks exactly like
+        :meth:`create_message_batch`."""
+        out = self._json("POST", "/v1/messages/count_tokens", body, extra_headers=extra_headers)
+        return int(out["input_tokens"])
+
+    def anthropic_models(
+        self,
+        *,
+        limit: int | None = None,
+        after_id: str | None = None,
+        before_id: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET /v1/models`` with ``anthropic-version`` — Anthropic's
+        ``{data: [{type: "model", id, display_name, created_at}],
+        first_id, last_id, has_more}`` envelope over the same inventory
+        :meth:`list_models` serves. ``after_id``/``before_id`` are the
+        positional id cursors; unknown cursors page to empty."""
+        path = "/v1/models"
+        params: list[str] = []
+        if limit is not None:
+            params.append(f"limit={limit}")
+        if after_id is not None:
+            params.append(f"after_id={urllib.parse.quote(after_id)}")
+        if before_id is not None:
+            params.append(f"before_id={urllib.parse.quote(before_id)}")
+        if params:
+            path += "?" + "&".join(params)
+        return dict(
+            self._json(
+                "GET", path, idempotent=True, extra_headers={"anthropic-version": "2023-06-01"}
+            )
+        )
+
+    def anthropic_model(self, model: str) -> dict[str, Any]:
+        """``GET /v1/models/{id}`` with ``anthropic-version`` — the
+        ``{type: "model"}`` card; unknown ids raise the 404-class
+        ``not_found_error``, never a fabricated card."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/models/{urllib.parse.quote(model, safe='')}",
+                idempotent=True,
+                extra_headers={"anthropic-version": "2023-06-01"},
+            )
+        )
+
     def responses_create(
         self,
         input: str | list[dict[str, Any]],

@@ -45,6 +45,7 @@ __all__ = [
     "AnthropicBatchCounts",
     "AnthropicBatchCreate",
     "AnthropicBatchItem",
+    "AnthropicCountTokensRequest",
     "AnthropicMessage",
     "AnthropicMessageObject",
     "AnthropicMessagesRequest",
@@ -53,9 +54,11 @@ __all__ = [
     "AnthropicToolChoice",
     "anthropic_batch_object",
     "anthropic_batch_result",
+    "anthropic_count_messages",
     "anthropic_envelope",
     "anthropic_error_body",
     "anthropic_events",
+    "anthropic_model_object",
     "anthropic_to_openai",
 ]
 
@@ -288,38 +291,7 @@ class AnthropicMessagesRequest(_Model):
             not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop_sequences
         ):
             raise ValueError("stop_sequences must be 1–512 char strings")
-        # Anthropic's transcript contract: user first, strict alternation.
-        if self.messages[0].role != "user":
-            raise ValueError("messages must start with a 'user' turn")
-        for prev, cur in zip(self.messages, self.messages[1:], strict=False):
-            if prev.role == cur.role:
-                raise ValueError(
-                    f"messages must alternate user/assistant (two consecutive {prev.role!r} turns)"
-                )
-        if self.system is not None and not isinstance(self.system, str):
-            if not self.system:
-                raise ValueError("system must be a string or a non-empty text-block list")
-            for block in self.system:
-                if block.get("type") != "text" or not isinstance(block.get("text"), str):
-                    raise ValueError("system blocks must be {type: 'text', text: str}")
-                if "cache_control" in block:
-                    raise ValueError("cache_control is not supported by the gated pipeline")
-        if self.tools is not None:
-            if len(self.tools) > 128:
-                raise ValueError("tools accepts at most 128 entries")
-            names = [t.name for t in self.tools]
-            if len(set(names)) != len(names):
-                raise ValueError("tools[] names must be unique")
-        if self.tool_choice is not None and not self.tools:
-            raise ValueError("tool_choice requires a non-empty tools list")
-        if (
-            self.tool_choice is not None
-            and self.tool_choice.type == "tool"
-            and self.tool_choice.name not in {t.name for t in self.tools or []}
-        ):
-            raise ValueError(
-                f"tool_choice names {self.tool_choice.name!r}, which is not in tools[]"
-            )
+        _anthropic_message_contract(self.messages, self.system, self.tools, self.tool_choice)
         bad = sorted(
             f
             for f in ANTHROPIC_UNSUPPORTED
@@ -328,6 +300,106 @@ class AnthropicMessagesRequest(_Model):
         if bad:
             raise ValueError(f"unsupported for the gated pipeline: {', '.join(bad)}")
         return self
+
+
+def _anthropic_message_contract(
+    messages: list[AnthropicMessage],
+    system: str | list[dict[str, Any]] | None,
+    tools: list[AnthropicTool] | None,
+    tool_choice: AnthropicToolChoice | None,
+) -> None:
+    """The message-channel contract shared by ``/v1/messages`` and
+    ``/v1/messages/count_tokens`` — user-first strict alternation,
+    system shape, and tool/tool_choice coherence."""
+    # Anthropic's transcript contract: user first, strict alternation.
+    if messages[0].role != "user":
+        raise ValueError("messages must start with a 'user' turn")
+    for prev, cur in zip(messages, messages[1:], strict=False):
+        if prev.role == cur.role:
+            raise ValueError(
+                f"messages must alternate user/assistant (two consecutive {prev.role!r} turns)"
+            )
+    if system is not None and not isinstance(system, str):
+        if not system:
+            raise ValueError("system must be a string or a non-empty text-block list")
+        for block in system:
+            if block.get("type") != "text" or not isinstance(block.get("text"), str):
+                raise ValueError("system blocks must be {type: 'text', text: str}")
+            if "cache_control" in block:
+                raise ValueError("cache_control is not supported by the gated pipeline")
+    if tools is not None:
+        if len(tools) > 128:
+            raise ValueError("tools accepts at most 128 entries")
+        names = [t.name for t in tools]
+        if len(set(names)) != len(names):
+            raise ValueError("tools[] names must be unique")
+    if tool_choice is not None and not tools:
+        raise ValueError("tool_choice requires a non-empty tools list")
+    if (
+        tool_choice is not None
+        and tool_choice.type == "tool"
+        and tool_choice.name not in {t.name for t in tools or []}
+    ):
+        raise ValueError(f"tool_choice names {tool_choice.name!r}, which is not in tools[]")
+
+
+class AnthropicCountTokensRequest(_Model):
+    """``POST /v1/messages/count_tokens`` body — Anthropic's estimate
+    contract: the create-message shape minus ``max_tokens`` (the input
+    channel alone is measured). Extra fields tolerate SDK bookkeeping
+    keys; the documented-but-unsupported knobs in ``ANTHROPIC_UNSUPPORTED``
+    refuse identically to ``/v1/messages``.
+
+    ``tools``/``tool_choice`` validate here (the wire shape is legal)
+    but the route refuses them — a provider's ``/tokenize`` sees only
+    the message channel, so counting a toolful request would undercount.
+    Refusing beats lying."""
+
+    model_config = ConfigDict(extra="allow")
+
+    model: str = "fx1"
+    messages: list[AnthropicMessage] = Field(min_length=1, max_length=512)
+    system: str | list[dict[str, Any]] | None = None
+    tools: list[AnthropicTool] | None = None
+    tool_choice: AnthropicToolChoice | None = None
+    fx1: OpenAIFx1 | None = None
+
+    @model_validator(mode="after")
+    def _count_valid(self) -> AnthropicCountTokensRequest:
+        _anthropic_message_contract(self.messages, self.system, self.tools, self.tool_choice)
+        bad = sorted(
+            f
+            for f in ANTHROPIC_UNSUPPORTED
+            if f in (self.__pydantic_extra__ or {}) or getattr(self, f, None) is not None
+        )
+        if bad:
+            raise ValueError(f"unsupported for the gated pipeline: {', '.join(bad)}")
+        return self
+
+
+def anthropic_count_messages(body: AnthropicCountTokensRequest) -> list[dict[str, Any]]:
+    """The count request's message channel in OpenAI shape — system folds
+    in exactly as ``anthropic_to_openai`` does, so the count matches the
+    prompt a completion would consume."""
+    messages = _messages_to_openai(body.messages)
+    if body.system is not None:
+        sys_text = _system_text(body.system)
+        if sys_text:
+            messages.insert(0, {"role": "system", "content": sys_text})
+    return messages
+
+
+def anthropic_model_object(model_id: str, *, created: int | None = None) -> dict[str, Any]:
+    """Anthropic's model card: ``{type: "model", id, display_name,
+    created_at}``. ``display_name`` mirrors the id honestly — the harness
+    names no display names of its own; ``created_at`` is the serve
+    boot stamp (``_rfc3339``), matching the ``/v1/models`` `created`."""
+    return {
+        "type": "model",
+        "id": model_id,
+        "display_name": model_id,
+        "created_at": _rfc3339(created),
+    }
 
 
 def _system_text(system: str | list[dict[str, Any]]) -> str:

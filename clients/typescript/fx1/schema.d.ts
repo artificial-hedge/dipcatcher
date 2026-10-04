@@ -1603,6 +1603,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/messages/count_tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Anthropic Count Tokens Route
+         * @description Anthropic's ``POST /v1/messages/count_tokens`` — the provider's
+         *     own tokenizer count over the message channel, ``{input_tokens: N}``.
+         *
+         *     The request validates the same contract as ``/v1/messages``
+         *     (user-first alternation, system shape, unsupported knobs refuse),
+         *     then the resolved backend answers through its own tokenize route
+         *     — vLLM/SGLang-style ``/tokenize`` on BYOK and local engines,
+         *     Moonshot's ``tokenizers/estimate-token-count`` on the hosted link.
+         *     A backend or endpoint without the channel fails closed 501
+         *     ``api_error`` — the harness never estimates. ``tools`` /
+         *     ``tool_choice`` refuse 400: provider tokenize routes see only the
+         *     message channel, so counting a toolful request would undercount.
+         *     ``X-Fx1-*`` headers and the ``fx1`` extension pick the link
+         *     exactly like the create path; ``X-Fx1-Timeout`` caps the call.
+         */
+        post: operations["anthropic_count_tokens"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/models": {
         parameters: {
             query?: never;
@@ -1614,6 +1647,15 @@ export interface paths {
          * Openai Models
          * @description Model inventory — the backend names a `model` field may carry,
          *     plus the `fx1` alias for the default link (hosted_k3).
+         *
+         *     One route, two envelopes: an ``anthropic-version`` header (the
+         *     stock anthropic SDK sends it on every call) switches the payload
+         *     to Anthropic's ``{data: [{type: "model", id, display_name,
+         *     created_at}], first_id, last_id, has_more}`` grammar with its
+         *     ``limit``/``after_id``/``before_id`` cursors —
+         *     ``client.models.list()`` works unmodified. Without the header the
+         *     OpenAI ``{object: "list"}`` shape answers; the cursor params
+         *     are Anthropic's and ignored on the OpenAI branch.
          */
         get: operations["openai_list_models"];
         put?: never;
@@ -1636,6 +1678,11 @@ export interface paths {
          * @description OpenAI's models.retrieve — one card for a listed id; unknown
          *     ids fail closed 404 in the OpenAI error shape, never a
          *     fabricated card. Registered ``ft:`` fine-tunes resolve too.
+         *
+         *     Under ``anthropic-version`` the same route answers Anthropic's
+         *     ``{type: "model", id, display_name, created_at}`` card (the
+         *     stock SDK's ``client.models.retrieve``), with unknown ids in the
+         *     ``not_found_error`` grammar.
          */
         get: operations["openai_retrieve_model"];
         put?: never;
@@ -2175,6 +2222,38 @@ export interface components {
             /** Custom Id */
             custom_id: string;
             params: components["schemas"]["AnthropicMessagesRequest"];
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * AnthropicCountTokensRequest
+         * @description ``POST /v1/messages/count_tokens`` body — Anthropic's estimate
+         *     contract: the create-message shape minus ``max_tokens`` (the input
+         *     channel alone is measured). Extra fields tolerate SDK bookkeeping
+         *     keys; the documented-but-unsupported knobs in ``ANTHROPIC_UNSUPPORTED``
+         *     refuse identically to ``/v1/messages``.
+         *
+         *     ``tools``/``tool_choice`` validate here (the wire shape is legal)
+         *     but the route refuses them — a provider's ``/tokenize`` sees only
+         *     the message channel, so counting a toolful request would undercount.
+         *     Refusing beats lying.
+         */
+        AnthropicCountTokensRequest: {
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Messages */
+            messages: components["schemas"]["AnthropicMessage"][];
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /** System */
+            system?: string | {
+                [key: string]: unknown;
+            }[] | null;
+            tool_choice?: components["schemas"]["AnthropicToolChoice"] | null;
+            /** Tools */
+            tools?: components["schemas"]["AnthropicTool"][] | null;
         } & {
             [key: string]: unknown;
         };
@@ -11031,9 +11110,82 @@ export interface operations {
             };
         };
     };
-    openai_list_models: {
+    anthropic_count_tokens: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnthropicCountTokensRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_list_models: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before_id?: string | null;
+                after_id?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11065,6 +11217,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpenAIModelList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

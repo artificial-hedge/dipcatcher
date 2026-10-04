@@ -74,6 +74,14 @@ class _FakeBackend:
         self.closed += 1
 
 
+class _CountSdkBackend(_FakeBackend):
+    """Tokenize-capable stub — deterministic provider-side count
+    (2 per message so the system fold is visible in the total)."""
+
+    def count_tokens(self, messages: list[dict[str, Any]]) -> int:
+        return 2 * len(messages)
+
+
 class _NonStreamingBackend:
     """complete-only backend — the stream contract must fail closed."""
 
@@ -982,6 +990,79 @@ def sdk_audit() -> dict[str, bool]:
         == "ValidationError"
         and _raises(lambda: sdk_am.anthropic_batch(_ab_ok, callback_secret="x"))
         == "ValidationError"
+    )
+
+    # ---- /v1/messages/count_tokens + anthropic models SDK surfaces -----
+    # the in-process twins of the wire routes: count_tokens forwards the
+    # provider's own count (system folds to a leading system message), a
+    # backend without the tokenize channel raises NotImplementedError,
+    # and the models listing/get project the OpenAI cards into the
+    # Anthropic {type: model, id, display_name, created_at} grammar.
+    sdk_ct = Fx1Harness(backend_resolver=lambda *a, **k: _CountSdkBackend())
+    out["anthropic_count_sdk"] = (
+        sdk_ct.anthropic_count_tokens(
+            {
+                "model": "fx1",
+                "system": "be terse",
+                "messages": [{"role": "user", "content": "ping"}],
+                "fx1": {"backend": "byok"},
+            }
+        )
+        == 4  # 2 messages folded (system+user) x 2 tokens each
+        and _raises(
+            lambda: Fx1Harness(
+                backend_resolver=lambda *a, **k: _FakeBackend()
+            ).anthropic_count_tokens(
+                {"model": "fx1", "messages": [{"role": "user", "content": "ping"}]}
+            )
+        )
+        == "NotImplementedError"
+        and _raises(
+            lambda: sdk_ct.anthropic_count_tokens(
+                {
+                    "model": "fx1",
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "tools": [{"name": "t", "input_schema": {"type": "object"}}],
+                }
+            )
+        )
+        == "ValueError"
+        and _raises(
+            lambda: sdk_ct.anthropic_count_tokens(
+                {"model": "fx1", "messages": [{"role": "assistant", "content": "x"}]}
+            )
+        )
+        == "ValidationError"
+    )
+    _am_list_s = sdk_ct.anthropic_models()
+    _am_ids = [m["id"] for m in _am_list_s["data"]]
+    out["anthropic_models_sdk"] = (
+        _am_ids == [m.id for m in sdk_ct.openai_models().data]
+        and _am_ids[:4] == ["fx1", "hosted_k3", "local_fx1", "byok"]
+        and _am_list_s["first_id"] == "fx1"
+        and _am_list_s["last_id"] == _am_ids[-1]
+        and _am_list_s["has_more"] is False
+        and all(
+            m["type"] == "model"
+            and m["display_name"] == m["id"]
+            and str(m["created_at"]).endswith("Z")
+            for m in _am_list_s["data"]
+        )
+    )
+    _am_pg = sdk_ct.anthropic_models(limit=1, after_id="fx1")
+    _am_pg_b = sdk_ct.anthropic_models(limit=1, before_id="byok")
+    out["anthropic_models_cursor_sdk"] = (
+        [m["id"] for m in _am_pg["data"]] == ["hosted_k3"]
+        and _am_pg["has_more"] is True
+        and [m["id"] for m in _am_pg_b["data"]] == ["local_fx1"]
+        and sdk_ct.anthropic_models(limit=1)["data"][0]["id"] == "fx1"
+        and _raises(lambda: sdk_ct.anthropic_models(limit=0)) == "ValueError"
+        and _raises(lambda: sdk_ct.anthropic_models(limit=1001)) == "ValueError"
+    )
+    out["anthropic_model_sdk"] = (
+        sdk_ct.anthropic_model("local_fx1")["type"] == "model"
+        and sdk_ct.anthropic_model("local_fx1")["id"] == "local_fx1"
+        and _raises(lambda: sdk_ct.anthropic_model("nope")) == "OpenAICompatError"
     )
 
     # ---- legacy /v1/completions SDK surface ------------------------------
