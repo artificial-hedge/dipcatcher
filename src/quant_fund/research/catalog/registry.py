@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1222 ortho canon.
+        "orthopedics_studies",
+        "sports_medicine_orthopedics",
+        "musculoskeletal_medicine",
+        "spine_surgery",
+        "joint_replacement",
+        "hand_surgery",
         # Wave-1221 derm-eye-ent canon.
         "dermatology_studies",
         "ophthalmology_studies",
