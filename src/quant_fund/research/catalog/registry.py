@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1341 bias-eval canon.
+        "bold_eval_studies",
+        "crow_s_pairs_studies",
+        "hate_speech_eval_studies",
+        "holo_bias_studies",
+        "real_toxicity_studies",
+        "stereo_set_studies",
         # Wave-1340 science-eval canon.
         "arc_challenge_studies",
         "bio_qa_studies",
