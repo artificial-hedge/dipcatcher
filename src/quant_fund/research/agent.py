@@ -10295,6 +10295,14 @@ from quant_fund.research.benches_w1287 import (
     bench_sandbox_escape_studies_family,
     bench_tool_call_verify_studies_family,
 )
+from quant_fund.research.benches_w1288 import (
+    bench_adversarial_irl_studies_family,
+    bench_behavior_cloning_studies_family,
+    bench_dagger_studies_family,
+    bench_offline_distill_studies_family,
+    bench_preference_irl_studies_family,
+    bench_skill_extraction_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10840,6 +10848,12 @@ def _provenance(
         "prompt_injection_studies": bench_prompt_injection_studies_family,
         "sandbox_escape_studies": bench_sandbox_escape_studies_family,
         "tool_call_verify_studies": bench_tool_call_verify_studies_family,
+        "adversarial_irl_studies": bench_adversarial_irl_studies_family,
+        "behavior_cloning_studies": bench_behavior_cloning_studies_family,
+        "dagger_studies": bench_dagger_studies_family,
+        "offline_distill_studies": bench_offline_distill_studies_family,
+        "preference_irl_studies": bench_preference_irl_studies_family,
+        "skill_extraction_studies": bench_skill_extraction_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
