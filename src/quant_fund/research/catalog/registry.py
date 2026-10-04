@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1081 renaissance/early modern canon.
+        "renaissance_studies",
+        "early_modern",
+        "humanism",
+        "reformation_studies",
+        "baroque_studies",
+        "enlightenment_studies",
         # Wave-1080 medieval studies canon.
         "medieval_studies",
         "paleography",
