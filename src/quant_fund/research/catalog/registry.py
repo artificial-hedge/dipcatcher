@@ -6260,6 +6260,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rosmerta_qa_studies",
         "taranis_qa_studies",
         "teutates_qa_studies",
+        # Wave-1857 romano-british-myth canon.
+        "belatucadrus_qa_studies",
+        "cocidius_qa_studies",
+        "maponus_qa_studies",
+        "nemetona_qa_studies",
+        "rigisamus_qa_studies",
+        "sulis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
