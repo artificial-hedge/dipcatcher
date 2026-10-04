@@ -9999,6 +9999,14 @@ from quant_fund.research.benches_w1250 import (
     bench_rhinology_studies_family,
     bench_sinus_studies_family,
 )
+from quant_fund.research.benches_w1251 import (
+    bench_andrology_studies_family,
+    bench_bladder_studies_family,
+    bench_bph_studies_family,
+    bench_erectile_studies_family,
+    bench_incontinence_studies_family,
+    bench_prostate_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10370,6 +10378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "prostate_studies": bench_prostate_studies_family,
+        "bladder_studies": bench_bladder_studies_family,
+        "andrology_studies": bench_andrology_studies_family,
+        "erectile_studies": bench_erectile_studies_family,
+        "incontinence_studies": bench_incontinence_studies_family,
+        "bph_studies": bench_bph_studies_family,
         "sinus_studies": bench_sinus_studies_family,
         "laryngology_studies": bench_laryngology_studies_family,
         "otology_studies": bench_otology_studies_family,
