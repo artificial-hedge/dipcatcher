@@ -12479,6 +12479,14 @@ from quant_fund.research.benches_w1560 import (
     bench_snapper_qa_studies_family,
     bench_wrasse_qa_studies_family,
 )
+from quant_fund.research.benches_w1561 import (
+    bench_angelfish_qa_studies_family,
+    bench_blenny_qa_studies_family,
+    bench_goby_qa_studies_family,
+    bench_lionfish_qa_studies_family,
+    bench_surgeonfish_qa_studies_family,
+    bench_triggerfish_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14418,6 +14426,12 @@ def _provenance(
         "parrotfish_qa_studies": bench_parrotfish_qa_studies_family,
         "snapper_qa_studies": bench_snapper_qa_studies_family,
         "wrasse_qa_studies": bench_wrasse_qa_studies_family,
+        "angelfish_qa_studies": bench_angelfish_qa_studies_family,
+        "blenny_qa_studies": bench_blenny_qa_studies_family,
+        "goby_qa_studies": bench_goby_qa_studies_family,
+        "lionfish_qa_studies": bench_lionfish_qa_studies_family,
+        "surgeonfish_qa_studies": bench_surgeonfish_qa_studies_family,
+        "triggerfish_qa_studies": bench_triggerfish_qa_studies_family,
         "herring_qa_studies": bench_herring_qa_studies_family,
         "kingfish_qa_studies": bench_kingfish_qa_studies_family,
         "mackerel_qa_studies": bench_mackerel_qa_studies_family,
