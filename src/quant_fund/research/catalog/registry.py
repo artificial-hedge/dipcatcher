@@ -3208,6 +3208,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "deduction_qa_studies",
         "effect_qa_studies",
         "fallacy_qa_studies",
+        # Wave-1421 spatial-navigation canon.
+        "geospatial_qa_studies",
+        "itinerary_qa_studies",
+        "journey_qa_studies",
+        "route_qa_studies",
+        "spatial_qa_studies",
+        "terrain_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

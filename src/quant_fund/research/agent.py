@@ -11359,6 +11359,14 @@ from quant_fund.research.benches_w1420 import (
     bench_effect_qa_studies_family,
     bench_fallacy_qa_studies_family,
 )
+from quant_fund.research.benches_w1421 import (
+    bench_geospatial_qa_studies_family,
+    bench_itinerary_qa_studies_family,
+    bench_journey_qa_studies_family,
+    bench_route_qa_studies_family,
+    bench_spatial_qa_studies_family,
+    bench_terrain_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12545,6 +12553,12 @@ def _provenance(
         "deduction_qa_studies": bench_deduction_qa_studies_family,
         "effect_qa_studies": bench_effect_qa_studies_family,
         "fallacy_qa_studies": bench_fallacy_qa_studies_family,
+        "geospatial_qa_studies": bench_geospatial_qa_studies_family,
+        "itinerary_qa_studies": bench_itinerary_qa_studies_family,
+        "journey_qa_studies": bench_journey_qa_studies_family,
+        "route_qa_studies": bench_route_qa_studies_family,
+        "spatial_qa_studies": bench_spatial_qa_studies_family,
+        "terrain_qa_studies": bench_terrain_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
