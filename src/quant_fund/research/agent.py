@@ -11679,6 +11679,14 @@ from quant_fund.research.benches_w1460 import (
     bench_wildebeest_qa_studies_family,
     bench_zebra_qa_studies_family,
 )
+from quant_fund.research.benches_w1461 import (
+    bench_gorilla_qa_studies_family,
+    bench_jaguar_qa_studies_family,
+    bench_macaw_qa_studies_family,
+    bench_orangutan_qa_studies_family,
+    bench_sloth_qa_studies_family,
+    bench_toucan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13105,6 +13113,12 @@ def _provenance(
         "giraffe_qa_studies": bench_giraffe_qa_studies_family,
         "wildebeest_qa_studies": bench_wildebeest_qa_studies_family,
         "zebra_qa_studies": bench_zebra_qa_studies_family,
+        "gorilla_qa_studies": bench_gorilla_qa_studies_family,
+        "jaguar_qa_studies": bench_jaguar_qa_studies_family,
+        "macaw_qa_studies": bench_macaw_qa_studies_family,
+        "orangutan_qa_studies": bench_orangutan_qa_studies_family,
+        "sloth_qa_studies": bench_sloth_qa_studies_family,
+        "toucan_qa_studies": bench_toucan_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

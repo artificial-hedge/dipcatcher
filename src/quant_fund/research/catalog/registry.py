@@ -3488,6 +3488,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "giraffe_qa_studies",
         "wildebeest_qa_studies",
         "zebra_qa_studies",
+        # Wave-1461 jungle canon.
+        "gorilla_qa_studies",
+        "jaguar_qa_studies",
+        "macaw_qa_studies",
+        "orangutan_qa_studies",
+        "sloth_qa_studies",
+        "toucan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
