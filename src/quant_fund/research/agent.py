@@ -5847,6 +5847,14 @@ from quant_fund.research.benches_w731 import (
     bench_semi_stable_model_family,
     bench_temkin_alter_family,
 )
+from quant_fund.research.benches_w732 import (
+    bench_hall_algebra_family,
+    bench_joyce_hall_family,
+    bench_lusztig_hall_family,
+    bench_ringel_hall_family,
+    bench_schiffmann_hall_family,
+    bench_toen_hall_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6226,6 +6234,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hall_algebra": bench_hall_algebra_family,
+        "ringel_hall": bench_ringel_hall_family,
+        "toen_hall": bench_toen_hall_family,
+        "lusztig_hall": bench_lusztig_hall_family,
+        "schiffmann_hall": bench_schiffmann_hall_family,
+        "joyce_hall": bench_joyce_hall_family,
         "higher_ramif": bench_higher_ramif_family,
         "brylinski_kato": bench_brylinski_kato_family,
         "log_ramification": bench_log_ramification_family,
