@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-718 representation-theory canon.
+        "helix_theory",
+        "mutation_class",
+        "rep_finite",
+        "der_bimodule",
+        "icy_paper",
+        "higher_auslander",
         # Wave-717 nc-motives canon.
         "nc_motive",
         "dg_enhancement",

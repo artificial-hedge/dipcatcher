@@ -5735,6 +5735,14 @@ from quant_fund.research.benches_w717 import (
     bench_nc_motive_family,
     bench_tabuada_motive_family,
 )
+from quant_fund.research.benches_w718 import (
+    bench_der_bimodule_family,
+    bench_helix_theory_family,
+    bench_higher_auslander_family,
+    bench_icy_paper_family,
+    bench_mutation_class_family,
+    bench_rep_finite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6114,6 +6122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "helix_theory": bench_helix_theory_family,
+        "mutation_class": bench_mutation_class_family,
+        "rep_finite": bench_rep_finite_family,
+        "der_bimodule": bench_der_bimodule_family,
+        "icy_paper": bench_icy_paper_family,
+        "higher_auslander": bench_higher_auslander_family,
         "nc_motive": bench_nc_motive_family,
         "dg_enhancement": bench_dg_enhancement_family,
         "bondal_kapranov": bench_bondal_kapranov_family,
