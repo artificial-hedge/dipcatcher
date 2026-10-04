@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1285 multimodal-2 canon.
+        "audio_lm_studies",
+        "chart_reasoning_studies",
+        "doc_vqa_studies",
+        "gui_agent_studies",
+        "video_understanding_studies",
+        "vision_pretraining_studies",
         # Wave-1284 grounding/hallucination canon.
         "citation_check_studies",
         "claim_verifier_studies",

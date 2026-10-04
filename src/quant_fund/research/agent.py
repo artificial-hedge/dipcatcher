@@ -10271,6 +10271,14 @@ from quant_fund.research.benches_w1284 import (
     bench_grounding_verify_studies_family,
     bench_self_reflect_studies_family,
 )
+from quant_fund.research.benches_w1285 import (
+    bench_audio_lm_studies_family,
+    bench_chart_reasoning_studies_family,
+    bench_doc_vqa_studies_family,
+    bench_gui_agent_studies_family,
+    bench_video_understanding_studies_family,
+    bench_vision_pretraining_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10798,6 +10806,12 @@ def _provenance(
         "factuality_score_studies": bench_factuality_score_studies_family,
         "grounding_verify_studies": bench_grounding_verify_studies_family,
         "self_reflect_studies": bench_self_reflect_studies_family,
+        "audio_lm_studies": bench_audio_lm_studies_family,
+        "chart_reasoning_studies": bench_chart_reasoning_studies_family,
+        "doc_vqa_studies": bench_doc_vqa_studies_family,
+        "gui_agent_studies": bench_gui_agent_studies_family,
+        "video_understanding_studies": bench_video_understanding_studies_family,
+        "vision_pretraining_studies": bench_vision_pretraining_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
