@@ -10679,6 +10679,14 @@ from quant_fund.research.benches_w1335 import (
     bench_swe_dev_studies_family,
     bench_swe_multimodal_studies_family,
 )
+from quant_fund.research.benches_w1336 import (
+    bench_assistantbench_studies_family,
+    bench_mind2web_studies_family,
+    bench_miniwob_studies_family,
+    bench_visual_web_studies_family,
+    bench_web_nav_studies_family,
+    bench_webarena_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11437,6 +11445,12 @@ def _provenance(
         "code_rag_studies": bench_code_rag_studies_family,
         "codegen_universal_studies": bench_codegen_universal_studies_family,
         "long_code_bench_studies": bench_long_code_bench_studies_family,
+        "assistantbench_studies": bench_assistantbench_studies_family,
+        "mind2web_studies": bench_mind2web_studies_family,
+        "miniwob_studies": bench_miniwob_studies_family,
+        "visual_web_studies": bench_visual_web_studies_family,
+        "web_nav_studies": bench_web_nav_studies_family,
+        "webarena_studies": bench_webarena_studies_family,
         "odex_eval_studies": bench_odex_eval_studies_family,
         "swe_dev_studies": bench_swe_dev_studies_family,
         "swe_multimodal_studies": bench_swe_multimodal_studies_family,

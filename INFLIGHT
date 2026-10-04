@@ -1,3 +1,4 @@
+w1336 agentic-eval-2 canon: assistantbench_studies, mind2web_studies, miniwob_studies, visual_web_studies, web_nav_studies, webarena_studies (7965->7971)
 w1335 code-eval-4 canon: code_rag_studies, codegen_universal_studies, long_code_bench_studies, odex_eval_studies, swe_dev_studies, swe_multimodal_studies (7959->7965)
 w1334 long-context-3 canon: books_qa_studies, lcc_codebase_studies, multi_news_eval_studies, narrative_qa_studies, needle_multi_studies, qmsum_eval_studies (7953->7959)
 w1333 multilingual-eval canon: fava_studies, polyglo_tox_studies, regard_eval_studies, unqover_studies, vlur_studies, xlsum_studies (7947->7953)
