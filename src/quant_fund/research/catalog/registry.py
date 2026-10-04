@@ -3089,6 +3089,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "infovqa_lite_studies",
         "mmqa_lite_studies",
         "ocrvqa_lite_studies",
+        # Wave-1404 video-QA canon.
+        "activitynet_qa_studies",
+        "how2qa_lite_studies",
+        "movie_qa_lite_studies",
+        "msrvtt_qa_studies",
+        "nextqa_lite_studies",
+        "star_qa_lite_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

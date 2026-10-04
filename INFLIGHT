@@ -1,3 +1,4 @@
+w1404 video-QA canon: activitynet_qa_studies, how2qa_lite_studies, movie_qa_lite_studies, msrvtt_qa_studies, nextqa_lite_studies, star_qa_lite_studies (8373->8379)
 w1403 vision-doc-QA canon: ai2d_lite_studies, chart_qa_lite_studies, docvqa_lite_studies, infovqa_lite_studies, mmqa_lite_studies, ocrvqa_lite_studies (8367->8373)
 w1402 science-QA-2 canon: ai2_arc_lite_studies, arc_da_lite_studies, drug_qa_lite_studies, emrqa_lite_studies, head_qa_lite_studies, medmcqa_lite_studies (8361->8367)
 w1401 math-word-2 canon: alg514_lite_studies, dolphin_lite_studies, draw_lite_studies, lila_lite_studies, math_doc_studies, math_eval_studies (8355->8361)
