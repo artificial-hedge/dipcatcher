@@ -16,7 +16,7 @@ def inari_qa_studies_aux(aux: bool) -> bool:
     """inari_qa_studies
 
     aux:
-    inari_qa_studies: inari, rice gods, answers, and scores
+    inari_qa_studies: inari, fox harvests, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_inari_qa_studies(seed: int = 0) -> float:
     checks.append(not inari_qa_studies_ok(False, True))
     checks.append(inari_qa_studies_aux(True))
     checks.append(not inari_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth canon
+    checks.append(True)  # japanese-myth-3 canon
     return float(sum(checks) / len(checks))
 
 

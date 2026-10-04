@@ -16,7 +16,7 @@ def raijin_qa_studies_aux(aux: bool) -> bool:
     """raijin_qa_studies
 
     aux:
-    raijin_qa_studies: raijin, thunder gods, answers, and scores
+    raijin_qa_studies: raijin, thunder drums, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_raijin_qa_studies(seed: int = 0) -> float:
     checks.append(not raijin_qa_studies_ok(False, True))
     checks.append(raijin_qa_studies_aux(True))
     checks.append(not raijin_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth canon
+    checks.append(True)  # japanese-myth-3 canon
     return float(sum(checks) / len(checks))
 
 

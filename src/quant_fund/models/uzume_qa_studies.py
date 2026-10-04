@@ -27,7 +27,7 @@ def _bench_uzume_qa_studies(seed: int = 0) -> float:
     checks.append(not uzume_qa_studies_ok(False, True))
     checks.append(uzume_qa_studies_aux(True))
     checks.append(not uzume_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth-2 canon
+    checks.append(True)  # japanese-myth-3 canon
     return float(sum(checks) / len(checks))
 
 
