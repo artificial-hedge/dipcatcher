@@ -11855,6 +11855,14 @@ from quant_fund.research.benches_w1482 import (
     bench_polecat_qa_studies_family,
     bench_wolverine_qa_studies_family,
 )
+from quant_fund.research.benches_w1483 import (
+    bench_coyote_qa_studies_family,
+    bench_ferret_qa_studies_family,
+    bench_jackal_qa_studies_family,
+    bench_marmot_qa_studies_family,
+    bench_moose_qa_studies_family,
+    bench_raccoon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13407,6 +13415,12 @@ def _provenance(
         "marten_qa_studies": bench_marten_qa_studies_family,
         "mink_qa_studies": bench_mink_qa_studies_family,
         "polecat_qa_studies": bench_polecat_qa_studies_family,
+        "coyote_qa_studies": bench_coyote_qa_studies_family,
+        "ferret_qa_studies": bench_ferret_qa_studies_family,
+        "jackal_qa_studies": bench_jackal_qa_studies_family,
+        "marmot_qa_studies": bench_marmot_qa_studies_family,
+        "moose_qa_studies": bench_moose_qa_studies_family,
+        "raccoon_qa_studies": bench_raccoon_qa_studies_family,
         "wolverine_qa_studies": bench_wolverine_qa_studies_family,
         "impala_qa_studies": bench_impala_qa_studies_family,
         "kudu_qa_studies": bench_kudu_qa_studies_family,
