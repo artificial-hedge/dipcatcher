@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-930 metaheuristics canon.
+        "lin_kernighan",
+        "two_opt_move",
+        "three_opt_move",
+        "tabu_search",
+        "iterated_local",
+        "grasp_meta",
         # Wave-929 information-geometry-4 canon.
         "mahalanobis_div",
         "bhat_distance",
