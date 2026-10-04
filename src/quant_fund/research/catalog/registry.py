@@ -5931,6 +5931,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "manannan2_qa_studies",
         "nuada2_qa_studies",
         "ogma2_qa_studies",
+        # Wave-1810 yoruba-myth canon.
+        "elegba2_qa_studies",
+        "obatala2_qa_studies",
+        "orunmila2_qa_studies",
+        "osun2_qa_studies",
+        "oya2_qa_studies",
+        "shango2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
