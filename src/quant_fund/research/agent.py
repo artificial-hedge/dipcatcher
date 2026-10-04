@@ -13535,6 +13535,14 @@ from quant_fund.research.benches_w1692 import (
     bench_svartalf_qa_studies_family,
     bench_ymir_qa_studies_family,
 )
+from quant_fund.research.benches_w1693 import (
+    bench_asag_qa_studies_family,
+    bench_edimmu_qa_studies_family,
+    bench_galla_qa_studies_family,
+    bench_lamassu_qa_studies_family,
+    bench_shedu_qa_studies_family,
+    bench_utukku_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
