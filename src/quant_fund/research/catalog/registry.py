@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1365 summarization canon.
+        "arxiv_sum_studies",
+        "cnn_dailymail_studies",
+        "dialogsum_lite_studies",
+        "multi_news_studies",
+        "pubmed_sum_studies",
+        "samsum_lite_studies",
         # Wave-1364 sentence-pair canon.
         "anli_lite_studies",
         "mnli_lite_studies",

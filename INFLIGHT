@@ -1,3 +1,4 @@
+w1365 summarization canon: arxiv_sum_studies, cnn_dailymail_studies, dialogsum_lite_studies, multi_news_studies, pubmed_sum_studies, samsum_lite_studies (8139->8145)
 w1364 sentence-pair canon: anli_lite_studies, mnli_lite_studies, mrpc_lite_studies, paws_lite_studies, quora_dup_studies, rte_lite_studies (8133->8139)
 w1363 rumor-bias canon: age_bias_studies, curry_qa_studies, cw_qa2_studies, dialect_bias_studies, politi_fact_studies, rumor_twitter_studies (8127->8133)
 w1362 fake-news canon: check_that_studies, claim_buster_studies, emergent_lite_studies, fake_news_studies, snopes_lite_studies, stance_detect_studies (8121->8127)
