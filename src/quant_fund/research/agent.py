@@ -6335,6 +6335,14 @@ from quant_fund.research.benches_w792 import (
     bench_reflected_bsde_family,
     bench_second_order_bsde_family,
 )
+from quant_fund.research.benches_w793 import (
+    bench_cubature_wiener_family,
+    bench_milstein_scheme_family,
+    bench_rough_vol2_family,
+    bench_stochastic_taylor_family,
+    bench_wagner_platen_family,
+    bench_wong_zakai_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6714,6 +6722,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wong_zakai": bench_wong_zakai_family,
+        "stochastic_taylor": bench_stochastic_taylor_family,
+        "milstein_scheme": bench_milstein_scheme_family,
+        "wagner_platen": bench_wagner_platen_family,
+        "cubature_wiener": bench_cubature_wiener_family,
+        "rough_vol2": bench_rough_vol2_family,
         "bsde_solver": bench_bsde_solver_family,
         "fbsde_markov": bench_fbsde_markov_family,
         "backward_sde": bench_backward_sde_family,
