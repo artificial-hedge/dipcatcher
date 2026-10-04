@@ -3782,6 +3782,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "opossum_qa_studies",
         "paca_qa_studies",
         "tamandua_qa_studies",
+        # Wave-1503 serpent-2 canon.
+        "garter_qa_studies",
+        "keelback_qa_studies",
+        "kingsnake_qa_studies",
+        "mockviper_qa_studies",
+        "racer_qa_studies",
+        "sidewinder_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
