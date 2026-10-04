@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1312 risk-domain canon.
+        "bio_risk_eval_studies",
+        "chem_risk_eval_studies",
+        "cyber_sec_eval_studies",
+        "lab_bench_studies",
+        "malicious_instruct_studies",
+        "wmdp_studies",
         # Wave-1311 safety-benchmark canon.
         "aegis_studies",
         "air_bench_studies",

@@ -10487,6 +10487,14 @@ from quant_fund.research.benches_w1311 import (
     bench_sorry_bench_studies_family,
     bench_wildguard_studies_family,
 )
+from quant_fund.research.benches_w1312 import (
+    bench_bio_risk_eval_studies_family,
+    bench_chem_risk_eval_studies_family,
+    bench_cyber_sec_eval_studies_family,
+    bench_lab_bench_studies_family,
+    bench_malicious_instruct_studies_family,
+    bench_wmdp_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11153,6 +11161,12 @@ def _provenance(
         "aegis_studies": bench_aegis_studies_family,
         "air_bench_studies": bench_air_bench_studies_family,
         "overkill_studies": bench_overkill_studies_family,
+        "bio_risk_eval_studies": bench_bio_risk_eval_studies_family,
+        "chem_risk_eval_studies": bench_chem_risk_eval_studies_family,
+        "cyber_sec_eval_studies": bench_cyber_sec_eval_studies_family,
+        "lab_bench_studies": bench_lab_bench_studies_family,
+        "malicious_instruct_studies": bench_malicious_instruct_studies_family,
+        "wmdp_studies": bench_wmdp_studies_family,
         "salad_bench_studies": bench_salad_bench_studies_family,
         "sorry_bench_studies": bench_sorry_bench_studies_family,
         "wildguard_studies": bench_wildguard_studies_family,
