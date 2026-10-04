@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1313 privacy-attack canon.
+        "abs_scan_studies",
+        "activation_cluster_studies",
+        "fine_pruning_studies",
+        "sleepless_studies",
+        "strip_defense_studies",
+        "watermark_studies",
         # Wave-1312 risk-domain canon.
         "bio_risk_eval_studies",
         "chem_risk_eval_studies",
