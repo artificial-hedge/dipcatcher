@@ -7903,6 +7903,14 @@ from quant_fund.research.benches_w988 import (
     bench_spectral_geometry_family,
     bench_weyl_law_family,
 )
+from quant_fund.research.benches_w989 import (
+    bench_fbi_transform_family,
+    bench_melrose_bdy_family,
+    bench_parametrix_family,
+    bench_propagation_thm_family,
+    bench_sg_calculus_family,
+    bench_wave_eq_group_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8274,6 +8282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "parametrix": bench_parametrix_family,
+        "wave_eq_group": bench_wave_eq_group_family,
+        "propagation_thm": bench_propagation_thm_family,
+        "melrose_bdy": bench_melrose_bdy_family,
+        "fbi_transform": bench_fbi_transform_family,
+        "sg_calculus": bench_sg_calculus_family,
         "spectral_geometry": bench_spectral_geometry_family,
         "heat_invariants": bench_heat_invariants_family,
         "weyl_law": bench_weyl_law_family,

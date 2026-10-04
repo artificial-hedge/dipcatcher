@@ -1,3 +1,4 @@
+feat(research): wave 989 — microlocal-2 canon (parametrix, wave_eq_group, propagation_thm, melrose_bdy, fbi_transform, sg_calculus) (5883->5889 families)
 feat(research): wave 988 — spectral-geometry canon (spectral_geometry, heat_invariants, weyl_law, isospectral, cheeger_ineq, nodal_domain) (5877->5883 families)
 feat(research): wave 987 — parabolic/Li-Yau canon (parabolic_harnack, gaussian_upper, li_yau, nash_ineq, davies_gaffney, grad_est) (5871->5877 families)
 feat(research): wave 986 — Calderon-Zygmund canon (calderon_zygmund, cz_decomp, cotlar_ineq, good_lambda, ap_weight, reverse_holder) (5865->5871 families)

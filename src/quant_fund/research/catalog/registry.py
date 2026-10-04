@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-989 microlocal-2 canon.
+        "parametrix",
+        "wave_eq_group",
+        "propagation_thm",
+        "melrose_bdy",
+        "fbi_transform",
+        "sg_calculus",
         # Wave-988 spectral-geometry canon.
         "spectral_geometry",
         "heat_invariants",
