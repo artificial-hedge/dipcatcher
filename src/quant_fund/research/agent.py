@@ -10031,6 +10031,14 @@ from quant_fund.research.benches_w1254 import (
     bench_penetrance_studies_family,
     bench_snp_studies_family,
 )
+from quant_fund.research.benches_w1255 import (
+    bench_als_studies_family,
+    bench_alzheimer_studies_family,
+    bench_dementia_studies_family,
+    bench_huntington_studies_family,
+    bench_ms_studies_family,
+    bench_parkinson_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10402,6 +10410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "parkinson_studies": bench_parkinson_studies_family,
+        "alzheimer_studies": bench_alzheimer_studies_family,
+        "ms_studies": bench_ms_studies_family,
+        "als_studies": bench_als_studies_family,
+        "huntington_studies": bench_huntington_studies_family,
+        "dementia_studies": bench_dementia_studies_family,
         "allele_studies": bench_allele_studies_family,
         "snp_studies": bench_snp_studies_family,
         "cnv_studies": bench_cnv_studies_family,
