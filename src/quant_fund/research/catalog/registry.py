@@ -3432,6 +3432,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "onion_qa_studies",
         "potato_qa_studies",
         "tomato_qa_studies",
+        # Wave-1453 raptor canon.
+        "condor_qa_studies",
+        "harrier_qa_studies",
+        "kestrel_qa_studies",
+        "kite_qa_studies",
+        "osprey_qa_studies",
+        "vulture_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
