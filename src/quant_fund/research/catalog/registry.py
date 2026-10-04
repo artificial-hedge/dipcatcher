@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-568 symplectic-field-theory canon.
+        "symplectic_field",
+        "contact_homology3",
+        "floer_homol",
+        "reeb_orbit",
+        "sft_algebra",
+        "eliashberg_givental",
         # Wave-567 algebraic-combinatorics canon.
         "littlewood_richardson",
         "knuth_rsk",
