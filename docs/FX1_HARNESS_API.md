@@ -3,7 +3,12 @@
 The dipcatcher harness (registry + backends + honesty gate + receipt
 verifier) is one code path exposed four ways. This page is the
 integrator reference; `docs/FX1.md` has the model overview and
-`docs/FX1_API_STABILITY.md` the versioning policy.
+`docs/FX1_API_STABILITY.md` the versioning policy. Operator docs:
+`docs/FX1_DEPLOY.md` (production runbook — launch, durability, keys,
+webhooks, drain, deploy gates, failure modes), `docs/FX1_CLIENTS.md`
+(the four legs side-by-side), `docs/FX1_BYOK_RUNBOOK.md` (BYOK request
+shapes, credentials, provider quirks). Runnable walkthroughs:
+`examples/fx1_quickstart_sdk.py` and `examples/fx1_quickstart_http.py`.
 
 ## Consumption modes
 

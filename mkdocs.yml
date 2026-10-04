@@ -240,6 +240,9 @@ nav:
       - Datasources: FX1_DATASOURCES.md
       - API stability: FX1_API_STABILITY.md
       - Harness endpoints: FX1_HARNESS_API.md
+      - Harness deployment runbook: FX1_DEPLOY.md
+      - Harness client legs: FX1_CLIENTS.md
+      - BYOK runbook: FX1_BYOK_RUNBOOK.md
       - Capability progress: FX1_CAPABILITY_PROGRESS.md
       - fx-1 operations: FX1_OPERATIONS.md
   - Decisions:
