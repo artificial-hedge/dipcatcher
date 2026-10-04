@@ -8231,6 +8231,14 @@ from quant_fund.research.benches_w1029 import (
     bench_tribology_family,
     bench_vibration_analysis_family,
 )
+from quant_fund.research.benches_w1030 import (
+    bench_circuit_analysis_family,
+    bench_control_systems_family,
+    bench_electromagnetics_family,
+    bench_power_systems_family,
+    bench_semiconductor_family,
+    bench_signal_processing2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8602,6 +8610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "circuit_analysis": bench_circuit_analysis_family,
+        "power_systems": bench_power_systems_family,
+        "control_systems": bench_control_systems_family,
+        "signal_processing2": bench_signal_processing2_family,
+        "electromagnetics": bench_electromagnetics_family,
+        "semiconductor": bench_semiconductor_family,
         "solid_mechanics": bench_solid_mechanics_family,
         "vibration_analysis": bench_vibration_analysis_family,
         "fatigue_life": bench_fatigue_life_family,
