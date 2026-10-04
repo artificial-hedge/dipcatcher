@@ -11279,6 +11279,14 @@ from quant_fund.research.benches_w1410 import (
     bench_hippo_qa_studies_family,
     bench_intent_qa_studies_family,
 )
+from quant_fund.research.benches_w1411 import (
+    bench_fakeqa_lite_studies_family,
+    bench_flame_qa_studies_family,
+    bench_hate_qa_studies_family,
+    bench_ironic_qa_studies_family,
+    bench_offensive_qa_studies_family,
+    bench_politeness_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12405,6 +12413,12 @@ def _provenance(
         "event_qa_studies": bench_event_qa_studies_family,
         "hippo_qa_studies": bench_hippo_qa_studies_family,
         "intent_qa_studies": bench_intent_qa_studies_family,
+        "fakeqa_lite_studies": bench_fakeqa_lite_studies_family,
+        "flame_qa_studies": bench_flame_qa_studies_family,
+        "hate_qa_studies": bench_hate_qa_studies_family,
+        "ironic_qa_studies": bench_ironic_qa_studies_family,
+        "offensive_qa_studies": bench_offensive_qa_studies_family,
+        "politeness_qa_studies": bench_politeness_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

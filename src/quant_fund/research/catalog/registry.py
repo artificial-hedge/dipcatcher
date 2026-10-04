@@ -3138,6 +3138,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "event_qa_studies",
         "hippo_qa_studies",
         "intent_qa_studies",
+        # Wave-1411 stance-toxicity canon.
+        "fakeqa_lite_studies",
+        "flame_qa_studies",
+        "hate_qa_studies",
+        "ironic_qa_studies",
+        "offensive_qa_studies",
+        "politeness_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
