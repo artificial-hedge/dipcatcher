@@ -9695,6 +9695,14 @@ from quant_fund.research.benches_w1212 import (
     bench_neuromuscular_medicine_family,
     bench_neurovascular_studies_family,
 )
+from quant_fund.research.benches_w1213 import (
+    bench_neurorehabilitation_family,
+    bench_neurosurgery_studies_family,
+    bench_neurotoxicology_family,
+    bench_neurotrauma_family,
+    bench_neurovascular_surgery_family,
+    bench_spinal_cord_medicine_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10066,6 +10074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "neurosurgery_studies": bench_neurosurgery_studies_family,
+        "neurotrauma": bench_neurotrauma_family,
+        "neurotoxicology": bench_neurotoxicology_family,
+        "neurorehabilitation": bench_neurorehabilitation_family,
+        "neurovascular_surgery": bench_neurovascular_surgery_family,
+        "spinal_cord_medicine": bench_spinal_cord_medicine_family,
         "neurocritical_care": bench_neurocritical_care_family,
         "neurovascular_studies": bench_neurovascular_studies_family,
         "neuromuscular_medicine": bench_neuromuscular_medicine_family,

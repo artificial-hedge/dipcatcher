@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1213 neurology-3 canon.
+        "neurosurgery_studies",
+        "neurotrauma",
+        "neurotoxicology",
+        "neurorehabilitation",
+        "neurovascular_surgery",
+        "spinal_cord_medicine",
         # Wave-1212 neurology-2 canon.
         "neurocritical_care",
         "neurovascular_studies",
