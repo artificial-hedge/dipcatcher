@@ -7503,6 +7503,14 @@ from quant_fund.research.benches_w938 import (
     bench_monotone_inclusion_family,
     bench_quasinonexpansive_family,
 )
+from quant_fund.research.benches_w939 import (
+    bench_cq_algorithm_family,
+    bench_dykstra_proj_family,
+    bench_halpern_iter_family,
+    bench_haugazeau_proj_family,
+    bench_parallel_prox_family,
+    bench_split_feasibility_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7874,6 +7882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "split_feasibility": bench_split_feasibility_family,
+        "cq_algorithm": bench_cq_algorithm_family,
+        "dykstra_proj": bench_dykstra_proj_family,
+        "haugazeau_proj": bench_haugazeau_proj_family,
+        "parallel_prox": bench_parallel_prox_family,
+        "halpern_iter": bench_halpern_iter_family,
         "fejer_monotone": bench_fejer_monotone_family,
         "firmly_nonexpansive": bench_firmly_nonexpansive_family,
         "averaged_operator": bench_averaged_operator_family,
