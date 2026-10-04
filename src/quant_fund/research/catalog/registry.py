@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1256 public-health-2 canon.
+        "screening_studies",
+        "vaccination_studies",
+        "outbreak_studies",
+        "surveillance_studies",
+        "health_disparities_studies",
+        "community_health_studies",
         # Wave-1255 neurodegeneration canon.
         "parkinson_studies",
         "alzheimer_studies",
