@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1046 meteorology canon.
+        "atmospheric_dynamics",
+        "synoptic_meteorology",
+        "cloud_physics",
+        "numerical_weather",
+        "mesoscale_meteorology",
+        "climate_dynamics",
         # Wave-1045 geology canon.
         "stratigraphy",
         "structural_geology",

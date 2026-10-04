@@ -8359,6 +8359,14 @@ from quant_fund.research.benches_w1045 import (
     bench_stratigraphy_family,
     bench_structural_geology_family,
 )
+from quant_fund.research.benches_w1046 import (
+    bench_atmospheric_dynamics_family,
+    bench_climate_dynamics_family,
+    bench_cloud_physics_family,
+    bench_mesoscale_meteorology_family,
+    bench_numerical_weather_family,
+    bench_synoptic_meteorology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8730,6 +8738,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "atmospheric_dynamics": bench_atmospheric_dynamics_family,
+        "synoptic_meteorology": bench_synoptic_meteorology_family,
+        "cloud_physics": bench_cloud_physics_family,
+        "numerical_weather": bench_numerical_weather_family,
+        "mesoscale_meteorology": bench_mesoscale_meteorology_family,
+        "climate_dynamics": bench_climate_dynamics_family,
         "stratigraphy": bench_stratigraphy_family,
         "structural_geology": bench_structural_geology_family,
         "petrology": bench_petrology_family,
