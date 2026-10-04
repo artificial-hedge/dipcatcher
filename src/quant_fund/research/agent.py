@@ -12151,6 +12151,14 @@ from quant_fund.research.benches_w1519 import (
     bench_praying_mantis_qa_studies_family,
     bench_shield_mantis_qa_studies_family,
 )
+from quant_fund.research.benches_w1520 import (
+    bench_agaric_qa_studies_family,
+    bench_bolete_qa_studies_family,
+    bench_chanterelle_qa_studies_family,
+    bench_inkcap_qa_studies_family,
+    bench_morel_qa_studies_family,
+    bench_puffball_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13883,6 +13891,12 @@ def _provenance(
         "orchid_mantis_qa_studies": bench_orchid_mantis_qa_studies_family,
         "praying_mantis_qa_studies": bench_praying_mantis_qa_studies_family,
         "shield_mantis_qa_studies": bench_shield_mantis_qa_studies_family,
+        "agaric_qa_studies": bench_agaric_qa_studies_family,
+        "bolete_qa_studies": bench_bolete_qa_studies_family,
+        "chanterelle_qa_studies": bench_chanterelle_qa_studies_family,
+        "inkcap_qa_studies": bench_inkcap_qa_studies_family,
+        "morel_qa_studies": bench_morel_qa_studies_family,
+        "puffball_qa_studies": bench_puffball_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
