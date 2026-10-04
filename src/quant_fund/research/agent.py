@@ -13471,6 +13471,14 @@ from quant_fund.research.benches_w1684 import (
     bench_teteoinnan_qa_studies_family,
     bench_yaotl_qa_studies_family,
 )
+from quant_fund.research.benches_w1685 import (
+    bench_ettin_qa_studies_family,
+    bench_fylgja_qa_studies_family,
+    bench_landvaettir_qa_studies_family,
+    bench_nokken_qa_studies_family,
+    bench_seidr_qa_studies_family,
+    bench_vette_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
