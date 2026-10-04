@@ -10983,6 +10983,14 @@ from quant_fund.research.benches_w1373 import (
     bench_qasc_sci2_studies_family,
     bench_winogrande_lite_studies_family,
 )
+from quant_fund.research.benches_w1374 import (
+    bench_deduc_lite_studies_family,
+    bench_entail_bank_studies_family,
+    bench_folio_lite_studies_family,
+    bench_logic_nli_studies_family,
+    bench_proof_writer_studies_family,
+    bench_rule_taker_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11893,6 +11901,12 @@ def _provenance(
         "muin_lite_studies": bench_muin_lite_studies_family,
         "qasc_sci2_studies": bench_qasc_sci2_studies_family,
         "winogrande_lite_studies": bench_winogrande_lite_studies_family,
+        "deduc_lite_studies": bench_deduc_lite_studies_family,
+        "entail_bank_studies": bench_entail_bank_studies_family,
+        "folio_lite_studies": bench_folio_lite_studies_family,
+        "logic_nli_studies": bench_logic_nli_studies_family,
+        "proof_writer_studies": bench_proof_writer_studies_family,
+        "rule_taker_studies": bench_rule_taker_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,

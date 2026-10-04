@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1374 proof-entailment canon.
+        "deduc_lite_studies",
+        "entail_bank_studies",
+        "folio_lite_studies",
+        "logic_nli_studies",
+        "proof_writer_studies",
+        "rule_taker_studies",
         # Wave-1373 commonsense-reasoning canon.
         "commonsense_lite_studies",
         "logi_qa_studies",
