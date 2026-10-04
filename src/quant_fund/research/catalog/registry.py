@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1023 finance-theory canon.
+        "capm_model",
+        "arbitrage_pricing",
+        "black_scholes",
+        "yield_curve",
+        "default_risk",
+        "corporate_finance",
         # Wave-1022 economics canon.
         "growth_theory",
         "overlapping_gens",
