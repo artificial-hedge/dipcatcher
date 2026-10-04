@@ -13127,6 +13127,14 @@ from quant_fund.research.benches_w1641 import (
     bench_taotie_qa_studies_family,
     bench_taowu_qa_studies_family,
 )
+from quant_fund.research.benches_w1642 import (
+    bench_basilisk_2_qa_studies_family,
+    bench_chimera_2_qa_studies_family,
+    bench_cockatrice_qa_studies_family,
+    bench_manticore_2_qa_studies_family,
+    bench_sphinx_2_qa_studies_family,
+    bench_wyvern_2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15401,6 +15409,12 @@ def _provenance(
         "qiongqi_qa_studies": bench_qiongqi_qa_studies_family,
         "taotie_qa_studies": bench_taotie_qa_studies_family,
         "taowu_qa_studies": bench_taowu_qa_studies_family,
+        "basilisk_2_qa_studies": bench_basilisk_2_qa_studies_family,
+        "chimera_2_qa_studies": bench_chimera_2_qa_studies_family,
+        "cockatrice_qa_studies": bench_cockatrice_qa_studies_family,
+        "manticore_2_qa_studies": bench_manticore_2_qa_studies_family,
+        "sphinx_2_qa_studies": bench_sphinx_2_qa_studies_family,
+        "wyvern_2_qa_studies": bench_wyvern_2_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
