@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-962 von-Neumann-algebra canon.
+        "von_neumann_alg",
+        "double_commutant",
+        "predual_space",
+        "normal_state",
+        "tomita_takesaki",
+        "jones_index",
         # Wave-961 semigroup-theory canon.
         "c0_semigroup",
         "hille_yosida",
