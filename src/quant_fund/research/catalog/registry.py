@@ -5245,6 +5245,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "melqart_qa_studies",
         "resheph_qa_studies",
         "tanit_qa_studies",
+        # Wave-1712 armenian-myth canon.
+        "astghik_qa_studies",
+        "hayk_qa_studies",
+        "nahapet_qa_studies",
+        "nane_qa_studies",
+        "tir_qa_studies",
+        "vahagn_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
