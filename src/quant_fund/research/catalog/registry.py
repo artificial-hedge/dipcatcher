@@ -5721,6 +5721,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shennong_qa_studies",
         "xihe_qa_studies",
         "yandi_qa_studies",
+        # Wave-1780 welsh-myth-2 canon.
+        "arawn_qa_studies",
+        "branwen_qa_studies",
+        "gwydion_qa_studies",
+        "lleu_qa_studies",
+        "lludd_qa_studies",
+        "taliesin_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -14231,6 +14231,14 @@ from quant_fund.research.benches_w1779 import (
     bench_xihe_qa_studies_family,
     bench_yandi_qa_studies_family,
 )
+from quant_fund.research.benches_w1780 import (
+    bench_arawn_qa_studies_family,
+    bench_branwen_qa_studies_family,
+    bench_gwydion_qa_studies_family,
+    bench_lleu_qa_studies_family,
+    bench_lludd_qa_studies_family,
+    bench_taliesin_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
