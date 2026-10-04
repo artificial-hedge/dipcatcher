@@ -3215,6 +3215,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "route_qa_studies",
         "spatial_qa_studies",
         "terrain_qa_studies",
+        # Wave-1422 temporal-era canon.
+        "calendar_qa_studies",
+        "century_qa_studies",
+        "date_qa_studies",
+        "decade_qa_studies",
+        "epoch_qa_studies",
+        "era_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
