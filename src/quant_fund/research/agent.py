@@ -8583,6 +8583,14 @@ from quant_fund.research.benches_w1073 import (
     bench_pastoral_theology_family,
     bench_systematic_theology_family,
 )
+from quant_fund.research.benches_w1074 import (
+    bench_baking_science_family,
+    bench_culinary_arts_family,
+    bench_fermentation_science_family,
+    bench_flavor_science_family,
+    bench_food_studies_family,
+    bench_gastronomy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8954,6 +8962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "culinary_arts": bench_culinary_arts_family,
+        "gastronomy": bench_gastronomy_family,
+        "food_studies": bench_food_studies_family,
+        "baking_science": bench_baking_science_family,
+        "flavor_science": bench_flavor_science_family,
+        "fermentation_science": bench_fermentation_science_family,
         "systematic_theology": bench_systematic_theology_family,
         "biblical_exegesis": bench_biblical_exegesis_family,
         "church_history": bench_church_history_family,
