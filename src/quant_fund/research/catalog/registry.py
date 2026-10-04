@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1387 tool-use canon.
+        "api_blend_studies",
+        "bfcl_v3_studies",
+        "gorilla_eval_studies",
+        "gta_bench_studies",
+        "seal_tools_studies",
+        "stabletoolbench_studies",
         # Wave-1386 embodied-game canon.
         "alfworld_lite_studies",
         "babyai_lite_studies",

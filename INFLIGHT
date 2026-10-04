@@ -1,3 +1,4 @@
+w1387 tool-use canon: api_blend_studies, bfcl_v3_studies, gorilla_eval_studies, gta_bench_studies, seal_tools_studies, stabletoolbench_studies (8271->8277)
 w1386 embodied-game canon: alfworld_lite_studies, babyai_lite_studies, crafter_lite_studies, jericho_lite_studies, scienceworld_studies, textworld_lite_studies (8265->8271)
 w1385 web-agent canon: airtasks_studies, browsergym_studies, maze_eval_studies, mmind2web_studies, screenqa_studies, weblinx_studies (8259->8265)
 w1384 live-eval canon: aider_polyglot_studies, hum_eval_studies, livebench_arena_studies, mbti_eval_studies, olmes_lite_studies, plus_eval_studies (8253->8259)
