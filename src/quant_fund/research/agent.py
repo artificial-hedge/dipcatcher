@@ -8743,6 +8743,14 @@ from quant_fund.research.benches_w1093 import (
     bench_procedural_law_family,
     bench_property_law_family,
 )
+from quant_fund.research.benches_w1094 import (
+    bench_dermatology_family,
+    bench_neurology_family,
+    bench_oncology_family,
+    bench_orthopedics_family,
+    bench_psychiatry_family,
+    bench_radiology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9114,6 +9122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "oncology": bench_oncology_family,
+        "neurology": bench_neurology_family,
+        "dermatology": bench_dermatology_family,
+        "orthopedics": bench_orthopedics_family,
+        "psychiatry": bench_psychiatry_family,
+        "radiology": bench_radiology_family,
         "civil_law": bench_civil_law_family,
         "common_law": bench_common_law_family,
         "canon_law": bench_canon_law_family,
