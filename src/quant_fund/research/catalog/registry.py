@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1200 medical-physics canon.
+        "cardiovascular_technology",
+        "nuclear_medicine_technology",
+        "radiation_dosimetry",
+        "medical_physics_studies",
+        "dosimetry_studies",
+        "radiopharmacy",
         # Wave-1199 interventional-medicine canon.
         "dialysis_technology",
         "transplant_studies",
