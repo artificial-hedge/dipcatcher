@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1063 communications/media canon.
+        "media_studies",
+        "journalism",
+        "public_relations",
+        "rhetoric",
+        "communication_theory",
+        "digital_media",
         # Wave-1062 religious-studies canon.
         "theology",
         "comparative_religion",
