@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-848 finite-element canon.
+        "fem_assembly",
+        "isoparametric_map",
+        "quadrature_rules",
+        "triangular_basis",
+        "edge_elements",
+        "dof_management",
         # Wave-847 perturbation-theory canon.
         "regular_perturbation",
         "singular_perturbation",

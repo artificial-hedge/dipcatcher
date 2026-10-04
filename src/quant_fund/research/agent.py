@@ -6775,6 +6775,14 @@ from quant_fund.research.benches_w847 import (
     bench_regular_perturbation_family,
     bench_singular_perturbation_family,
 )
+from quant_fund.research.benches_w848 import (
+    bench_dof_management_family,
+    bench_edge_elements_family,
+    bench_fem_assembly_family,
+    bench_isoparametric_map_family,
+    bench_quadrature_rules_family,
+    bench_triangular_basis_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7146,6 +7154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fem_assembly": bench_fem_assembly_family,
+        "isoparametric_map": bench_isoparametric_map_family,
+        "quadrature_rules": bench_quadrature_rules_family,
+        "triangular_basis": bench_triangular_basis_family,
+        "edge_elements": bench_edge_elements_family,
+        "dof_management": bench_dof_management_family,
         "regular_perturbation": bench_regular_perturbation_family,
         "singular_perturbation": bench_singular_perturbation_family,
         "matched_asymptotic": bench_matched_asymptotic_family,

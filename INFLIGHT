@@ -1,3 +1,4 @@
+feat(research): wave 848 — finite-element canon (fem_assembly, isoparametric_map, quadrature_rules, triangular_basis, edge_elements, dof_management) (5037->5043 families)
 feat(research): wave 847 — perturbation-theory canon (regular_perturbation, singular_perturbation, matched_asymptotic, multiple_scales, lindstedt_poincare, boundary_layer) (5031->5037 families)
 feat(research): wave 846 — special-functions canon (gamma_fn, beta_fn, bessel_fn, airy_fn, error_fn, hypergeometric_fn) (5025->5031 families)
 feat(research): wave 845 — integral-transforms canon (laplace_transform, mellin_transform, hankel_transform, z_transform, hilbert_transform, abel_transform) (5019->5025 families)
