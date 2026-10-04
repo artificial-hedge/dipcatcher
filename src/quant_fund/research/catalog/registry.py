@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-621 motivic-10 canon.
+        "motivic_k",
+        "motivic_borel",
+        "motivic_height",
+        "motivic_chow",
+        "motivic_homology",
+        "motivic_class",
         # Wave-620 stacks-2 canon.
         "gerbe2",
         "band_gerbe",

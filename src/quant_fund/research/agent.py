@@ -4959,6 +4959,14 @@ from quant_fund.research.benches_w620 import (
     bench_rigid_stack_family,
     bench_root_stack_family,
 )
+from quant_fund.research.benches_w621 import (
+    bench_motivic_borel_family,
+    bench_motivic_chow_family,
+    bench_motivic_class_family,
+    bench_motivic_height_family,
+    bench_motivic_homology_family,
+    bench_motivic_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5338,6 +5346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_k": bench_motivic_k_family,
+        "motivic_borel": bench_motivic_borel_family,
+        "motivic_height": bench_motivic_height_family,
+        "motivic_chow": bench_motivic_chow_family,
+        "motivic_homology": bench_motivic_homology_family,
+        "motivic_class": bench_motivic_class_family,
         "gerbe2": bench_gerbe2_family,
         "band_gerbe": bench_band_gerbe_family,
         "rigid_stack": bench_rigid_stack_family,
