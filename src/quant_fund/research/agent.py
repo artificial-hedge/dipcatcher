@@ -11319,6 +11319,14 @@ from quant_fund.research.benches_w1415 import (
     bench_legal_qa_studies_family,
     bench_statute_qa_studies_family,
 )
+from quant_fund.research.benches_w1416 import (
+    bench_analyst_qa_studies_family,
+    bench_audit_qa_studies_family,
+    bench_bank_qa_studies_family,
+    bench_broker_qa_studies_family,
+    bench_credit_qa_studies_family,
+    bench_earnings_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12475,6 +12483,12 @@ def _provenance(
         "lawqa_lite_studies": bench_lawqa_lite_studies_family,
         "legal_qa_studies": bench_legal_qa_studies_family,
         "statute_qa_studies": bench_statute_qa_studies_family,
+        "analyst_qa_studies": bench_analyst_qa_studies_family,
+        "audit_qa_studies": bench_audit_qa_studies_family,
+        "bank_qa_studies": bench_bank_qa_studies_family,
+        "broker_qa_studies": bench_broker_qa_studies_family,
+        "credit_qa_studies": bench_credit_qa_studies_family,
+        "earnings_qa_studies": bench_earnings_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

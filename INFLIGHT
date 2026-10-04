@@ -1,3 +1,4 @@
+w1416 financial-NLP canon: analyst_qa_studies, audit_qa_studies, bank_qa_studies, broker_qa_studies, credit_qa_studies, earnings_qa_studies (8445->8451)
 w1415 legal-regulatory canon: case_qa_studies, clause_qa_studies, contract_qa_studies, lawqa_lite_studies, legal_qa_studies, statute_qa_studies (8439->8445)
 w1414 folk-commonsense canon: afford_qa_studies, counter_qa_studies, custom_qa_studies, everyday_qa_studies, folk_qa_studies, moral_qa_studies (8433->8439)
 w1413 discourse-pragmatics canon: anaphora_qa_studies, coherence_qa_studies, dialogue_act_studies, discourse_qa_studies, hedge_qa_studies, implicit_qa_studies (8427->8433)

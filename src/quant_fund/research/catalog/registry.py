@@ -3173,6 +3173,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lawqa_lite_studies",
         "legal_qa_studies",
         "statute_qa_studies",
+        # Wave-1416 financial-NLP canon.
+        "analyst_qa_studies",
+        "audit_qa_studies",
+        "bank_qa_studies",
+        "broker_qa_studies",
+        "credit_qa_studies",
+        "earnings_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
