@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-649 prismatic-3 canon.
+        "prism_site2",
+        "cartier_prism",
+        "breuil_prism",
+        "filtered_prism",
+        "frobenius_prism",
+        "stacky_prism",
         # Wave-648 algebraic-K-10 canon.
         "kodaira_k",
         "lindenstrauss_k",
