@@ -8247,6 +8247,14 @@ from quant_fund.research.benches_w1031 import (
     bench_transportation_eng_family,
     bench_water_resources_family,
 )
+from quant_fund.research.benches_w1032 import (
+    bench_aerodynamics_family,
+    bench_airfoil_theory_family,
+    bench_flight_dynamics_family,
+    bench_orbital_mechanics2_family,
+    bench_propulsion_family,
+    bench_spacecraft_design_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8618,6 +8626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "aerodynamics": bench_aerodynamics_family,
+        "propulsion": bench_propulsion_family,
+        "orbital_mechanics2": bench_orbital_mechanics2_family,
+        "flight_dynamics": bench_flight_dynamics_family,
+        "spacecraft_design": bench_spacecraft_design_family,
+        "airfoil_theory": bench_airfoil_theory_family,
         "structural_analysis": bench_structural_analysis_family,
         "geotechnics": bench_geotechnics_family,
         "transportation_eng": bench_transportation_eng_family,
