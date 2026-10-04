@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1146 organismal-biology canon.
+        "virology",
+        "parasitology",
+        "mycology",
+        "entomology_2",
+        "limnology",
+        "wildlife_biology",
         # Wave-1145 life-science canon.
         "genomicsciences",
         "proteomics",
