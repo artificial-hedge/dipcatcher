@@ -6903,6 +6903,14 @@ from quant_fund.research.benches_w863 import (
     bench_schwarz_add_family,
     bench_schwarz_mult_family,
 )
+from quant_fund.research.benches_w864 import (
+    bench_intrusive_pce_family,
+    bench_nonintrusive_pce_family,
+    bench_poly_chaos_uq_family,
+    bench_stochastic_colloc_family,
+    bench_stochastic_fem_family,
+    bench_stochastic_galerkin_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7274,6 +7282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stochastic_galerkin": bench_stochastic_galerkin_family,
+        "poly_chaos_uq": bench_poly_chaos_uq_family,
+        "intrusive_pce": bench_intrusive_pce_family,
+        "nonintrusive_pce": bench_nonintrusive_pce_family,
+        "stochastic_colloc": bench_stochastic_colloc_family,
+        "stochastic_fem": bench_stochastic_fem_family,
         "schwarz_add": bench_schwarz_add_family,
         "schwarz_mult": bench_schwarz_mult_family,
         "coarse_correction": bench_coarse_correction_family,
