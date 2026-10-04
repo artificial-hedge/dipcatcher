@@ -11143,6 +11143,14 @@ from quant_fund.research.benches_w1393 import (
     bench_videoweb_studies_family,
     bench_webshop_lite_studies_family,
 )
+from quant_fund.research.benches_w1394 import (
+    bench_api_eval_studies_family,
+    bench_apps_lite_studies_family,
+    bench_livecode_studies_family,
+    bench_mbpp_lite_studies_family,
+    bench_restbench_studies_family,
+    bench_swe_gym_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12173,6 +12181,12 @@ def _provenance(
         "tool_sandbox_studies": bench_tool_sandbox_studies_family,
         "videoweb_studies": bench_videoweb_studies_family,
         "webshop_lite_studies": bench_webshop_lite_studies_family,
+        "api_eval_studies": bench_api_eval_studies_family,
+        "apps_lite_studies": bench_apps_lite_studies_family,
+        "livecode_studies": bench_livecode_studies_family,
+        "mbpp_lite_studies": bench_mbpp_lite_studies_family,
+        "restbench_studies": bench_restbench_studies_family,
+        "swe_gym_studies": bench_swe_gym_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
