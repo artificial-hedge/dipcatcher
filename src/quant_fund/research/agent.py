@@ -13751,6 +13751,14 @@ from quant_fund.research.benches_w1719 import (
     bench_mari_qa_studies_family,
     bench_sugaar_qa_studies_family,
 )
+from quant_fund.research.benches_w1720 import (
+    bench_akka_qa_studies_family,
+    bench_juksakka_qa_studies_family,
+    bench_lieaibolmmai_qa_studies_family,
+    bench_radien_qa_studies_family,
+    bench_sarakka_qa_studies_family,
+    bench_ukso_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
