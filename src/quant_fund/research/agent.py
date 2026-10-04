@@ -10423,6 +10423,14 @@ from quant_fund.research.benches_w1303 import (
     bench_mmlu_studies_family,
     bench_mt_bench_studies_family,
 )
+from quant_fund.research.benches_w1304 import (
+    bench_boolq_studies_family,
+    bench_copa_studies_family,
+    bench_hellaswag_studies_family,
+    bench_openbookqa_studies_family,
+    bench_piqa_studies_family,
+    bench_siqa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11059,6 +11067,12 @@ def _provenance(
         "ifeval_studies": bench_ifeval_studies_family,
         "mmlu_studies": bench_mmlu_studies_family,
         "mt_bench_studies": bench_mt_bench_studies_family,
+        "boolq_studies": bench_boolq_studies_family,
+        "copa_studies": bench_copa_studies_family,
+        "hellaswag_studies": bench_hellaswag_studies_family,
+        "openbookqa_studies": bench_openbookqa_studies_family,
+        "piqa_studies": bench_piqa_studies_family,
+        "siqa_studies": bench_siqa_studies_family,
         "gradient_leak_studies": bench_gradient_leak_studies_family,
         "lira_studies": bench_lira_studies_family,
         "membership_infer_studies": bench_membership_infer_studies_family,
