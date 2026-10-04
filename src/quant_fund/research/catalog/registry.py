@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1181 performing-arts canon.
+        "performing_arts_2",
+        "theater_arts",
+        "acting_studies",
+        "directing_studies",
+        "playwriting",
+        "scenography",
         # Wave-1180 allied-health canon.
         "nursing_studies",
         "allied_health",
