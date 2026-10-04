@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-560 geometric-flows canon.
+        "hamilton_ricci",
+        "perelman_entropy",
+        "ricci_soliton",
+        "kahler_ricci_flow",
+        "mean_curvature_flow",
+        "ancient_solution",
         # Wave-559 complex-geometry canon.
         "calabi_yau_mfd",
         "calabi_conjecture",

@@ -4471,6 +4471,14 @@ from quant_fund.research.benches_w559 import (
     bench_k_stability_family,
     bench_kahler_einstein_family,
 )
+from quant_fund.research.benches_w560 import (
+    bench_ancient_solution_family,
+    bench_hamilton_ricci_family,
+    bench_kahler_ricci_flow_family,
+    bench_mean_curvature_flow_family,
+    bench_perelman_entropy_family,
+    bench_ricci_soliton_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4850,6 +4858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hamilton_ricci": bench_hamilton_ricci_family,
+        "perelman_entropy": bench_perelman_entropy_family,
+        "ricci_soliton": bench_ricci_soliton_family,
+        "kahler_ricci_flow": bench_kahler_ricci_flow_family,
+        "mean_curvature_flow": bench_mean_curvature_flow_family,
+        "ancient_solution": bench_ancient_solution_family,
         "calabi_yau_mfd": bench_calabi_yau_mfd_family,
         "calabi_conjecture": bench_calabi_conjecture_family,
         "kahler_einstein": bench_kahler_einstein_family,
