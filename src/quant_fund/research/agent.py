@@ -11239,6 +11239,14 @@ from quant_fund.research.benches_w1405 import (
     bench_esc_qa_studies_family,
     bench_music_avqa_studies_family,
 )
+from quant_fund.research.benches_w1406 import (
+    bench_menat_qa_studies_family,
+    bench_syndq_lite_studies_family,
+    bench_teas_qa_studies_family,
+    bench_time_qa_studies_family,
+    bench_timedial_qa_studies_family,
+    bench_timetravel_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12335,6 +12343,12 @@ def _provenance(
         "clotho_qa_studies": bench_clotho_qa_studies_family,
         "esc_qa_studies": bench_esc_qa_studies_family,
         "music_avqa_studies": bench_music_avqa_studies_family,
+        "menat_qa_studies": bench_menat_qa_studies_family,
+        "syndq_lite_studies": bench_syndq_lite_studies_family,
+        "teas_qa_studies": bench_teas_qa_studies_family,
+        "time_qa_studies": bench_time_qa_studies_family,
+        "timedial_qa_studies": bench_timedial_qa_studies_family,
+        "timetravel_lite_studies": bench_timetravel_lite_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

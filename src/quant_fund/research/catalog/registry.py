@@ -3103,6 +3103,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "clotho_qa_studies",
         "esc_qa_studies",
         "music_avqa_studies",
+        # Wave-1406 temporal-QA canon.
+        "menat_qa_studies",
+        "syndq_lite_studies",
+        "teas_qa_studies",
+        "time_qa_studies",
+        "timedial_qa_studies",
+        "timetravel_lite_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
