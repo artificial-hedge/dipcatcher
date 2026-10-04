@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-995 integrable-systems canon.
+        "sine_gordon",
+        "nls_soliton",
+        "toda_lattice",
+        "calogero_moser",
+        "kp_hierarchy",
+        "painleve_eq",
         # Wave-994 inverse-spectral canon.
         "inverse_scattering",
         "marchenko_eq",

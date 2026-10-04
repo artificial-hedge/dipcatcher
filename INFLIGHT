@@ -1,3 +1,4 @@
+feat(research): wave 995 — integrable-systems canon (sine_gordon, nls_soliton, toda_lattice, calogero_moser, kp_hierarchy, painleve_eq) (5919->5925 families)
 feat(research): wave 994 — inverse-spectral canon (inverse_scattering, marchenko_eq, gelfand_levitan, kdv_isospectral, trace_formulas, borg_levinson) (5913->5919 families)
 feat(research): wave 993 — nonlinear-functional-analysis canon (monotone_op, degree_theory, schauder_fixed, krein_rutman, minty_browder, maximal_monotone) (5907->5913 families)
 feat(research): wave 992 — scattering-theory canon (wave_operators, scattering_matrix, limiting_absorption, trace_class_scatt, resonances_thy, radiation_cond) (5901->5907 families)
