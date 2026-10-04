@@ -12167,6 +12167,14 @@ from quant_fund.research.benches_w1521 import (
     bench_paphiopedilum_qa_studies_family,
     bench_phalaenopsis_qa_studies_family,
 )
+from quant_fund.research.benches_w1522 import (
+    bench_agave_qa_studies_family,
+    bench_aloe_qa_studies_family,
+    bench_echeveria_qa_studies_family,
+    bench_haworthia_qa_studies_family,
+    bench_lithops_qa_studies_family,
+    bench_sedum_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13911,6 +13919,12 @@ def _provenance(
         "oncidium_qa_studies": bench_oncidium_qa_studies_family,
         "paphiopedilum_qa_studies": bench_paphiopedilum_qa_studies_family,
         "phalaenopsis_qa_studies": bench_phalaenopsis_qa_studies_family,
+        "agave_qa_studies": bench_agave_qa_studies_family,
+        "aloe_qa_studies": bench_aloe_qa_studies_family,
+        "echeveria_qa_studies": bench_echeveria_qa_studies_family,
+        "haworthia_qa_studies": bench_haworthia_qa_studies_family,
+        "lithops_qa_studies": bench_lithops_qa_studies_family,
+        "sedum_qa_studies": bench_sedum_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

@@ -3915,6 +3915,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oncidium_qa_studies",
         "paphiopedilum_qa_studies",
         "phalaenopsis_qa_studies",
+        # Wave-1522 succulent canon.
+        "agave_qa_studies",
+        "aloe_qa_studies",
+        "echeveria_qa_studies",
+        "haworthia_qa_studies",
+        "lithops_qa_studies",
+        "sedum_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
