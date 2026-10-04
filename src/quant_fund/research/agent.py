@@ -13327,6 +13327,14 @@ from quant_fund.research.benches_w1666 import (
     bench_ekek_qa_studies_family,
     bench_engkanto_qa_studies_family,
 )
+from quant_fund.research.benches_w1667 import (
+    bench_centauride_qa_studies_family,
+    bench_dryad_qa_studies_family,
+    bench_faun_qa_studies_family,
+    bench_hamadryad_qa_studies_family,
+    bench_nereid_qa_studies_family,
+    bench_nymph_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
