@@ -13007,6 +13007,14 @@ from quant_fund.research.benches_w1626 import (
     bench_southern_qa_studies_family,
     bench_western_qa_studies_family,
 )
+from quant_fund.research.benches_w1627 import (
+    bench_cave_crayfish_qa_studies_family,
+    bench_cave_scorpion_qa_studies_family,
+    bench_cave_springtail_qa_studies_family,
+    bench_cave_worm_qa_studies_family,
+    bench_stygobite_qa_studies_family,
+    bench_troglofish_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15191,6 +15199,12 @@ def _provenance(
         "northern_qa_studies": bench_northern_qa_studies_family,
         "southern_qa_studies": bench_southern_qa_studies_family,
         "western_qa_studies": bench_western_qa_studies_family,
+        "cave_crayfish_qa_studies": bench_cave_crayfish_qa_studies_family,
+        "cave_scorpion_qa_studies": bench_cave_scorpion_qa_studies_family,
+        "cave_springtail_qa_studies": bench_cave_springtail_qa_studies_family,
+        "cave_worm_qa_studies": bench_cave_worm_qa_studies_family,
+        "stygobite_qa_studies": bench_stygobite_qa_studies_family,
+        "troglofish_qa_studies": bench_troglofish_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
