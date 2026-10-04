@@ -1,3 +1,4 @@
+w1342 bias-eval-2 canon: fairness_eval_studies, gender_bias_studies, jigsaw_tox_studies, nlp_bias_studies, pronoun_bias_studies, regard_metric_studies (8001->8007)
 w1341 bias-eval canon: bold_eval_studies, crow_s_pairs_studies, hate_speech_eval_studies, holo_bias_studies, real_toxicity_studies, stereo_set_studies (7995->8001)
 w1340 science-eval canon: arc_challenge_studies, bio_qa_studies, med_qa_studies, openbook_qa_studies, pubmed_qa_studies, sci_q_studies (7989->7995)
 w1339 math-eval-2 canon: aqua_rat_studies, geo_qa_studies, hol_step_studies, math_odyssey_studies, tab_math_studies, uni_math_studies (7983->7989)
