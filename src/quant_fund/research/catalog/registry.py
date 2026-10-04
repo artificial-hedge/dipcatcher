@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1232 geriatrics canon.
+        "geriatrics_studies",
+        "frailty_medicine",
+        "memory_clinic_studies",
+        "falls_prevention_studies",
+        "polypharmacy_studies",
+        "caregiver_medicine",
         # Wave-1231 transplant-immunology canon.
         "transplant_medicine_studies",
         "immunology_medicine",
