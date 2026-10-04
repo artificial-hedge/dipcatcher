@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1184 film-production canon.
+        "film_production",
+        "cinematography_studies",
+        "film_editing",
+        "sound_design",
+        "documentary_production",
+        "animation_studies",
         # Wave-1183 music canon.
         "music_theory_2",
         "musicology_2",
