@@ -10343,6 +10343,14 @@ from quant_fund.research.benches_w1293 import (
     bench_rlaif_studies_family,
     bench_sleeper_eval_studies_family,
 )
+from quant_fund.research.benches_w1294 import (
+    bench_activation_oracle_studies_family,
+    bench_concept_vector_studies_family,
+    bench_feature_ablation_studies_family,
+    bench_honesty_vector_studies_family,
+    bench_reading_vector_studies_family,
+    bench_refusal_vector_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10924,6 +10932,12 @@ def _provenance(
         "principle_eval_studies": bench_principle_eval_studies_family,
         "rlaif_studies": bench_rlaif_studies_family,
         "sleeper_eval_studies": bench_sleeper_eval_studies_family,
+        "activation_oracle_studies": bench_activation_oracle_studies_family,
+        "concept_vector_studies": bench_concept_vector_studies_family,
+        "feature_ablation_studies": bench_feature_ablation_studies_family,
+        "honesty_vector_studies": bench_honesty_vector_studies_family,
+        "reading_vector_studies": bench_reading_vector_studies_family,
+        "refusal_vector_studies": bench_refusal_vector_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
