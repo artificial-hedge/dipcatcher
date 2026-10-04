@@ -9322,6 +9322,360 @@ def _probe_backend_probes(  # NOSONAR
     }
     out["vs_gone_404"] = fb.get(f"/v1/vector_stores/{vs_id}").status_code == 404
 
+    # ---- Anthropic /v1/messages drop-in -----------------------------------
+    # The Anthropic surface is a translation layer over the gated
+    # _openai_chat_core — same auth (the SDK's x-api-key is the
+    # case-insensitive X-API-Key), metering, backend chain, completion
+    # log, and /v1 idempotency space; the response is re-minted in
+    # Anthropic's message grammar and every refusal carries the
+    # {type:"error",error:{...}} envelope (stock anthropic SDK parses it).
+
+    am = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "system": "be terse",
+            "messages": [{"role": "user", "content": "ping"}],
+        },
+    )
+    amb = am.json()
+    am_cid = am.headers.get("X-Fx1-Completion-Id", "")
+    out["anthropic_message_200"] = (
+        am.status_code == 200
+        and amb.get("type") == "message"
+        and amb.get("role") == "assistant"
+        and str(amb.get("id", "")).startswith("msg_")
+        and amb.get("content") == [{"type": "text", "text": "clean:ping"}]
+        and amb.get("stop_reason") == "end_turn"
+        and amb.get("model") == "fake-0"
+        and isinstance(amb.get("usage", {}).get("input_tokens"), int)
+        and isinstance(amb.get("usage", {}).get("output_tokens"), int)
+        and bool(am_cid)
+    )
+    # the answer is logged/receipted like any gated call, but `store` is
+    # forced off — the chat-completions retrieval twin 404s
+    if am_cid:
+        out["anthropic_logged_not_stored"] = (
+            fb.get(f"/harness/completions/{am_cid}").status_code == 200
+            and fb.get(f"/v1/chat/completions/chatcmpl-{am_cid}").status_code == 404
+        )
+
+    # stream:true → Anthropic SSE grammar; frames carry id:<idx>; the
+    # text deltas re-assemble the gated answer; message_stop is terminal
+    ams = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "stream me"}],
+            "stream": True,
+        },
+    )
+    aframes = [ln for ln in ams.text.split("\n\n") if ln.strip()]
+    aparsed: list[dict[str, Any]] = []
+    for ln in aframes:
+        ev_name = ""
+        data = ""
+        for sub in ln.splitlines():
+            if sub.startswith("event: "):
+                ev_name = sub[7:]
+            elif sub.startswith("data: "):
+                data = sub[6:]
+        if data:
+            aparsed.append({"event": ev_name, "data": _json3.loads(data)})
+    aseq = [f["event"] for f in aparsed]
+    atext = "".join(
+        f["data"]["delta"]["text"]
+        for f in aparsed
+        if f["data"].get("type") == "content_block_delta"
+        and f["data"].get("delta", {}).get("type") == "text_delta"
+    )
+    out["anthropic_stream_grammar"] = (
+        ams.status_code == 200
+        and ams.headers.get("content-type", "").startswith("text/event-stream")
+        and aseq[0] == "message_start"
+        and aseq[1] == "ping"
+        and "content_block_start" in aseq
+        and "content_block_stop" in aseq
+        and aseq[-2] == "message_delta"
+        and aseq[-1] == "message_stop"
+        and atext == "clean:stream me"
+        and aparsed[0]["data"]["message"]["role"] == "assistant"
+        and aparsed[-2]["data"]["delta"]["stop_reason"] == "end_turn"
+        and "output_tokens" in aparsed[-2]["data"]["usage"]
+    )
+    # idempotency: same key+body replays the identical answer without a
+    # second backend call; a mismatched body under the same key 409s
+    ikey = {"Idempotency-Key": "am-1"}
+    ai1 = fb.post(
+        "/v1/messages",
+        headers=ikey,
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "idem"}],
+        },
+    )
+    ai2 = fb.post(
+        "/v1/messages",
+        headers=ikey,
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "idem"}],
+        },
+    )
+    ai3 = fb.post(
+        "/v1/messages",
+        headers=ikey,
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "different"}],
+        },
+    )
+    out["anthropic_idem_replay"] = (
+        ai1.status_code == 200
+        and ai2.status_code == 200
+        and ai1.json() == ai2.json()
+        and ai2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and ai3.status_code == 409
+        and ai3.json().get("type") == "error"
+        and ai3.json()["error"]["type"] == "invalid_request_error"
+    )
+    # keyed stream replays resume: Last-Event-ID skips already-sent frames
+    skey = {"Idempotency-Key": "am-s1"}
+    asi1 = fb.post(
+        "/v1/messages",
+        headers=skey,
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "resume"}],
+            "stream": True,
+        },
+    )
+    n_frames_1 = sum(1 for ln in asi1.text.split("\n\n") if "data:" in ln)
+    asi2 = fb.post(
+        "/v1/messages",
+        headers={**skey, "Last-Event-ID": "1"},
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "resume"}],
+            "stream": True,
+        },
+    )
+    n_frames_2 = sum(1 for ln in asi2.text.split("\n\n") if "data:" in ln)
+    out["anthropic_stream_resume"] = (
+        asi1.status_code == 200
+        and asi2.status_code == 200
+        and n_frames_2 == n_frames_1 - 2
+        and "message_stop" in asi2.text
+        # resume without the key / for an unkeyed original fails closed
+        and fb.post(
+            "/v1/messages",
+            headers={"Last-Event-ID": "1"},
+            json={
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "resume"}],
+                "stream": True,
+            },
+        ).status_code
+        == 400
+        and fb.post(
+            "/v1/messages",
+            headers={"Idempotency-Key": "no-pin", "Last-Event-ID": "0"},
+            json={
+                "model": "fx1",
+                "max_tokens": 64,
+                "messages": [{"role": "user", "content": "x"}],
+                "stream": True,
+            },
+        ).status_code
+        == 409
+    )
+
+    # tools: Anthropic input_schema → OpenAI function spec verbatim; a
+    # tool_calls turn re-mints as a tool_use block with parsed input;
+    # tool_result history translates to OpenAI tool turns
+    at_backend = _OiToolBackend()
+    tool_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: at_backend))
+    at = tool_app.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "tools": [
+                {
+                    "name": "calc",
+                    "description": "adds",
+                    "input_schema": {"type": "object", "properties": {"x": {"type": "integer"}}},
+                }
+            ],
+            "tool_choice": {"type": "any"},
+            "messages": [{"role": "user", "content": "use the tool"}],
+        },
+    )
+    atb = at.json()
+    out["anthropic_tool_use_envelope"] = (
+        at.status_code == 200
+        and atb.get("stop_reason") == "tool_use"
+        and atb["content"][0]["type"] == "tool_use"
+        and atb["content"][0]["id"] == "call_0"
+        and atb["content"][0]["name"] == "calc"
+        and atb["content"][0]["input"] == {"x": 1}
+    )
+    # the forwarded spec: input_schema lands as function.parameters
+    # verbatim and {type:"any"} maps to OpenAI's "required"
+    out["anthropic_tools_forwarded"] = (
+        at_backend.seen_tools
+        == [
+            {
+                "type": "function",
+                "function": {
+                    "name": "calc",
+                    "description": "adds",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"x": {"type": "integer"}},
+                    },
+                },
+            }
+        ]
+        and at_backend.seen_choice == "required"
+    )
+    at2 = tool_app.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "tools": [
+                {
+                    "name": "calc",
+                    "description": "adds",
+                    "input_schema": {"type": "object"},
+                }
+            ],
+            "tool_choice": {"type": "tool", "name": "calc"},
+            "messages": [{"role": "user", "content": "go"}],
+        },
+    )
+    out["anthropic_tool_choice_named"] = at2.status_code == 200 and (
+        at_backend.seen_choice == {"type": "function", "function": {"name": "calc"}}
+    )
+    # tool_use/tool_result history → assistant tool_calls + role:"tool" turn
+    at3 = tool_app.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [
+                {"role": "user", "content": "add"},
+                {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "call_0",
+                            "name": "calc",
+                            "input": {"x": 1},
+                        }
+                    ],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "call_0",
+                            "content": "2",
+                        }
+                    ],
+                },
+            ],
+        },
+    )
+    aseen = at_backend.seen_messages or []
+    out["anthropic_tool_result_turns"] = (
+        at3.status_code == 200
+        and aseen[0] == {"role": "user", "content": "add"}
+        and aseen[1]["role"] == "assistant"
+        and aseen[1]["tool_calls"]
+        == [
+            {
+                "id": "call_0",
+                "type": "function",
+                "function": {"name": "calc", "arguments": '{"x": 1}'},
+            }
+        ]
+        and aseen[2] == {"role": "tool", "tool_call_id": "call_0", "content": "2"}
+    )
+
+    # fail-closed surface — every refusal in the Anthropic envelope
+    bad1 = fb.post(
+        "/v1/messages",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+    )
+    bad2 = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "assistant", "content": "x"}],
+        },
+    )
+    bad3 = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [{"role": "user", "content": "x"}],
+            "top_k": 40,
+        },
+    )
+    bad4 = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {"type": "base64", "media_type": "image/png", "data": "x"},
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+    bad5 = fb.post(
+        "/v1/messages",
+        json={
+            "model": "fx1",
+            "max_tokens": 64,
+            "tools": [{"name": "f", "input_schema": {"type": "object"}}],
+            "tool_choice": {"type": "tool", "name": "missing"},
+            "messages": [{"role": "user", "content": "x"}],
+        },
+    )
+    out["anthropic_failclosed"] = (
+        # max_tokens required; non-user-first turn; top_k unsupported;
+        # image blocks unsupported; tool_choice naming an absent tool —
+        # each refusal is the Anthropic envelope, never OpenAI-shaped
+        all(
+            b.status_code in (400, 422)
+            and b.json().get("type") == "error"
+            and b.json()["error"]["type"] == "invalid_request_error"
+            for b in (bad1, bad2, bad3, bad4, bad5)
+        )
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

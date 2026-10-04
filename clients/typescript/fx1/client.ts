@@ -898,6 +898,86 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/messages — the Anthropic Messages surface over the gated
+   * pipeline (the stock `anthropic` SDK's `x-api-key` header
+   * authenticates unchanged; `baseURL` just points at the harness).
+   * `request` uses Anthropic's wire shape: `messages` are
+   * `user`/`assistant` turns (string or block content), `system` a
+   * string or text blocks, `tools` the `{name, description,
+   * input_schema}` shape, `tool_choice` `{type: auto|any|tool|none}`;
+   * `max_tokens` is required by the contract. Anthropic-only knobs the
+   * pipeline cannot honor (`top_k`, `thinking`, `cache_control`,
+   * image/document blocks) fail closed as `{type: "error", error}` —
+   * `HarnessApiError` surfaces the body unchanged. Returns the
+   * `message` object plus the `X-Fx1-Completion-Id` handle.
+   */
+  async messagesCreate(
+    request: Record<string, unknown>,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{ message: Record<string, unknown>; completionId: string | null }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/messages",
+      body: { ...request, stream: false },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      message: (await res.json()) as Record<string, unknown>,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  /**
+   * POST /v1/messages with `stream: true` — SSE frames in the
+   * Anthropic event grammar (`message_start` → `content_block_*` →
+   * `message_delta` → `message_stop`; `ping` keepalives; `error` is a
+   * frame, not transport). `onEvent` receives `{event, data}` where
+   * `event` is the Anthropic event name and `data` the parsed payload.
+   * `lastEventId` resumes a dropped keyed stream like
+   * `chatCompletionStream` — frames carry `id:` equal to their index.
+   */
+  async messagesCreateStream(
+    request: Record<string, unknown>,
+    onEvent: (event: string, payload: Record<string, unknown>) => void,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+    lastEventId?: number,
+  ): Promise<string | null> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/messages",
+      body: { ...request, stream: true },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+        ...(lastEventId !== undefined
+          ? { "Last-Event-ID": String(lastEventId) }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    for await (const ev of readSse(res)) {
+      onEvent(ev.event, JSON.parse(ev.data) as Record<string, unknown>);
+      if (ev.event === "message_stop") break;
+    }
+    return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  /**
    * POST /v1/responses — the OpenAI Responses surface over the gated
    * pipeline. Non-streaming only (`stream: true` is rejected here; use
    * `responsesCreateStream`). `input` is a string or message-item list

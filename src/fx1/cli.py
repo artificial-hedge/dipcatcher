@@ -162,6 +162,30 @@ def _emit_response_deltas(events: Iterable[Any]) -> None:
         typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
 
 
+def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
+    """Print an Anthropic event stream — ``text_delta`` pieces inline,
+    a ``tool_use`` block's ``input_json_delta`` into the same stream
+    (delimited), nothing else. ``message_stop`` is the terminal frame;
+    its absence means the stream was cut (the callers fail on that)."""
+    for event in events:
+        data = event.get("data", event) if isinstance(event, dict) else event
+        payload = data if isinstance(data, dict) else {}
+        ptype = payload.get("type")
+        if ptype == "content_block_start":
+            if (payload.get("content_block") or {}).get("type") == "tool_use":
+                typer.echo("[tool_use]", nl=False)
+        elif ptype == "content_block_delta":
+            delta = payload.get("delta") or {}
+            text = (
+                delta.get("text")
+                if delta.get("type") == "text_delta"
+                else delta.get("partial_json")
+            )
+            if text:
+                typer.echo(text, nl=False)
+    typer.echo()
+
+
 app = typer.Typer(
     name="fx1",
     help="fx-1 — the quant LLM. dipcatcher is the harness that builds, evaluates, and verifies it.",
@@ -2894,6 +2918,180 @@ def harness_respond(  # NOSONAR
         return
     resp, _cid = _or_exit(lambda: Fx1Harness().openai_response(body, headers=headers))
     typer.echo(json.dumps(resp, indent=2))
+
+
+@harness_app.command("message")
+def harness_message(  # NOSONAR
+    input_: str = typer.Argument(
+        ...,
+        help="User-turn text, or a JSON array of Anthropic message objects.",
+    ),
+    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    max_tokens: int = typer.Option(
+        1024, "--max-tokens", help="Output token cap (required by the contract)."
+    ),
+    system: str | None = typer.Option(
+        None,
+        "--system",
+        help="System prompt text, or a JSON array of {type:'text',text} blocks.",
+    ),
+    temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature 0–1."),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    stop: list[str] = typer.Option([], "--stop", help="Stop sequence (repeatable, at most 4)."),
+    tools: str | None = typer.Option(
+        None, "--tools", help="JSON array of Anthropic tools ({name, description, input_schema})."
+    ),
+    tool_choice: str | None = typer.Option(
+        None,
+        "--tool-choice",
+        help='JSON choice object, e.g. \'{"type":"auto"}\' or \'{"type":"tool","name":"x"}\'.',
+    ),
+    user_id: str | None = typer.Option(None, "--user-id", help="metadata.user_id audit stamp."),
+    stream: bool = typer.Option(
+        False, "--stream", help="Emit Anthropic SSE event deltas instead of one JSON block."
+    ),
+    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+) -> None:
+    """``POST /v1/messages`` — the Anthropic Messages surface over the gated
+    pipeline.
+
+    Anthropic turns (``user``/``assistant``, string or block-list content),
+    ``--system``, tools in the Anthropic ``input_schema`` shape. The answer
+    prints as the ``message`` object; ``--stream`` prints text deltas. The
+    completion-log id rides ``X-Fx1-Completion-Id`` for receipt lookup.
+    Anthropic-only knobs the pipeline cannot honor (top_k, thinking,
+    cache_control, image blocks) fail closed — never silently dropped.
+    """
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+
+    def _json_opt(raw: str | None, what: str) -> Any:
+        if raw is None:
+            return None
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            _bad_arg(f"invalid {what} JSON")
+            raise AssertionError("unreachable") from None
+
+    try:
+        parsed = json.loads(input_)
+        messages: list[dict[str, Any]] = (
+            cast(list[dict[str, Any]], parsed)
+            if isinstance(parsed, list)
+            else [{"role": "user", "content": input_}]
+        )
+    except json.JSONDecodeError:
+        messages = [{"role": "user", "content": input_}]
+    sys_val: str | list[Any] | None = None
+    if system is not None:
+        try:
+            parsed_sys = json.loads(system)
+        except json.JSONDecodeError:
+            sys_val = system
+        else:
+            sys_val = parsed_sys if isinstance(parsed_sys, list) else system
+    tool_list = _json_opt(tools, "tools")
+    if tool_list is not None and not isinstance(tool_list, list):
+        _bad_arg("--tools must be a JSON array")
+    tchoice = _json_opt(tool_choice, "tool-choice")
+    if tchoice is not None and not isinstance(tchoice, dict):
+        _bad_arg('--tool-choice must be a JSON object, e.g. {"type":"auto"}')
+
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        if stream:
+            events, _cid = _or_exit(
+                lambda: client.create_message_stream(
+                    messages,
+                    model=model,
+                    max_tokens=max_tokens,
+                    system=sys_val,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop_sequences=stop or None,
+                    tools=tool_list,
+                    tool_choice=tchoice,
+                    user_id=user_id,
+                    backend=backend,
+                    byok=byok,
+                    checkpoint_dir=checkpoint_dir,
+                    fallbacks=fallbacks or None,
+                    timeout_s=backend_timeout,
+                )
+            )
+            _emit_anthropic_deltas(events)
+            return
+        msg_remote, _cid = _or_exit(
+            lambda: client.create_message(
+                messages,
+                model=model,
+                max_tokens=max_tokens,
+                system=sys_val,
+                temperature=temperature,
+                top_p=top_p,
+                stop_sequences=stop or None,
+                tools=tool_list,
+                tool_choice=tchoice,
+                user_id=user_id,
+                backend=backend,
+                byok=byok,
+                checkpoint_dir=checkpoint_dir,
+                fallbacks=fallbacks or None,
+                timeout_s=backend_timeout,
+            )
+        )
+        typer.echo(json.dumps(msg_remote, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    headers: dict[str, str] = {}
+    if backend is not None:
+        headers["x-fx1-backend"] = backend
+    if checkpoint_dir is not None:
+        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
+    if byok is not None:
+        headers["x-fx1-byok-base-url"] = byok["base_url"]
+        headers["x-fx1-byok-api-key"] = byok["api_key"]
+        headers["x-fx1-byok-model"] = byok["model"]
+    if fallbacks:
+        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    fx1: dict[str, Any] = {}
+    if backend_timeout is not None:
+        fx1["timeout_s"] = backend_timeout
+    body: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "system": sys_val,
+        "temperature": temperature,
+        "top_p": top_p,
+        "stop_sequences": stop or None,
+        "tools": tool_list,
+        "tool_choice": tchoice,
+        "metadata": {"user_id": user_id} if user_id is not None else None,
+        "fx1": fx1 or None,
+    }
+    if stream:
+        sevents, _cid = _or_exit(
+            lambda: Fx1Harness().anthropic_message_stream(body, headers=headers)
+        )
+        _emit_anthropic_deltas(sevents)
+        return
+    amsg, _cid = _or_exit(lambda: Fx1Harness().anthropic_message(body, headers=headers))
+    typer.echo(json.dumps(amsg.model_dump(mode="json"), indent=2))
 
 
 @harness_app.command("embed")

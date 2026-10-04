@@ -1402,6 +1402,27 @@
         ]
       }
     },
+    "/v1/messages": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/models": {
       "get": {
         "params": [],
@@ -1932,5 +1953,5 @@
       }
     }
   },
-  "schema_sha256": "eb4aaba44e7a8c7ec1c3e2f89f5fb4cc4a0822b814a1924b05b1199c01682254"
+  "schema_sha256": "11f416da57f1151db43620d94a850f7916a42b7555acb96e438ea562da64e92f"
 }

@@ -91,6 +91,14 @@ from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
 from fx1.honesty import Fx1HonestyError, honesty_categories, validate_fx1_output
 from fx1.reward import score_response
+from fx1.serve.anthropic_compat import (
+    AnthropicMessageObject,
+    AnthropicMessagesRequest,
+    anthropic_envelope,
+    anthropic_error_body,
+    anthropic_sse,
+    anthropic_to_openai,
+)
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -419,6 +427,16 @@ def _err_code(exc: HTTPException) -> str:
     if isinstance(exc, ApiError):
         return exc.code
     return _STATUS_CODES.get(exc.status_code, "internal")
+
+
+def _v1_error_body(path: str, message: str, status: int, code: str) -> dict[str, Any]:
+    """Error envelope for `/v1` paths — Anthropic's `{type: "error",
+    error}` shape on the `/v1/messages` surface, OpenAI's `{error}` shape
+    everywhere else (stock SDKs of either family read their own grammar).
+    """
+    if path == "/v1/messages" or path.startswith("/v1/messages/"):
+        return anthropic_error_body(message, status)
+    return openai_error_body(message, status, code)
 
 
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
@@ -3116,6 +3134,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
     openai_idem_store: _IdemStore[_OpenAIIdemRecord],
+    anthropic_idem_store: _IdemStore[_OpenAIIdemRecord],
     breaker: _BackendBreaker | None,
     receipt_index: _ReceiptIndex,
     metrics: _Metrics,
@@ -4815,6 +4834,122 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 headers=headers,
             )
         return JSONResponse(env_chat, headers=headers)
+
+    @app.post(
+        "/v1/messages",
+        # the JSON path returns the Anthropic `message` object;
+        # stream=true returns the Anthropic SSE event grammar
+        responses={200: {"model": AnthropicMessageObject}},
+        tags=["anthropic"],
+        operation_id="anthropic_messages",
+    )
+    def anthropic_messages(
+        body: AnthropicMessagesRequest,
+        request: Request,
+        _slot_held: None = Depends(slot),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+        last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+    ) -> Response:
+        """Anthropic Messages-compatible completion over the gated pipeline.
+
+        The request translates into the shared OpenAI core — same honesty
+        gate, same fail-closed validation, same metering — and the
+        completion translates out to Anthropic's `message` object (or the
+        `message_start`/`content_block_*`/`message_delta`/`message_stop`
+        SSE grammar when `stream` is set). Auth is the same surface:
+        `X-API-Key`, `Authorization: Bearer`, or a managed `/harness/keys`
+        key; the stock anthropic SDK's `x-api-key` header works
+        unmodified. Anthropic-only knobs the pipeline cannot honor
+        (`top_k`, `thinking`, `service_tier`, `cache_control`, image or
+        document blocks, …) refuse `400 invalid_request_error` instead
+        of silently dropping.
+
+        `Idempotency-Key` makes the call retry-safe — a same-key+body
+        retry replays the pinned completion byte-identically (JSON or
+        SSE, `X-Fx1-Idempotent-Replay: true`); a key reused with a
+        different body fails closed 409. Keyed streams resume on
+        `Last-Event-ID` — frames at or below the delivered index are
+        dropped, and a resume with no pinned record fails closed 409.
+        `X-Fx1-Completion-Id` links the response to the completion-log
+        record (`GET /harness/completions/{id}`) and its sealed receipt.
+        `X-Fx1-*` backend headers and the `fx1` extension object carry
+        over from the OpenAI surface (backend selection, BYOK, deadline).
+        """
+
+        def _refusal(status: int, message: str) -> JSONResponse:
+            return JSONResponse(anthropic_error_body(message, status), status_code=status)
+
+        # resume parsing first — a malformed Last-Event-ID refuses before
+        # any idempotency store work or model spend
+        skip = 0
+        if last_event_id is not None:
+            if not body.stream:
+                return _refusal(400, "Last-Event-ID applies to stream requests only")
+            try:
+                seen = int(last_event_id)
+            except ValueError:
+                return _refusal(
+                    400,
+                    f"Last-Event-ID must be a frame index, got {last_event_id!r}",
+                )
+            if seen < 0:
+                return _refusal(400, "Last-Event-ID must be >= 0")
+            if not (idempotency_key or "").strip():
+                return _refusal(
+                    400,
+                    "resuming a stream needs the original call's Idempotency-Key",
+                )
+            skip = seen + 1
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, anthropic_idem_store, body_fp)
+        if skip and replay is None:
+            return _refusal(
+                409,
+                "Last-Event-ID resume needs a pinned stream under this "
+                "Idempotency-Key — nothing stored",
+            )
+        if replay is not None:
+            env = replay.envelope
+            cid_replay = str(env["id"]).removeprefix("chatcmpl-")
+            headers = {
+                "X-Fx1-Completion-Id": cid_replay,
+                "X-Fx1-Idempotent-Replay": "true",
+            }
+            _rsha = _completion_receipt_sha(cid_replay)
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
+            if body.stream:
+                return StreamingResponse(
+                    anthropic_sse(env, model=body.model, skip=skip),
+                    media_type="text/event-stream",
+                    headers=headers,
+                )
+            return JSONResponse(anthropic_envelope(env, model=body.model), headers=headers)
+        try:
+            oai_body = OpenAIChatRequest.model_validate(anthropic_to_openai(body))
+        except OpenAICompatError as exc:
+            return _refusal(exc.status, str(exc))
+        except ValidationError as exc:
+            return _refusal(400, str(exc))
+        try:
+            env_chat, cid = _openai_chat_core(oai_body, request.headers)
+        except OpenAICompatError as exc:
+            return _refusal(exc.status, str(exc))
+        except ApiError as exc:
+            return _refusal(exc.status_code, str(exc.detail))
+        if key is not None:
+            anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
+        headers = {"X-Fx1-Completion-Id": cid}
+        _rsha = _completion_receipt_sha(cid)
+        if _rsha is not None:
+            headers["X-Fx1-Receipt-Sha256"] = _rsha
+        if body.stream:
+            return StreamingResponse(
+                anthropic_sse(env_chat, model=body.model),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        return JSONResponse(anthropic_envelope(env_chat, model=body.model), headers=headers)
 
     @app.post(
         "/v1/responses",
@@ -7257,7 +7392,9 @@ def _resolve_auth(
             "code": "unauthorized",
         }
         if is_openai_path(request.url.path):
-            content = openai_error_body("invalid or missing API key", 401, "unauthorized")
+            content = _v1_error_body(
+                request.url.path, "invalid or missing API key", 401, "unauthorized"
+            )
         return JSONResponse(status_code=401, content=content)
     host = (request.client.host if request.client else "") or ""
     if host not in _LOOPBACK_HOSTS:
@@ -7270,7 +7407,9 @@ def _resolve_auth(
             "code": "forbidden",
         }
         if is_openai_path(request.url.path):
-            forbidden_body = openai_error_body(str(forbidden_body["detail"]), 403, "forbidden")
+            forbidden_body = _v1_error_body(
+                request.url.path, str(forbidden_body["detail"]), 403, "forbidden"
+            )
         return JSONResponse(status_code=403, content=forbidden_body)
     return (None, True)
 
@@ -7362,6 +7501,11 @@ def create_app(
     )
     openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
         idem_max, journal=_journal("idem_openai.jsonl"), model=_OpenAIIdemRecord
+    )
+    # /v1/messages pins the shared chat.completion envelope — replay
+    # regenerates the Anthropic surface deterministically from it.
+    anthropic_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
+        idem_max, journal=_journal("idem_anthropic.jsonl"), model=_OpenAIIdemRecord
     )
     file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
@@ -7488,7 +7632,9 @@ def create_app(
         if is_openai_path(request.url.path):
             return JSONResponse(
                 status_code=exc.status_code,
-                content=openai_error_body(str(exc.detail), exc.status_code, _err_code(exc)),
+                content=_v1_error_body(
+                    request.url.path, str(exc.detail), exc.status_code, _err_code(exc)
+                ),
                 headers=exc.headers,
             )
         return JSONResponse(
@@ -7507,7 +7653,9 @@ def create_app(
             )
             return JSONResponse(
                 status_code=422,
-                content=openai_error_body(msg or "invalid request", 422, "validation"),
+                content=_v1_error_body(
+                    request.url.path, msg or "invalid request", 422, "validation"
+                ),
             )
         return JSONResponse(
             status_code=422,
@@ -7540,7 +7688,7 @@ def create_app(
                     "code": "too_many_requests",
                 }
                 if is_openai_path(request.url.path):
-                    rl_content = openai_error_body(rl_msg, 429, "too_many_requests")
+                    rl_content = _v1_error_body(request.url.path, rl_msg, 429, "too_many_requests")
                 response = JSONResponse(
                     status_code=429,
                     content=rl_content,
@@ -7564,8 +7712,8 @@ def create_app(
                         "code": "too_large",
                     }
                     if is_openai_path(request.url.path):
-                        big_content = openai_error_body(
-                            str(big_content["detail"]), 413, "too_large"
+                        big_content = _v1_error_body(
+                            request.url.path, str(big_content["detail"]), 413, "too_large"
                         )
                     response = JSONResponse(status_code=413, content=big_content)
                     return _finish(request, request_id, response, started)
@@ -7587,7 +7735,7 @@ def create_app(
             key_rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
             key_rl_body: dict[str, Any] = {"detail": key_rl_msg, "code": exc.code}
             if is_openai_path(request.url.path):
-                key_rl_body = openai_error_body(key_rl_msg, 429, exc.code)
+                key_rl_body = _v1_error_body(request.url.path, key_rl_msg, 429, exc.code)
             over_headers = {"Retry-After": str(wait_s)}
             over_headers.update(_key_budget_headers(key_store, exc.key_id))
             response = JSONResponse(
@@ -7700,6 +7848,7 @@ def create_app(
                 "openai_moderations": True,
                 "openai_vector_stores": True,
                 "openai_file_search": True,
+                "anthropic_messages": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -8051,6 +8200,7 @@ def create_app(
         complete_idem_store=complete_idem_store,
         complete_batch_idem_store=complete_batch_idem_store,
         openai_idem_store=openai_idem_store,
+        anthropic_idem_store=anthropic_idem_store,
         breaker=breaker,
         receipt_index=receipt_index,
         metrics=metrics,

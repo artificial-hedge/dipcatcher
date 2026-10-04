@@ -1424,6 +1424,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Anthropic Messages
+         * @description Anthropic Messages-compatible completion over the gated pipeline.
+         *
+         *     The request translates into the shared OpenAI core — same honesty
+         *     gate, same fail-closed validation, same metering — and the
+         *     completion translates out to Anthropic's `message` object (or the
+         *     `message_start`/`content_block_*`/`message_delta`/`message_stop`
+         *     SSE grammar when `stream` is set). Auth is the same surface:
+         *     `X-API-Key`, `Authorization: Bearer`, or a managed `/harness/keys`
+         *     key; the stock anthropic SDK's `x-api-key` header works
+         *     unmodified. Anthropic-only knobs the pipeline cannot honor
+         *     (`top_k`, `thinking`, `service_tier`, `cache_control`, image or
+         *     document blocks, …) refuse `400 invalid_request_error` instead
+         *     of silently dropping.
+         *
+         *     `Idempotency-Key` makes the call retry-safe — a same-key+body
+         *     retry replays the pinned completion byte-identically (JSON or
+         *     SSE, `X-Fx1-Idempotent-Replay: true`); a key reused with a
+         *     different body fails closed 409. Keyed streams resume on
+         *     `Last-Event-ID` — frames at or below the delivered index are
+         *     dropped, and a resume with no pinned record fails closed 409.
+         *     `X-Fx1-Completion-Id` links the response to the completion-log
+         *     record (`GET /harness/completions/{id}`) and its sealed receipt.
+         *     `X-Fx1-*` backend headers and the `fx1` extension object carry
+         *     over from the OpenAI surface (backend selection, BYOK, deadline).
+         */
+        post: operations["anthropic_messages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/models": {
         parameters: {
             query?: never;
@@ -1965,6 +2008,174 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AnthropicMessage
+         * @description One Anthropic transcript turn — ``role`` is ``user`` or
+         *     ``assistant``; ``content`` is a string or a block list. Supported
+         *     block types: ``text`` (any turn), ``tool_use`` (assistant turns —
+         *     a prior round's calls), ``tool_result`` (user turns — the tool's
+         *     answer). Every other declared block type is refused, not dropped.
+         */
+        AnthropicMessage: {
+            /** Content */
+            content: string | {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+        };
+        /**
+         * AnthropicMessageObject
+         * @description The ``POST /v1/messages`` response — Anthropic's ``message``
+         *     object. ``content`` blocks are loose dicts (``text``/``tool_use``);
+         *     ``stop_reason`` is the OpenAI finish verdict translated
+         *     (``end_turn``/``max_tokens``/``tool_use``/``refusal``).
+         */
+        AnthropicMessageObject: {
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            }[];
+            /** Id */
+            id: string;
+            /** Model */
+            model: string;
+            /**
+             * Role
+             * @default assistant
+             * @constant
+             */
+            role: "assistant";
+            /** Stop Reason */
+            stop_reason: ("end_turn" | "max_tokens" | "stop_sequence" | "tool_use" | "refusal") | null;
+            /** Stop Sequence */
+            stop_sequence?: string | null;
+            /**
+             * Type
+             * @default message
+             * @constant
+             */
+            type: "message";
+            usage: components["schemas"]["AnthropicUsage"];
+        };
+        /**
+         * AnthropicMessagesRequest
+         * @description ``POST /v1/messages`` body — Anthropic's create-message contract.
+         *     ``max_tokens`` is required (the Anthropic contract, unlike OpenAI's).
+         *     Extra fields are tolerated for SDK bookkeeping keys but the
+         *     documented-but-unsupported knobs in ``ANTHROPIC_UNSUPPORTED`` refuse
+         *     (a 400, never a silent ignore).
+         */
+        AnthropicMessagesRequest: {
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Max Tokens */
+            max_tokens: number;
+            /** Messages */
+            messages: components["schemas"]["AnthropicMessage"][];
+            metadata?: components["schemas"]["AnthropicMetadata"] | null;
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /** Stop Sequences */
+            stop_sequences?: string[] | null;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+            /** System */
+            system?: string | {
+                [key: string]: unknown;
+            }[] | null;
+            /** Temperature */
+            temperature?: number | null;
+            tool_choice?: components["schemas"]["AnthropicToolChoice"] | null;
+            /** Tools */
+            tools?: components["schemas"]["AnthropicTool"][] | null;
+            /** Top P */
+            top_p?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * AnthropicMetadata
+         * @description Anthropic's ``metadata`` object — ``user_id`` is the only field the
+         *     contract defines (maps to OpenAI's ``user`` audit stamp).
+         */
+        AnthropicMetadata: {
+            /** User Id */
+            user_id?: string | null;
+        };
+        /**
+         * AnthropicTool
+         * @description One Anthropic ``tools[]`` entry — ``input_schema`` is the JSON
+         *     Schema the model fills into a ``tool_use`` block's ``input``.
+         */
+        AnthropicTool: {
+            /** Description */
+            description?: string | null;
+            /** Input Schema */
+            input_schema: {
+                [key: string]: unknown;
+            };
+            /** Name */
+            name: string;
+            /**
+             * Type
+             * @default custom
+             * @constant
+             */
+            type: "custom";
+        };
+        /**
+         * AnthropicToolChoice
+         * @description Anthropic ``tool_choice``: ``auto``/``any``/``tool``/``none`` —
+         *     ``tool`` pins one tool by ``name``.
+         */
+        AnthropicToolChoice: {
+            /** Disable Parallel Tool Use */
+            disable_parallel_tool_use?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "auto" | "any" | "tool" | "none";
+        };
+        /**
+         * AnthropicUsage
+         * @description Anthropic ``usage`` — input/output token counts plus the cache
+         *     fields (always 0 here — the gated pipeline has no prompt cache;
+         *     reporting zeros is the honest contract).
+         */
+        AnthropicUsage: {
+            /**
+             * Cache Creation Input Tokens
+             * @default 0
+             */
+            cache_creation_input_tokens: number;
+            /**
+             * Cache Read Input Tokens
+             * @default 0
+             */
+            cache_read_input_tokens: number;
+            /**
+             * Input Tokens
+             * @default 0
+             */
+            input_tokens: number;
+            /**
+             * Output Tokens
+             * @default 0
+             */
+            output_tokens: number;
+        };
         /** ApiKeyCreateRequest */
         ApiKeyCreateRequest: {
             /**
@@ -9994,6 +10205,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    anthropic_messages: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "Last-Event-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnthropicMessagesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnthropicMessageObject"];
                 };
             };
             /** @description Validation Error */
