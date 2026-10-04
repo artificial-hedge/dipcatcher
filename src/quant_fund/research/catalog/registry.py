@@ -5784,6 +5784,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pomona_qa_studies",
         "silvanus_qa_studies",
         "solinvictus_qa_studies",
+        # Wave-1789 greek-minor canon.
+        "eris_qa_studies",
+        "ganymede_qa_studies",
+        "hebe_qa_studies",
+        "hermes_qa_studies",
+        "momus_qa_studies",
+        "oneiros_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
