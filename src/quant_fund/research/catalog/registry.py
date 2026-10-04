@@ -5287,6 +5287,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "redon_qa_studies",
         "thana_qa_studies",
         "vidasus_qa_studies",
+        # Wave-1718 etruscan-myth canon.
+        "fufluns_qa_studies",
+        "menrva_qa_studies",
+        "tinia_qa_studies",
+        "turan_qa_studies",
+        "veltha_qa_studies",
+        "voltumna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

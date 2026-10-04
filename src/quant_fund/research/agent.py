@@ -13735,6 +13735,14 @@ from quant_fund.research.benches_w1717 import (
     bench_thana_qa_studies_family,
     bench_vidasus_qa_studies_family,
 )
+from quant_fund.research.benches_w1718 import (
+    bench_fufluns_qa_studies_family,
+    bench_menrva_qa_studies_family,
+    bench_tinia_qa_studies_family,
+    bench_turan_qa_studies_family,
+    bench_veltha_qa_studies_family,
+    bench_voltumna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
