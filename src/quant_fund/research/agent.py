@@ -10647,6 +10647,14 @@ from quant_fund.research.benches_w1331 import (
     bench_project_eval_studies_family,
     bench_swe_bench_verified_studies_family,
 )
+from quant_fund.research.benches_w1332 import (
+    bench_decontaminate_studies_family,
+    bench_eval_bias_studies_family,
+    bench_fair_eval_studies_family,
+    bench_g_eval_studies_family,
+    bench_ngram_overlap_studies_family,
+    bench_pandalm_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11389,6 +11397,12 @@ def _provenance(
         "hh_rlhf_studies": bench_hh_rlhf_studies_family,
         "codescope_studies": bench_codescope_studies_family,
         "concode_eval_studies": bench_concode_eval_studies_family,
+        "decontaminate_studies": bench_decontaminate_studies_family,
+        "eval_bias_studies": bench_eval_bias_studies_family,
+        "fair_eval_studies": bench_fair_eval_studies_family,
+        "g_eval_studies": bench_g_eval_studies_family,
+        "ngram_overlap_studies": bench_ngram_overlap_studies_family,
+        "pandalm_studies": bench_pandalm_studies_family,
         "crosscodeeval_studies": bench_crosscodeeval_studies_family,
         "mer_bench_studies": bench_mer_bench_studies_family,
         "project_eval_studies": bench_project_eval_studies_family,
