@@ -10321,6 +10321,140 @@ def _probe_backend_probes(  # NOSONAR
         and a_404.json().get("error", {}).get("type") == "not_found_error"
     )
 
+    # ---- drop-in response headers ------------------------------------------
+    # `request-id` is the Anthropic grammar's name for the same id —
+    # dialect responses carry both names with one value; an inbound
+    # X-Request-ID echoes on both.
+    a_echo = oi_clean.get(
+        "/v1/models",
+        headers={"anthropic-version": "2023-06-01", "X-Request-ID": "am-trace.1"},
+    )
+    out["anthropic_request_id_echo"] = (
+        a_echo.status_code == 200
+        and a_echo.headers.get("request-id") == "am-trace.1"
+        and a_echo.headers.get("x-request-id") == "am-trace.1"
+    )
+    out["anthropic_request_id_200"] = am.headers.get("request-id") is not None and am.headers.get(
+        "request-id"
+    ) == am.headers.get("x-request-id")
+    out["anthropic_request_id_error"] = (
+        ai3.headers.get("request-id") is not None
+        and ai3.headers.get("request-id") == ai3.headers.get("x-request-id")
+        and a_404.headers.get("request-id") == a_404.headers.get("x-request-id")
+    )
+    # SSE: terminal frames can't carry metadata — request-id and
+    # processing-ms ride the stream's opening headers, like OpenAI's
+    out["anthropic_stream_headers"] = (
+        ams.headers.get("request-id") is not None
+        and ams.headers.get("request-id") == ams.headers.get("x-request-id")
+        and int(ams.headers.get("openai-processing-ms", "-1")) >= 0
+    )
+    # x-should-retry: the stock SDK retries 429/5xx by default and treats
+    # the rest as terminal — a 409 idempotency conflict carries false,
+    # a clean 2xx omits the header (the SDK's default is already right)
+    out["anthropic_retry_hint_terminal"] = ai3.headers.get("x-should-retry") == "false"
+    out["anthropic_retry_hint_absent_2xx"] = (
+        "x-should-retry" not in am.headers and "x-should-retry" not in a_404.headers
+    )
+    # openai surface never speaks Anthropic's names — and vice versa the
+    # /harness routes carry neither grammar's headers
+    o_models = oi_clean.get("/v1/models")
+    out["openai_surface_no_anthropic_headers"] = (
+        "request-id" not in o_models.headers
+        and "anthropic-ratelimit-requests-limit" not in o_models.headers
+        and "x-should-retry" not in o_models.headers
+        and o_models.headers.get("openai-version") is not None
+    )
+    out["openai_version_openai_only"] = (
+        o_models.headers.get("openai-version") == api_mod.API_VERSION
+        and "openai-version" not in client.get("/harness/version").headers
+    )
+    # managed-key budget: the anthropic-ratelimit-requests-* family reports
+    # the same declared window the X-RateLimit-* family does — remaining
+    # decrements per call, reset is Anthropic's RFC 3339 instant, and the
+    # over-limit 429 carries both the window and x-should-retry:true.
+    # Env/loopback credentials declare no window and emit none — same
+    # no-false-scarcity rule as the OpenAI family.
+    saved_api_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "k3y-material"
+    try:
+        a_sec = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    finally:
+        if saved_api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_api_key
+    a_rpm = a_sec.post("/harness/keys", json={"rpm": 2}, headers={"X-API-Key": "k3y-material"})
+    a_rkey = str(a_rpm.json().get("key", ""))
+    a_kh = {"X-API-Key": a_rkey}
+    a_r1 = a_sec.post(
+        _MESSAGES_PATH,
+        json={"model": "fx1", "max_tokens": 8, "messages": [{"role": "user", "content": "a"}]},
+        headers=a_kh,
+    )
+    a_r2 = a_sec.get("/v1/models", headers={**a_kh, "anthropic-version": "2023-06-01"})
+    a_r3 = a_sec.get("/v1/models", headers={**a_kh, "anthropic-version": "2023-06-01"})
+    out["anthropic_ratelimit_managed"] = (
+        a_r1.status_code == 200
+        and a_r1.headers.get("anthropic-ratelimit-requests-limit") == "2"
+        and a_r1.headers.get("anthropic-ratelimit-requests-remaining") == "1"
+        and a_r1.headers.get("anthropic-ratelimit-requests-reset", "").endswith("Z")
+        and a_r1.headers.get("x-ratelimit-limit-requests") == "2"
+        and a_r2.headers.get("anthropic-ratelimit-requests-remaining") == "0"
+        and a_r2.headers.get("x-ratelimit-remaining-requests") == "0"
+    )
+    out["anthropic_ratelimit_429"] = (
+        a_r3.status_code == 429
+        and a_r3.headers.get("anthropic-ratelimit-requests-limit") == "2"
+        and a_r3.headers.get("anthropic-ratelimit-requests-remaining") == "0"
+        and a_r3.headers.get("x-should-retry") == "true"
+        and int(a_r3.headers.get("retry-after", "0")) >= 1
+    )
+    out["anthropic_ratelimit_absent_env_loopback"] = (
+        "anthropic-ratelimit-requests-limit" not in am.headers
+        and "anthropic-ratelimit-requests-limit"
+        not in a_sec.get(
+            "/harness/version",
+            headers={"X-API-Key": "k3y-material", "anthropic-version": "2023-06-01"},
+        ).headers
+    )
+    # headers we deliberately DON'T emit: no org/proxy/edge provenance —
+    # there is no organization layer or CDN in front of this process
+    out["no_proxy_header_leak"] = all(
+        h not in am.headers and h not in a_r1.headers
+        for h in ("openai-organization", "cf-ray", "cf-cache-status", "cf-request-id")
+    )
+    # the spec itself declares the Anthropic family on /v1/messages* ops
+    # only — generated clients see them typed on the right surface
+    a_spec = oi_clean.get("/openapi.json").json()
+    a_msg_ops = [
+        op
+        for p, item in a_spec["paths"].items()
+        if p == _MESSAGES_PATH or p.startswith(_MESSAGES_PATH + "/")
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    a_other_ops = [
+        op
+        for p, item in a_spec["paths"].items()
+        if not (p == _MESSAGES_PATH or p.startswith(_MESSAGES_PATH + "/"))
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    out["openapi_declares_anthropic_headers"] = (
+        bool(a_msg_ops)
+        and all(
+            "request-id" in resp.get("headers", {})
+            for op in a_msg_ops
+            for resp in op.get("responses", {}).values()
+        )
+        and all(
+            "request-id" not in resp.get("headers", {})
+            for op in a_other_ops
+            for resp in op.get("responses", {}).values()
+        )
+    )
+
     # ---- legacy /v1/completions drop-in ------------------------------------
     # the pre-chat text surface: each prompt element is one user turn
     # through the same gated pipeline (honesty gate, fail-closed
@@ -10492,7 +10626,18 @@ def api_audit_bench() -> dict[str, Any]:
             "DELETE /v1/models/{id} unregisters an ft: name with a real "
             "tombstone (list/retrieve/chat all 404 after; built-ins "
             "refuse 400), and every X-Fx1-* request knob is in the CORS "
-            "allow-headers list so browser clients can send them."
+            "allow-headers list so browser clients can send them. "
+            "Drop-in response headers hold: every Anthropic-dialect "
+            "response carries `request-id` (the same id as X-Request-ID, "
+            "echoed when supplied) on 2xx, error, and SSE-open alike; "
+            "x-should-retry pins the statuses the stock SDK's defaults "
+            "would get wrong (true on transient 429/5xx, false on "
+            "terminal 409/501); managed-key rpm windows report as "
+            "anthropic-ratelimit-requests-* alongside X-RateLimit-* "
+            "(remaining decrements, reset an RFC 3339 instant, absent "
+            "for env/loopback — no false scarcity); the OpenAI surface "
+            "never speaks Anthropic's names; and no org/proxy/edge "
+            "headers leak (no openai-organization, no cf-*)."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

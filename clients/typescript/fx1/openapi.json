@@ -21969,6 +21969,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22033,6 +22068,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22157,6 +22227,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22221,6 +22326,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22325,6 +22465,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22389,6 +22564,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22478,6 +22688,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22542,6 +22787,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22628,6 +22908,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22692,6 +23007,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22781,6 +23131,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22845,6 +23230,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -22934,6 +23354,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -22998,6 +23453,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }
@@ -23086,6 +23576,41 @@
                 "schema": {
                   "type": "string"
                 }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
+                  "type": "string"
+                }
               }
             }
           },
@@ -23150,6 +23675,41 @@
               "X-Request-ID": {
                 "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
                 "schema": {
+                  "type": "string"
+                }
+              },
+              "anthropic-ratelimit-requests-limit": {
+                "description": "Managed-key rpm window size \u2014 present only when the credential carries a declared rpm window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-remaining": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "anthropic-ratelimit-requests-reset": {
+                "description": "RFC 3339 instant when the key's rpm window reopens.",
+                "schema": {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              },
+              "request-id": {
+                "description": "Anthropic's request-id header \u2014 the same id as X-Request-ID.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "x-should-retry": {
+                "description": "Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong.",
+                "schema": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ],
                   "type": "string"
                 }
               }

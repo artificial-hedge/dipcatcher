@@ -1581,6 +1581,9 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_kw: dict[str, Any] | None = None
             self.ft_actions: list[tuple[str, str]] = []
             self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+            # the wire snapshot HarnessClient keeps — CLI surfaces read
+            # x-request-id off it for the just-answered call
+            self.last_response_headers: dict[str, str] = {"x-request-id": "req-cli-fake"}
 
         def usage(self, **kw: Any) -> Any:
             from fx1.serve.usage_report import UsageReport
@@ -2720,6 +2723,11 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(rcp.stdout)["compatible"] is True
             and remotes[-1].last_compat_strict is False
         )
+        # the wire's request-id for the just-answered call rides the
+        # version/compat payloads — the trace surface ops paste into
+        # bug reports; absent when the client saw no response headers
+        out["remote_version_request_id"] = json.loads(rv.stdout).get("request_id") == "req-cli-fake"
+        out["remote_compat_request_id"] = json.loads(rcp.stdout).get("request_id") == "req-cli-fake"
         rj = runner.invoke(
             app,
             [
@@ -2916,6 +2924,18 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         and json.loads(rv_local.stdout)["api_version"] == "1"
         and json.loads(rv_local.stdout)["local"] is True
     )
+    out["version_local_no_request_id"] = "request_id" not in json.loads(rv_local.stdout)
+    # a remote whose client reports no wire headers (pre-channel peer,
+    # transport fault) prints no request_id — the key is never fabricated
+    with patch("fx1.serve.client.HarnessClient") as mc_h:
+        mc_h.return_value.server_version.return_value = {
+            "api_version": "1",
+            "fx1_version": "0.4.0",
+        }
+        rv2 = runner.invoke(app, ["harness", "version", "--remote", "http://h.test"])
+        out["remote_version_no_headers_omits_rid"] = (
+            rv2.exit_code == 0 and "request_id" not in json.loads(rv2.stdout)
+        )
 
     # compat on a wire-contract mismatch exits 1 but still prints the report
     with patch("fx1.serve.client.HarnessClient") as mc2:
