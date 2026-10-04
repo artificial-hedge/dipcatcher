@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1252 metabolic-endocrine canon.
+        "pituitary_studies",
+        "parathyroid_studies",
+        "lipid_studies",
+        "obesity_studies",
+        "metabolic_syndrome_studies",
+        "hypothalamic_studies",
         # Wave-1251 urology-andrology canon.
         "prostate_studies",
         "bladder_studies",
