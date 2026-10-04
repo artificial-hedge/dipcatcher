@@ -1,3 +1,4 @@
+feat(research): wave 668 — motivic-15 canon (norimotive3, motivic_galois2, tannakian_motive2, period_realization2, beilinson_regulator2, hodge_motive2) (3963->3969 families)
 feat(research): wave 667 — category-13 canon (stable_cat2, exact_cat2, ab_cat, grothendieck_cat, coniveau_fil, special_cat) (3957->3963 families)
 feat(research): wave 666 — derived-geometry-5 canon (derived_abelian, simplicial_comm, derived_bezout, derived_hecke, cotangent_stack, derived_bun) (3951->3957 families)
 feat(research): wave 665 — homotopy-23 canon (cohen_moore2, whitehead_product, homotopy_decomp, kervaire_inv2, unstable_vn, moore_space2) (3945->3951 families)
