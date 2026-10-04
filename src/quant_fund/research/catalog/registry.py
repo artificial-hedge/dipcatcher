@@ -3502,6 +3502,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "seahorse_qa_studies",
         "squid_qa_studies",
         "stingray_qa_studies",
+        # Wave-1463 meadow canon.
+        "acorn_qa_studies",
+        "blossom_qa_studies",
+        "canopy_qa_studies",
+        "firefly_qa_studies",
+        "sprout_qa_studies",
+        "truffle_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
