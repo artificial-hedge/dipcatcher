@@ -5439,6 +5439,14 @@ from quant_fund.research.benches_w680 import (
     bench_spectral_proper_family,
     bench_spectral_smooth2_family,
 )
+from quant_fund.research.benches_w681 import (
+    bench_homotopy_factor_family,
+    bench_homotopy_fixed_family,
+    bench_homotopy_lift_family,
+    bench_homotopy_orbit_family,
+    bench_stable_operad_family,
+    bench_stable_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5818,6 +5826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "homotopy_lift": bench_homotopy_lift_family,
+        "homotopy_orbit": bench_homotopy_orbit_family,
+        "homotopy_fixed": bench_homotopy_fixed_family,
+        "stable_operad": bench_stable_operad_family,
+        "homotopy_factor": bench_homotopy_factor_family,
+        "stable_sheaf": bench_stable_sheaf_family,
         "spectral_perfect": bench_spectral_perfect_family,
         "spectral_smooth2": bench_spectral_smooth2_family,
         "spectral_etale2": bench_spectral_etale2_family,
