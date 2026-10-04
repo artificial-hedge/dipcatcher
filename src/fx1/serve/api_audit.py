@@ -2864,6 +2864,100 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         tok_app.get("/harness/commands", headers=root_h).status_code == 200
         and keys_client.get("/harness/commands", headers=root_h).status_code == 200
     )
+    # --- per-key usage card + caller self-introspection -----------------
+    # GET /harness/keys/{id}/usage is the admin view; GET /harness/self
+    # is the read-scope twin any credential calls on itself.
+    uq_mint = keys_client.post(
+        "/harness/keys",
+        json={"name": "u-card", "max_requests": 5, "max_tokens": 100, "rpm": 60},
+        headers=root_h,
+    )
+    uq_id = uq_mint.json()["id"]
+    uq_raw = str(uq_mint.json().get("key", ""))
+    uq_h = {"X-API-Key": uq_raw}
+    keys_client.get("/harness/commands", headers=uq_h)
+    keys_client.get("/harness/commands", headers=uq_h)
+    uq_card = keys_client.get(f"/harness/keys/{uq_id}/usage", headers=root_h)
+    uq = uq_card.json() if uq_card.status_code == 200 else {}
+    out["key_usage_200"] = (
+        uq_card.status_code == 200
+        and uq.get("object") == "key_usage"
+        and uq.get("uses") == 2
+        and uq.get("max_requests") == 5
+        and uq.get("requests_remaining") == 3
+        and uq.get("max_tokens") == 100
+        and uq.get("tokens_used") == 0
+        and uq.get("tokens_remaining") == 100
+        and uq.get("rpm") == 60
+        and uq.get("window_remaining") == 58
+        and uq.get("enabled") is True
+        and uq.get("served", {}).get("calls") == 0
+        and uq.get("log_cap", 0) > 0
+        and "log_dropped" in uq
+    )
+    out["key_usage_404"] = (
+        keys_client.get("/harness/keys/0000000000000000/usage", headers=root_h).status_code == 404
+    )
+    out["key_usage_admin_scope"] = (
+        keys_client.get(f"/harness/keys/{uq_id}/usage", headers={"X-API-Key": ro_raw}).status_code
+        == 403
+    )
+    # served split attributes metered calls to the credential
+    tq_mint = tok_app.post("/harness/keys", json={"name": "u-svc"}, headers=root_h)
+    tq_raw = str(tq_mint.json().get("key", ""))
+    tq_id = tq_mint.json()["id"]
+    tok_app.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "z"}]},
+        headers={"X-API-Key": tq_raw},
+    )
+    tq_card = tok_app.get(f"/harness/keys/{tq_id}/usage", headers=root_h)
+    tq = tq_card.json() if tq_card.status_code == 200 else {}
+    out["key_usage_served_split"] = (
+        tq_card.status_code == 200
+        and tq.get("uses") == 1
+        and tq.get("tokens_used") == 10
+        and tq.get("served", {}).get("calls") == 1
+        and tq.get("served", {}).get("prompt_tokens") == 4
+        and tq.get("served", {}).get("total_tokens") == 10
+        and tq.get("served", {}).get("by_backend", {}).get("byok", {}).get("calls") == 1
+    )
+    # /harness/self — the caller's own card; the introspection call
+    # itself is an authenticated use, so uses counts it
+    sl = tok_app.get("/harness/self", headers={"X-API-Key": tq_raw})
+    slj = sl.json() if sl.status_code == 200 else {}
+    out["self_managed_200"] = (
+        sl.status_code == 200
+        and slj.get("object") == "self_usage"
+        and slj.get("credential") == "managed"
+        and slj.get("metered") is True
+        and slj.get("scopes") == ["read", "write"]
+        and slj.get("key", {}).get("id") == tq_id
+        and slj.get("key", {}).get("uses") == 2
+        and slj.get("key", {}).get("tokens_used") == 10
+    )
+    out["self_read_scope"] = (
+        keys_client.get("/harness/self", headers={"X-API-Key": ro_raw}).status_code == 200
+    )
+    out["self_write_denied"] = (
+        keys_client.get("/harness/self", headers={"X-API-Key": wr_raw}).status_code == 403
+    )
+    se = tok_app.get("/harness/self", headers=root_h)
+    sej = se.json() if se.status_code == 200 else {}
+    out["self_env_unmetered"] = (
+        se.status_code == 200
+        and sej.get("credential") == "env"
+        and sej.get("metered") is False
+        and sej.get("key") is None
+        and sej.get("scopes") == ["read", "write", "admin"]
+    )
+    noenv_self = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    sn = noenv_self.get("/harness/self")
+    out["self_loopback_none"] = (
+        sn.status_code == 200
+        and sn.json().get("credential") == "none"
+        and sn.json().get("metered") is False
+    )
     # no env key + empty store → loopback dev (admin); minting turns auth on
     noenv_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
     minted = noenv_client.post("/harness/keys", json={})

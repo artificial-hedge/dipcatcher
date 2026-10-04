@@ -3988,8 +3988,39 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     out["key_quota_no_retry"] = (
         _raises(lambda: _q429_cli.health())[0] == "HarnessTransportError" and _q429_calls["n"] == 1
     )
-
-    # --- Anthropic /v1/messages parity -----------------------------------
+    # the usage card is identical on both legs — budgets, live counters,
+    # and the served split read back the same schema; the wire leg adds
+    # metered uses because its calls authenticate
+    _uc_sdk = sdk.key_usage(_qb_sdk["id"])
+    _uc_wl = _admin_remote.key_usage(_qb_wl["id"])
+    out["key_usage_parity"] = (
+        _uc_sdk["object"] == _uc_wl["object"] == "key_usage"
+        and _uc_sdk["max_requests"] == _uc_wl["max_requests"] == 3
+        and _uc_sdk["max_tokens"] == _uc_wl["max_tokens"] == 1000
+        and _uc_sdk["requests_remaining"] == 3
+        and _uc_wl["requests_remaining"] == 0
+        and _uc_sdk["tokens_used"] == _uc_wl["tokens_used"] == 0
+        and _uc_sdk["served"]["calls"] == _uc_wl["served"]["calls"] == 0
+        and _uc_sdk["log_cap"] == _uc_wl["log_cap"]
+        and _uc_wl["uses"] == 3
+        and _uc_sdk["uses"] == 0
+        and _raises(lambda: sdk.key_usage("nope"))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_usage("nope"))[0] == "KeyError"
+    )
+    # /harness/self — the wire card reports the managed credential; the
+    # in-process twin is the unmetered env root
+    _su_wl = _admin_remote.self_usage()
+    _su_sdk = sdk.self_usage()
+    out["self_usage_parity"] = (
+        _su_wl["object"] == _su_sdk["object"] == "self_usage"
+        and _su_wl["credential"] == "managed"
+        and _su_wl["metered"] is True
+        and _su_wl["key"]["id"] == _boot.json()["id"]
+        and _su_wl["scopes"] == ["read", "write", "admin"]
+        and _su_sdk["credential"] == "env"
+        and _su_sdk["metered"] is False
+        and _su_sdk["key"] is None
+    )
     # One translation module (fx1.serve.anthropic_compat) serves all
     # surfaces: the same request over the wire, in-process, and through
     # the typed remote client must produce the same message object, the

@@ -1032,6 +1032,19 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_call = ("revoke", key_id)
             return {"id": key_id, "object": "key", "enabled": False}
 
+        def key_usage(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("usage", key_id)
+            return {
+                "id": key_id,
+                "object": "key_usage",
+                "uses": 1,
+                "served": {"calls": 0},
+            }
+
+        def self_usage(self, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("self", None)
+            return {"object": "self_usage", "credential": "env", "metered": False}
+
     fake = _FakeSDK()
     with patch(_SDK_TARGET, return_value=fake):
         out["complete_block_echoes_content"] = (
@@ -1527,6 +1540,18 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             kr.exit_code == 0
             and json.loads(kr.stdout)["enabled"] is False
             and fake.last_key_call == ("revoke", "kfake")
+        )
+        ku = runner.invoke(app, ["harness", "key-usage", "kfake"])
+        out["key_usage_json"] = (
+            ku.exit_code == 0
+            and json.loads(ku.stdout)["object"] == "key_usage"
+            and fake.last_key_call == ("usage", "kfake")
+        )
+        ss = runner.invoke(app, ["harness", "self"])
+        out["self_usage_json"] = (
+            ss.exit_code == 0
+            and json.loads(ss.stdout)["credential"] == "env"
+            and fake.last_key_call == ("self", None)
         )
 
     # --remote routes the same commands through HarnessClient --------------
@@ -2483,6 +2508,14 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_call = ("revoke", key_id)
             return {"id": key_id, "object": "key", "enabled": False}
 
+        def key_usage(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("usage", key_id)
+            return {"id": key_id, "object": "key_usage", "uses": 3}
+
+        def self_usage(self, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("self", None)
+            return {"object": "self_usage", "credential": "managed"}
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -2628,6 +2661,18 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             kr.exit_code == 0
             and json.loads(kr.stdout)["enabled"] is False
             and remotes[-1].last_key_call == ("revoke", "krem")
+        )
+        ku = runner.invoke(app, ["harness", "key-usage", "krem", "--remote", "http://h.test"])
+        out["key_usage_remote"] = (
+            ku.exit_code == 0
+            and json.loads(ku.stdout)["object"] == "key_usage"
+            and remotes[-1].last_key_call == ("usage", "krem")
+        )
+        ss = runner.invoke(app, ["harness", "self", "--remote", "http://h.test"])
+        out["self_usage_remote"] = (
+            ss.exit_code == 0
+            and json.loads(ss.stdout)["credential"] == "managed"
+            and remotes[-1].last_key_call == ("self", None)
         )
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()

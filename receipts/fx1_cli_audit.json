@@ -131,6 +131,8 @@
       "key_list_remote": true,
       "key_revoke_json": true,
       "key_revoke_remote": true,
+      "key_usage_json": true,
+      "key_usage_remote": true,
       "local_evalrun": true,
       "local_evalrun_cancel_refused": true,
       "local_evalrun_family": true,
@@ -246,6 +248,8 @@
       "respond_hints_inproc": true,
       "respond_hints_inproc_bad_enum_2": true,
       "respond_stream_local_concat": true,
+      "self_usage_json": true,
+      "self_usage_remote": true,
       "serve_bad_knob_exit2": true,
       "serve_flags_reach_app": true,
       "stream_fallback_flags_forward": true,
@@ -266,11 +270,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "f50f3b71db700bddbed29301034e84613a40af0e",
+  "git_revision": "f94cea747bc6065c6cbb5b852db010659ccf357c",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). respond --stream concatenates Responses delta frames on both surfaces (in-process SDK pairs and remote payload dicts), forwarding flag kwargs verbatim. ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. eval-wait/ft-wait/batch-wait re-attach to a --no-wait submit: poll kwargs reach the client verbatim, the terminal record prints, and eval-wait --receipt follows with the sealed doc; all three refuse locally without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "9c3baefc01bd1bb090faa849e882448d5b7d0b651d1c858362227151a154b50e",
+  "receipt_sha256": "196e8722a1caadf7e2cb7156b723d2fe66d3a9fbe9a1a20cdef60254034342a1",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

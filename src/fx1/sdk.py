@@ -729,6 +729,89 @@ class Fx1Harness:
             raise ValueError(str(exc)) from exc
         return self._key_wire(rec)
 
+    def key_usage(self, key_id: str) -> dict[str, Any]:
+        """One managed key's usage card — the in-process twin of
+        ``GET /harness/keys/{id}/usage``: live counters, declared budgets
+        with derived headroom, the rpm window state, and this process's
+        completion-ring spend split (in-process calls are unauthenticated,
+        so ``served`` counts only records already attributed to the key).
+        ``KeyError`` when the key is unknown."""
+        rec = self._key_store.get(key_id)
+        if rec is None:
+            raise KeyError(key_id)
+        return self._usage_card(rec)
+
+    def self_usage(self) -> dict[str, Any]:
+        """``GET /harness/self`` in-process twin — the SDK IS the root
+        credential, so the card reports the unmetered ``env`` class."""
+        return {
+            "object": "self_usage",
+            "credential": "env",
+            "scopes": ["read", "write", "admin"],
+            "metered": False,
+            "key": None,
+        }
+
+    def _usage_card(self, rec: dict[str, Any]) -> dict[str, Any]:
+        uses = int(rec.get("uses") or 0)
+        tokens_used = int(rec.get("tokens_used") or 0)
+        max_req = rec.get("max_requests")
+        max_tok = rec.get("max_tokens")
+        ws = self._key_store.window_state(rec["key_id"])
+        calls = 0
+        prompt = 0
+        completion = 0
+        total_all = 0
+        by_backend: dict[str, list[int]] = {}
+        for r in self._log.all():
+            if r.key_id != rec["key_id"]:
+                continue
+            calls += 1
+            usage = r.usage or {}
+            p = int(usage.get("prompt_tokens") or 0)
+            c = int(usage.get("completion_tokens") or 0)
+            t = usage.get("total_tokens")
+            tt = int(t) if t is not None else p + c
+            prompt += p
+            completion += c
+            total_all += tt
+            bb = by_backend.setdefault(r.backend, [0, 0])
+            bb[0] += 1
+            bb[1] += tt
+        return {
+            "id": rec["key_id"],
+            "object": "key_usage",
+            "name": rec.get("name"),
+            "admin": bool(rec.get("admin")),
+            "enabled": bool(rec.get("enabled", True)),
+            "created_at": rec["created_at"],
+            "expires_at": rec.get("expires_at"),
+            "revoked_at": rec.get("revoked_at"),
+            "uses": uses,
+            "tokens_used": tokens_used,
+            "last_used_at": rec.get("last_used_at"),
+            "max_requests": max_req,
+            "requests_remaining": (max(0, int(max_req) - uses) if max_req is not None else None),
+            "max_tokens": max_tok,
+            "tokens_remaining": (
+                max(0, int(max_tok) - tokens_used) if max_tok is not None else None
+            ),
+            "rpm": rec.get("rpm"),
+            "window_remaining": (ws[1] if ws is not None else None),
+            "window_reset_s": (ws[2] if ws is not None else None),
+            "served": {
+                "calls": calls,
+                "prompt_tokens": prompt,
+                "completion_tokens": completion,
+                "total_tokens": total_all,
+                "by_backend": {
+                    k: {"calls": v[0], "total_tokens": v[1]} for k, v in sorted(by_backend.items())
+                },
+            },
+            "log_cap": self._log.cap,
+            "log_dropped": self._log.dropped,
+        }
+
     @staticmethod
     def _key_wire(rec: dict[str, Any]) -> dict[str, Any]:
         return {
