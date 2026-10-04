@@ -9183,6 +9183,14 @@ from quant_fund.research.benches_w1148 import (
     bench_petrology_2_family,
     bench_stratigraphy_2_family,
 )
+from quant_fund.research.benches_w1149 import (
+    bench_dermatology_2_family,
+    bench_hematology_2_family,
+    bench_hepatology_2_family,
+    bench_nephrology_2_family,
+    bench_pulmonology_2_family,
+    bench_toxicology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9554,6 +9562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "toxicology_2": bench_toxicology_2_family,
+        "dermatology_2": bench_dermatology_2_family,
+        "hematology_2": bench_hematology_2_family,
+        "pulmonology_2": bench_pulmonology_2_family,
+        "nephrology_2": bench_nephrology_2_family,
+        "hepatology_2": bench_hepatology_2_family,
         "geology_3": bench_geology_3_family,
         "petrology_2": bench_petrology_2_family,
         "mineralogy_2": bench_mineralogy_2_family,

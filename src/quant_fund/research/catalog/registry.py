@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1149 clinical-medicine canon.
+        "toxicology_2",
+        "dermatology_2",
+        "hematology_2",
+        "pulmonology_2",
+        "nephrology_2",
+        "hepatology_2",
         # Wave-1148 geological-sciences canon.
         "geology_3",
         "petrology_2",
