@@ -10903,6 +10903,14 @@ from quant_fund.research.benches_w1363 import (
     bench_politi_fact_studies_family,
     bench_rumor_twitter_studies_family,
 )
+from quant_fund.research.benches_w1364 import (
+    bench_anli_lite_studies_family,
+    bench_mnli_lite_studies_family,
+    bench_mrpc_lite_studies_family,
+    bench_paws_lite_studies_family,
+    bench_quora_dup_studies_family,
+    bench_rte_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11753,6 +11761,12 @@ def _provenance(
         "dialect_bias_studies": bench_dialect_bias_studies_family,
         "politi_fact_studies": bench_politi_fact_studies_family,
         "rumor_twitter_studies": bench_rumor_twitter_studies_family,
+        "anli_lite_studies": bench_anli_lite_studies_family,
+        "mnli_lite_studies": bench_mnli_lite_studies_family,
+        "mrpc_lite_studies": bench_mrpc_lite_studies_family,
+        "paws_lite_studies": bench_paws_lite_studies_family,
+        "quora_dup_studies": bench_quora_dup_studies_family,
+        "rte_lite_studies": bench_rte_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
