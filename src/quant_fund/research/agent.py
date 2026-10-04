@@ -9959,6 +9959,14 @@ from quant_fund.research.benches_w1245 import (
     bench_targeted_therapy_studies_family,
     bench_thoracic_oncology_studies_family,
 )
+from quant_fund.research.benches_w1246 import (
+    bench_bariatric_surgery_studies_family,
+    bench_burn_surgery_studies_family,
+    bench_endocrine_surgery_studies_family,
+    bench_pediatric_surgery_studies_family,
+    bench_plastic_surgery_studies_family,
+    bench_transplant_surgery_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10330,6 +10338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bariatric_surgery_studies": bench_bariatric_surgery_studies_family,
+        "pediatric_surgery_studies": bench_pediatric_surgery_studies_family,
+        "plastic_surgery_studies": bench_plastic_surgery_studies_family,
+        "burn_surgery_studies": bench_burn_surgery_studies_family,
+        "endocrine_surgery_studies": bench_endocrine_surgery_studies_family,
+        "transplant_surgery_studies": bench_transplant_surgery_studies_family,
         "medical_oncology_studies": bench_medical_oncology_studies_family,
         "immuno_oncology_studies": bench_immuno_oncology_studies_family,
         "targeted_therapy_studies": bench_targeted_therapy_studies_family,
