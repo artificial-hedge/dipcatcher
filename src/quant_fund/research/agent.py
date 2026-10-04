@@ -12199,6 +12199,14 @@ from quant_fund.research.benches_w1525 import (
     bench_quillwort_qa_studies_family,
     bench_sphagnum_qa_studies_family,
 )
+from quant_fund.research.benches_w1526 import (
+    bench_bracken_qa_studies_family,
+    bench_horsetail_qa_studies_family,
+    bench_maidenhair_qa_studies_family,
+    bench_staghorn_qa_studies_family,
+    bench_swordfern_qa_studies_family,
+    bench_treefern_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13967,6 +13975,12 @@ def _provenance(
         "liverwort_qa_studies": bench_liverwort_qa_studies_family,
         "quillwort_qa_studies": bench_quillwort_qa_studies_family,
         "sphagnum_qa_studies": bench_sphagnum_qa_studies_family,
+        "bracken_qa_studies": bench_bracken_qa_studies_family,
+        "horsetail_qa_studies": bench_horsetail_qa_studies_family,
+        "maidenhair_qa_studies": bench_maidenhair_qa_studies_family,
+        "staghorn_qa_studies": bench_staghorn_qa_studies_family,
+        "swordfern_qa_studies": bench_swordfern_qa_studies_family,
+        "treefern_qa_studies": bench_treefern_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,

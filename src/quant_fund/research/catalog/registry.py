@@ -3943,6 +3943,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "liverwort_qa_studies",
         "quillwort_qa_studies",
         "sphagnum_qa_studies",
+        # Wave-1526 fern canon.
+        "bracken_qa_studies",
+        "horsetail_qa_studies",
+        "maidenhair_qa_studies",
+        "staghorn_qa_studies",
+        "swordfern_qa_studies",
+        "treefern_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
