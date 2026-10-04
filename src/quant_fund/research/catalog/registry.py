@@ -4622,6 +4622,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nilgiri_qa_studies",
         "snow_leopard_qa_studies",
         "snowcock_qa_studies",
+        # Wave-1623 alpine-bird canon.
+        "altai_qa_studies",
+        "blood_pheasant_qa_studies",
+        "chukar_qa_studies",
+        "monal_qa_studies",
+        "snow_partridge_qa_studies",
+        "wallcreeper_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
