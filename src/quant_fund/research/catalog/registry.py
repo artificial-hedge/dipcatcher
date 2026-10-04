@@ -3859,6 +3859,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "screech_owl_qa_studies",
         "snowy_owl_qa_studies",
         "tawny_owl_qa_studies",
+        # Wave-1514 butterfly canon.
+        "blue_morpho_qa_studies",
+        "cabbage_white_qa_studies",
+        "fritillary_qa_studies",
+        "monarch_qa_studies",
+        "painted_lady_qa_studies",
+        "swallowtail_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
