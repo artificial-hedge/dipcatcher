@@ -3495,6 +3495,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "orangutan_qa_studies",
         "sloth_qa_studies",
         "toucan_qa_studies",
+        # Wave-1462 ocean-life canon.
+        "crab_qa_studies",
+        "jellyfish_qa_studies",
+        "octopus_qa_studies",
+        "seahorse_qa_studies",
+        "squid_qa_studies",
+        "stingray_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
