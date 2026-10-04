@@ -12879,6 +12879,14 @@ from quant_fund.research.benches_w1610 import (
     bench_porcupine_qa_studies_family,
     bench_ratel_qa_studies_family,
 )
+from quant_fund.research.benches_w1611 import (
+    bench_crowned_lemur_qa_studies_family,
+    bench_fat_tailed_qa_studies_family,
+    bench_fork_marked_qa_studies_family,
+    bench_needle_clawed_qa_studies_family,
+    bench_ringtail_qa_studies_family,
+    bench_sifaka_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15005,6 +15013,12 @@ def _provenance(
         "dhole_qa_studies": bench_dhole_qa_studies_family,
         "mara_qa_studies": bench_mara_qa_studies_family,
         "porcupine_qa_studies": bench_porcupine_qa_studies_family,
+        "crowned_lemur_qa_studies": bench_crowned_lemur_qa_studies_family,
+        "fat_tailed_qa_studies": bench_fat_tailed_qa_studies_family,
+        "fork_marked_qa_studies": bench_fork_marked_qa_studies_family,
+        "needle_clawed_qa_studies": bench_needle_clawed_qa_studies_family,
+        "ringtail_qa_studies": bench_ringtail_qa_studies_family,
+        "sifaka_qa_studies": bench_sifaka_qa_studies_family,
         "ratel_qa_studies": bench_ratel_qa_studies_family,
         "sportive_lemur_qa_studies": bench_sportive_lemur_qa_studies_family,
         "bearded_saki_qa_studies": bench_bearded_saki_qa_studies_family,
