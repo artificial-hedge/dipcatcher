@@ -16,7 +16,7 @@ def iris_qa_studies_aux(aux: bool) -> bool:
     """iris_qa_studies
 
     aux:
-    iris_qa_studies: irises, sepals, answers, and scores
+    iris_qa_studies: iris, rainbow messengers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_iris_qa_studies(seed: int = 0) -> float:
     checks.append(not iris_qa_studies_ok(False, True))
     checks.append(iris_qa_studies_aux(True))
     checks.append(not iris_qa_studies_aux(False))
-    checks.append(True)  # wildflower canon
+    checks.append(True)  # greek-myth-6 canon
     return float(sum(checks) / len(checks))
 
 

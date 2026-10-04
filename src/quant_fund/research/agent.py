@@ -14103,6 +14103,14 @@ from quant_fund.research.benches_w1763 import (
     bench_serqet_qa_studies_family,
     bench_tefnut_qa_studies_family,
 )
+from quant_fund.research.benches_w1764 import (
+    bench_eileithyia_qa_studies_family,
+    bench_iris_qa_studies_family,
+    bench_leto_qa_studies_family,
+    bench_nemesis_qa_studies_family,
+    bench_nike_qa_studies_family,
+    bench_tyche_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

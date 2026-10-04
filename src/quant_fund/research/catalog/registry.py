@@ -5609,6 +5609,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nephthys_qa_studies",
         "serqet_qa_studies",
         "tefnut_qa_studies",
+        # Wave-1764 greek-myth-6 canon.
+        "eileithyia_qa_studies",
+        "iris_qa_studies",
+        "leto_qa_studies",
+        "nemesis_qa_studies",
+        "nike_qa_studies",
+        "tyche_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
