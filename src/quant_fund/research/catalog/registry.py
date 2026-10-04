@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1253 immune-mediators canon.
+        "cytokine_studies",
+        "chemokine_studies",
+        "interferon_studies",
+        "complement_studies",
+        "antibody_studies",
+        "lymphocyte_studies",
         # Wave-1252 metabolic-endocrine canon.
         "pituitary_studies",
         "parathyroid_studies",
