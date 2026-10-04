@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1083 humanities-theory canon.
+        "semiotics",
+        "narratology",
+        "hermeneutics",
+        "phenomenology",
+        "structuralism",
+        "poststructuralism",
         # Wave-1082 jewish studies canon.
         "jewish_studies",
         "talmudic_studies",
