@@ -7943,6 +7943,14 @@ from quant_fund.research.benches_w993 import (
     bench_monotone_op_family,
     bench_schauder_fixed_family,
 )
+from quant_fund.research.benches_w994 import (
+    bench_borg_levinson_family,
+    bench_gelfand_levitan_family,
+    bench_inverse_scattering_family,
+    bench_kdv_isospectral_family,
+    bench_marchenko_eq_family,
+    bench_trace_formulas_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8314,6 +8322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "inverse_scattering": bench_inverse_scattering_family,
+        "marchenko_eq": bench_marchenko_eq_family,
+        "gelfand_levitan": bench_gelfand_levitan_family,
+        "kdv_isospectral": bench_kdv_isospectral_family,
+        "trace_formulas": bench_trace_formulas_family,
+        "borg_levinson": bench_borg_levinson_family,
         "monotone_op": bench_monotone_op_family,
         "degree_theory": bench_degree_theory_family,
         "schauder_fixed": bench_schauder_fixed_family,
