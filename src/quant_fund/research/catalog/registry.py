@@ -5119,6 +5119,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lamassu_qa_studies",
         "shedu_qa_studies",
         "utukku_qa_studies",
+        # Wave-1694 filipino-myth-3 canon.
+        "duwende_qa_studies",
+        "karibusa_qa_studies",
+        "mambabarang_qa_studies",
+        "mangkukulam_qa_studies",
+        "sokoy_qa_studies",
+        "tiktik_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
