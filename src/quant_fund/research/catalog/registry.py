@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1271 LLM-evaluation canon.
+        "arena_battle_studies",
+        "bigbench_studies",
+        "capability_elicitation_studies",
+        "contamination_detect_studies",
+        "helm_eval_studies",
+        "llm_judge_studies",
         # Wave-1270 mech-interp-2 canon.
         "attribution_graph_studies",
         "causal_tracing_studies",

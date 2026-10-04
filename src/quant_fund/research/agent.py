@@ -10159,6 +10159,14 @@ from quant_fund.research.benches_w1270 import (
     bench_gated_sae_studies_family,
     bench_transcoder_studies_family,
 )
+from quant_fund.research.benches_w1271 import (
+    bench_arena_battle_studies_family,
+    bench_bigbench_studies_family,
+    bench_capability_elicitation_studies_family,
+    bench_contamination_detect_studies_family,
+    bench_helm_eval_studies_family,
+    bench_llm_judge_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10602,6 +10610,12 @@ def _provenance(
         "feature_geometry_studies": bench_feature_geometry_studies_family,
         "gated_sae_studies": bench_gated_sae_studies_family,
         "transcoder_studies": bench_transcoder_studies_family,
+        "arena_battle_studies": bench_arena_battle_studies_family,
+        "bigbench_studies": bench_bigbench_studies_family,
+        "capability_elicitation_studies": bench_capability_elicitation_studies_family,
+        "contamination_detect_studies": bench_contamination_detect_studies_family,
+        "helm_eval_studies": bench_helm_eval_studies_family,
+        "llm_judge_studies": bench_llm_judge_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
