@@ -4559,6 +4559,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "saola_qa_studies",
         "tamaraw_qa_studies",
         "yak_qa_studies",
+        # Wave-1614 deer-3 canon.
+        "hog_deer_qa_studies",
+        "kouprey_qa_studies",
+        "mule_qa_studies",
+        "pere_david_qa_studies",
+        "red_deer_qa_studies",
+        "wapiti_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
