@@ -11775,6 +11775,14 @@ from quant_fund.research.benches_w1472 import (
     bench_coriander_qa_studies_family,
     bench_cumin_qa_studies_family,
 )
+from quant_fund.research.benches_w1473 import (
+    bench_clove_qa_studies_family,
+    bench_dill_qa_studies_family,
+    bench_fennel_qa_studies_family,
+    bench_lemongrass_qa_studies_family,
+    bench_mint_qa_studies_family,
+    bench_nutmeg_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13273,6 +13281,12 @@ def _provenance(
         "cinnamon_qa_studies": bench_cinnamon_qa_studies_family,
         "coriander_qa_studies": bench_coriander_qa_studies_family,
         "cumin_qa_studies": bench_cumin_qa_studies_family,
+        "clove_qa_studies": bench_clove_qa_studies_family,
+        "dill_qa_studies": bench_dill_qa_studies_family,
+        "fennel_qa_studies": bench_fennel_qa_studies_family,
+        "lemongrass_qa_studies": bench_lemongrass_qa_studies_family,
+        "mint_qa_studies": bench_mint_qa_studies_family,
+        "nutmeg_qa_studies": bench_nutmeg_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
