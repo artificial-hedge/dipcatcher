@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-779 matrix-analytic canon.
+        "neuts_map",
+        "phase_type",
+        "matrix_geom",
+        "quasi_birth",
+        "ramaswami",
+        "logarithmic_red",
         # Wave-778 loss/vacation-queue canon.
         "engset",
         "erlang_b",
