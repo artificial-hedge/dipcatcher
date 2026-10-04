@@ -16,7 +16,7 @@ def xihe_qa_studies_aux(aux: bool) -> bool:
     """xihe_qa_studies
 
     aux:
-    xihe_qa_studies: xihe, sun charioteers, answers, and scores
+    xihe_qa_studies: xihe, sun mothers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_xihe_qa_studies(seed: int = 0) -> float:
     checks.append(not xihe_qa_studies_ok(False, True))
     checks.append(xihe_qa_studies_aux(True))
     checks.append(not xihe_qa_studies_aux(False))
-    checks.append(True)  # chinese-myth-4 canon
+    checks.append(True)  # chinese-myth-5 canon
     return float(sum(checks) / len(checks))
 
 
