@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1032 aerospace-engineering canon.
+        "aerodynamics",
+        "propulsion",
+        "orbital_mechanics2",
+        "flight_dynamics",
+        "spacecraft_design",
+        "airfoil_theory",
         # Wave-1031 civil-engineering canon.
         "structural_analysis",
         "geotechnics",
