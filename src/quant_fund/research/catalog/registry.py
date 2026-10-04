@@ -3754,6 +3754,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "guillemot_qa_studies",
         "murrelet_qa_studies",
         "razorbill_qa_studies",
+        # Wave-1499 spice-2 canon.
+        "oregano_qa_studies",
+        "parsley_qa_studies",
+        "rosemary_qa_studies",
+        "saffron_qa_studies",
+        "tarragon_qa_studies",
+        "turmeric_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -11983,6 +11983,14 @@ from quant_fund.research.benches_w1498 import (
     bench_murrelet_qa_studies_family,
     bench_razorbill_qa_studies_family,
 )
+from quant_fund.research.benches_w1499 import (
+    bench_oregano_qa_studies_family,
+    bench_parsley_qa_studies_family,
+    bench_rosemary_qa_studies_family,
+    bench_saffron_qa_studies_family,
+    bench_tarragon_qa_studies_family,
+    bench_turmeric_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13589,6 +13597,12 @@ def _provenance(
         "frigatebird_qa_studies": bench_frigatebird_qa_studies_family,
         "guillemot_qa_studies": bench_guillemot_qa_studies_family,
         "murrelet_qa_studies": bench_murrelet_qa_studies_family,
+        "oregano_qa_studies": bench_oregano_qa_studies_family,
+        "parsley_qa_studies": bench_parsley_qa_studies_family,
+        "rosemary_qa_studies": bench_rosemary_qa_studies_family,
+        "saffron_qa_studies": bench_saffron_qa_studies_family,
+        "tarragon_qa_studies": bench_tarragon_qa_studies_family,
+        "turmeric_qa_studies": bench_turmeric_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
         "pademelon_qa_studies": bench_pademelon_qa_studies_family,
