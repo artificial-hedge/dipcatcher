@@ -13559,6 +13559,14 @@ from quant_fund.research.benches_w1695 import (
     bench_yaoguai_qa_studies_family,
     bench_zhuyin_qa_studies_family,
 )
+from quant_fund.research.benches_w1696 import (
+    bench_dongwanggong_qa_studies_family,
+    bench_fuxi_qa_studies_family,
+    bench_kuafu_qa_studies_family,
+    bench_nuwa_qa_studies_family,
+    bench_shennong_qa_studies_family,
+    bench_xiwangmu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
