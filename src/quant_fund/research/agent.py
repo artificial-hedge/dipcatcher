@@ -4391,6 +4391,14 @@ from quant_fund.research.benches_w549 import (
     bench_heat_kernel2_family,
     bench_signature_op_family,
 )
+from quant_fund.research.benches_w550 import (
+    bench_chern_character_family,
+    bench_chern_class_family,
+    bench_euler_class_family,
+    bench_hirzebruch_sig_family,
+    bench_pontryagin_class_family,
+    bench_todd_genus_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4770,6 +4778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chern_class": bench_chern_class_family,
+        "pontryagin_class": bench_pontryagin_class_family,
+        "euler_class": bench_euler_class_family,
+        "todd_genus": bench_todd_genus_family,
+        "chern_character": bench_chern_character_family,
+        "hirzebruch_sig": bench_hirzebruch_sig_family,
         "atiyah_singer": bench_atiyah_singer_family,
         "dirac_op": bench_dirac_op_family,
         "eta_invariant": bench_eta_invariant_family,

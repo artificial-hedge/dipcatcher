@@ -1,3 +1,4 @@
+feat(research): wave 550 — characteristic-classes canon (chern_class, pontryagin_class, euler_class, todd_genus, chern_character, hirzebruch_sig) (3255->3261 families)
 feat(research): wave 549 — index-theory canon (atiyah_singer, dirac_op, eta_invariant, heat_kernel2, signature_op, analytic_torsion) (3249->3255 families)
 feat(research): wave 548 — Floer-theory canon (floer_homology, knot_floer, instanton_floer, monopole_floer, lagrangian_floer, fukaya_cat) (3243->3249 families)
 feat(research): wave 547 — 4-manifold canon (four_mfd, donaldson_thm, seiberg_witten, exotic_r4, intersection_form, freedman_thm) (3237->3243 families)
