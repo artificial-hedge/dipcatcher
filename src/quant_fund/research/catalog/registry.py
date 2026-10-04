@@ -3236,6 +3236,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "layout_qa_studies",
         "pattern_qa_studies",
         "schema_qa_studies",
+        # Wave-1425 media canon.
+        "article_qa_studies",
+        "broadcast_qa_studies",
+        "column_qa_studies",
+        "debate_qa_studies",
+        "editorial_qa_studies",
+        "headline_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
