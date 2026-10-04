@@ -13063,6 +13063,14 @@ from quant_fund.research.benches_w1633 import (
     bench_storm_jinn_qa_studies_family,
     bench_water_sprite_qa_studies_family,
 )
+from quant_fund.research.benches_w1634 import (
+    bench_gnome_2_qa_studies_family,
+    bench_ifrit_qa_studies_family,
+    bench_marid_qa_studies_family,
+    bench_salamander_2_qa_studies_family,
+    bench_sylph_2_qa_studies_family,
+    bench_undine_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15289,6 +15297,12 @@ def _provenance(
         "frost_wight_qa_studies": bench_frost_wight_qa_studies_family,
         "storm_jinn_qa_studies": bench_storm_jinn_qa_studies_family,
         "water_sprite_qa_studies": bench_water_sprite_qa_studies_family,
+        "gnome_2_qa_studies": bench_gnome_2_qa_studies_family,
+        "ifrit_qa_studies": bench_ifrit_qa_studies_family,
+        "marid_qa_studies": bench_marid_qa_studies_family,
+        "salamander_2_qa_studies": bench_salamander_2_qa_studies_family,
+        "sylph_2_qa_studies": bench_sylph_2_qa_studies_family,
+        "undine_qa_studies": bench_undine_qa_studies_family,
         "olm_qa_studies": bench_olm_qa_studies_family,
         "troglobite_qa_studies": bench_troglobite_qa_studies_family,
         "saw_scaled_qa_studies": bench_saw_scaled_qa_studies_family,
