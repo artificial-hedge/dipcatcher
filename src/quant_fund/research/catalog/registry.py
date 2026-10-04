@@ -3971,6 +3971,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ruby_qa_studies",
         "tanzanite_qa_studies",
         "tourmaline_qa_studies",
+        # Wave-1530 alloy canon.
+        "amalgam_qa_studies",
+        "brass_qa_studies",
+        "bronze_qa_studies",
+        "nichrome_qa_studies",
+        "pewter_qa_studies",
+        "solder_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
