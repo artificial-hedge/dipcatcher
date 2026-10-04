@@ -9495,6 +9495,14 @@ from quant_fund.research.benches_w1187 import (
     bench_jewelry_design_family,
     bench_textile_studies_family,
 )
+from quant_fund.research.benches_w1188 import (
+    bench_brewing_science_family,
+    bench_culinary_science_family,
+    bench_enology_family,
+    bench_fermentation_studies_family,
+    bench_gastronomy_2_family,
+    bench_pastry_arts_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9866,6 +9874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "culinary_science": bench_culinary_science_family,
+        "pastry_arts": bench_pastry_arts_family,
+        "brewing_science": bench_brewing_science_family,
+        "enology": bench_enology_family,
+        "fermentation_studies": bench_fermentation_studies_family,
+        "gastronomy_2": bench_gastronomy_2_family,
         "fashion_studies": bench_fashion_studies_family,
         "textile_studies": bench_textile_studies_family,
         "costume_design": bench_costume_design_family,

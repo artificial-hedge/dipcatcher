@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1188 culinary canon.
+        "culinary_science",
+        "pastry_arts",
+        "brewing_science",
+        "enology",
+        "fermentation_studies",
+        "gastronomy_2",
         # Wave-1187 fashion canon.
         "fashion_studies",
         "textile_studies",
