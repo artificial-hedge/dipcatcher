@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1057 linguistics canon.
+        "phonetics",
+        "phonology",
+        "morphology",
+        "syntax_theory",
+        "semantics",
+        "pragmatics",
         # Wave-1056 political-science canon.
         "comparative_politics",
         "international_relations",
