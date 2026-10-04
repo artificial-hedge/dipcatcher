@@ -3614,6 +3614,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kudu_qa_studies",
         "oryx_qa_studies",
         "springbok_qa_studies",
+        # Wave-1479 neotropical canon.
+        "agouti_qa_studies",
+        "armadillo_qa_studies",
+        "capybara_qa_studies",
+        "coati_qa_studies",
+        "peccary_qa_studies",
+        "tapir_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

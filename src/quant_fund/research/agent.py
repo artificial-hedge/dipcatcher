@@ -11823,6 +11823,14 @@ from quant_fund.research.benches_w1478 import (
     bench_oryx_qa_studies_family,
     bench_springbok_qa_studies_family,
 )
+from quant_fund.research.benches_w1479 import (
+    bench_agouti_qa_studies_family,
+    bench_armadillo_qa_studies_family,
+    bench_capybara_qa_studies_family,
+    bench_coati_qa_studies_family,
+    bench_peccary_qa_studies_family,
+    bench_tapir_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -13352,6 +13360,12 @@ def _provenance(
         "skua_qa_studies": bench_skua_qa_studies_family,
         "antelope_qa_studies": bench_antelope_qa_studies_family,
         "eland_qa_studies": bench_eland_qa_studies_family,
+        "agouti_qa_studies": bench_agouti_qa_studies_family,
+        "armadillo_qa_studies": bench_armadillo_qa_studies_family,
+        "capybara_qa_studies": bench_capybara_qa_studies_family,
+        "coati_qa_studies": bench_coati_qa_studies_family,
+        "peccary_qa_studies": bench_peccary_qa_studies_family,
+        "tapir_qa_studies": bench_tapir_qa_studies_family,
         "impala_qa_studies": bench_impala_qa_studies_family,
         "kudu_qa_studies": bench_kudu_qa_studies_family,
         "oryx_qa_studies": bench_oryx_qa_studies_family,
