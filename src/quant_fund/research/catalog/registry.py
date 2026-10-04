@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-665 homotopy-23 canon.
+        "cohen_moore2",
+        "whitehead_product",
+        "homotopy_decomp",
+        "kervaire_inv2",
+        "unstable_vn",
+        "moore_space2",
         # Wave-664 spectral-AG-4 canon.
         "spectral_moduli",
         "e_ring_moduli",
