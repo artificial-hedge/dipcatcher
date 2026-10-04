@@ -1,3 +1,4 @@
+feat(research): wave 580 — enumerative-combinatorics canon (species_theory, cycle_index, lagrange_inversion, transfer_matrix, matrix_tree, exponential_gf) (3435->3441 families)
 feat(research): wave 579 — geometric-invariant-theory canon (git_quotient, hilbert_mumford, moment_polytope, kirwan_strat, symplectic_quot, luna_slice) (3429->3435 families)
 feat(research): wave 578 — arithmetic-geometry-2 canon (global_height, bogomolov_conj, equidistribution_thm, canonical_height, nevanlinna_th, vojta_conj) (3423->3429 families)
 feat(research): wave 577 — perverse-sheaves canon (perverse_sheaf, intersection_homology, nearby_cycles, d_module2, char_cycle, middle_perversity) (3417->3423 families)
