@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-836 integral-geometry canon.
+        "crofton_formula",
+        "kinematic_measure",
+        "buffon_needle",
+        "santalo_measure",
+        "kubota_mean_width",
+        "hadwiger_chars",
         # Wave-835 stochastic-geometry canon.
         "poisson_voronoi",
         "boolean_model",

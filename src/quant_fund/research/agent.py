@@ -6679,6 +6679,14 @@ from quant_fund.research.benches_w835 import (
     bench_poisson_voronoi_family,
     bench_steiner_formula_family,
 )
+from quant_fund.research.benches_w836 import (
+    bench_buffon_needle_family,
+    bench_crofton_formula_family,
+    bench_hadwiger_chars_family,
+    bench_kinematic_measure_family,
+    bench_kubota_mean_width_family,
+    bench_santalo_measure_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7050,6 +7058,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "crofton_formula": bench_crofton_formula_family,
+        "kinematic_measure": bench_kinematic_measure_family,
+        "buffon_needle": bench_buffon_needle_family,
+        "santalo_measure": bench_santalo_measure_family,
+        "kubota_mean_width": bench_kubota_mean_width_family,
+        "hadwiger_chars": bench_hadwiger_chars_family,
         "poisson_voronoi": bench_poisson_voronoi_family,
         "boolean_model": bench_boolean_model_family,
         "germ_grain": bench_germ_grain_family,
