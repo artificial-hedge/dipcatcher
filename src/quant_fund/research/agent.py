@@ -8775,6 +8775,14 @@ from quant_fund.research.benches_w1097 import (
     bench_philosophy_of_mind_family,
     bench_political_philosophy_family,
 )
+from quant_fund.research.benches_w1098 import (
+    bench_biological_anthropology_family,
+    bench_economic_anthropology_family,
+    bench_medical_anthropology_family,
+    bench_paleoanthropology_family,
+    bench_political_anthropology_family,
+    bench_urban_anthropology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9146,6 +9154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "biological_anthropology": bench_biological_anthropology_family,
+        "paleoanthropology": bench_paleoanthropology_family,
+        "medical_anthropology": bench_medical_anthropology_family,
+        "economic_anthropology": bench_economic_anthropology_family,
+        "political_anthropology": bench_political_anthropology_family,
+        "urban_anthropology": bench_urban_anthropology_family,
         "moral_philosophy": bench_moral_philosophy_family,
         "political_philosophy": bench_political_philosophy_family,
         "philosophy_of_mind": bench_philosophy_of_mind_family,
