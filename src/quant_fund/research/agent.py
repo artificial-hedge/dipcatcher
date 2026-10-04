@@ -9911,6 +9911,14 @@ from quant_fund.research.benches_w1239 import (
     bench_motility_studies_family,
     bench_pancreatic_medicine_family,
 )
+from quant_fund.research.benches_w1240 import (
+    bench_asthma_studies_family,
+    bench_bronchiectasis_studies_family,
+    bench_copd_studies_family,
+    bench_interstitial_lung_studies_family,
+    bench_respiratory_studies_family,
+    bench_sleep_breathing_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10282,6 +10290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "respiratory_studies": bench_respiratory_studies_family,
+        "asthma_studies": bench_asthma_studies_family,
+        "copd_studies": bench_copd_studies_family,
+        "interstitial_lung_studies": bench_interstitial_lung_studies_family,
+        "sleep_breathing_studies": bench_sleep_breathing_studies_family,
+        "bronchiectasis_studies": bench_bronchiectasis_studies_family,
         "gi_endoscopy_studies": bench_gi_endoscopy_studies_family,
         "hepatology_medicine": bench_hepatology_medicine_family,
         "pancreatic_medicine": bench_pancreatic_medicine_family,

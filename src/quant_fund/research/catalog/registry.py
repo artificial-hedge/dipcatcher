@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1240 pulmonology canon.
+        "respiratory_studies",
+        "asthma_studies",
+        "copd_studies",
+        "interstitial_lung_studies",
+        "sleep_breathing_studies",
+        "bronchiectasis_studies",
         # Wave-1239 gi-medicine canon.
         "gi_endoscopy_studies",
         "hepatology_medicine",
