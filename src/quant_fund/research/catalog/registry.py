@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1139 medicine-6 canon.
+        "optometry",
+        "dentistry_2",
+        "podiatry",
+        "dietetics",
+        "physiotherapy",
+        "occupational_therapy",
         # Wave-1138 economics-5 canon.
         "behavioral_economics",
         "econ_neuroscience",
