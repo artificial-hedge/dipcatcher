@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1308 long-context-factuality canon.
+        "halu_eval_studies",
+        "infinite_bench_studies",
+        "longmem_studies",
+        "needle_haystack_studies",
+        "ruler_studies",
+        "truthful_qa_studies",
         # Wave-1307 winograd-eval canon.
         "lambada_studies",
         "record_studies",
