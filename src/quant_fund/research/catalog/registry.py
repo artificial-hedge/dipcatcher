@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1192 integrative-medicine canon.
+        "acupuncture_studies",
+        "chiropractic_studies",
+        "naturopathy",
+        "homeopathy",
+        "herbal_medicine",
+        "osteopathy_studies",
         # Wave-1191 media canon.
         "journalism_studies",
         "advertising_studies",
