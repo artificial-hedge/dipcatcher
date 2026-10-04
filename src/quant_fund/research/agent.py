@@ -10335,6 +10335,14 @@ from quant_fund.research.benches_w1292 import (
     bench_rlvr_studies_family,
     bench_verifiable_reward_studies_family,
 )
+from quant_fund.research.benches_w1293 import (
+    bench_cai_critique_studies_family,
+    bench_constitutional_studies_family,
+    bench_harmlessness_rl_studies_family,
+    bench_principle_eval_studies_family,
+    bench_rlaif_studies_family,
+    bench_sleeper_eval_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10910,6 +10918,12 @@ def _provenance(
         "process_reward_studies": bench_process_reward_studies_family,
         "rlvr_studies": bench_rlvr_studies_family,
         "verifiable_reward_studies": bench_verifiable_reward_studies_family,
+        "cai_critique_studies": bench_cai_critique_studies_family,
+        "constitutional_studies": bench_constitutional_studies_family,
+        "harmlessness_rl_studies": bench_harmlessness_rl_studies_family,
+        "principle_eval_studies": bench_principle_eval_studies_family,
+        "rlaif_studies": bench_rlaif_studies_family,
+        "sleeper_eval_studies": bench_sleeper_eval_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
