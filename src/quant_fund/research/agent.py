@@ -6407,6 +6407,14 @@ from quant_fund.research.benches_w801 import (
     bench_rough_variance_family,
     bench_volterra_sde_family,
 )
+from quant_fund.research.benches_w802 import (
+    bench_latent_sde_family,
+    bench_logsig_rde_family,
+    bench_neural_cde_family,
+    bench_neural_rde_family,
+    bench_sde_gan_family,
+    bench_sde_matching_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6786,6 +6794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "latent_sde": bench_latent_sde_family,
+        "neural_cde": bench_neural_cde_family,
+        "neural_rde": bench_neural_rde_family,
+        "sde_gan": bench_sde_gan_family,
+        "sde_matching": bench_sde_matching_family,
+        "logsig_rde": bench_logsig_rde_family,
         "fractional_heston": bench_fractional_heston_family,
         "rough_bergomi": bench_rough_bergomi_family,
         "rough_sabr": bench_rough_sabr_family,
