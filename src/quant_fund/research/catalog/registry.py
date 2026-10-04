@@ -4412,6 +4412,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "loris_qa_studies",
         "potto_qa_studies",
         "tarsier_qa_studies",
+        # Wave-1593 old-world-monkey canon.
+        "colobus_qa_studies",
+        "drill_qa_studies",
+        "gelada_qa_studies",
+        "guenon_qa_studies",
+        "mandrill_qa_studies",
+        "mangabey_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
