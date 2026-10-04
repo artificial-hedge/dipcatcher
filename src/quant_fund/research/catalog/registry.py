@@ -3516,6 +3516,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "monolith_qa_studies",
         "spire_qa_studies",
         "tempest_qa_studies",
+        # Wave-1465 forge canon.
+        "citadel_qa_studies",
+        "forge_qa_studies",
+        "grotto_qa_studies",
+        "lighthouse_qa_studies",
+        "quarry_qa_studies",
+        "vault_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
