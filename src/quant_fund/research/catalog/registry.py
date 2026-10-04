@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1318 NLP-eval-2 canon.
+        "cb_studies",
+        "cola_studies",
+        "qqp_studies",
+        "squad_v2_studies",
+        "sst2_studies",
+        "wic_studies",
         # Wave-1317 eval-science-2 canon.
         "arc_eval_studies",
         "do_anything_studies",

@@ -10535,6 +10535,14 @@ from quant_fund.research.benches_w1317 import (
     bench_verifier_reward_studies_family,
     bench_winogrande_studies_family,
 )
+from quant_fund.research.benches_w1318 import (
+    bench_cb_studies_family,
+    bench_cola_studies_family,
+    bench_qqp_studies_family,
+    bench_squad_v2_studies_family,
+    bench_sst2_studies_family,
+    bench_wic_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11221,6 +11229,12 @@ def _provenance(
         "stylized_studies": bench_stylized_studies_family,
         "backgrounds_studies": bench_backgrounds_studies_family,
         "arc_eval_studies": bench_arc_eval_studies_family,
+        "cb_studies": bench_cb_studies_family,
+        "cola_studies": bench_cola_studies_family,
+        "qqp_studies": bench_qqp_studies_family,
+        "squad_v2_studies": bench_squad_v2_studies_family,
+        "sst2_studies": bench_sst2_studies_family,
+        "wic_studies": bench_wic_studies_family,
         "do_anything_studies": bench_do_anything_studies_family,
         "step_eval_studies": bench_step_eval_studies_family,
         "strong_reject_studies": bench_strong_reject_studies_family,
