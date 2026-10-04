@@ -3460,6 +3460,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "piranha_qa_studies",
         "salmon_qa_studies",
         "tuna_qa_studies",
+        # Wave-1457 forest-mammal canon.
+        "badger_qa_studies",
+        "beaver_qa_studies",
+        "bison_qa_studies",
+        "cougar_qa_studies",
+        "elk_qa_studies",
+        "lynx_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
