@@ -5975,6 +5975,14 @@ from quant_fund.research.benches_w747 import (
     bench_schutz_tasep_family,
     bench_timar_tasep_family,
 )
+from quant_fund.research.benches_w748 import (
+    bench_aggarwal_sixv_family,
+    bench_baxter_vertex_family,
+    bench_borodin_sixv_family,
+    bench_corwin_petrov_family,
+    bench_gowers_knot_family,
+    bench_reshetikhin_vertex_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6354,6 +6362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "borodin_sixv": bench_borodin_sixv_family,
+        "gowers_knot": bench_gowers_knot_family,
+        "baxter_vertex": bench_baxter_vertex_family,
+        "reshetikhin_vertex": bench_reshetikhin_vertex_family,
+        "corwin_petrov": bench_corwin_petrov_family,
+        "aggarwal_sixv": bench_aggarwal_sixv_family,
         "bertini_giacomin": bench_bertini_giacomin_family,
         "gardina_asym": bench_gardina_asym_family,
         "schutz_tasep": bench_schutz_tasep_family,
