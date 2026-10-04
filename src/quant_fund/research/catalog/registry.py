@@ -5546,6 +5546,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "raijin_qa_studies",
         "sarutahiko_qa_studies",
         "uzume_qa_studies",
+        # Wave-1755 norse-myth-7 canon.
+        "dellingr_qa_studies",
+        "gna_qa_studies",
+        "jord_qa_studies",
+        "mani_qa_studies",
+        "sigyn_qa_studies",
+        "sol_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
