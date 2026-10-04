@@ -10119,6 +10119,14 @@ from quant_fund.research.benches_w1265 import (
     bench_pleiotropy_robust_studies_family,
     bench_polygenic_score_studies_family,
 )
+from quant_fund.research.benches_w1266 import (
+    bench_diffusion_lm_studies_family,
+    bench_kv_compression_studies_family,
+    bench_medusa_speculation_studies_family,
+    bench_moe_shared_expert_studies_family,
+    bench_rope_scaling_studies_family,
+    bench_sparse_attention_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -10532,6 +10540,12 @@ def _provenance(
         "mendelian_randomization_studies": bench_mendelian_randomization_studies_family,
         "pleiotropy_robust_studies": bench_pleiotropy_robust_studies_family,
         "polygenic_score_studies": bench_polygenic_score_studies_family,
+        "diffusion_lm_studies": bench_diffusion_lm_studies_family,
+        "kv_compression_studies": bench_kv_compression_studies_family,
+        "medusa_speculation_studies": bench_medusa_speculation_studies_family,
+        "moe_shared_expert_studies": bench_moe_shared_expert_studies_family,
+        "rope_scaling_studies": bench_rope_scaling_studies_family,
+        "sparse_attention_studies": bench_sparse_attention_studies_family,
         "transcriptome_studies": bench_transcriptome_studies_family,
         "proteome_studies": bench_proteome_studies_family,
         "metabolome_studies": bench_metabolome_studies_family,
