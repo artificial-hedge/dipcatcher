@@ -14215,6 +14215,14 @@ from quant_fund.research.benches_w1777 import (
     bench_rangda_qa_studies_family,
     bench_semar_qa_studies_family,
 )
+from quant_fund.research.benches_w1778 import (
+    bench_hanuman_qa_studies_family,
+    bench_lakshmi_qa_studies_family,
+    bench_parvati_qa_studies_family,
+    bench_rama_qa_studies_family,
+    bench_sita_qa_studies_family,
+    bench_vishnu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

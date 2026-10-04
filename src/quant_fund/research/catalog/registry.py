@@ -5707,6 +5707,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "raksasa_qa_studies",
         "rangda_qa_studies",
         "semar_qa_studies",
+        # Wave-1778 hindu-myth-6 canon.
+        "hanuman_qa_studies",
+        "lakshmi_qa_studies",
+        "parvati_qa_studies",
+        "rama_qa_studies",
+        "sita_qa_studies",
+        "vishnu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
