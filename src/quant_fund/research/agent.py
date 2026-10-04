@@ -10775,6 +10775,14 @@ from quant_fund.research.benches_w1347 import (
     bench_reason_mc_studies_family,
     bench_recli_log_studies_family,
 )
+from quant_fund.research.benches_w1348 import (
+    bench_anli_r1_studies_family,
+    bench_anli_r2_studies_family,
+    bench_anli_r3_studies_family,
+    bench_mnli_match_studies_family,
+    bench_scitail_lite_studies_family,
+    bench_snli_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11565,6 +11573,12 @@ def _provenance(
         "mintaka_qa_studies": bench_mintaka_qa_studies_family,
         "spinach_qa_studies": bench_spinach_qa_studies_family,
         "abductive_nli_studies": bench_abductive_nli_studies_family,
+        "anli_r1_studies": bench_anli_r1_studies_family,
+        "anli_r2_studies": bench_anli_r2_studies_family,
+        "anli_r3_studies": bench_anli_r3_studies_family,
+        "mnli_match_studies": bench_mnli_match_studies_family,
+        "scitail_lite_studies": bench_scitail_lite_studies_family,
+        "snli_lite_studies": bench_snli_lite_studies_family,
         "conseq_log_studies": bench_conseq_log_studies_family,
         "logiqa_log_studies": bench_logiqa_log_studies_family,
         "lsat_log_studies": bench_lsat_log_studies_family,
