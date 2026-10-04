@@ -5441,6 +5441,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mithra_qa_studies",
         "verethragna_qa_studies",
         "zahhak_qa_studies",
+        # Wave-1740 canaanite-2 canon.
+        "anat_qa_studies",
+        "astarte_qa_studies",
+        "kothar_qa_studies",
+        "mot_qa_studies",
+        "resheph_qa_studies",
+        "yam_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

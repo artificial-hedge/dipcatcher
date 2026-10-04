@@ -13911,6 +13911,14 @@ from quant_fund.research.benches_w1739 import (
     bench_verethragna_qa_studies_family,
     bench_zahhak_qa_studies_family,
 )
+from quant_fund.research.benches_w1740 import (
+    bench_anat_qa_studies_family,
+    bench_astarte_qa_studies_family,
+    bench_kothar_qa_studies_family,
+    bench_mot_qa_studies_family,
+    bench_resheph_qa_studies_family,
+    bench_yam_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

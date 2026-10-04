@@ -16,7 +16,7 @@ def anat_qa_studies_aux(aux: bool) -> bool:
     """anat_qa_studies
 
     aux:
-    anat_qa_studies: anat, warrior queens, answers, and scores
+    anat_qa_studies: anat, warrior maidens, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_anat_qa_studies(seed: int = 0) -> float:
     checks.append(not anat_qa_studies_ok(False, True))
     checks.append(anat_qa_studies_aux(True))
     checks.append(not anat_qa_studies_aux(False))
-    checks.append(True)  # canaanite-myth canon
+    checks.append(True)  # canaanite-2 canon
     return float(sum(checks) / len(checks))
 
 
