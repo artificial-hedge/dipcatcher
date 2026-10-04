@@ -16,7 +16,7 @@ def supay_qa_studies_aux(aux: bool) -> bool:
     """supay_qa_studies
 
     aux:
-    supay_qa_studies: supay, underworld gods, answers, and scores
+    supay_qa_studies: supay, shadow lords, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_supay_qa_studies(seed: int = 0) -> float:
     checks.append(not supay_qa_studies_ok(False, True))
     checks.append(supay_qa_studies_aux(True))
     checks.append(not supay_qa_studies_aux(False))
-    checks.append(True)  # incan-myth canon
+    checks.append(True)  # incan-myth-2 canon
     return float(sum(checks) / len(checks))
 
 

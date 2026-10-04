@@ -16,7 +16,7 @@ def inti_qa_studies_aux(aux: bool) -> bool:
     """inti_qa_studies
 
     aux:
-    inti_qa_studies: inti, sun gods, answers, and scores
+    inti_qa_studies: inti, sun fathers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_inti_qa_studies(seed: int = 0) -> float:
     checks.append(not inti_qa_studies_ok(False, True))
     checks.append(inti_qa_studies_aux(True))
     checks.append(not inti_qa_studies_aux(False))
-    checks.append(True)  # incan-myth canon
+    checks.append(True)  # incan-myth-2 canon
     return float(sum(checks) / len(checks))
 
 

@@ -16,7 +16,7 @@ def viracocha_qa_studies_aux(aux: bool) -> bool:
     """viracocha_qa_studies
 
     aux:
-    viracocha_qa_studies: viracocha, creator gods, answers, and scores
+    viracocha_qa_studies: viracocha, foam makers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_viracocha_qa_studies(seed: int = 0) -> float:
     checks.append(not viracocha_qa_studies_ok(False, True))
     checks.append(viracocha_qa_studies_aux(True))
     checks.append(not viracocha_qa_studies_aux(False))
-    checks.append(True)  # incan-myth canon
+    checks.append(True)  # incan-myth-2 canon
     return float(sum(checks) / len(checks))
 
 

@@ -5630,6 +5630,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "itzamna_qa_studies",
         "ixmucane_qa_studies",
         "zipacna_qa_studies",
+        # Wave-1767 incan-myth-2 canon.
+        "coniraya_qa_studies",
+        "guanare_qa_studies",
+        "inti_qa_studies",
+        "pachacamac_qa_studies",
+        "supay_qa_studies",
+        "viracocha_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
