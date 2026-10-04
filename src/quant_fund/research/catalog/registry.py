@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-529 KAM/Aubry-Mather canon.
+        "kam_theorem",
+        "aubry_mather",
+        "twist_map",
+        "cantorus",
+        "greene_crit",
+        "arnold_diff",
         # Wave-528 thermodynamic-formalism canon.
         "transfer_op",
         "thermo_formal",

@@ -1,3 +1,4 @@
+feat(research): wave 529 — KAM/Aubry-Mather canon (kam_theorem, aubry_mather, twist_map, cantorus, greene_crit, arnold_diff) (3129->3135 families)
 feat(research): wave 528 — thermodynamic-formalism canon (transfer_op, thermo_formal, pressure_thm, equilibrium_state, ruelle_zeta, lasota_yorke) (3123->3129 families)
 feat(research): wave 527 — hyperbolic-dynamics canon (anosov, srb_measure, horseshoe, stable_mfld, bowen_spec, markov_partition) (3117->3123 families)
 feat(research): wave 526 — complex-dynamics canon (julia_set, mandelbrot_set, fatou_set, sullivan_no_wander, douady_hubbard, parabolic_impl) (3111->3117 families)
