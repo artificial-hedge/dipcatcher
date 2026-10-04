@@ -4048,6 +4048,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sacred_ibis_qa_studies",
         "snowy_egret_qa_studies",
         "squacco_qa_studies",
+        # Wave-1541 pelagic canon.
+        "anhinga_qa_studies",
+        "darter_qa_studies",
+        "diving_petrel_qa_studies",
+        "gadfly_qa_studies",
+        "manx_qa_studies",
+        "mollymawk_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -12319,6 +12319,14 @@ from quant_fund.research.benches_w1540 import (
     bench_snowy_egret_qa_studies_family,
     bench_squacco_qa_studies_family,
 )
+from quant_fund.research.benches_w1541 import (
+    bench_anhinga_qa_studies_family,
+    bench_darter_qa_studies_family,
+    bench_diving_petrel_qa_studies_family,
+    bench_gadfly_qa_studies_family,
+    bench_manx_qa_studies_family,
+    bench_mollymawk_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -14176,6 +14184,12 @@ def _provenance(
         "sacred_ibis_qa_studies": bench_sacred_ibis_qa_studies_family,
         "snowy_egret_qa_studies": bench_snowy_egret_qa_studies_family,
         "squacco_qa_studies": bench_squacco_qa_studies_family,
+        "anhinga_qa_studies": bench_anhinga_qa_studies_family,
+        "darter_qa_studies": bench_darter_qa_studies_family,
+        "diving_petrel_qa_studies": bench_diving_petrel_qa_studies_family,
+        "gadfly_qa_studies": bench_gadfly_qa_studies_family,
+        "manx_qa_studies": bench_manx_qa_studies_family,
+        "mollymawk_qa_studies": bench_mollymawk_qa_studies_family,
         "tourmaline_qa_studies": bench_tourmaline_qa_studies_family,
         "razorbill_qa_studies": bench_razorbill_qa_studies_family,
         "numbat2_qa_studies": bench_numbat2_qa_studies_family,
