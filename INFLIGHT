@@ -1,3 +1,4 @@
+w1397 multilingual-QA canon: coma_qa_studies, gaia_lite_studies, simple_qa_studies, sqa_lite_studies, tqa_lite_studies, tydiqa_lite_studies (8331->8337)
 w1396 summarization-2 canon: agnews_lite_studies, dialsum_lite_studies, facet_lite_studies, medsum_lite_studies, oposum_lite_studies, qsum_lite_studies (8325->8331)
 w1395 QA-exotics-3 canon: bamboogle_studies, fine_qa_studies, hotpot2_studies, kwik_qa_studies, quest_qa_studies, tatqa2_studies (8319->8325)
 w1394 code-agent canon: api_eval_studies, apps_lite_studies, livecode_studies, mbpp_lite_studies, restbench_studies, swe_gym_studies (8313->8319)
