@@ -11447,6 +11447,14 @@ from quant_fund.research.benches_w1431 import (
     bench_engine_qa_studies_family,
     bench_plane_qa_studies_family,
 )
+from quant_fund.research.benches_w1432 import (
+    bench_beverage_qa_studies_family,
+    bench_cuisine_qa_studies_family,
+    bench_dessert_qa_studies_family,
+    bench_dish_qa_studies_family,
+    bench_fruit_qa_studies_family,
+    bench_ingredient_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12699,6 +12707,12 @@ def _provenance(
         "car_qa_studies": bench_car_qa_studies_family,
         "engine_qa_studies": bench_engine_qa_studies_family,
         "plane_qa_studies": bench_plane_qa_studies_family,
+        "beverage_qa_studies": bench_beverage_qa_studies_family,
+        "cuisine_qa_studies": bench_cuisine_qa_studies_family,
+        "dessert_qa_studies": bench_dessert_qa_studies_family,
+        "dish_qa_studies": bench_dish_qa_studies_family,
+        "fruit_qa_studies": bench_fruit_qa_studies_family,
+        "ingredient_qa_studies": bench_ingredient_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,

@@ -3285,6 +3285,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "car_qa_studies",
         "engine_qa_studies",
         "plane_qa_studies",
+        # Wave-1432 cuisine canon.
+        "beverage_qa_studies",
+        "cuisine_qa_studies",
+        "dessert_qa_studies",
+        "dish_qa_studies",
+        "fruit_qa_studies",
+        "ingredient_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
