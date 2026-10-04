@@ -78,6 +78,23 @@ def _bad_arg(msg: str) -> NoReturn:
     raise typer.Exit(code=2)
 
 
+def _json_meta(raw: str | None) -> dict[str, str] | None:
+    """``--metadata`` JSON — must be an object of string pairs."""
+    if raw is None:
+        return None
+    try:
+        meta = json.loads(raw)
+    except json.JSONDecodeError:
+        _bad_arg("--metadata must be a JSON object of string pairs")
+        raise AssertionError("unreachable") from None
+    if not (
+        isinstance(meta, dict)
+        and all(isinstance(k, str) and isinstance(v, str) for k, v in meta.items())
+    ):
+        _bad_arg("--metadata must be a JSON object of string pairs")
+    return meta
+
+
 def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
@@ -2084,6 +2101,11 @@ def harness_respond(
         "--previous-response-id",
         help="Chain onto a stored response (resp_…) — the turn runs with the parent history.",
     ),
+    conversation: str | None = typer.Option(
+        None,
+        "--conversation",
+        help="Join a conversation container (conv_…) — its items are the turn's context.",
+    ),
     background: bool = typer.Option(
         False,
         "--background",
@@ -2161,6 +2183,7 @@ def harness_respond(
                     tools=tool_list,
                     tool_choice=tchoice,
                     previous_response_id=previous_response_id,
+                    conversation=conversation,
                 )
             )
             _emit_response_deltas(events)
@@ -2183,6 +2206,7 @@ def harness_respond(
                 tools=tool_list,
                 tool_choice=tchoice,
                 previous_response_id=previous_response_id,
+                conversation=conversation,
                 background=background,
             )
         )
@@ -2215,6 +2239,7 @@ def harness_respond(
         "tools": tool_list,
         "tool_choice": tchoice,
         "previous_response_id": previous_response_id,
+        "conversation": conversation,
         "background": background,
         "fx1": fx1 or None,
     }
@@ -2537,6 +2562,199 @@ def harness_response_input_items(
             response_id, limit=limit, after=after, before=before, order=order
         )
     )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-create")
+def harness_conv_create(
+    items: str | None = typer.Option(
+        None, "--items", help="JSON array of seed item dicts (message items)."
+    ),
+    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/conversations`` — mint a ``conv_*`` container a response
+    joins via ``--conversation``. Prints the object (``id`` is the join
+    handle)."""
+    seed: list[Any] | None = None
+    if items is not None:
+        try:
+            parsed = json.loads(items)
+        except json.JSONDecodeError:
+            _bad_arg("--items must be a JSON array of item dicts")
+            raise AssertionError("unreachable") from None
+        if not isinstance(parsed, list):
+            _bad_arg("--items must be a JSON array of item dicts")
+        seed = parsed
+    meta = _json_meta(metadata)
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_create(
+                items=seed, metadata=meta
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_create(items=seed, metadata=meta))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-get")
+def harness_conv_get(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/conversations/{id}`` — the conversation object; missing
+    ids exit 2."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_get(conversation_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_get(conversation_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-update")
+def harness_conv_update(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    metadata: str | None = typer.Option(
+        None, "--metadata", help="JSON object of string pairs — replaces wholesale."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/conversations/{id}`` — set the conv's metadata (an omitted
+    flag clears it)."""
+    meta = _json_meta(metadata)
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_update(
+                conversation_id, metadata=meta
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_update(conversation_id, metadata=meta))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-delete")
+def harness_conv_delete(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/conversations/{id}`` — drop the container and its
+    items; member responses stay retrievable on their own ids."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_delete(conversation_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_delete(conversation_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-items")
+def harness_conv_items(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — an item id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — an item id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/conversations/{id}/items`` — the conv's accumulated
+    items, paged by item id."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_items(
+                conversation_id, limit=limit, after=after, before=before, order=order
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().openai_conversation_items(
+            conversation_id, limit=limit, after=after, before=before, order=order
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-items-add")
+def harness_conv_items_add(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    items: str = typer.Option(..., "--items", help="JSON array of item dicts to append."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/conversations/{id}/items`` — append item dicts; prints
+    the minted items list."""
+    try:
+        parsed = json.loads(items)
+    except json.JSONDecodeError:
+        _bad_arg("--items must be a JSON array of item dicts")
+        raise AssertionError("unreachable") from None
+    if not isinstance(parsed, list):
+        _bad_arg("--items must be a JSON array of item dicts")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_items_add(
+                conversation_id, parsed
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_items_add(conversation_id, parsed))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("conv-items-delete")
+def harness_conv_item_delete(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    item_id: str = typer.Argument(..., help="Item id inside the conv."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/conversations/{id}/items/{item_id}`` — drop one item;
+    prints the conv object."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_item_delete(
+                conversation_id, item_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_item_delete(conversation_id, item_id))
     typer.echo(json.dumps(out, indent=2))
 
 

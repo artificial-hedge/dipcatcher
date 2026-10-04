@@ -1210,6 +1210,61 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "has_more": False,
             }
 
+        def conversation_create(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"conv_create": True, **kw}
+            return {
+                "id": "conv_x",
+                "object": "conversation",
+                "created_at": 0,
+                "metadata": kw.get("metadata") or {},
+            }
+
+        def conversation_get(self, conversation_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"conv_get": conversation_id}
+            return {"id": conversation_id, "object": "conversation", "metadata": {}}
+
+        def conversation_update(self, conversation_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"conv_update": conversation_id, **kw}
+            return {
+                "id": conversation_id,
+                "object": "conversation",
+                "metadata": kw.get("metadata") or {},
+            }
+
+        def conversation_delete(self, conversation_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"conv_delete": conversation_id}
+            return {
+                "id": conversation_id,
+                "object": "conversation.deleted",
+                "deleted": True,
+            }
+
+        def conversation_items(self, conversation_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = {"conv_items": conversation_id, **kw}
+            return {
+                "object": "list",
+                "data": [{"id": "msg_z", "type": "message", "role": "user"}],
+                "first_id": "msg_z",
+                "last_id": "msg_z",
+                "has_more": False,
+            }
+
+        def conversation_items_add(
+            self, conversation_id: str, items: Any, **kw: Any
+        ) -> dict[str, Any]:
+            self.last_ft_query = {"conv_items_add": conversation_id, "items": items, **kw}
+            return {
+                "object": "list",
+                "data": items,
+                "first_id": "msg_z",
+                "last_id": "msg_z",
+                "has_more": False,
+            }
+
+        def conversation_item_delete(self, conversation_id: str, item_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"conv_item_delete": [conversation_id, item_id]}
+            return {"id": conversation_id, "object": "conversation", "metadata": {}}
+
         def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
             self.last_ft_query = {"score": input}
             items = input if isinstance(input, list) else [input]
@@ -1979,6 +2034,25 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("background") is True
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
+        # --conversation forwards verbatim (its own legal anchor — the
+        # conv/prev-response pair is a wire 422, so this probes alone)
+        _rc = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--conversation",
+                "conv_9",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_conversation"] = (
+            _rc.exit_code == 0
+            and (remotes[-1].last_ft_query or {}).get("conversation") == "conv_9"
+            and (remotes[-1].last_ft_query or {}).get("previous_response_id") is None
+        )
         # respond --stream remote-side: bare payload dicts — the deltas
         # concatenate and the flag kwargs forward verbatim
         _rsr = runner.invoke(
@@ -2087,6 +2161,82 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             "before": None,
             "order": "asc",
         }
+        # the conv family on --remote: each verb forwards id + kwargs to
+        # the matching HarnessClient method
+        out["remote_conv_create"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "conv-create",
+                    "--items",
+                    '[{"role":"user","content":"hi"}]',
+                    "--metadata",
+                    '{"k":"v"}',
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("id") == "conv_x" and remotes[-1].last_ft_query == {
+            "conv_create": True,
+            "items": [{"role": "user", "content": "hi"}],
+            "metadata": {"k": "v"},
+        }
+        out["remote_conv_family"] = all(
+            json.loads(
+                runner.invoke(app, ["harness", name, "conv_x", "--remote", "http://h.test"]).stdout
+            ).get("id")
+            == "conv_x"
+            for name in ("conv-get", "conv-update", "conv-delete")
+        )
+        out["remote_conv_items"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "conv-items", "conv_x", "--limit", "7", "--remote", "http://h.test"],
+            ).stdout
+        ).get("first_id") == "msg_z" and remotes[-1].last_ft_query == {
+            "conv_items": "conv_x",
+            "limit": 7,
+            "after": None,
+            "before": None,
+            "order": "asc",
+        }
+        out["remote_conv_items_add"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "conv-items-add",
+                    "conv_x",
+                    "--items",
+                    '[{"role":"user","content":"more"}]',
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("data") == [{"role": "user", "content": "more"}] and remotes[-1].last_ft_query == {
+            "conv_items_add": "conv_x",
+            "items": [{"role": "user", "content": "more"}],
+        }
+        out["remote_conv_item_delete"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "conv-items-delete", "conv_x", "msg_z", "--remote", "http://h.test"],
+            ).stdout
+        ).get("id") == "conv_x" and remotes[-1].last_ft_query == {
+            "conv_item_delete": ["conv_x", "msg_z"]
+        }
+        # in-process leg: conv-create needs no backend; a ghost get maps
+        # the SDK KeyError to exit 2 through _or_exit
+        _cip = runner.invoke(app, ["harness", "conv-create", "--metadata", '{"k":"v"}'])
+        _cip_id = json.loads(_cip.stdout).get("id") if _cip.exit_code == 0 else None
+        out["conv_inproc"] = (
+            _cip.exit_code == 0
+            and isinstance(_cip_id, str)
+            and _cip_id.startswith("conv_")
+            and json.loads(_cip.stdout).get("metadata") == {"k": "v"}
+            and runner.invoke(app, ["harness", "conv-get", "conv_ghost"]).exit_code == 2
+        )
         _rs = json.loads(
             runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
         )

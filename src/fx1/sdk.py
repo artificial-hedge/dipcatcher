@@ -89,8 +89,10 @@ from fx1.serve.openai_compat import (
     batch_output_line,
     chained_response_input,
     chat_messages_for_store,
+    conversation_id_of,
     embeddings_to_kwargs,
     openai_chunks,
+    openai_conversation_object,
     openai_embedding_envelope,
     openai_envelope,
     openai_error_body,
@@ -441,6 +443,8 @@ class Fx1Harness:
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
+        # Named conversation containers — the wire's conv_store twin.
+        self._conv_store = OpenAIEnvelopeStore(256)
         # Cancel flags for background responses — a set event means the
         # stored envelope was flipped to ``cancelled`` and the worker must
         # not overwrite it with a terminal result.
@@ -1877,7 +1881,7 @@ class Fx1Harness:
         )
         # chaining resolves (and fails closed) at call time, on both the
         # sync and the background path — a bad parent never queues
-        eff_body = self._chain_response_input(body)
+        eff_body, conv_cid = self._chain_response_input(body)
         if body.background and not body.stream:
             if body.store is False:
                 raise OpenAICompatError(
@@ -1914,6 +1918,7 @@ class Fx1Harness:
                             headers,
                             rid=rid,
                             created=int(queued["created_at"]),
+                            conv_cid=conv_cid,
                         )
                     except Exception as exc:  # noqa: BLE001 — worker faults land on the record
                         if cancel_ev.is_set():
@@ -1945,7 +1950,7 @@ class Fx1Harness:
 
             threading.Thread(target=_bg, daemon=True).start()
             return queued, None
-        return self._openai_response_finish(body, eff_body, headers)
+        return self._openai_response_finish(body, eff_body, headers, conv_cid=conv_cid)
 
     def _openai_response_finish(
         self,
@@ -1955,11 +1960,14 @@ class Fx1Harness:
         *,
         rid: str | None = None,
         created: int | None = None,
+        conv_cid: str | None = None,
     ) -> tuple[dict[str, Any], str | None]:
         """The synchronous tail of ``openai_response`` — shared by the
         direct call and the background worker (which pins ``rid``/
         ``created`` so the completed record lands on the queued
-        envelope's id)."""
+        envelope's id).``conv_cid`` carries the resolved conversation
+        anchor — the turn's items append onto the conv when it
+        completes."""
         kwargs = response_to_kwargs(
             eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
@@ -1989,31 +1997,91 @@ class Fx1Harness:
                     )
                 },
             )
+        self._conv_append(conv_cid, body, envelope)
         return envelope, result.completion_id
 
-    def _chain_response_input(self, body: OpenAIResponseRequest) -> OpenAIResponseRequest:
-        """``previous_response_id`` → the effective input item list
-        (parent's stored input items + parent output + this request's
-        input). Fails closed when the parent isn't a stored ``response`` —
-        a ``store=false`` or evicted parent can't anchor a chain."""
-        if body.previous_response_id is None:
-            return body
-        prev = self._openai_store.get(body.previous_response_id)
-        if prev is None or prev.get("object") != "response":
-            raise OpenAICompatError(
-                f"previous_response_id {body.previous_response_id!r} not found — "
-                "the chain parent must be a stored response (store=true)",
-                status=400,
-                code="previous_response_not_found",
-            )
-        return body.model_copy(
-            update={
-                "input": chained_response_input(
-                    prev,
-                    self._openai_store.get_items(body.previous_response_id, "input_items") or [],
-                    body.input,
+    def _conv_append(
+        self,
+        conv_cid: str | None,
+        body: OpenAIResponseRequest,
+        envelope: dict[str, Any],
+    ) -> None:
+        """Append the turn's items onto the conversation — the request's
+        input items + the response's output items, ids minted off the
+        response rid. The conv container is its own store: the turn lands
+        on it even when the response itself carried ``store=false``."""
+        if conv_cid is None:
+            return
+        conv = self._conv_store.get(conv_cid)
+        if conv is None:
+            return  # deleted mid-flight — the response record stands alone
+        appended = [
+            *response_input_items_for_store(body.input, rid=str(envelope["id"])),
+            *[it for it in envelope["output"] if isinstance(it, dict)],
+        ]
+        self._conv_store.put(
+            conv,
+            items={
+                "items": [
+                    *(self._conv_store.get_items(conv_cid, "items") or []),
+                    *appended,
+                ]
+            },
+        )
+
+    def _chain_response_input(
+        self, body: OpenAIResponseRequest
+    ) -> tuple[OpenAIResponseRequest, str | None]:
+        """``previous_response_id``/``conversation`` → the effective input
+        item list plus the resolved conv id (``None`` when unanchored or
+        chain-anchored). The chain parent must be a stored ``response`` —
+        a ``store=false`` or evicted parent fails closed — and the conv
+        anchor must be a live ``conv_*`` container in the conv store.
+        The two anchors are mutually exclusive at validation."""
+        if body.previous_response_id is not None:
+            prev = self._openai_store.get(body.previous_response_id)
+            if prev is None or prev.get("object") != "response":
+                raise OpenAICompatError(
+                    f"previous_response_id {body.previous_response_id!r} not found — "
+                    "the chain parent must be a stored response (store=true)",
+                    status=400,
+                    code="previous_response_not_found",
                 )
-            }
+            return (
+                body.model_copy(
+                    update={
+                        "input": chained_response_input(
+                            prev,
+                            self._openai_store.get_items(body.previous_response_id, "input_items")
+                            or [],
+                            body.input,
+                        )
+                    }
+                ),
+                None,
+            )
+        conv_cid = conversation_id_of(body.conversation)
+        if conv_cid is None:
+            return body, None
+        conv = self._conv_store.get(conv_cid)
+        if conv is None or conv.get("object") != "conversation":
+            raise OpenAICompatError(
+                f"conversation {conv_cid!r} not found — create it with "
+                "openai_conversation_create first",
+                status=400,
+                code="conversation_not_found",
+            )
+        return (
+            body.model_copy(
+                update={
+                    "input": chained_response_input(
+                        {"output": []},
+                        self._conv_store.get_items(conv_cid, "items") or [],
+                        body.input,
+                    )
+                }
+            ),
+            conv_cid,
         )
 
     def openai_response_stream(
@@ -2034,7 +2102,7 @@ class Fx1Harness:
             if isinstance(request, OpenAIResponseRequest)
             else OpenAIResponseRequest.model_validate(request)
         )
-        eff_body = self._chain_response_input(body)
+        eff_body, conv_cid = self._chain_response_input(body)
         kwargs = response_to_kwargs(
             eff_body, dict(headers or {}), ft_resolver=self._ft_store.checkpoint_for
         )
@@ -2045,21 +2113,22 @@ class Fx1Harness:
         item_id = f"msg_{uuid.uuid4().hex}"
         call_items = openai_response_call_items(result.tool_calls or [])
         lp_arr_s = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
+        env_s = openai_response_object(
+            rid=rid,
+            item_id=item_id,
+            content=result.content,
+            body=body,
+            model=result.model,
+            usage=result.usage,
+            call_items=call_items or None,
+            logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+        )
         if body.store is not False:
-            env_s = openai_response_object(
-                rid=rid,
-                item_id=item_id,
-                content=result.content,
-                body=body,
-                model=result.model,
-                usage=result.usage,
-                call_items=call_items or None,
-                logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
-            )
             self._openai_store.put(
                 env_s,
                 items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
             )
+        self._conv_append(conv_cid, body, env_s)
         events = list(
             openai_response_events(
                 text=result.content,
@@ -2372,6 +2441,115 @@ class Fx1Harness:
             order=order,
         )
 
+    # --- conversations (the /v1/conversations twin) --------------------------
+
+    def _conversation_get(self, conversation_id: str) -> dict[str, Any]:
+        conv = self._conv_store.get(conversation_id)
+        if conv is None or conv.get("object") != "conversation":
+            raise KeyError(f"conversation {conversation_id!r} not found")
+        return conv
+
+    def openai_conversation_create(
+        self,
+        *,
+        items: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations`` in-process — mints a ``conv_*``
+        container; ``items`` seeds it, ``metadata`` stamps it."""
+        cid = f"conv_{uuid.uuid4().hex}"
+        env = openai_conversation_object(cid=cid, metadata=metadata)
+        self._conv_store.put(
+            env,
+            items={"items": (response_input_items_for_store(items, rid=cid) if items else [])},
+        )
+        return env
+
+    def openai_conversation_get(self, conversation_id: str) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}`` in-process."""
+        return self._conversation_get(conversation_id)
+
+    def openai_conversation_update(
+        self,
+        conversation_id: str,
+        *,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}`` in-process — metadata replaces
+        wholesale."""
+        conv = self._conversation_get(conversation_id)
+        conv["metadata"] = dict(metadata) if metadata is not None else {}
+        self._conv_store.put(conv)
+        return conv
+
+    def openai_conversation_delete(self, conversation_id: str) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}`` in-process — the conv and its
+        items drop; member responses stay in the index."""
+        self._conversation_get(conversation_id)
+        self._conv_store.delete(conversation_id)
+        return {"id": conversation_id, "object": "conversation.deleted", "deleted": True}
+
+    def openai_conversation_items(
+        self,
+        conversation_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items`` in-process — the conv's
+        accumulated items, paged."""
+        self._conversation_get(conversation_id)
+        return paged_item_list(
+            self._conv_store.get_items(conversation_id, "items") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    def openai_conversation_items_add(
+        self,
+        conversation_id: str,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}/items`` in-process — appends the
+        dicts (minted per append), returns the minted list."""
+        conv = self._conversation_get(conversation_id)
+        minted = response_input_items_for_store(items, rid=conversation_id)
+        self._conv_store.put(
+            conv,
+            items={
+                "items": [
+                    *(self._conv_store.get_items(conversation_id, "items") or []),
+                    *minted,
+                ]
+            },
+        )
+        return {
+            "object": "list",
+            "data": minted,
+            "first_id": minted[0].get("id") if minted else None,
+            "last_id": minted[-1].get("id") if minted else None,
+            "has_more": False,
+        }
+
+    def openai_conversation_item_delete(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}/items/{item_id}`` in-process —
+        drops one item; a missing id raises ``KeyError``."""
+        conv = self._conversation_get(conversation_id)
+        items = self._conv_store.get_items(conversation_id, "items") or []
+        kept = [it for it in items if it.get("id") != item_id]
+        if len(kept) == len(items):
+            raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
+        self._conv_store.put(conv, items={"items": kept})
+        return conv
+
     def openai_batch(
         self,
         lines: list[dict[str, Any]],
@@ -2425,6 +2603,18 @@ class Fx1Harness:
                 if getattr(obj, "stream", False):
                     raise OpenAICompatError(
                         "stream requests are not valid inside a batch",
+                        code="invalid_request",
+                    )
+                if getattr(obj, "background", False):
+                    raise OpenAICompatError(
+                        "background requests are not valid inside a batch — the "
+                        "batch itself is the async surface",
+                        code="invalid_request",
+                    )
+                if getattr(obj, "conversation", None) is not None:
+                    raise OpenAICompatError(
+                        "conversation requests are not valid inside a batch — "
+                        "a shared conv container would race across lines",
                         code="invalid_request",
                     )
                 if isinstance(obj, OpenAIChatRequest):

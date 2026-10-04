@@ -142,6 +142,9 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAIConversationCreate,
+    OpenAIConversationItemsAdd,
+    OpenAIConversationUpdate,
     OpenAIEmbeddingRequest,
     OpenAIEmbeddingResponse,
     OpenAIEnvelopeStore,
@@ -155,10 +158,12 @@ from fx1.serve.openai_compat import (
     batch_output_line,
     chained_response_input,
     chat_messages_for_store,
+    conversation_id_of,
     embeddings_to_kwargs,
     file_object,
     is_openai_path,
     openai_chunks,
+    openai_conversation_object,
     openai_embedding_envelope,
     openai_envelope,
     openai_error_body,
@@ -2751,6 +2756,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ft_runner: FTJobRunner,
     ft_dir: Path,
     bg_cancel: dict[str, threading.Event],
+    conv_store: OpenAIEnvelopeStore,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -3639,8 +3645,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         plus the completion-log id and raw usage (the caller decides what
         rides the idempotency record).``previous_response_id`` chains the
         turn onto a stored response — the parent must sit in the retrieval
-        index (a ``store=false`` or evicted parent fails closed)."""
+        index (a ``store=false`` or evicted parent fails closed).
+        ``conversation`` anchors to a named container instead: the conv's
+        accumulated items become the context, and after the turn completes
+        the request input + output items append onto the conv (the conv
+        is its own store — it keeps the turn even under
+        ``store=false``). The two anchors are mutually exclusive
+        (422 at validation); an unknown conv fails closed
+        ``400 conversation_not_found``."""
         eff_body = body
+        conv_cid: str | None = None
         if body.previous_response_id is not None:
             prev = envelope_store.get(body.previous_response_id)
             if prev is None or prev.get("object") != "response":
@@ -3659,6 +3673,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     )
                 }
             )
+        else:
+            conv_cid = conversation_id_of(body.conversation)
+            if conv_cid is not None:
+                conv = conv_store.get(conv_cid)
+                if conv is None or conv.get("object") != "conversation":
+                    raise OpenAICompatError(
+                        f"conversation {conv_cid!r} not found — create it with "
+                        "POST /v1/conversations first",
+                        status=400,
+                        code="conversation_not_found",
+                    )
+                eff_body = body.model_copy(
+                    update={
+                        "input": chained_response_input(
+                            {"output": []},
+                            conv_store.get_items(conv_cid, "items") or [],
+                            body.input,
+                        )
+                    }
+                )
         creq = CompleteRequest(
             **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
         )
@@ -3690,6 +3724,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     )
                 },
             )
+        if conv_cid is not None:
+            # the conv accumulates each turn's own items (request input +
+            # response output) — the conv IS the store, so this happens
+            # even under ``store=false`` on the response itself
+            conv = conv_store.get(conv_cid)
+            if conv is not None:
+                appended = [
+                    *response_input_items_for_store(body.input, rid=str(envelope["id"])),
+                    *[it for it in envelope["output"] if isinstance(it, dict)],
+                ]
+                conv_store.put(
+                    conv,
+                    items={
+                        "items": [
+                            *(conv_store.get_items(conv_cid, "items") or []),
+                            *appended,
+                        ]
+                    },
+                )
         return envelope, cid, out.usage
 
     def _openai_embeddings_core(
@@ -4084,6 +4137,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         request's input, and the child's ``input_items`` carry the whole
         history. An unknown, deleted, or ``store=false`` parent fails
         closed ``400 previous_response_not_found``.
+        ``conversation`` (a ``conv_*`` id or ``{id: …}``) anchors to a
+        named container instead — the conv's accumulated items are the
+        context and the turn appends onto it when it completes; the two
+        anchors are mutually exclusive (422) and an unknown conv fails
+        closed ``400 conversation_not_found``.
         ``store`` governs the retrieval index — ``store=false`` keeps the
         call out of ``GET /v1/responses/{id}`` (the audit ledger still
         records it).
@@ -4204,6 +4262,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 submit_items = chained_response_input(
                     prev,
                     envelope_store.get_items(body.previous_response_id, "input_items") or [],
+                    body.input,
+                )
+            elif (conv_cid_sub := conversation_id_of(body.conversation)) is not None:
+                # same contract for the conv anchor: a missing conv fails
+                # now at submit, not inside the worker — the core re-checks
+                # so a delete mid-flight still fails the work honestly
+                conv = conv_store.get(conv_cid_sub)
+                if conv is None or conv.get("object") != "conversation":
+                    raise ApiError(
+                        400,
+                        f"conversation {conv_cid_sub!r} not found — create it "
+                        "with POST /v1/conversations first",
+                        code="conversation_not_found",
+                    )
+                submit_items = chained_response_input(
+                    {"output": []},
+                    conv_store.get_items(conv_cid_sub, "items") or [],
                     body.input,
                 )
             else:
@@ -4453,6 +4528,159 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         envelope_store.put(env)
         return env
 
+    # --- /v1/conversations ---------------------------------------------------
+    # The named-container twin of ``previous_response_id``: a conv id a
+    # turn joins via ``conversation``, whose accumulated items (each turn's
+    # input + output) become the next turn's context. Items page through
+    # the same cursor contract as the stored-request subresources; the
+    # conv and its items live in one bounded LRU keyed on ``conv_*`` ids.
+
+    def _stored_conversation(conversation_id: str) -> dict[str, Any]:
+        conv = conv_store.get(conversation_id)
+        if conv is None or conv.get("object") != "conversation":
+            raise ApiError(
+                404,
+                f"{conversation_id!r} not found — no conversation under this id",
+                code="not_found",
+            )
+        return conv
+
+    @app.post(
+        "/v1/conversations",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_create",
+    )
+    def openai_conversation_create(body: OpenAIConversationCreate) -> dict[str, Any]:
+        """Create a conversation container (``conv_…``). ``items`` seeds
+        the item list with message items; a response joins it with
+        ``conversation`` and appends its turn when it completes."""
+        cid = f"conv_{uuid.uuid4().hex}"
+        env = openai_conversation_object(cid=cid, metadata=body.metadata)
+        conv_store.put(
+            env,
+            items={
+                "items": (response_input_items_for_store(body.items, rid=cid) if body.items else [])
+            },
+        )
+        return env
+
+    @app.get(
+        "/v1/conversations/{conversation_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_retrieve",
+    )
+    def openai_conversation_retrieve(conversation_id: str) -> dict[str, Any]:
+        """Retrieve a conversation object."""
+        return _stored_conversation(conversation_id)
+
+    @app.post(
+        "/v1/conversations/{conversation_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_update",
+    )
+    def openai_conversation_update(
+        body: OpenAIConversationUpdate,
+        conversation_id: str,
+    ) -> dict[str, Any]:
+        """Update a conversation — ``metadata`` replaces wholesale."""
+        conv = _stored_conversation(conversation_id)
+        conv["metadata"] = dict(body.metadata) if body.metadata is not None else {}
+        conv_store.put(conv)
+        return conv
+
+    @app.delete(
+        "/v1/conversations/{conversation_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_delete",
+    )
+    def openai_conversation_delete(conversation_id: str) -> dict[str, Any]:
+        """Delete a conversation — its items drop with it; responses that
+        joined it stay in the retrieval index on their own ids."""
+        _stored_conversation(conversation_id)
+        conv_store.delete(conversation_id)
+        return {"id": conversation_id, "object": "conversation.deleted", "deleted": True}
+
+    @app.get(
+        "/v1/conversations/{conversation_id}/items",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_items_list",
+    )
+    def openai_conversation_items(
+        conversation_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+    ) -> dict[str, Any]:
+        """A conversation's items, oldest first — the same ``after``/
+        ``before``/``order`` cursor contract as the other item lists."""
+        _stored_conversation(conversation_id)
+        items = conv_store.get_items(conversation_id, "items")
+        try:
+            return paged_item_list(
+                items or [],
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+            )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
+    @app.post(
+        "/v1/conversations/{conversation_id}/items",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_items_add",
+    )
+    def openai_conversation_items_add(
+        body: OpenAIConversationItemsAdd,
+        conversation_id: str,
+    ) -> dict[str, Any]:
+        """Append items to a conversation — returns the minted items as a
+        list object. ``item_ids`` (alias-by-reference) is refused: items
+        are minted per append, never aliased."""
+        conv = _stored_conversation(conversation_id)
+        minted = response_input_items_for_store(body.items or [], rid=conversation_id)
+        merged = [*(conv_store.get_items(conversation_id, "items") or []), *minted]
+        conv_store.put(conv, items={"items": merged})
+        return {
+            "object": "list",
+            "data": minted,
+            "first_id": minted[0].get("id") if minted else None,
+            "last_id": minted[-1].get("id") if minted else None,
+            "has_more": False,
+        }
+
+    @app.delete(
+        "/v1/conversations/{conversation_id}/items/{item_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_item_delete",
+    )
+    def openai_conversation_item_delete(
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """Delete one item from a conversation — the conv object returns;
+        a missing item id is a 404."""
+        conv = _stored_conversation(conversation_id)
+        items = conv_store.get_items(conversation_id, "items") or []
+        kept = [it for it in items if it.get("id") != item_id]
+        if len(kept) == len(items):
+            raise ApiError(
+                404,
+                f"item {item_id!r} not found in {conversation_id!r}",
+                code="not_found",
+            )
+        conv_store.put(conv, items={"items": kept})
+        return conv
+
     def _request_items(
         envelope_id: str,
         *,
@@ -4626,6 +4854,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 raise OpenAICompatError(
                     "background requests are not valid inside a batch — the "
                     "batch itself is the async surface",
+                    code="invalid_request",
+                )
+            if getattr(obj, "conversation", None) is not None:
+                raise OpenAICompatError(
+                    "conversation requests are not valid inside a batch — "
+                    "a shared conv container would race across lines",
                     code="invalid_request",
                 )
             if isinstance(obj, OpenAIChatRequest):
@@ -5786,6 +6020,10 @@ def create_app(
     # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
     # and /v1/responses/{id} — `store=false` keeps a call out of it.
     envelope_store = OpenAIEnvelopeStore(store_max)
+    # Named conversation containers — ``POST /v1/conversations`` mints
+    # them, ``conversation`` on a response joins one. Same bounded LRU
+    # contract as the envelope store; items live in subitems.
+    conv_store = OpenAIEnvelopeStore(store_max)
     # Cancel flags for background responses — a set event means the stored
     # envelope was flipped to ``cancelled`` and the worker must not
     # overwrite it with a terminal result.
@@ -6325,6 +6563,7 @@ def create_app(
         batch_line_max=batch_line_max,
         file_bytes_max=file_bytes_max,
         bg_cancel=_bg_cancel,
+        conv_store=conv_store,
     )
 
     _mount_receipt_routes(app, receipt_index)
