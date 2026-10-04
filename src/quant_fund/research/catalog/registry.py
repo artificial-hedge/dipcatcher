@@ -4020,6 +4020,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pigeon_qa_studies",
         "turtle_dove_qa_studies",
         "woodpigeon_qa_studies",
+        # Wave-1537 marshbird canon.
+        "coot_qa_studies",
+        "crake_qa_studies",
+        "dabchick_qa_studies",
+        "gallinule_qa_studies",
+        "rail_qa_studies",
+        "waterhen_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
