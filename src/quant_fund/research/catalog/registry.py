@@ -5000,6 +5000,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "vetala_qa_studies",
         "vidyadhara_qa_studies",
         "yakshini_qa_studies",
+        # Wave-1677 greco-roman canon.
+        "antheia_qa_studies",
+        "aurae_qa_studies",
+        "camenae_qa_studies",
+        "fauns_qa_studies",
+        "limoniad_qa_studies",
+        "numina_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

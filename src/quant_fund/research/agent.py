@@ -13407,6 +13407,14 @@ from quant_fund.research.benches_w1676 import (
     bench_vidyadhara_qa_studies_family,
     bench_yakshini_qa_studies_family,
 )
+from quant_fund.research.benches_w1677 import (
+    bench_antheia_qa_studies_family,
+    bench_aurae_qa_studies_family,
+    bench_camenae_qa_studies_family,
+    bench_fauns_qa_studies_family,
+    bench_limoniad_qa_studies_family,
+    bench_numina_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
