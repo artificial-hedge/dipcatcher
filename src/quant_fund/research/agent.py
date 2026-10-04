@@ -9111,6 +9111,14 @@ from quant_fund.research.benches_w1139 import (
     bench_physiotherapy_family,
     bench_podiatry_family,
 )
+from quant_fund.research.benches_w1140 import (
+    bench_glaciology_family,
+    bench_hydrology_2_family,
+    bench_oceanography_family,
+    bench_paleoclimatology_family,
+    bench_seismology_family,
+    bench_volcanology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9482,6 +9490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "oceanography": bench_oceanography_family,
+        "hydrology_2": bench_hydrology_2_family,
+        "seismology": bench_seismology_family,
+        "glaciology": bench_glaciology_family,
+        "paleoclimatology": bench_paleoclimatology_family,
+        "volcanology_2": bench_volcanology_2_family,
         "optometry": bench_optometry_family,
         "dentistry_2": bench_dentistry_2_family,
         "podiatry": bench_podiatry_family,
