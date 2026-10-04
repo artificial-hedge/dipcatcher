@@ -94,6 +94,7 @@ __all__ = [
     "openai_usage",
     "paged_item_list",
     "OpenAIEnvelopeStore",
+    "OPENAI_RESPONSE_TERMINAL",
     "chained_response_input",
     "response_input_item_dicts",
     "response_input_items_for_store",
@@ -921,7 +922,6 @@ def openai_chunks(
 # the evidence).
 RESPONSES_UNSUPPORTED = (
     "truncation",
-    "background",
     # chat-completions fields that don't exist on this surface — refuse
     # rather than drop so a caller's intent never evaporates
     "n",
@@ -970,6 +970,10 @@ RESPONSE_PART_TYPES = frozenset({"input_text", "output_text"})
 
 RESPONSE_ROLES = frozenset({"user", "assistant", "system", "developer"})
 
+# ``status`` values a response stops moving at — cancel refuses these and a
+# background worker never overwrites them.
+OPENAI_RESPONSE_TERMINAL = frozenset({"completed", "failed", "cancelled", "incomplete"})
+
 
 class OpenAIResponseTool(OpenAIToolFunction):
     """One ``tools[]`` entry on the Responses surface — the flattened
@@ -1009,6 +1013,7 @@ class OpenAIResponseRequest(_Model):
     include: list[str] | None = None
     top_logprobs: int | None = Field(default=None, ge=0, le=20)
     previous_response_id: str | None = Field(default=None, max_length=512)
+    background: bool = Field(default=False)
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -1412,6 +1417,7 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "include": body.include or [],
         "top_logprobs": body.top_logprobs,
         "truncation": "disabled",
+        "background": body.background,
         "previous_response_id": body.previous_response_id,
     }
 
@@ -1454,6 +1460,7 @@ def openai_response_object(
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
     logprobs: list[dict[str, Any]] | None = None,
+    error: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the ``response`` object. ``output`` carries one
     ``message`` item with one ``output_text`` part — plus one
@@ -1463,8 +1470,10 @@ def openai_response_object(
     (``None`` when the backend reports nothing — never fabricated).
     ``logprobs`` is the provider's per-token array — it lands verbatim
     on the ``output_text`` part's ``logprobs`` field (the key is emitted
-    only when the provider reported scores). ``status`` is
-    ``in_progress`` only inside the pre-completion stream events."""
+    only when the provider reported scores). ``status`` is ``in_progress``
+    inside the pre-completion stream events, and ``queued``/``failed``/
+    ``cancelled`` on the background lifecycle (non-``completed`` ships an
+    empty ``output``; ``error`` carries the failure record when set)."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
         it = usage.get("prompt_tokens")
@@ -1506,7 +1515,7 @@ def openai_response_object(
         "model": model or body.model,
         "output": output,
         "usage": resp_usage,
-        "error": None,
+        "error": error,
         "incomplete_details": None,
         **_response_echoes(body),
     }

@@ -1273,6 +1273,23 @@ export class HarnessApiClient {
   }
 
   /**
+   * POST /v1/responses/{id}/cancel — cancel a queued or in-progress
+   * background response (`background: true` on `responsesCreate`).
+   * Terminal responses are a 409, unknown ids a 404 — both surface as
+   * `HarnessApiError`.
+   */
+  async cancelResponse(
+    responseId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/responses/${encodeURIComponent(responseId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
    * GET /v1/chat/completions — stored completions, filtered by `model`
    * and/or an exact `metadata` subset, paged by completion id (OpenAI's
    * `chat.completions.list`).

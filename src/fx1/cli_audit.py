@@ -182,6 +182,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         "chat-messages",
         "response-get",
         "response-delete",
+        "response-cancel",
         "response-input-items",
         "score",
         "commands",
@@ -293,7 +294,13 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         # (the wire's 404), never a fabricated envelope.
         out["harness_stored_missing_2"] = all(
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
-            for name in ("chat-get", "chat-delete", "response-get", "response-delete")
+            for name in (
+                "chat-get",
+                "chat-delete",
+                "response-get",
+                "response-delete",
+                "response-cancel",
+            )
         )
         # the stored-request subresources inherit the same contract —
         # missing id is a clean 2 in-process too.
@@ -1169,6 +1176,10 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "deleted": True,
             }
 
+        def cancel_response(self, response_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"resp_cancel": response_id}
+            return {"id": response_id, "object": "response", "status": "cancelled"}
+
         def list_chat_completions(self, **kw: Any) -> dict[str, Any]:
             self.last_ft_query = {"chat_list": True, **kw}
             return {
@@ -1955,6 +1966,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 '{"type":"json_object"}',
                 "--previous-response-id",
                 "resp_prev9",
+                "--background",
                 "--remote",
                 "http://h.test",
             ],
@@ -1964,6 +1976,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
             and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
             and (remotes[-1].last_ft_query or {}).get("previous_response_id") == "resp_prev9"
+            and (remotes[-1].last_ft_query or {}).get("background") is True
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
         # respond --stream remote-side: bare payload dicts — the deltas
@@ -2011,6 +2024,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 "chat-delete",
                 "response-get",
                 "response-delete",
+                "response-cancel",
             )
         )
         # the stored-request subresources — --remote forwards id + paging

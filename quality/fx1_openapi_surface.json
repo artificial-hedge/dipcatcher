@@ -992,6 +992,22 @@
         ]
       }
     },
+    "/v1/responses/{response_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/responses/{response_id}/input_items": {
       "get": {
         "params": [
@@ -1029,5 +1045,5 @@
       }
     }
   },
-  "schema_sha256": "22cc9f55401a5783d297188d93c6c1078811cee752d1c1da1012522bafa529ad"
+  "schema_sha256": "2fef8102b468586e3a1e5d5d687610d792103c38c0d2018989ea7bb90864d5e8"
 }

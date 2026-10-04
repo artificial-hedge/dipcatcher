@@ -2084,6 +2084,12 @@ def harness_respond(
         "--previous-response-id",
         help="Chain onto a stored response (resp_…) — the turn runs with the parent history.",
     ),
+    background: bool = typer.Option(
+        False,
+        "--background",
+        help="Queue the response and return a status='queued' object — poll "
+        "with `response-get`, cancel with `response-cancel`.",
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
@@ -2177,6 +2183,7 @@ def harness_respond(
                 tools=tool_list,
                 tool_choice=tchoice,
                 previous_response_id=previous_response_id,
+                background=background,
             )
         )
         typer.echo(json.dumps(resp, indent=2))
@@ -2208,6 +2215,7 @@ def harness_respond(
         "tools": tool_list,
         "tool_choice": tchoice,
         "previous_response_id": previous_response_id,
+        "background": background,
         "fx1": fx1 or None,
     }
     if tfmt is not None:
@@ -2394,6 +2402,28 @@ def harness_response_delete(
     from fx1.sdk import Fx1Harness
 
     out = _or_exit(lambda: Fx1Harness().openai_response_delete(response_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-cancel")
+def harness_response_cancel(
+    response_id: str = typer.Argument(..., help="Background response id (resp_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/responses/{id}/cancel`` — cancel a queued or in-progress
+    background response. Terminal responses exit 2 (``cancel_terminal``),
+    unknown ids exit 2 (``not_found``)."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).cancel_response(response_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_response_cancel(response_id))
     typer.echo(json.dumps(out, indent=2))
 
 

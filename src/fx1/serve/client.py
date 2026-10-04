@@ -1399,6 +1399,7 @@ class HarnessClient:
         include: list[str] | None = None,
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
+        background: bool = False,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1448,6 +1449,7 @@ class HarnessClient:
             parallel_tool_calls=parallel_tool_calls,
             include=include,
             top_logprobs=top_logprobs,
+            background=background,
             stream=False,
         )
         if idempotency_key is not None:
@@ -1532,6 +1534,7 @@ class HarnessClient:
         include: list[str] | None = None,
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
+        background: bool = False,
         stream: bool = False,
     ) -> dict[str, Any]:
         fx1: dict[str, Any] = {}
@@ -1559,6 +1562,7 @@ class HarnessClient:
             "user": user,
             "safety_identifier": safety_identifier,
             "previous_response_id": previous_response_id,
+            "background": background,
             "stream": stream,
         }
         if reasoning_effort is not None:
@@ -1800,6 +1804,14 @@ class HarnessClient:
     def delete_response(self, response_id: str) -> dict[str, Any]:
         """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
         return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
+
+    def cancel_response(self, response_id: str) -> dict[str, Any]:
+        """``POST /v1/responses/{id}/cancel`` — cancel a queued or
+        in-progress background response. Terminal responses are a 409;
+        unknown ids a 404 (both surface as ``HarnessTransportError``)."""
+        return dict(
+            self._json("POST", f"/v1/responses/{urllib.parse.quote(response_id)}/cancel", {})
+        )
 
     def list_chat_completions(
         self,
