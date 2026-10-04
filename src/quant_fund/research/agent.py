@@ -6071,6 +6071,14 @@ from quant_fund.research.benches_w759 import (
     bench_sun_cle_family,
     bench_zhan_cle_family,
 )
+from quant_fund.research.benches_w760 import (
+    bench_cameron_martin_family,
+    bench_doob_bm_family,
+    bench_gikhman_skorokhod_family,
+    bench_ito_bm_family,
+    bench_levy_bm_family,
+    bench_wiener_bm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6450,6 +6458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "levy_bm": bench_levy_bm_family,
+        "wiener_bm": bench_wiener_bm_family,
+        "doob_bm": bench_doob_bm_family,
+        "ito_bm": bench_ito_bm_family,
+        "cameron_martin": bench_cameron_martin_family,
+        "gikhman_skorokhod": bench_gikhman_skorokhod_family,
         "gwynne_cle": bench_gwynne_cle_family,
         "hospitsky_cle": bench_hospitsky_cle_family,
         "apu_cle": bench_apu_cle_family,

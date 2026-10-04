@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-760 Brownian-motion canon.
+        "levy_bm",
+        "wiener_bm",
+        "doob_bm",
+        "ito_bm",
+        "cameron_martin",
+        "gikhman_skorokhod",
         # Wave-759 CLE-2 canon.
         "gwynne_cle",
         "hospitsky_cle",
