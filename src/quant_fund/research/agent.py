@@ -8367,6 +8367,14 @@ from quant_fund.research.benches_w1046 import (
     bench_numerical_weather_family,
     bench_synoptic_meteorology_family,
 )
+from quant_fund.research.benches_w1047 import (
+    bench_aquaculture_family,
+    bench_benthic_biology_family,
+    bench_coral_reef_ecology_family,
+    bench_fisheries_science_family,
+    bench_marine_ecology_family,
+    bench_plankton_dynamics_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8738,6 +8746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "plankton_dynamics": bench_plankton_dynamics_family,
+        "marine_ecology": bench_marine_ecology_family,
+        "fisheries_science": bench_fisheries_science_family,
+        "aquaculture": bench_aquaculture_family,
+        "benthic_biology": bench_benthic_biology_family,
+        "coral_reef_ecology": bench_coral_reef_ecology_family,
         "atmospheric_dynamics": bench_atmospheric_dynamics_family,
         "synoptic_meteorology": bench_synoptic_meteorology_family,
         "cloud_physics": bench_cloud_physics_family,
