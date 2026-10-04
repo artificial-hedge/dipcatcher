@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-778 loss/vacation-queue canon.
+        "engset",
+        "erlang_b",
+        "erlang_c",
+        "pollaczek_khinchine",
+        "borel_tanner",
+        "takacs_vacation",
         # Wave-777 heavy-traffic canon.
         "fluid_limit",
         "heavy_traffic",
