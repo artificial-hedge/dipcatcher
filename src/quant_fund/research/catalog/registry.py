@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1051 public-health canon.
+        "epidemiology_2",
+        "biostatistics_2",
+        "health_policy",
+        "global_health",
+        "occupational_health",
+        "preventive_medicine",
         # Wave-1050 pharmacology canon.
         "pharmacodynamics",
         "pharmacokinetics_2",
