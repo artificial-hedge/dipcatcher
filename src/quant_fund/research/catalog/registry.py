@@ -3390,6 +3390,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "guitar_qa_studies",
         "piano_qa_studies",
         "violin_qa_studies",
+        # Wave-1447 predator canon.
+        "bear_qa_studies",
+        "cheetah_qa_studies",
+        "fox_qa_studies",
+        "leopard_qa_studies",
+        "lion_qa_studies",
+        "wolf_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
