@@ -5266,6 +5266,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tabiti_qa_studies",
         "tavrita_qa_studies",
         "thagimasadas_qa_studies",
+        # Wave-1715 dacian-myth canon.
+        "bendis_qa_studies",
+        "darzalas_qa_studies",
+        "derzelas_qa_studies",
+        "kezion_qa_studies",
+        "sabazios_qa_studies",
+        "zamolxis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
