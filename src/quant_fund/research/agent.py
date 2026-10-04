@@ -9151,6 +9151,14 @@ from quant_fund.research.benches_w1144 import (
     bench_planetology_family,
     bench_space_weather_family,
 )
+from quant_fund.research.benches_w1145 import (
+    bench_bioinformatics_4_family,
+    bench_epidemiology_3_family,
+    bench_genomicsciences_family,
+    bench_proteomics_family,
+    bench_synthetic_biology_family,
+    bench_systems_biology_2_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9522,6 +9530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "genomicsciences": bench_genomicsciences_family,
+        "proteomics": bench_proteomics_family,
+        "bioinformatics_4": bench_bioinformatics_4_family,
+        "systems_biology_2": bench_systems_biology_2_family,
+        "synthetic_biology": bench_synthetic_biology_family,
+        "epidemiology_3": bench_epidemiology_3_family,
         "space_weather": bench_space_weather_family,
         "planetology": bench_planetology_family,
         "asteroid_science": bench_asteroid_science_family,
