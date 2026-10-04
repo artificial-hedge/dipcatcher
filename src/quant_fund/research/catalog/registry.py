@@ -5301,6 +5301,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mairu_qa_studies",
         "mari_qa_studies",
         "sugaar_qa_studies",
+        # Wave-1720 sami-myth canon.
+        "akka_qa_studies",
+        "juksakka_qa_studies",
+        "lieaibolmmai_qa_studies",
+        "radien_qa_studies",
+        "sarakka_qa_studies",
+        "ukso_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
