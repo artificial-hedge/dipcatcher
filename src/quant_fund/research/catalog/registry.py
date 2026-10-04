@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1024 computational-biology canon.
+        "protein_folding",
+        "dna_sequencing",
+        "phylogenetics",
+        "gene_expression",
+        "metabolomics",
+        "systems_biology",
         # Wave-1023 finance-theory canon.
         "capm_model",
         "arbitrage_pricing",

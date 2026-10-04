@@ -8183,6 +8183,14 @@ from quant_fund.research.benches_w1023 import (
     bench_default_risk_family,
     bench_yield_curve_family,
 )
+from quant_fund.research.benches_w1024 import (
+    bench_dna_sequencing_family,
+    bench_gene_expression_family,
+    bench_metabolomics_family,
+    bench_phylogenetics_family,
+    bench_protein_folding_family,
+    bench_systems_biology_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8554,6 +8562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "protein_folding": bench_protein_folding_family,
+        "dna_sequencing": bench_dna_sequencing_family,
+        "phylogenetics": bench_phylogenetics_family,
+        "gene_expression": bench_gene_expression_family,
+        "metabolomics": bench_metabolomics_family,
+        "systems_biology": bench_systems_biology_family,
         "capm_model": bench_capm_model_family,
         "arbitrage_pricing": bench_arbitrage_pricing_family,
         "black_scholes": bench_black_scholes_family,
