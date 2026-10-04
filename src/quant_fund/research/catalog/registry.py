@@ -3446,6 +3446,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mosquito_qa_studies",
         "scarab_qa_studies",
         "termite_qa_studies",
+        # Wave-1455 amphibian canon.
+        "axolotl_qa_studies",
+        "bullfrog_qa_studies",
+        "newt_qa_studies",
+        "salamander_qa_studies",
+        "toad_qa_studies",
+        "tree_frog_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
