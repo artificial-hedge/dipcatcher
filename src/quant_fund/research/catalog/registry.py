@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-707 spectral-AG-9 canon.
+        "spectral_prime",
+        "spectral_residue",
+        "spectral_level",
+        "spectral_polynomial2",
+        "spectral_coord",
+        "spectral_ext_field",
         # Wave-706 chromatic-9 canon.
         "chromatic_layer",
         "morava_maven",

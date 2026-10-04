@@ -5647,6 +5647,14 @@ from quant_fund.research.benches_w706 import (
     bench_lubin_tate3_family,
     bench_morava_maven_family,
 )
+from quant_fund.research.benches_w707 import (
+    bench_spectral_coord_family,
+    bench_spectral_ext_field_family,
+    bench_spectral_level_family,
+    bench_spectral_polynomial2_family,
+    bench_spectral_prime_family,
+    bench_spectral_residue_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6026,6 +6034,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_prime": bench_spectral_prime_family,
+        "spectral_residue": bench_spectral_residue_family,
+        "spectral_level": bench_spectral_level_family,
+        "spectral_polynomial2": bench_spectral_polynomial2_family,
+        "spectral_coord": bench_spectral_coord_family,
+        "spectral_ext_field": bench_spectral_ext_field_family,
         "chromatic_layer": bench_chromatic_layer_family,
         "morava_maven": bench_morava_maven_family,
         "chromatic_square2": bench_chromatic_square2_family,
