@@ -12935,6 +12935,14 @@ from quant_fund.research.benches_w1617 import (
     bench_russet_qa_studies_family,
     bench_white_footed_qa_studies_family,
 )
+from quant_fund.research.benches_w1618 import (
+    bench_anglerfish_qa_studies_family,
+    bench_bristlemouth_qa_studies_family,
+    bench_grenadier_qa_studies_family,
+    bench_hatchetfish_qa_studies_family,
+    bench_lanternfish_qa_studies_family,
+    bench_viperfish_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -15076,6 +15084,12 @@ def _provenance(
         "copepod_qa_studies": bench_copepod_qa_studies_family,
         "amber_mountain_qa_studies": bench_amber_mountain_qa_studies_family,
         "anosy_qa_studies": bench_anosy_qa_studies_family,
+        "anglerfish_qa_studies": bench_anglerfish_qa_studies_family,
+        "bristlemouth_qa_studies": bench_bristlemouth_qa_studies_family,
+        "grenadier_qa_studies": bench_grenadier_qa_studies_family,
+        "hatchetfish_qa_studies": bench_hatchetfish_qa_studies_family,
+        "lanternfish_qa_studies": bench_lanternfish_qa_studies_family,
+        "viperfish_qa_studies": bench_viperfish_qa_studies_family,
         "daraina_qa_studies": bench_daraina_qa_studies_family,
         "red_bellied_qa_studies": bench_red_bellied_qa_studies_family,
         "russet_qa_studies": bench_russet_qa_studies_family,
