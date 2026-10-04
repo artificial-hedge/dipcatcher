@@ -11263,6 +11263,14 @@ from quant_fund.research.benches_w1408 import (
     bench_fusion_qa_studies_family,
     bench_proof_qa_studies_family,
 )
+from quant_fund.research.benches_w1409 import (
+    bench_bamboogle_lite_studies_family,
+    bench_beerqa_lite_studies_family,
+    bench_cider_qa_studies_family,
+    bench_ensem_qa_studies_family,
+    bench_fanqa_lite_studies_family,
+    bench_hops_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12377,6 +12385,12 @@ def _provenance(
         "entailment_qa_studies": bench_entailment_qa_studies_family,
         "fusion_qa_studies": bench_fusion_qa_studies_family,
         "proof_qa_studies": bench_proof_qa_studies_family,
+        "bamboogle_lite_studies": bench_bamboogle_lite_studies_family,
+        "beerqa_lite_studies": bench_beerqa_lite_studies_family,
+        "cider_qa_studies": bench_cider_qa_studies_family,
+        "ensem_qa_studies": bench_ensem_qa_studies_family,
+        "fanqa_lite_studies": bench_fanqa_lite_studies_family,
+        "hops_qa_studies": bench_hops_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
