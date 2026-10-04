@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1242 rehab-medicine canon.
+        "rehabilitation_studies",
+        "physical_therapy_studies",
+        "sports_injury_studies",
+        "fracture_studies",
+        "osteoporosis_studies",
+        "physiatry_studies",
         # Wave-1241 hematology canon.
         "anemia_studies",
         "coagulation_studies",
