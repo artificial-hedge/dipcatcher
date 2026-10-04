@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1151 chemical-sciences canon.
+        "chemistry_3",
+        "organic_chemistry_2",
+        "inorganic_chemistry_2",
+        "physical_chemistry_2",
+        "analytical_chemistry_2",
+        "electrochemistry_2",
         # Wave-1150 microbial-genetics canon.
         "microbiology_2",
         "bacteriology",
