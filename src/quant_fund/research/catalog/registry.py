@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1239 gi-medicine canon.
+        "gi_endoscopy_studies",
+        "hepatology_medicine",
+        "pancreatic_medicine",
+        "ibd_studies",
+        "celiac_studies",
+        "motility_studies",
         # Wave-1238 vascular-medicine canon.
         "vascular_medicine_studies",
         "phlebology_studies",
