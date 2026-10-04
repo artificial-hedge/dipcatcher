@@ -11039,6 +11039,14 @@ from quant_fund.research.benches_w1380 import (
     bench_social_lite_studies_family,
     bench_subj_lite_studies_family,
 )
+from quant_fund.research.benches_w1381 import (
+    bench_begins_lite_studies_family,
+    bench_diamonds_lite_studies_family,
+    bench_faithful_dial_studies_family,
+    bench_multi_woz_studies_family,
+    bench_top_dialog_studies_family,
+    bench_wow_lite_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -11991,6 +11999,12 @@ def _provenance(
         "snips_lite_studies": bench_snips_lite_studies_family,
         "social_lite_studies": bench_social_lite_studies_family,
         "subj_lite_studies": bench_subj_lite_studies_family,
+        "begins_lite_studies": bench_begins_lite_studies_family,
+        "diamonds_lite_studies": bench_diamonds_lite_studies_family,
+        "faithful_dial_studies": bench_faithful_dial_studies_family,
+        "multi_woz_studies": bench_multi_woz_studies_family,
+        "top_dialog_studies": bench_top_dialog_studies_family,
+        "wow_lite_studies": bench_wow_lite_studies_family,
         "stance_detect_studies": bench_stance_detect_studies_family,
         "evidence_inf_studies": bench_evidence_inf_studies_family,
         "hoax_detect_studies": bench_hoax_detect_studies_family,
