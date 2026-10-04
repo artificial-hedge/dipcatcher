@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-559 complex-geometry canon.
+        "calabi_yau_mfd",
+        "calabi_conjecture",
+        "kahler_einstein",
+        "k_stability",
+        "csck_metric",
+        "futaki_invariant",
         # Wave-558 gauge-theory canon.
         "yang_mills",
         "instanton_moduli",
