@@ -14303,6 +14303,14 @@ from quant_fund.research.benches_w1788 import (
     bench_silvanus_qa_studies_family,
     bench_solinvictus_qa_studies_family,
 )
+from quant_fund.research.benches_w1789 import (
+    bench_eris_qa_studies_family,
+    bench_ganymede_qa_studies_family,
+    bench_hebe_qa_studies_family,
+    bench_hermes_qa_studies_family,
+    bench_momus_qa_studies_family,
+    bench_oneiros_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
