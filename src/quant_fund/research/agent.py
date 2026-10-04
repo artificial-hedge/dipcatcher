@@ -15015,6 +15015,14 @@ from quant_fund.research.benches_w1877 import (
     bench_tiniri_qa_studies_family,
     bench_warpon_qa_studies_family,
 )
+from quant_fund.research.benches_w1878 import (
+    bench_baal_marod_qa_studies_family,
+    bench_bozrum_qa_studies_family,
+    bench_guillyn_qa_studies_family,
+    bench_hammonites_qa_studies_family,
+    bench_weded_qa_studies_family,
+    bench_yamenna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

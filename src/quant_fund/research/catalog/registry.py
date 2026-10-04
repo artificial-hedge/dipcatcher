@@ -6407,6 +6407,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "igal_qa_studies",
         "tiniri_qa_studies",
         "warpon_qa_studies",
+        # Wave-1878 garamantian-2 canon.
+        "baal_marod_qa_studies",
+        "bozrum_qa_studies",
+        "guillyn_qa_studies",
+        "hammonites_qa_studies",
+        "weded_qa_studies",
+        "yamenna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
