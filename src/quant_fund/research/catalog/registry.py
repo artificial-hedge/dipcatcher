@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-628 operads-2 canon.
+        "moerdijk_weiss",
+        "higher_operad",
+        "operad_infty3",
+        "operad_cat2",
+        "dendroidal_seg",
+        "operad_module",
         # Wave-627 condensed-4 canon.
         "discrete_liquid",
         "smith_project",
