@@ -3166,6 +3166,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "everyday_qa_studies",
         "folk_qa_studies",
         "moral_qa_studies",
+        # Wave-1415 legal-regulatory canon.
+        "case_qa_studies",
+        "clause_qa_studies",
+        "contract_qa_studies",
+        "lawqa_lite_studies",
+        "legal_qa_studies",
+        "statute_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

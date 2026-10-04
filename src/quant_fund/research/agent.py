@@ -11311,6 +11311,14 @@ from quant_fund.research.benches_w1414 import (
     bench_folk_qa_studies_family,
     bench_moral_qa_studies_family,
 )
+from quant_fund.research.benches_w1415 import (
+    bench_case_qa_studies_family,
+    bench_clause_qa_studies_family,
+    bench_contract_qa_studies_family,
+    bench_lawqa_lite_studies_family,
+    bench_legal_qa_studies_family,
+    bench_statute_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -12461,6 +12469,12 @@ def _provenance(
         "everyday_qa_studies": bench_everyday_qa_studies_family,
         "folk_qa_studies": bench_folk_qa_studies_family,
         "moral_qa_studies": bench_moral_qa_studies_family,
+        "case_qa_studies": bench_case_qa_studies_family,
+        "clause_qa_studies": bench_clause_qa_studies_family,
+        "contract_qa_studies": bench_contract_qa_studies_family,
+        "lawqa_lite_studies": bench_lawqa_lite_studies_family,
+        "legal_qa_studies": bench_legal_qa_studies_family,
+        "statute_qa_studies": bench_statute_qa_studies_family,
         "cronqa_lite_studies": bench_cronqa_lite_studies_family,
         "cwq_lite_studies": bench_cwq_lite_studies_family,
         "grailqa_studies": bench_grailqa_studies_family,
