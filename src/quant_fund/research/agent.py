@@ -8767,6 +8767,14 @@ from quant_fund.research.benches_w1096 import (
     bench_pollution_science_family,
     bench_urban_ecology_family,
 )
+from quant_fund.research.benches_w1097 import (
+    bench_eastern_philosophy_family,
+    bench_moral_philosophy_family,
+    bench_philosophy_of_language_family,
+    bench_philosophy_of_law_family,
+    bench_philosophy_of_mind_family,
+    bench_political_philosophy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -9138,6 +9146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "moral_philosophy": bench_moral_philosophy_family,
+        "political_philosophy": bench_political_philosophy_family,
+        "philosophy_of_mind": bench_philosophy_of_mind_family,
+        "philosophy_of_language": bench_philosophy_of_language_family,
+        "philosophy_of_law": bench_philosophy_of_law_family,
+        "eastern_philosophy": bench_eastern_philosophy_family,
         "pollution_science": bench_pollution_science_family,
         "conservation_biology": bench_conservation_biology_family,
         "environmental_toxicology": bench_environmental_toxicology_family,

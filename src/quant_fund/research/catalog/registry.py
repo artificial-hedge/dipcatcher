@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1097 philosophy-3 canon.
+        "moral_philosophy",
+        "political_philosophy",
+        "philosophy_of_mind",
+        "philosophy_of_language",
+        "philosophy_of_law",
+        "eastern_philosophy",
         # Wave-1096 environmental-2 canon.
         "pollution_science",
         "conservation_biology",
