@@ -8934,7 +8934,19 @@ def _resolve_auth(
             auth_hdr = request.headers.get("Authorization", "")
             if auth_hdr.startswith("Bearer "):
                 provided = auth_hdr[len("Bearer ") :]
-        if provided and api_key and hmac.compare_digest(provided, api_key):
+        # compare_digest refuses non-ASCII str; the utf-8 encodings keep
+        # ordinary header values byte-exact. ``os.environ`` can contain
+        # surrogate-escaped bytes on POSIX, so surrogatepass is required
+        # on both sides as well: a malformed configured key must not turn
+        # an otherwise ordinary bad credential into a server fault.
+        if (
+            provided
+            and api_key
+            and hmac.compare_digest(
+                provided.encode("utf-8", errors="surrogatepass"),
+                api_key.encode("utf-8", errors="surrogatepass"),
+            )
+        ):
             return ("env", True, None)
         if provided:
             key_rec = key_store.authenticate(
