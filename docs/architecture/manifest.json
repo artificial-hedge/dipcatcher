@@ -14311,10 +14311,6 @@
       "src": "quant_fund.proofcore.ci"
     },
     {
-      "dst": "quant_fund.utils.receipt",
-      "src": "quant_fund.proofcore.ci"
-    },
-    {
       "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.proofcore.cli"
     },
@@ -80732,11 +80728,6 @@
     {
       "dst": "quant_fund.proofcore",
       "imports": 7,
-      "src": "quant_fund.proofcore"
-    },
-    {
-      "dst": "quant_fund.utils",
-      "imports": 1,
       "src": "quant_fund.proofcore"
     },
     {
