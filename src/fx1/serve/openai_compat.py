@@ -33,13 +33,16 @@ import time
 import urllib.parse
 import uuid
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from fx1.serve.receipt_store import SHA256_HEX
 from fx1.serve.webhooks import check_callback_url
+
+if TYPE_CHECKING:
+    from fx1.serve.journal import JobJournal
 
 __all__ = [
     "OPENAI_BACKENDS",
@@ -1576,15 +1579,18 @@ def response_input_item_dicts(input_: str | list[dict[str, Any]]) -> list[dict[s
 
 
 def response_input_items_for_store(
-    input_: str | list[dict[str, Any]], *, rid: str
+    input_: str | list[dict[str, Any]], *, rid: str, start_at: int = 0
 ) -> list[dict[str, Any]]:
     """``input`` in retrieval shape for
     ``GET /v1/responses/{id}/input_items`` — the items as submitted
     (a plain string wraps as one user message item with ``input_text``),
-    each carrying a caller-supplied or digest ``msg_`` id."""
+    each carrying a caller-supplied or digest ``msg_`` id. ``start_at``
+    is the index the first minted id covers: a caller appending onto an
+    existing item list passes its length so successive appends to one
+    container (a conversation) never double-mint a position's id."""
     out: list[dict[str, Any]] = []
     for i, item in enumerate(response_input_item_dicts(input_)):
-        item.setdefault("id", _stored_item_id("msg", rid, i))
+        item.setdefault("id", _stored_item_id("msg", rid, start_at + i))
         out.append(item)
     return out
 
@@ -2835,9 +2841,15 @@ class OpenAIEnvelopeStore:
     routes. ``store=false`` keeps a call out of this index — the
     completion log still records it; retrieval is a convenience surface,
     not the evidence. Oldest entries evict at ``cap`` (insertion order —
-    a re-put refreshes the id's position)."""
+    a re-put refreshes the id's position).
 
-    def __init__(self, cap: int = 256) -> None:
+    With a ``JobJournal`` bound, every mutation is journaled inside the
+    store lock before the in-memory write lands, and boot replays the
+    chain then compacts to the live records — a restart rebuilds the
+    index verbatim (evictions re-derive from insertion order, so no
+    tombstones are needed)."""
+
+    def __init__(self, cap: int = 256, journal: JobJournal | None = None) -> None:
         if cap < 1:
             raise ValueError(f"store cap must be >= 1, got {cap}")
         self._cap = cap
@@ -2849,6 +2861,77 @@ class OpenAIEnvelopeStore:
         # line, and SSE replay source — a stash key would serialize onto
         # the wire. Items share their envelope's lifetime.
         self._subitems: dict[str, dict[str, list[dict[str, Any]]]] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            for payload in res.payloads:
+                self._apply(payload)
+            self._compact_locked()
+
+    def _journal_op(self, payload: dict[str, Any]) -> None:
+        """Append one mutation record — callers hold ``self._lock``, so
+        the journal's line order matches the in-memory mutation order."""
+        if self._journal is not None:
+            self._journal.append(payload)
+
+    def _apply(self, payload: dict[str, Any]) -> None:
+        """Replay one journaled op onto the in-memory maps (boot path —
+        never re-journals)."""
+        op = payload.get("op")
+        if op == "put":
+            env = payload.get("envelope")
+            if not isinstance(env, dict) or not isinstance(env.get("id"), str):
+                return
+            eid = str(env["id"])
+            self._items.pop(eid, None)
+            self._items[eid] = env
+            items = payload.get("items")
+            if isinstance(items, dict):
+                self._subitems[eid] = {
+                    k: [dict(it) for it in v] for k, v in items.items() if isinstance(v, list)
+                }
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+        elif op == "set_items":
+            sid, key, items = (
+                payload.get("id"),
+                payload.get("key"),
+                payload.get("items"),
+            )
+            if (
+                isinstance(sid, str)
+                and sid in self._items
+                and isinstance(key, str)
+                and isinstance(items, list)
+            ):
+                self._subitems.setdefault(sid, {})[key] = [dict(it) for it in items]
+        elif op == "delete":
+            did = payload.get("id")
+            if isinstance(did, str):
+                self._items.pop(did, None)
+                self._subitems.pop(did, None)
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        post-replay so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            self._journal.compact(
+                [
+                    {
+                        "op": "put",
+                        "envelope": env,
+                        "items": {
+                            k: [dict(it) for it in v]
+                            for k, v in self._subitems.get(eid, {}).items()
+                        },
+                    }
+                    for eid, env in self._items.items()
+                ]
+            )
 
     def put(
         self,
@@ -2860,6 +2943,10 @@ class OpenAIEnvelopeStore:
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         with self._lock:
+            payload: dict[str, Any] = {"op": "put", "envelope": envelope}
+            if items is not None:
+                payload["items"] = {k: [dict(it) for it in v] for k, v in items.items()}
+            self._journal_op(payload)
             self._items.pop(eid, None)
             self._items[eid] = envelope
             if items is not None:
@@ -2887,6 +2974,7 @@ class OpenAIEnvelopeStore:
             if cur is None or cur.get("status") not in allowed:
                 return False
             cur["status"] = status
+            self._journal_op({"op": "put", "envelope": dict(cur)})
             return True
 
     def put_unless_status(
@@ -2913,6 +3001,10 @@ class OpenAIEnvelopeStore:
                 return False
             if cur is not None and cur.get("status") in blocked:
                 return False
+            payload: dict[str, Any] = {"op": "put", "envelope": envelope}
+            if items is not None:
+                payload["items"] = {k: [dict(it) for it in v] for k, v in items.items()}
+            self._journal_op(payload)
             self._items.pop(eid, None)
             self._items[eid] = envelope
             if items is not None:
@@ -2937,6 +3029,7 @@ class OpenAIEnvelopeStore:
         with self._lock:
             live = self._items.pop(eid, None)
             selected = live if live is not None else envelope
+            self._journal_op({"op": "put", "envelope": selected})
             self._items[eid] = selected
             while len(self._items) > self._cap:
                 evicted = next(iter(self._items))
@@ -2960,6 +3053,10 @@ class OpenAIEnvelopeStore:
         with self._lock:
             if eid not in self._items:
                 return False
+            payload: dict[str, Any] = {"op": "put", "envelope": envelope}
+            if items is not None:
+                payload["items"] = {k: [dict(it) for it in v] for k, v in items.items()}
+            self._journal_op(payload)
             self._items.pop(eid)
             self._items[eid] = envelope
             if items is not None:
@@ -2989,8 +3086,34 @@ class OpenAIEnvelopeStore:
         with self._lock:
             return [dict(env) for env in self._items.values() if env.get("object") == object_]
 
+    def mutate_items(
+        self,
+        envelope_id: str,
+        key: str,
+        fn: Callable[[list[dict[str, Any]]], Sequence[dict[str, Any]]],
+    ) -> list[dict[str, Any]] | None:
+        """Read-modify-write one item list under the store lock: ``fn``
+        gets a copy of the current list (``[]`` when the envelope never
+        carried items under ``key``) and its return becomes the list.
+        The whole merge — read, transform, store — is one critical
+        section, so parallel mutators can't lose each other's writes and
+        a delete racing in resolves as ``None`` instead of a get-then-put
+        resurrection. Returns the merged list, or ``None`` when the id is
+        gone."""
+        with self._lock:
+            if envelope_id not in self._items:
+                return None
+            bucket = self._subitems.setdefault(envelope_id, {})
+            merged = [dict(it) for it in fn([dict(it) for it in bucket.get(key, [])])]
+            self._journal_op({"op": "set_items", "id": envelope_id, "key": key, "items": merged})
+            bucket[key] = merged
+            return merged
+
     def delete(self, envelope_id: str) -> bool:
         with self._lock:
+            existed = envelope_id in self._items or envelope_id in self._subitems
+            if existed:
+                self._journal_op({"op": "delete", "id": envelope_id})
             self._subitems.pop(envelope_id, None)
             return self._items.pop(envelope_id, None) is not None
 
@@ -3004,6 +3127,7 @@ class OpenAIEnvelopeStore:
             if env is None:
                 return None
             env["metadata"] = dict(metadata)
+            self._journal_op({"op": "put", "envelope": dict(env)})
             return dict(env)
 
     def __len__(self) -> int:
