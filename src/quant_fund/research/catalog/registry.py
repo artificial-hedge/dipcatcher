@@ -6547,6 +6547,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "striga_qa_studies",
         "strix_qa_studies",
         "vrykolakas_qa_studies",
+        # Wave-1898 malay-archipelago-demon canon.
+        "bajang_qa_studies",
+        "kum_kum_qa_studies",
+        "pelesit_qa_studies",
+        "penanggalan_qa_studies",
+        "pontianak_qa_studies",
+        "toyol_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

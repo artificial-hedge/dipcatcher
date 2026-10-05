@@ -15175,6 +15175,14 @@ from quant_fund.research.benches_w1897 import (
     bench_strix_qa_studies_family,
     bench_vrykolakas_qa_studies_family,
 )
+from quant_fund.research.benches_w1898 import (
+    bench_bajang_qa_studies_family,
+    bench_kum_kum_qa_studies_family,
+    bench_pelesit_qa_studies_family,
+    bench_penanggalan_qa_studies_family,
+    bench_pontianak_qa_studies_family,
+    bench_toyol_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
