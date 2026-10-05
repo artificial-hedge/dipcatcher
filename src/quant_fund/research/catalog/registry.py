@@ -5805,6 +5805,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "modi_qa_studies",
         "njord_qa_studies",
         "tyr2_qa_studies",
+        # Wave-1792 sumerian-5 canon.
+        "agga_qa_studies",
+        "babbar_qa_studies",
+        "enmerkar2_qa_studies",
+        "lugulbanda_qa_studies",
+        "ninsun_qa_studies",
+        "urukagina_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
