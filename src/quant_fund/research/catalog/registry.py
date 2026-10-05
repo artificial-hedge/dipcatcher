@@ -6771,6 +6771,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nuku_mai_tore_qa_studies",
         "tipua_qa_studies",
         "wheke_muturangi_qa_studies",
+        # Wave-1930 tibetan-demon canon.
+        "bdud_qa_studies",
+        "bgegs_qa_studies",
+        "btsan_qa_studies",
+        "gdon_qa_studies",
+        "gnod_sbyin_qa_studies",
+        "srin_po_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

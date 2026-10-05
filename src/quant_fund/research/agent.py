@@ -15431,6 +15431,14 @@ from quant_fund.research.benches_w1929 import (
     bench_tipua_qa_studies_family,
     bench_wheke_muturangi_qa_studies_family,
 )
+from quant_fund.research.benches_w1930 import (
+    bench_bdud_qa_studies_family,
+    bench_bgegs_qa_studies_family,
+    bench_btsan_qa_studies_family,
+    bench_gdon_qa_studies_family,
+    bench_gnod_sbyin_qa_studies_family,
+    bench_srin_po_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
