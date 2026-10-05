@@ -65,11 +65,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "1216a4e1724354a0331bb4ada497cb56802344e9",
+  "git_revision": "8f66ed7660ab7562767e8c9555bbf33c92cfa02b",
   "interpretation": "Webhook delivery contract holds: HMAC-SHA256 signatures over <timestamp>.<body> verify against the declared secret and refuse wrong-secret, tampered, and replayed-stale deliveries; every terminal transition fires exactly once across jobs, evals, fine-tuning jobs, and both batch surfaces \u2014 repeated cancels and repeated GETs never re-fire; 5xx retries bound at three attempts with capped backoff, 4xx is definitive, dead and stalling endpoints give up loudly into a recorded 'failed' verdict; the delivered body is the final record shape (finished_at populated, terminal status consistent with GET); callback verdicts surface on every record's GET; callback_secret never serializes to GETs, deliveries, or the journal; scheme/userinfo smuggling and secret-without-URL all refuse 422 at create; and an unresolvable host never hangs the request path.",
   "kind": "webhook_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "4b0edfff8e3d0f9da2fbb44df9ef9f4d293bdfc9c88ea9efe5060c7fd05fd575",
+  "receipt_sha256": "e6b84fb3cc56ebc50aa4a26d837d18a62d2d7b338fbc326c547b166ee11043a4",
   "research_only": true,
   "schema": "webhook_audit.v1"
 }
