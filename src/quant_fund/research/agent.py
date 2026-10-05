@@ -14335,6 +14335,14 @@ from quant_fund.research.benches_w1792 import (
     bench_ninsun_qa_studies_family,
     bench_urukagina_qa_studies_family,
 )
+from quant_fund.research.benches_w1793 import (
+    bench_cluentia_qa_studies_family,
+    bench_faunus_qa_studies_family,
+    bench_larunda_qa_studies_family,
+    bench_mutina_qa_studies_family,
+    bench_quirinus_qa_studies_family,
+    bench_tellus_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
