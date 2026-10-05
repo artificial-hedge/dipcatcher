@@ -14391,6 +14391,14 @@ from quant_fund.research.benches_w1799 import (
     bench_susanoo2_qa_studies_family,
     bench_tsukuyomi2_qa_studies_family,
 )
+from quant_fund.research.benches_w1800 import (
+    bench_aeneas2_qa_studies_family,
+    bench_evander2_qa_studies_family,
+    bench_lavinia2_qa_studies_family,
+    bench_remus2_qa_studies_family,
+    bench_romulus2_qa_studies_family,
+    bench_turnus2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
