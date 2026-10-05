@@ -6764,6 +6764,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "patupaiarehe_qa_studies",
         "ponaturi_qa_studies",
         "taipo_qa_studies",
+        # Wave-1929 maori-demon canon.
+        "hotupuku_qa_studies",
+        "kahui_tipua_qa_studies",
+        "kataore_qa_studies",
+        "nuku_mai_tore_qa_studies",
+        "tipua_qa_studies",
+        "wheke_muturangi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
