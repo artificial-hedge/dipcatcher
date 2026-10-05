@@ -6337,6 +6337,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "deiba_qa_studies",
         "nantosuelta_qa_studies",
         "ognios_qa_studies",
+        # Wave-1868 carthaginian-2 canon.
+        "anat_punic_qa_studies",
+        "carthage_punic_qa_studies",
+        "el_punic_qa_studies",
+        "hadad_punic_qa_studies",
+        "moloch_punic_qa_studies",
+        "reshef_punic_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

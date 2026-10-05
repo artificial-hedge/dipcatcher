@@ -14935,6 +14935,14 @@ from quant_fund.research.benches_w1867 import (
     bench_nantosuelta_qa_studies_family,
     bench_ognios_qa_studies_family,
 )
+from quant_fund.research.benches_w1868 import (
+    bench_anat_punic_qa_studies_family,
+    bench_carthage_punic_qa_studies_family,
+    bench_el_punic_qa_studies_family,
+    bench_hadad_punic_qa_studies_family,
+    bench_moloch_punic_qa_studies_family,
+    bench_reshef_punic_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
