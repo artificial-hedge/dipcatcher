@@ -6820,6 +6820,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "luison_qa_studies",
         "mboitui_qa_studies",
         "pombero_qa_studies",
+        # Wave-1937 chiloe-demon canon.
+        "caleuche_qa_studies",
+        "camahueto_qa_studies",
+        "fiura_qa_studies",
+        "invunche_qa_studies",
+        "pincoya_qa_studies",
+        "trauco_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
