@@ -5135,20 +5135,32 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             incomplete_details=inc_details,
         )
         if body.store is not False:
-            envelope_store.put(
-                {
-                    **envelope,
-                    # the completion-log link the GET ?stream replay surface
-                    # needs for its X-Fx1-* headers — stripped before any
-                    # wire read, matching the idem-record convention
-                    "_fx1_completion_id": cid,
-                },
-                items={
-                    "input_items": response_input_items_for_store(
-                        eff_body.input, rid=str(envelope["id"])
-                    )
-                },
-            )
+            stored_env = {
+                **envelope,
+                # the completion-log link the GET ?stream replay surface
+                # needs for its X-Fx1-* headers — stripped before any
+                # wire read, matching the idem-record convention
+                "_fx1_completion_id": cid,
+            }
+            store_items = {
+                "input_items": response_input_items_for_store(
+                    eff_body.input, rid=str(envelope["id"])
+                )
+            }
+            if rid is None:
+                envelope_store.put(stored_env, items=store_items)
+            else:
+                # Commit only while this background response is active.
+                # A cancelled/deleted result remains in the completion log
+                # but must not overwrite its verdict or its conversation.
+                stored = envelope_store.put_unless_status(
+                    stored_env,
+                    forbidden=OPENAI_RESPONSE_TERMINAL,
+                    require_existing=True,
+                    items=store_items,
+                )
+                if not stored:
+                    return envelope, cid, out.usage
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
@@ -6191,15 +6203,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         if replay is not None:
             env = replay.envelope
-            # re-pin in the retrieval index — a replay refreshes the entry
             if body.store is not False:
-                envelope_store.put(env)
-            # a non-terminal background response replays the LIVE envelope —
-            # the queued snapshot in the idem record would be stale
-            if env.get("status") in ("queued", "in_progress"):
-                live = envelope_store.get(str(env.get("id")))
-                if live is not None:
-                    env = {**env, **{k: v for k, v in live.items() if not k.startswith("_fx1_")}}
+                # Refresh retrieval order while retaining a newer live
+                # verdict. Only an absent record rehydrates from cache.
+                # Cache-only raw usage remains available for stream replay;
+                # every field present in the live envelope takes precedence.
+                env = {**env, **envelope_store.repin(env)}
             headers = {"X-Fx1-Idempotent-Replay": "true"}
             if env.get("_fx1_completion_id"):
                 headers["X-Fx1-Completion-Id"] = str(env["_fx1_completion_id"])
@@ -6289,10 +6298,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 try:
                     if cancel_ev.is_set():
                         return
-                    cur = envelope_store.get(rid)
-                    if cur is not None and cur.get("status") == "queued":
-                        cur["status"] = "in_progress"
-                        envelope_store.put(cur)
+                    # A cancellation or deletion after the event check
+                    # must prevent the queued backend call from starting.
+                    if not envelope_store.transition_status(
+                        rid, expect={"queued"}, status="in_progress"
+                    ):
+                        return
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
@@ -6327,12 +6338,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 "code": "internal_error",
                             },
                         )
-                    else:
-                        if cancel_ev.is_set():
-                            done = envelope_store.get(rid)
-                            if done is not None:
-                                done["status"] = "cancelled"
-                                envelope_store.put(done)
                 finally:
                     inflight.release()
                     bg_cancel.pop(rid, None)
@@ -6345,7 +6350,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     return
                 cur["status"] = "failed"
                 cur["error"] = error
-                envelope_store.put(cur)
+                envelope_store.put_unless_status(
+                    cur, forbidden=OPENAI_RESPONSE_TERMINAL, require_existing=True
+                )
 
             if key is not None:
                 openai_idem_store.put(
@@ -6565,17 +6572,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "in_progress responses cancel",
                 code="cancel_terminal",
             )
+        # Commit before signalling: a terminal completion that already
+        # won cannot be undone by a late cancellation request. The atomic
+        # status update preserves internal completion/evidence headers.
+        if not envelope_store.transition_status(
+            response_id, expect={"queued", "in_progress"}, status="cancelled"
+        ):
+            current = _stored_envelope(response_id, object_="response")
+            raise ApiError(
+                409,
+                f"{response_id!r} is already {current['status']} — only queued or "
+                "in_progress responses cancel",
+                code="cancel_terminal",
+            )
         ev = bg_cancel.get(response_id)
         if ev is not None:
             ev.set()
-        # put the raw stored record (not the _fx1_*-stripped projection) so
-        # the replay surface keeps its completion-log link on a cancelled
-        # response too
-        raw = envelope_store.get(response_id)
-        if raw is None or raw.get("object") != "response":
-            raise ApiError(404, f"{response_id!r} not found", code="not_found")
-        raw["status"] = "cancelled"
-        envelope_store.put(raw)
         env["status"] = "cancelled"
         return env
 

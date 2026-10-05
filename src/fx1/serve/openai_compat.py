@@ -2869,6 +2869,107 @@ class OpenAIEnvelopeStore:
                 self._items.pop(evicted)
                 self._subitems.pop(evicted, None)
 
+    def transition_status(
+        self,
+        envelope_id: str,
+        *,
+        expect: Iterable[str],
+        status: str,
+    ) -> bool:
+        """Compare-and-set on the stored envelope's status — the bg
+        worker's ``queued → in_progress`` claim lands only while no
+        terminal verdict has. A status the poller has already seen can
+        never regress: the write is refused when the stored status is
+        not in ``expect``."""
+        allowed = frozenset(expect)
+        with self._lock:
+            cur = self._items.get(envelope_id)
+            if cur is None or cur.get("status") not in allowed:
+                return False
+            cur["status"] = status
+            return True
+
+    def put_unless_status(
+        self,
+        envelope: dict[str, Any],
+        *,
+        forbidden: Iterable[str],
+        require_existing: bool = False,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> bool:
+        """``put`` guarded on the *stored* envelope's status: refuses
+        when a record under the id already carries a status in
+        ``forbidden``. A terminal verdict (``cancelled``) is sticky — a
+        worker's late result never overwrites it. Returns whether the
+        put landed. ``require_existing`` protects background updates
+        from recreating an envelope that was deleted or evicted."""
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        blocked = frozenset(forbidden)
+        with self._lock:
+            cur = self._items.get(eid)
+            if cur is None and require_existing:
+                return False
+            if cur is not None and cur.get("status") in blocked:
+                return False
+            self._items.pop(eid, None)
+            self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+            return True
+
+    def repin(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        """Refresh a replay's retrieval entry without replacing live state.
+
+        An existing envelope wins over the idempotency cache's older
+        snapshot. An absent entry is rehydrated from the cache, preserving
+        the existing replay contract after deletion or capacity eviction.
+        Selection, insertion and eviction share the store lock.
+        """
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        with self._lock:
+            live = self._items.pop(eid, None)
+            selected = live if live is not None else envelope
+            self._items[eid] = selected
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+            return dict(selected)
+
+    def put_if_present(
+        self,
+        envelope: dict[str, Any],
+        *,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> bool:
+        """Atomic check-and-``put``: lands only while the id is still in
+        the index. A background turn's late writes (status flips, the
+        terminal envelope) must not resurrect a record deleted
+        mid-flight. Returns whether the envelope was stored."""
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        with self._lock:
+            if eid not in self._items:
+                return False
+            self._items.pop(eid)
+            self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+            return True
+
     def get(self, envelope_id: str) -> dict[str, Any] | None:
         with self._lock:
             env = self._items.get(envelope_id)
