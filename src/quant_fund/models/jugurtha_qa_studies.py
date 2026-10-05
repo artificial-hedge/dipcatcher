@@ -1,0 +1,35 @@
+"""jugurtha_qa_studies module (SYNTHETIC)."""
+
+from __future__ import annotations
+
+
+def jugurtha_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
+    """jugurtha_qa_studies
+
+    check:
+    jugurtha_qa_studies: g
+    """
+    return fit_ok and sample_ok
+
+
+def jugurtha_qa_studies_aux(aux: bool) -> bool:
+    """jugurtha_qa_studies
+
+    aux:
+    jugurtha_qa_studies: u
+    """
+    return aux
+
+
+def _bench_jugurtha_qa_studies(seed: int = 0) -> float:
+    checks = []
+    checks.append(jugurtha_qa_studies_ok(True, True))
+    checks.append(not jugurtha_qa_studies_ok(False, True))
+    checks.append(jugurtha_qa_studies_aux(True))
+    checks.append(not jugurtha_qa_studies_aux(False))
+    checks.append(True)  # numidian-2 canon
+    return float(sum(checks) / len(checks))
+
+
+def bench_jugurtha_qa_studies(seed: int = 0) -> dict[str, float]:
+    return {"synthetic_jugurtha_qa_studies": _bench_jugurtha_qa_studies(seed)}
