@@ -14911,6 +14911,14 @@ from quant_fund.research.benches_w1864 import (
     bench_safir_qa_studies_family,
     bench_segwarides_qa_studies_family,
 )
+from quant_fund.research.benches_w1865 import (
+    bench_enid_qa_studies_family,
+    bench_geraint_qa_studies_family,
+    bench_gwalchmei_qa_studies_family,
+    bench_olwen_qa_studies_family,
+    bench_owen_qa_studies_family,
+    bench_rheged_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

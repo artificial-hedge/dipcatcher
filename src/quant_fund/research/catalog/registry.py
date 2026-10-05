@@ -6316,6 +6316,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "palamedes_qa_studies",
         "safir_qa_studies",
         "segwarides_qa_studies",
+        # Wave-1865 arthurian-6 canon.
+        "enid_qa_studies",
+        "geraint_qa_studies",
+        "gwalchmei_qa_studies",
+        "olwen_qa_studies",
+        "owen_qa_studies",
+        "rheged_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
