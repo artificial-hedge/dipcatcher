@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 
-def conjugate(mul, inv, g: tuple, x: tuple) -> tuple:
-    return tuple(mul(mul(g, x), inv(g)))
+def conjugate(mul, inv, g, x):
+    # elements stay in the group's own representation — permutation
+    # tuples for S3, plain ints for Z4; ``mul`` already returns it.
+    return mul(mul(g, x), inv(g))
 
 
-def class_of(g_elems: frozenset, mul, inv, x: tuple) -> frozenset:
+def class_of(g_elems: frozenset, mul, inv, x) -> frozenset:
     return frozenset(conjugate(mul, inv, g, x) for g in g_elems)
 
 
@@ -22,7 +24,7 @@ def all_classes(g_elems: frozenset, mul, inv) -> list[frozenset]:
     return out
 
 
-def centralizer(g_elems: frozenset, mul, x: tuple) -> frozenset:
+def centralizer(g_elems: frozenset, mul, x) -> frozenset:
     return frozenset(g for g in g_elems if mul(g, x) == mul(x, g))
 
 

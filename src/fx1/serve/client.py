@@ -26,6 +26,7 @@ tests route it at a ``fastapi.testclient.TestClient``.
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
@@ -129,6 +130,12 @@ def _urllib_transport(
         return exc.code, dict(exc.headers or {}), body
     except urllib.error.URLError as exc:
         raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+    except (http.client.HTTPException, OSError) as exc:
+        # socket faults before a status line exists — e.g. a mid-upload
+        # reset when the server rejects early on headers alone (413
+        # body-cap) — are transport errors under the same contract as
+        # URLError; don't leak raw errno classes to callers.
+        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
