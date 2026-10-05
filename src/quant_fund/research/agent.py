@@ -15591,6 +15591,14 @@ from quant_fund.research.benches_w1949 import (
     bench_valefor_qa_studies_family,
     bench_vasago_qa_studies_family,
 )
+from quant_fund.research.benches_w1950 import (
+    bench_beleth_qa_studies_family,
+    bench_botis_qa_studies_family,
+    bench_eligos_qa_studies_family,
+    bench_leraje_qa_studies_family,
+    bench_sitri_qa_studies_family,
+    bench_zepar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
