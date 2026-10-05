@@ -14855,6 +14855,14 @@ from quant_fund.research.benches_w1857 import (
     bench_rigisamus_qa_studies_family,
     bench_sulis_qa_studies_family,
 )
+from quant_fund.research.benches_w1858 import (
+    bench_aracus_qa_studies_family,
+    bench_cosus_qa_studies_family,
+    bench_cronia_qa_studies_family,
+    bench_munidis_qa_studies_family,
+    bench_quangeio_qa_studies_family,
+    bench_reo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
