@@ -6568,6 +6568,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kodama_shirakawa_qa_studies",
         "nure_onna_qa_studies",
         "yurei_muzen_qa_studies",
+        # Wave-1901 brazilian-folklore canon.
+        "boitata_qa_studies",
+        "boto_qa_studies",
+        "curupira_qa_studies",
+        "iara_qa_studies",
+        "mapinguari_qa_studies",
+        "saci_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
