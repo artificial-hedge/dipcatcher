@@ -6155,6 +6155,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dibon2_qa_studies",
         "kiriath2_qa_studies",
         "nebo2_qa_studies",
+        # Wave-1842 ammonite-myth canon.
+        "ammon_qa_studies",
+        "baalis2_qa_studies",
+        "el2_qa_studies",
+        "milcom_qa_studies",
+        "moloch2_qa_studies",
+        "sodom2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
