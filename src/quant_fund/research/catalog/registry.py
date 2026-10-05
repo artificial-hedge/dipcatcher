@@ -6386,6 +6386,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shooil_ghoul_qa_studies",
         "sleih_beggey_qa_studies",
         "ushtey_qa_studies",
+        # Wave-1875 punic-3 canon.
+        "abdastartus_qa_studies",
+        "bariha_qa_studies",
+        "bodastart_qa_studies",
+        "mider_qa_studies",
+        "reshef_qa_studies",
+        "safon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
