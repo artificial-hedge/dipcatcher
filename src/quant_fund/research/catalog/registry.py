@@ -5819,6 +5819,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mutina_qa_studies",
         "quirinus_qa_studies",
         "tellus_qa_studies",
+        # Wave-1794 maori-2 canon.
+        "maru2_qa_studies",
+        "pere_qa_studies",
+        "rongomai_qa_studies",
+        "tuhi2_qa_studies",
+        "uenuku2_qa_studies",
+        "wairere_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
