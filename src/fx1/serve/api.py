@@ -85,6 +85,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 
 from fx1 import __version__
@@ -487,7 +488,7 @@ class ApiError(HTTPException):
         self.code = code or _STATUS_CODES.get(status_code, "internal")
 
 
-def _err_code(exc: HTTPException) -> str:
+def _err_code(exc: StarletteHTTPException) -> str:
     if isinstance(exc, ApiError):
         return exc.code
     return _STATUS_CODES.get(exc.status_code, "internal")
@@ -2575,12 +2576,13 @@ def _mount_job_routes(
         for i, req in enumerate(body.jobs):
             try:
                 key = _idem_key(req.idempotency_key)
-                resp = await _run_claimed(
-                    job_store.async_claim_lock(key),
-                    lambda req=req, key=key: _submit_job(
-                        req, key, lab, job_store, metrics, inflight, jobs_executor
-                    ),
-                )
+
+                def _submit(
+                    req: HarnessRunRequest = req, key: str | None = key
+                ) -> JobSubmitResponse:
+                    return _submit_job(req, key, lab, job_store, metrics, inflight, jobs_executor)
+
+                resp = await _run_claimed(job_store.async_claim_lock(key), _submit)
                 items.append(
                     JobBatchItemResponse(
                         index=i,
@@ -9179,8 +9181,13 @@ def create_app(
     app.state.rate_limiter = limiter
     app.state.breaker = breaker
 
-    @app.exception_handler(HTTPException)
-    async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    # Register on starlette's base HTTPException, not fastapi's subclass —
+    # body-parse failures (multipart/body errors raised by starlette's own
+    # request parsing and fastapi's routing layer) raise the parent class;
+    # the subclass-only registration let them escape as bare {"detail":...}
+    # instead of the surface's {error: {message, type, param, code}} envelope.
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         if is_openai_path(request.url.path):
             return JSONResponse(
                 status_code=exc.status_code,
