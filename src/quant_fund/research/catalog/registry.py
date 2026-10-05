@@ -6526,6 +6526,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gidim_qa_studies",
         "maskim_qa_studies",
         "sebettu_qa_studies",
+        # Wave-1895 mesopotamian-demon-3 canon.
+        "allatu_qa_studies",
+        "belili_qa_studies",
+        "dimme_qa_studies",
+        "gallu_qa_studies",
+        "lilu_qa_studies",
+        "sulak_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

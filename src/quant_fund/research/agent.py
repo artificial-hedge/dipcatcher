@@ -15151,6 +15151,14 @@ from quant_fund.research.benches_w1894 import (
     bench_maskim_qa_studies_family,
     bench_sebettu_qa_studies_family,
 )
+from quant_fund.research.benches_w1895 import (
+    bench_allatu_qa_studies_family,
+    bench_belili_qa_studies_family,
+    bench_dimme_qa_studies_family,
+    bench_gallu_qa_studies_family,
+    bench_lilu_qa_studies_family,
+    bench_sulak_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
