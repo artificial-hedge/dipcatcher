@@ -6974,6 +6974,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "marbas_qa_studies",
         "purson_qa_studies",
         "sallos_qa_studies",
+        # Wave-1959 goetic-throne canon.
+        "adramelech_qa_studies",
+        "azazel_qa_studies",
+        "belphegor_qa_studies",
+        "ipos_qa_studies",
+        "marchosias_qa_studies",
+        "phenex_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -15663,6 +15663,14 @@ from quant_fund.research.benches_w1958 import (
     bench_purson_qa_studies_family,
     bench_sallos_qa_studies_family,
 )
+from quant_fund.research.benches_w1959 import (
+    bench_adramelech_qa_studies_family,
+    bench_azazel_qa_studies_family,
+    bench_belphegor_qa_studies_family,
+    bench_ipos_qa_studies_family,
+    bench_marchosias_qa_studies_family,
+    bench_phenex_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
