@@ -6876,6 +6876,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gwishin_qa_studies",
         "mul_gwishin_qa_studies",
         "oeggwi_qa_studies",
+        # Wave-1945 oceania-demon canon.
+        "adaro_qa_studies",
+        "kaiaimunu_qa_studies",
+        "masalai_qa_studies",
+        "pukaua_qa_studies",
+        "sanguma_qa_studies",
+        "tambaran_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

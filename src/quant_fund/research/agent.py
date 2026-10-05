@@ -15551,6 +15551,14 @@ from quant_fund.research.benches_w1944 import (
     bench_mul_gwishin_qa_studies_family,
     bench_oeggwi_qa_studies_family,
 )
+from quant_fund.research.benches_w1945 import (
+    bench_adaro_qa_studies_family,
+    bench_kaiaimunu_qa_studies_family,
+    bench_masalai_qa_studies_family,
+    bench_pukaua_qa_studies_family,
+    bench_sanguma_qa_studies_family,
+    bench_tambaran_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
