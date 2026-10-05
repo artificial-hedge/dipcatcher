@@ -6106,6 +6106,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "simige2_qa_studies",
         "tasmisu2_qa_studies",
         "tessub2_qa_studies",
+        # Wave-1835 luwian-myth canon.
+        "hannahanna2_qa_studies",
+        "istanuwa2_qa_studies",
+        "iyarri2_qa_studies",
+        "kamrusepa2_qa_studies",
+        "runtija2_qa_studies",
+        "tarhunza2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

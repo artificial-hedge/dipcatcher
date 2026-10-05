@@ -16,7 +16,7 @@ def hannahanna2_qa_studies_aux(aux: bool) -> bool:
     """hannahanna2_qa_studies
 
     aux:
-    hannahanna2_qa_studies: hannahanna2, bee seekers, answers, and scores
+    hannahanna2_qa_studies: hannahanna2, bee mothers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_hannahanna2_qa_studies(seed: int = 0) -> float:
     checks.append(not hannahanna2_qa_studies_ok(False, True))
     checks.append(hannahanna2_qa_studies_aux(True))
     checks.append(not hannahanna2_qa_studies_aux(False))
-    checks.append(True)  # hittite-3 canon
+    checks.append(True)  # luwian-myth canon
     return float(sum(checks) / len(checks))
 
 
