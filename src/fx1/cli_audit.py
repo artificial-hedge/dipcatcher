@@ -22,6 +22,7 @@ Sealed ``cli_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import hashlib
+import math
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -3944,7 +3945,11 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and _rrp.stdout == "replayed\n"
             and (remotes[-1].last_ft_query or {}).get("resp_replay") == "resp_x"
             and (remotes[-1].last_ft_query or {}).get("starting_after") == 4
-            and (remotes[-1].last_ft_query or {}).get("timeout_s") == 30.0
+            and isinstance(
+                _rts := (remotes[-1].last_ft_query or {}).get("timeout_s"),
+                (int, float),
+            )
+            and math.isclose(float(_rts), 30.0)
         )
 
         # a replay that lands a cancelled terminal says so on stderr —
