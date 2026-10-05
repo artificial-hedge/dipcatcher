@@ -3192,6 +3192,7 @@ class _BatchRecord(_Model):
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _key_id: str | None = PrivateAttr(default=None)
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -3311,6 +3312,7 @@ class _AnthropicBatchRecord(_Model):
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _items: builtins.list[AnthropicBatchItem] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _key_id: str | None = PrivateAttr(default=None)
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -5812,6 +5814,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``canceled`` rows for the tail. Holds ONE inflight slot for the
         batch's lifetime (the jobs-channel contract) — released in
         ``finally`` so a cancel or worker fault never leaks it."""
+        ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
         try:
             for item in batch._items:
                 if batch._cancel.is_set():
@@ -5846,6 +5849,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             if batch.status != "ended":
                 _abatch_finish(batch)
         finally:
+            _REQUEST_KEY_ID.reset(ctx_key)
             metrics.release()
             inflight.release()
 
@@ -5913,6 +5917,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        batch._key_id = _REQUEST_KEY_ID.get()
         try:
             jobs_executor.submit(_exec_abatch, batch)
         except RuntimeError as exc:
@@ -7366,12 +7371,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _exec_batch(batch: _BatchRecord) -> None:
         """Worker: validate → in_progress → per-line through the gated cores
         → finalizing → write the output file → terminal status. Holds ONE
-        inflight slot for the whole batch (the jobs-channel contract)."""
+        inflight slot for the whole batch (the jobs-channel contract).
+
+        Every status write respects an already-terminal record: expiry-on-
+        read can flip the batch while it queues or runs, and a terminal
+        state is never overwritten. The submitter's ``key_id`` is re-
+        installed per line — worker threads do not inherit request
+        contextvars, and every line must still attribute + meter under
+        the credential that submitted the batch."""
+        ctx_key: contextvars.Token[str | None] | None = None
+        out_lines: builtins.list[str] = []
         try:
+            if batch.status in _BATCH_TERMINAL:
+                return  # expiry-on-read already terminalized it while queued
+            ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
             batch.status = "in_progress"
             batch.in_progress_at = int(time.time())
             batch_store.mark(batch)
-            out_lines: builtins.list[str] = []
             counts = batch.request_counts
             cancelled = False
             for line in batch._lines:
@@ -7384,9 +7400,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 else:
                     counts.failed += 1
                 out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
-            batch.status = "finalizing"
-            batch.finalizing_at = int(time.time())
-            batch_store.mark(batch)
+            if batch.status not in _BATCH_TERMINAL:
+                batch.status = "finalizing"
+                batch.finalizing_at = int(time.time())
+                batch_store.mark(batch)
             if out_lines:
                 rec = file_store.put(
                     filename=f"{batch.batch_id}_output.jsonl",
@@ -7394,29 +7411,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     content=("\n".join(out_lines) + "\n").encode(),
                 )
                 batch.output_file_id = rec.file_id
-            if cancelled:
-                batch.status = "cancelled"
-                batch.cancelled_at = int(time.time())
-            else:
-                batch.status = "completed"
-                batch.completed_at = int(time.time())
+            if batch.status not in _BATCH_TERMINAL:
+                if cancelled:
+                    batch.status = "cancelled"
+                    batch.cancelled_at = int(time.time())
+                else:
+                    batch.status = "completed"
+                    batch.completed_at = int(time.time())
         except Exception as exc:  # noqa: BLE001 — worker fault fails the batch, not the process
-            batch.status = "failed"
-            batch.failed_at = int(time.time())
-            batch.errors = {
-                "object": "list",
-                "data": [{"code": "internal_error", "message": f"{type(exc).__name__}: {exc}"}],
-            }
-            try:
-                err_rec = file_store.put(
-                    filename=f"{batch.batch_id}_errors.jsonl",
-                    purpose="batch_output",
-                    content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
-                )
-                batch.error_file_id = err_rec.file_id
-            except Exception:  # noqa: BLE001,S110 — error-file write must never mask the failure
-                pass
+            if batch.status not in _BATCH_TERMINAL:
+                batch.status = "failed"
+                batch.failed_at = int(time.time())
+                batch.errors = {
+                    "object": "list",
+                    "data": [{"code": "internal_error", "message": f"{type(exc).__name__}: {exc}"}],
+                }
+                try:
+                    err_rec = file_store.put(
+                        filename=f"{batch.batch_id}_errors.jsonl",
+                        purpose="batch_output",
+                        content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
+                    )
+                    batch.error_file_id = err_rec.file_id
+                except Exception:  # noqa: BLE001,S110 — error-file write must never mask the failure
+                    pass
         finally:
+            if ctx_key is not None:
+                _REQUEST_KEY_ID.reset(ctx_key)
             metrics.release()
             inflight.release()
             _batch_webhook(batch)
@@ -7434,8 +7455,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
     def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
-        """Expiry check + envelope projection."""
+        """Expiry check + envelope projection.
+
+        Expiry sets ``_cancel`` (mirroring the Anthropic dialect) so a
+        queued worker returns early and a mid-flight worker stops after
+        its current line — the terminal status is never overwritten and
+        whatever lines did run still mint the partial output file."""
         if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
+            batch._cancel.set()  # the worker exits its loop at the next line
             batch.status = "expired"
             batch.expired_at = int(time.time())
             batch_store.mark(batch)
@@ -7726,6 +7753,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        # every line runs under the submitting credential's fingerprint —
+        # worker threads do not inherit request contextvars, so the key_id
+        # rides the record and the worker re-installs it per line.
+        batch._key_id = _REQUEST_KEY_ID.get()
         try:
             jobs_executor.submit(_exec_batch, batch)
         except RuntimeError as exc:
