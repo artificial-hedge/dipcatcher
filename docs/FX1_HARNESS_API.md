@@ -981,6 +981,35 @@ stores fail closed `vector_store_not_found` (404 on the wire,
   the OpenAPI spec itself, so generated clients see them typed.
   `X-RateLimit-*` declarations appear only on builds where the limiter
   is enabled.
+- Drop-in SDK headers: `Openai-Processing-Ms` (integer wall-clock ms)
+  and `openai-version` ride every response on the `/v1` grammar —
+  `openai-version` is our own wire contract (`API_VERSION`, currently
+  `"1"`), not a dated OpenAI deployment spec, since the surface is a
+  contract superset rather than a snapshot of one upstream version.
+  The Anthropic dialect (`/v1/messages*`, or any `/v1/*` request under
+  an `anthropic-version` header) answers with Anthropic's names for
+  the same surfaces: `request-id` (the same id `X-Request-ID` stamps,
+  echoed from an inbound `X-Request-ID` or minted, on success, error,
+  and SSE-open alike) and `x-should-retry` — `true` on the transient
+  statuses the stock SDK retries (408/429/500/502/503/504/529),
+  `false` on the ones its defaults would get wrong here (409
+  idempotency conflict, 501 unimplemented, and exhausted hard-budget
+  429 responses), omitted everywhere else. Explicit route retry hints
+  take precedence over the generic status defaults.
+  A managed key minted with `rpm` reports its standing window on the
+  Anthropic surface too — `anthropic-ratelimit-requests-limit` /
+  `-remaining` / `-reset` (an RFC 3339 instant, Anthropic's
+  convention) beside the `X-RateLimit-*-Requests` family; env /
+  loopback / unwindowed keys emit neither (no false scarcity), and
+  there is no token-window family because no token window is metered.
+  We deliberately do **not** emit `openai-organization`, `cf-*`, or
+  other org/edge provenance headers — no organization layer or CDN
+  fronts this process, so minting them would fabricate provenance.
+  `HarnessClient.last_response_headers`,
+  `Fx1Harness.last_response_headers` (stamped per gated call), and the
+  TS client's `lastResponseHeaders` expose the last response's
+  lowercased header map on their respective legs — `{}`/`null` before
+  the first call or after a transport fault.
 - `circuit_breaker_threshold` + `circuit_reset_s` on `HarnessClient`
   fast-fail a dead peer (`HarnessTransportError`) and half-open after
   the reset window.
@@ -1018,10 +1047,14 @@ version.
 client.check_compat()  # raises HarnessCompatError on mismatch
 client.check_compat(strict=False)  # returns {"compatible": bool, ...}
 client.last_api_version  # stamped header from the last response
+client.last_response_headers  # the last response's full header map
 ```
 
 `fx1 harness compat --remote URL` prints the report and exits 1 on
-mismatch — deploy pipelines gate on it before routing traffic.
+mismatch — deploy pipelines gate on it before routing traffic. Both
+`compat` and `version --remote` fold the just-answered call's
+`x-request-id` into their JSON (`request_id`) when the peer stamps
+one — the trace id a bug report should quote.
 
 `fx1 harness capabilities --remote URL` (`client.capabilities()` /
 `HarnessApiClient.capabilities()`) returns the server's declared feature

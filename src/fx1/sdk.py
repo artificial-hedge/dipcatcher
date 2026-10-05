@@ -75,6 +75,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
+from fx1.serve.contract import API_VERSION
 from fx1.serve.evals import (
     EvalDiff,
     EvalRecord,
@@ -543,6 +544,10 @@ class Fx1Harness:
         # durable half).
         self._files: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._files_lock = threading.Lock()
+        # The wire-correlate headers of the last gated call — stamped by
+        # ``_record_call`` so in-process callers read the same tracing
+        # surface the HTTP middleware emits for that call.
+        self._last_response_headers: dict[str, str] = {}
         # Managed API keys — the wire's ApiKeyStore twin. Bound to
         # ``state_dir/keys.jsonl`` when durable, so provisioning keys
         # from the SDK writes the same journal the server replays.
@@ -608,7 +613,28 @@ class Fx1Harness:
                 metadata=metadata,
             )
         )
+        # No transport means no socket headers — but every quantity the
+        # middleware stamps is owned here: a per-call trace id, the wire
+        # contract, the call's own wall-clock, and the completion id.
+        self._last_response_headers = {
+            "x-request-id": uuid.uuid4().hex,
+            "x-fx1-api-version": API_VERSION,
+            "openai-processing-ms": str(int(latency_ms)),
+        }
+        if ok:
+            # the wire's X-Fx1-Completion-Id appears on served responses;
+            # a refused/failed call's error envelope carries none
+            self._last_response_headers["x-fx1-completion-id"] = cid
         return cid
+
+    @property
+    def last_response_headers(self) -> dict[str, str]:
+        """The headers the HTTP surface would stamp for the same gated
+        call — ``x-request-id`` (minted per call), ``x-fx1-api-version``,
+        ``openai-processing-ms`` (the call's measured latency), and
+        ``x-fx1-completion-id`` — so SDK and remote callers read the same
+        tracing surface. ``{}`` before the first gated call."""
+        return dict(self._last_response_headers)
 
     def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
         """Newest-first window on the in-process completion log — the
