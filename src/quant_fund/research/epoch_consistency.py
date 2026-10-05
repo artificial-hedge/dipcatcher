@@ -22,6 +22,7 @@ Provenance evidence only; never a market or P&L claim.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from fnmatch import fnmatch
 from pathlib import Path
 from typing import Any
 
@@ -128,7 +129,7 @@ def verify_consistency(
     )
     if held_sha256 is not None and hops[0]["sha256"] != held_sha256:
         errors.append("held_head_digest_mismatch")
-    prev = None
+    prev: dict[str, Any] | None = None
     for hop in hops:
         entry = index.get(hop["name"])
         if entry is None:
@@ -142,6 +143,10 @@ def verify_consistency(
                 errors.append(f"hop_link_broken:{hop['name']}")
             # The successor's member map must pin the predecessor's bytes —
             # linkage alone could point at a file that isn't this hop.
+            # When the member glob excludes epoch receipts (e.g. ``*.md``
+            # or ``*.yml`` corpora) the predecessor can never be a member;
+            # bind the link through the predecessor's own canonical digest
+            # embedded in its ``corpus_epoch_<sha256[:16]>`` name instead.
             member_sha = next(
                 (
                     m.get("sha256")
@@ -150,9 +155,19 @@ def verify_consistency(
                 ),
                 None,
             )
-            if member_sha != prev["sha256"]:
+            if member_sha is not None:
+                if member_sha != prev["sha256"]:
+                    errors.append(f"hop_member_digest_mismatch:{hop['name']}")
+            elif fnmatch(prev["name"], str(proof.get("pattern") or "*.json")):
                 errors.append(f"hop_member_digest_mismatch:{hop['name']}")
-        prev = hop
+            else:
+                prev_receipt_sha = (prev.get("payload") or {}).get("receipt_sha256")
+                expected = (
+                    f"corpus_epoch_{str(prev_receipt_sha)[:16]}.json" if prev_receipt_sha else None
+                )
+                if expected != prev["name"]:
+                    errors.append(f"hop_member_digest_mismatch:{hop['name']}")
+        prev = {"name": hop["name"], "sha256": hop["sha256"], "payload": payload}
     # The `to` endpoint must be a live chain head — proof of extension to a
     # mid-chain node is vacuous (a fork could still rewrite the suffix).
     if hops:

@@ -124,7 +124,7 @@ def test_atlas_splice_requires_marker_pair(tmp_path, monkeypatch) -> None:
 
     doc.write_text("# atlas without markers\n")
     # A doc with no marker pair cannot embed generated content -> stale.
-    assert str(gen.ATLAS_DOC) in gen.stale_artifacts(repo)
+    assert gen.ATLAS_DOC.as_posix() in gen.stale_artifacts(repo)
 
 
 def test_atlas_splice_rejects_duplicate_marker_pair(tmp_path, monkeypatch) -> None:
@@ -136,7 +136,7 @@ def test_atlas_splice_rejects_duplicate_marker_pair(tmp_path, monkeypatch) -> No
         doc.read_text()
         + "\n<!-- BEGIN GENERATED: module_deps -->\n<!-- END GENERATED: module_deps -->\n"
     )
-    assert str(gen.ATLAS_DOC) in gen.stale_artifacts(repo)
+    assert gen.ATLAS_DOC.as_posix() in gen.stale_artifacts(repo)
 
 
 def test_check_reports_stale_path(tmp_path, monkeypatch, capsys) -> None:

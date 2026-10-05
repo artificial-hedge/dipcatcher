@@ -470,7 +470,6 @@ flowchart LR
   quant_fund_proof -->|1| quant_fund_pit
   quant_fund_proof -->|12| quant_fund_proofcore
   quant_fund_proof -->|1| quant_fund_utils
-  quant_fund_proofcore -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -806,7 +805,7 @@ sequenceDiagram
 
 - Modules scanned: **13286**
 - Packages: **86**
-- Cross-package import edges: **373**
+- Cross-package import edges: **372**
 
 <!-- END GENERATED: coverage -->
 

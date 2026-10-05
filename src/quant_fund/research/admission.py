@@ -225,7 +225,19 @@ def admission_check(
     except ImportError:
         checks.append({"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"})
     else:
-        chain_result = check_epoch_chain(corpus_dir)
+        # Acknowledged removals/mutations live next to the heads pin in the
+        # conventional quality/ dir — same map `corpus-epoch --check
+        # --allowed-removals` and suite_health load so every path agrees on
+        # a deliberate retire.
+        allowed: dict[str, str] | None = None
+        allowed_path = Path(corpus_dir).parent / "quality" / "epoch_allowed_removals.json"
+        if allowed_path.is_file():
+            try:
+                raw = json.loads(allowed_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                raw = None
+            allowed = dict(raw) if isinstance(raw, dict) else None
+        chain_result = check_epoch_chain(corpus_dir, allowed_removals=allowed)
         chain_errors = list(chain_result["errors"])
         # An unstamped corpus ("no_epoch_receipts") is benign — the gate
         # works fine before the first epoch stamp exists. Only a *broken
