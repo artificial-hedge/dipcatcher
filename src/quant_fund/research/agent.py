@@ -15335,6 +15335,14 @@ from quant_fund.research.benches_w1917 import (
     bench_glaistig_qa_studies_family,
     bench_sluagh_qa_studies_family,
 )
+from quant_fund.research.benches_w1918 import (
+    bench_bocan_qa_studies_family,
+    bench_dunter_qa_studies_family,
+    bench_fuath_qa_studies_family,
+    bench_redcap_qa_studies_family,
+    bench_seonaidh_qa_studies_family,
+    bench_wraith_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
