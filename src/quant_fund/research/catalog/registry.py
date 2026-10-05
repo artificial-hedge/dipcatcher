@@ -6372,6 +6372,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mooinjer_qa_studies",
         "morveren_qa_studies",
         "nuckelavee_qa_studies",
+        # Wave-1873 breton-myth-2 canon.
+        "ar_marzh_qa_studies",
+        "darkman_qa_studies",
+        "kaier_qa_studies",
+        "noz_vat_qa_studies",
+        "paotr_bugel_qa_studies",
+        "santez_nonna_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
