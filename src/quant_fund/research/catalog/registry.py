@@ -6939,6 +6939,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "murmur_qa_studies",
         "orobas_qa_studies",
         "ose_qa_studies",
+        # Wave-1954 goetic-pact canon.
+        "flauros_qa_studies",
+        "kimaris_qa_studies",
+        "oriens_qa_studies",
+        "valac_qa_studies",
+        "vapula_qa_studies",
+        "zagan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

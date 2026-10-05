@@ -15623,6 +15623,14 @@ from quant_fund.research.benches_w1953 import (
     bench_orobas_qa_studies_family,
     bench_ose_qa_studies_family,
 )
+from quant_fund.research.benches_w1954 import (
+    bench_flauros_qa_studies_family,
+    bench_kimaris_qa_studies_family,
+    bench_oriens_qa_studies_family,
+    bench_valac_qa_studies_family,
+    bench_vapula_qa_studies_family,
+    bench_zagan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
