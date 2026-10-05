@@ -17,9 +17,16 @@ Honesty rules:
   delete — the audit trail of which key existed stays.
 - Under ``--state-dir`` every mint/revoke is journaled (hash-chained
   JSONL, verified on replay) so a restart does not resurrect a revoked
-  key or lose a minted one. ``uses``/``last_used_at`` are live
-  operational counters — deliberately NOT journaled (a per-request fsync
-  would tax the hot path); they reset honestly to zero on restart.
+  key or lose a minted one. Accepted ``uses``/``tokens_used``/
+  ``last_used_at`` snapshots are also journaled; a restart restores the
+  spend. Boot compacts snapshots into the latest record per key, retaining
+  revoked and quarantined records and rotation lineage.
+- Every detected journal break, including a torn final line, quarantines
+  recovered keys and reports ``recover_warnings``. A persisted marker
+  keeps authentication required even if no complete key record survived.
+  The trusted ``FX1_API_KEY`` bootstrap credential can mint replacements;
+  clean later boots keep those fresh keys enabled. Unknown lost history
+  is never treated as permission to reactivate a credential.
 - Auth failure is uniform: bad credentials and absent credentials get
   the same 401 shape as a wrong env key — no oracle for which entries
   exist. Expired keys fail the same way — a dead credential is a dead
@@ -29,7 +36,7 @@ Honesty rules:
   remaining seconds — the wire maps it to 429 + ``Retry-After``) and
   ``ttl_s`` bakes an ``expires_at`` into the record. Both are journaled
   fields (declared at mint, durable policy); the live window counters
-  are not journaled, like ``uses``. A refused request — over-limit or
+  remain process-local. A refused request — over-limit or
   expired — never bumps the use counter.
 - ``scopes`` declares which surface classes the key may touch:
   ``read`` (safe methods anywhere), ``write`` (mutating calls outside
@@ -44,15 +51,16 @@ Honesty rules:
   refuses ``quota_exceeded`` once ``uses`` reaches ``max_requests``
   authenticated calls, or once its reported token spend (charged out of
   the completion log as providers report it) reaches ``max_tokens``.
-  Budgets are declared durably at mint but meter on live counters —
-  like ``uses``, they reset on restart; a budget gates the *next*
-  call, so the request that crosses the token line completes and only
-  then counts against the next one.
+  Budgets and their counters are durable when a journal is configured;
+  a normal restart never resets acknowledged spend. A budget gates the
+  *next* call, so the request crossing the token line completes before its
+  provider-reported charge counts against the next call.
 """
 
 from __future__ import annotations
 
 import hashlib
+import logging
 import math
 import secrets
 import threading
@@ -63,6 +71,8 @@ from typing import Any
 from fx1.serve.journal import JobJournal
 
 __all__ = ["KEY_PREFIX", "SCOPES", "ApiKeyStore", "KeyStoreError"]
+
+_LOG = logging.getLogger(__name__)
 
 KEY_PREFIX = "fx1k_"
 _MAX_KEYS = 4096
@@ -98,6 +108,11 @@ def _wire(rec: dict[str, Any]) -> dict[str, Any]:
     """The public view of a record: the sha256 and any ``_``-prefixed
     live counters (rate window) never leave the store."""
     return {k: v for k, v in rec.items() if k != "sha256" and not k.startswith("_")}
+
+
+def _durable_record(rec: dict[str, Any]) -> dict[str, Any]:
+    """Persist policy and lifetime counters; rate windows remain process-local."""
+    return {key: value for key, value in rec.items() if not key.startswith("_")}
 
 
 def _is_finite_number(value: object) -> bool:
@@ -137,8 +152,8 @@ def _record(
         "rpm": rpm,
         "max_requests": max_requests,
         "max_tokens": max_tokens,
-        # live meter for the token budget — journaled as 0 like
-        # ``uses`` and charged post-response off the completion log.
+        # Token budget starts at zero; later provider-reported charges
+        # are persisted as counter snapshots.
         "tokens_used": 0,
         "created_at": created_at,
         "expires_at": expires_at,
@@ -196,42 +211,93 @@ class ApiKeyStore:
         self._lock = threading.Lock()
         self._max = max_keys
         self._by_hash: dict[str, dict[str, Any]] = {}
-        self._by_id: dict[str, str] = {}  # key_id -> sha256
+        self._by_id: dict[str, str] = {}
         self._journal = journal
         self._clock = clock
+        self._auth_required = False
+        self.recover_warnings: list[str] = []
+        self.recovery_quarantined = False
         if journal is not None:
-            res = journal.replay()
-            for payload in res.payloads:
-                # A rotation journals the tombstone and successor in one
-                # verified line. Older replayers still see the tombstone.
-                for rec in (payload.get("record"), payload.get("successor")):
-                    if isinstance(rec, dict) and isinstance(rec.get("sha256"), str):
-                        rec.setdefault("admin", False)
-                        # records journaled before scopes existed keep the
-                        # old unrestricted contract
-                        rec.setdefault(
-                            "scopes", list(SCOPES) if rec["admin"] else ["read", "write"]
-                        )
-                        # pre-quota records carried no budget declaration
-                        rec.setdefault("max_requests", None)
-                        rec.setdefault("max_tokens", None)
-                        rec.setdefault("tokens_used", 0)
-                        rec.setdefault("rotated_from", None)
-                        self._by_hash[rec["sha256"]] = rec
-                        kid = rec.get("key_id")
-                        if isinstance(kid, str):
-                            self._by_id[kid] = rec["sha256"]
+            result = journal.replay()
+            self.recover_warnings = list(result.warnings)
+            for payload in result.payloads:
+                self._restore_payload(payload)
+            # An existing empty journal can mean all credential history
+            # was lost. Only an absent journal is safely unprovisioned.
+            damaged = (
+                result.dropped > 0
+                or result.truncated_at is not None
+                or (not result.payloads and journal.path.exists())
+            )
+            if damaged:
+                # Even a torn final line may have been a confirmed revoke.
+                # Keep auth enabled when no complete key record survived.
+                self._auth_required = True
+                self.recovery_quarantined = True
+                for record in self._by_hash.values():
+                    record["enabled"] = False
+                    record["quarantined"] = True
+                warning = (
+                    f"journal {journal.path.name}: recovered keys quarantined after "
+                    "unverified records; use the bootstrap credential to mint replacements"
+                )
+                self.recover_warnings.append(warning)
+                _LOG.warning("%s", warning)
+            if result.payloads or damaged:
+                self._compact_locked()
+
+    def _restore_payload(self, payload: dict[str, Any]) -> None:
+        if payload.get("auth_required") is True:
+            self._auth_required = True
+        if payload.get("recovery_quarantined") is True:
+            self.recovery_quarantined = True
+        for value in (payload.get("record"), payload.get("successor")):
+            if not isinstance(value, dict) or not isinstance(value.get("sha256"), str):
+                continue
+            record = _durable_record(value)
+            record.setdefault("admin", False)
+            record.setdefault("scopes", list(SCOPES) if record["admin"] else ["read", "write"])
+            record.setdefault("max_requests", None)
+            record.setdefault("max_tokens", None)
+            record.setdefault("tokens_used", 0)
+            record.setdefault("uses", 0)
+            record.setdefault("last_used_at", None)
+            record.setdefault("rotated_from", None)
+            if record.get("quarantined") is True:
+                record["enabled"] = False
+                self.recovery_quarantined = True
+                self._auth_required = True
+            self._by_hash[record["sha256"]] = record
+            key_id = record.get("key_id")
+            if isinstance(key_id, str):
+                self._by_id[key_id] = record["sha256"]
+
+    def _compact_locked(self) -> None:
+        """Atomically repair/fold snapshots, retaining tombstones and auth history.
+
+        Called during construction or while holding the key-store lock.
+        The recovery marker does not quarantine fresh keys on a clean boot.
+        """
+        if self._journal is None:
+            return
+        payloads: list[dict[str, Any]] = []
+        if self._auth_required:
+            payloads.append(
+                {"auth_required": True, "recovery_quarantined": self.recovery_quarantined}
+            )
+        payloads.extend({"record": _durable_record(record)} for record in self._by_hash.values())
+        self._journal.compact(payloads)
 
     @property
     def has_keys(self) -> bool:
         """Whether any key was ever minted — a non-empty store turns on
         remote auth even without ``FX1_API_KEY`` (provisioning is the
         opt-in)."""
-        return bool(self._by_id)
+        return self._auth_required or bool(self._by_hash)
 
     def _append(self, rec: dict[str, Any]) -> None:
         if self._journal is not None:
-            self._journal.append({"record": rec})
+            self._journal.append({"record": _durable_record(rec)})
 
     def mint(
         self,
@@ -320,7 +386,7 @@ class ApiKeyStore:
 
     def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
-        Bumps the live use counters (not journaled).
+        Journals accepted-use counters before authorizing the request.
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
@@ -331,8 +397,9 @@ class ApiKeyStore:
         if not isinstance(raw, str) or not raw.startswith(KEY_PREFIX):
             return None
         now = self._clock()
+        sha = _hash(raw)
         with self._lock:
-            rec = self._by_hash.get(_hash(raw))
+            rec = self._by_hash.get(sha)
             if rec is None or not rec["enabled"]:
                 return None
             expires = rec.get("expires_at")
@@ -362,9 +429,12 @@ class ApiKeyStore:
                     f"key lacks required scope {required_scope!r}",
                     key_id=rec["key_id"],
                 )
+            rec = dict(rec)
             self._consume_window(rec, now)
             rec["uses"] += 1
             rec["last_used_at"] = now
+            self._append(rec)
+            self._by_hash[sha] = rec
             return _wire(rec)
 
     def window_state(self, key_id: str) -> tuple[int, int, int] | None:
@@ -391,7 +461,7 @@ class ApiKeyStore:
             return (rpm, max(0, rpm - count), reset)
 
     def charge_tokens(self, key_id: str, tokens: int) -> None:
-        """Add provider-reported token spend to the key's live meter.
+        """Add and journal provider-reported token spend to the key's meter.
         Called by the wire after a served response — a tombstoned or
         unknown key still records the spend (audit, not auth)."""
         if tokens <= 0:
@@ -400,7 +470,10 @@ class ApiKeyStore:
             sha = self._by_id.get(key_id)
             rec = self._by_hash.get(sha) if sha is not None else None
             if rec is not None:
+                # The provider has already spent these tokens. Keep the
+                # live charge even when persisting it raises an I/O error.
                 rec["tokens_used"] = int(rec.get("tokens_used", 0)) + int(tokens)
+                self._append(rec)
 
     def get(self, key_id: str) -> dict[str, Any] | None:
         with self._lock:
@@ -484,7 +557,9 @@ class ApiKeyStore:
             if revoke_old and sha is not None:
                 revoked = {**old, "enabled": False, "revoked_at": created}
                 if self._journal is not None:
-                    self._journal.append({"record": revoked, "successor": rec})
+                    self._journal.append(
+                        {"record": _durable_record(revoked), "successor": _durable_record(rec)}
+                    )
                 self._by_hash[sha] = revoked
             else:
                 self._append(rec)

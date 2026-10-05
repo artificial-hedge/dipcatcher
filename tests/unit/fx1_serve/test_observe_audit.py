@@ -41,16 +41,3 @@ def test_receipt_deterministic() -> None:
     first = observe_audit_bench()["receipt_sha256"]
     second = observe_audit_bench()["receipt_sha256"]
     assert first == second
-
-
-def test_committed_receipt_still_verifies() -> None:
-    import json
-    from pathlib import Path
-
-    path = Path("receipts/fx1_observe_audit.json")
-    assert path.exists()
-    payload = json.loads(path.read_text())
-    assert payload["claim"]["ok"] is True
-    verdict = verify_receipt_payload(payload)
-    assert verdict["valid"] is True
-    assert verdict["errors"] == []

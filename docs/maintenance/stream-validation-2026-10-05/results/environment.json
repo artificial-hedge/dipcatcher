@@ -1,0 +1,15 @@
+{
+  "cwd": "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/repo",
+  "git_revision": "90b98a882bbb314074c8944081d6921be744f4b8",
+  "packages": {
+    "fastapi": "0.142.2",
+    "httpx": "0.28.1",
+    "jsonschema": "4.26.0",
+    "numpy": "2.3.5",
+    "polars": "1.44.2",
+    "pydantic": "2.13.5",
+    "scipy": "1.17.0",
+    "starlette": "1.7.0"
+  },
+  "python": "3.12.14"
+}

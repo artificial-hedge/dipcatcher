@@ -1,0 +1,47 @@
+{
+  "audit_calls": 1,
+  "audit_elapsed_s": 49.6699197300004,
+  "audit_module": "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/repo/src/fx1/serve/stream_audit.py",
+  "claim_ok": true,
+  "coverage": {
+    "not_verified": [
+      "early client disconnect propagation",
+      "deletion during an active network follow response",
+      "network streaming delivery timing"
+    ],
+    "transport": "Starlette TestClient buffered ASGI response bodies"
+  },
+  "environment": {
+    "cwd": "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/repo",
+    "git_revision": "90b98a882bbb314074c8944081d6921be744f4b8",
+    "packages": {
+      "fastapi": "0.142.2",
+      "httpx": "0.28.1",
+      "jsonschema": "4.26.0",
+      "numpy": "2.3.5",
+      "polars": "1.44.2",
+      "pydantic": "2.13.5",
+      "scipy": "1.17.0",
+      "starlette": "1.7.0"
+    },
+    "python": "3.12.14"
+  },
+  "failing_probes": [],
+  "git_status_after_run": "",
+  "openapi": {
+    "actual_openapi_matches_proposed": true,
+    "actual_openapi_sha256": "ce548ea9d3e2da0dbb921f0c9c63983bad825516247a228820436482ff3b09b4",
+    "declared_surface_hash_valid": true,
+    "normalized_surface_matches_proposed": true,
+    "openapi_difference_count": 0,
+    "proposed_openapi_sha256": "ce548ea9d3e2da0dbb921f0c9c63983bad825516247a228820436482ff3b09b4",
+    "surface_difference_count": 0
+  },
+  "passing_probes": 186,
+  "probe_count": 186,
+  "receipt": "fx1_stream_audit_buffered_validation_90b98a882bbb.json",
+  "receipt_git_revision": "90b98a882bbb314074c8944081d6921be744f4b8",
+  "receipt_sha256": "fb1403c617f1e790c79bed6b5ded4bc0b23d351efec2db79d2c949e77d7a0ff3",
+  "receipt_valid": true,
+  "status": "completed"
+}

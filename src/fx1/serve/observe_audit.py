@@ -73,8 +73,10 @@ import threading
 import time
 import urllib.parse
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -111,6 +113,37 @@ _U2 = {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 5}
 _RID_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _PROM_SAMPLE = re.compile(r"^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{([^}]*)\})?\s+(\S+)\s*$")
 _HIST_SUFFIXES = ("_bucket", "_sum", "_count")
+
+
+_RESOURCE_STACK: ContextVar[ExitStack | None] = ContextVar("observe_audit_resources", default=None)
+
+
+@contextmanager
+def _audit_resources() -> Iterator[None]:
+    """Close every client and worker pool even when a probe raises."""
+    with ExitStack() as stack:
+        token = _RESOURCE_STACK.set(stack)
+        try:
+            yield
+        finally:
+            _RESOURCE_STACK.reset(token)
+
+
+def _resources() -> ExitStack:
+    stack = _RESOURCE_STACK.get()
+    if stack is None:
+        raise RuntimeError("audit app creation requires an audit resource context")
+    return stack
+
+
+def _test_client(app: Any) -> TestClient:
+    from fastapi.testclient import TestClient
+
+    stack = _resources()
+    client = TestClient(app, raise_server_exceptions=False)
+    # TestClient.__exit__ handles lifespan but does not close HTTPX here.
+    stack.callback(client.close)
+    return stack.enter_context(client)
 
 
 def _fast_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
@@ -203,17 +236,20 @@ def _make_app(
     def fake_resolve(name: str, *a: Any, **k: Any) -> Any:
         return backends[name]()
 
+    resources = _resources()
     saved = {k: os.environ.get(k) for k in _SWEPT_ENVS}
     try:
         for k in _SWEPT_ENVS:
             os.environ.pop(k, None)
         if api_key is not None:
             os.environ[_API_KEY_ENV] = api_key
-        return api_mod.create_app(
+        app = api_mod.create_app(
             harness=Harness(runner=_fast_runner),
             backend_resolver=fake_resolve,
             **create_kw,
         )
+        resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
+        return app
     finally:
         for k, v in saved.items():
             if v is None:
@@ -228,12 +264,10 @@ def _client(
     **create_kw: Any,
 ) -> tuple[TestClient, ModuleType]:
     """(TestClient, api_module) — the battery's standard wired app."""
-    from fastapi.testclient import TestClient
-
     import fx1.serve.api as api_mod
 
     app = _make_app(backend_map, api_key, **create_kw)
-    return TestClient(app, raise_server_exceptions=False), api_mod
+    return _test_client(app), api_mod
 
 
 def _mint(client: TestClient, root_h: dict[str, str], **policy: Any) -> tuple[str, str]:
@@ -365,6 +399,7 @@ class _Prom:
                 if series.endswith(_HIST_SUFFIXES):
                     base = series.rsplit("_", 1)[0]
                 fam = self.families.setdefault(base, {"samples": []})
+                fam.setdefault("first_sample_idx", i)
                 fam["samples"].append((series, labels, m.group(4)))
 
     @staticmethod
@@ -399,7 +434,8 @@ class _Prom:
                 continue
             t_idx = fam.get("type_idx")
             h_idx = fam.get("help_idx")
-            if t_idx is None or h_idx is None or not (h_idx < t_idx):
+            first_idx = fam["first_sample_idx"]
+            if t_idx is None or h_idx is None or not (h_idx < t_idx < first_idx):
                 return False
         return True
 
@@ -536,7 +572,7 @@ def _probe_dev_and_remote() -> dict[str, bool]:
     non-loopback client without a key is refused while /health stays
     public."""
     out: dict[str, bool] = {}
-    client, api_mod = _client(api_key=None)
+    client, _ = _client(api_key=None)
     out["dev_loopback_full_admin"] = (
         client.get("/metrics").status_code == 200
         and client.get("/ready").status_code == 200
@@ -551,7 +587,7 @@ def _probe_dev_and_remote() -> dict[str, bool]:
         and client.get("/health").status_code == 200
     )
     # non-loopback source host, no env key: refused except /health
-    app2 = api_mod.create_app(harness=None, backend_resolver=lambda n, *a, **k: _StubBackend("m-0"))
+    app2 = _make_app(api_key=None)
     out["remote_no_key_forbidden"] = (
         _raw_http(app2, "GET", "/metrics", [], client_host="198.51.100.7")["status"] == 403
     )
@@ -702,15 +738,13 @@ def _prom_text(client: TestClient, headers: dict[str, str], **params: Any) -> An
 
 
 def _probe_prometheus() -> dict[str, bool]:
-    """The text exposition negotiates correctly and parses as valid 0.0.4:
+    """The text exposition negotiates correctly and meets selected 0.0.4 checks:
     declared types, finite values, cumulative histograms, mechanical
     label escaping, correct content-type."""
     out: dict[str, bool] = {}
     weird = 'we"ird\\backend\nname'
-    from fastapi.testclient import TestClient  # noqa: PLC0415
-
     app = _make_app({"byok": lambda: _StubBackend("m-0", dict(_U))})
-    client = TestClient(app, raise_server_exceptions=False)
+    client = _test_client(app)
     root = {"X-API-Key": _ROOT}
     for _ in range(2):
         _complete(client, "byok", root)
@@ -832,6 +866,7 @@ def _probe_drain() -> dict[str, bool]:
     out: dict[str, bool] = {}
     gate = _GateBackend("m-0", width=1, usage=dict(_U))
     client, _ = _client({"byok": lambda: gate})
+    _resources().callback(gate.release.set)
     root = {"X-API-Key": _ROOT}
 
     # one request parked in-flight
@@ -865,15 +900,35 @@ def _probe_drain() -> dict[str, bool]:
             "r", client.post("/harness/drain", params={"wait_s": 30}, headers=root)
         )
     )
+    # Observe the actual condition wait while it owns the condition lock.
+    # The backend cannot release its inflight slot until that wait unlocks
+    # the condition, so scheduling cannot turn this into an already-idle check.
+    app: Any = client.app
+    condition = app.state.metrics._cond  # noqa: SLF001 - instance-local probe
+    original_wait = condition.wait
+    wait_entered = threading.Event()
+
+    def observed_wait(timeout: float | None = None) -> bool:
+        wait_entered.set()
+        return bool(original_wait(timeout))
+
+    condition.wait = observed_wait
     dt.start()
-    gate.release.set()
-    t.join(15.0)
-    dt.join(15.0)
+    try:
+        observed_block = wait_entered.wait(timeout=5.0)
+    finally:
+        gate.release.set()
+        t.join(15.0)
+        dt.join(15.0)
+        condition.wait = original_wait
     r_done = box["r"]
     r_block = dbox["r"].json()
     out["drain_inflight_completes_uninterrupted"] = r_done.status_code == 200
     out["drain_wait_blocks_until_idle"] = (
-        r_block["drained"] is True and r_block["inflight"] == 0 and r_block["draining"] is True
+        observed_block
+        and r_block["drained"] is True
+        and r_block["inflight"] == 0
+        and r_block["draining"] is True
     )
     out["metrics_reports_draining_latch"] = (
         _metrics(client, root)["draining"] is True and _metrics(client, root)["inflight"] == 0
@@ -931,56 +986,39 @@ def _probe_drain() -> dict[str, bool]:
 
 
 def _probe_drain_restart() -> dict[str, bool]:
-    """``--state-dir`` + restart: the drain latch is process-local (a
-    restarted pod re-registers as ready) while journaled state — minted
-    keys, job records — survives the bounce."""
+    """Recreate an app over the same state directory and inspect recovery.
+
+    This checks application initialization, not an external process restart.
+    Resource cleanup precedes deletion of the temporary state directory.
+    """
     out: dict[str, bool] = {}
-    from fastapi.testclient import TestClient  # noqa: PLC0415
-
-    import fx1.serve.api as api_mod  # noqa: PLC0415
-    from fx1.harness import Harness  # noqa: PLC0415
-
-    with tempfile.TemporaryDirectory() as td:
+    with tempfile.TemporaryDirectory() as td, _audit_resources():
         sd = Path(td) / "state"
-        saved = {k: os.environ.get(k) for k in _SWEPT_ENVS}
-        try:
-            for k in _SWEPT_ENVS:
-                os.environ.pop(k, None)
-            os.environ[_API_KEY_ENV] = _ROOT
-            app1 = api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=sd)
-            c1 = TestClient(app1, raise_server_exceptions=False)
-            root = {"X-API-Key": _ROOT}
-            raw, _kid = _mint(c1, root, scopes=["read"])
-            jr = c1.post("/harness/jobs", json={"command": "doctor"}, headers=root)
-            jid = jr.json()["job_id"]
-            _wait_job(c1, jid, root)
-            c1.post("/harness/drain", headers=root)
-            assert c1.get("/ready", headers=root).status_code == 503
+        c1 = _test_client(_make_app(state_dir=sd))
+        root = {"X-API-Key": _ROOT}
+        raw, _kid = _mint(c1, root, scopes=["read"])
+        jr = c1.post("/harness/jobs", json={"command": "doctor"}, headers=root)
+        jid = jr.json()["job_id"]
+        _wait_job(c1, jid, root)
+        c1.post("/harness/drain", headers=root)
+        assert c1.get("/ready", headers=root).status_code == 503
 
-            app2 = api_mod.create_app(harness=Harness(runner=_fast_runner), state_dir=sd)
-            c2 = TestClient(app2, raise_server_exceptions=False)
-            out["drain_process_local_restart_ready"] = (
-                c2.get("/ready", headers=root).status_code == 200
-                and c2.get("/health").json().get("draining") is False
-            )
-            out["restart_keeps_key_store_consistent"] = (
-                c2.get("/metrics", headers={"X-API-Key": raw}).status_code == 200
-                and c2.get("/metrics", headers={"X-API-Key": "fx1k_deadbeef"}).status_code == 401
-            )
-            rec = c2.get(f"/harness/jobs/{jid}", headers=root)
-            out["restart_journaled_jobs_survive"] = (
-                rec.status_code == 200 and rec.json().get("status") == "succeeded"
-            )
-            out["restart_accepts_new_work"] = (
-                c2.post("/harness/jobs", json={"command": "doctor"}, headers=root).status_code
-                == 202
-            )
-        finally:
-            for k, v in saved.items():
-                if v is None:
-                    os.environ.pop(k, None)
-                else:
-                    os.environ[k] = v
+        c2 = _test_client(_make_app(state_dir=sd))
+        out["drain_process_local_restart_ready"] = (
+            c2.get("/ready", headers=root).status_code == 200
+            and c2.get("/health").json().get("draining") is False
+        )
+        out["restart_keeps_key_store_consistent"] = (
+            c2.get("/metrics", headers={"X-API-Key": raw}).status_code == 200
+            and c2.get("/metrics", headers={"X-API-Key": "fx1k_deadbeef"}).status_code == 401
+        )
+        rec = c2.get(f"/harness/jobs/{jid}", headers=root)
+        out["restart_journaled_jobs_survive"] = (
+            rec.status_code == 200 and rec.json().get("status") == "succeeded"
+        )
+        out["restart_accepts_new_work"] = (
+            c2.post("/harness/jobs", json={"command": "doctor"}, headers=root).status_code == 202
+        )
     return out
 
 
@@ -1069,7 +1107,7 @@ def _probe_error_envelope() -> dict[str, bool]:
     """Every refusal across the ops surface lands in the wire-code
     envelope — no bare 500s, no unenveloped exceptions."""
     out: dict[str, bool] = {}
-    client, api_mod = _client()
+    client, _ = _client()
     root = {"X-API-Key": _ROOT}
 
     # routing-level refusals ride the same envelope — an unmatched path
@@ -1110,7 +1148,7 @@ def _probe_error_envelope() -> dict[str, bool]:
     )
 
     # declared-body abuse — raw ASGI since httpx sanitizes Content-Length
-    app = api_mod.create_app(harness=None, backend_resolver=lambda n, *a, **k: _StubBackend("m-0"))
+    app = _make_app(api_key=None)
     big = _raw_http(
         app,
         "POST",
@@ -1157,6 +1195,7 @@ def _probe_concurrency() -> dict[str, bool]:
     width = 4
     gate = _GateBackend("m-0", width=width, usage=dict(_U))
     client, _ = _client({"byok": lambda: gate, "local_fx1": lambda: _StubBackend("f-1", dict(_U2))})
+    _resources().callback(gate.release.set)
     root = {"X-API-Key": _ROOT}
     m0 = _metrics(client, root)
 
@@ -1293,22 +1332,23 @@ def observe_audit() -> dict[str, Any]:
     prev = os.environ.pop(_API_KEY_ENV, None)
     out: dict[str, Any] = {}
     try:
-        for section in (
-            _probe_liveness,
-            _probe_scope_boundary,
-            _probe_dev_and_remote,
-            _probe_metrics_json,
-            _probe_rate_limited_metrics,
-            _probe_prometheus,
-            _probe_drain,
-            _probe_drain_restart,
-            _probe_drain_concurrent,
-            _probe_request_id,
-            _probe_error_envelope,
-            _probe_concurrency,
-            _probe_client_surface,
-        ):
-            out.update(section())
+        with _audit_resources():
+            for section in (
+                _probe_liveness,
+                _probe_scope_boundary,
+                _probe_dev_and_remote,
+                _probe_metrics_json,
+                _probe_rate_limited_metrics,
+                _probe_prometheus,
+                _probe_drain,
+                _probe_drain_restart,
+                _probe_drain_concurrent,
+                _probe_request_id,
+                _probe_error_envelope,
+                _probe_concurrency,
+                _probe_client_surface,
+            ):
+                out.update(section())
     finally:
         if prev is not None:
             os.environ[_API_KEY_ENV] = prev
@@ -1318,8 +1358,8 @@ def observe_audit() -> dict[str, Any]:
 def observe_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under observe_audit.v1."""
     r = observe_audit()
-    ok = all(v is True for v in r.values())
-    defects = sorted(k for k, v in r.items() if v is not True)
+    ok = bool(r) and all(v is True for v in r.values())
+    defects = sorted(k for k, v in r.items() if v is not True) if r else ["no_probes"]
     out: dict[str, Any] = {
         "kind": "observe_audit",
         "schema": "observe_audit.v1",
@@ -1327,7 +1367,16 @@ def observe_audit_bench() -> dict[str, Any]:
         "data_label": "SYNTHETIC",
         "research_only": True,
         "live_pnl_claim": False,
-        "claim": {"results": r, "ok": ok},
+        "claim": {"results": r, "ok": ok, "defects": defects},
+        "coverage": {
+            "transport": "Starlette TestClient and direct in-process ASGI calls",
+            "not_verified": [
+                "real network transport behavior",
+                "external process restart",
+                "exhaustive Prometheus parser conformance",
+                "all possible hostile inputs or refusal cases",
+            ],
+        },
         "interpretation": (
             "The ops-instrumentation contract holds end to end: /health "
             "is liveness (public, always 200, backends as booleans, "
@@ -1338,7 +1387,7 @@ def observe_audit_bench() -> dict[str, Any]:
             "monotonic for the process lifetime, and its per-backend "
             "complete ledger reconciles 1:1 with /harness/usage for the "
             "same window. The Prometheus view negotiates on ?format=prom "
-            "or Accept text/plain/OpenMetrics, emits valid 0.0.4 "
+            "or Accept text/plain/OpenMetrics, passes selected 0.0.4 "
             "exposition (declared TYPEs, HELP before TYPE before "
             "samples, no NaN/Inf values, cumulative le buckets with "
             "+Inf == _count, label escaping that round-trips a hostile "
@@ -1346,11 +1395,11 @@ def observe_audit_bench() -> dict[str, Any]:
             "one-way latch refuses new gated work with enveloped 503 "
             "'draining' while in-flight work finishes and reads stay "
             "open; wait_s blocks to idle or its bound; parallel drains "
-            "are idempotent; and the latch is process-local — a restart "
-            "over the same --state-dir comes back ready while journaled "
+            "are idempotent; and recreating the app with the same state "
+            "directory comes back ready while journaled "
             "keys and job records survive. X-Request-ID echoes on "
-            "success and every refusal class and mints on absent or "
-            "malformed input; every hostile input lands in the "
+            "success and the tested refusal cases and mints on absent or "
+            "malformed input; the tested hostile inputs land in the "
             "documented wire-code envelope with no bare 500s; parallel "
             "traffic loses no counter increment; and HarnessClient's "
             "ops methods honor the documented 401/403->HarnessAuthError, "
