@@ -6708,6 +6708,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "samca_qa_studies",
         "strigoi_qa_studies",
         "varcolac_qa_studies",
+        # Wave-1921 baltic-demon canon.
+        "baubas_qa_studies",
+        "kaukas_qa_studies",
+        "lauma_qa_studies",
+        "pukis_qa_studies",
+        "spigana_qa_studies",
+        "vilkacis_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
