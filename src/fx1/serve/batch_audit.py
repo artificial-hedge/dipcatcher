@@ -1080,14 +1080,15 @@ def _probe_expiry(client: TestClient, sink: _Sink) -> dict[str, bool]:
         _wait_hits(sink, n0 + 1)
         exp_hit = sink.hits[-1]
         gate.release.set()
-        # let the worker settle (it exits the loop at the next line),
-        # then read back: expiry already terminalized the record — the
-        # worker's completion must never overwrite a terminal state
+        # Let the worker settle (it exits the loop at the next line), then
+        # read back.  Expiry already terminalized the record: the in-flight
+        # provider call is still metered, but its late result is not attached
+        # to a terminal payload that may already have been delivered.
         time.sleep(0.6)
         fin = gclient.get(f"/v1/batches/{b['id']}", headers=h).json()
         out["expired_never_overwritten"] = fin.get("status") == "expired"
         out["expired_tail_never_ran"] = (
-            gate.calls == 1 and fin.get("request_counts", {}).get("completed") == 1
+            gate.calls == 1 and fin.get("request_counts", {}).get("completed") == 0
         )
         _wait_hits(sink, n0 + 1, timeout=0.4)
         out["expired_webhook_once_terminal_payload"] = (

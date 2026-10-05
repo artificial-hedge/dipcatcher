@@ -57,6 +57,7 @@ from contextlib import (
     AbstractAsyncContextManager,
     asynccontextmanager,
     contextmanager,
+    suppress,
 )
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -3193,6 +3194,11 @@ class _BatchRecord(_Model):
     _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
     _key_id: str | None = PrivateAttr(default=None)
+    # Serializes every lifecycle transition and snapshot.  A plain
+    # check-then-write is not sufficient here: expiry/cancel routes and the
+    # worker run on different threads and can otherwise overwrite a terminal
+    # verdict after observing an older status.
+    _state_lock: threading.RLock = PrivateAttr(default_factory=threading.RLock)
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -3257,7 +3263,12 @@ class _BatchStore:
         mutates ``batch`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(batch))
+                # A worker may start just before put(), or finish after the
+                # bounded store evicts its record.  put() snapshots the first
+                # case; ignoring the second prevents a late journal row from
+                # resurrecting an evicted batch on restart.
+                if self._batches.get(batch.batch_id) is batch:
+                    self._journal.append(self._record(batch))
 
     def put(self, batch: _BatchRecord) -> None:
         with self._lock:
@@ -3316,7 +3327,10 @@ class _AnthropicBatchRecord(_Model):
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
-    _row_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    # Covers result rows and every lifecycle transition.  Reentrancy lets
+    # the shared finish path be called by a route that already stabilized
+    # the record.
+    _row_lock: threading.RLock = PrivateAttr(default_factory=threading.RLock)
 
 
 _ABATCH_TERMINAL = frozenset({"ended"})
@@ -3402,7 +3416,12 @@ class _AnthropicBatchStore:
         mutates ``batch`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(batch))
+                # A terminal webhook may finish while DELETE removes the
+                # batch.  Whichever operation obtains the store lock first
+                # wins; a late mark after delete is ignored so replay cannot
+                # resurrect the tombstone.
+                if self._batches.get(batch.batch_id) is batch:
+                    self._journal.append(self._record(batch))
 
     def put(self, batch: _AnthropicBatchRecord) -> None:
         with self._lock:
@@ -5796,6 +5815,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             batch.ended_at = int(time.time())
         abatch_store.mark(batch)
         _abatch_webhook(batch)
+        # Delivery outcome is part of the public record.  Persist it after
+        # the callback attempt as well as the terminal state before it.
+        abatch_store.mark(batch)
 
     def _abatch_webhook(batch: _AnthropicBatchRecord) -> None:
         """Fire-once terminal webhook: the projected ``message_batch``
@@ -5828,26 +5850,41 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     batch.result_lines.append(
                         json.dumps(row, sort_keys=True, separators=(",", ":"))
                     )
+                # Result rows are declared durable.  Persist each committed
+                # row rather than waiting for the terminal transition: a
+                # crash after item N must not turn already-served work into
+                # restart-error rows.
+                abatch_store.mark(batch)
             _abatch_finish(batch)
         except Exception as exc:  # noqa: BLE001 — a worker fault ends the batch, not the process
-            for cid in _abatch_unfinished(batch):
-                batch.result_lines.append(
-                    json.dumps(
-                        anthropic_batch_result(
-                            cid,
-                            {
-                                "type": "errored",
-                                "error": anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)[
-                                    "error"
-                                ],
-                            },
-                        ),
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    )
-                )
-            if batch.status != "ended":
-                _abatch_finish(batch)
+            with batch._row_lock:
+                if batch.status != "ended":
+                    for cid in _abatch_unfinished(batch):
+                        batch.result_lines.append(
+                            json.dumps(
+                                anthropic_batch_result(
+                                    cid,
+                                    {
+                                        "type": "errored",
+                                        "error": anthropic_error_body(
+                                            f"{type(exc).__name__}: {exc}", 500
+                                        )["error"],
+                                    },
+                                ),
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            )
+                        )
+                    batch.request_counts = _abatch_tally(batch)
+                    batch.status = "ended"
+                    batch.ended_at = int(time.time())
+                    should_finish = True
+                else:
+                    should_finish = False
+            if should_finish:
+                abatch_store.mark(batch)
+                _abatch_webhook(batch)
+                abatch_store.mark(batch)
         finally:
             _REQUEST_KEY_ID.reset(ctx_key)
             metrics.release()
@@ -5859,7 +5896,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if batch.status != "ended" and time.time() > batch.expires_at:
             batch._cancel.set()  # the worker exits its loop at the next item
             _abatch_finish(batch, "expired")
-        return anthropic_batch_object(batch.model_dump(mode="json"))
+        with batch._row_lock:
+            return anthropic_batch_object(batch.model_dump(mode="json"))
+
+    async def _anthropic_batch_idem_claim(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        """Serialize first use of one batch idempotency key.
+
+        The claim is an async dependency so waiters yield the event loop
+        instead of consuming every sync-handler worker while the winner
+        creates and stores the batch response.
+        """
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        async with anthropic_idem_store.async_claim_lock(key):
+            yield
 
     @app.post(
         "/v1/messages/batches",
@@ -5869,6 +5922,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def anthropic_batches_create(
         body: AnthropicBatchCreate,
         request: Request,
+        _idem_claim_held: None = Depends(_anthropic_batch_idem_claim),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit an Anthropic message batch — ``requests`` ride inline
@@ -5988,17 +6042,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch = abatch_store.get(batch_id)
         if batch is None:
             raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
-        if batch.status == "ended":
-            raise ApiError(
-                400,
-                f"message batch {batch_id!r} has already ended",
-                code="invalid_request",
-            )
-        if batch.status == "canceling":
+        with batch._row_lock:
+            if batch.status == "ended":
+                raise ApiError(
+                    400,
+                    f"message batch {batch_id!r} has already ended",
+                    code="invalid_request",
+                )
+            if batch.status == "canceling":
+                already_canceling = True
+            else:
+                already_canceling = False
+                batch._cancel.set()
+                batch.status = "canceling"
+                batch.cancel_initiated_at = int(time.time())
+        if already_canceling:
             return JSONResponse(_abatch_project(batch))
-        batch._cancel.set()
-        batch.status = "canceling"
-        batch.cancel_initiated_at = int(time.time())
         abatch_store.mark(batch)
         return JSONResponse(_abatch_project(batch))
 
@@ -7382,59 +7441,98 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ctx_key: contextvars.Token[str | None] | None = None
         out_lines: builtins.list[str] = []
         try:
-            if batch.status in _BATCH_TERMINAL:
-                return  # expiry-on-read already terminalized it while queued
-            ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
-            batch.status = "in_progress"
-            batch.in_progress_at = int(time.time())
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    return  # expiry-on-read already terminalized it while queued
+                if batch._cancel.is_set():
+                    # Cancellation won before the worker started.  Preserve
+                    # the monotone lifecycle instead of regressing
+                    # cancelling -> in_progress for an empty batch.
+                    batch.status = "cancelled"
+                    batch.cancelled_at = int(time.time())
+                    return
+                ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
+                batch.status = "in_progress"
+                batch.in_progress_at = int(time.time())
             batch_store.mark(batch)
-            counts = batch.request_counts
             cancelled = False
             for line in batch._lines:
                 if batch._cancel.is_set():
                     cancelled = True
                     break
                 out = _run_batch_line(line, batch)
-                if out["response"]["status_code"] == 200:
-                    counts.completed += 1
-                else:
-                    counts.failed += 1
-                out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
-            if batch.status not in _BATCH_TERMINAL:
+                with batch._state_lock:
+                    if batch.status in _BATCH_TERMINAL:
+                        # Expiry won while the provider call was in flight.
+                        # Terminal records are immutable: usage remains in
+                        # the completion ledger, but no late result is
+                        # attached to an already-delivered terminal payload.
+                        return
+                    if out["response"]["status_code"] == 200:
+                        batch.request_counts.completed += 1
+                    else:
+                        batch.request_counts.failed += 1
+                    out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    return
                 batch.status = "finalizing"
                 batch.finalizing_at = int(time.time())
-                batch_store.mark(batch)
+            batch_store.mark(batch)
+            rec: _FileRecord | None = None
             if out_lines:
                 rec = file_store.put(
                     filename=f"{batch.batch_id}_output.jsonl",
                     purpose="batch_output",
                     content=("\n".join(out_lines) + "\n").encode(),
                 )
-                batch.output_file_id = rec.file_id
-            if batch.status not in _BATCH_TERMINAL:
-                if cancelled:
-                    batch.status = "cancelled"
-                    batch.cancelled_at = int(time.time())
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    terminal_won = True
                 else:
-                    batch.status = "completed"
-                    batch.completed_at = int(time.time())
+                    terminal_won = False
+                    if rec is not None:
+                        batch.output_file_id = rec.file_id
+                    if cancelled or batch._cancel.is_set():
+                        batch.status = "cancelled"
+                        batch.cancelled_at = int(time.time())
+                    else:
+                        batch.status = "completed"
+                        batch.completed_at = int(time.time())
+            if terminal_won and rec is not None:
+                # Expiry won while the output blob was being published.
+                # Roll back the unreferenced file; terminal state and webhook
+                # payload remain immutable.
+                file_store.delete(rec.file_id)
         except Exception as exc:  # noqa: BLE001 — worker fault fails the batch, not the process
-            if batch.status not in _BATCH_TERMINAL:
-                batch.status = "failed"
-                batch.failed_at = int(time.time())
-                batch.errors = {
-                    "object": "list",
-                    "data": [{"code": "internal_error", "message": f"{type(exc).__name__}: {exc}"}],
-                }
-                try:
+            with batch._state_lock:
+                can_fail = batch.status not in _BATCH_TERMINAL
+            err_rec: _FileRecord | None = None
+            if can_fail:
+                with suppress(Exception):
                     err_rec = file_store.put(
                         filename=f"{batch.batch_id}_errors.jsonl",
                         purpose="batch_output",
                         content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
                     )
-                    batch.error_file_id = err_rec.file_id
-                except Exception:  # noqa: BLE001,S110 — error-file write must never mask the failure
-                    pass
+                with batch._state_lock:
+                    if batch.status not in _BATCH_TERMINAL:
+                        batch.status = "failed"
+                        batch.failed_at = int(time.time())
+                        batch.errors = {
+                            "object": "list",
+                            "data": [
+                                {
+                                    "code": "internal_error",
+                                    "message": f"{type(exc).__name__}: {exc}",
+                                }
+                            ],
+                        }
+                        if err_rec is not None:
+                            batch.error_file_id = err_rec.file_id
+                        err_rec = None
+                if err_rec is not None:
+                    file_store.delete(err_rec.file_id)
         finally:
             if ctx_key is not None:
                 _REQUEST_KEY_ID.reset(ctx_key)
@@ -7447,11 +7545,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Fire-once terminal webhook: the projected OpenAI envelope is the
         payload (the same shape GET returns — never the internal record).
         The first terminal transition fires; expiry-on-read is one."""
-        if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
-            return
+        with batch._state_lock:
+            if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
+                return
+            payload = json.dumps(batch_object(batch.model_dump(mode="json"))).encode()
         _deliver_callback(
             batch,
-            body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),
+            body=payload,
         )
 
     def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
@@ -7459,15 +7559,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         Expiry sets ``_cancel`` (mirroring the Anthropic dialect) so a
         queued worker returns early and a mid-flight worker stops after
-        its current line — the terminal status is never overwritten and
-        whatever lines did run still mint the partial output file."""
-        if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
-            batch._cancel.set()  # the worker exits its loop at the next line
-            batch.status = "expired"
-            batch.expired_at = int(time.time())
+        its current line.  A result that returns after expiry is still
+        metered in the completion ledger but is not attached to the already
+        terminal batch or its fire-once webhook payload."""
+        expired_now = False
+        with batch._state_lock:
+            if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
+                batch._cancel.set()  # the worker exits its loop at the next line
+                batch.status = "expired"
+                batch.expired_at = int(time.time())
+                expired_now = True
+        if expired_now:
             batch_store.mark(batch)
             _batch_webhook(batch)  # expiry is a terminal transition too
-        return batch_object(batch.model_dump())
+            batch_store.mark(batch)  # persist callback outcome as well
+        with batch._state_lock:
+            return batch_object(batch.model_dump())
 
     @app.post(
         "/v1/files",
@@ -7668,6 +7775,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise _upload_err(exc) from exc
         return JSONResponse(upload_object(meta))
 
+    async def _openai_batch_idem_claim(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        """Serialize lookup + creation + insertion for one batch key."""
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        async with openai_idem_store.async_claim_lock(key):
+            yield
+
     @app.post(
         "/v1/batches",
         tags=["openai"],
@@ -7676,6 +7793,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_batches_create(
         body: OpenAIBatchRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_openai_batch_idem_claim),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit a batch over an uploaded input file. One worker slot
@@ -7818,17 +7936,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch = batch_store.get(batch_id)
         if batch is None:
             raise ApiError(404, f"batch {batch_id!r} not found", code="batch_not_found")
-        if batch.status in _BATCH_TERMINAL:
-            raise ApiError(
-                409,
-                f"batch {batch_id!r} is already {batch.status}",
-                code="batch_terminal",
-            )
-        if batch.status == "cancelling":
+        with batch._state_lock:
+            if batch.status in _BATCH_TERMINAL:
+                raise ApiError(
+                    409,
+                    f"batch {batch_id!r} is already {batch.status}",
+                    code="batch_terminal",
+                )
+            if batch.status == "cancelling":
+                already_cancelling = True
+            else:
+                already_cancelling = False
+                batch._cancel.set()
+                batch.status = "cancelling"
+                batch.cancelling_at = int(time.time())
+        if already_cancelling:
             return JSONResponse(_batch_project(batch))
-        batch._cancel.set()
-        batch.status = "cancelling"
-        batch.cancelling_at = int(time.time())
         batch_store.mark(batch)
         return JSONResponse(_batch_project(batch))
 
@@ -8965,7 +9088,19 @@ def _resolve_auth(
             auth_hdr = request.headers.get("Authorization", "")
             if auth_hdr.startswith("Bearer "):
                 provided = auth_hdr[len("Bearer ") :]
-        if provided and api_key and hmac.compare_digest(provided, api_key):
+        # compare_digest refuses non-ASCII str; the utf-8 encodings keep
+        # ordinary header values byte-exact. ``os.environ`` can contain
+        # surrogate-escaped bytes on POSIX, so surrogatepass is required
+        # on both sides as well: a malformed configured key must not turn
+        # an otherwise ordinary bad credential into a server fault.
+        if (
+            provided
+            and api_key
+            and hmac.compare_digest(
+                provided.encode("utf-8", errors="surrogatepass"),
+                api_key.encode("utf-8", errors="surrogatepass"),
+            )
+        ):
             return ("env", True, None)
         if provided:
             key_rec = key_store.authenticate(
