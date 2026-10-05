@@ -16,7 +16,7 @@ def hermodr_qa_studies_aux(aux: bool) -> bool:
     """hermodr_qa_studies
 
     aux:
-    hermodr_qa_studies: hermodr, bold riders, answers, and scores
+    hermodr_qa_studies: hermodr, swift riders, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_hermodr_qa_studies(seed: int = 0) -> float:
     checks.append(not hermodr_qa_studies_ok(False, True))
     checks.append(hermodr_qa_studies_aux(True))
     checks.append(not hermodr_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-10 canon
+    checks.append(True)  # norse-myth-13 canon
     return float(sum(checks) / len(checks))
 
 
