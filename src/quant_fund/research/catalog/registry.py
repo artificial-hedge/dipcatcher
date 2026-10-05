@@ -6911,6 +6911,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gusion_qa_studies",
         "valefor_qa_studies",
         "vasago_qa_studies",
+        # Wave-1950 goetic-assembly canon.
+        "beleth_qa_studies",
+        "botis_qa_studies",
+        "eligos_qa_studies",
+        "leraje_qa_studies",
+        "sitri_qa_studies",
+        "zepar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
