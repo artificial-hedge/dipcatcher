@@ -14895,6 +14895,14 @@ from quant_fund.research.benches_w1862 import (
     bench_mark_cornwall_qa_studies_family,
     bench_mordred_qa_studies_family,
 )
+from quant_fund.research.benches_w1863 import (
+    bench_balin_qa_studies_family,
+    bench_lamorak_qa_studies_family,
+    bench_lot_qa_studies_family,
+    bench_marhaus_qa_studies_family,
+    bench_pellinor_qa_studies_family,
+    bench_uther_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
