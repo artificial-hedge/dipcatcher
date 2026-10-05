@@ -1,0 +1,210 @@
+/workspace/scratch/b4080da16fcf/maintenance/test_dependencies/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+2026-10-05 20:08:35,604 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=21.2 rid=c628afb90e82461ca67f8efa90a9e291
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=21.2 rid=c628afb90e82461ca67f8efa90a9e291
+2026-10-05 20:08:35,612 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.8 rid=008986b5c59746d6824198860b5861ba
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.8 rid=008986b5c59746d6824198860b5861ba
+2026-10-05 20:08:35,619 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.9 rid=7d3ef65d569444308943e3a9a8c7a06b
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.9 rid=7d3ef65d569444308943e3a9a8c7a06b
+2026-10-05 20:08:35,625 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.1 rid=8b569a94edbb42128c8fb852a20788e4
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.1 rid=8b569a94edbb42128c8fb852a20788e4
+2026-10-05 20:08:35,634 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.0 rid=366caed51ce4413592461ae70fbc12d0
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.0 rid=366caed51ce4413592461ae70fbc12d0
+2026-10-05 20:08:35,642 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.1 rid=d71cb0bfe34547d4818d1cb6ac514e2c
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.1 rid=d71cb0bfe34547d4818d1cb6ac514e2c
+2026-10-05 20:08:35,649 INFO fx1-api request method=POST path=/v1/completions status=200 elapsed_ms=5.0 rid=ffcfb1da36834cefb6bba10ff27657ce
+INFO:fx1.serve.api:request method=POST path=/v1/completions status=200 elapsed_ms=5.0 rid=ffcfb1da36834cefb6bba10ff27657ce
+2026-10-05 20:08:35,656 INFO fx1-api request method=POST path=/v1/completions status=200 elapsed_ms=4.4 rid=b0f73932f896468ea3f92e33e6294257
+INFO:fx1.serve.api:request method=POST path=/v1/completions status=200 elapsed_ms=4.4 rid=b0f73932f896468ea3f92e33e6294257
+2026-10-05 20:08:35,664 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=5.9 rid=8d78e7ca4cb742da9d8a3289822fa585
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=5.9 rid=8d78e7ca4cb742da9d8a3289822fa585
+2026-10-05 20:08:35,671 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=4.2 rid=15737da55c1c48709c0d887af35992a5
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=4.2 rid=15737da55c1c48709c0d887af35992a5
+2026-10-05 20:08:35,677 INFO fx1-api request method=POST path=/v1/messages status=200 elapsed_ms=4.9 rid=1528aa1827c446ed9627661e4890443b
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=200 elapsed_ms=4.9 rid=1528aa1827c446ed9627661e4890443b
+2026-10-05 20:08:35,684 INFO fx1-api request method=POST path=/v1/messages status=200 elapsed_ms=4.3 rid=24d5557d3df44a579d580dadc383ccdd
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=200 elapsed_ms=4.3 rid=24d5557d3df44a579d580dadc383ccdd
+2026-10-05 20:08:35,690 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.3 rid=2f3f606cb5b446b38af570562b2d701c
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.3 rid=2f3f606cb5b446b38af570562b2d701c
+2026-10-05 20:08:35,695 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.8 rid=bbbdcd7f48ca41ab80f718fe49325cd7
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.8 rid=bbbdcd7f48ca41ab80f718fe49325cd7
+2026-10-05 20:08:35,700 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.5 rid=d853f61eff254e489622d2f7091c4ef7
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.5 rid=d853f61eff254e489622d2f7091c4ef7
+2026-10-05 20:08:35,704 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.7 rid=1dd800094f6c4697b106c70d82f8e14d
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=2.7 rid=1dd800094f6c4697b106c70d82f8e14d
+2026-10-05 20:08:35,707 INFO fx1-api request method=POST path=/v1/chat/completions status=409 elapsed_ms=1.1 rid=536e1d3a456c4fb796eb667b92bba26e
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=409 elapsed_ms=1.1 rid=536e1d3a456c4fb796eb667b92bba26e
+2026-10-05 20:08:35,709 INFO fx1-api request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.1 rid=86b785757ffb4468bc4621c9b4e64ef4
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.1 rid=86b785757ffb4468bc4621c9b4e64ef4
+2026-10-05 20:08:35,712 INFO fx1-api request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.1 rid=4e86cef8c657455789965309961c5814
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.1 rid=4e86cef8c657455789965309961c5814
+2026-10-05 20:08:35,715 INFO fx1-api request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.4 rid=771e2f77c7754956afb8ef783186833e
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=400 elapsed_ms=1.4 rid=771e2f77c7754956afb8ef783186833e
+2026-10-05 20:08:35,717 INFO fx1-api request method=POST path=/v1/chat/completions status=400 elapsed_ms=0.8 rid=e9f5d99c54014eb1b2c69070f93761d0
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=400 elapsed_ms=0.8 rid=e9f5d99c54014eb1b2c69070f93761d0
+2026-10-05 20:08:35,720 INFO fx1-api request method=POST path=/v1/chat/completions status=409 elapsed_ms=1.7 rid=c271aa4c663146dca9fc20399c18053f
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=409 elapsed_ms=1.7 rid=c271aa4c663146dca9fc20399c18053f
+2026-10-05 20:08:35,726 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=4.8 rid=17ccbc07a81045e59b31d27b8772eef1
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=4.8 rid=17ccbc07a81045e59b31d27b8772eef1
+2026-10-05 20:08:35,732 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=3.2 rid=2b63a73263c8462581eadbdd3ebff52f
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=3.2 rid=2b63a73263c8462581eadbdd3ebff52f
+2026-10-05 20:08:35,737 INFO fx1-api request method=POST path=/v1/responses status=409 elapsed_ms=1.3 rid=ab8a89e714ee4cc4bc841ea47e1eebef
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=409 elapsed_ms=1.3 rid=ab8a89e714ee4cc4bc841ea47e1eebef
+2026-10-05 20:08:35,744 INFO fx1-api request method=POST path=/v1/messages status=200 elapsed_ms=4.9 rid=c1e6fc4d40ab454a90ff7b883559f56e
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=200 elapsed_ms=4.9 rid=c1e6fc4d40ab454a90ff7b883559f56e
+2026-10-05 20:08:35,751 INFO fx1-api request method=POST path=/v1/messages status=200 elapsed_ms=4.4 rid=21ef38c962c64675848991755da4681c
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=200 elapsed_ms=4.4 rid=21ef38c962c64675848991755da4681c
+2026-10-05 20:08:35,755 INFO fx1-api request method=POST path=/v1/messages status=409 elapsed_ms=1.6 rid=855f44ddf0e6424597c2d6fb28c57aa9
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=409 elapsed_ms=1.6 rid=855f44ddf0e6424597c2d6fb28c57aa9
+2026-10-05 20:08:35,762 INFO fx1-api request method=POST path=/v1/completions status=200 elapsed_ms=5.2 rid=eb1fd83cd2f54eb797125a7cc9dd1bb0
+INFO:fx1.serve.api:request method=POST path=/v1/completions status=200 elapsed_ms=5.2 rid=eb1fd83cd2f54eb797125a7cc9dd1bb0
+2026-10-05 20:08:35,768 INFO fx1-api request method=POST path=/v1/completions status=200 elapsed_ms=2.8 rid=a0cc27aef9ef470193211d9161e4b180
+INFO:fx1.serve.api:request method=POST path=/v1/completions status=200 elapsed_ms=2.8 rid=a0cc27aef9ef470193211d9161e4b180
+2026-10-05 20:08:35,773 INFO fx1-api request method=POST path=/v1/completions status=200 elapsed_ms=2.8 rid=76f0119268804bd38198b0eb362ef4d6
+INFO:fx1.serve.api:request method=POST path=/v1/completions status=200 elapsed_ms=2.8 rid=76f0119268804bd38198b0eb362ef4d6
+2026-10-05 20:08:35,780 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=de710bfe3a44401ab6c3633ad4aa5598
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=de710bfe3a44401ab6c3633ad4aa5598
+2026-10-05 20:08:35,787 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=10e598e13bb84ac281da02658873697f
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=10e598e13bb84ac281da02658873697f
+2026-10-05 20:08:35,794 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.5 rid=0c11716647c645168aced2cdc96ef167
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.5 rid=0c11716647c645168aced2cdc96ef167
+2026-10-05 20:08:35,798 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=0.9 rid=46d2fb1cf4be4391b4751b790e91b85a
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=0.9 rid=46d2fb1cf4be4391b4751b790e91b85a
+2026-10-05 20:08:35,803 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=2.9 rid=3eb971994a9645c8962d095be244d205
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=2.9 rid=3eb971994a9645c8962d095be244d205
+2026-10-05 20:08:35,811 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.2 rid=f8a41aac31e845c2a917a918f310d0cb
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.2 rid=f8a41aac31e845c2a917a918f310d0cb
+2026-10-05 20:08:35,817 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=2.8 rid=7888a58ca41f46c9851a9b0bdb83c254
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=2.8 rid=7888a58ca41f46c9851a9b0bdb83c254
+2026-10-05 20:08:35,822 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.1 rid=d41869bfab4748b7bb264fab1155dc27
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=3.1 rid=d41869bfab4748b7bb264fab1155dc27
+2026-10-05 20:08:35,826 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=1.0 rid=d41361939e874c33bf6f52bfc2c7db7d
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=1.0 rid=d41361939e874c33bf6f52bfc2c7db7d
+2026-10-05 20:08:35,829 INFO fx1-api request method=GET path=/v1/responses/resp_nope status=404 elapsed_ms=0.9 rid=ffe2f90029104391a165af1466267de0
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_nope status=404 elapsed_ms=0.9 rid=ffe2f90029104391a165af1466267de0
+2026-10-05 20:08:35,837 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=6.2 rid=14096e845e3140e6ab6e8324df223575
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=6.2 rid=14096e845e3140e6ab6e8324df223575
+2026-10-05 20:08:35,842 INFO fx1-api request method=GET path=/v1/responses/resp_3181e3641f814b3eb6ec9aba4e2179cc status=404 elapsed_ms=0.8 rid=0760ea2b11f44e01b384783f3f7ecee6
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_3181e3641f814b3eb6ec9aba4e2179cc status=404 elapsed_ms=0.8 rid=0760ea2b11f44e01b384783f3f7ecee6
+2026-10-05 20:08:35,844 INFO fx1-api request method=DELETE path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=0.7 rid=f958447e29cf4323a12019f69826f50b
+INFO:fx1.serve.api:request method=DELETE path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=200 elapsed_ms=0.7 rid=f958447e29cf4323a12019f69826f50b
+2026-10-05 20:08:35,847 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=404 elapsed_ms=0.8 rid=6174a3c2c3c440bf92f90a9efe51be1b
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=404 elapsed_ms=0.8 rid=6174a3c2c3c440bf92f90a9efe51be1b
+2026-10-05 20:08:35,848 INFO fx1-api request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=404 elapsed_ms=0.5 rid=26367ed6d9f84bbcbbddd5bd3d04a1ba
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_f7af3602f3fc44eb855ce62d0d88e038 status=404 elapsed_ms=0.5 rid=26367ed6d9f84bbcbbddd5bd3d04a1ba
+2026-10-05 20:08:36,477 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=2.7 rid=6ed122b98a794e44b8b77630b317ad6e
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=2.7 rid=6ed122b98a794e44b8b77630b317ad6e
+2026-10-05 20:08:36,481 INFO fx1-api request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=1.7 rid=9a677abdf08a467e940e5709c7e1b8e2
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=1.7 rid=9a677abdf08a467e940e5709c7e1b8e2
+2026-10-05 20:08:37,297 INFO fx1-api request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=3.6 rid=385dc894f274456cac883b270cc522c6
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=3.6 rid=385dc894f274456cac883b270cc522c6
+2026-10-05 20:08:37,302 INFO fx1-api request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=3.0 rid=32b16343177547a3b7cbe31eedefc03c
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=3.0 rid=32b16343177547a3b7cbe31eedefc03c
+2026-10-05 20:08:37,306 INFO fx1-api request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=0.5 rid=676914fba477435981500c69797566c3
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_97eb4e528a344b74ab7f735a9b9b27e6 status=200 elapsed_ms=0.5 rid=676914fba477435981500c69797566c3
+2026-10-05 20:08:37,696 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.9 rid=18d3392a9c7e4ea5bfdd272e61c5c08b
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.9 rid=18d3392a9c7e4ea5bfdd272e61c5c08b
+2026-10-05 20:08:37,703 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.7 rid=8e6e9ad169c548a79eb6f444b186529b
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.7 rid=8e6e9ad169c548a79eb6f444b186529b
+2026-10-05 20:08:37,710 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.6 rid=e6403cdf9487490ca64d7a22c47452c9
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=4.6 rid=e6403cdf9487490ca64d7a22c47452c9
+2026-10-05 20:08:37,719 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=6.6 rid=a27dbbabdd0b4db8a6e8e8699b1bd92f
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=6.6 rid=a27dbbabdd0b4db8a6e8e8699b1bd92f
+2026-10-05 20:08:37,728 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=6.8 rid=9e07f5793fb641d891b56df796b7a929
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=6.8 rid=9e07f5793fb641d891b56df796b7a929
+2026-10-05 20:08:37,738 INFO fx1-api request method=POST path=/v1/messages status=200 elapsed_ms=7.0 rid=cadb13749f62496daa337afcf0251ba1
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=200 elapsed_ms=7.0 rid=cadb13749f62496daa337afcf0251ba1
+2026-10-05 20:08:38,381 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=3.5 rid=9802da07057646358653e7bb63a3cd97
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=3.5 rid=9802da07057646358653e7bb63a3cd97
+2026-10-05 20:08:38,388 INFO fx1-api request method=POST path=/harness/complete/stream status=501 elapsed_ms=1.1 rid=6e0fbb06fd91466e87b5c6d8044ccbe5
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=501 elapsed_ms=1.1 rid=6e0fbb06fd91466e87b5c6d8044ccbe5
+2026-10-05 20:08:38,390 INFO fx1-api request method=POST path=/harness/complete/stream status=501 elapsed_ms=1.0 rid=7686bceb24a74bb0a6176524cc01466e
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=501 elapsed_ms=1.0 rid=7686bceb24a74bb0a6176524cc01466e
+2026-10-05 20:08:38,395 INFO fx1-api request method=POST path=/harness/complete/stream status=501 elapsed_ms=2.7 rid=ef3dfb9816714374a712664bac295396
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=501 elapsed_ms=2.7 rid=ef3dfb9816714374a712664bac295396
+2026-10-05 20:08:38,858 INFO fx1-api request method=POST path=/harness/complete/stream status=502 elapsed_ms=3.9 rid=06c46f2f0bbc4391a43ffcf1a41b5af0
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=502 elapsed_ms=3.9 rid=06c46f2f0bbc4391a43ffcf1a41b5af0
+2026-10-05 20:08:39,555 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=104.1 rid=ac6d854251264695b3e31d847503ad84
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=104.1 rid=ac6d854251264695b3e31d847503ad84
+2026-10-05 20:08:40,446 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=105.8 rid=23ca2c07c200400097c62d786a1e4916
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=105.8 rid=23ca2c07c200400097c62d786a1e4916
+2026-10-05 20:08:40,853 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=102.6 rid=b6cf3190562d4094ba3cdd3cf391d184
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=102.6 rid=b6cf3190562d4094ba3cdd3cf391d184
+2026-10-05 20:08:41,659 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=dfaf87d697c8457dad951f026d6a755b
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=4.7 rid=dfaf87d697c8457dad951f026d6a755b
+2026-10-05 20:08:41,662 INFO fx1-api request method=GET path=/v1/responses/resp_ea54b88c658c40b78a2a26c9f1df95b2 status=200 elapsed_ms=1.4 rid=ea10274777c24da18cbeff2b4a0c5d42
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_ea54b88c658c40b78a2a26c9f1df95b2 status=200 elapsed_ms=1.4 rid=ea10274777c24da18cbeff2b4a0c5d42
+2026-10-05 20:08:41,666 INFO fx1-api request method=GET path=/v1/responses/resp_ea54b88c658c40b78a2a26c9f1df95b2 status=200 elapsed_ms=1.3 rid=bd4502c159b74a96b8c3f879b1aec1fc
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_ea54b88c658c40b78a2a26c9f1df95b2 status=200 elapsed_ms=1.3 rid=bd4502c159b74a96b8c3f879b1aec1fc
+2026-10-05 20:08:41,670 INFO fx1-api request method=POST path=/v1/chat/completions status=502 elapsed_ms=2.3 rid=a5e1e6e98df2485084f866bd0210fa7a
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=502 elapsed_ms=2.3 rid=a5e1e6e98df2485084f866bd0210fa7a
+2026-10-05 20:08:41,674 INFO fx1-api request method=POST path=/v1/messages status=502 elapsed_ms=1.9 rid=5464756f36da4d1daaff5956ccec59a9
+INFO:fx1.serve.api:request method=POST path=/v1/messages status=502 elapsed_ms=1.9 rid=5464756f36da4d1daaff5956ccec59a9
+2026-10-05 20:08:41,678 INFO fx1-api request method=POST path=/v1/responses status=502 elapsed_ms=2.2 rid=8ef89cd925d345fead20e9529c7f1e27
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=502 elapsed_ms=2.2 rid=8ef89cd925d345fead20e9529c7f1e27
+2026-10-05 20:08:42,035 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=3.6 rid=56d51a6e51cd4e45a2789bd862e5190b
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=3.6 rid=56d51a6e51cd4e45a2789bd862e5190b
+2026-10-05 20:08:42,039 INFO fx1-api request method=POST path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0/cancel status=200 elapsed_ms=1.3 rid=642fa7f0aa5443e8a2626667deac65ab
+INFO:fx1.serve.api:request method=POST path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0/cancel status=200 elapsed_ms=1.3 rid=642fa7f0aa5443e8a2626667deac65ab
+2026-10-05 20:08:42,042 INFO fx1-api request method=GET path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0 status=200 elapsed_ms=1.3 rid=eac1ef29e1f2404e9c97f565e5f7be9e
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0 status=200 elapsed_ms=1.3 rid=eac1ef29e1f2404e9c97f565e5f7be9e
+2026-10-05 20:08:42,046 INFO fx1-api request method=GET path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0 status=200 elapsed_ms=2.0 rid=a95663aadda9422a90d91fbbf8318367
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_c4d3dd140e844cd79b5c89b436fd4fd0 status=200 elapsed_ms=2.0 rid=a95663aadda9422a90d91fbbf8318367
+2026-10-05 20:08:42,539 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=3.7 rid=370f9e93d2f9449488605373fb38c86b
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=3.7 rid=370f9e93d2f9449488605373fb38c86b
+2026-10-05 20:08:42,544 INFO fx1-api request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=200 elapsed_ms=1.8 rid=c9e6048eb2114956abbc5636bc60de06
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=200 elapsed_ms=1.8 rid=c9e6048eb2114956abbc5636bc60de06
+2026-10-05 20:09:02,585 INFO fx1-api request method=DELETE path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=200 elapsed_ms=0.9 rid=d3d12ea447444a82b2df05a95327a40d
+INFO:fx1.serve.api:request method=DELETE path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=200 elapsed_ms=0.9 rid=d3d12ea447444a82b2df05a95327a40d
+2026-10-05 20:09:03,390 INFO fx1-api request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=404 elapsed_ms=1.8 rid=dc6c845d6892410e8914e26879fbafe8
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=404 elapsed_ms=1.8 rid=dc6c845d6892410e8914e26879fbafe8
+2026-10-05 20:09:03,394 INFO fx1-api request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=404 elapsed_ms=1.1 rid=ecdeea2e68e8414490d805494384c408
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_3bca48d616ab4d4685e34524d179d6d2 status=404 elapsed_ms=1.1 rid=ecdeea2e68e8414490d805494384c408
+2026-10-05 20:09:03,403 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.7 rid=2d7a06ebc9e54527b9b30191831c518a
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=6.7 rid=2d7a06ebc9e54527b9b30191831c518a
+2026-10-05 20:09:03,410 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=3.8 rid=640532f5ce4c4abb89f66fb2ec1d39a0
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=3.8 rid=640532f5ce4c4abb89f66fb2ec1d39a0
+2026-10-05 20:09:03,418 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=5.3 rid=769e778a92884e0fb3e6d7a023b56025
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=5.3 rid=769e778a92884e0fb3e6d7a023b56025
+2026-10-05 20:09:03,808 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=3.7 rid=50f8007cb51c458c8368529ff4824b88
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=3.7 rid=50f8007cb51c458c8368529ff4824b88
+2026-10-05 20:09:03,812 INFO fx1-api request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.7 rid=1518236bfabd48859a945afb5dcf0e11
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.7 rid=1518236bfabd48859a945afb5dcf0e11
+2026-10-05 20:09:23,859 INFO fx1-api request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.4 rid=c385f73f2fa64bf09db1d1959d2f266b
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.4 rid=c385f73f2fa64bf09db1d1959d2f266b
+2026-10-05 20:09:23,912 INFO fx1-api request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.0 rid=7f95a0ef14b04543961c8cb7948d7efc
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=1.0 rid=7f95a0ef14b04543961c8cb7948d7efc
+2026-10-05 20:09:23,918 INFO fx1-api request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=3.8 rid=36199d62498d416fa933c8679f3f4f39
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_11e1a164e08c4626901ef72c09ce3df8 status=200 elapsed_ms=3.8 rid=36199d62498d416fa933c8679f3f4f39
+2026-10-05 20:09:23,927 INFO fx1-api request method=POST path=/v1/responses status=200 elapsed_ms=5.3 rid=985e957404944d6d883d9911a6d34d60
+INFO:fx1.serve.api:request method=POST path=/v1/responses status=200 elapsed_ms=5.3 rid=985e957404944d6d883d9911a6d34d60
+2026-10-05 20:09:23,956 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=21.9 rid=2492bbe6d9d9427d978b4c3aeb28736d
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=21.9 rid=2492bbe6d9d9427d978b4c3aeb28736d
+2026-10-05 20:09:23,958 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=13.9 rid=23486d86b6174aba89a2df36514ea4ab
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=13.9 rid=23486d86b6174aba89a2df36514ea4ab
+2026-10-05 20:09:23,958 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=25.1 rid=9b16709d7845472e93d04cd50d7f73fd
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=25.1 rid=9b16709d7845472e93d04cd50d7f73fd
+2026-10-05 20:09:23,961 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=17.8 rid=0933f9f4550742cb970b5863cdbcd16d
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=17.8 rid=0933f9f4550742cb970b5863cdbcd16d
+2026-10-05 20:09:23,967 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=29.7 rid=3a592a886c604bbca8a597b3272fde6d
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=29.7 rid=3a592a886c604bbca8a597b3272fde6d
+2026-10-05 20:09:23,967 INFO fx1-api request method=POST path=/v1/chat/completions status=200 elapsed_ms=29.4 rid=328d7eeb77fc4c2aa0362387ca8e1fe0
+INFO:fx1.serve.api:request method=POST path=/v1/chat/completions status=200 elapsed_ms=29.4 rid=328d7eeb77fc4c2aa0362387ca8e1fe0
+2026-10-05 20:09:23,995 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=8.9 rid=a80eb20cb8b74502bcde044bd70882fb
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=8.9 rid=a80eb20cb8b74502bcde044bd70882fb
+2026-10-05 20:09:23,998 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=8.0 rid=abd8cf638083449c96c39665dfddc651
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=8.0 rid=abd8cf638083449c96c39665dfddc651
+2026-10-05 20:09:23,999 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=10.2 rid=a9e38473c3b04bbcb44d0ea946a7e3bb
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=10.2 rid=a9e38473c3b04bbcb44d0ea946a7e3bb
+2026-10-05 20:09:24,000 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=14.7 rid=781a4eab8bfe4110998861be896b905e
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=14.7 rid=781a4eab8bfe4110998861be896b905e
+2026-10-05 20:09:24,000 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=12.4 rid=2fb8aeb17c1b4d5fb375f99d129fba72
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=12.4 rid=2fb8aeb17c1b4d5fb375f99d129fba72
+2026-10-05 20:09:24,001 INFO fx1-api request method=POST path=/harness/complete/stream status=200 elapsed_ms=10.1 rid=7ea3eef9ae504c5498145b480f298ac6
+INFO:fx1.serve.api:request method=POST path=/harness/complete/stream status=200 elapsed_ms=10.1 rid=7ea3eef9ae504c5498145b480f298ac6
+2026-10-05 20:09:24,036 INFO fx1-api request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=7.5 rid=f2029582929249baac0934c34a689e3e
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=7.5 rid=f2029582929249baac0934c34a689e3e
+2026-10-05 20:09:24,037 INFO fx1-api request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=6.6 rid=f2ee2bee3b6c42c0be8a74708c1fee4c
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=6.6 rid=f2ee2bee3b6c42c0be8a74708c1fee4c
+2026-10-05 20:09:24,037 INFO fx1-api request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=5.7 rid=4d2c81bbe294430faf82f8eccbe9b7fa
+INFO:fx1.serve.api:request method=GET path=/v1/responses/resp_91375bd2b57b47e8b7219ffb074a39a3 status=200 elapsed_ms=5.7 rid=4d2c81bbe294430faf82f8eccbe9b7fa

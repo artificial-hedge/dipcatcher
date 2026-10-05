@@ -1,0 +1,10 @@
+{
+  "digest_convention": "canonical_json",
+  "errors": [],
+  "kind": "stream_audit",
+  "path": "<memory>",
+  "schema": "stream_audit.v1",
+  "valid": true,
+  "verdict": null,
+  "warnings": []
+}
