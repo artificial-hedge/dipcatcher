@@ -6449,6 +6449,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maziun_qa_studies",
         "tissardal_qa_studies",
         "zilalsen_qa_studies",
+        # Wave-1884 saharan-2 canon.
+        "argemm_qa_studies",
+        "arzew_qa_studies",
+        "cilteni_qa_studies",
+        "essuf_qa_studies",
+        "medghassen_qa_studies",
+        "tanezruft_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
