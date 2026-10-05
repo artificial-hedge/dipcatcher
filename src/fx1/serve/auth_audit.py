@@ -28,7 +28,8 @@ Coverage map:
   prefix+garbage, wrong-case prefix, and almost-a-real-key all refuse
   the same uniform 401 — the body is byte-identical for absent vs
   wrong (no oracle for which entries exist). A credential carrying
-  non-ASCII bytes is the same refusal, never a server fault
+  non-ASCII bytes is the same refusal, never a server fault. The same
+  fail-closed rule covers a POSIX surrogate-escaped environment key
   (compare_digest is fed utf-8 bytes post-fix).
 - *revocation timing* — a key revoked while a request is in-flight
   lets the admitted call complete; every later call 401s. A revoked
@@ -606,17 +607,36 @@ def _malformed_credential_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     )
 
     # a credential carrying non-ASCII bytes refuses like any other dead
-    # credential — never a server fault (hmac.compare_digest is
-    # str-only; the wire feeds it utf-8 bytes)
+    # credential — never a server fault (hmac.compare_digest refuses
+    # non-ASCII str, so the comparison must receive encoded bytes).
+    # POSIX may also surface undecodable environment bytes as surrogate-
+    # escaped str; those must fail closed instead of escaping as a 500.
     from fx1.serve.keys import ApiKeyStore  # noqa: PLC0415
 
     store = ApiKeyStore()
     store.mint()
-    nonascii_statuses = [
-        _status_of(_resolve_auth_unit(api_mod, _request([(b"x-api-key", raw_hdr)]), _ROOT, store))
+    nonascii_responses = [
+        _resolve_auth_unit(api_mod, _request([(b"x-api-key", raw_hdr)]), _ROOT, store)
         for raw_hdr in (b"fx1k_\xff\xfe", b"fx1k_\xe2\x82\xac")
     ]
-    out["nonascii_x_api_key_uniform_401"] = nonascii_statuses == [401, 401]
+    malformed_env = _resolve_auth_unit(
+        api_mod,
+        _request([(b"x-api-key", b"fx1k_forged")]),
+        "\udcff",
+        store,
+    )
+    refusal_body = {
+        "error": {
+            "message": "invalid or missing API key",
+            "type": "authentication_error",
+            "param": None,
+            "code": "unauthorized",
+        }
+    }
+    out["nonascii_x_api_key_uniform_401"] = all(
+        _status_of(response) == 401 and json.loads(response.body) == refusal_body
+        for response in (*nonascii_responses, malformed_env)
+    )
     res_bearer = _resolve_auth_unit(
         api_mod,
         _request([(b"authorization", b"Bearer fx1k_\xff")]),
@@ -1413,9 +1433,10 @@ def auth_audit_bench() -> dict[str, Any]:
             "the compared bytes. Every malformed, absent, revoked, or "
             "expired credential gets the same uniform 401 — byte-"
             "identical bodies, no oracle for which entries exist — "
-            "including non-ASCII header bytes (compare_digest is fed "
-            "utf-8 encodings so an undecodable credential refuses "
-            "instead of faulting). Scope is literal membership: read "
+            "including non-ASCII header bytes and POSIX surrogate-escaped "
+            "environment values (compare_digest is fed utf-8 encodings "
+            "so malformed material refuses instead of faulting). Scope "
+            "is literal membership: read "
             "covers GET/HEAD/OPTIONS, write the mutating methods, admin "
             "the /harness/keys* + /harness/drain control plane on any "
             "method — no hierarchy (a write-only key cannot read, an "

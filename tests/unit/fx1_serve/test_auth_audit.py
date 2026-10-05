@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -133,7 +134,7 @@ def test_client_uses_private_state_and_closes_executor(
         client, _ = audit._client()
         raw, _ = audit._mint(client, {audit._H_KEY: audit._ROOT})
         assert audit._models(client, {audit._H_KEY: raw}).status_code == 200
-        executor = client.app.state.jobs_executor
+        executor = cast(Any, client.app).state.jobs_executor
         assert executor.submit(lambda: 3).result(timeout=1) == 3
     assert client.is_closed
     with pytest.raises(RuntimeError, match="shutdown"):
@@ -154,3 +155,19 @@ def test_refusal_code_reads_every_envelope_grammar() -> None:
     assert audit._code(Resp({"error": {"code": "insufficient_scope"}})) == "insufficient_scope"
     assert audit._code(Resp({"type": "error", "error": {"type": "authentication_error"}})) is None
     assert audit._code(Resp("not-json-dict")) is None
+
+
+def test_surrogateescaped_environment_key_fails_closed() -> None:
+    """Undecodable POSIX environment bytes must not escape as a 500."""
+    from fx1.serve.keys import ApiKeyStore
+
+    api_mod = import_module("fx1.serve.api")
+    store = ApiKeyStore()
+    store.mint()
+    response = audit._resolve_auth_unit(
+        api_mod,
+        audit._request([(b"x-api-key", b"fx1k_forged")]),
+        "\udcff",
+        store,
+    )
+    assert audit._status_of(response) == 401
