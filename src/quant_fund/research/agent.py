@@ -15375,6 +15375,14 @@ from quant_fund.research.benches_w1922 import (
     bench_painajainen_qa_studies_family,
     bench_tursas_qa_studies_family,
 )
+from quant_fund.research.benches_w1923 import (
+    bench_baigujing_qa_studies_family,
+    bench_hanba_qa_studies_family,
+    bench_jiuying_qa_studies_family,
+    bench_nian_qa_studies_family,
+    bench_wuzhiqi_qa_studies_family,
+    bench_xiangliu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
