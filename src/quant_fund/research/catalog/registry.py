@@ -6834,6 +6834,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "phi_am_qa_studies",
         "phi_hong_qa_studies",
         "phi_pha_qa_studies",
+        # Wave-1939 thai-demon-2 canon.
+        "phi_khao_qa_studies",
+        "phi_pret_qa_studies",
+        "phi_puay_qa_studies",
+        "phi_rai_qa_studies",
+        "phi_taen_qa_studies",
+        "phi_yuan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
