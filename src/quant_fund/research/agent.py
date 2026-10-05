@@ -14799,6 +14799,14 @@ from quant_fund.research.benches_w1850 import (
     bench_meghisen_qa_studies_family,
     bench_tanit2_qa_studies_family,
 )
+from quant_fund.research.benches_w1851 import (
+    bench_achaman_qa_studies_family,
+    bench_achuguayo_qa_studies_family,
+    bench_chaxiraxi_qa_studies_family,
+    bench_guayota_qa_studies_family,
+    bench_magec_qa_studies_family,
+    bench_tibicena_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

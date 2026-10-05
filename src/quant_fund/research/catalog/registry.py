@@ -6218,6 +6218,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ifri_qa_studies",
         "meghisen_qa_studies",
         "tanit2_qa_studies",
+        # Wave-1851 guanche-myth canon.
+        "achaman_qa_studies",
+        "achuguayo_qa_studies",
+        "chaxiraxi_qa_studies",
+        "guayota_qa_studies",
+        "magec_qa_studies",
+        "tibicena_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
