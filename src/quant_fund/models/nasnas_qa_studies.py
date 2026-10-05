@@ -7,7 +7,7 @@ def nasnas_qa_studies_ok(fit_ok: bool, sample_ok: bool) -> bool:
     """nasnas_qa_studies
 
     check:
-    nasnas_qa_studies: N
+    nasnas_qa_studies: h
     """
     return fit_ok and sample_ok
 
@@ -27,7 +27,7 @@ def _bench_nasnas_qa_studies(seed: int = 0) -> float:
     checks.append(not nasnas_qa_studies_ok(False, True))
     checks.append(nasnas_qa_studies_aux(True))
     checks.append(not nasnas_qa_studies_aux(False))
-    checks.append(True)  # jinn canon
+    checks.append(True)  # arabian-bestiary canon
     return float(sum(checks) / len(checks))
 
 
