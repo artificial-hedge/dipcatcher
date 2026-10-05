@@ -6806,6 +6806,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kalku_qa_studies",
         "peuchen_qa_studies",
         "wekufe_qa_studies",
+        # Wave-1935 andean-demon canon.
+        "anchancho_qa_studies",
+        "jarjacha_qa_studies",
+        "kharisiri_qa_studies",
+        "muki_qa_studies",
+        "pishtaco_qa_studies",
+        "sirenito_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
