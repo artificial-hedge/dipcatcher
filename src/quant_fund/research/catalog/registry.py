@@ -6715,6 +6715,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pukis_qa_studies",
         "spigana_qa_studies",
         "vilkacis_qa_studies",
+        # Wave-1922 finnish-demon canon.
+        "kalma_qa_studies",
+        "kratti_qa_studies",
+        "loviatar_qa_studies",
+        "nakki_qa_studies",
+        "painajainen_qa_studies",
+        "tursas_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

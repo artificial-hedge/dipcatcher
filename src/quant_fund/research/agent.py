@@ -15367,6 +15367,14 @@ from quant_fund.research.benches_w1921 import (
     bench_spigana_qa_studies_family,
     bench_vilkacis_qa_studies_family,
 )
+from quant_fund.research.benches_w1922 import (
+    bench_kalma_qa_studies_family,
+    bench_kratti_qa_studies_family,
+    bench_loviatar_qa_studies_family,
+    bench_nakki_qa_studies_family,
+    bench_painajainen_qa_studies_family,
+    bench_tursas_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
