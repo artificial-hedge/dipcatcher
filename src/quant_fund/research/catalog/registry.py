@@ -6680,6 +6680,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mahr_qa_studies",
         "poltergeist_qa_studies",
         "tatzelwurm_qa_studies",
+        # Wave-1917 celtic-demon canon.
+        "baobhan_sith_qa_studies",
+        "bean_nighe_qa_studies",
+        "boggart_qa_studies",
+        "fear_durach_qa_studies",
+        "glaistig_qa_studies",
+        "sluagh_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

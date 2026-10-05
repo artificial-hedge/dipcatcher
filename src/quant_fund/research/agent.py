@@ -15327,6 +15327,14 @@ from quant_fund.research.benches_w1916 import (
     bench_poltergeist_qa_studies_family,
     bench_tatzelwurm_qa_studies_family,
 )
+from quant_fund.research.benches_w1917 import (
+    bench_baobhan_sith_qa_studies_family,
+    bench_bean_nighe_qa_studies_family,
+    bench_boggart_qa_studies_family,
+    bench_fear_durach_qa_studies_family,
+    bench_glaistig_qa_studies_family,
+    bench_sluagh_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
