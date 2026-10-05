@@ -6743,6 +6743,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kyys_qa_studies",
         "oror_qa_studies",
         "urgut_qa_studies",
+        # Wave-1926 caucasus-demon canon.
+        "albasty_qa_studies",
+        "albi_qa_studies",
+        "chinka_qa_studies",
+        "furts_qa_studies",
+        "gorgogosh_qa_studies",
+        "rukhi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
