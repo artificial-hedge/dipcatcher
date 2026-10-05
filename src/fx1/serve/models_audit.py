@@ -86,14 +86,19 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import tempfile
 import threading
 import time
 from collections.abc import Iterator
-from contextlib import ExitStack, contextmanager
-from contextvars import ContextVar
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
+from fx1.serve.conv_audit import (
+    _RESOURCES,
+    _audit_context,
+    _GateBackend,
+    _temporary_directory,
+)
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -104,42 +109,6 @@ __all__ = ["models_audit", "models_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
 _ROOT = "k3y-material"
-_AUDIT_LOCK = threading.Lock()
-_RESOURCES: ContextVar[ExitStack] = ContextVar("models_audit_resources")
-
-
-@contextmanager
-def _audit_context() -> Iterator[None]:
-    """Restore ambient configuration and close all synthetic resources.
-
-    Run this diagnostic in a dedicated process: its environment and
-    rate-window overrides are process-wide, not application configuration.
-    The lock serializes calls made through this module.
-    """
-    with _AUDIT_LOCK:
-        saved = {
-            name: value
-            for name, value in os.environ.items()
-            if name.startswith("FX1_") or name == "MOONSHOT_API_KEY"
-        }
-        for name in saved:
-            os.environ.pop(name, None)
-        try:
-            with ExitStack() as resources:
-                token = _RESOURCES.set(resources)
-                try:
-                    yield
-                finally:
-                    _RESOURCES.reset(token)
-        finally:
-            for name in list(os.environ):
-                if name.startswith("FX1_") or name == "MOONSHOT_API_KEY":
-                    os.environ.pop(name, None)
-            os.environ.update(saved)
-
-
-def _temporary_directory() -> Path:
-    return Path(_RESOURCES.get().enter_context(tempfile.TemporaryDirectory(prefix="models_audit_")))
 
 
 _MODEL = "byok"
@@ -171,47 +140,23 @@ class _StubBackend:
         self.calls += 1
         return f"stub:{messages[-1]['content']}"
 
-    def embeddings(
-        self,
-        input: Any,  # noqa: A002 — the wire field's own name
-        *,
-        model: str,
-        encoding_format: str | None = None,
-        dimensions: int | None = None,
-        user: str | None = None,
-    ) -> Any:
+    def embeddings(self, input: Any, *, model: str, **extra: Any) -> Any:  # noqa: A002
+        """Echo-shaped ``EmbeddingResult``; records the model the wire sent."""
         from fx1.serve.backends import EmbeddingResult
 
-        del encoding_format, dimensions, user
+        del extra
         self.seen_model = model
-        n = (
-            len(input)
-            if isinstance(input, list) and input and isinstance(input[0], (str, list))
-            else 1
-        )
-        data = tuple({"object": "embedding", "index": i, "embedding": [0.1, 0.2]} for i in range(n))
+        count = len(input) if isinstance(input, (list, tuple)) else 1
         return EmbeddingResult(
-            data=data, model=model, usage={"prompt_tokens": 1, "total_tokens": 1}
+            data=tuple(
+                {"object": "embedding", "index": i, "embedding": [0.1, 0.2]} for i in range(count)
+            ),
+            model=model,
+            usage={"prompt_tokens": 1, "total_tokens": 1},
         )
 
     def close(self) -> None:
         pass
-
-
-class _GateBackend(_StubBackend):
-    """Blocks ``complete`` on a gate — deterministic mid-flight windows:
-    ``entered`` marks the worker sitting inside the backend call, so a
-    probe can land a delete exactly while the turn is in flight."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.gate = threading.Event()
-        self.entered = threading.Event()
-
-    def complete(self, messages: list[dict[str, Any]], *, sampling: Any = None) -> str:
-        self.entered.set()
-        self.gate.wait(30)
-        return super().complete(messages, sampling=sampling)
 
 
 class _Resolver:
@@ -245,6 +190,23 @@ def _spy_resolver() -> _Resolver:
     )
 
 
+@contextmanager
+def _api_key_env(api_key: str | None) -> Iterator[None]:
+    """Scope the env root key to one app construction, then restore."""
+    previous = os.environ.get(_API_KEY_ENV)
+    if api_key is None:
+        os.environ.pop(_API_KEY_ENV, None)
+    else:
+        os.environ[_API_KEY_ENV] = api_key
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = previous
+
+
 def _client(
     resolver: _Resolver | None = None,
     *,
@@ -258,37 +220,24 @@ def _client(
     import fx1.serve.api as api_mod
     from fx1.harness import Harness
 
-    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-        return 0, "ok", ""
-
-    resources = _RESOURCES.get()
     isolated = _temporary_directory()
     receipts = isolated / "receipts"
     receipts.mkdir()
-    saved_key = os.environ.get(_API_KEY_ENV)
-    try:
-        if api_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = api_key
+    with _api_key_env(api_key):
         app = api_mod.create_app(
-            harness=Harness(runner=fake_runner),
+            harness=Harness(runner=lambda argv, timeout_s: (0, "ok", "")),
             backend_resolver=resolver if resolver is not None else _spy_resolver(),
             state_dir=state_dir if state_dir is not None else isolated / "state",
             receipts_dir=receipts,
             ft_runner=ft_runner if ft_runner is not None else _ok_runner,
             ft_dir=isolated / "fine_tuning",
         )
-        resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
-        client = TestClient(app, raise_server_exceptions=False)
-        resources.callback(client.close)
-        resources.enter_context(client)
-        return client, api_mod
-    finally:
-        if saved_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = saved_key
+    resources = _RESOURCES.get()
+    resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
+    client = TestClient(app, raise_server_exceptions=False)
+    resources.callback(client.close)
+    resources.enter_context(client)
+    return client, api_mod
 
 
 def _ok_runner(spec: Any, *, emit: Any, should_cancel: Any) -> Any:
@@ -343,9 +292,8 @@ def _message(client: TestClient, model: str, **kw: Any) -> Any:
 
 
 def _err(resp: Any) -> dict[str, Any]:
-    body = resp.json()
-    err = body.get("error")
-    return err if isinstance(err, dict) else {}
+    err = resp.json().get("error")
+    return dict(err) if isinstance(err, dict) else {}
 
 
 def _is_openai_envelope(resp: Any) -> bool:
