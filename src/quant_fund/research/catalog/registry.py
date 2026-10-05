@@ -6127,6 +6127,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leto2_qa_studies",
         "trqqiz2_qa_studies",
         "xssentimi2_qa_studies",
+        # Wave-1838 palmyrene-myth canon.
+        "aglibol2_qa_studies",
+        "astarte2_qa_studies",
+        "baalshamin2_qa_studies",
+        "bel2_qa_studies",
+        "malakbel2_qa_studies",
+        "yarhibol2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
