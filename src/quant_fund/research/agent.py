@@ -14919,6 +14919,14 @@ from quant_fund.research.benches_w1865 import (
     bench_owen_qa_studies_family,
     bench_rheged_qa_studies_family,
 )
+from quant_fund.research.benches_w1866 import (
+    bench_avilion_qa_studies_family,
+    bench_balan_qa_studies_family,
+    bench_ector_qa_studies_family,
+    bench_hector_cameliard_qa_studies_family,
+    bench_seneschal_qa_studies_family,
+    bench_ynis_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
