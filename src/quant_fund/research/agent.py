@@ -15207,6 +15207,14 @@ from quant_fund.research.benches_w1901 import (
     bench_mapinguari_qa_studies_family,
     bench_saci_qa_studies_family,
 )
+from quant_fund.research.benches_w1902 import (
+    bench_ao_andon_qa_studies_family,
+    bench_hannya_oni_qa_studies_family,
+    bench_kamaitachi_qa_studies_family,
+    bench_nurarihyon_qa_studies_family,
+    bench_shuten_doji_qa_studies_family,
+    bench_tsuchigumo_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
