@@ -1173,10 +1173,16 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
   transition and cancel/evict across the async surface appends to a
   hash-chained JSONL journal (fsync'd per append): `jobs.jsonl`,
   `evals.jsonl`, `batches.jsonl`, `abatches.jsonl`, `ft_jobs.jsonl`,
-  `files.jsonl` + `files/<id>.bin` blob files, and
+  `files.jsonl` + `files/<id>.bin` blob files,
+  `conversations.jsonl` (each `/v1/conversations` mutation — create,
+  metadata replace, item append/delete, turn append, delete — with
+  the item lists, so containers and contents both survive), and
   `idem_{runs,complete,complete_batch,openai}.jsonl`. On boot each chain is verified line-by-line — a torn
   tail or edited line truncates at the first bad record — and the
-  stores are rebuilt: terminal records return as-was, anything still
+  stores are rebuilt. Conversation journals are stricter: a damaged chain
+  or malformed operation refuses startup without rewriting the file, because
+  lost history may contain a deletion. Restore a verified backup before
+  reopening that store. For the async job stores, terminal records return as-was, anything still
   `queued`/`running`/`validating`/`in_progress`/`finalizing`/
   `cancelling` at the crash recovers as `failed` with a
   restart-explaining `error` (payloads are not journaled, so nothing is
@@ -1195,9 +1201,9 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
   cannot deliver post-restart. Boot compacts each journal to live
   records. Unset = the same in-memory stores as before. The in-process
   SDK binds the same journals: `Fx1Harness(state_dir=...)` (or the
-  `FX1_SDK_STATE_DIR` env var) journals evals and fine-tune jobs with
-  identical restart semantics — a mid-eval crash recovers as `failed`,
-  terminal records return as-was.
+  `FX1_SDK_STATE_DIR` env var) journals evals, fine-tune jobs, API
+  keys, and conversations with identical restart semantics — a
+  mid-eval crash recovers as `failed`, terminal records return as-was.
 
 The same contract applies on the OpenAI-compatible async surfaces:
 `POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept
