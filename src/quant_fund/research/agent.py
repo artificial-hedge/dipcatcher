@@ -14983,6 +14983,14 @@ from quant_fund.research.benches_w1873 import (
     bench_paotr_bugel_qa_studies_family,
     bench_santez_nonna_qa_studies_family,
 )
+from quant_fund.research.benches_w1874 import (
+    bench_arkan_sonney_qa_studies_family,
+    bench_dozmary_qa_studies_family,
+    bench_loaghtan_qa_studies_family,
+    bench_shooil_ghoul_qa_studies_family,
+    bench_sleih_beggey_qa_studies_family,
+    bench_ushtey_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

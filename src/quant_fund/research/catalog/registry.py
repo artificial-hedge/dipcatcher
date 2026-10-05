@@ -6379,6 +6379,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "noz_vat_qa_studies",
         "paotr_bugel_qa_studies",
         "santez_nonna_qa_studies",
+        # Wave-1874 manx-myth-2 canon.
+        "arkan_sonney_qa_studies",
+        "dozmary_qa_studies",
+        "loaghtan_qa_studies",
+        "shooil_ghoul_qa_studies",
+        "sleih_beggey_qa_studies",
+        "ushtey_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
