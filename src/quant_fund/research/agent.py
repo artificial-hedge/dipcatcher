@@ -15279,6 +15279,14 @@ from quant_fund.research.benches_w1910 import (
     bench_nasu_demon_qa_studies_family,
     bench_yalburz_qa_studies_family,
 )
+from quant_fund.research.benches_w1911 import (
+    bench_divsalar_qa_studies_family,
+    bench_khrafstra_qa_studies_family,
+    bench_leshenka_qa_studies_family,
+    bench_pari_vatra_qa_studies_family,
+    bench_srosh_demon_qa_studies_family,
+    bench_urvan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
