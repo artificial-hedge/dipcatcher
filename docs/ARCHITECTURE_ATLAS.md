@@ -245,7 +245,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|42| quant_fund_research
+  quant_fund_cli -->|45| quant_fund_research
   quant_fund_cli -->|2| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|10| quant_fund_utils
@@ -317,7 +317,7 @@ flowchart LR
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
   quant_fund_models -->|53| quant_fund_metrics
-  quant_fund_models -->|1| quant_fund_microstructure
+  quant_fund_models -->|3| quant_fund_microstructure
   quant_fund_models -->|3| quant_fund_pipeline
   quant_fund_models -->|4| quant_fund_research
   quant_fund_models -->|2| quant_fund_schemas
@@ -653,7 +653,7 @@ sequenceDiagram
 | `quant_fund.audit` | 11 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 17 |
+| `quant_fund.cli` | 18 |
 | `quant_fund.compute` | 3 |
 | `quant_fund.config` | 3 |
 | `quant_fund.data` | 42 |
@@ -671,7 +671,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
 | `quant_fund.microstructure` | 52 |
-| `quant_fund.models` | 222 |
+| `quant_fund.models` | 223 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -698,7 +698,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **1246**
+- Modules scanned: **1248**
 - Packages: **70**
 - Cross-package import edges: **300**
 

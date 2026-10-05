@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1246,
+  "module_count": 1248,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -2923,6 +2923,10 @@
       "src": "quant_fund.cli"
     },
     {
+      "dst": "quant_fund.cli.benchmark_cmds",
+      "src": "quant_fund.cli._app"
+    },
+    {
       "dst": "quant_fund.cli.blueprint_cmds",
       "src": "quant_fund.cli._app"
     },
@@ -3005,6 +3009,22 @@
     {
       "dst": "quant_fund.cli._app",
       "src": "quant_fund.cli.audit_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.benchmark_cmds"
+    },
+    {
+      "dst": "quant_fund.research.net_tournament",
+      "src": "quant_fund.cli.benchmark_cmds"
+    },
+    {
+      "dst": "quant_fund.research.ranker_probability",
+      "src": "quant_fund.cli.benchmark_cmds"
+    },
+    {
+      "dst": "quant_fund.research.real_benchmark",
+      "src": "quant_fund.cli.benchmark_cmds"
     },
     {
       "dst": "quant_fund.execution.ml_router",
@@ -6095,6 +6115,14 @@
       "src": "quant_fund.models.asset_pricing"
     },
     {
+      "dst": "quant_fund.microstructure.rl_market_maker",
+      "src": "quant_fund.models.c51_rl"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.models.c51_rl"
+    },
+    {
       "dst": "quant_fund.models.base",
       "src": "quant_fund.models.calibration"
     },
@@ -8912,6 +8940,10 @@
     },
     {
       "dst": "quant_fund.research.allocation",
+      "src": "quant_fund.research.allocation_cli"
+    },
+    {
+      "dst": "quant_fund.research.allocation.engines",
       "src": "quant_fund.research.allocation_cli"
     },
     {
@@ -12033,6 +12065,7 @@
     "quant_fund.cli._app",
     "quant_fund.cli.app",
     "quant_fund.cli.audit_cmds",
+    "quant_fund.cli.benchmark_cmds",
     "quant_fund.cli.blueprint_cmds",
     "quant_fund.cli.book_cmds",
     "quant_fund.cli.data_cmds",
@@ -12336,6 +12369,7 @@
     "quant_fund.models.bayesian",
     "quant_fund.models.bond_analytics",
     "quant_fund.models.bvar",
+    "quant_fund.models.c51_rl",
     "quant_fund.models.calibration",
     "quant_fund.models.carr_madan",
     "quant_fund.models.causal_panel",
@@ -13365,7 +13399,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 37,
+      "imports": 39,
       "src": "quant_fund.cli"
     },
     {
@@ -13475,7 +13509,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 42,
+      "imports": 45,
       "src": "quant_fund.cli"
     },
     {
@@ -13920,7 +13954,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 1,
+      "imports": 3,
       "src": "quant_fund.models"
     },
     {
@@ -14490,7 +14524,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 231,
+      "imports": 232,
       "src": "quant_fund.research"
     },
     {

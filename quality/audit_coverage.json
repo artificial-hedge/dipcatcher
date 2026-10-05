@@ -547,6 +547,13 @@
       "evidence": [
         "tests/unit/research/test_explainability_cli.py"
       ]
+    },
+    "models/c51_rl.py": {
+      "status": "partial",
+      "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
+      "evidence": [
+        "tests/unit/models/test_c51_rl.py"
+      ]
     }
   },
   "schema_version": "audit-coverage/v1",
