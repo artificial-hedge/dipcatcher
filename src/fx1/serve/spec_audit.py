@@ -338,7 +338,12 @@ def _check(val: Any, spec: Any, path: str) -> str | None:
     if isinstance(spec, dict):
         return _require_shape(val, spec, path)
     if isinstance(spec, frozenset):
-        return None if val in spec else f"{path}: {val!r} outside vendor enum"
+        try:
+            allowed = val in spec
+        except TypeError:
+            # JSON containers are malformed enum values, not audit crashes.
+            allowed = False
+        return None if allowed else f"{path}: {val!r} outside vendor enum"
     if isinstance(spec, tuple):
         return (
             None

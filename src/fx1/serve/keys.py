@@ -53,6 +53,7 @@ Honesty rules:
 from __future__ import annotations
 
 import hashlib
+import math
 import secrets
 import threading
 import time
@@ -124,6 +125,15 @@ class KeyStoreError(RuntimeError):
 
 def _hash(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 class ApiKeyStore:
@@ -209,8 +219,8 @@ class ApiKeyStore:
         usage charged by the wire after each served response."""
         if rpm is not None and rpm < 1:
             raise ValueError("rpm must be >= 1")
-        if ttl_s is not None and ttl_s <= 0:
-            raise ValueError("ttl_s must be > 0")
+        if ttl_s is not None and (not _is_finite_number(ttl_s) or ttl_s <= 0):
+            raise ValueError("ttl_s must be finite and > 0")
         if max_requests is not None and max_requests < 1:
             raise ValueError("max_requests must be >= 1")
         if max_tokens is not None and max_tokens < 1:
@@ -219,6 +229,9 @@ class ApiKeyStore:
         raw = KEY_PREFIX + secrets.token_hex(20)
         sha = _hash(raw)
         created = self._clock()
+        expires_at = (created + ttl_s) if ttl_s is not None else None
+        if expires_at is not None and not _is_finite_number(expires_at):
+            raise ValueError("ttl_s must produce a finite expires_at")
         rec: dict[str, Any] = {
             "key_id": sha[:16],
             "prefix": raw[:13],
@@ -232,7 +245,7 @@ class ApiKeyStore:
             # ``uses`` and charged post-response off the completion log.
             "tokens_used": 0,
             "created_at": created,
-            "expires_at": (created + ttl_s) if ttl_s is not None else None,
+            "expires_at": expires_at,
             "enabled": True,
             "revoked_at": None,
             "uses": 0,
@@ -247,14 +260,37 @@ class ApiKeyStore:
             self._by_id[rec["key_id"]] = sha
         return raw, _wire(rec)
 
-    def authenticate(self, raw: str) -> dict[str, Any] | None:
+    def _consume_window(self, rec: dict[str, Any], now: float) -> None:
+        """Take one slot in the key's declared ``rpm`` window, or raise
+        ``rate_limited`` when the window is exhausted. Mutates ``rec``'s
+        private ``_window_*`` fields; caller holds ``self._lock``."""
+        rpm = rec.get("rpm")
+        if rpm is None:
+            return
+        start = rec.get("_window_start")
+        if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
+            rec["_window_start"] = now
+            rec["_window_count"] = 0
+        if rec["_window_count"] >= rpm:
+            retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
+            raise KeyStoreError(
+                "rate_limited",
+                f"key exceeds its {rpm}/min request limit",
+                retry_after=retry,
+                key_id=rec["key_id"],
+            )
+        rec["_window_count"] += 1
+
+    def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
         Bumps the live use counters (not journaled).
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
-        answering — the wire maps that to 429. Refusals do not count
-        as uses."""
+        answering — the wire maps that to 429. ``required_scope`` is the
+        authorization bound the request needs: a key missing it raises
+        ``insufficient_scope`` — the wire maps that to 403. Refusals do
+        not count as uses."""
         if not isinstance(raw, str) or not raw.startswith(KEY_PREFIX):
             return None
         now = self._clock()
@@ -263,7 +299,7 @@ class ApiKeyStore:
             if rec is None or not rec["enabled"]:
                 return None
             expires = rec.get("expires_at")
-            if expires is not None and now >= expires:
+            if expires is not None and (not _is_finite_number(expires) or now >= expires):
                 return None
             # hard budgets refuse before the rate window — an exhausted
             # key never consumes a window slot
@@ -281,21 +317,15 @@ class ApiKeyStore:
                     f"key exhausted its {max_tok} token budget",
                     key_id=rec["key_id"],
                 )
-            rpm = rec.get("rpm")
-            if rpm is not None:
-                start = rec.get("_window_start")
-                if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
-                    rec["_window_start"] = now
-                    rec["_window_count"] = 0
-                if rec["_window_count"] >= rpm:
-                    retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
-                    raise KeyStoreError(
-                        "rate_limited",
-                        f"key exceeds its {rpm}/min request limit",
-                        retry_after=retry,
-                        key_id=rec["key_id"],
-                    )
-                rec["_window_count"] += 1
+            # the scope check runs before any counter moves — a denied
+            # call never counts as a use nor consumes a window slot
+            if required_scope is not None and required_scope not in (rec.get("scopes") or []):
+                raise KeyStoreError(
+                    "insufficient_scope",
+                    f"key lacks required scope {required_scope!r}",
+                    key_id=rec["key_id"],
+                )
+            self._consume_window(rec, now)
             rec["uses"] += 1
             rec["last_used_at"] = now
             return _wire(rec)

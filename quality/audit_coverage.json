@@ -96,13 +96,15 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 181,
-      "status": "audited"
+      "n_modules": 182,
+      "status": "partial",
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 369,
-      "status": "audited"
+      "n_modules": 10396,
+      "status": "partial",
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
     "monitoring": {
       "doc": "docs/AUDIT_FRONTIER.md",
@@ -175,8 +177,9 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 196,
-      "status": "audited"
+      "n_modules": 1857,
+      "status": "partial",
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
     "risk": {
       "doc": "docs/AUDIT_FRONTIER.md",

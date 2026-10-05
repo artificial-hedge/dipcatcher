@@ -203,6 +203,71 @@ pub fn bollinger(close: &[f64], window: usize, num_sd: f64) -> [Vec<f64>; 5] {
         let span = upper[i] - lower[i];
         pct_b[i] = (close[i] - lower[i]) / span;
         bandwidth[i] = span / mid[i];
+        // Match the Python reference for zero-width bands, zero midpoints,
+        // and overflow: undefined ratios are NaN, never escaped infinities.
+        if !pct_b[i].is_finite() {
+            pct_b[i] = f64::NAN;
+        }
+        if !bandwidth[i].is_finite() {
+            bandwidth[i] = f64::NAN;
+        }
     }
     [mid, upper, lower, pct_b, bandwidth]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bollinger;
+
+    #[test]
+    fn bollinger_zero_width_percentage_is_nan() {
+        // Cumsum cancellation makes the second midpoint differ by an ulp.
+        let [mid, upper, lower, pct_b, bandwidth] = bollinger(&[1.0, 7.492], 1, 2.0);
+        assert_ne!(mid[1], 7.492);
+        assert_eq!(upper, mid);
+        assert_eq!(lower, mid);
+        assert!(pct_b.iter().all(|value| value.is_nan()));
+        assert_eq!(bandwidth, vec![0.0, 0.0]);
+    }
+
+    #[test]
+    fn bollinger_zero_midpoint_bandwidth_is_nan() {
+        let [mid, upper, lower, pct_b, bandwidth] = bollinger(&[-1.0, 1.0], 2, 2.0);
+        assert_eq!(mid[1], 0.0);
+        assert_eq!(upper[1], 2.0);
+        assert_eq!(lower[1], -2.0);
+        assert_eq!(pct_b[1], 0.75);
+        assert!(bandwidth[1].is_nan());
+    }
+
+    #[test]
+    fn bollinger_overflowed_bandwidth_is_nan() {
+        let [_, upper, lower, pct_b, bandwidth] = bollinger(&[0.0, 2.0], 2, f64::MAX);
+        assert!(upper[1].is_finite());
+        assert!(lower[1].is_finite());
+        assert_eq!(pct_b[1], 0.0);
+        assert!(bandwidth[1].is_nan());
+    }
+
+    #[test]
+    fn bollinger_preserves_finite_ratios_and_warmup() {
+        for values in [[1.0, 3.0], [-3.0, -1.0]] {
+            let [mid, upper, lower, pct_b, bandwidth] = bollinger(&values, 2, 2.0);
+            for output in [&mid, &upper, &lower, &pct_b, &bandwidth] {
+                assert!(output[0].is_nan());
+            }
+            assert_eq!(pct_b[1], 0.75);
+            assert_eq!(bandwidth[1], 4.0 / mid[1]);
+        }
+    }
+
+    #[test]
+    fn bollinger_flat_zero_band_ratios_are_nan() {
+        let [mid, upper, lower, pct_b, bandwidth] = bollinger(&[0.0, 0.0, 0.0], 2, 2.0);
+        assert_eq!(&mid[1..], &[0.0, 0.0]);
+        assert_eq!(&upper[1..], &[0.0, 0.0]);
+        assert_eq!(&lower[1..], &[0.0, 0.0]);
+        assert!(pct_b.iter().all(|value| value.is_nan()));
+        assert!(bandwidth.iter().all(|value| value.is_nan()));
+    }
 }

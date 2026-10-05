@@ -46,3 +46,21 @@ def test_require_shape_unit() -> None:
     assert _require_shape({"a": True, "c": []}, schema) is not None  # bool is not int
     assert _require_shape({"a": 1, "c": [{"d": "z"}]}, schema) is not None
     assert _require_shape([], schema) is not None
+
+
+@pytest.mark.parametrize("value", [[], {}])
+def test_require_shape_enum_container_is_a_violation(value: object) -> None:
+    schema = {"responses": [{"status": frozenset({"completed"})}]}
+    assert _require_shape({"responses": [{"status": value}]}, schema) == (
+        f"$.responses[0].status: {value!r} outside vendor enum"
+    )
+
+
+@pytest.mark.parametrize("value", [[], {}])
+def test_require_shape_enum_union_container_is_a_violation(value: object) -> None:
+    schema = {"status": (frozenset({"completed"}), type(None))}
+    assert _require_shape({"status": value}, schema) == (
+        f"$.status: {value!r} matches no allowed alternative"
+    )
+    assert _require_shape({"status": None}, schema) is None
+    assert _require_shape({"status": "completed"}, schema) is None
