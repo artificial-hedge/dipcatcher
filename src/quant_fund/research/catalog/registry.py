@@ -6008,6 +6008,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "xihe2_qa_studies",
         "yandi2_qa_studies",
         "yaoji2_qa_studies",
+        # Wave-1821 japanese-myth-9 canon.
+        "benzaiten2_qa_studies",
+        "daikoku2_qa_studies",
+        "ebisu2_qa_studies",
+        "fukurokuju2_qa_studies",
+        "hotei2_qa_studies",
+        "juroujin2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
