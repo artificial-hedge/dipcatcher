@@ -6624,6 +6624,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "jurupari_qa_studies",
         "lobisomem_qa_studies",
         "mula_sem_cabeca_qa_studies",
+        # Wave-1909 persian-daeva canon.
+        "aeshma_qa_studies",
+        "astwihad_qa_studies",
+        "azhi_dahaka_qa_studies",
+        "druj_qa_studies",
+        "jahi_qa_studies",
+        "nasu_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

@@ -15263,6 +15263,14 @@ from quant_fund.research.benches_w1908 import (
     bench_lobisomem_qa_studies_family,
     bench_mula_sem_cabeca_qa_studies_family,
 )
+from quant_fund.research.benches_w1909 import (
+    bench_aeshma_qa_studies_family,
+    bench_astwihad_qa_studies_family,
+    bench_azhi_dahaka_qa_studies_family,
+    bench_druj_qa_studies_family,
+    bench_jahi_qa_studies_family,
+    bench_nasu_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
