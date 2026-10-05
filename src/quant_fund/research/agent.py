@@ -15607,6 +15607,14 @@ from quant_fund.research.benches_w1951 import (
     bench_naberius_qa_studies_family,
     bench_ronove_qa_studies_family,
 )
+from quant_fund.research.benches_w1952 import (
+    bench_alloces_qa_studies_family,
+    bench_balam_qa_studies_family,
+    bench_camio_qa_studies_family,
+    bench_foras_qa_studies_family,
+    bench_furcas_qa_studies_family,
+    bench_gaap_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

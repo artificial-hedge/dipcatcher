@@ -6925,6 +6925,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "glasya_labolas_qa_studies",
         "naberius_qa_studies",
         "ronove_qa_studies",
+        # Wave-1952 goetic-decree canon.
+        "alloces_qa_studies",
+        "balam_qa_studies",
+        "camio_qa_studies",
+        "foras_qa_studies",
+        "furcas_qa_studies",
+        "gaap_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
