@@ -1638,6 +1638,8 @@ class JobStatusResponse(_Model):
     callback_url: str | None = None
     callback_status: Literal["delivered", "failed"] | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
     callback_error: str | None = None
     callback_attempts: int = 0
 
@@ -2015,10 +2017,18 @@ def _deliver_callback(
     worker and never changes the record's own status. Transient faults
     (network errors, 5xx) retry ``WEBHOOK_MAX_ATTEMPTS`` times with
     capped backoff; a 4xx is a definitive rejection and is never
-    retried."""
+    retried. Fire-once: the first call for a record wins the
+    ``_callback_fired`` flag under ``_callback_lock`` — duplicate terminal
+    transitions (a repeated DELETE on a cancelled record, a cancel+
+    complete race, expiry-on-read re-projects) never re-deliver. Recovery
+    also claims this flag because callback secrets are never journaled."""
     url = rec.callback_url
     if not url:
         return
+    with rec._callback_lock:
+        if rec._callback_fired:
+            return
+        rec._callback_fired = True
     payload = body if body is not None else rec.model_dump_json().encode()
     ok, err, attempts = deliver_signed(url, rec._callback_secret, payload)
     rec.callback_status = "delivered" if ok else "failed"
@@ -2111,8 +2121,10 @@ def _submit_job(
             job.error = f"{type(exc).__name__}: {exc}"
             job.status = "failed"
         finally:
+            # stamp finished_at before the webhook fires — the delivered
+            # record is the final record, never a pre-terminal snapshot
+            job.finished_at = time.time()
             _deliver_callback(job)
-        job.finished_at = time.time()
         job_store.mark(job)
         metrics.release()
         inflight.release()
@@ -2655,6 +2667,8 @@ class _JobStore:
                 if "job" not in payload:
                     continue
                 job = JobStatusResponse.model_validate(payload["job"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                job._callback_fired = True
                 self._jobs[job.job_id] = job
                 self._jobs.move_to_end(job.job_id)
                 key, fp = payload.get("key"), payload.get("fp")
@@ -3002,6 +3016,8 @@ class _BatchStore:
                 if "batch" not in payload:
                     continue
                 batch = _BatchRecord.model_validate(payload["batch"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                batch._callback_fired = True
                 self._batches[batch.batch_id] = batch
                 self._batches.move_to_end(batch.batch_id)
             for batch in self._batches.values():
@@ -3121,6 +3137,8 @@ class _AnthropicBatchStore:
                 if "batch" not in payload:
                     continue
                 batch = _AnthropicBatchRecord.model_validate(payload["batch"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                batch._callback_fired = True
                 self._batches[batch.batch_id] = batch
                 self._batches.move_to_end(batch.batch_id)
             for batch in self._batches.values():
@@ -5508,10 +5526,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         once — expiry-on-read is a terminal transition too."""
         if not batch.callback_url or batch.status != "ended":
             return
-        with batch._callback_lock:
-            if batch._callback_fired:
-                return
-            batch._callback_fired = True
         _deliver_callback(
             batch,
             body=json.dumps(anthropic_batch_object(batch.model_dump(mode="json"))).encode(),
@@ -7088,10 +7102,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         The first terminal transition fires; expiry-on-read is one."""
         if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
             return
-        with batch._callback_lock:
-            if batch._callback_fired:
-                return
-            batch._callback_fired = True
         _deliver_callback(
             batch,
             body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),

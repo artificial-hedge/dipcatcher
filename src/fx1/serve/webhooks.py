@@ -99,8 +99,16 @@ def check_callback_url(url: str | None) -> str | None:
     import urllib.parse  # noqa: PLC0415 — local import keeps the module leaf
 
     parsed = urllib.parse.urlparse(url)
-    if parsed.scheme not in ("http", "https") or not parsed.netloc:
-        raise ValueError(f"callback_url must be an http(s) URL with a host, got {url!r}")
+    if (
+        parsed.scheme not in ("http", "https")
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        raise ValueError(
+            f"callback_url must be an http(s) URL with a host and no "
+            f"userinfo credentials, got {url!r}"
+        )
     return url
 
 
