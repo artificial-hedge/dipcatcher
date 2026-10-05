@@ -8934,7 +8934,14 @@ def _resolve_auth(
             auth_hdr = request.headers.get("Authorization", "")
             if auth_hdr.startswith("Bearer "):
                 provided = auth_hdr[len("Bearer ") :]
-        if provided and api_key and hmac.compare_digest(provided, api_key):
+        # compare_digest refuses non-ASCII str; the utf-8 encodings keep
+        # the comparison byte-exact so a non-ASCII credential refuses
+        # 401 like any other dead credential instead of faulting.
+        if (
+            provided
+            and api_key
+            and hmac.compare_digest(provided.encode("utf-8"), api_key.encode("utf-8"))
+        ):
             return ("env", True, None)
         if provided:
             key_rec = key_store.authenticate(
