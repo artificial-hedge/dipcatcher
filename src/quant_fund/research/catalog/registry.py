@@ -6344,6 +6344,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hadad_punic_qa_studies",
         "moloch_punic_qa_studies",
         "reshef_punic_qa_studies",
+        # Wave-1869 breton-myth canon.
+        "ankou_qa_studies",
+        "gwalarn_qa_studies",
+        "korrigan_qa_studies",
+        "mari_morgen_qa_studies",
+        "tangi_qa_studies",
+        "yeun_elez_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
