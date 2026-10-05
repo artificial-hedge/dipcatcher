@@ -15305,10 +15305,7 @@ from quant_fund.research.benches_w1913 import (
 )
 from quant_fund.research.benches_w1914 import (
     bench_ghul_qa_studies_family,
-    bench_ifrit_qa_studies_family,
     bench_jann_qa_studies_family,
-    bench_marid_qa_studies_family,
-    bench_nasnas_qa_studies_family,
     bench_shaitan_qa_studies_family,
 )
 from quant_fund.research.benches_w1915 import (
