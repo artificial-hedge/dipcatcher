@@ -1863,8 +1863,11 @@ def _responses_replay_frames(
         if env is None:
             return
         events = list(openai_response_replay_events(env))
-        for i in range(cursor, len(events)):
-            event, payload = events[i]
+        for i, (event, payload) in enumerate(events):
+            # the cursor is request input — compare, never bound the loop
+            # on it (a huge starting_after just skips, it can't extend)
+            if i < cursor:
+                continue
             yield _frame(event, payload, i)
         if env.get("status") in OPENAI_RESPONSE_TERMINAL:
             return
