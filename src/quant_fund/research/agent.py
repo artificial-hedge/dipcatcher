@@ -15255,6 +15255,14 @@ from quant_fund.research.benches_w1907 import (
     bench_obayifo_qa_studies_family,
     bench_ogboni_qa_studies_family,
 )
+from quant_fund.research.benches_w1908 import (
+    bench_anhanga_qa_studies_family,
+    bench_bolotnik_qa_studies_family,
+    bench_dvorovoy_qa_studies_family,
+    bench_jurupari_qa_studies_family,
+    bench_lobisomem_qa_studies_family,
+    bench_mula_sem_cabeca_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
