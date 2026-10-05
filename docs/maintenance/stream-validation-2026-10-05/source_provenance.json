@@ -1,0 +1,259 @@
+{
+  "base_main_sha": "3fc9c007a111bd10c1f407b93d93b69ab64dca9b",
+  "validation_commit_sha": "90b98a882bbb314074c8944081d6921be744f4b8",
+  "validation_tree_sha": "08785154226ecab69e5ce7e87f4b432fb5fe2b95",
+  "validation_commit_is_local_only": true,
+  "source_basis": "Exact network-fetched current-main checkout, followed by frozen reviewed #2781 and corrected #2801 overlays. All overlay base/result blobs checked.",
+  "overlay_manifests": [
+    "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/input_manifests/2781.json",
+    "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/input_manifests/2801.json"
+  ],
+  "overlay_files": [
+    {
+      "pr": 2781,
+      "path": "clients/typescript/fx1/client.ts",
+      "base_blob": "865a3d5491a15be7ce5ccf052c91d393187f34a6",
+      "result_blob": "6d1482321b8e06004e23e05810600a79acb4b6e7",
+      "sha256": "e7c9d085a6380ee11c2ecd39b6a114483c0c34ee74afc947b2bc29ea8061420f"
+    },
+    {
+      "pr": 2781,
+      "path": "clients/typescript/fx1/openapi.json",
+      "base_blob": "ee1e456c203d10d9b6be16617cbff84adbea3ee7",
+      "result_blob": "9adcc6a9088ef902c50e91c4a5238cb617c92e3b",
+      "sha256": "11a1951518452f4cc1f63f605c08eda87392d59fdfff43f29e6e8aab116c1811"
+    },
+    {
+      "pr": 2781,
+      "path": "clients/typescript/fx1/schema.d.ts",
+      "base_blob": "0c4c4a8d9b33d662d48ad15a05a9a758abdd1701",
+      "result_blob": "797c636028f1921bf60f78ce41be491501c4eb85",
+      "sha256": "3c62e2277c460fa14ef0636014c9960aa3b37c9baa3a00cf51d1785d869e4571"
+    },
+    {
+      "pr": 2781,
+      "path": "docs/FX1_HARNESS_API.md",
+      "base_blob": "9fd97488aa83d43d9f5e6bef654cce9fb3db5ee4",
+      "result_blob": "202a0d1a14fa9fc7d6abfd917bdd85521c7715a4",
+      "sha256": "88d3db25cc0df110d06e6b81ebbf4ad09875f6c2efa7b38f5dc9710b51a40427"
+    },
+    {
+      "pr": 2781,
+      "path": "quality/fx1_openapi_surface.json",
+      "base_blob": "00534ef8d5260f8bd834ee8d6aee55bd5236fbff",
+      "result_blob": "c71fab0e7c2aa5cc9de82b08e16332e05535b2ea",
+      "sha256": "bbfb60c2c7ed0790c73d01a24b0a2516200a9b7bd7a47d98258c3cf0b8d027f0"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/cli.py",
+      "base_blob": "bdaf4ec6d9318feaf90762f1b7c5b89fbe0b7941",
+      "result_blob": "4d53742da753dbc961ee3c23fe68216a1217998e",
+      "sha256": "c1e8facd057d6c5243851610a11967bd890cc0b121e951d85f2b7daa0b655754"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/cli_audit.py",
+      "base_blob": "ea55f8682719d28ad985482f78ca7fd80acacb69",
+      "result_blob": "a1167cca1c032e6acbe765300cacd097b956bb6c",
+      "sha256": "e9b22d6167a63eca38c22876901942e7b109bb42276d5e873587231e5ff3752d"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/sdk.py",
+      "base_blob": "19661ed5f1c8ad72f331b3bf8faf4ac068f5b8f3",
+      "result_blob": "c61f499706cd774a6c23a8080181cabe8aff7ef3",
+      "sha256": "db05a087157d98ac5553907e871ae3cec21c10164fce9ecfd3b1911b62e781d9"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/api.py",
+      "base_blob": "ba5b14507d18c54099bf5a57c95dd8aa4052d2f5",
+      "result_blob": "6913424008cab21aeb13c4840fc9dfa5fe55768f",
+      "sha256": "9193b8ddb916e1ee0930f767e3076fe4dce074f95b5f174dc9e9d4bfbbbebf5a"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/api_audit.py",
+      "base_blob": "bb1a6f19d01b0b271730a9278b33ae03491644d3",
+      "result_blob": "50160f4a90f778c722bc19dfc18f93c5b5744b13",
+      "sha256": "5b8c32027451dc1bf3b1c6d6f3137eefbaa499be928266d9c8232c3d47d61459"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/client.py",
+      "base_blob": "41b239c8d3f1bffae7fcfc655c777860e11b29c5",
+      "result_blob": "71ee0ac8c34d2366d1fa0f7a4e0ca7c31bf8c8d4",
+      "sha256": "3cc985951a9b1eb45218818a5cf58723f0a95894f2918bf8babba783d96fbf26"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/e2e_audit.py",
+      "base_blob": "a79ed9b4e2aa1a92d62223dfd4900b67d044cba8",
+      "result_blob": "2b60abc216ed0b21cde87636e630274c48dce350",
+      "sha256": "e47b31d68d8ee80583ce1d0085c85d156f1f19ecad226b063979b13bbac5b115"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/oai_sdk_audit.py",
+      "base_blob": "cb280b11847828be331dd4c60ada83c5bba4aeea",
+      "result_blob": "9233f349e305ca97642cadcb9d8586c611a2b90d",
+      "sha256": "b155c560e27f703fe56ba78af3fa04d6f9de6c642a9c4b4457c33c0f0574cee3"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/openai_compat.py",
+      "base_blob": "35b28958cb5b14f2de73d711b3930e3c3bede095",
+      "result_blob": "3415ef3d8e4a4d1d59457b14d4b8d58e474845e0",
+      "sha256": "09d121e5296e86e8bdf363a11a251fded131bb592f887f1f79b1c5c271124fa6"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/serve/parity_audit.py",
+      "base_blob": "59d59a55741bb40d79d4fadf083ab4abcf14f3b8",
+      "result_blob": "f0aa6a660c0e287d57eb0c35af31b94e41e6efaf",
+      "sha256": "2ed1bfacd664592a40fc0adf6bc8204dce414c6f2fecd7c9939b829c89a3b15f"
+    },
+    {
+      "pr": 2781,
+      "path": "src/fx1/tail_audit.py",
+      "base_blob": "9a989b451835d3486d6b3f7996ae512c68099432",
+      "result_blob": "4b0caa9e82ee14bd2915ea858033719eca7b9f0e",
+      "sha256": "580197fc69f2077819a4084bb6f19b0c0a429cfa38e9caf7900fc35b20b7ed1f"
+    },
+    {
+      "pr": 2781,
+      "path": "src/quant_fund/mc_engine/summary.py",
+      "base_blob": "ed81c5b5890e9893da6c7be1f62e3bc5ee0d608c",
+      "result_blob": "51af9abb4257631c20d49b299b8e4bcaf3c584ec",
+      "sha256": "8579437e0be06f7c7a0255e1900b046947aaccb891b7589eb3a4e7112d0521a2"
+    },
+    {
+      "pr": 2781,
+      "path": "src/quant_fund/models/conjugacy_classes.py",
+      "base_blob": "373e45c6ac3974f9b6d2a172e6ea93b860049c75",
+      "result_blob": "a78bbf988ebb7994a2d7e0957c7c07df2315798d",
+      "sha256": "0d7c8b13bd60fc9754e206613035c5dabd10eb0f790ac433c37e6e38dcbf021c"
+    },
+    {
+      "pr": 2781,
+      "path": "tests/unit/cli/test_cli_api.py",
+      "base_blob": "80573ccf1183d052eb1921af5410126d6cef3bf4",
+      "result_blob": "3a86078e14bbfff26ca5e491b7d23a395dbd1e66",
+      "sha256": "4a490c0047942e59ef04f54c14ea6cfba11a092912afb1657c1bd2594a13a1e4"
+    },
+    {
+      "pr": 2781,
+      "path": "tests/unit/docs/test_arch_atlas.py",
+      "base_blob": "df8d95c147792c87b122bfd3585f36630c89ddd6",
+      "result_blob": "370e5997f92781c3425fd33819805546b8dda9bb",
+      "sha256": "248299750f015ac5b12fc60094d2d83bfcf355fd8e3427deac43786b3d4f1c13"
+    },
+    {
+      "pr": 2781,
+      "path": "tests/unit/microstructure/test_queue_priority.py",
+      "base_blob": "f0c42e541839d22aeff980963e67a6b6809c9c7a",
+      "result_blob": "19f26b42e824880bb0c572b4831e740c0fcee602",
+      "sha256": "de9c3d0cd17195c2b7ef6292a378811874c1cb9a79b8ac55c62e9f772277035a"
+    },
+    {
+      "pr": 2781,
+      "path": "tests/unit/test_replay_engine.py",
+      "base_blob": "2f3ca54f6db951bb582ca3ca2777538577435f56",
+      "result_blob": "30dbbcb669227b48ec569675ec5e494ba0726ec3",
+      "sha256": "b1403522fab109b5a9016ed29b6c3e8808f76a0c9804c016cb8886ddd6da6953"
+    },
+    {
+      "pr": 2781,
+      "path": "tests/unit/fx1_serve/test_response_replay_cursor.py",
+      "base_blob": null,
+      "result_blob": "a93b88813c044df32284365e5a2d292e4276ccff",
+      "sha256": "30b961bc2b0746fde7bacaac37c678ad8c2cdf4b27f8d45719e9cb24f90b5b2d"
+    },
+    {
+      "pr": 2801,
+      "path": "src/fx1/serve/api.py",
+      "base_blob": "6913424008cab21aeb13c4840fc9dfa5fe55768f",
+      "result_blob": "7ceafce7067485c73f290f948dc977672e47f118",
+      "sha256": "3bed67393879a8ab56258ac5df29de7756bb35e4f23c2536d9856cde772c44df"
+    },
+    {
+      "pr": 2801,
+      "path": "src/fx1/serve/openai_compat.py",
+      "base_blob": "3415ef3d8e4a4d1d59457b14d4b8d58e474845e0",
+      "result_blob": "165898f6598704420700b594aa698d149f9c67db",
+      "sha256": "a38b589bf2ad734a7587c2511726e014446dc987188dfaa654b87de8bc7a5403"
+    },
+    {
+      "pr": 2801,
+      "path": "src/fx1/serve/stream_audit.py",
+      "base_blob": null,
+      "result_blob": "f77b6f83d398b20bfe04ca83c6e70390ca22c496",
+      "sha256": "7de9ac1e7454fffa39ff715b77fc2ff5132619c44f20dfce22f5cdb1b59d7a07"
+    },
+    {
+      "pr": 2801,
+      "path": "tests/unit/fx1_serve/test_stream_audit.py",
+      "base_blob": null,
+      "result_blob": "6a5338c73c8b59ecf70e42e57ebe23e8f1130562",
+      "sha256": "41cba446e131e194d2f81f51eab62979b4c8fb5d800be6d38ca898db0cf4e929"
+    },
+    {
+      "pr": 2801,
+      "path": "tests/unit/fx1_serve/test_response_store_deletion.py",
+      "base_blob": null,
+      "result_blob": "c27a1ce53dcfe6fb73c18a2e4edd034a554a1ac6",
+      "sha256": "92eccd0b07b671b57a01a1447a2359926a83a892768ed688f4138dde1cc5424c"
+    },
+    {
+      "pr": 2801,
+      "path": "tests/unit/fx1_serve/test_response_state_regressions.py",
+      "base_blob": null,
+      "result_blob": "4cf5414bda39f97756cbda9c1cc9139bc1d480fb",
+      "sha256": "7f8fac3238f7036de67eb4fe87f81c1d2b8f2c47904c3bb5492a87d5bf3759a6"
+    },
+    {
+      "pr": 2801,
+      "path": "tests/unit/fx1_serve/test_response_replay_state.py",
+      "base_blob": null,
+      "result_blob": "82eff50325a50a4b79cf44d52b674fbd17fe3d8f",
+      "sha256": "f58a754d151eb96b8b627cf5888891780bac1af64391e298c4f39272700d69ea"
+    },
+    {
+      "pr": 2801,
+      "path": "quality/audit_coverage_fx1.json",
+      "base_blob": "f174548dfa88494be74bb82d0f90908bb3060896",
+      "result_blob": "2253ddde26805a3267d7528159c938e458f03841",
+      "sha256": "6da00f5017f4804ad9f8c4cab5b7a7103ed4731e84522628eeb54c400d07d486"
+    }
+  ],
+  "unique_changed_files": 29,
+  "existing_receipt_changes": [],
+  "git_status_after_commit": "",
+  "github_mutations": [],
+  "manifest_refresh_note": "Before the only audit run, captured final b677 #2781 reviewed head metadata and sole updated schema.d.ts cursor comment. Python and OpenAPI JSON sources were unchanged.",
+  "published_equivalence": {
+    "source": "https://api.github.com/repos/artificial-hedge/dipcatcher/git/commits/816c88467792cf994fa1ca24c303d74304ce6d32",
+    "published_commit": "816c88467792cf994fa1ca24c303d74304ce6d32",
+    "published_tree": "08785154226ecab69e5ce7e87f4b432fb5fe2b95",
+    "local_validation_commit": "90b98a882bbb314074c8944081d6921be744f4b8",
+    "local_validation_tree": "08785154226ecab69e5ce7e87f4b432fb5fe2b95",
+    "full_tree_identical": true
+  },
+  "runtime_environment": {
+    "cwd": "/workspace/scratch/b4080da16fcf/maintenance/fx1_accounting_review/stream_validation/repo",
+    "git_revision": "90b98a882bbb314074c8944081d6921be744f4b8",
+    "packages": {
+      "fastapi": "0.142.2",
+      "httpx": "0.28.1",
+      "jsonschema": "4.26.0",
+      "numpy": "2.3.5",
+      "polars": "1.44.2",
+      "pydantic": "2.13.5",
+      "scipy": "1.17.0",
+      "starlette": "1.7.0"
+    },
+    "python": "3.12.14"
+  },
+  "receipt_unchanged": true
+}

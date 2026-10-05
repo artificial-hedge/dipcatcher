@@ -100,6 +100,16 @@ Journal semantics (`fx1.serve.journal`):
 - Stores compact their journals when they grow past bounds; a crash
   mid-compact leaves the old journal intact.
 
+Detected corruption in `keys.jsonl`, including a torn final record,
+quarantines recovered credentials while retaining verified metadata for
+inspection. Existing empty key journals also require authentication;
+losing all verified records never silently reopens anonymous access.
+Use the trusted `FX1_API_KEY` bootstrap credential to inspect the state
+and mint fresh replacement keys. Replacement keys stay usable after a
+later clean restart; quarantined historical credentials remain disabled.
+A journal hash chain cannot detect deletion of the entire file or a
+valid older snapshot without a separate trusted record of its history.
+
 ```bash
 uv run fx1 harness serve --state-dir /var/lib/fx1
 # SDK twin: Fx1Harness(state_dir=...) or FX1_SDK_STATE_DIR
@@ -303,9 +313,14 @@ honesty-gate refusals or 4xx.
 
 Every served response stamps the credential's fingerprint on the
 completion record, so `key_id`-filtered usage is exact even when callers
-share a base URL. Live meters (`uses`, `last_used_at`, `tokens_used`)
-and rate-window updates are not journaled per request. On restart the
-store restores the most recent durable key snapshot, normally the
-mint-time counters for an active key. Declared budgets persist, but their
-lifetime usage meters are not restart-durable; a snapshot written by a
-later key operation may contain newer counter values.
+share a base URL. With `--state-dir`, successful authorization journals
+`uses` and `last_used_at` before accepting the call; an authorization
+journal failure refuses the call without advancing those meters. Token
+charges journal updated `tokens_used`, so recorded lifetime usage and
+declared budgets survive a clean restart. Request-rate windows remain
+process-local and reset on restart.
+
+If a token-charge write fails after the provider has already done work,
+the charge remains counted in the live process. A crash before that
+charge reaches durable storage can still lose that accounting update;
+the journal does not provide exactly-once provider billing.

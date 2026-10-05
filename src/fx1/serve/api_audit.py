@@ -9093,6 +9093,171 @@ def _probe_backend_probes(  # NOSONAR
         and bg_rep.headers.get("X-Fx1-Completion-Id") is not None
     )
 
+    # GET /v1/responses/{id}?stream=true — OpenAI's response replay: the
+    # stored envelope re-emits the recorded event grammar so a client
+    # that dropped the create stream (or submitted background:true,
+    # which answers JSON) rebuilds the same typed Response. Frames carry
+    # the create-time seq on the id: line — monotonic from 0 — and each
+    # event's data payload keeps the typed {"type", "response"} shape a
+    # stock SDK stream parser reads.
+    def _replay_frames(rp: Any) -> tuple[list[str], list[int], list[dict[str, Any]]]:
+        lines = rp.text.splitlines()
+        return (
+            [ln[len("event: ") :] for ln in lines if ln.startswith("event: ")],
+            [int(ln[len("id: ") :]) for ln in lines if ln.startswith("id: ")],
+            [_json3.loads(ln[len("data: ") :]) for ln in lines if ln.startswith("data: ")],
+        )
+
+    rp_create = ch.post(
+        "/v1/responses", json={"model": "fx1", "input": "replay-me", "stream": True}
+    )
+    rp_rid = _json3.loads(
+        next(ln for ln in rp_create.text.splitlines() if ln.startswith("data: "))[len("data: ") :]
+    )["response"]["id"]
+    rp_get = ch.get(f"/v1/responses/{rp_rid}?stream=true")
+    rp_events, rp_ids, rp_data = _replay_frames(rp_get)
+    out["resp_replay_completed_grammar"] = (
+        rp_get.status_code == 200
+        and rp_get.headers["content-type"].startswith("text/event-stream")
+        and rp_events[:2] == ["response.created", "response.in_progress"]
+        and rp_events[-1] == "response.completed"
+        and "response.output_item.added" in rp_events
+        and "response.output_text.delta" in rp_events
+        and rp_ids == list(range(len(rp_ids)))
+        and rp_data[-1]["type"] == "response.completed"
+        and rp_data[-1]["response"]["id"] == rp_rid
+        and rp_data[-1]["response"]["status"] == "completed"
+    )
+    # a replay of a stream-created response is byte-identical to the
+    # stream it replays — the grammar derives from the stored object, not
+    # a second code path; the terminal payload IS the non-stream body.
+    out["resp_replay_byte_identical"] = rp_get.text == rp_create.text
+    out["resp_replay_terminal_is_retrieve"] = (
+        rp_data[-1]["response"] == ch.get(f"/v1/responses/{rp_rid}").json()
+    )
+    # evidence + trace headers ride the replay like every gated call
+    out["resp_replay_headers"] = (
+        rp_get.headers.get("x-request-id") is not None
+        and int(rp_get.headers.get("openai-processing-ms", "-1")) >= 0
+        and rp_get.headers.get("X-Fx1-Completion-Id") is not None
+        and rp_get.headers.get("X-Fx1-Receipt-Sha256") is not None
+    )
+    # starting_after=N resumes past sequence N — the cursor is the frame's
+    # id: line; past the end the stream closes empty.
+    rp_slice = ch.get(f"/v1/responses/{rp_rid}?stream=true&starting_after=2")
+    _rp_sev, _rp_sid, _rp_sdata = _replay_frames(rp_slice)
+    rp_past = ch.get(f"/v1/responses/{rp_rid}?stream=true&starting_after=9999")
+    out["resp_replay_starting_after"] = (
+        rp_slice.status_code == 200
+        and _rp_sid == list(range(3, len(rp_ids)))
+        and _rp_sev[0] != "response.created"
+        and _rp_sev[-1] == "response.completed"
+        and len(_rp_sdata) == len(rp_data) - 3
+    )
+    out["resp_replay_starting_after_beyond"] = (
+        rp_past.status_code == 200 and not _replay_frames(rp_past)[0]
+    )
+    # unknown / deleted / store=false ids answer the same 404 not_found
+    # envelope as the JSON read — a replay never invents a record.
+    rp_ns = ch.post("/v1/responses", json={"model": "fx1", "input": "ns", "store": False})
+    rp_del = ch.post("/v1/responses", json={"model": "fx1", "input": "del"})
+    ch.delete(f"/v1/responses/{rp_del.json()['id']}")
+    out["resp_replay_not_found"] = (
+        ch.get("/v1/responses/resp_ghost?stream=true").status_code == 404
+        and ch.get("/v1/responses/resp_ghost?stream=true").json()["error"]["code"] == "not_found"
+        and ch.get(f"/v1/responses/{rp_del.json()['id']}?stream=true").status_code == 404
+        and ch.get(f"/v1/responses/{rp_ns.json()['id']}?stream=true").status_code == 404
+    )
+    # flag fallthrough: stream=false (or absent) is the JSON retrieve;
+    # the truthy spellings pydantic accepts (1/yes/on) all stream.
+    rp_false = ch.get(f"/v1/responses/{rp_rid}?stream=false")
+    out["resp_replay_flag_fallthrough"] = (
+        rp_false.status_code == 200
+        and rp_false.headers["content-type"].startswith("application/json")
+        and rp_false.json()["id"] == rp_rid
+        and ch.get(f"/v1/responses/{rp_rid}?stream=1")
+        .headers["content-type"]
+        .startswith("text/event-stream")
+        and ch.get(f"/v1/responses/{rp_rid}?stream=yes").status_code == 200
+    )
+    # a completed background envelope replays the recorded lifecycle —
+    # response.queued is a real event on this surface.
+    bg_rp = ch.get(f"/v1/responses/{bg_env['id']}?stream=true")
+    _bg_ev, _bg_i, _bg_d = _replay_frames(bg_rp)
+    out["resp_replay_background_grammar"] = (
+        bg_rp.status_code == 200
+        and _bg_ev[:3] == ["response.created", "response.queued", "response.in_progress"]
+        and _bg_ev[-1] == "response.completed"
+        and _bg_d[-1]["response"]["status"] == "completed"
+        and _bg_d[-1]["response"]["output"][0]["content"][0]["text"] == "clean:bg-run"
+    )
+
+    # in-flight attach: a still-running background response emits its
+    # prelude then live-follows — the : keepalive comments prove the
+    # stream observed a non-terminal record before the terminal frame.
+    class _ReplaySlowBackend(_OiBackend):
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            time.sleep(0.8)
+            return super().complete(messages, sampling=sampling)
+
+    rp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _ReplaySlowBackend())
+    rp_app.state.sse_keepalive_s = 0.05
+    rp_follow = _TC2(rp_app)
+    rfa = rp_follow.post(
+        "/v1/responses", json={"model": "fx1", "input": "rfa", "background": True}
+    ).json()
+    rfa_rep = rp_follow.get(f"/v1/responses/{rfa['id']}?stream=true&timeout_s=10")
+    _rfa_ev, _rfa_i, _rfa_d = _replay_frames(rfa_rep)
+    out["resp_replay_inflight_attach"] = (
+        rfa_rep.status_code == 200
+        and _rfa_ev[:2] == ["response.created", "response.queued"]
+        and _rfa_ev[-1] == "response.completed"
+        and _rfa_i == list(range(len(_rfa_i)))
+        and any(ln.startswith(":") for ln in rfa_rep.text.splitlines())
+        and _rfa_d[-1]["response"]["status"] == "completed"
+    )
+    # drain/cancel interplay: replaying a cancelled record ends with the
+    # response.cancelled frame; the cancelled object is the terminal
+    # payload verbatim. (sbg was cancelled in resp_background_cancel.)
+    cx_rep = ch_slow.get(f"/v1/responses/{sbg['id']}?stream=true")
+    _cx_ev, _cx_i, _cx_d = _replay_frames(cx_rep)
+    out["resp_replay_cancelled_terminal"] = (
+        cx_rep.status_code == 200
+        and _cx_ev[-1] == "response.cancelled"
+        and _cx_d[-1]["response"]["status"] == "cancelled"
+        and _cx_d[-1]["response"]["id"] == sbg["id"]
+        and _cx_i == list(range(len(_cx_i)))
+    )
+
+    # a failed background job replays to response.failed — the recorded
+    # error object is the terminal payload's error field.
+    class _ReplayBoomBackend:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            raise RuntimeError("replay boom")
+
+    rp_boom = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ReplayBoomBackend()))
+    rfb = rp_boom.post(
+        "/v1/responses", json={"model": "fx1", "input": "rfb", "background": True}
+    ).json()
+    rfb_fin: dict[str, Any] = {}
+    for _ in range(500):
+        rfb_fin = rp_boom.get(f"/v1/responses/{rfb['id']}").json()
+        if rfb_fin["status"] == "failed":
+            break
+        time.sleep(0.01)
+    rfb_rep = rp_boom.get(f"/v1/responses/{rfb['id']}?stream=true")
+    _rfb_ev, _rfb_i, _rfb_d = _replay_frames(rfb_rep)
+    out["resp_replay_failed_terminal"] = (
+        rfb_fin["status"] == "failed"
+        and _rfb_ev[-1] == "response.failed"
+        and _rfb_d[-1]["response"]["status"] == "failed"
+        and _rfb_d[-1]["response"]["error"]["code"] == "backend_failure"
+    )
+
     # /v1/conversations — the named-container twin of
     # previous_response_id: a conv_* carries an accumulated item stream;
     # a response anchored to it runs on the conv context and appends its
@@ -10849,7 +11014,17 @@ def api_audit_bench() -> dict[str, Any]:
             "(remaining decrements, reset an RFC 3339 instant, absent "
             "for env/loopback — no false scarcity); the OpenAI surface "
             "never speaks Anthropic's names; and no org/proxy/edge "
-            "headers leak (no openai-organization, no cf-*)."
+            "headers leak (no openai-organization, no cf-*). "
+            "GET /v1/responses/{id}?stream=true replays a stored "
+            "response as the Responses SSE grammar — the emitted "
+            "sequence derives deterministically from the stored "
+            "envelope (byte-identical to the create-time stream for a "
+            "stream-created record), frames carry the monotonic id: "
+            "cursor starting_after slices on, an in-flight "
+            "background:true attach emits the prelude then live-follows "
+            "keepalives to terminal, and cancelled/failed records end "
+            "response.cancelled/response.failed with the stored object "
+            "verbatim."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

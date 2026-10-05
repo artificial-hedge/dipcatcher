@@ -26,6 +26,7 @@ tests route it at a ``fastapi.testclient.TestClient``.
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
@@ -133,6 +134,12 @@ def _urllib_transport(
         return exc.code, dict(exc.headers or {}), body
     except urllib.error.URLError as exc:
         raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+    except (http.client.HTTPException, OSError) as exc:
+        # socket faults before a status line exists — e.g. a mid-upload
+        # reset when the server rejects early on headers alone (413
+        # body-cap) — are transport errors under the same contract as
+        # URLError; don't leak raw errno classes to callers.
+        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
@@ -221,6 +228,41 @@ def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
             break
     if not saw_terminal:
         raise HarnessTransportError("stream ended without response.completed/response.incomplete")
+    return events
+
+
+_REPLAY_TERMINAL_EVENTS = frozenset(
+    {
+        "response.completed",
+        "response.incomplete",
+        "response.failed",
+        "response.cancelled",
+    }
+)
+
+
+def _responses_replay_events(body: bytes) -> list[dict[str, Any]]:
+    """Collect Responses *replay* frames until the terminal event.
+
+    Wider than :func:`_responses_sse_events`: a replayed record can end
+    in any terminal status — ``response.failed`` and ``response.cancelled``
+    are terminals here (a create-time stream never emits them).
+    """
+    events: list[dict[str, Any]] = []
+    saw_terminal = False
+    for line in body.decode().splitlines():
+        if not line.startswith("data: "):
+            continue
+        frame = json.loads(line[len("data: ") :])
+        events.append(frame)
+        if frame.get("type") in _REPLAY_TERMINAL_EVENTS:
+            saw_terminal = True
+            break
+    if not saw_terminal:
+        raise HarnessTransportError(
+            "replay stream ended without a terminal response.* event "
+            "(response.completed/incomplete/failed/cancelled)"
+        )
     return events
 
 
@@ -2802,6 +2844,41 @@ class HarnessClient:
         unknown ids a 404 (both surface as ``HarnessTransportError``)."""
         return dict(
             self._json("POST", f"/v1/responses/{urllib.parse.quote(response_id)}/cancel", {})
+        )
+
+    def responses_replay(
+        self,
+        response_id: str,
+        *,
+        starting_after: int | None = None,
+        timeout_s: float | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """``GET /v1/responses/{id}?stream=true`` — the replay stream:
+        returns ``(events, completion_id)`` where events are the parsed
+        Responses event payloads replayed from the stored envelope — the
+        full grammar for a terminal response, or the prelude plus a live
+        follow for a still-``queued``/``in_progress`` background call.
+        ``starting_after`` resumes past sequence N (the frames' ``id:``
+        cursor); ``timeout_s`` bounds a live follow server-side. Unknown,
+        deleted, or ``store=false`` ids raise ``KeyError`` off the 404
+        envelope like :meth:`retrieve_response`; a stream that closes
+        without a terminal ``response.*`` frame raises
+        ``HarnessTransportError`` (record vanished mid-follow)."""
+        q = "stream=true"
+        if starting_after is not None:
+            q += f"&starting_after={starting_after}"
+        if timeout_s is not None:
+            q += f"&timeout_s={timeout_s}"
+        _status, headers, body = self._request(
+            "GET",
+            f"/v1/responses/{urllib.parse.quote(response_id)}?{q}",
+            idempotent=True,
+            extra_headers=extra_headers,
+        )
+        return (
+            _responses_replay_events(body),
+            _hget(headers, "X-Fx1-Completion-Id"),
         )
 
     def list_chat_completions(

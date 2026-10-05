@@ -1,0 +1,33 @@
+{
+  "starlette_version": "1.7.0",
+  "loaded_source_file": "/workspace/scratch/b4080da16fcf/maintenance/test_dependencies/starlette/testclient.py",
+  "source_sha256": "9e85a77aeb913c0913b2a9de977ae617554ecd08a645ec89bca2e0809fff761b",
+  "method": "_TestClientTransport.handle_request",
+  "excerpts": [
+    {
+      "method_line": 69,
+      "source": "raw_kwargs: dict[str, Any] = {\"stream\": io.BytesIO()}"
+    },
+    {
+      "method_line": 116,
+      "source": "raw_kwargs[\"stream\"].write(body)"
+    },
+    {
+      "method_line": 118,
+      "source": "raw_kwargs[\"stream\"].seek(0)"
+    },
+    {
+      "method_line": 135,
+      "source": "portal.call(self.app, scope, receive, send)"
+    },
+    {
+      "method_line": 146,
+      "source": "\"stream\": io.BytesIO(),"
+    },
+    {
+      "method_line": 149,
+      "source": "raw_kwargs[\"stream\"] = httpx.ByteStream(raw_kwargs[\"stream\"].read())"
+    }
+  ],
+  "conclusion": "The measured TestClient collects ASGI body chunks in BytesIO, awaits completion of the app call, rewinds the buffer, and constructs the HTTPX byte stream from the buffered bytes. Its client iterator therefore does not test early network disconnect or network delivery timing."
+}

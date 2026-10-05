@@ -38,6 +38,7 @@ def _trade(oid: int, qa: int, *, t: float = 1.0, t_submit: float = 0.0) -> Trade
         maker_tag="zi",
         maker_t_submit=t_submit,
         maker_queue_ahead_at_submit=qa,
+        maker_placement_class="join",
     )
 
 

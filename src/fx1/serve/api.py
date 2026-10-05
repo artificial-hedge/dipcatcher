@@ -160,7 +160,7 @@ from fx1.serve.finetune import (
     default_ft_runner,
     validate_chat_jsonl,
 )
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 from fx1.serve.keys import CLEARABLE_KEY_FIELDS, SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
@@ -214,11 +214,13 @@ from fx1.serve.openai_compat import (
     openai_model,
     openai_response_events,
     openai_response_object,
+    openai_response_replay_events,
     openai_to_kwargs,
     paged_item_list,
     response_cap_call_items,
     response_input_item_dicts,
     response_input_items_for_store,
+    response_output_pieces,
     response_query_text,
     response_text_format,
     response_to_kwargs,
@@ -1925,6 +1927,74 @@ def _responses_sse(
             yield _frame(event, payload, seq)
 
 
+# ``timeout_s``'s ceiling — the route clamps it (<=3600) and the generator
+# clamps again locally so the follow loop's trip count is statically
+# bounded regardless of how it is called
+_REPLAY_FOLLOW_TIMEOUT_MAX_S = 3600.0
+_REPLAY_MIN_POLL_S = 0.01
+_REPLAY_FOLLOW_MAX_ITERS = int(_REPLAY_FOLLOW_TIMEOUT_MAX_S / _REPLAY_MIN_POLL_S) + 1
+
+
+def _responses_replay_frames(
+    envelope_store: OpenAIEnvelopeStore,
+    response_id: str,
+    *,
+    skip: int = 0,
+    timeout_s: float = 600.0,
+    keepalive_s: float = 15.0,
+) -> Iterator[str]:
+    """The ``GET /v1/responses/{id}?stream=true`` frame generator — the
+    replay grammar (:func:`openai_response_replay_events`) serialized with
+    the same ``event:``/``id:``/``data:`` shape as the create stream, so a
+    re-attaching client's SSE parser rebuilds the same typed ``Response``.
+
+    A terminal envelope emits the full recorded sequence (``skip`` =
+    ``starting_after + 1`` resumes past a sequence cursor — the cursor is
+    the frame's ``id:``, monotonically increasing by absolute index).
+    A still-``queued``/``in_progress`` background response emits its
+    current prelude then live-follows: each pass re-reads the envelope and
+    emits any newly-derivable events until the terminal frame
+    (``response.completed``/``incomplete``/``failed``/``cancelled``) or the
+    ``timeout_s`` deadline (clamped to ``_REPLAY_FOLLOW_TIMEOUT_MAX_S``
+    so the follow can't outrun the literal cap) — a ``: keepalive``
+    comment rides each idle interval like ``/harness/jobs/{id}/events``.
+    A record deleted or evicted mid-follow ends the stream with no
+    terminal frame (the record is gone — there is nothing honest left
+    to say).
+    """
+
+    def _frame(event: str, payload: dict[str, Any], seq: int) -> str:
+        return f"event: {event}\nid: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
+
+    cursor = skip
+    deadline = time.monotonic() + min(timeout_s, _REPLAY_FOLLOW_TIMEOUT_MAX_S)
+    next_keep = time.monotonic() + keepalive_s if keepalive_s > 0 else math.inf
+    poll_s = 0.25 if keepalive_s <= 0 else max(_REPLAY_MIN_POLL_S, min(0.25, keepalive_s))
+    # static trip bound: the follow window is request input, so the loop
+    # iterates a fixed worst case and the deadline still ends it early
+    for _ in range(_REPLAY_FOLLOW_MAX_ITERS):
+        env = envelope_store.get(response_id)
+        if env is None:
+            return
+        events = list(openai_response_replay_events(env))
+        for i, (event, payload) in enumerate(events):
+            # the cursor is request input — compare, never bound the loop
+            # on it (a huge starting_after just skips, it can't extend)
+            if i < cursor:
+                continue
+            yield _frame(event, payload, i)
+        if env.get("status") in OPENAI_RESPONSE_TERMINAL:
+            return
+        cursor = max(cursor, len(events))
+        now = time.monotonic()
+        if now >= deadline:
+            return
+        if now >= next_keep:
+            yield ": keepalive\n\n"
+            next_keep = now + keepalive_s
+        time.sleep(poll_s)
+
+
 def _openai_sse(
     body: OpenAIChatRequest,
     *,
@@ -2103,6 +2173,70 @@ def _deliver_callback(
     rec.callback_status = "delivered" if ok else "failed"
     rec.callback_error = None if ok else err
     rec.callback_attempts = attempts
+
+
+def _validation_response(request: Request, exc: RequestValidationError) -> JSONResponse:
+    errs = exc.errors()
+    if is_openai_path(request.url.path):
+        msg = "; ".join(
+            f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}" for e in errs[:4]
+        )
+        return JSONResponse(
+            status_code=422,
+            content=_v1_error_body(request.url.path, msg or "invalid request", 422, "validation"),
+        )
+    try:
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"detail": errs, "code": "validation"}),
+        )
+    except RecursionError:
+        # A rejected input can be too deeply nested to echo. Preserve
+        # the validation failure without recursively encoding that input.
+        details = [{key: err[key] for key in ("type", "loc", "msg") if key in err} for err in errs]
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"detail": details, "code": "validation"}),
+        )
+
+
+def _idem_key(key: str | None) -> str | None:
+    """Normalize a claim key exactly as the existing replay lookup does."""
+    key = (key or "").strip() or None
+    if key is not None and len(key) > _IDEM_KEY_MAX:
+        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+    return key
+
+
+async def _run_claimed[ResultT](
+    claim: AbstractAsyncContextManager[None], action: Callable[[], ResultT]
+) -> ResultT:
+    """Keep a key claimed until its synchronous worker has really finished.
+
+    Waiting retries yield without occupying request workers. A shielded
+    child keeps executing after its caller is cancelled; the task group
+    drains it before releasing the claim, so a retry cannot overlap work
+    that is still publishing its replay record. Worker errors are raised
+    outside the group to preserve their original HTTP error type.
+    """
+    import anyio
+
+    results: list[ResultT] = []
+    failures: list[Exception] = []
+
+    async def execute() -> None:
+        with anyio.CancelScope(shield=True):
+            try:
+                results.append(await anyio.to_thread.run_sync(action))
+            except Exception as exc:  # noqa: BLE001 — preserve the worker's exact error
+                failures.append(exc)
+
+    async with claim:
+        async with anyio.create_task_group() as tasks:
+            tasks.start_soon(execute)
+        if failures:
+            raise failures[0]
+        return results[0]
 
 
 def _submit_job(
@@ -2404,7 +2538,7 @@ def _mount_job_routes(
         tags=["jobs"],
         operation_id="submit_job",
     )
-    def submit_job(
+    async def submit_job(
         body: HarnessRunRequest,
         response: Response,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -2413,14 +2547,10 @@ def _mount_job_routes(
         polls ``GET /harness/jobs/{job_id}`` for the terminal record (also
         echoed as the ``Location`` header). Same drain/cap/idempotency
         contract as the sync route."""
-        out = _submit_job(
-            body,
-            idempotency_key or body.idempotency_key,
-            lab,
-            job_store,
-            metrics,
-            inflight,
-            jobs_executor,
+        key = _idem_key(idempotency_key or body.idempotency_key)
+        out = await _run_claimed(
+            job_store.async_claim_lock(key),
+            lambda: _submit_job(body, key, lab, job_store, metrics, inflight, jobs_executor),
         )
         response.headers["Location"] = f"/harness/jobs/{out.job_id}"
         return out
@@ -2432,7 +2562,7 @@ def _mount_job_routes(
         tags=["jobs"],
         operation_id="submit_jobs_batch",
     )
-    def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
+    async def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
         """Fan-out submit: each item takes the same path as the single
         route — command validation, drain latch, inflight cap, and
         per-item ``idempotency_key`` dedup (headers carry no per-item
@@ -2444,14 +2574,12 @@ def _mount_job_routes(
         submitted = 0
         for i, req in enumerate(body.jobs):
             try:
-                resp = _submit_job(
-                    req,
-                    req.idempotency_key,
-                    lab,
-                    job_store,
-                    metrics,
-                    inflight,
-                    jobs_executor,
+                key = _idem_key(req.idempotency_key)
+                resp = await _run_claimed(
+                    job_store.async_claim_lock(key),
+                    lambda req=req, key=key: _submit_job(
+                        req, key, lab, job_store, metrics, inflight, jobs_executor
+                    ),
                 )
                 items.append(
                     JobBatchItemResponse(
@@ -2595,6 +2723,7 @@ class _IdemStore[IdemT: BaseModel]:
     ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
+        self._claims = _ClaimLocks(max_entries)
         self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
         self._journal = journal
         self.recover_warnings: list[str] = []
@@ -2615,6 +2744,9 @@ class _IdemStore[IdemT: BaseModel]:
                 )
                 self._map.move_to_end(str(rec["key"]))
             self._compact_locked()
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        return self._claims.ahold(key)
 
     def _compact_locked(self) -> None:
         if self._journal is not None:
@@ -2720,6 +2852,7 @@ class _JobStore:
     def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
+        self._claims = _ClaimLocks(max_entries)
         self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._job_key: dict[str, str] = {}
@@ -2751,6 +2884,9 @@ class _JobStore:
                     job.error = "process restarted before the job reached a terminal state"
                     job.finished_at = now
             self._compact_locked()
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        return self._claims.ahold(key)
 
     def _drop(self, job_id: str) -> None:
         self._jobs.pop(job_id, None)
@@ -5065,14 +5201,32 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             incomplete_details=inc_details,
         )
         if body.store is not False:
-            envelope_store.put(
-                envelope,
-                items={
-                    "input_items": response_input_items_for_store(
-                        eff_body.input, rid=str(envelope["id"])
-                    )
-                },
-            )
+            stored_env = {
+                **envelope,
+                # the completion-log link the GET ?stream replay surface
+                # needs for its X-Fx1-* headers — stripped before any
+                # wire read, matching the idem-record convention
+                "_fx1_completion_id": cid,
+            }
+            store_items = {
+                "input_items": response_input_items_for_store(
+                    eff_body.input, rid=str(envelope["id"])
+                )
+            }
+            if rid is None:
+                envelope_store.put(stored_env, items=store_items)
+            else:
+                # Commit only while this background response is active.
+                # A cancelled/deleted result remains in the completion log
+                # but must not overwrite its verdict or its conversation.
+                stored = envelope_store.put_unless_status(
+                    stored_env,
+                    forbidden=OPENAI_RESPONSE_TERMINAL,
+                    require_existing=True,
+                    items=store_items,
+                )
+                if not stored:
+                    return envelope, cid, out.usage
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
@@ -6094,37 +6248,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
 
         def _resp_sse_from(env: dict[str, Any], drop: int) -> Iterator[str]:
-            env_items = [it for it in env["output"] if isinstance(it, dict)]
-            env_msg = next((it for it in env_items if it.get("type") == "message"), None)
-            env_calls = [it for it in env_items if it.get("type") == "function_call"]
-            env_search = [it for it in env_items if it.get("type") == "file_search_call"]
-            env_parts = env_msg.get("content") if isinstance(env_msg, dict) else None
-            env_lp = (
-                env_parts[0].get("logprobs")
-                if isinstance(env_parts, list) and env_parts and isinstance(env_parts[0], dict)
-                else None
-            )
-            # ``None`` marks a prose turn; a calls turn truncated to zero
-            # by max_tool_calls replays as the empty list — never a
-            # phantom empty message item
-            if env_calls:
-                env_call_list: list[dict[str, Any]] | None = env_calls
-            elif env.get("status") == "incomplete" and env_msg is None:
-                env_call_list = []
-            else:
-                env_call_list = None
+            text, item_id, call_list, env_search, env_lp = response_output_pieces(env)
             return _responses_sse(
                 body,
-                content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
+                content=text,
                 rid=env["id"],
-                item_id=(str(env_msg["id"]) if isinstance(env_msg, dict) else ""),
+                item_id=item_id,
                 model=env.get("model"),
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
-                call_items=env_call_list,
-                search_items=env_search or None,
-                logprobs=(env_lp if isinstance(env_lp, list) else None),
+                call_items=call_list,
+                search_items=env_search,
+                logprobs=env_lp,
                 # a truncated turn replays its terminal event too —
                 # response.incomplete, not response.completed
                 final_status=("incomplete" if env.get("status") == "incomplete" else "completed"),
@@ -6133,15 +6269,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         if replay is not None:
             env = replay.envelope
-            # re-pin in the retrieval index — a replay refreshes the entry
             if body.store is not False:
-                envelope_store.put(env)
-            # a non-terminal background response replays the LIVE envelope —
-            # the queued snapshot in the idem record would be stale
-            if env.get("status") in ("queued", "in_progress"):
-                live = envelope_store.get(str(env.get("id")))
-                if live is not None:
-                    env = {**env, **{k: v for k, v in live.items() if not k.startswith("_fx1_")}}
+                # Refresh retrieval order while retaining a newer live
+                # verdict. Only an absent record rehydrates from cache.
+                # Cache-only raw usage remains available for stream replay;
+                # every field present in the live envelope takes precedence.
+                env = {**env, **envelope_store.repin(env)}
             headers = {"X-Fx1-Idempotent-Replay": "true"}
             if env.get("_fx1_completion_id"):
                 headers["X-Fx1-Completion-Id"] = str(env["_fx1_completion_id"])
@@ -6231,10 +6364,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 try:
                     if cancel_ev.is_set():
                         return
-                    cur = envelope_store.get(rid)
-                    if cur is not None and cur.get("status") == "queued":
-                        cur["status"] = "in_progress"
-                        envelope_store.put(cur)
+                    # A cancellation or deletion after the event check
+                    # must prevent the queued backend call from starting.
+                    if not envelope_store.transition_status(
+                        rid, expect={"queued"}, status="in_progress"
+                    ):
+                        return
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
@@ -6269,12 +6404,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 "code": "internal_error",
                             },
                         )
-                    else:
-                        if cancel_ev.is_set():
-                            done = envelope_store.get(rid)
-                            if done is not None:
-                                done["status"] = "cancelled"
-                                envelope_store.put(done)
                 finally:
                     inflight.release()
                     bg_cancel.pop(rid, None)
@@ -6287,7 +6416,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     return
                 cur["status"] = "failed"
                 cur["error"] = error
-                envelope_store.put(cur)
+                envelope_store.put_unless_status(
+                    cur, forbidden=OPENAI_RESPONSE_TERMINAL, require_existing=True
+                )
 
             if key is not None:
                 openai_idem_store.put(
@@ -6313,20 +6444,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         rid = str(envelope["id"])
-        msg_item = next(
-            (it for it in envelope["output"] if it.get("type") == "message"),
-            None,
+        msg_text, msg_item_id, call_list, env_search_items, env_logprobs = response_output_pieces(
+            envelope
         )
-        env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
-        env_search_items = [it for it in envelope["output"] if it.get("type") == "file_search_call"]
-        # ``None`` marks a prose turn; a calls turn truncated to zero
-        # replays the empty list, never a phantom message item
-        if env_call_items:
-            call_list: list[dict[str, Any]] | None = env_call_items
-        elif envelope.get("status") == "incomplete" and msg_item is None:
-            call_list = []
-        else:
-            call_list = None
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -6350,24 +6470,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _responses_sse(
                     body,
-                    content=(
-                        str(msg_item["content"][0]["text"]) if isinstance(msg_item, dict) else ""
-                    ),
+                    content=msg_text,
                     rid=rid,
-                    item_id=(str(msg_item["id"]) if isinstance(msg_item, dict) else ""),
+                    item_id=msg_item_id,
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
                     call_items=call_list,
-                    search_items=env_search_items or None,
-                    logprobs=(
-                        msg_item["content"][0].get("logprobs")
-                        if isinstance(msg_item, dict)
-                        and isinstance(msg_item.get("content"), list)
-                        and msg_item["content"]
-                        and isinstance(msg_item["content"][0], dict)
-                        else None
-                    ),
+                    search_items=env_search_items,
+                    logprobs=env_logprobs,
                     final_status=str(envelope.get("status") or "completed"),
                     incomplete_details=envelope.get("incomplete_details"),
                 ),
@@ -6449,9 +6560,53 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_responses_retrieve",
     )
-    def openai_response_retrieve(response_id: str) -> dict[str, Any]:
-        """Retrieve a stored response object (``resp_…``)."""
-        return _stored_envelope(response_id, object_="response")
+    def openai_response_retrieve(
+        response_id: str,
+        stream: bool = Query(default=False),
+        starting_after: int | None = Query(default=None, ge=0),
+        timeout_s: float = Query(default=600.0, ge=1.0, le=3600.0),
+    ) -> Response:
+        """Retrieve a stored response object (``resp_…``).
+
+        ``stream=true`` replays the response as the Responses SSE event
+        grammar — how a client re-attaches to a ``background:true`` call it
+        disconnected from, or re-streams a completed one: a terminal
+        envelope emits the full recorded sequence, a still
+        ``queued``/``in_progress`` envelope emits its prelude then
+        live-follows until the terminal frame
+        (``response.completed``/``incomplete``/``failed``/``cancelled``) or
+        the ``timeout_s`` deadline. ``starting_after`` resumes past
+        sequence number N — the cursor is the frame's ``id:``. Unknown,
+        deleted, or ``store=false`` ids answer the same 404 ``not_found``
+        envelope as the JSON read."""
+        env = envelope_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise ApiError(
+                404,
+                f"{response_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        if not stream:
+            return JSONResponse({k: v for k, v in env.items() if not k.startswith("_fx1_")})
+        headers: dict[str, str] = {}
+        cid = env.get("_fx1_completion_id")
+        if isinstance(cid, str) and cid:
+            headers["X-Fx1-Completion-Id"] = cid
+            _rsha = _completion_receipt_sha(cid)
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
+        skip = (starting_after + 1) if starting_after is not None else 0
+        return StreamingResponse(
+            _responses_replay_frames(
+                envelope_store,
+                response_id,
+                skip=skip,
+                timeout_s=timeout_s,
+                keepalive_s=float(getattr(app.state, "sse_keepalive_s", 15.0)),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
 
     @app.delete(
         "/v1/responses/{response_id}",
@@ -6483,11 +6638,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "in_progress responses cancel",
                 code="cancel_terminal",
             )
+        # Commit before signalling: a terminal completion that already
+        # won cannot be undone by a late cancellation request. The atomic
+        # status update preserves internal completion/evidence headers.
+        if not envelope_store.transition_status(
+            response_id, expect={"queued", "in_progress"}, status="cancelled"
+        ):
+            current = _stored_envelope(response_id, object_="response")
+            raise ApiError(
+                409,
+                f"{response_id!r} is already {current['status']} — only queued or "
+                "in_progress responses cancel",
+                code="cancel_terminal",
+            )
         ev = bg_cancel.get(response_id)
         if ev is not None:
             ev.set()
         env["status"] = "cancelled"
-        envelope_store.put(env)
         return env
 
     # --- /v1/conversations ---------------------------------------------------
@@ -9030,22 +9197,7 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
-        if is_openai_path(request.url.path):
-            errs = jsonable_encoder(exc.errors())
-            msg = "; ".join(
-                f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}"
-                for e in errs[:4]
-            )
-            return JSONResponse(
-                status_code=422,
-                content=_v1_error_body(
-                    request.url.path, msg or "invalid request", 422, "validation"
-                ),
-            )
-        return JSONResponse(
-            status_code=422,
-            content=jsonable_encoder({"detail": exc.errors(), "code": "validation"}),
-        )
+        return _validation_response(request, exc)
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
@@ -9222,6 +9374,7 @@ def create_app(
                 "byok_override": byok_override_enabled,
                 "openai_compat": True,
                 "openai_retrieval": True,
+                "openai_responses_replay": True,
                 "openai_tools": True,
                 "openai_responses_tools": True,
                 "openai_logprobs": True,
@@ -9496,37 +9649,41 @@ def create_app(
         tags=["runs"],
         operation_id="run_command",
     )
-    def run_command(
+    async def run_command(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        body_fp = _body_fp(body, exclude={"idempotency_key"})
-        key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
-        if replay is not None:
-            return replay
-        with _work_gate():
-            try:
-                result = lab.run(
-                    body.command,
-                    body.extra_args or None,
-                    config=Path(body.config) if body.config else None,
+        def execute() -> HarnessRunResponse:
+            body_fp = _body_fp(body, exclude={"idempotency_key"})
+            key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
+            if replay is not None:
+                return replay
+            with _work_gate():
+                try:
+                    result = lab.run(
+                        body.command,
+                        body.extra_args or None,
+                        config=Path(body.config) if body.config else None,
+                    )
+                except KeyError as exc:
+                    raise ApiError(404, str(exc)) from exc
+                except ValueError as exc:
+                    raise ApiError(422, str(exc)) from exc
+                command = lab.get(body.command)
+                resp = HarnessRunResponse(
+                    command=result.command,
+                    exit_code=result.exit_code,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    ok=result.ok,
+                    timeout_s=command.timeout_s,
                 )
-            except KeyError as exc:
-                raise ApiError(404, str(exc)) from exc
-            except ValueError as exc:
-                raise ApiError(422, str(exc)) from exc
-            command = lab.get(body.command)
-            resp = HarnessRunResponse(
-                command=result.command,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                stderr=result.stderr,
-                ok=result.ok,
-                timeout_s=command.timeout_s,
-            )
-        if key is not None:
-            idem_store.put(key, body_fp, resp)
-        return resp
+            if key is not None:
+                idem_store.put(key, body_fp, resp)
+            return resp
+
+        key = _idem_key(idempotency_key or body.idempotency_key)
+        return await _run_claimed(idem_store.async_claim_lock(key), execute)
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
     _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
