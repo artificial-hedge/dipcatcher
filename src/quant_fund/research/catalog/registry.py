@@ -6414,6 +6414,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hammonites_qa_studies",
         "weded_qa_studies",
         "yamenna_qa_studies",
+        # Wave-1879 tuareg canon.
+        "afriye_qa_studies",
+        "almajira_qa_studies",
+        "djinnet_qa_studies",
+        "kel_essuf_qa_studies",
+        "tanit_lok_qa_studies",
+        "tin_hinan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

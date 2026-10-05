@@ -15023,6 +15023,14 @@ from quant_fund.research.benches_w1878 import (
     bench_weded_qa_studies_family,
     bench_yamenna_qa_studies_family,
 )
+from quant_fund.research.benches_w1879 import (
+    bench_afriye_qa_studies_family,
+    bench_almajira_qa_studies_family,
+    bench_djinnet_qa_studies_family,
+    bench_kel_essuf_qa_studies_family,
+    bench_tanit_lok_qa_studies_family,
+    bench_tin_hinan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
