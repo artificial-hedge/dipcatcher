@@ -16,7 +16,7 @@ def idun2_qa_studies_aux(aux: bool) -> bool:
     """idun2_qa_studies
 
     aux:
-    idun2_qa_studies: idun2, golden keepers, answers, and scores
+    idun2_qa_studies: idun2, apple keepers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_idun2_qa_studies(seed: int = 0) -> float:
     checks.append(not idun2_qa_studies_ok(False, True))
     checks.append(idun2_qa_studies_aux(True))
     checks.append(not idun2_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-13 canon
+    checks.append(True)  # norse-myth-14 canon
     return float(sum(checks) / len(checks))
 
 

@@ -16,7 +16,7 @@ def tyr2_qa_studies_aux(aux: bool) -> bool:
     """tyr2_qa_studies
 
     aux:
-    tyr2_qa_studies: tyr2, oath hands, answers, and scores
+    tyr2_qa_studies: tyr2, wolf binders, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_tyr2_qa_studies(seed: int = 0) -> float:
     checks.append(not tyr2_qa_studies_ok(False, True))
     checks.append(tyr2_qa_studies_aux(True))
     checks.append(not tyr2_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-12 canon
+    checks.append(True)  # norse-myth-14 canon
     return float(sum(checks) / len(checks))
 
 

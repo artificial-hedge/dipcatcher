@@ -16,7 +16,7 @@ def baldr2_qa_studies_aux(aux: bool) -> bool:
     """baldr2_qa_studies
 
     aux:
-    baldr2_qa_studies: baldr2, shining sons, answers, and scores
+    baldr2_qa_studies: baldr2, bright slain, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_baldr2_qa_studies(seed: int = 0) -> float:
     checks.append(not baldr2_qa_studies_ok(False, True))
     checks.append(baldr2_qa_studies_aux(True))
     checks.append(not baldr2_qa_studies_aux(False))
-    checks.append(True)  # norse-myth-13 canon
+    checks.append(True)  # norse-myth-14 canon
     return float(sum(checks) / len(checks))
 
 
