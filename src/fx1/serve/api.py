@@ -4892,20 +4892,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             incomplete_details=inc_details,
         )
         if body.store is not False:
-            envelope_store.put(
-                {
-                    **envelope,
-                    # the completion-log link the GET ?stream replay surface
-                    # needs for its X-Fx1-* headers — stripped before any
-                    # wire read, matching the idem-record convention
-                    "_fx1_completion_id": cid,
-                },
-                items={
-                    "input_items": response_input_items_for_store(
-                        eff_body.input, rid=str(envelope["id"])
-                    )
-                },
-            )
+            stored_env = {
+                **envelope,
+                # the completion-log link the GET ?stream replay surface
+                # needs for its X-Fx1-* headers — stripped before any
+                # wire read, matching the idem-record convention
+                "_fx1_completion_id": cid,
+            }
+            store_items = {
+                "input_items": response_input_items_for_store(
+                    eff_body.input, rid=str(envelope["id"])
+                )
+            }
+            if rid is None:
+                envelope_store.put(stored_env, items=store_items)
+            else:
+                # a background turn's record may have been deleted while
+                # the job was in flight — the terminal write must not
+                # resurrect it (a dropped write also drops the response
+                # itself, matching the deleted-verdict semantics)
+                envelope_store.put_if_present(stored_env, items=store_items)
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
@@ -6047,7 +6053,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     cur = envelope_store.get(rid)
                     if cur is not None and cur.get("status") == "queued":
                         cur["status"] = "in_progress"
-                        envelope_store.put(cur)
+                        # a mid-flight delete must stick — never resurrect
+                        envelope_store.put_if_present(cur)
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
@@ -6087,7 +6094,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             done = envelope_store.get(rid)
                             if done is not None:
                                 done["status"] = "cancelled"
-                                envelope_store.put(done)
+                                envelope_store.put_if_present(done)
                 finally:
                     inflight.release()
                     bg_cancel.pop(rid, None)
@@ -6100,7 +6107,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     return
                 cur["status"] = "failed"
                 cur["error"] = error
-                envelope_store.put(cur)
+                envelope_store.put_if_present(cur)
 
             if key is not None:
                 openai_idem_store.put(
@@ -6330,7 +6337,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if raw is None or raw.get("object") != "response":
             raise ApiError(404, f"{response_id!r} not found", code="not_found")
         raw["status"] = "cancelled"
-        envelope_store.put(raw)
+        # a delete racing the cancel verdict must win — the write is atomic
+        if not envelope_store.put_if_present(raw):
+            raise ApiError(404, f"{response_id!r} not found", code="not_found")
         env["status"] = "cancelled"
         return env
 

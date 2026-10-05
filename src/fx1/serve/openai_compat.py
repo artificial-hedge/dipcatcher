@@ -2869,6 +2869,32 @@ class OpenAIEnvelopeStore:
                 self._items.pop(evicted)
                 self._subitems.pop(evicted, None)
 
+    def put_if_present(
+        self,
+        envelope: dict[str, Any],
+        *,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> bool:
+        """Atomic check-and-``put``: lands only while the id is still in
+        the index. A background turn's late writes (status flips, the
+        terminal envelope) must not resurrect a record deleted
+        mid-flight. Returns whether the envelope was stored."""
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        with self._lock:
+            if eid not in self._items:
+                return False
+            self._items.pop(eid)
+            self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+            return True
+
     def get(self, envelope_id: str) -> dict[str, Any] | None:
         with self._lock:
             env = self._items.get(envelope_id)
