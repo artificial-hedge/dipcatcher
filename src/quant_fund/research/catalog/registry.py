@@ -6197,6 +6197,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "khalasah_qa_studies",
         "raymah_qa_studies",
         "shams_qa_studies",
+        # Wave-1848 meroitic-myth canon.
+        "apedemak_qa_studies",
+        "arensnuphis_qa_studies",
+        "dedwen_qa_studies",
+        "mandulis_qa_studies",
+        "miket_qa_studies",
+        "sebiumeker_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
