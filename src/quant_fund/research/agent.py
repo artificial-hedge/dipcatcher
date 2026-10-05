@@ -14903,6 +14903,14 @@ from quant_fund.research.benches_w1863 import (
     bench_pellinor_qa_studies_family,
     bench_uther_qa_studies_family,
 )
+from quant_fund.research.benches_w1864 import (
+    bench_bors_qa_studies_family,
+    bench_culhwch_qa_studies_family,
+    bench_dinadan_qa_studies_family,
+    bench_palamedes_qa_studies_family,
+    bench_safir_qa_studies_family,
+    bench_segwarides_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
