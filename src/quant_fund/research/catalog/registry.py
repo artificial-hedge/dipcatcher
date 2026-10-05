@@ -6330,6 +6330,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hector_cameliard_qa_studies",
         "seneschal_qa_studies",
         "ynis_qa_studies",
+        # Wave-1867 celtic-remnant canon.
+        "antenociticus_qa_studies",
+        "ares_lusitani_qa_studies",
+        "braciaca_qa_studies",
+        "deiba_qa_studies",
+        "nantosuelta_qa_studies",
+        "ognios_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
