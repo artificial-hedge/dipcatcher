@@ -15535,6 +15535,14 @@ from quant_fund.research.benches_w1942 import (
     bench_tinh_linh_qa_studies_family,
     bench_yeu_quai_qa_studies_family,
 )
+from quant_fund.research.benches_w1943 import (
+    bench_genderuwo_qa_studies_family,
+    bench_jenglot_qa_studies_family,
+    bench_kuntilanak_qa_studies_family,
+    bench_leyak_qa_studies_family,
+    bench_pocong_qa_studies_family,
+    bench_tuyul_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
