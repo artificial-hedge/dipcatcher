@@ -28,7 +28,7 @@
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 30,
+      "n_modules": 31,
       "status": "audited"
     },
     "train": {
