@@ -276,7 +276,7 @@ class AnthropicMessagesRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1)
     messages: list[AnthropicMessage] = Field(min_length=1, max_length=512)
     max_tokens: int = Field(gt=0, le=262144)
     system: str | list[dict[str, Any]] | None = None
@@ -363,7 +363,7 @@ class AnthropicCountTokensRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1)
     messages: list[AnthropicMessage] = Field(min_length=1, max_length=512)
     system: str | list[dict[str, Any]] | None = None
     tools: list[AnthropicTool] | None = None

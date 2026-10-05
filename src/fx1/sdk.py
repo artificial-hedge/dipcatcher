@@ -1848,6 +1848,7 @@ class Fx1Harness:
         parallel_tool_calls: bool | None = None,
         logprobs: bool | None = None,
         top_logprobs: int | None = None,
+        served_model: str | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -1885,6 +1886,12 @@ class Fx1Harness:
         passes through the message list itself. The honesty gate reads
         the assistant's text only — tool arguments are machine-bound
         JSON and logprobs are provider scores, not claims.
+
+        ``served_model`` is the registry alias that resolved the request
+        — an ``ft:`` name set by the OpenAI/Anthropic translators when
+        the ft registry routed the call — so the result and the
+        completion record name what the caller addressed rather than
+        the checkpoint's internal version stamp.
         """
         if top_logprobs is not None and not logprobs:
             raise ValueError("top_logprobs requires logprobs=True")
@@ -2040,7 +2047,7 @@ class Fx1Harness:
                 if callable(closer):
                     closer()
                 raise
-            model_name = getattr(backend_obj, "_model", None)
+            model_name = served_model or getattr(backend_obj, "_model", None)
             usage = getattr(backend_obj, "last_usage", None)
             attempts.append(
                 {
@@ -2367,13 +2374,22 @@ class Fx1Harness:
     def openai_models(self) -> OpenAIModelList:
         """The ``GET /v1/models`` inventory in-process — `fx1` plus the
         backend names an OpenAI ``model`` field may carry."""
-        return openai_models(extra_ids=[m["id"] for m in self._ft_store.models()])
+        refs = self._ft_store.models()
+        return openai_models(
+            extra_ids=[m["id"] for m in refs],
+            created_by_id={str(m["id"]): int(m["created"]) for m in refs},
+        )
 
     def openai_model(self, model_id: str) -> OpenAIModel:
         """``GET /v1/models/{id}`` in-process — one card for a listed id;
         unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
         the SDK's request-error class."""
-        return openai_model(model_id, extra_ids=[m["id"] for m in self._ft_store.models()])
+        refs = self._ft_store.models()
+        return openai_model(
+            model_id,
+            extra_ids=[m["id"] for m in refs],
+            created_by_id={str(m["id"]): int(m["created"]) for m in refs},
+        )
 
     def openai_delete_model(self, model_id: str) -> OpenAIModelDelete:
         """``DELETE /v1/models/{id}`` in-process — unregister an ``ft:``
@@ -2665,8 +2681,12 @@ class Fx1Harness:
                 "have no tokenize route to honor them"
             )
         hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
-        backend_name, _fallbacks, checkpoint_dir, byok = _resolve_openai_link(
-            body.model, body.fx1, hdrs, ft_resolver=self._ft_store.checkpoint_for
+        backend_name, _fallbacks, checkpoint_dir, byok, _served = _resolve_openai_link(
+            body.model,
+            body.fx1,
+            hdrs,
+            ft_resolver=self._ft_store.checkpoint_for,
+            require_known_model=True,
         )
         timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
         backend = self._resolve_completion_backend(

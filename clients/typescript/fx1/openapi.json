@@ -88,6 +88,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -291,6 +292,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -2427,6 +2429,17 @@
               }
             ],
             "title": "Seed"
+          },
+          "served_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Served Model"
           },
           "service_tier": {
             "anyOf": [
@@ -5931,6 +5944,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -6374,6 +6388,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -6717,6 +6732,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -7127,6 +7143,7 @@
           },
           "model": {
             "default": "fx1",
+            "minLength": 1,
             "title": "Model",
             "type": "string"
           },
@@ -26100,7 +26117,7 @@
     },
     "/v1/uploads/{upload_id}/complete": {
       "post": {
-        "description": "Assemble the declared parts into a ``file-`` record. The md5\ncheck runs BEFORE the file mints so a checksum failure leaves no\norphan; the upload then transitions terminal.",
+        "description": "Validate and mint one file under the upload lifecycle lock.",
         "operationId": "openai_upload_complete",
         "parameters": [
           {

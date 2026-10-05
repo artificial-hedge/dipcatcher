@@ -740,6 +740,11 @@ class CompleteRequest(_Model):
     verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
+    # The registry alias that resolved — an ``ft:`` name when the ft
+    # registry routed the request at its checkpoint; ``None`` on every
+    # other link. The response and completion record name the alias the
+    # caller addressed, not the checkpoint's internal version stamp.
+    served_model: str | None = None
     # Agent-loop tool context — the OpenAI tool-calling surface on the
     # harness route: function specs the model may call (verbatim
     # OpenAI-shaped dicts), the provider's call policy, and the
@@ -4616,7 +4621,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(cand_key, True)
                 usage_snap = _billable_usage(getattr(backend, "last_usage", None))
-                model_snap = getattr(backend, "_model", None)
+                model_snap = getattr(body, "served_model", None) or getattr(backend, "_model", None)
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
                 break
@@ -4809,7 +4814,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     breaker.report(_breaker_key_name(serving, body.byok), True)
             finally:
                 usage_snap = _billable_usage(getattr(backend, "last_usage", None))
-                model_snap = getattr(backend, "_model", None)
+                model_snap = getattr(body, "served_model", None) or getattr(backend, "_model", None)
                 joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
                     serving,
@@ -4968,9 +4973,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         one gated path, one envelope. Raises ``OpenAICompatError`` on
         translation or post-validation failures (callers map it to the
         wire shape)."""
-        creq = CompleteRequest(
-            **openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
-        )
+        try:
+            creq = CompleteRequest(
+                **openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+            )
+        except ValidationError as exc:
+            raise OpenAICompatError(str(exc), status=422) from exc
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
         # sums what was actually spent (n calls × provider-reported counts).
@@ -5175,9 +5183,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     }
                 )
         search_items, eff_body = _file_search_turn(body, eff_body)
-        creq = CompleteRequest(
-            **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
-        )
+        try:
+            creq = CompleteRequest(
+                **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
+            )
+        except ValidationError as exc:
+            raise OpenAICompatError(str(exc), status=422) from exc
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
         # post-validate against text.format on an empty content
@@ -5258,9 +5269,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         digest binds the sent input and the verbatim ``data[]``).
 
         Returns ``(envelope, completion_id)``."""
-        ereq = EmbedRequest(
-            **embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
-        )
+        try:
+            ereq = EmbedRequest(
+                **embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+            )
+        except ValidationError as exc:
+            raise OpenAICompatError(str(exc), status=422) from exc
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(
@@ -5425,11 +5439,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``client.models.list()`` works unmodified. Without the header the
         OpenAI ``{object: \"list\"}`` shape answers; the cursor params
         are Anthropic's and ignored on the OpenAI branch."""
-        ids = [m for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in ft_store.models()))]
+        refs = ft_store.models()
+        stamps = {str(r["id"]): int(r["created"]) for r in refs}
+        ids = [m for m in (*OPENAI_MODEL_IDS, *(r["id"] for r in refs))]
         if "anthropic-version" not in request.headers:
             return JSONResponse(
                 OpenAIModelList(
-                    data=[OpenAIModel(id=m, created=_openai_created) for m in ids]
+                    data=[OpenAIModel(id=m, created=stamps.get(m, _openai_created)) for m in ids]
                 ).model_dump(mode="json")
             )
         if after_id is not None:
@@ -5444,7 +5460,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         page = ids[-limit:] if before_id is not None else ids[:limit]
         return JSONResponse(
             {
-                "data": [anthropic_model_object(mid, created=_openai_created) for mid in page],
+                "data": [
+                    anthropic_model_object(mid, created=stamps.get(mid, _openai_created))
+                    for mid in page
+                ],
                 "first_id": page[0] if page else None,
                 "last_id": page[-1] if page else None,
                 "has_more": len(ids) > limit,
@@ -5467,11 +5486,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         stock SDK's ``client.models.retrieve``), with unknown ids in the
         ``not_found_error`` grammar."""
         anthropic = "anthropic-version" in request.headers
+        refs = ft_store.models()
         try:
             card = openai_model(
                 model,
                 created=_openai_created,
-                extra_ids=(r["id"] for r in ft_store.models()),
+                extra_ids=(r["id"] for r in refs),
+                created_by_id={str(r["id"]): int(r["created"]) for r in refs},
             )
         except OpenAICompatError as exc:
             if anthropic:
@@ -5481,7 +5502,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         if anthropic:
-            return JSONResponse(anthropic_model_object(model, created=_openai_created))
+            return JSONResponse(anthropic_model_object(model, created=card.created))
         return JSONResponse(card.model_dump(mode="json"))
 
     @app.delete(
@@ -6077,8 +6098,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         hdrs = {str(k).lower(): str(v) for k, v in request.headers.items()}
         try:
-            backend_name, _fb, checkpoint_dir, byok = _resolve_openai_link(
-                body.model, body.fx1, hdrs, ft_resolver=ft_store.checkpoint_for
+            backend_name, _fb, checkpoint_dir, byok, _sv = _resolve_openai_link(
+                body.model,
+                body.fx1,
+                hdrs,
+                ft_resolver=ft_store.checkpoint_for,
+                require_known_model=True,
             )
             timeout_s = _resolve_timeout(body.fx1.timeout_s if body.fx1 is not None else None, hdrs)
         except OpenAICompatError as exc:
@@ -7856,7 +7881,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     prompt_sha256 = hashlib.sha256(
                         json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
                     ).hexdigest()
-                    model_snap = getattr(backend, "_model", None)
+                    model_snap = getattr(body, "served_model", None) or getattr(
+                        backend, "_model", None
+                    )
 
                     def _log_item(
                         ok: bool, content: str | None, err: str | None, cls: str | None
