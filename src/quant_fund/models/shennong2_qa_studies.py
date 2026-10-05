@@ -16,7 +16,7 @@ def shennong2_qa_studies_aux(aux: bool) -> bool:
     """shennong2_qa_studies
 
     aux:
-    shennong2_qa_studies: shennong2, divine farmers, answers, and scores
+    shennong2_qa_studies: shennong2, herb farmers, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_shennong2_qa_studies(seed: int = 0) -> float:
     checks.append(not shennong2_qa_studies_ok(False, True))
     checks.append(shennong2_qa_studies_aux(True))
     checks.append(not shennong2_qa_studies_aux(False))
-    checks.append(True)  # chinese-myth-6 canon
+    checks.append(True)  # chinese-myth-7 canon
     return float(sum(checks) / len(checks))
 
 
