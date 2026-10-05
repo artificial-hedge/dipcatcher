@@ -3577,7 +3577,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
     ) -> Any:
         """Resolve one chain link — per-link kwargs: the byok override binds
-        only a 'byok' link, checkpoint_dir only a 'local_fx1' link."""
+        only a 'byok' link, checkpoint_dir only a 'local_fx1' link.
+        ``resolve_backend`` is create_app's normalized request resolver
+        (``_resolve_request_backend``) — resolver faults already arrive as
+        the wire map's errors."""
         return resolve_backend(
             name,
             body.checkpoint_dir if name == "local_fx1" else None,
@@ -3587,11 +3590,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     def _resolve_chain(
         body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
+        *,
+        out: list[BackendAttempt] | None = None,
     ) -> tuple[str, Any, list[BackendAttempt]]:
         """First chain link that admits + resolves serves; a 503
         (unconfigured / unavailable / circuit open) records the attempt and
-        moves on. Any other error is a request fault and aborts."""
-        attempts: list[BackendAttempt] = []
+        moves on. Any other error is a request fault and aborts. ``out``
+        shares the attempts list with the caller so a dead chain still seals
+        which links were tried on the failed record."""
+        attempts: list[BackendAttempt] = out if out is not None else []
         last: ApiError | None = None
         for cand in [body.backend, *body.fallbacks]:
             key = _breaker_key_name(cand, body.byok)
@@ -3616,12 +3623,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _submit_eval(
         body: EvalSubmitRequest,
         idempotency_key: str | None,
+        *,
+        eval_spec: str | None = None,
+        eval_model: str | None = None,
     ) -> EvalSubmitResponse:
         """Eval submission core — the job contract (idempotency lookup ->
         drain check -> slot admission -> background execution) applied to
         the eval suites. The slot is held for the eval's lifetime and
         released by the worker, so evals queue no deeper than
-        ``max_inflight``."""
+        ``max_inflight``. ``eval_spec``/``eval_model`` bind a /v1/evals
+        run at construction so every journal entry and the terminal
+        callback carry the binding — a fast eval can never fire its
+        webhook before the binding lands."""
         key = (idempotency_key or "").strip() or None
         if key is not None and len(key) > _IDEM_KEY_MAX:
             raise ApiError(400, "Idempotency-Key must be <= 256 chars")
@@ -3657,20 +3670,24 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             created_at=time.time(),
             sampling=EVAL_SAMPLING.body_fields(),
             callback_url=body.callback_url,
+            eval_spec=eval_spec,
+            eval_model=eval_model,
         )
         record._callback_secret = body.callback_secret
 
         def _exec() -> None:
-            if record.status == "cancelled":
+            # Atomically claim the record queued→running under the store's
+            # lock — a cancel that landed first wins, and the worker drops
+            # the task instead of resurrecting a terminal state.
+            if eval_store.start(record.eval_id) is None:
                 metrics.release()
                 inflight.release()
                 return
-            record.status = "running"
-            eval_store.mark(record)
+            chain_att: list[BackendAttempt] = []
             try:
-                name, backend, attempts = _resolve_chain(body)
+                name, backend, _ = _resolve_chain(body, out=chain_att)
                 record.backend = name
-                record.attempts = [a.model_dump(mode="json") for a in attempts]
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 model = metered_model(
                     backend,
                     metric_key=f"eval:{body.suite}:{name}",
@@ -3698,10 +3715,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 run_eval_record(record, model=model, judge=judge)
             except ApiError as exc:
                 record.error = f"{exc.status_code}: {exc.detail}"
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 record.status = "failed"
                 record.finished_at = time.time()
             except Exception as exc:  # noqa: BLE001 — worker faults land in the record
                 record.error = f"{type(exc).__name__}: {exc}"
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 record.status = "failed"
                 record.finished_at = time.time()
             finally:
@@ -3710,13 +3729,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             metrics.release()
             inflight.release()
 
+        # Put before the executor hand-off: the worker's atomic start() claim
+        # can only ever lose to a cancel that already landed — never to a
+        # store that doesn't know the record yet.
+        eval_store.put(record, key, body_fp)
         try:
             jobs_executor.submit(_exec)
         except RuntimeError as exc:  # executor gone (shutdown race)
+            eval_store.delete(record.eval_id)
             metrics.release()
             inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        eval_store.put(record, key, body_fp)
         return EvalSubmitResponse(eval_id=record.eval_id, status=record.status, replayed=False)
 
     @app.post(
@@ -3881,7 +3904,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def eval_spec_list(limit: int = 20, after: str | None = None) -> EvalSpecPage:
         if not 1 <= limit <= 100:
             raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
-        page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        try:
+            page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_cursor") from exc
         return EvalSpecPage(
             data=[EvalSpecWire.model_validate(spec_wire(s)) for s in page], has_more=more
         )
@@ -3961,14 +3987,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         # The run's dedupe namespace is scoped to the spec — the same
         # Idempotency-Key under a different eval is a different run.
         scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
-        submitted = _submit_eval(sub, scoped_key)
+        submitted = _submit_eval(sub, scoped_key, eval_spec=spec.spec_id, eval_model=body.model)
         rec = eval_store.get(submitted.eval_id)
         if rec is None:
             raise ApiError(404, f"run '{submitted.eval_id}' evicted")
-        if not submitted.replayed:
-            rec.eval_spec = spec.spec_id
-            rec.eval_model = body.model
-            eval_store.mark(rec)
         response.headers["Location"] = f"/v1/evals/{eval_id}/runs/{rec.eval_id}"
         return EvalRunObject.model_validate(run_wire(rec))
 
@@ -3984,7 +4006,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
         records, _total = eval_store.list_records(spec=eval_id)
         if after is not None:
-            idx = next((i for i, r in enumerate(records) if r.eval_id == after), None)
+            # The wire hands out run ids as ``evalrun_<id>`` — the cursor
+            # round-trips in that shape or bare.
+            bare_after = after.removeprefix("evalrun_")
+            idx = next((i for i, r in enumerate(records) if r.eval_id == bare_after), None)
             if idx is None:
                 raise ApiError(
                     400,
@@ -4056,8 +4081,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         start = 0
         if after is not None:
-            m = re.fullmatch(r"evalrun_.+-(\d+)", after)
-            start = int(m.group(1)) + 1 if m else 0
+            m = re.fullmatch(r"evalrun_(.+)-(\d+)", after)
+            if m is None or m.group(1) != rec.eval_id:
+                raise ApiError(
+                    400,
+                    f"cursor {after!r} is not an item id under run {run_id!r}",
+                    code="invalid_cursor",
+                )
+            start = int(m.group(2)) + 1
         page = tasks[start : start + limit]
         items = [
             EvalOutputItem(

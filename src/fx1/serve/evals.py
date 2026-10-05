@@ -331,6 +331,22 @@ class EvalStore:
             with self._lock:
                 self._journal.append(self._record(rec))
 
+    def start(self, eval_id: str) -> EvalRecord | None:
+        """Atomic queued→running claim — the worker's handshake against
+        the cancel path. Takes the same lock ``cancel`` does, so a
+        cancel that lands first can never be overwritten back to
+        running. Returns the record only when it was still queued;
+        ``None`` tells the worker to drop it (cancelled, evicted, or
+        unknown)."""
+        with self._lock:
+            rec = self._records.get(eval_id)
+            if rec is None or rec.status != "queued":
+                return None
+            rec.status = "running"
+            if self._journal is not None:
+                self._journal.append(self._record(rec))
+            return rec
+
     @property
     def capacity(self) -> int:
         return self._max
@@ -680,13 +696,17 @@ class EvalSpecStore:
 
     def list_specs(self, *, limit: int, after: str | None) -> tuple[list[EvalSpec], bool]:
         """Newest-first page — ``after`` is a spec-id cursor like the jobs
-        list; returns (page, has_more)."""
+        list; returns (page, has_more). An unknown cursor raises
+        ``ValueError`` — a mistyped cursor must fail closed, never
+        masquerade as end-of-list."""
         with self._lock:
             specs = list(self._specs.values())
         specs.reverse()
         if after is not None:
             idx = next((i for i, s in enumerate(specs) if s.spec_id == after), None)
-            specs = specs[idx + 1 :] if idx is not None else []
+            if idx is None:
+                raise ValueError(f"cursor {after!r} is not a spec id")
+            specs = specs[idx + 1 :]
         page = specs[:limit]
         return page, len(specs) > limit
 
