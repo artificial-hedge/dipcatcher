@@ -467,16 +467,18 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
     client, sink = ctx.client, ctx.sink
     out: dict[str, bool] = {}
 
+    n0 = len(sink.hits)
     _submit_job(client, sink.url("/j1"))
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_job_success_once"] = sink.path_n.get("/j1") == 1
 
     # queued-cancel: occupy every worker, submit, DELETE while queued
     _busy_executor(ctx.app, 4)
     qjob = _submit_job(client, sink.url("/jcancel"))
     qid = qjob["job_id"]
+    n0 = len(sink.hits)
     cxl = client.delete(f"/harness/jobs/{qid}")
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_job_cancel_queued_once"] = (
         cxl.status_code == 200
         and cxl.json().get("status") == "cancelled"
@@ -513,16 +515,18 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
     out["fire_job_gets_no_refire"] = sink.path_n.get("/jslow") == 1
 
     # evals: an unresolvable backend fails terminal; cancel is the same
+    n0 = len(sink.hits)
     evid = _submit_eval(client, sink.url("/ev"))["eval_id"]
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     evst = client.get(f"/harness/evals/{evid}").json()
     out["fire_eval_terminal_once"] = (
         evst.get("status") in _JOB_TERMINAL and sink.path_n.get("/ev") == 1
     )
     _busy_executor(ctx.app, 4)
     ev2id = _submit_eval(client, sink.url("/evcancel"))["eval_id"]
+    n0 = len(sink.hits)
     cxl2 = client.delete(f"/harness/evals/{ev2id}")
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_eval_cancel_queued_once"] = (
         cxl2.status_code == 200 and sink.path_n.get("/evcancel") == 1
     )
@@ -531,9 +535,10 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
     out["fire_eval_repeated_cancel_once"] = sink.path_n.get("/evcancel") == 1
 
     # fine-tuning jobs
+    n0 = len(sink.hits)
     ft = _ft_create(client, sink.url("/ft"))
     ftst = _wait_ft(client, ft["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_ft_success_once"] = (
         ftst.get("status") == "succeeded"
         and sink.path_n.get("/ft") == 1
@@ -541,17 +546,19 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
     )
     _busy_executor(ctx.app, 4)
     ft2 = _ft_create(client, sink.url("/ftcancel"))
+    n0 = len(sink.hits)
     client.post(f"/v1/fine_tuning/jobs/{ft2['id']}/cancel")
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_ft_cancel_queued_once"] = (
         sink.path_n.get("/ftcancel") == 1
         and json.loads(sink.hits[-1].body).get("status") == "cancelled"
     )
 
     # /v1/batches
+    n0 = len(sink.hits)
     b = _batch_create(client, sink.url("/b1"))
     bst = _wait_batch(client, b["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_batch_completed_once"] = (
         bst.get("status") == "completed" and sink.path_n.get("/b1") == 1
     )
@@ -564,17 +571,19 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
     # deterministically before the first line runs
     _busy_executor(ctx.app, 4)
     b2 = _batch_create(client, sink.url("/b2cancel"))
+    n0 = len(sink.hits)
     client.post(f"/v1/batches/{b2['id']}/cancel")
     b2st = _wait_batch(client, b2["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_batch_cancel_once"] = (
         b2st.get("status") == "cancelled" and sink.path_n.get("/b2cancel") == 1
     )
 
     # /v1/messages/batches
+    n0 = len(sink.hits)
     ab = _abatch_create(client, sink.url("/ab1"))
     abst = _wait_abatch(client, ab["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_abatch_ended_once"] = (
         abst.get("processing_status") == "ended" and sink.path_n.get("/ab1") == 1
     )
@@ -585,9 +594,10 @@ def _probe_fire_once(ctx: _Ctx) -> dict[str, bool]:
 
     _busy_executor(ctx.app, 4)
     ab2 = _abatch_create(client, sink.url("/ab2cancel"))
+    n0 = len(sink.hits)
     client.post(f"/v1/messages/batches/{ab2['id']}/cancel")
     ab2st = _wait_abatch(client, ab2["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     out["fire_abatch_cancel_once"] = (
         ab2st.get("processing_status") == "ended"
         and sink.path_n.get("/ab2cancel") == 1
@@ -677,6 +687,7 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
     out: dict[str, bool] = {}
 
     seen_statuses: list[str] = []
+    n0 = len(sink.hits)
     jid = _submit_job(client, sink.url("/pj"), secret=_SECRET)["job_id"]
     end = time.monotonic() + _WAIT_S
     st: dict[str, Any] = {}
@@ -687,7 +698,7 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         if st.get("status") in _JOB_TERMINAL and st.get("callback_status"):
             break
         time.sleep(0.05)
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     hit = sink.hits[-1]
     body = json.loads(hit.body)
     out["payload_job_parses_json"] = isinstance(body, dict)
@@ -708,9 +719,10 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         seen_statuses, key=lambda s: order.get(str(s), 0)
     )
 
+    n0 = len(sink.hits)
     b = _batch_create(client, sink.url("/pb"))
     _wait_batch(client, b["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     bbody = json.loads(sink.hits[-1].body)
     out["payload_batch_envelope"] = (
         bbody.get("object") == "batch"
@@ -720,9 +732,10 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         and bbody.get("callback_url") == sink.url("/pb")
     )
 
+    n0 = len(sink.hits)
     ab = _abatch_create(client, sink.url("/pab"))
     _wait_abatch(client, ab["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     abody = json.loads(sink.hits[-1].body)
     out["payload_abatch_envelope"] = (
         abody.get("type") == "message_batch"
@@ -732,9 +745,10 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         and abody.get("callback_url") == sink.url("/pab")
     )
 
+    n0 = len(sink.hits)
     ft = _ft_create(client, sink.url("/pft"))
     _wait_ft(client, ft["id"])
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     fbody = json.loads(sink.hits[-1].body)
     out["payload_ft_shape"] = (
         fbody.get("object") == "fine_tuning.job"
@@ -744,8 +758,9 @@ def _probe_payload(ctx: _Ctx) -> dict[str, bool]:
         and fbody.get("finished_at") is not None
     )
 
+    n0 = len(sink.hits)
     evid = _submit_eval(client, sink.url("/pev"))["eval_id"]
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     ebody = json.loads(sink.hits[-1].body)
     evst = client.get(f"/harness/evals/{evid}").json()
     out["payload_eval_shape"] = (
@@ -803,9 +818,10 @@ def _probe_secret_never_serializes(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
     body, or the on-disk journal."""
     client, sink = ctx.client, ctx.sink
     out: dict[str, bool] = {}
+    n0 = len(sink.hits)
     jid = _submit_job(client, sink.url("/s"), secret=_SECRET)["job_id"]
     st = _wait_job(client, jid)
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     got = client.get(f"/harness/jobs/{jid}")
     lst = client.get("/harness/jobs")
     out["secret_not_in_get"] = "callback_secret" not in st and _SECRET not in got.text
@@ -815,9 +831,10 @@ def _probe_secret_never_serializes(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
     # the state-dir journal persists records — the secret must not land
     jdir = workdir / "state"
     jctx = _make_ctx(workdir / "w2", sink=sink, state_dir=jdir)
+    n0 = len(sink.hits)
     sjid = _submit_job(jctx.client, sink.url("/sj"), secret=_SECRET)["job_id"]
     _wait_job(jctx.client, sjid)
-    _wait_hits(sink, len(sink.hits) + 1)
+    _wait_hits(sink, n0 + 1)
     journal_bytes = b""
     jpath = jdir / "jobs.jsonl"
     if jpath.exists():
