@@ -160,7 +160,7 @@ from fx1.serve.finetune import (
     default_ft_runner,
     validate_chat_jsonl,
 )
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 from fx1.serve.keys import CLEARABLE_KEY_FIELDS, SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
@@ -2175,6 +2175,70 @@ def _deliver_callback(
     rec.callback_attempts = attempts
 
 
+def _validation_response(request: Request, exc: RequestValidationError) -> JSONResponse:
+    errs = exc.errors()
+    if is_openai_path(request.url.path):
+        msg = "; ".join(
+            f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}" for e in errs[:4]
+        )
+        return JSONResponse(
+            status_code=422,
+            content=_v1_error_body(request.url.path, msg or "invalid request", 422, "validation"),
+        )
+    try:
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"detail": errs, "code": "validation"}),
+        )
+    except RecursionError:
+        # A rejected input can be too deeply nested to echo. Preserve
+        # the validation failure without recursively encoding that input.
+        details = [{key: err[key] for key in ("type", "loc", "msg") if key in err} for err in errs]
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"detail": details, "code": "validation"}),
+        )
+
+
+def _idem_key(key: str | None) -> str | None:
+    """Normalize a claim key exactly as the existing replay lookup does."""
+    key = (key or "").strip() or None
+    if key is not None and len(key) > _IDEM_KEY_MAX:
+        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+    return key
+
+
+async def _run_claimed[ResultT](
+    claim: AbstractAsyncContextManager[None], action: Callable[[], ResultT]
+) -> ResultT:
+    """Keep a key claimed until its synchronous worker has really finished.
+
+    Waiting retries yield without occupying request workers. A shielded
+    child keeps executing after its caller is cancelled; the task group
+    drains it before releasing the claim, so a retry cannot overlap work
+    that is still publishing its replay record. Worker errors are raised
+    outside the group to preserve their original HTTP error type.
+    """
+    import anyio
+
+    results: list[ResultT] = []
+    failures: list[Exception] = []
+
+    async def execute() -> None:
+        with anyio.CancelScope(shield=True):
+            try:
+                results.append(await anyio.to_thread.run_sync(action))
+            except Exception as exc:  # noqa: BLE001 — preserve the worker's exact error
+                failures.append(exc)
+
+    async with claim:
+        async with anyio.create_task_group() as tasks:
+            tasks.start_soon(execute)
+        if failures:
+            raise failures[0]
+        return results[0]
+
+
 def _submit_job(
     body: HarnessRunRequest,
     idempotency_key: str | None,
@@ -2474,7 +2538,7 @@ def _mount_job_routes(
         tags=["jobs"],
         operation_id="submit_job",
     )
-    def submit_job(
+    async def submit_job(
         body: HarnessRunRequest,
         response: Response,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -2483,14 +2547,10 @@ def _mount_job_routes(
         polls ``GET /harness/jobs/{job_id}`` for the terminal record (also
         echoed as the ``Location`` header). Same drain/cap/idempotency
         contract as the sync route."""
-        out = _submit_job(
-            body,
-            idempotency_key or body.idempotency_key,
-            lab,
-            job_store,
-            metrics,
-            inflight,
-            jobs_executor,
+        key = _idem_key(idempotency_key or body.idempotency_key)
+        out = await _run_claimed(
+            job_store.async_claim_lock(key),
+            lambda: _submit_job(body, key, lab, job_store, metrics, inflight, jobs_executor),
         )
         response.headers["Location"] = f"/harness/jobs/{out.job_id}"
         return out
@@ -2502,7 +2562,7 @@ def _mount_job_routes(
         tags=["jobs"],
         operation_id="submit_jobs_batch",
     )
-    def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
+    async def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
         """Fan-out submit: each item takes the same path as the single
         route — command validation, drain latch, inflight cap, and
         per-item ``idempotency_key`` dedup (headers carry no per-item
@@ -2514,14 +2574,12 @@ def _mount_job_routes(
         submitted = 0
         for i, req in enumerate(body.jobs):
             try:
-                resp = _submit_job(
-                    req,
-                    req.idempotency_key,
-                    lab,
-                    job_store,
-                    metrics,
-                    inflight,
-                    jobs_executor,
+                key = _idem_key(req.idempotency_key)
+                resp = await _run_claimed(
+                    job_store.async_claim_lock(key),
+                    lambda req=req, key=key: _submit_job(
+                        req, key, lab, job_store, metrics, inflight, jobs_executor
+                    ),
                 )
                 items.append(
                     JobBatchItemResponse(
@@ -2665,6 +2723,7 @@ class _IdemStore[IdemT: BaseModel]:
     ) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
+        self._claims = _ClaimLocks(max_entries)
         self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
         self._journal = journal
         self.recover_warnings: list[str] = []
@@ -2685,6 +2744,9 @@ class _IdemStore[IdemT: BaseModel]:
                 )
                 self._map.move_to_end(str(rec["key"]))
             self._compact_locked()
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        return self._claims.ahold(key)
 
     def _compact_locked(self) -> None:
         if self._journal is not None:
@@ -2790,6 +2852,7 @@ class _JobStore:
     def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
+        self._claims = _ClaimLocks(max_entries)
         self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._job_key: dict[str, str] = {}
@@ -2821,6 +2884,9 @@ class _JobStore:
                     job.error = "process restarted before the job reached a terminal state"
                     job.finished_at = now
             self._compact_locked()
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        return self._claims.ahold(key)
 
     def _drop(self, job_id: str) -> None:
         self._jobs.pop(job_id, None)
@@ -9131,22 +9197,7 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
-        if is_openai_path(request.url.path):
-            errs = jsonable_encoder(exc.errors())
-            msg = "; ".join(
-                f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}"
-                for e in errs[:4]
-            )
-            return JSONResponse(
-                status_code=422,
-                content=_v1_error_body(
-                    request.url.path, msg or "invalid request", 422, "validation"
-                ),
-            )
-        return JSONResponse(
-            status_code=422,
-            content=jsonable_encoder({"detail": exc.errors(), "code": "validation"}),
-        )
+        return _validation_response(request, exc)
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
@@ -9598,37 +9649,41 @@ def create_app(
         tags=["runs"],
         operation_id="run_command",
     )
-    def run_command(
+    async def run_command(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        body_fp = _body_fp(body, exclude={"idempotency_key"})
-        key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
-        if replay is not None:
-            return replay
-        with _work_gate():
-            try:
-                result = lab.run(
-                    body.command,
-                    body.extra_args or None,
-                    config=Path(body.config) if body.config else None,
+        def execute() -> HarnessRunResponse:
+            body_fp = _body_fp(body, exclude={"idempotency_key"})
+            key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
+            if replay is not None:
+                return replay
+            with _work_gate():
+                try:
+                    result = lab.run(
+                        body.command,
+                        body.extra_args or None,
+                        config=Path(body.config) if body.config else None,
+                    )
+                except KeyError as exc:
+                    raise ApiError(404, str(exc)) from exc
+                except ValueError as exc:
+                    raise ApiError(422, str(exc)) from exc
+                command = lab.get(body.command)
+                resp = HarnessRunResponse(
+                    command=result.command,
+                    exit_code=result.exit_code,
+                    stdout=result.stdout,
+                    stderr=result.stderr,
+                    ok=result.ok,
+                    timeout_s=command.timeout_s,
                 )
-            except KeyError as exc:
-                raise ApiError(404, str(exc)) from exc
-            except ValueError as exc:
-                raise ApiError(422, str(exc)) from exc
-            command = lab.get(body.command)
-            resp = HarnessRunResponse(
-                command=result.command,
-                exit_code=result.exit_code,
-                stdout=result.stdout,
-                stderr=result.stderr,
-                ok=result.ok,
-                timeout_s=command.timeout_s,
-            )
-        if key is not None:
-            idem_store.put(key, body_fp, resp)
-        return resp
+            if key is not None:
+                idem_store.put(key, body_fp, resp)
+            return resp
+
+        key = _idem_key(idempotency_key or body.idempotency_key)
+        return await _run_claimed(idem_store.async_claim_lock(key), execute)
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
     _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
