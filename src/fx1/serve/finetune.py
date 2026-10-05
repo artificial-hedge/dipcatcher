@@ -321,6 +321,8 @@ class FTJobStore:
                 if "ft_job" not in payload:
                     continue
                 job = FTJob.model_validate(payload["ft_job"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                job._callback_fired = True
                 key = payload.get("key")
                 fp = payload.get("fp")
                 entry = FTJobEntry(

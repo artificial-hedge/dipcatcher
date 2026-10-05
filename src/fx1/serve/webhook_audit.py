@@ -460,9 +460,10 @@ def _probe_signature(ctx: _Ctx) -> dict[str, bool]:
 
 def _probe_unsigned(ctx: _Ctx) -> dict[str, bool]:
     """A secret-less delivery carries no signature headers."""
+    n0 = len(ctx.sink.hits)
     jid = _submit_job(ctx.client, ctx.sink.url("/unsigned"))["job_id"]
     _wait_job(ctx.client, jid)
-    _wait_hits(ctx.sink, len(ctx.sink.hits) + 1)
+    _wait_hits(ctx.sink, n0 + 1)
     hit = ctx.sink.hits[-1]
     return {
         "unsigned_no_signature_header": WEBHOOK_SIGNATURE_HEADER not in hit.headers

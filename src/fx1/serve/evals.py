@@ -292,6 +292,8 @@ class EvalStore:
                 if "record" not in payload:
                     continue
                 rec = EvalRecord.model_validate(payload["record"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                rec._callback_fired = True
                 self._records[rec.eval_id] = rec
                 self._records.move_to_end(rec.eval_id)
                 key, fp = payload.get("key"), payload.get("fp")

@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
@@ -109,6 +109,18 @@ def _surface(
         api_key=api_key or os.environ.get("FX1_API_KEY") or None,
         timeout_s=timeout_s,
     )
+
+
+def _last_request_id(client: Any) -> str | None:
+    """``x-request-id`` off the client's last wire response, when it
+    reports one — the trace id a bug report would quote. ``None`` for
+    clients without a header channel or a transport that saw no
+    response."""
+    hmap = getattr(client, "last_response_headers", None)
+    if not isinstance(hmap, Mapping):
+        return None
+    rid = hmap.get("x-request-id")
+    return rid if isinstance(rid, str) and rid else None
 
 
 def _or_exit[T](fn: Callable[[], T]) -> T:
@@ -1071,7 +1083,13 @@ def harness_version(
     /harness/version, local mode prints this install's own pair."""
     if remote is not None:
         client = _remote_client(remote, api_key, timeout_s)
-        typer.echo(json.dumps(_or_exit(lambda: client.server_version())))
+        out = _or_exit(lambda: client.server_version())
+        # the wire's request-id for this very call — the trace surface a
+        # deploy loop would paste into a bug report
+        rid = _last_request_id(client)
+        if rid is not None:
+            out = {**out, "request_id": rid}
+        typer.echo(json.dumps(out))
         return
     from fx1 import __version__
     from fx1.serve.contract import API_VERSION
@@ -1350,6 +1368,9 @@ def harness_compat(
         raise typer.Exit(code=2)
     client = _remote_client(remote, api_key, timeout_s)
     report = _or_exit(lambda: client.check_compat(strict=False))
+    rid = _last_request_id(client)
+    if rid is not None:
+        report = {**report, "request_id": rid}
     typer.echo(json.dumps(report))
     if not report["compatible"]:
         raise typer.Exit(code=1)

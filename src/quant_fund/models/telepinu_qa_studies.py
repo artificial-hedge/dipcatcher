@@ -22,12 +22,13 @@ def telepinu_qa_studies_aux(aux: bool) -> bool:
 
 
 def _bench_telepinu_qa_studies(seed: int = 0) -> float:
-    checks = []
-    checks.append(telepinu_qa_studies_ok(True, True))
-    checks.append(not telepinu_qa_studies_ok(False, True))
-    checks.append(telepinu_qa_studies_aux(True))
-    checks.append(not telepinu_qa_studies_aux(False))
-    checks.append(True)  # hittite-myth canon
+    checks = [
+        telepinu_qa_studies_ok(True, True),
+        not telepinu_qa_studies_ok(False, True),
+        telepinu_qa_studies_aux(True),
+        not telepinu_qa_studies_aux(False),
+        True,  # hittite-myth canon
+    ]
     return float(sum(checks) / len(checks))
 
 
