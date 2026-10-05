@@ -6953,6 +6953,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "decarabia_qa_studies",
         "malphas_qa_studies",
         "seere_qa_studies",
+        # Wave-1956 goetic-covenant canon.
+        "focalor_qa_studies",
+        "halphas_qa_studies",
+        "raum_qa_studies",
+        "sabnock_qa_studies",
+        "shax_qa_studies",
+        "vepar_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

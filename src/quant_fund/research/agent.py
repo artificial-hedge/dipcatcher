@@ -15639,6 +15639,14 @@ from quant_fund.research.benches_w1955 import (
     bench_malphas_qa_studies_family,
     bench_seere_qa_studies_family,
 )
+from quant_fund.research.benches_w1956 import (
+    bench_focalor_qa_studies_family,
+    bench_halphas_qa_studies_family,
+    bench_raum_qa_studies_family,
+    bench_sabnock_qa_studies_family,
+    bench_shax_qa_studies_family,
+    bench_vepar_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
