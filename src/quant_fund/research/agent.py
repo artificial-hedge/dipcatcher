@@ -15103,6 +15103,14 @@ from quant_fund.research.benches_w1888 import (
     bench_vafthrudnir_qa_studies_family,
     bench_voluspa_qa_studies_family,
 )
+from quant_fund.research.benches_w1889 import (
+    bench_alvissmal_qa_studies_family,
+    bench_edda_lore_qa_studies_family,
+    bench_gylfaginning_prose_qa_studies_family,
+    bench_haddingjar_qa_studies_family,
+    bench_hyndluljod_qa_studies_family,
+    bench_rigsthula_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
