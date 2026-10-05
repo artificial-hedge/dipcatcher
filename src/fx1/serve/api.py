@@ -1927,6 +1927,12 @@ def _responses_sse(
             yield _frame(event, payload, seq)
 
 
+# ``timeout_s``'s route cap (3600) divided by the poll floor — a literal
+# bound the follow loop can never outrun; the deadline ends it far sooner
+_REPLAY_MIN_POLL_S = 0.01
+_REPLAY_FOLLOW_MAX_ITERS = 360_001
+
+
 def _responses_replay_frames(
     envelope_store: OpenAIEnvelopeStore,
     response_id: str,
@@ -1959,8 +1965,10 @@ def _responses_replay_frames(
     cursor = skip
     deadline = time.monotonic() + timeout_s
     next_keep = time.monotonic() + keepalive_s if keepalive_s > 0 else math.inf
-    poll_s = 0.25 if keepalive_s <= 0 else min(0.25, keepalive_s)
-    while True:
+    poll_s = 0.25 if keepalive_s <= 0 else max(_REPLAY_MIN_POLL_S, min(0.25, keepalive_s))
+    # static trip bound: the follow window is request input, so the loop
+    # iterates a fixed worst case and the deadline still ends it early
+    for _ in range(_REPLAY_FOLLOW_MAX_ITERS):
         env = envelope_store.get(response_id)
         if env is None:
             return
