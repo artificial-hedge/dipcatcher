@@ -58,6 +58,7 @@ from contextlib import (
     asynccontextmanager,
     contextmanager,
 )
+from functools import partial
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -2578,8 +2579,15 @@ def _mount_job_routes(
                 key = _idem_key(req.idempotency_key)
                 resp = await _run_claimed(
                     job_store.async_claim_lock(key),
-                    lambda req=req, key=key: _submit_job(
-                        req, key, lab, job_store, metrics, inflight, jobs_executor
+                    partial(
+                        _submit_job,
+                        req,
+                        key,
+                        lab,
+                        job_store,
+                        metrics,
+                        inflight,
+                        jobs_executor,
                     ),
                 )
                 items.append(
@@ -7471,23 +7479,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``has_more`` + ``first_id``/``last_id``) so stock-SDK
         auto-pagination terminates; ``purpose`` filters by the upload's
         declared intent."""
-        if order not in ("asc", "desc"):
-            raise OpenAICompatError(
-                f"order must be 'asc' or 'desc', got {order!r}",
-                status=400,
-                code="invalid_cursor",
+        try:
+            if order not in ("asc", "desc"):
+                raise OpenAICompatError(
+                    f"order must be 'asc' or 'desc', got {order!r}",
+                    status=400,
+                    code="invalid_cursor",
+                )
+            records = file_store.list()
+            if purpose is not None:
+                records = [r for r in records if r.purpose == purpose]
+            items = [file_object(r.model_dump()) for r in records]
+            # the store is newest-first — that IS desc; "asc" flips to
+            # oldest-first before the shared pager walks it
+            if order == "asc":
+                items.reverse()
+            return JSONResponse(
+                paged_item_list(items, limit=limit, after=after, before=before, order="asc")
             )
-        records = file_store.list()
-        if purpose is not None:
-            records = [r for r in records if r.purpose == purpose]
-        items = [file_object(r.model_dump()) for r in records]
-        # the store is newest-first — that IS desc; "asc" flips to
-        # oldest-first before the shared pager walks it
-        if order == "asc":
-            items.reverse()
-        return JSONResponse(
-            paged_item_list(items, limit=limit, after=after, before=before, order="asc")
-        )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
     @app.get(
         "/v1/files/{file_id}",
@@ -7732,8 +7743,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         items = batch_store.list()
         if after is not None:
             idx = next((i for i, b in enumerate(items) if b.batch_id == after), None)
-            if idx is not None:
-                items = items[idx + 1 :]
+            if idx is None:
+                raise ApiError(400, f"cursor {after!r} is not a batch id", code="invalid_cursor")
+            items = items[idx + 1 :]
         page = items[:limit]
         return JSONResponse(
             {
