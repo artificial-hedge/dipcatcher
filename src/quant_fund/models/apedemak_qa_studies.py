@@ -27,7 +27,7 @@ def _bench_apedemak_qa_studies(seed: int = 0) -> float:
     checks.append(not apedemak_qa_studies_ok(False, True))
     checks.append(apedemak_qa_studies_aux(True))
     checks.append(not apedemak_qa_studies_aux(False))
-    checks.append(True)  # kushite-myth canon
+    checks.append(True)  # meroitic-myth canon
     return float(sum(checks) / len(checks))
 
 

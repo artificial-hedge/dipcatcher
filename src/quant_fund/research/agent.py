@@ -14817,11 +14817,9 @@ from quant_fund.research.benches_w1852 import (
 )
 from quant_fund.research.benches_w1853 import (
     bench_amesemi_qa_studies_family,
-    bench_apedemak_qa_studies_family,
     bench_aresnuphis_qa_studies_family,
     bench_dedun_qa_studies_family,
     bench_sabios_qa_studies_family,
-    bench_sebiumeker_qa_studies_family,
 )
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
