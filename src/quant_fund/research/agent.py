@@ -14847,6 +14847,14 @@ from quant_fund.research.benches_w1856 import (
     bench_taranis_qa_studies_family,
     bench_teutates_qa_studies_family,
 )
+from quant_fund.research.benches_w1857 import (
+    bench_belatucadrus_qa_studies_family,
+    bench_cocidius_qa_studies_family,
+    bench_maponus_qa_studies_family,
+    bench_nemetona_qa_studies_family,
+    bench_rigisamus_qa_studies_family,
+    bench_sulis_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
