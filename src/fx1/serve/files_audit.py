@@ -37,7 +37,9 @@ the whole lifecycle end to end:
 - *Durability* — under ``--state-dir`` metadata journals and bytes land
   as ``files/<id>.bin`` before the journal names them: a restart returns
   the same bytes under the same ids, a deleted record stays deleted, an
-  evicted record stays evicted, and orphan blobs are GC'd on boot.
+  evicted record stays evicted, LRU touches survive restart, journal
+  failures cannot publish a mutation, damaged journals fail closed
+  without rewriting evidence, and orphan blobs are GC'd on a clean boot.
 - *Uploads-minted parity* — a ``/v1/uploads``-completed ``file-*`` is
   indistinguishable from a direct ``POST /v1/files`` record on every
   surface.
@@ -70,6 +72,17 @@ Defects found while probing, fixed on this lane:
   slice) and re-served the first page, diverging from the shared
   fail-closed cursor contract ``paged_item_list`` documents. It now
   refuses ``400 invalid_cursor`` like its siblings.
+- *File mutations published before their journal records* — failed
+  journal appends left new files and deletes visible in memory, and an
+  evicting put could discard an older live record. Mutations now append
+  before publishing; failed put blobs are removed.
+- *LRU order diverged after restart* — a GET refreshed only memory, so
+  the next eviction could change after recovery. Touches are journaled
+  before the in-memory order changes.
+- *Damaged file journals were compacted around a verified prefix* — a
+  corrupt suffix could be destroyed and a deleted record resurrected.
+  Broken chains, invalid operations, missing blobs, and size mismatches
+  now refuse startup without rewriting the evidence.
 
 Probes are literal bools: ``True`` pins a contract that holds;
 ``False`` pins a measured divergence — the sealed receipt names every
@@ -87,7 +100,7 @@ import threading
 import time
 import urllib.parse
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -315,17 +328,32 @@ def _wait_ft(c: TestClient, jid: str, timeout_s: float = 30.0) -> dict[str, Any]
 
 def _run_threads(fn: Any, n: int = 8) -> None:
     """Run ``fn(0..n-1)`` released together behind a barrier."""
-    barrier = threading.Barrier(n)
+    _run_calls([lambda i=i: fn(i) for i in range(n)])
 
-    def _w(i: int) -> None:
-        barrier.wait()
-        fn(i)
 
-    ths = [threading.Thread(target=_w, args=(i,)) for i in range(n)]
+def _run_calls(calls: list[Any]) -> None:
+    """Run heterogeneous calls concurrently and propagate worker failures."""
+    barrier = threading.Barrier(len(calls))
+    errors: list[BaseException] = []
+    errors_lock = threading.Lock()
+
+    def _w(call: Any) -> None:
+        try:
+            barrier.wait()
+            call()
+        except BaseException as exc:  # noqa: BLE001 — worker errors must reach the audit
+            with errors_lock:
+                errors.append(exc)
+
+    ths = [threading.Thread(target=_w, args=(call,)) for call in calls]
     for t in ths:
         t.start()
     for t in ths:
-        t.join()
+        t.join(timeout=30.0)
+    if any(t.is_alive() for t in ths):
+        raise RuntimeError("files audit worker did not terminate")
+    if errors:
+        raise RuntimeError(f"files audit worker failed: {errors[0]}") from errors[0]
 
 
 def _tc_transport(client: TestClient) -> Any:
@@ -561,9 +589,9 @@ def _probe_get_delete(c: TestClient) -> dict[str, bool]:
     return out
 
 
-def _probe_caps() -> dict[str, bool]:
+def _probe_caps(stack: ExitStack) -> dict[str, bool]:
     out: dict[str, bool] = {}
-    capped = _client(file_bytes_max=64)
+    capped = stack.enter_context(_client(file_bytes_max=64))
     fat = _upload(capped, b"x" * 65)
     out["over_file_cap_413_envelope"] = (
         fat.status_code == 413 and _code(fat) == "file_too_large" and _is_envelope(fat)
@@ -574,12 +602,12 @@ def _probe_caps() -> dict[str, bool]:
     out["zero_byte_400"] = zero.status_code == 400 and _code(zero) == "invalid_request"
     # the request-body cap sits under the file cap — a >1 MiB multipart
     # refuses 413 too_large at the transport layer, still in the envelope
-    big = _upload(_client(), b"x" * (1 << 20 | 1))
+    big = _upload(stack.enter_context(_client()), b"x" * (1 << 20 | 1))
     out["over_body_cap_413_too_large"] = (
         big.status_code == 413 and _code(big) == "too_large" and _is_envelope(big)
     )
     # entry cap: LRU eviction is a real tombstone
-    lm = _client(file_max=2)
+    lm = stack.enter_context(_client(file_max=2))
     e1 = _minted(lm, b'{"e":1}\n')
     e2 = _minted(lm, b'{"e":2}\n')
     e3 = _minted(lm, b'{"e":3}\n')
@@ -591,7 +619,7 @@ def _probe_caps() -> dict[str, bool]:
         and lm.get(f"/v1/files/{e3}").status_code == 200
     )
     # a get refreshes LRU position — the read file is NOT the evict victim
-    lm2 = _client(file_max=2)
+    lm2 = stack.enter_context(_client(file_max=2))
     f1 = _minted(lm2, b'{"f":1}\n')
     f2 = _minted(lm2, b'{"f":2}\n')
     assert lm2.get(f"/v1/files/{f1}").status_code == 200
@@ -604,7 +632,9 @@ def _probe_caps() -> dict[str, bool]:
     return out
 
 
-def _probe_consumer(c: TestClient, ft_client: TestClient, slow: TestClient) -> dict[str, bool]:
+def _probe_consumer(
+    c: TestClient, ft_client: TestClient, slow: TestClient, stack: ExitStack
+) -> dict[str, bool]:
     out: dict[str, bool] = {}
     fid = _minted(c, _BODY, purpose="batch")
     r = c.post(
@@ -747,7 +777,7 @@ def _probe_consumer(c: TestClient, ft_client: TestClient, slow: TestClient) -> d
         },
     )
     out["batch_blank_lines_400"] = bl.status_code == 400 and _code(bl) == "invalid_request"
-    one_line = _client(batch_line_max=1)
+    one_line = stack.enter_context(_client(batch_line_max=1))
     two = _minted(one_line, _BODY, purpose="batch")
     over = one_line.post(
         "/v1/batches",
@@ -932,8 +962,7 @@ def _probe_concurrency(c: TestClient) -> dict[str, bool]:
         def _rm(i: int, rid: str = rid) -> None:
             c.delete(f"/v1/files/{rid}")
 
-        _run_threads(_read, 4)
-        _run_threads(_rm, 1)
+        _run_calls([*[lambda i=i: _read(i) for i in range(4)], lambda: _rm(0)])
         for status, payload in results:
             if status == 200 and payload != body:
                 torn = True
@@ -943,10 +972,10 @@ def _probe_concurrency(c: TestClient) -> dict[str, bool]:
     return out
 
 
-def _probe_tenancy() -> dict[str, bool]:
+def _probe_tenancy(stack: ExitStack) -> dict[str, bool]:
     out: dict[str, bool] = {}
     with _env_key():
-        c = _client()
+        c = stack.enter_context(_client())
         env_h = {"X-API-Key": _ROOT_KEY}
         out["unauthenticated_401"] = _upload(c).status_code == 401
         out["wrong_key_401"] = _upload(c, headers={"X-API-Key": "wrong"}).status_code == 401
@@ -990,61 +1019,130 @@ def _probe_tenancy() -> dict[str, bool]:
 def _probe_durability(tmp: Path) -> dict[str, bool]:
     out: dict[str, bool] = {}
     state = tmp / "state"
-    c1 = _client(state_dir=state)
-    fid = _minted(c1, _BODY, purpose="batch")
-    fid2 = _minted(c1, b'{"z":9}\n', purpose="fine-tune")
-    journal = state / "files.jsonl"
-    blob = state / "files" / f"{fid}.bin"
-    out["journal_and_blob_on_disk"] = (
-        journal.is_file() and blob.is_file() and blob.read_bytes() == _BODY
-    )
+    with _client(state_dir=state) as c1:
+        fid = _minted(c1, _BODY, purpose="batch")
+        fid2 = _minted(c1, b'{"z":9}\n', purpose="fine-tune")
+        journal = state / "files.jsonl"
+        blob = state / "files" / f"{fid}.bin"
+        out["journal_and_blob_on_disk"] = (
+            journal.is_file() and blob.is_file() and blob.read_bytes() == _BODY
+        )
     # restart: same ids, same bytes, same order — list BEFORE the gets
     # because a GET refreshes the LRU position by design
-    c2 = _client(state_dir=state)
-    listed = [f["id"] for f in c2.get("/v1/files").json()["data"]]
-    got = c2.get(f"/v1/files/{fid}")
-    raw = c2.get(f"/v1/files/{fid}/content")
-    out["restart_restores_bytes"] = (
-        got.status_code == 200
-        and got.json()["purpose"] == "batch"
-        and raw.status_code == 200
-        and raw.content == _BODY
-    )
-    out["restart_order_preserved"] = listed[:2] == [fid2, fid]
-    store2 = cast("FastAPI", c2.app).state.file_store
-    out["clean_restart_no_recover_warnings"] = store2.recover_warnings == []
-    # a deleted record stays deleted — tombstone replays, blob unlinks
-    c2.delete(f"/v1/files/{fid2}")
-    out["delete_unlinks_blob"] = not (state / "files" / f"{fid2}.bin").exists()
-    c3 = _client(state_dir=state)
-    out["deleted_stays_deleted_after_restart"] = (
-        c3.get(f"/v1/files/{fid2}").status_code == 404
-        and c3.get(f"/v1/files/{fid2}/content").status_code == 404
-        and all(f["id"] != fid2 for f in c3.get("/v1/files").json()["data"])
-        and not (state / "files" / f"{fid2}.bin").exists()
-    )
+    with _client(state_dir=state) as c2:
+        listed = [f["id"] for f in c2.get("/v1/files").json()["data"]]
+        got = c2.get(f"/v1/files/{fid}")
+        raw = c2.get(f"/v1/files/{fid}/content")
+        out["restart_restores_bytes"] = (
+            got.status_code == 200
+            and got.json()["purpose"] == "batch"
+            and raw.status_code == 200
+            and raw.content == _BODY
+        )
+        out["restart_order_preserved"] = listed[:2] == [fid2, fid]
+        store2 = cast("FastAPI", c2.app).state.file_store
+        out["clean_restart_no_recover_warnings"] = store2.recover_warnings == []
+        # a deleted record stays deleted — tombstone replays, blob unlinks
+        c2.delete(f"/v1/files/{fid2}")
+        out["delete_unlinks_blob"] = not (state / "files" / f"{fid2}.bin").exists()
+    with _client(state_dir=state) as c3:
+        out["deleted_stays_deleted_after_restart"] = (
+            c3.get(f"/v1/files/{fid2}").status_code == 404
+            and c3.get(f"/v1/files/{fid2}/content").status_code == 404
+            and all(f["id"] != fid2 for f in c3.get("/v1/files").json()["data"])
+            and not (state / "files" / f"{fid2}.bin").exists()
+        )
     # eviction journals a tombstone too — an evicted file stays evicted
     e_state = tmp / "evict"
-    ec1 = _client(state_dir=e_state, file_max=1)
-    ea = _minted(ec1, b'{"e":"a"}\n')
-    _minted(ec1, b'{"e":"b"}\n')
-    ec2 = _client(state_dir=e_state, file_max=1)
-    out["evicted_stays_evicted_after_restart"] = (
-        ec2.get(f"/v1/files/{ea}").status_code == 404
-        and ec2.get(f"/v1/files/{ea}/content").status_code == 404
-    )
+    with _client(state_dir=e_state, file_max=1) as ec1:
+        ea = _minted(ec1, b'{"e":"a"}\n')
+        _minted(ec1, b'{"e":"b"}\n')
+    with _client(state_dir=e_state, file_max=1) as ec2:
+        out["evicted_stays_evicted_after_restart"] = (
+            ec2.get(f"/v1/files/{ea}").status_code == 404
+            and ec2.get(f"/v1/files/{ea}/content").status_code == 404
+        )
     # orphan blob GC: a blob with no journaled record is dropped at boot
     g_state = tmp / "gc"
-    gc1 = _client(state_dir=g_state)
-    gfid = _minted(gc1, b'{"g":1}\n')
+    with _client(state_dir=g_state) as gc1:
+        gfid = _minted(gc1, b'{"g":1}\n')
     orphan = g_state / "files" / "file-ghost.bin"
     orphan.write_bytes(b"orphaned bytes")
-    gc2 = _client(state_dir=g_state)
-    out["orphan_blob_gcd_on_boot"] = (
-        not orphan.exists()
-        and gc2.get("/v1/files/file-ghost").status_code == 404
-        and gc2.get(f"/v1/files/{gfid}").status_code == 200
+    with _client(state_dir=g_state) as gc2:
+        out["orphan_blob_gcd_on_boot"] = (
+            not orphan.exists()
+            and gc2.get("/v1/files/file-ghost").status_code == 404
+            and gc2.get(f"/v1/files/{gfid}").status_code == 200
+        )
+    return out
+
+
+def _probe_journal_failures(tmp: Path) -> dict[str, bool]:
+    """Pin journal-before-publish and fail-closed recovery semantics."""
+    from fx1.serve.api import _FileStore
+
+    out: dict[str, bool] = {}
+    state = tmp / "journal-faults"
+    store = _FileStore(2, 1 << 20, state_dir=state)
+    first = store.put(filename="a.jsonl", purpose="batch", content=b'{"a":1}\n')
+    second = store.put(filename="b.jsonl", purpose="batch", content=b'{"b":2}\n')
+    before_ids = [rec.file_id for rec in store.list()]
+    before_blobs = {p.name for p in (state / "files").glob("*.bin")}
+    journal = cast("Any", store._journal)
+    append = journal.append
+
+    def fail_append(payload: dict[str, Any]) -> None:
+        raise OSError("synthetic journal failure")
+
+    journal.append = fail_append
+    try:
+        store.put(filename="c.jsonl", purpose="batch", content=b'{"c":3}\n')
+        put_failed = False
+    except OSError:
+        put_failed = True
+    out["journal_failed_put_not_published"] = (
+        put_failed
+        and [rec.file_id for rec in store.list()] == before_ids
+        and {p.name for p in (state / "files").glob("*.bin")} == before_blobs
     )
+    try:
+        store.delete(first.file_id)
+        delete_failed = False
+    except OSError:
+        delete_failed = True
+    out["journal_failed_delete_not_published"] = delete_failed and {
+        rec.file_id for rec in store.list()
+    } == {first.file_id, second.file_id}
+    order_before_touch = [rec.file_id for rec in store.list()]
+    try:
+        store.get(first.file_id)
+        touch_failed = False
+    except OSError:
+        touch_failed = True
+    out["journal_failed_touch_not_published"] = (
+        touch_failed and [rec.file_id for rec in store.list()] == order_before_touch
+    )
+    journal.append = append
+
+    # A successful GET is an LRU mutation and must survive restart.
+    assert store.get(first.file_id) is not None
+    recovered = _FileStore(2, 1 << 20, state_dir=state)
+    out["lru_touch_survives_restart"] = [rec.file_id for rec in recovered.list()] == [
+        first.file_id,
+        second.file_id,
+    ]
+
+    # A broken chain remains byte-for-byte available for operator repair.
+    journal_path = state / "files.jsonl"
+    with journal_path.open("ab") as fh:
+        fh.write(b'{"torn":')
+    damaged = journal_path.read_bytes()
+    try:
+        _FileStore(2, 1 << 20, state_dir=state)
+        refused = False
+    except RuntimeError:
+        refused = True
+    out["damaged_journal_fails_closed_unchanged"] = refused and journal_path.read_bytes() == damaged
     return out
 
 
@@ -1094,7 +1192,7 @@ def _probe_error_paths(c: TestClient) -> dict[str, bool]:
     return out
 
 
-def _probe_client_map(c: TestClient) -> dict[str, bool]:
+def _probe_client_map(c: TestClient, stack: ExitStack) -> dict[str, bool]:
     out: dict[str, bool] = {}
     from fx1.serve.client import (
         BackendNotConfiguredError,
@@ -1158,7 +1256,7 @@ def _probe_client_map(c: TestClient) -> dict[str, bool]:
     out["client_500_maps_transport_error"] = isinstance(_mapped(500), HarnessTransportError)
     # keyed app: a client without the key gets the auth error
     with _env_key():
-        keyed = _client()
+        keyed = stack.enter_context(_client())
         kc = HarnessClient(base_url="http://files-audit", transport=_tc_transport(keyed))
         try:
             kc.upload_file(b"ab")
@@ -1238,25 +1336,26 @@ def files_audit() -> dict[str, Any]:
         os.environ.pop(k, None)
     out: dict[str, Any] = {}
     try:
-        with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory() as td, ExitStack() as stack:
             wd = Path(td)
-            c = _client()
-            fresh = _client()
-            slow = _slow_client()
-            ft_client = _client(ft_runner=_ft_runner, ft_dir=wd / "ft")
+            c = stack.enter_context(_client())
+            fresh = stack.enter_context(_client())
+            slow = stack.enter_context(_slow_client())
+            ft_client = stack.enter_context(_client(ft_runner=_ft_runner, ft_dir=wd / "ft"))
             out.update(_probe_upload(c))
             out.update(_probe_list(c, fresh))
             out.update(_probe_get_delete(c))
-            out.update(_probe_caps())
-            out.update(_probe_consumer(c, ft_client, slow))
+            out.update(_probe_caps(stack))
+            out.update(_probe_consumer(c, ft_client, slow, stack))
             out.update(_probe_ft_edges(ft_client))
             out.update(_probe_vector_store(c))
             out.update(_probe_uploads_minted(c))
             out.update(_probe_concurrency(c))
-            out.update(_probe_tenancy())
+            out.update(_probe_tenancy(stack))
             out.update(_probe_durability(wd))
+            out.update(_probe_journal_failures(wd))
             out.update(_probe_error_paths(c))
-            out.update(_probe_client_map(c))
+            out.update(_probe_client_map(c, stack))
             out.update(_probe_sdk_twin())
     finally:
         for k, v in saved.items():
@@ -1295,7 +1394,9 @@ def files_audit_bench() -> dict[str, Any]:
             "batch or ft job, malformed inputs fail the submit loudly "
             "rather than a silent job, byte and entry caps refuse in the "
             "envelope, LRU eviction is a real tombstone that survives "
-            "restarts like deletes do, uploads-minted files are "
+            "restarts like deletes do, LRU touches survive restart, "
+            "journal failures publish no mutations, damaged journals "
+            "remain intact for repair, uploads-minted files are "
             "indistinguishable from direct uploads, racing creates mint "
             "unique ids while delete+read races resolve atomically, "
             "files are workspace-level across credentials with "

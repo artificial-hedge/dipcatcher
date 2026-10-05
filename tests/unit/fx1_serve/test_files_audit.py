@@ -16,11 +16,21 @@ from quant_fund.research.receipt_v2 import verify_receipt_payload
 #    sibling route does; fixed with the same try/except wrap.
 #  - ``GET /v1/batches?after=<unknown>`` silently re-served the first
 #    page instead of refusing the cursor; now 400 ``invalid_cursor``.
+#  - file puts/deletes and LRU touches published in memory before their
+#    durable journal operations; failed appends could corrupt live state.
+#  - LRU touches were not journaled, so restart changed eviction order.
+#  - damaged file journals were compacted around their verified prefix,
+#    destroying evidence and risking record resurrection.
 _FORMER_DEFECTS = {
     "list_unknown_after_400_envelope",
     "list_unknown_before_400_envelope",
     "list_bad_order_400_envelope",
     "batches_unknown_after_400_envelope",
+    "journal_failed_put_not_published",
+    "journal_failed_delete_not_published",
+    "journal_failed_touch_not_published",
+    "lru_touch_survives_restart",
+    "damaged_journal_fails_closed_unchanged",
 }
 
 
@@ -32,7 +42,7 @@ def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_contract_probes_hold() -> None:
     results = files_audit()
-    assert len(results) == 130
+    assert len(results) == 135
     for name, ok in results.items():
         assert ok is True, f"probe {name} failed"
 
@@ -69,3 +79,27 @@ def test_empty_audit_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
     assert blob["claim"]["results"] == {}
     assert blob["claim"]["ok"] is False
     assert blob["data_label"] == "SYNTHETIC"
+
+
+def test_audit_shuts_down_every_created_executor(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Audit-owned apps must not strand their job-worker pools."""
+    import fx1.serve.api as api_module
+
+    real_executor = api_module.ThreadPoolExecutor
+    created: list[object] = []
+
+    class TrackingExecutor(real_executor):
+        shutdown_called = False
+
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            super().__init__(*args, **kwargs)
+            created.append(self)
+
+        def shutdown(self, *args: object, **kwargs: object) -> None:
+            self.shutdown_called = True
+            super().shutdown(*args, **kwargs)
+
+    monkeypatch.setattr(api_module, "ThreadPoolExecutor", TrackingExecutor)
+    files_audit()
+    assert created
+    assert all(getattr(executor, "shutdown_called", False) for executor in created)
