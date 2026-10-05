@@ -6841,6 +6841,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "phi_rai_qa_studies",
         "phi_taen_qa_studies",
         "phi_yuan_qa_studies",
+        # Wave-1940 burmese-nat canon.
+        "magami_qa_studies",
+        "mahagiri_qa_studies",
+        "min_kyawzwa_qa_studies",
+        "shwe_nabay_qa_studies",
+        "taungmagyi_qa_studies",
+        "thagya_min_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
