@@ -135,11 +135,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "d6fae96646457cafaa3c92ef64fdc4a5c40a6145",
+  "git_revision": "d669b30bb4adde73259ceceeb2ada3a0e23134fc",
   "interpretation": "The /v1/files lifecycle holds end to end: multipart mints produce the exact file envelope, content serves byte-exact under application/jsonl with no-store, cursors and filters walk the list honestly (refusals land in the envelope as invalid_cursor after the list route learned the shared OpenAICompatError wrap), delete tombstones the record on every surface at once, consumers snapshot bytes at submit/attach so a deleted source never tears a running batch or ft job, malformed inputs fail the submit loudly rather than a silent job, byte and entry caps refuse in the envelope, LRU eviction is a real tombstone that survives restarts like deletes do, uploads-minted files are indistinguishable from direct uploads, racing creates mint unique ids while delete+read races resolve atomically, files are workspace-level across credentials with scope-gated writes, and the client maps statuses to its exception taxonomy with an in-process SDK twin.",
   "kind": "files_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "4a9d1c7280326c322200ac877103c3303adbbd7e919a2a08f651c9221282758a",
+  "receipt_sha256": "1911dd3ac9e337fd361e2f0e7a419387f2d3ce8666d2af40e245c24a9f969a1c",
   "research_only": true,
   "schema": "files_audit.v1"
 }
