@@ -15567,6 +15567,14 @@ from quant_fund.research.benches_w1946 import (
     bench_wangliang_qa_studies_family,
     bench_yanwang_qa_studies_family,
 )
+from quant_fund.research.benches_w1947 import (
+    bench_baron_samedi_qa_studies_family,
+    bench_damballa_qa_studies_family,
+    bench_ezili_dantor_qa_studies_family,
+    bench_ogou_feray_qa_studies_family,
+    bench_papa_legba_qa_studies_family,
+    bench_simbi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
