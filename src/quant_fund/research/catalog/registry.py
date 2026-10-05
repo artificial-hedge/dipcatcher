@@ -6897,6 +6897,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ogou_feray_qa_studies",
         "papa_legba_qa_studies",
         "simbi_qa_studies",
+        # Wave-1948 goetic-demon canon.
+        "asmodeus_qa_studies",
+        "astaroth_qa_studies",
+        "belial_qa_studies",
+        "furfur_qa_studies",
+        "paimon_qa_studies",
+        "stolas_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
