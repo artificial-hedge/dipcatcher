@@ -33,6 +33,9 @@ import hashlib
 import json
 import os
 import threading
+from collections import OrderedDict
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -164,3 +167,88 @@ class JobJournal:
             self._seq = seq
             self._chain = chain
             self._appends_since_compact = 0
+
+
+@dataclass
+class _Claim:
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    users: int = 0
+
+
+class _ClaimLocks:
+    """Bounded registry of per-key mutexes for idempotent execution.
+
+    A reservation counts both holders and waiters before they leave the
+    registry lock. Only entries without reservations may be evicted: an
+    unlocked mutex may still have an acquiring thread or queued waiters.
+    Active keys may temporarily exceed the cache bound; the excess is
+    reclaimed as claims finish.
+    """
+
+    def __init__(self, bound: int) -> None:
+        self._guard = threading.Lock()
+        self._locks: OrderedDict[str, _Claim] = OrderedDict()
+        self._bound = max(1, bound)
+
+    def _prune_idle(self) -> None:
+        """Evict idle entries while the registry lock is held."""
+        while len(self._locks) > self._bound:
+            stale = next((k for k, claim in self._locks.items() if claim.users == 0), None)
+            if stale is None:
+                break
+            del self._locks[stale]
+
+    def _reserve(self, key: str) -> _Claim:
+        with self._guard:
+            claim = self._locks.get(key)
+            if claim is None:
+                claim = _Claim()
+                self._locks[key] = claim
+            claim.users += 1
+            self._locks.move_to_end(key)
+            self._prune_idle()
+            return claim
+
+    def _release(self, claim: _Claim) -> None:
+        with self._guard:
+            claim.users -= 1
+            self._prune_idle()
+
+    @contextmanager
+    def hold(self, key: str | None) -> Iterator[None]:
+        """Serialize a key's lookup, execution, and insertion; None bypasses."""
+        if key is None:
+            yield
+            return
+        claim = self._reserve(key)
+        try:
+            with claim.lock:
+                yield
+        finally:
+            self._release(claim)
+
+    @asynccontextmanager
+    async def ahold(self, key: str | None) -> AsyncIterator[None]:
+        """Wait cooperatively without occupying a request worker thread.
+
+        A sync yield dependency can strand its holder: waiting retries
+        consume every threadpool token before the holder's handler can
+        run. Nonblocking acquisition preserves the shared sync mutex
+        while yielding the event loop between attempts. Cancellation
+        releases the reservation even when acquisition never succeeds.
+        """
+        if key is None:
+            yield
+            return
+        from anyio import sleep
+
+        claim = self._reserve(key)
+        try:
+            while not claim.lock.acquire(blocking=False):
+                await sleep(0.01)
+            try:
+                yield
+            finally:
+                claim.lock.release()
+        finally:
+            self._release(claim)

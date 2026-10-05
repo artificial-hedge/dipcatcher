@@ -1,0 +1,11 @@
+{
+  "actual_openapi_matches_proposed": true,
+  "actual_openapi_sha256": "ce548ea9d3e2da0dbb921f0c9c63983bad825516247a228820436482ff3b09b4",
+  "declared_surface_hash_valid": true,
+  "normalized_surface_matches_proposed": true,
+  "openapi_difference_count": 0,
+  "openapi_differences": [],
+  "proposed_openapi_sha256": "ce548ea9d3e2da0dbb921f0c9c63983bad825516247a228820436482ff3b09b4",
+  "surface_difference_count": 0,
+  "surface_differences": []
+}

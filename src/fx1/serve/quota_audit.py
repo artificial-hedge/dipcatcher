@@ -36,8 +36,8 @@ Coverage map:
   read-scoped key refused on a write path admits immediately after on
   a read path.
 - *persistence* — spent quota survives a fresh process on the same
-  ``--state-dir``: uses, tokens, and window occupancy replay from the
-  journal, so a restart cannot launder budget. A revoked key stays
+  ``--state-dir``: lifetime uses and tokens replay from the journal; RPM windows remain
+  process-local and reset on restart. A revoked key stays
   dead across restart; a rotated key's successor starts at zero with
   the predecessor's declared policy and lineage — quota never leaks
   across the rotation boundary.
@@ -59,25 +59,17 @@ Coverage map:
   ``HarnessClient`` issues it exactly once even under
   ``retry_writes``/``max_retries``; a ``rate_limited`` 429 carries
   ``Retry-After``, is retried within ``max_retry_wait_s``, and is
-  abandoned when the hint exceeds that budget. The TypeScript client
-  applies the identical gate — 429/503 retry only when the hint is
-  present — so the wire pin covers both.
+  abandoned when the hint exceeds that budget. The TypeScript client is not executed by this battery.
 - *anthropic surface* — on ``/v1/messages`` the same refusals speak
   the Anthropic grammar: ``x-should-retry: false`` on
   ``quota_exceeded``, ``true`` on ``rate_limited``, plus the
   ``anthropic-ratelimit-requests-*`` trio; the OpenAI legs answer the
   ``{error: {...}}`` envelope.
 
-One defect was found and fixed while building this battery: the quota
-counters (``uses`` / ``tokens_used`` / ``last_used_at`` and the live
-rate-window occupancy) were deliberately not journaled — a restart on
-``--state-dir`` silently laundered spent budget and window state,
-contradicting the documented post-#2748 contract that quota state
-survives. The fix journals the record snapshot inside ``authenticate``
-and ``charge_tokens`` (the mutation points), compacts the journal on
-boot like ``_JobStore``, and backfills ``uses``/``last_used_at``
-defaults for records journaled before the meters existed — pinned by
-the persistence probes below.
+The lifetime counter and recovery behavior is provided by the existing
+key store. These probes pin that behavior without changing its journal
+or process-local RPM-window contract. This is a stub-backed TestClient
+battery, not network timing, crash-durability, or live-provider evidence.
 
 Sealed ``quota_audit.v1`` (fx1-side receipt).
 """
@@ -90,8 +82,10 @@ import tempfile
 import threading
 import time
 import urllib.parse
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -109,21 +103,43 @@ __all__ = ["quota_audit", "quota_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
 _ROOT = "k3y-material"
-_SWEPT_ENVS = (
-    _API_KEY_ENV,
-    "MOONSHOT_API_KEY",
-    "FX1_API_STATE_DIR",
-    "FX1_API_RATE_LIMIT_RPS",
-    "FX1_API_MAX_INFLIGHT",
-    "FX1_BYOK_BASE_URL",
-    "FX1_BYOK_API_KEY",
-    "FX1_BYOK_MODEL",
-    "FX1_LOCAL_SERVE_URL",
-    "FX1_LOCAL_SERVE_CMD",
-    "FX1_LOCAL_MODEL",
-    "FX1_LOCAL_API_KEY",
-    "FX1_CHECKPOINT_DIR",
-)
+_AUDIT_LOCK = threading.Lock()
+_RESOURCES: ContextVar[ExitStack] = ContextVar("quota_audit_resources")
+
+
+@contextmanager
+def _audit_context() -> Iterator[None]:
+    """Restore ambient configuration and close all synthetic resources.
+
+    Run this diagnostic in a dedicated process: its environment and
+    rate-window overrides are process-wide, not application configuration.
+    The lock serializes calls made through this module.
+    """
+    with _AUDIT_LOCK:
+        saved = {
+            name: value
+            for name, value in os.environ.items()
+            if name.startswith("FX1_") or name == "MOONSHOT_API_KEY"
+        }
+        for name in saved:
+            os.environ.pop(name, None)
+        try:
+            with ExitStack() as resources:
+                token = _RESOURCES.set(resources)
+                try:
+                    yield
+                finally:
+                    _RESOURCES.reset(token)
+        finally:
+            for name in list(os.environ):
+                if name.startswith("FX1_") or name == "MOONSHOT_API_KEY":
+                    os.environ.pop(name, None)
+            os.environ.update(saved)
+
+
+def _temporary_directory() -> Path:
+    return Path(_RESOURCES.get().enter_context(tempfile.TemporaryDirectory(prefix="quota_audit_")))
+
 
 _COMPLETE_PATH = "/harness/complete"
 _KEYS_PATH = "/harness/keys"
@@ -236,6 +252,7 @@ class _HoldBackend:
     def __init__(self, model: str) -> None:
         self._model = model
         self._gate = threading.Event()
+        self.entered = threading.Event()
         self.last_usage: dict[str, int] | None = None
 
     def complete(
@@ -244,6 +261,7 @@ class _HoldBackend:
         *,
         sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> str:
+        self.entered.set()
         self._gate.wait(timeout=10)
         return "ok"
 
@@ -288,26 +306,35 @@ def _client(
     def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, "ok", ""
 
-    saved = {k: os.environ.get(k) for k in _SWEPT_ENVS}
+    resources = _RESOURCES.get()
+    isolated = _temporary_directory()
+    receipts = isolated / "receipts"
+    receipts.mkdir()
+    saved_key = os.environ.get(_API_KEY_ENV)
     try:
-        for k in _SWEPT_ENVS:
-            os.environ.pop(k, None)
-        if api_key is not None:
+        if api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
             os.environ[_API_KEY_ENV] = api_key
         app = api_mod.create_app(
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: backend_map[name](),
-            state_dir=state_dir,
+            state_dir=state_dir if state_dir is not None else isolated / "state",
+            receipts_dir=receipts,
+            ft_dir=isolated / "fine_tuning",
             rate_limit_rps=rate_limit_rps,
             max_inflight=max_inflight,
         )
-        return TestClient(app, raise_server_exceptions=False), api_mod
+        resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
+        client = TestClient(app, raise_server_exceptions=False)
+        resources.callback(client.close)
+        resources.enter_context(client)
+        return client, api_mod
     finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        if saved_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_key
 
 
 def _mint(client: TestClient, root_h: dict[str, str], **policy: Any) -> tuple[str, str]:
@@ -552,7 +579,7 @@ def _quota_boundary_probes() -> dict[str, Any]:  # NOSONAR(S3776)
         refused.status_code == 429 and refused.json().get("code") == "quota_exceeded"
     )
     out["quota_refusal_no_retry_after"] = _H_RETRY_AFTER not in {k.lower() for k in refused.headers}
-    out["quota_refusal_still_declares_key"] = refused.status_code == 429
+    out["quota_refusal_status_is_429"] = refused.status_code == 429
     card = _key_card(client, root_h, q_id)
     out["quota_refusal_bills_no_use"] = card["uses"] == 3
     out["quota_requests_remaining_zero"] = card["requests_remaining"] == 0
@@ -741,7 +768,7 @@ def _persistence_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     constructions over one directory stand in for two processes — the
     second sees only what the journal carried."""
     out: dict[str, Any] = {}
-    state_dir = Path(tempfile.mkdtemp(prefix="quota_audit_"))
+    state_dir = _temporary_directory()
     backends: dict[str, Any] = {"byok": lambda: _MeterBackend("byok-model", dict(_U6))}
     root_h = {_H_KEY: _ROOT}
 
@@ -773,9 +800,10 @@ def _persistence_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     card_b = _key_card(client_b, root_h, p_id)
     out["persisted_uses_after_restart"] = card_b["uses"] == 2
     out["persisted_tokens_after_restart"] = card_b["tokens_used"] == 12
-    out["persisted_window_after_restart"] = _complete(client_b, p_h).status_code == 429
-    out["persisted_window_refusal_is_rate_limited"] = (
-        _complete(client_b, p_h).json().get("code") == "rate_limited"
+    out["process_local_window_resets_after_restart"] = card_b["window_remaining"] == 2
+    out["restarted_window_admits_with_durable_spend"] = (
+        _complete(client_b, p_h).status_code == 200
+        and _key_card(client_b, root_h, p_id)["tokens_used"] == 18
     )
     out["persisted_remaining_budget_enforced"] = card_b["requests_remaining"] == 3
     # the restarted process spends the declared remainder down to the
@@ -905,7 +933,7 @@ def _error_path_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     # pre-auth refusals bill nothing
     big = client.post(
         _COMPLETE_PATH,
-        content=b"x" * (1 << 20 + 1),
+        content=b"x" * ((1 << 20) + 1),
         headers={**f_h, "Content-Type": "application/json"},
     )
     card = _key_card(client, root_h, f_id)
@@ -923,24 +951,27 @@ def _error_path_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     oc_h = {_H_KEY: oc_raw}
 
     def _hold() -> int:
-        return client2.post(
+        response = client2.post(
             _COMPLETE_PATH,
             json={"backend": "byok", "messages": [{"role": "user", "content": "hi"}]},
             headers=oc_h,
-        ).status_code
+        )
+        return int(response.status_code)
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         fut = pool.submit(_hold)
-        time.sleep(0.2)  # let the first call reach the blocking backend
-        second = client2.post(
-            _COMPLETE_PATH,
-            json={
-                "backend": "byok",
-                "messages": [{"role": "user", "content": "hi"}],
-            },
-            headers=oc_h,
-        )
-        held.release()
+        assert held.entered.wait(timeout=5), "blocking backend never entered"
+        try:
+            second = client2.post(
+                _COMPLETE_PATH,
+                json={
+                    "backend": "byok",
+                    "messages": [{"role": "user", "content": "hi"}],
+                },
+                headers=oc_h,
+            )
+        finally:
+            held.release()
         fut.result()
     card2 = _key_card(client2, root_h, oc_id)
     out["over_capacity_still_bills_use"] = second.status_code == 503 and card2["uses"] == 2
@@ -1182,7 +1213,7 @@ def _store_unit_probes() -> dict[str, Any]:
     # replay: the journal's fold reconstructs counters — unit-level pin
     # for the wire probes above (the same contract the restart battery
     # exercises end to end)
-    journal_path = Path(tempfile.mkdtemp(prefix="quota_audit_jl_")) / "keys.jsonl"
+    journal_path = _temporary_directory() / "keys.jsonl"
     store_a = ApiKeyStore(journal=JobJournal(journal_path))
     raw_a, rec_a = store_a.mint(max_requests=9, rpm=5)
     store_a.authenticate(raw_a)
@@ -1194,7 +1225,7 @@ def _store_unit_probes() -> dict[str, Any]:
         reborn is not None and reborn["uses"] == 2 and reborn["tokens_used"] == 7
     )
     ws = store_b.window_state(rec_a["key_id"])
-    out["store_replay_window_occupancy"] = ws is not None and ws[:2] == (5, 3)
+    out["store_replay_window_is_process_local"] = ws is not None and ws[:2] == (5, 5)
     return out
 
 
@@ -1205,24 +1236,25 @@ def _store_unit_probes() -> dict[str, Any]:
 
 def quota_audit() -> dict[str, Any]:
     """Run the boundary battery; returns literal bools."""
-    out: dict[str, Any] = {}
-    out.update(_rpm_window_probes())
-    out.update(_quota_boundary_probes())
-    out.update(_token_budget_probes())
-    out.update(_scope_refusal_probes())
-    out.update(_persistence_probes())
-    out.update(_surface_probes())
-    out.update(_error_path_probes())
-    out.update(_client_probes())
-    out.update(_anthropic_probes())
-    out.update(_store_unit_probes())
-    return out
+    with _audit_context():
+        out: dict[str, Any] = {}
+        out.update(_rpm_window_probes())
+        out.update(_quota_boundary_probes())
+        out.update(_token_budget_probes())
+        out.update(_scope_refusal_probes())
+        out.update(_persistence_probes())
+        out.update(_surface_probes())
+        out.update(_error_path_probes())
+        out.update(_client_probes())
+        out.update(_anthropic_probes())
+        out.update(_store_unit_probes())
+        return out
 
 
 def quota_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under quota_audit.v1."""
     r = quota_audit()
-    ok = all(v is True for v in r.values())
+    ok = bool(r) and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "quota_audit",
         "schema": "quota_audit.v1",
@@ -1231,6 +1263,15 @@ def quota_audit_bench() -> dict[str, Any]:
         "research_only": True,
         "live_pnl_claim": False,
         "claim": {"results": r, "ok": ok},
+        "coverage": {
+            "transport": "in-process buffered TestClient; stub backends",
+            "not_executed": [
+                "TypeScript client runtime",
+                "network delivery or disconnect timing",
+                "process-crash/power-loss durability",
+                "live provider billing",
+            ],
+        },
         "interpretation": (
             "Managed-key limits hold as exact boundaries end to end: the "
             "rpm window admits precisely N calls and refuses N+1 with "
@@ -1239,14 +1280,13 @@ def quota_audit_bench() -> dict[str, Any]:
             "under parallel races with no overshoot, per-key isolated, "
             "and re-admitting on expiry. The request budget decrements "
             "once per admitted call and refuses terminally (quota_"
-            "exceeded carries no Retry-After — the client, and the "
-            "TypeScript client under the identical wire gate, never "
+            "exceeded carries no Retry-After — the Python client does not "
             "retry it); the token budget meters provider usage on sync, "
             "stream, and batch surfaces with the crossing call last "
             "admitted. Refusals consume nothing: no use, no slot, no "
             "tokens — including the 403 scope denial. Spent quota "
-            "survives restart on a journaled --state-dir (uses, tokens, "
-            "and window occupancy replay); a revoked key stays dead and "
+            "survives a clean journaled restart (uses and tokens replay; "
+            "RPM windows reset as process-local state); a revoked key stays dead and "
             "a rotated successor starts fresh under the predecessor's "
             "policy. Metering is uniform across every authenticated "
             "path — an authenticated 404 counts because uses measures "

@@ -115,7 +115,9 @@ def test_torn_rotation_never_recovers_two_enabled_secrets(tmp_path: Path) -> Non
         recovered = ApiKeyStore(journal=JobJournal(cut_path), clock=lambda: 100.0)
         old_live = recovered.authenticate(raw) is not None
         new_live = recovered.authenticate(successor) is not None
-        assert old_live != new_live, f"partial swap at rotation byte {cut}"
+        assert not (old_live and new_live), f"partial swap at rotation byte {cut}"
+        if cut == len(suffix):
+            assert new_live and not old_live
 
 
 def test_keep_old_rotation_still_preserves_both_credentials(tmp_path: Path) -> None:

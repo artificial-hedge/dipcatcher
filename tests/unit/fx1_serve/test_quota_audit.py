@@ -1,83 +1,132 @@
-"""Tests for fx1.serve.quota_audit — the quota/rate-limit boundary battery."""
+"""Synthetic quota boundaries and the audit's evidence/isolation helpers."""
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+from typing import Any
+
 import pytest
 
-from fx1.serve.quota_audit import quota_audit, quota_audit_bench
+from fx1.serve import quota_audit as audit
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
-# Probes that pinned False as measured divergences before this lane's
-# fix. Each names the contract it now holds; the assertions below keep
-# them regression-pinned True so a reversion re-breaks the test, not
-# the receipt.
-#
-# The measured defect: the managed-key meters — ``uses``,
-# ``tokens_used``, ``last_used_at``, and the rpm window occupancy —
-# were deliberately not journaled, so a restart on ``--state-dir``
-# laundered spent budget: an exhausted key's declared
-# ``max_requests``/``max_tokens`` budget reset to full, its spent
-# window reopened, and ``requests_remaining`` reverted to the minted
-# bound — contradicting the post-#2748 contract that quota state
-# survives restart. The fix journals the counter snapshot inside
-# ``authenticate`` and ``charge_tokens`` (the mutation points),
-# compacts the journal on boot like ``_JobStore``, and backfills
-# ``uses``/``last_used_at`` defaults for records journaled before the
-# meters existed.
-_FORMER_DEFECTS = {
-    "persisted_uses_after_restart",
-    "persisted_tokens_after_restart",
-    "persisted_window_after_restart",
-    "persisted_window_refusal_is_rate_limited",
-    "persisted_remaining_budget_enforced",
-    "persisted_spenddown_to_refusal",
-    "persisted_refusal_is_quota",
-    "store_replay_reconstructs_counters",
-    "store_replay_window_occupancy",
-}
+
+@pytest.fixture(scope="module")
+def measured() -> dict[str, Any]:
+    return audit.quota_audit()
 
 
-@pytest.fixture(autouse=True)
-def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("FX1_API_KEY", "MOONSHOT_API_KEY", "FX1_CHECKPOINT_DIR"):
-        monkeypatch.delenv(name, raising=False)
+def test_contract_probes_hold(measured: dict[str, Any]) -> None:
+    assert len(measured) == 93
+    assert all(value is True for value in measured.values()), measured
 
 
-def test_contract_probes_hold() -> None:
-    results = quota_audit()
-    assert len(results) >= 60
-    for name, ok in results.items():
-        assert ok is True, f"probe {name} failed"
+def test_durable_lifetime_and_process_local_window(measured: dict[str, Any]) -> None:
+    for name in (
+        "persisted_uses_after_restart",
+        "persisted_tokens_after_restart",
+        "persisted_remaining_budget_enforced",
+        "persisted_spenddown_to_refusal",
+        "persisted_refusal_is_quota",
+        "store_replay_reconstructs_counters",
+        "process_local_window_resets_after_restart",
+        "restarted_window_admits_with_durable_spend",
+        "store_replay_window_is_process_local",
+    ):
+        assert measured[name] is True, name
 
 
-def test_defect_probes_fixed() -> None:
-    """Each formerly pinned defect now measures the fixed contract."""
-    results = quota_audit()
-    for name in sorted(_FORMER_DEFECTS):
-        assert results.get(name) is True, f"former defect {name} regressed"
+@pytest.mark.parametrize("results", [{}, {"probe": False}, {"probe": 1}, {"probe": None}])
+def test_receipt_refuses_empty_or_nonliteral_success(
+    monkeypatch: pytest.MonkeyPatch, results: dict[str, Any]
+) -> None:
+    monkeypatch.setattr(audit, "quota_audit", lambda: results)
+    receipt = audit.quota_audit_bench()
+    assert receipt["claim"]["ok"] is False
+    assert receipt["claim"]["results"] == results
+    assert receipt["interpretation"].startswith("QUOTA AUDIT DEFECT:")
+    assert verify_receipt_payload(receipt)["valid"] is True
 
 
-def test_receipt_verifies() -> None:
-    blob = quota_audit_bench()
-    assert blob["claim"]["ok"] is True
-    verdict = verify_receipt_payload(blob)
-    assert verdict["valid"] is True
+def test_measured_receipt_verifies_without_rerunning(
+    measured: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(audit, "quota_audit", lambda: measured)
+    receipt = audit.quota_audit_bench()
+    assert receipt["claim"]["ok"] is True
+    assert receipt["data_label"] == "SYNTHETIC"
+    assert receipt["live_pnl_claim"] is False
+    assert verify_receipt_payload(receipt)["valid"] is True
+    assert receipt == audit.quota_audit_bench()
+    assert "TypeScript client runtime" in receipt["coverage"]["not_executed"]
 
 
-def test_receipt_deterministic() -> None:
-    first = quota_audit_bench()["receipt_sha256"]
-    second = quota_audit_bench()["receipt_sha256"]
-    assert first == second
+def test_audit_context_restores_environment_and_removes_temp_state_on_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "operator_state"
+    state.mkdir()
+    marker = state / "keys.jsonl"
+    marker.write_bytes(b"operator data must remain untouched\n")
+    before = marker.read_bytes()
+    env = {
+        "FX1_API_STATE_DIR": str(state),
+        "FX1_API_RECEIPTS_DIR": str(state),
+        "FX1_FT_DIR": str(state),
+        "FX1_API_CORS_ORIGINS": "*",
+        "FX1_API_JOB_MAX": "not-a-number",
+        "MOONSHOT_API_KEY": "synthetic ambient sentinel",
+    }
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    temporary: Path | None = None
+    with pytest.raises(RuntimeError, match="deliberate failure"), audit._audit_context():
+        assert all(name not in os.environ for name in env)
+        temporary = audit._temporary_directory()
+        (temporary / "test.txt").write_text("synthetic")
+        os.environ["FX1_TEMPORARY_AUDIT_VALUE"] = "temporary"
+        raise RuntimeError("deliberate failure")
+    assert temporary is not None and not temporary.exists()
+    assert all(os.environ[name] == value for name, value in env.items())
+    assert "FX1_TEMPORARY_AUDIT_VALUE" not in os.environ
+    assert marker.read_bytes() == before
 
 
-def test_committed_receipt_still_verifies() -> None:
-    import json
-    from pathlib import Path
+def test_client_uses_private_state_and_closes_executor(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    operator = tmp_path / "operator"
+    operator.mkdir()
+    marker = operator / "keys.jsonl"
+    marker.write_text("operator sentinel\n")
+    monkeypatch.setenv("FX1_API_STATE_DIR", str(operator))
+    monkeypatch.setenv("FX1_FT_DIR", str(operator))
+    monkeypatch.setenv("FX1_API_RECEIPTS_DIR", str(operator))
+    monkeypatch.setenv("FX1_API_STORE_MAX", "invalid ambient bound")
+    with audit._audit_context():
+        client, _ = audit._client(
+            {"byok": lambda: audit._MeterBackend("synthetic", dict(audit._U6))},
+            api_key=audit._ROOT,
+        )
+        raw, _ = audit._mint(client, {audit._H_KEY: audit._ROOT}, max_requests=1)
+        assert audit._complete(client, {audit._H_KEY: raw}).status_code == 200
+        executor = client.app.state.jobs_executor
+        assert executor.submit(lambda: 3).result(timeout=1) == 3
+    assert client.is_closed
+    with pytest.raises(RuntimeError, match="shutdown"):
+        executor.submit(lambda: None)
+    assert list(operator.iterdir()) == [marker]
+    assert marker.read_text() == "operator sentinel\n"
 
-    path = Path("receipts/fx1_quota_audit.json")
-    assert path.exists()
-    payload = json.loads(path.read_text())
-    assert payload["claim"]["ok"] is True
-    verdict = verify_receipt_payload(payload)
-    assert verdict["valid"] is True
-    assert verdict["errors"] == []
+
+def test_retry_after_parser_rejects_invalid_values() -> None:
+    class Response:
+        headers: dict[str, str] = {}
+
+    response = Response()
+    assert audit._retry_after(response) is None
+    response.headers = {"retry-after": "nonsense"}
+    assert audit._retry_after(response) is None
+    response.headers = {"retry-after": "7"}
+    assert audit._retry_after(response) == 7

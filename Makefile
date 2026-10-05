@@ -65,10 +65,11 @@ audit: ## All-platform locked Python dependency vulnerability audit (pip-audit)
 		sed 's/ ;.*//' "$$requirements" > "$$requirements.all"; \
 		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements.all"
 
-audit-js: ## Audit all three locked npm dependency trees
+audit-js: ## Audit all four locked npm dependency trees
 	cd web && npm audit
 	cd replay && npm audit
 	cd clients/typescript && npm audit
+	cd clients/typescript/fx1 && npm audit
 
 audit-rust: ## Audit the native extension (requires cargo-audit)
 	cargo audit --file rust/quant_core/Cargo.lock

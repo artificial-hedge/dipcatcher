@@ -1,0 +1,8 @@
+{
+  "source": "https://api.github.com/repos/artificial-hedge/dipcatcher/git/commits/816c88467792cf994fa1ca24c303d74304ce6d32",
+  "published_commit": "816c88467792cf994fa1ca24c303d74304ce6d32",
+  "published_tree": "08785154226ecab69e5ce7e87f4b432fb5fe2b95",
+  "local_validation_commit": "90b98a882bbb314074c8944081d6921be744f4b8",
+  "local_validation_tree": "08785154226ecab69e5ce7e87f4b432fb5fe2b95",
+  "full_tree_identical": true
+}

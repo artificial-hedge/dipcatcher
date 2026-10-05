@@ -1008,9 +1008,8 @@ stores fail closed `vector_store_not_found` (404 on the wire,
   itself, so a no-env-key deployment keeps a control plane. Revocation
   is a tombstone (`enabled:false`, fail-closed); records persist under
   `--state-dir` (journaled to `keys.jsonl`, replayed on restart —
-  `uses`/`last_used_at`/`tokens_used` and the rpm window
-  occupancy ride the same journal as counter snapshots — a restart
-  restores the spend).
+  `uses`/`last_used_at`/`tokens_used` are live counters, deliberately
+  not journaled).
   Declared policy travels with the record: `rpm` bounds the key to a
   fixed 60 s request window — the over-limit refusal is `429
   rate_limited` with an honest `Retry-After`, and a refused request

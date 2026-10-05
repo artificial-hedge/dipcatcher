@@ -1081,7 +1081,7 @@
       },
       "ApiKeyUsageResponse": {
         "additionalProperties": false,
-        "description": "Usage card for one managed key: journaled counters (``uses`` /\n``tokens_used`` survive restart on a ``--state-dir`` store),\ndeclared budgets with derived headroom, the rpm window state, and\nthe completion-ring spend split.",
+        "description": "Usage card for one managed key: lifetime ``uses`` and ``tokens_used``\nsurvive a clean ``--state-dir`` restart; RPM windows remain process-local.\nIncludes declared budgets, derived headroom, and completion-ring spend.",
         "properties": {
           "admin": {
             "title": "Admin",
@@ -13307,7 +13307,7 @@
     },
     "/harness/keys/{key_id}/usage": {
       "get": {
-        "description": "One key's usage card \u2014 journaled counters, declared budgets\nwith derived headroom, the rpm window state, and the\ncompletion-ring spend split. Counters ride the key journal, so\na ``--state-dir`` restart restores the spend.",
+        "description": "One key's usage card \u2014 lifetime counters, declared budgets with\nderived headroom, RPM window state, and completion-ring spend.\nJournaled ``uses`` and ``tokens_used`` survive a clean ``--state-dir``\nrestart; the RPM window remains process-local and resets.",
         "operationId": "key_usage",
         "parameters": [
           {
