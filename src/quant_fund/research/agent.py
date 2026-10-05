@@ -15407,6 +15407,14 @@ from quant_fund.research.benches_w1926 import (
     bench_gorgogosh_qa_studies_family,
     bench_rukhi_qa_studies_family,
 )
+from quant_fund.research.benches_w1927 import (
+    bench_amautalik_qa_studies_family,
+    bench_ijiraq_qa_studies_family,
+    bench_mahaha_qa_studies_family,
+    bench_qivittoq_qa_studies_family,
+    bench_tornit_qa_studies_family,
+    bench_tupilaq_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
