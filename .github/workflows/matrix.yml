@@ -152,7 +152,10 @@ jobs:
           # holds inside every invocation.
           chunk=200
           for ((i = 0; i < ${#files[@]}; i += chunk)); do
-            # --frozen/--no-build: env is already synced by setup-uv; don't
-            # relock or build sdists inside the shard step (sonar S8541/S8544).
-            uv run --frozen --no-build pytest -q -m "not network" "${files[@]:i:chunk}"
+            # --frozen/--no-sync: env is already synced by the Sync step;
+            # don't relock, re-resolve, or rebuild inside the shard step
+            # (sonar S8541/S8544). --no-build is wrong here: sdists installed
+            # by the sync (hmmlearn on py3.14 Windows has no wheel) re-enter
+            # resolution under `uv run` and get rejected outright.
+            uv run --frozen --no-sync pytest -q -m "not network" "${files[@]:i:chunk}"
           done
