@@ -15447,6 +15447,14 @@ from quant_fund.research.benches_w1931 import (
     bench_naagloshii_qa_studies_family,
     bench_pukwudgie_qa_studies_family,
 )
+from quant_fund.research.benches_w1932 import (
+    bench_ah_puch_qa_studies_family,
+    bench_alux_qa_studies_family,
+    bench_cizin_qa_studies_family,
+    bench_nahualli_qa_studies_family,
+    bench_vucub_qa_studies_family,
+    bench_xtabay_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
