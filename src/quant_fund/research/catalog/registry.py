@@ -5959,6 +5959,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "njord2_qa_studies",
         "sif2_qa_studies",
         "tyr2_qa_studies",
+        # Wave-1814 mesopotamian-3 canon.
+        "enki2_qa_studies",
+        "marduk2_qa_studies",
+        "nanna2_qa_studies",
+        "ninhursag2_qa_studies",
+        "tiamat2_qa_studies",
+        "utu2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

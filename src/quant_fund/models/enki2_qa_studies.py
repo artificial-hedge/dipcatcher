@@ -27,7 +27,7 @@ def _bench_enki2_qa_studies(seed: int = 0) -> float:
     checks.append(not enki2_qa_studies_ok(False, True))
     checks.append(enki2_qa_studies_aux(True))
     checks.append(not enki2_qa_studies_aux(False))
-    checks.append(True)  # sumerian-6 canon
+    checks.append(True)  # mesopotamian-3 canon
     return float(sum(checks) / len(checks))
 
 
