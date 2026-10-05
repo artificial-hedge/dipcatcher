@@ -109,11 +109,18 @@ def admission_check(
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
     tombstone_dir: Path | str | None = None,
+    chain_corpus_dir: Path | str | None = None,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
 
     Fails closed: a missing candidate or unreadable corpus dir raises;
     per-check findings are recorded rather than swallowed.
+
+    ``chain_corpus_dir`` is the corpus whose *stamped epoch chain* the
+    epoch-integrity check verifies — admit_batch passes the real corpus
+    there because its shadow staging deliberately drops changed members
+    (a ``head_member_missing_live``/``member_removed`` on the shadow
+    would fire on every multi-file diff, not on real tampering).
     """
     candidate = Path(candidate)
     corpus_dir = Path(corpus_dir)
@@ -229,15 +236,16 @@ def admission_check(
         # conventional quality/ dir — same map `corpus-epoch --check
         # --allowed-removals` and suite_health load so every path agrees on
         # a deliberate retire.
+        chain_dir = Path(chain_corpus_dir) if chain_corpus_dir is not None else corpus_dir
         allowed: dict[str, str] | None = None
-        allowed_path = Path(corpus_dir).parent / "quality" / "epoch_allowed_removals.json"
+        allowed_path = chain_dir.parent / "quality" / "epoch_allowed_removals.json"
         if allowed_path.is_file():
             try:
                 raw = json.loads(allowed_path.read_text(encoding="utf-8"))
             except (OSError, ValueError):
                 raw = None
             allowed = dict(raw) if isinstance(raw, dict) else None
-        chain_result = check_epoch_chain(corpus_dir, allowed_removals=allowed)
+        chain_result = check_epoch_chain(chain_dir, allowed_removals=allowed)
         chain_errors = list(chain_result["errors"])
         # An unstamped corpus ("no_epoch_receipts") is benign — the gate
         # works fine before the first epoch stamp exists. Only a *broken
@@ -382,6 +390,7 @@ def admit_batch(
             q=q,
             known_inconsistent=known_inconsistent,
             tombstone_dir=corpus_dir,
+            chain_corpus_dir=corpus_dir,
         )
         results.append(result)
         # Post-merge coexistence: a merged diff lands all of its files
