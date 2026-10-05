@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 222,
+      "n_modules": 223,
       "status": "audited"
     },
     "monitoring": {
@@ -482,24 +482,43 @@
       ]
     },
     "microstructure/price_clustering.py": {
-      "status": "pending",
-      "reason": "SYNTHETIC round-number clustering diagnostics. Not imported by any module or test as of 2026-10-04; no wiring and no coverage exist yet. Audit queued."
+      "status": "partial",
+      "reason": "Owner disposition: keep. Unique SYNTHETIC round-number-clustering diagnostic (reachable-normalized residue statistic + sealed price_clustering.v1 receipt writer); the earlier 'not imported' finding only checked module-level imports. Focused unit tests at tests/unit/microstructure/test_price_clustering_module.py; a complete independent line-level audit has not been established.",
+      "evidence": [
+        "tests/unit/microstructure/test_price_clustering_module.py"
+      ]
     },
     "research/energy_score.py": {
-      "status": "pending",
-      "reason": "Multivariate distributional-calibration energy score. Not imported by any module or test as of 2026-10-04. The wired univariate implementation is quant_fund.metrics.energy_score; the overlap needs owner disposition before an audit scope can be stated."
+      "status": "partial",
+      "reason": "Owner disposition: keep. copula_specification bench core, imported lazily inside quant_fund.research.benches_w18.bench_copula_specification; a distinct API from metrics/energy_score because variogram_score and gaussian_copula_samples exist only here. Focused unit tests at tests/unit/research/test_energy_score_module.py; a complete independent line-level audit has not been established.",
+      "evidence": [
+        "tests/unit/research/test_energy_score_module.py",
+        "tests/unit/research/test_benches_w18.py"
+      ]
     },
     "research/selective_inference.py": {
-      "status": "pending",
-      "reason": "Lee-Sun polyhedral confidence intervals after argmin selection. Not imported by any module or test as of 2026-10-04. The wired implementation is quant_fund.models.selective_inference; the overlap needs owner disposition before an audit scope can be stated."
+      "status": "partial",
+      "reason": "Owner disposition: keep. selective_inference bench core, imported lazily inside quant_fund.research.benches_w18.bench_selective_inference; argmin-specialized Lee-Sun polyhedral CI, a different function API from the canon models/selective_inference. Focused unit tests at tests/unit/research/test_selective_inference_module.py; a complete independent line-level audit has not been established.",
+      "evidence": [
+        "tests/unit/research/test_selective_inference_module.py",
+        "tests/unit/research/test_benches_w18.py"
+      ]
     },
     "research/spa_test.py": {
-      "status": "pending",
-      "reason": "White Reality Check plus Romano-Wolf stepdown. Not imported by any module or test as of 2026-10-04. quant_fund.metrics.snooping already ships reality_check, spa_test, stepm and model_confidence_set with test coverage, so this looks like a parallel reimplementation; owner disposition required before audit."
+      "status": "partial",
+      "reason": "Owner disposition: keep. spa_test bench core, imported lazily inside quant_fund.research.benches_w18.bench_spa_test; the compact wave-18 Reality Check / Romano-Wolf stepdown, with the fuller canon battery left in metrics/snooping and metrics/inference. Focused unit tests at tests/unit/research/test_spa_test_module.py; a complete independent line-level audit has not been established.",
+      "evidence": [
+        "tests/unit/research/test_spa_test_module.py",
+        "tests/unit/research/test_benches_w18.py"
+      ]
     },
     "research/total_return.py": {
-      "status": "pending",
-      "reason": "Dividend-reinvestment total-return basis for research backtests. Not imported by any module or test as of 2026-10-04. Audit queued."
+      "status": "partial",
+      "reason": "Owner disposition: keep. Price-basis core for the 'dipcatcher data total-return' CLI, imported lazily inside quant_fund.cli.data_cmds.total_return_cmd. Focused unit tests at tests/unit/research/test_total_return_module.py; a complete independent line-level audit has not been established.",
+      "evidence": [
+        "tests/unit/research/test_total_return_module.py",
+        "tests/unit/cli/test_reality_total_return_cmds.py"
+      ]
     },
     "cli/sota_cmds.py": {
       "status": "partial",
