@@ -15231,6 +15231,14 @@ from quant_fund.research.benches_w1904 import (
     bench_sunakake_babaa_qa_studies_family,
     bench_umibozu_qa_studies_family,
 )
+from quant_fund.research.benches_w1905 import (
+    bench_betobeto_qa_studies_family,
+    bench_buruburu_qa_studies_family,
+    bench_hyakume_qa_studies_family,
+    bench_shachihoko_qa_studies_family,
+    bench_uwan_qa_studies_family,
+    bench_waira_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
