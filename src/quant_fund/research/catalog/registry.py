@@ -6960,6 +6960,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sabnock_qa_studies",
         "shax_qa_studies",
         "vepar_qa_studies",
+        # Wave-1957 goetic-sigil canon.
+        "bael_qa_studies",
+        "bifrons_qa_studies",
+        "crocell_qa_studies",
+        "gamigin_qa_studies",
+        "haagenti_qa_studies",
+        "vuall_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
