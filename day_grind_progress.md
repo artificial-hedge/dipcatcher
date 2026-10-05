@@ -2064,3 +2064,33 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
 
 Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
+
+## 2026-10-05 — owner-directed 3-item push (gates / capability verification / SOTA backlog)
+
+- Gate remediation closed: de8965875e lands src/fx1/{operations,extensions,interactive}
+  (169 registered ops) + regenerated derived artifacts; test_docs_code_references_resolve
+  green (index staging sufficed); docs/FXI.md quickstart comment fixed (parsed as CLI
+  subcommands); PLAN + FXI docs committed so tracked refs resolve.
+- fx-1 full-batch behavioral verification: CONFIRMED ALREADY CLOSED — all 169 registered
+  operation ids have hand-checked invocation cases (inline CASES + operation_cases_chunk0-8);
+  test_operations_registry_invocation.py 170/170 green locally in 7s. The codex lane's
+  "outstanding" note predated the Phase 0 Gate-0 close-out.
+- 5-file disposition (owner call: keep all five): 76cb15d676 adds 181 seeded unit tests for
+  research/{energy_score,selective_inference,spa_test,total_return}.py +
+  microstructure/price_clustering.py and flips their audit entries pending->partial. Wiring
+  was lazy-import (benches_w18 bench cores; data total-return CLI) — the "zero importers"
+  finding only checked module-level imports.
+- SOTA backlog B4-ii: 24fc30e910 adds models/c51_rl.py (torch-free Algorithm-1 projection +
+  C51Agent + ZILobQuoteEnv over ZILobSimulator), 37 tests. Wave 16's
+  microstructure/rl_market_maker.py already shipped the paper-faithful SMDP C51 RLMM; this
+  is the reusable models-layer core beside it.
+- SOTA matched-incumbent finding: the "industry-grade NOT PROVEN — no matched incumbent run"
+  line is STALE — .dsh-24x7/PROOF.md records vectorbt 1.1.0 (NAV parity 1.5e-15) and qlib
+  0.9.7 parity runs -> STATUS: PROVEN there. What genuinely lacks a matched incumbent is the
+  research/SOTA arm in the product's own domain. Recommended next: model registry +
+  per-incumbent output-contract test (the TimesFM channel-5 incident), add Moirai/Uni2TS/
+  Lag-Llama + realized-vol benchmark, fold sota_eval_native into the same pre-registered
+  receipt; biggest blocker is FX/equity PIT licensing (claim stays crypto-scoped without it).
+- All verification ran over SSH on ah-remote (D:\verify-local mirror): 218 tests green,
+  ruff/format clean on 7 files, mypy clean on 6 modules. Pre-existing reds left for owners:
+  audit cli pin 17 vs 18 (untracked sota_cmds.py), arch_atlas Windows path-sep x2.
