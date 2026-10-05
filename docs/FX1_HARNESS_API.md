@@ -1121,6 +1121,19 @@ HTTP before returning. `POST /v1/messages/batches` accepts the same pair —
 its terminal webhook posts the `message_batch` envelope and the verdict
 fields ride on it under the same names.
 
+The whole delivery contract is pinned end-to-end by
+`fx1.serve.webhook_audit` (`receipts/fx1_webhook_audit.json`, sealed
+`webhook_audit.v1`): a real loopback HTTP sink measures signature
+correctness (recompute/wrong-secret/tamper/stale-replay), fire-once per
+terminal transition on all five surfaces (repeated DELETEs and repeated
+GETs never re-fire — the fire-once flag rides the record), bounded 5xx
+retries vs definitive 4xx, loud `callback_status='failed'` verdicts on
+dead/stalling hosts, payload fidelity (the delivered body is the final
+record — `finished_at` populated), verdict visibility on GET, and
+fail-closed URL validation (scheme, netloc, and userinfo credentials
+refused at create; `callback_secret` requires `callback_url`). A `307`
+is not followed — the signed body never re-POSTs to a different path.
+
 Poll with `GET /harness/jobs/{id}`, or stream
 `/harness/jobs/{id}/events` (`HarnessClient.stream_job`,
 `wait_run_stream`, `fx1 harness watch`).

@@ -131,6 +131,8 @@ class FTJob(BaseModel, extra="forbid"):
     callback_attempts: int = 0
     callback_error: str | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 class FTJobList(BaseModel, extra="forbid"):
