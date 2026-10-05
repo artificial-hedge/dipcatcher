@@ -262,7 +262,7 @@ same digested shape the job record embeds.
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `POST /v1/chat/completions/{id}` | update a stored completion — `metadata` replaces wholesale (≤16 pairs, keys ≤64 chars, values ≤512), choices/usage sealed; `Fx1Harness.openai_chat_update` / `HarnessClient.update_chat_completion` / `client.updateChatCompletion` / `fx1 harness chat-update` |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
-| `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
+| `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object — `?stream=true` instead replays it as SSE (`response.*` grammar; `starting_after=N` resumes past sequence N, the `id:` cursor) — `Fx1Harness.openai_response_replay` / `HarnessClient.responses_replay` / `client.responseReplay` / `fx1 harness response-replay` |
 | `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
 | `GET /v1/responses/{id}/input_items` | the `input` items a stored response ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `input_items.list` |
 | `POST /v1/conversations` | mint a `conv_*` container (`items` seeds, `metadata` string pairs) — `Fx1Harness.openai_conversation_create` / `HarnessClient.conversation_create` / `client.conversationCreate` / `fx1 harness conv-create` |
@@ -559,7 +559,14 @@ same OpenAI error taxonomy:
   the harness drains). Poll `GET /v1/responses/{id}` until
   `status` lands terminal (`completed` / `failed` / `cancelled` /
   `incomplete`); `POST /v1/responses/{id}/cancel` flips a live
-  one to `cancelled` (409 `cancel_terminal` once terminal).
+  one to `cancelled` (409 `cancel_terminal` once terminal). A
+  dropped connection isn't a lost stream: `GET
+  /v1/responses/{id}?stream=true` re-attaches — a queued/
+  in-progress record emits its event prelude then live-follows
+  to the terminal frame (`response.completed`/`incomplete`/
+  `failed`/`cancelled`), and a terminal record replays the
+  whole grammar from the stored envelope; `starting_after=N`
+  resumes past sequence N.
   `background` requires `store` (400 `background_requires_store`
   otherwise) and can't nest inside a batch line (the batch is
   already the async surface). `previous_response_id` chains
@@ -589,12 +596,16 @@ same OpenAI error taxonomy:
   body is 409.
 
 Client-side: `HarnessClient.responses_create` /
-`responses_create_stream` / `cancel_response` in Python
+`responses_create_stream` / `cancel_response` /
+`responses_replay` in Python
 (`Fx1Harness.openai_response` / `openai_response_stream` /
-`openai_response_cancel` in-process — same `(envelope|events, cid)`
+`openai_response_cancel` / `openai_response_replay` in-process —
+same `(envelope|events, cid)`
 returns); `HarnessApiClient.responsesCreate` /
-`responsesCreateStream` / `cancelResponse` in TS; `fx1 harness
-respond [--background]` / `response-get` / `response-cancel` on the
+`responsesCreateStream` / `cancelResponse` / `responseReplay` in
+TS; `fx1 harness
+respond [--background]` / `response-get` / `response-cancel` /
+`response-replay` on the
 CLI.
 
 ### Embeddings (`/v1/embeddings`)

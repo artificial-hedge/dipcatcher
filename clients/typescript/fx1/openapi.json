@@ -24153,7 +24153,7 @@
         ]
       },
       "get": {
-        "description": "Retrieve a stored response object (``resp_\u2026``).",
+        "description": "Retrieve a stored response object (``resp_\u2026``).\n\n``stream=true`` replays the response as the Responses SSE event\ngrammar \u2014 how a client re-attaches to a ``background:true`` call it\ndisconnected from, or re-streams a completed one: a terminal\nenvelope emits the full recorded sequence, a still\n``queued``/``in_progress`` envelope emits its prelude then\nlive-follows until the terminal frame\n(``response.completed``/``incomplete``/``failed``/``cancelled``) or\nthe ``timeout_s`` deadline. ``starting_after`` resumes past\nsequence number N \u2014 the cursor is the frame's ``id:``. Unknown,\ndeleted, or ``store=false`` ids answer the same 404 ``not_found``\nenvelope as the JSON read.",
         "operationId": "openai_responses_retrieve",
         "parameters": [
           {
@@ -24163,6 +24163,45 @@
             "schema": {
               "title": "Response Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stream",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Stream",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "starting_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Starting After"
+            }
+          },
+          {
+            "in": "query",
+            "name": "timeout_s",
+            "required": false,
+            "schema": {
+              "default": 600.0,
+              "maximum": 3600.0,
+              "minimum": 1.0,
+              "title": "Timeout S",
+              "type": "number"
             }
           }
         ],

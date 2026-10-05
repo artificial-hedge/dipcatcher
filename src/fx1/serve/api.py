@@ -213,11 +213,13 @@ from fx1.serve.openai_compat import (
     openai_model,
     openai_response_events,
     openai_response_object,
+    openai_response_replay_events,
     openai_to_kwargs,
     paged_item_list,
     response_cap_call_items,
     response_input_item_dicts,
     response_input_items_for_store,
+    response_output_pieces,
     response_query_text,
     response_text_format,
     response_to_kwargs,
@@ -1809,6 +1811,59 @@ def _responses_sse(
     ):
         if seq >= skip:
             yield _frame(event, payload, seq)
+
+
+def _responses_replay_frames(
+    envelope_store: OpenAIEnvelopeStore,
+    response_id: str,
+    *,
+    skip: int = 0,
+    timeout_s: float = 600.0,
+    keepalive_s: float = 15.0,
+) -> Iterator[str]:
+    """The ``GET /v1/responses/{id}?stream=true`` frame generator — the
+    replay grammar (:func:`openai_response_replay_events`) serialized with
+    the same ``event:``/``id:``/``data:`` shape as the create stream, so a
+    re-attaching client's SSE parser rebuilds the same typed ``Response``.
+
+    A terminal envelope emits the full recorded sequence (``skip`` =
+    ``starting_after + 1`` resumes past a sequence cursor — the cursor is
+    the frame's ``id:``, monotonically increasing by absolute index).
+    A still-``queued``/``in_progress`` background response emits its
+    current prelude then live-follows: each pass re-reads the envelope and
+    emits any newly-derivable events until the terminal frame
+    (``response.completed``/``incomplete``/``failed``/``cancelled``) or the
+    ``timeout_s`` deadline — a ``: keepalive`` comment rides each idle
+    interval like ``/harness/jobs/{id}/events``. A record deleted or
+    evicted mid-follow ends the stream with no terminal frame (the record
+    is gone — there is nothing honest left to say).
+    """
+
+    def _frame(event: str, payload: dict[str, Any], seq: int) -> str:
+        return f"event: {event}\nid: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
+
+    cursor = skip
+    deadline = time.monotonic() + timeout_s
+    next_keep = time.monotonic() + keepalive_s if keepalive_s > 0 else math.inf
+    poll_s = 0.25 if keepalive_s <= 0 else min(0.25, keepalive_s)
+    while True:
+        env = envelope_store.get(response_id)
+        if env is None:
+            return
+        events = list(openai_response_replay_events(env))
+        for i in range(cursor, len(events)):
+            event, payload = events[i]
+            yield _frame(event, payload, i)
+        if env.get("status") in OPENAI_RESPONSE_TERMINAL:
+            return
+        cursor = len(events)
+        now = time.monotonic()
+        if now >= deadline:
+            return
+        if now >= next_keep:
+            yield ": keepalive\n\n"
+            next_keep = now + keepalive_s
+        time.sleep(poll_s)
 
 
 def _openai_sse(
@@ -4823,7 +4878,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         if body.store is not False:
             envelope_store.put(
-                envelope,
+                {
+                    **envelope,
+                    # the completion-log link the GET ?stream replay surface
+                    # needs for its X-Fx1-* headers — stripped before any
+                    # wire read, matching the idem-record convention
+                    "_fx1_completion_id": cid,
+                },
                 items={
                     "input_items": response_input_items_for_store(
                         eff_body.input, rid=str(envelope["id"])
@@ -5849,37 +5910,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
 
         def _resp_sse_from(env: dict[str, Any], drop: int) -> Iterator[str]:
-            env_items = [it for it in env["output"] if isinstance(it, dict)]
-            env_msg = next((it for it in env_items if it.get("type") == "message"), None)
-            env_calls = [it for it in env_items if it.get("type") == "function_call"]
-            env_search = [it for it in env_items if it.get("type") == "file_search_call"]
-            env_parts = env_msg.get("content") if isinstance(env_msg, dict) else None
-            env_lp = (
-                env_parts[0].get("logprobs")
-                if isinstance(env_parts, list) and env_parts and isinstance(env_parts[0], dict)
-                else None
-            )
-            # ``None`` marks a prose turn; a calls turn truncated to zero
-            # by max_tool_calls replays as the empty list — never a
-            # phantom empty message item
-            if env_calls:
-                env_call_list: list[dict[str, Any]] | None = env_calls
-            elif env.get("status") == "incomplete" and env_msg is None:
-                env_call_list = []
-            else:
-                env_call_list = None
+            text, item_id, call_list, env_search, env_lp = response_output_pieces(env)
             return _responses_sse(
                 body,
-                content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
+                content=text,
                 rid=env["id"],
-                item_id=(str(env_msg["id"]) if isinstance(env_msg, dict) else ""),
+                item_id=item_id,
                 model=env.get("model"),
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
-                call_items=env_call_list,
-                search_items=env_search or None,
-                logprobs=(env_lp if isinstance(env_lp, list) else None),
+                call_items=call_list,
+                search_items=env_search,
+                logprobs=env_lp,
                 # a truncated turn replays its terminal event too —
                 # response.incomplete, not response.completed
                 final_status=("incomplete" if env.get("status") == "incomplete" else "completed"),
@@ -6068,20 +6111,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         rid = str(envelope["id"])
-        msg_item = next(
-            (it for it in envelope["output"] if it.get("type") == "message"),
-            None,
+        msg_text, msg_item_id, call_list, env_search_items, env_logprobs = response_output_pieces(
+            envelope
         )
-        env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
-        env_search_items = [it for it in envelope["output"] if it.get("type") == "file_search_call"]
-        # ``None`` marks a prose turn; a calls turn truncated to zero
-        # replays the empty list, never a phantom message item
-        if env_call_items:
-            call_list: list[dict[str, Any]] | None = env_call_items
-        elif envelope.get("status") == "incomplete" and msg_item is None:
-            call_list = []
-        else:
-            call_list = None
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -6105,24 +6137,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _responses_sse(
                     body,
-                    content=(
-                        str(msg_item["content"][0]["text"]) if isinstance(msg_item, dict) else ""
-                    ),
+                    content=msg_text,
                     rid=rid,
-                    item_id=(str(msg_item["id"]) if isinstance(msg_item, dict) else ""),
+                    item_id=msg_item_id,
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
                     call_items=call_list,
-                    search_items=env_search_items or None,
-                    logprobs=(
-                        msg_item["content"][0].get("logprobs")
-                        if isinstance(msg_item, dict)
-                        and isinstance(msg_item.get("content"), list)
-                        and msg_item["content"]
-                        and isinstance(msg_item["content"][0], dict)
-                        else None
-                    ),
+                    search_items=env_search_items,
+                    logprobs=env_logprobs,
                     final_status=str(envelope.get("status") or "completed"),
                     incomplete_details=envelope.get("incomplete_details"),
                 ),
@@ -6204,9 +6227,53 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_responses_retrieve",
     )
-    def openai_response_retrieve(response_id: str) -> dict[str, Any]:
-        """Retrieve a stored response object (``resp_…``)."""
-        return _stored_envelope(response_id, object_="response")
+    def openai_response_retrieve(
+        response_id: str,
+        stream: bool = Query(default=False),
+        starting_after: int | None = Query(default=None, ge=0),
+        timeout_s: float = Query(default=600.0, ge=1.0, le=3600.0),
+    ) -> Response:
+        """Retrieve a stored response object (``resp_…``).
+
+        ``stream=true`` replays the response as the Responses SSE event
+        grammar — how a client re-attaches to a ``background:true`` call it
+        disconnected from, or re-streams a completed one: a terminal
+        envelope emits the full recorded sequence, a still
+        ``queued``/``in_progress`` envelope emits its prelude then
+        live-follows until the terminal frame
+        (``response.completed``/``incomplete``/``failed``/``cancelled``) or
+        the ``timeout_s`` deadline. ``starting_after`` resumes past
+        sequence number N — the cursor is the frame's ``id:``. Unknown,
+        deleted, or ``store=false`` ids answer the same 404 ``not_found``
+        envelope as the JSON read."""
+        env = envelope_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise ApiError(
+                404,
+                f"{response_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        if not stream:
+            return JSONResponse({k: v for k, v in env.items() if not k.startswith("_fx1_")})
+        headers: dict[str, str] = {}
+        cid = env.get("_fx1_completion_id")
+        if isinstance(cid, str) and cid:
+            headers["X-Fx1-Completion-Id"] = cid
+            _rsha = _completion_receipt_sha(cid)
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
+        skip = (starting_after + 1) if starting_after is not None else 0
+        return StreamingResponse(
+            _responses_replay_frames(
+                envelope_store,
+                response_id,
+                skip=skip,
+                timeout_s=timeout_s,
+                keepalive_s=float(getattr(app.state, "sse_keepalive_s", 15.0)),
+            ),
+            media_type="text/event-stream",
+            headers=headers,
+        )
 
     @app.delete(
         "/v1/responses/{response_id}",
@@ -6241,8 +6308,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ev = bg_cancel.get(response_id)
         if ev is not None:
             ev.set()
+        # put the raw stored record (not the _fx1_*-stripped projection) so
+        # the replay surface keeps its completion-log link on a cancelled
+        # response too
+        raw = envelope_store.get(response_id)
+        if raw is None or raw.get("object") != "response":
+            raise ApiError(404, f"{response_id!r} not found", code="not_found")
+        raw["status"] = "cancelled"
+        envelope_store.put(raw)
         env["status"] = "cancelled"
-        envelope_store.put(env)
         return env
 
     # --- /v1/conversations ---------------------------------------------------
@@ -8866,6 +8940,7 @@ def create_app(
                 "byok_override": byok_override_enabled,
                 "openai_compat": True,
                 "openai_retrieval": True,
+                "openai_responses_replay": True,
                 "openai_tools": True,
                 "openai_responses_tools": True,
                 "openai_logprobs": True,

@@ -107,6 +107,8 @@ __all__ = [
     "openai_response_call_items",
     "openai_response_events",
     "openai_response_object",
+    "openai_response_replay_events",
+    "response_output_pieces",
     "openai_to_kwargs",
     "openai_usage",
     "file_search_call_item",
@@ -2229,6 +2231,49 @@ def openai_response_events(
             "response": created_obj,
         },
     )
+    yield from _response_output_item_events(
+        text=text,
+        item_id=item_id,
+        call_items=call_items,
+        search_items=search_items,
+        logprobs=logprobs,
+        final_status=final_status,
+    )
+    terminal = "response.incomplete" if final_status == "incomplete" else "response.completed"
+    yield (
+        terminal,
+        {
+            "type": terminal,
+            "response": openai_response_object(
+                rid=rid,
+                item_id=item_id,
+                content=text,
+                body=body,
+                model=model,
+                usage=usage,
+                status=final_status,
+                created=created,
+                call_items=call_items,
+                search_items=search_items,
+                logprobs=logprobs,
+                incomplete_details=incomplete_details,
+            ),
+        },
+    )
+
+
+def _response_output_item_events(
+    *,
+    text: str,
+    item_id: str,
+    call_items: list[dict[str, Any]] | None,
+    search_items: list[dict[str, Any]] | None,
+    logprobs: list[dict[str, Any]] | None,
+    final_status: str,
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """The output-item lifecycle section of the Responses event grammar —
+    shared verbatim between the create-time stream and the stored-response
+    replay."""
     next_index = 0
     # ``file_search_call`` items lead the output — each emits its
     # output_item lifecycle plus the file_search_call-specific events
@@ -2384,27 +2429,104 @@ def openai_response_events(
                 "item": item,
             },
         )
-    terminal = "response.incomplete" if final_status == "incomplete" else "response.completed"
-    yield (
-        terminal,
-        {
-            "type": terminal,
-            "response": openai_response_object(
-                rid=rid,
-                item_id=item_id,
-                content=text,
-                body=body,
-                model=model,
-                usage=usage,
-                status=final_status,
-                created=created,
-                call_items=call_items,
-                search_items=search_items,
-                logprobs=logprobs,
-                incomplete_details=incomplete_details,
-            ),
-        },
+
+
+def response_output_pieces(
+    env: Mapping[str, Any],
+) -> tuple[
+    str, str, list[dict[str, Any]] | None, list[dict[str, Any]] | None, list[dict[str, Any]] | None
+]:
+    """The stream-grammar pieces extracted from a stored ``response``
+    envelope: ``(text, item_id, call_items, search_items, logprobs)`` — the
+    deterministic reconstruction the replay surface shares with the
+    create-time emitter. ``call_items`` is ``None`` for a prose turn and
+    ``[]`` for a calls turn truncated to zero by ``max_tool_calls`` (the
+    same distinction ``openai_response_events`` makes), so the replayed
+    grammar matches the create-time one byte-for-byte."""
+    items = [it for it in env.get("output") or [] if isinstance(it, dict)]
+    msg = next((it for it in items if it.get("type") == "message"), None)
+    calls = [it for it in items if it.get("type") == "function_call"]
+    search = [it for it in items if it.get("type") == "file_search_call"]
+    parts = msg.get("content") if isinstance(msg, dict) else None
+    lp = (
+        parts[0].get("logprobs")
+        if isinstance(parts, list) and parts and isinstance(parts[0], dict)
+        else None
     )
+    if calls:
+        call_list: list[dict[str, Any]] | None = calls
+    elif env.get("status") == "incomplete" and msg is None:
+        # an ``incomplete`` response with no message item = a calls turn
+        # truncated to zero calls by ``max_tool_calls`` — not a prose turn
+        call_list = []
+    else:
+        call_list = None
+    text = ""
+    if isinstance(msg, dict):
+        content = msg.get("content")
+        if isinstance(content, list) and content and isinstance(content[0], dict):
+            text = str(content[0].get("text") or "")
+    item_id = str(msg["id"]) if isinstance(msg, dict) and msg.get("id") else ""
+    return text, item_id, call_list, (search or None), (lp if isinstance(lp, list) else None)
+
+
+def openai_response_replay_events(
+    env: Mapping[str, Any],
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """The ``GET /v1/responses/{id}?stream=true`` replay grammar derived
+    deterministically from the stored envelope — OpenAI emits the same
+    event sequence the create-time stream produced, so a re-attaching
+    client's stream parser rebuilds the same typed ``Response``.
+
+    The envelope carries enough structure to replay without a persisted
+    event log: the stored ``id``/``created_at``/output items pin the
+    create-time minted values, and the envelope object itself IS the
+    terminal-frame payload — so the replayed terminal event is
+    byte-consistent with the non-stream retrieve body. ``response.created``
+    carries the as-created state (``output: []``, ``usage: null``, status
+    ``queued`` for a background response / ``in_progress`` otherwise);
+    ``response.queued`` follows for ``background: true`` envelopes (the
+    recorded lifecycle); ``response.in_progress`` emits once the record
+    left ``queued``. Non-terminal envelopes emit only this prelude — the
+    route's follow loop emits the rest once the record lands terminal
+    (``response.completed`` / ``response.incomplete`` / ``response.failed``
+    / ``response.cancelled``). ``_fx1_*`` internals never reach the wire.
+    """
+    clean = {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+    status = str(clean.get("status") or "completed")
+    background = clean.get("background") is True
+    created_obj = {
+        **clean,
+        "status": "queued" if background else "in_progress",
+        "output": [],
+        "usage": None,
+        "error": None,
+        "incomplete_details": None,
+    }
+    yield "response.created", {"type": "response.created", "response": created_obj}
+    if background:
+        yield "response.queued", {"type": "response.queued", "response": created_obj}
+    if status != "queued":
+        yield (
+            "response.in_progress",
+            {
+                "type": "response.in_progress",
+                "response": {**created_obj, "status": "in_progress"},
+            },
+        )
+    if status in ("completed", "incomplete"):
+        text, item_id, call_items, search_items, logprobs = response_output_pieces(clean)
+        yield from _response_output_item_events(
+            text=text,
+            item_id=item_id,
+            call_items=call_items,
+            search_items=search_items,
+            logprobs=logprobs,
+            final_status=status,
+        )
+    if status in OPENAI_RESPONSE_TERMINAL:
+        terminal = f"response.{status}"
+        yield terminal, {"type": terminal, "response": clean}
 
 
 # ---- /v1/embeddings ---------------------------------------------------------

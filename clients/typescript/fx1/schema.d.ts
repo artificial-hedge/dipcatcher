@@ -1845,6 +1845,18 @@ export interface paths {
         /**
          * Openai Response Retrieve
          * @description Retrieve a stored response object (``resp_…``).
+         *
+         *     ``stream=true`` replays the response as the Responses SSE event
+         *     grammar — how a client re-attaches to a ``background:true`` call it
+         *     disconnected from, or re-streams a completed one: a terminal
+         *     envelope emits the full recorded sequence, a still
+         *     ``queued``/``in_progress`` envelope emits its prelude then
+         *     live-follows until the terminal frame
+         *     (``response.completed``/``incomplete``/``failed``/``cancelled``) or
+         *     the ``timeout_s`` deadline. ``starting_after`` resumes past
+         *     sequence number N — the cursor is the frame's ``id:``. Unknown,
+         *     deleted, or ``store=false`` ids answer the same 404 ``not_found``
+         *     envelope as the JSON read.
          */
         get: operations["openai_responses_retrieve"];
         put?: never;
@@ -11825,7 +11837,11 @@ export interface operations {
     };
     openai_responses_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                stream?: boolean;
+                starting_after?: number | null;
+                timeout_s?: number;
+            };
             header?: never;
             path: {
                 response_id: string;

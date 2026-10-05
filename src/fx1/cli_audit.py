@@ -225,6 +225,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "response-get",
         "response-delete",
         "response-cancel",
+        "response-replay",
         "response-input-items",
         "score",
         "commands",
@@ -403,6 +404,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "response-get",
                 "response-delete",
                 "response-cancel",
+                "response-replay",
             )
         )
         # the stored-request subresources inherit the same contract —
@@ -661,6 +663,20 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     ("response.completed", {"response": {}}),
                 ],
                 None,
+            )
+
+        def openai_response_replay(
+            self, response_id: str, **kw: Any
+        ) -> tuple[list[tuple[str, dict[str, Any]]], str | None]:
+            self.stream_calls.append({"responses_replay": response_id, **dict(kw)})
+            return (
+                [
+                    ("response.created", {"type": "response.created", "response": {}}),
+                    (_DELTA_EVENT, {"delta": "re"}),
+                    (_DELTA_EVENT, {"delta": "play"}),
+                    ("response.completed", {"type": "response.completed", "response": {}}),
+                ],
+                "cid-replay",
             )
 
         def openai_completion(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
@@ -1074,6 +1090,17 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+        # response-replay in-process: SDK (event, payload) pairs — only
+        # the .delta strings concatenate onto stdout; cursor flags forward
+        rrp = runner.invoke(
+            app, ["harness", "response-replay", "resp_fake", "--starting-after", "2"]
+        )
+        out["response_replay_local_concat"] = (
+            rrp.exit_code == 0
+            and rrp.stdout == "replay\n"
+            and fake.stream_calls[-1].get("responses_replay") == "resp_fake"
+            and fake.stream_calls[-1].get("starting_after") == 2
+        )
 
         # text-completion in-process leg — the legacy surface through the
         # SDK twin: envelope prints as JSON; --stream prints the text
@@ -2249,6 +2276,20 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         def cancel_response(self, response_id: str) -> dict[str, Any]:
             self.last_ft_query = {"resp_cancel": response_id}
             return {"id": response_id, "object": "response", "status": "cancelled"}
+
+        def responses_replay(
+            self, response_id: str, **kw: Any
+        ) -> tuple[list[dict[str, Any]], str | None]:
+            self.last_ft_query = {"resp_replay": response_id, **kw}
+            return (
+                [
+                    {"type": "response.created", "response": {}},
+                    {"type": _DELTA_EVENT, "delta": "re"},
+                    {"type": _DELTA_EVENT, "delta": "played"},
+                    {"type": "response.completed", "response": {"id": response_id}},
+                ],
+                "cid-replay",
+            )
 
         def list_chat_completions(self, **kw: Any) -> dict[str, Any]:
             self.last_ft_query = {"chat_list": True, **kw}
@@ -3883,6 +3924,56 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "response-delete",
                 "response-cancel",
             )
+        )
+        # response-replay remote-side: bare payload dicts — the deltas
+        # concatenate and the id/cursor/timeout kwargs forward verbatim
+        _rrp = runner.invoke(
+            app,
+            [
+                "harness",
+                "response-replay",
+                "resp_x",
+                "--starting-after",
+                "4",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_response_replay"] = (
+            _rrp.exit_code == 0
+            and _rrp.stdout == "replayed\n"
+            and (remotes[-1].last_ft_query or {}).get("resp_replay") == "resp_x"
+            and (remotes[-1].last_ft_query or {}).get("starting_after") == 4
+            and (remotes[-1].last_ft_query or {}).get("timeout_s") == 30.0
+        )
+
+        # a replay that lands a cancelled terminal says so on stderr —
+        # a quiet delta stream would look like a full answer
+        class _CancelledReplayRemote(_FakeRemote):
+            def responses_replay(
+                self, response_id: str, **kw: Any
+            ) -> tuple[list[dict[str, Any]], str | None]:
+                self.last_ft_query = {"resp_replay": response_id, **kw}
+                return (
+                    [
+                        {"type": "response.in_progress", "response": {}},
+                        {
+                            "type": "response.cancelled",
+                            "response": {"id": response_id, "status": "cancelled"},
+                        },
+                    ],
+                    "cid-cx",
+                )
+
+        with patch(
+            "fx1.serve.client.HarnessClient",
+            side_effect=lambda u, **kw: _CancelledReplayRemote(u, **kw),
+        ):
+            _rrcx = runner.invoke(
+                app, ["harness", "response-replay", "resp_cx", "--remote", "http://h.test"]
+            )
+        out["response_replay_cancelled_stderr"] = (
+            _rrcx.exit_code == 0 and "[stream ended: cancelled]" in _rrcx.stderr
         )
         # chat-update --remote forwards the metadata payload verbatim
         out["remote_chat_update"] = json.loads(

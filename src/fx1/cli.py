@@ -182,6 +182,16 @@ def _response_frame_of(event: Any) -> tuple[str | None, str | None]:
         details = resp.get("incomplete_details") if isinstance(resp, dict) else None
         if isinstance(details, dict) and isinstance(details.get("reason"), str):
             reason = details["reason"]
+    if payload.get("type") == "response.failed":
+        resp = payload.get("response")
+        err = resp.get("error") if isinstance(resp, dict) else None
+        reason = (
+            f"failed: {err['message']}"
+            if isinstance(err, dict) and isinstance(err.get("message"), str)
+            else "failed"
+        )
+    if payload.get("type") == "response.cancelled":
+        reason = "cancelled"
     delta = payload.get("delta")
     return delta if isinstance(delta, str) else None, reason
 
@@ -190,19 +200,19 @@ def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
     nothing else. Accepts bare payload dicts (remote) or ``(event,
-    payload)`` pairs (in-process SDK). A ``response.incomplete`` terminal
-    reports its truncation reason on stderr — a quiet text stream would
-    look like a full answer."""
-    incomplete_reason: str | None = None
+    payload)`` pairs (in-process SDK). A ``response.incomplete``/``failed``/
+    ``cancelled`` terminal reports its reason on stderr — a quiet text
+    stream would look like a full answer."""
+    terminal_reason: str | None = None
     for event in events:
         delta, reason = _response_frame_of(event)
         if delta is not None:
             typer.echo(delta, nl=False)
         if reason is not None:
-            incomplete_reason = reason
+            terminal_reason = reason
     typer.echo()
-    if incomplete_reason is not None:
-        typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
+    if terminal_reason is not None:
+        typer.echo(f"[stream ended: {terminal_reason}]", err=True)
 
 
 def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
@@ -3804,6 +3814,42 @@ def harness_response_cancel(
 
     out = _or_exit(lambda: Fx1Harness().openai_response_cancel(response_id))
     typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-replay")
+def harness_response_replay(
+    response_id: str = typer.Argument(..., help=_RESPONSE_ID_HELP),
+    starting_after: int | None = typer.Option(
+        None,
+        "--starting-after",
+        help="Resume past sequence N — only events whose sequence number "
+        "exceeds N (the frames' id: cursor).",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/responses/{id}?stream=true`` — replay the stored response
+    as the Responses SSE event stream: the full grammar for a terminal
+    response, or the prelude plus a live follow for a still-running
+    ``background:true`` call. Prints the text-delta channel like
+    ``respond --stream``; unknown/deleted ids exit 2 (``not_found``)."""
+    if remote is not None:
+        revents, _cid = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).responses_replay(
+                response_id, starting_after=starting_after, timeout_s=timeout_s
+            )
+        )
+        _emit_response_deltas(revents)
+        return
+    from fx1.sdk import Fx1Harness
+
+    sevents, _cid = _or_exit(
+        lambda: Fx1Harness().openai_response_replay(
+            response_id, starting_after=starting_after, timeout_s=timeout_s
+        )
+    )
+    _emit_response_deltas(sevents)
 
 
 @harness_app.command("chat-list")

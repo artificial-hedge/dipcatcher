@@ -1689,6 +1689,21 @@
             "name": "response_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "starting_after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "stream",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "timeout_s",
+            "in": "query",
+            "required": false
           }
         ],
         "request_body_required": null,
@@ -2128,5 +2143,5 @@
       }
     }
   },
-  "schema_sha256": "c59c6d2ba640b61b29f20b3d098e6626dae61aa330b8daf144ba660f4422ae62"
+  "schema_sha256": "49a5bb0b4d56631c80feb805ab8f276144a2e483812868d991b0bfea63ca54e2"
 }
