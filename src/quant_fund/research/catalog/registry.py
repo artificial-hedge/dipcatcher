@@ -6421,6 +6421,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kel_essuf_qa_studies",
         "tanit_lok_qa_studies",
         "tin_hinan_qa_studies",
+        # Wave-1880 tuareg-2 canon.
+        "achimi_qa_studies",
+        "iyezid_qa_studies",
+        "mazer_qa_studies",
+        "milkart_qa_studies",
+        "tamgak_qa_studies",
+        "tesfit_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
