@@ -42,6 +42,7 @@ def test_empty_audit_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(audit_module, "uploads_audit", lambda: {})
     blob = uploads_audit_bench()
+    assert blob["claim"]["defects"] == ["no_probes"]
     assert blob["claim"]["results"] == {}
     assert blob["claim"]["ok"] is False
     assert blob["data_label"] == "SYNTHETIC"

@@ -46,19 +46,20 @@ This battery pins the whole lifecycle end to end:
   422 → ValueError, 501 → NotImplementedError, 503 →
   BackendNotConfiguredError, anything else → HarnessTransportError.
 
-Defects found while probing, fixed on this lane:
+Existing behavior pinned by this battery:
 
-- *Error-envelope leak* — body-parse failures (missing multipart
-  boundary, unparsable multipart body) raised starlette's base
-  ``HTTPException`` while ``_http_error`` was registered on fastapi's
-  subclass, so they escaped the ``{error: ...}`` envelope as bare
-  ``{"detail": ...}`` on /v1 paths. The handler is now registered on
-  ``starlette.exceptions.HTTPException`` (the parent); the exception
-  middleware's MRO lookup routes both classes through the envelope.
+- *Error envelope* — the existing Starlette base-exception handler
+  covers body-parse failures as well as FastAPI exceptions. This battery
+  extends coverage of that already-merged behavior.
 
 Probes are literal bools: ``True`` pins a contract that holds;
 ``False`` pins a measured divergence — the sealed receipt names every
 defect by probe name so the finding survives byte-for-byte.
+
+These are SYNTHETIC, stub-backed in-process checks. Restart probes close
+all clients and workers before reconstructing apps over the same directory;
+they do not start a fresh external process or establish crash atomicity. The
+fine-tuning fixture tests file plumbing, not corpus or training quality.
 
 Sealed ``uploads_audit.v1`` (fx1-side receipt).
 """
@@ -72,8 +73,10 @@ import tempfile
 import threading
 import time
 import urllib.parse
-from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from collections.abc import Callable, Iterator, Mapping
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -84,38 +87,55 @@ if TYPE_CHECKING:
 
 __all__ = ["uploads_audit", "uploads_audit_bench"]
 
-_ENV_KEYS = (
-    "FX1_API_KEY",
-    "MOONSHOT_API_KEY",
-    "FX1_CHECKPOINT_DIR",
-    "FX1_BYOK_BASE_URL",
-    "FX1_BYOK_API_KEY",
-    "FX1_BYOK_MODEL",
-    "FX1_LOCAL_SERVE_URL",
-    "FX1_LOCAL_SERVE_CMD",
-    "FX1_LOCAL_MODEL",
-    "FX1_LOCAL_API_KEY",
-    "FX1_FT_DIR",
-    "FX1_API_MAX_INFLIGHT",
-    "FX1_API_SSE_KEEPALIVE_S",
-    "FX1_API_IDEM_MAX",
-    "FX1_API_JOB_MAX",
-    "FX1_API_RATE_LIMIT_RPS",
-    "FX1_API_GZIP_MIN_BYTES",
-    "FX1_API_CORS_ORIGINS",
-    "FX1_API_BREAKER_THRESHOLD",
-    "FX1_API_BREAKER_COOLDOWN_S",
-    "FX1_API_RECEIPTS_DIR",
-    "FX1_API_BYOK_OVERRIDE",
-    "FX1_API_FILE_MAX",
-    "FX1_API_FILE_BYTES",
-    "FX1_API_BATCH_MAX",
-    "FX1_API_BATCH_LINES",
-    "FX1_API_STORE_MAX",
-    "FX1_API_STATE_DIR",
-    "FX1_API_HOST",
-    "FX1_API_PORT",
-)
+_AUDIT_LOCK = threading.Lock()
+_RESOURCES: ContextVar[ExitStack] = ContextVar("uploads_audit_resources")
+
+
+@contextmanager
+def _audit_context() -> Iterator[None]:
+    """Own temporary state and restore all ambient FX1 configuration.
+
+    Run this diagnostic in a dedicated process: environment overrides are
+    process-wide. The lock serializes calls made through this module.
+    """
+    with _AUDIT_LOCK:
+        saved = {
+            name: value
+            for name, value in os.environ.items()
+            if name.startswith("FX1_") or name == "MOONSHOT_API_KEY"
+        }
+        for name in saved:
+            os.environ.pop(name, None)
+        try:
+            with ExitStack() as resources:
+                token = _RESOURCES.set(resources)
+                try:
+                    yield
+                finally:
+                    _RESOURCES.reset(token)
+        finally:
+            for name in list(os.environ):
+                if name.startswith("FX1_") or name == "MOONSHOT_API_KEY":
+                    os.environ.pop(name, None)
+            os.environ.update(saved)
+
+
+def _temporary_directory() -> Path:
+    return Path(
+        _RESOURCES.get().enter_context(tempfile.TemporaryDirectory(prefix="uploads_audit_"))
+    )
+
+
+@contextmanager
+def _client_session(**kw: Any) -> Iterator[TestClient]:
+    """Finish one application's lifespan before a persistence replay."""
+    with ExitStack() as resources:
+        token = _RESOURCES.set(resources)
+        try:
+            yield _client(**kw)
+        finally:
+            _RESOURCES.reset(token)
+
 
 _API_KEY_ENV = "FX1_API_KEY"
 _ROOT_KEY = "uploads-audit-root"
@@ -164,12 +184,23 @@ def _client(**kw: Any) -> TestClient:
     import fx1.serve.api as api_mod
     from fx1.harness import Harness
 
+    resources = _RESOURCES.get()
+    isolated = _temporary_directory()
+    receipts = isolated / "receipts"
+    receipts.mkdir()
+    kw.setdefault("state_dir", isolated / "state")
+    kw.setdefault("ft_dir", isolated / "fine_tuning")
+    kw.setdefault("receipts_dir", receipts)
     app = api_mod.create_app(
         harness=Harness(runner=_runner),
         backend_resolver=lambda *a, **k: _B(),
         **kw,
     )
-    return TestClient(app, raise_server_exceptions=False)
+    resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
+    client = TestClient(app, raise_server_exceptions=False)
+    resources.callback(client.close)
+    resources.enter_context(client)
+    return client
 
 
 @contextmanager
@@ -255,19 +286,18 @@ def _minted(
     return str(done.json()["file"]["id"])
 
 
-def _run_threads(fn: Any, n: int = 8) -> None:
-    """Run ``fn(0..n-1)`` released together behind a barrier."""
-    barrier = threading.Barrier(n)
+def _run_threads(fn: Callable[[int], None], n: int = 8) -> None:
+    """Release workers together and propagate exceptions to the caller."""
+    barrier = threading.Barrier(n, timeout=10)
 
     def _w(i: int) -> None:
         barrier.wait()
         fn(i)
 
-    ths = [threading.Thread(target=_w, args=(i,)) for i in range(n)]
-    for t in ths:
-        t.start()
-    for t in ths:
-        t.join()
+    with ThreadPoolExecutor(max_workers=n) as pool:
+        futures = [pool.submit(_w, i) for i in range(n)]
+        for future in futures:
+            future.result(timeout=30)
 
 
 def _tc_transport(client: TestClient) -> Any:
@@ -649,48 +679,48 @@ def _probe_tenancy() -> dict[str, bool]:
 def _probe_durability(tmp: Path) -> dict[str, bool]:
     out: dict[str, bool] = {}
     state = tmp / "state"
-    c1 = _client(state_dir=state)
-    uid = str(_create(c1, 6).json()["id"])
-    p1 = str(_part(c1, uid, b"ab").json()["id"])
-    p2 = str(_part(c1, uid, b"cd").json()["id"])
-    journal = state / "uploads.jsonl"
-    blobs = state / "uploads" / uid
-    out["parts_journal_and_blob_on_disk"] = (
-        journal.is_file()
-        and blobs.is_dir()
-        and (blobs / f"{p1}.bin").read_bytes() == b"ab"
-        and (blobs / f"{p2}.bin").read_bytes() == b"cd"
-    )
-    # restart mid-upload: the intent + parts replay; the md5 gate still binds
-    c2 = _client(state_dir=state)
-    p3 = str(_part(c2, uid, b"ef").json()["id"])
-    bad = _complete_upload(c2, uid, [p1, p2, p3], md5="0" * 32)
-    out["md5_gate_holds_after_restart"] = (
-        bad.status_code == 400 and _code(bad) == "checksum_mismatch"
-    )
-    done = _complete_upload(
-        c2, uid, [p1, p2, p3], md5=hashlib.md5(b"abcdef", usedforsecurity=False).hexdigest()
-    )
-    fid = str(done.json()["file"]["id"]) if done.status_code == 200 else ""
-    raw = c2.get(f"/v1/files/{fid}/content") if fid else None
-    out["restart_resumes_and_completes_exact"] = (
-        done.status_code == 200 and raw is not None and raw.content == b"abcdef"
-    )
-    out["parts_dir_dropped_after_complete"] = not blobs.exists()
-    # cancelled and completed intents stay terminal across a restart
-    c3 = _client(state_dir=state)
-    out["completed_stays_terminal_after_restart"] = (
-        _part(c3, uid, b"zz").status_code == 409
-        and c3.post(f"/v1/uploads/{uid}/cancel").status_code == 409
-    )
-    uid4 = str(_create(c3, 2).json()["id"])
-    c3.post(f"/v1/uploads/{uid4}/cancel")
-    c4 = _client(state_dir=state)
-    out["cancelled_stays_terminal_after_restart"] = (
-        _part(c4, uid4, b"ab").status_code == 409
-        and _complete_upload(c4, uid4, ["part_x"]).status_code == 409
-        and c4.post(f"/v1/uploads/{uid4}/cancel").json()["status"] == "cancelled"
-    )
+    with _client_session(state_dir=state) as c1:
+        uid = str(_create(c1, 6).json()["id"])
+        p1 = str(_part(c1, uid, b"ab").json()["id"])
+        p2 = str(_part(c1, uid, b"cd").json()["id"])
+        journal = state / "uploads.jsonl"
+        blobs = state / "uploads" / uid
+        out["parts_journal_and_blob_on_disk"] = (
+            journal.is_file()
+            and blobs.is_dir()
+            and (blobs / f"{p1}.bin").read_bytes() == b"ab"
+            and (blobs / f"{p2}.bin").read_bytes() == b"cd"
+        )
+        # restart mid-upload: the intent + parts replay; the md5 gate still binds
+    with _client_session(state_dir=state) as c2:
+        p3 = str(_part(c2, uid, b"ef").json()["id"])
+        bad = _complete_upload(c2, uid, [p1, p2, p3], md5="0" * 32)
+        out["md5_gate_holds_after_restart"] = (
+            bad.status_code == 400 and _code(bad) == "checksum_mismatch"
+        )
+        done = _complete_upload(
+            c2, uid, [p1, p2, p3], md5=hashlib.md5(b"abcdef", usedforsecurity=False).hexdigest()
+        )
+        fid = str(done.json()["file"]["id"]) if done.status_code == 200 else ""
+        raw = c2.get(f"/v1/files/{fid}/content") if fid else None
+        out["restart_resumes_and_completes_exact"] = (
+            done.status_code == 200 and raw is not None and raw.content == b"abcdef"
+        )
+        out["parts_dir_dropped_after_complete"] = not blobs.exists()
+        # cancelled and completed intents stay terminal across a restart
+    with _client_session(state_dir=state) as c3:
+        out["completed_stays_terminal_after_restart"] = (
+            _part(c3, uid, b"zz").status_code == 409
+            and c3.post(f"/v1/uploads/{uid}/cancel").status_code == 409
+        )
+        uid4 = str(_create(c3, 2).json()["id"])
+        c3.post(f"/v1/uploads/{uid4}/cancel")
+    with _client_session(state_dir=state) as c4:
+        out["cancelled_stays_terminal_after_restart"] = (
+            _part(c4, uid4, b"ab").status_code == 409
+            and _complete_upload(c4, uid4, ["part_x"]).status_code == 409
+            and c4.post(f"/v1/uploads/{uid4}/cancel").json()["status"] == "cancelled"
+        )
     return out
 
 
@@ -974,35 +1004,25 @@ def _probe_sdk_twin() -> dict[str, bool]:
 
 def uploads_audit() -> dict[str, Any]:
     """Run every probe against live in-process apps; literal bools out."""
-    saved = {k: os.environ.get(k) for k in _ENV_KEYS}
-    for k in _ENV_KEYS:
-        os.environ.pop(k, None)
     out: dict[str, Any] = {}
-    try:
-        with tempfile.TemporaryDirectory() as td:
-            wd = Path(td)
-            c = _client()
-            capped = _client(file_bytes_max=64)
-            ft_client = _client(ft_runner=_ft_runner, ft_dir=wd / "ft")
-            out.update(_probe_happy_path(c))
-            out.update(_probe_md5(c))
-            out.update(_probe_part_bounds(c, capped))
-            out.update(_probe_ordering(c))
-            out.update(_probe_lifecycle(c))
-            out.update(_probe_ttl())
-            out.update(_probe_eviction(wd))
-            out.update(_probe_tenancy())
-            out.update(_probe_durability(wd))
-            out.update(_probe_downstream(ft_client))
-            out.update(_probe_error_paths(c))
-            out.update(_probe_client_map(c))
-            out.update(_probe_sdk_twin())
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+    with _audit_context():
+        wd = _temporary_directory()
+        c = _client()
+        capped = _client(file_bytes_max=64)
+        ft_client = _client(ft_runner=_ft_runner, ft_dir=wd / "ft")
+        out.update(_probe_happy_path(c))
+        out.update(_probe_md5(c))
+        out.update(_probe_part_bounds(c, capped))
+        out.update(_probe_ordering(c))
+        out.update(_probe_lifecycle(c))
+        out.update(_probe_ttl())
+        out.update(_probe_eviction(wd))
+        out.update(_probe_tenancy())
+        out.update(_probe_durability(wd))
+        out.update(_probe_downstream(ft_client))
+        out.update(_probe_error_paths(c))
+        out.update(_probe_client_map(c))
+        out.update(_probe_sdk_twin())
     return out
 
 
@@ -1021,14 +1041,15 @@ def uploads_audit_bench() -> dict[str, Any]:
         "data_label": "SYNTHETIC",
         "research_only": True,
         "live_pnl_claim": False,
-        "claim": {"results": r, "ok": ok},
+        "claim": {"results": r, "ok": ok, "defects": defects},
         "interpretation": (
-            "The /v1/uploads lifecycle holds end to end: intents carry a "
+            "Selected SYNTHETIC in-process /v1/uploads checks passed: intents carry a "
             "byte bound and a TTL, parts land bounded by the declared total "
             "and the 64-part cap, caller-declared part order (repeats "
             "included) assembles byte-exact behind an md5 gate that refuses "
-            "fail-closed and stays retryable, terminal intents refuse "
-            "everything at 409/410 while cancel replays idempotently, "
+            "fail-closed and stays retryable, terminal intents refuse parts "
+            "and completion at 409/410; cancelled cancel replays and expired "
+            "cancel reports expired, "
             "expiry never resurrects, evicted intents are real tombstones "
             "(404 live, honest 410-expired after a durable restart), "
             "credentials are workspace-level with scope-gated writes, parts "
@@ -1036,7 +1057,9 @@ def uploads_audit_bench() -> dict[str, Any]:
             "flow into batches/fine-tuning/vector stores, every refusal "
             "arrives in the OpenAI error envelope — including body-parse "
             "failures — and the client maps statuses to its exception "
-            "taxonomy. The in-process SDK twin mirrors the wire."
+            "taxonomy. The SDK twin covers the tested lifecycle. Reconstruction "
+            "uses closed in-process apps, not external-process or crash tests; "
+            "stub fine-tuning checks plumbing, not training or corpus quality."
             if ok
             else f"UPLOADS AUDIT DEFECTS: {defects}"
         ),

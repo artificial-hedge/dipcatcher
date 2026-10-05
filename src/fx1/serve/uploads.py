@@ -35,6 +35,8 @@ import threading
 import time
 import uuid
 from collections import OrderedDict
+from collections.abc import Callable
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -155,8 +157,16 @@ class UploadStore:
             res = self._journal.replay()
             self.recover_warnings = list(res.warnings)
             for payload in res.payloads:
+                expired_ids = set(payload.get("expired_uploads") or ())
+                for expired in expired_ids:
+                    expired_meta = self._uploads.get(str(expired))
+                    if expired_meta is not None:
+                        expired_meta.status = "expired"
+                        expired_meta.parts = {}
                 for evict in payload.get("evicted") or ():
                     uid = str(evict)
+                    if uid in expired_ids:
+                        continue
                     self._uploads.pop(uid, None)
                     if self._dir is not None:
                         self._rmtree(self._dir / uid)
@@ -287,39 +297,36 @@ class UploadStore:
             expires_at=now + self._ttl_s,
             status="pending",
         )
-        evicted: list[str] = []
         with self._lock:
+            count = max(0, len(self._uploads) + 1 - self._max)
+            evicted = list(self._uploads)[:count]
+            if self._journal is not None:
+                pending_evicted = [uid for uid in evicted if self._uploads[uid].status == "pending"]
+                self._journal.append(
+                    {
+                        "upload": self._meta(meta),
+                        "expired_uploads": pending_evicted,
+                        # Older readers honor evicted, so a downgrade cannot
+                        # resurrect a pending intent (they return 404, not 410).
+                        "evicted": pending_evicted,
+                    }
+                )
             self._uploads[meta.upload_id] = meta
             self._inmem[meta.upload_id] = {}
-            while len(self._uploads) > self._max:
-                old_id, old = self._uploads.popitem(last=False)
-                evicted.append(old_id)
-                if old.status == "pending" and self._journal is not None:
-                    self._journal.append(
-                        {
-                            "upload_terminal": {
-                                "upload_id": old_id,
-                                "status": "expired",
-                            }
-                        }
-                    )
-            if self._journal is not None:
-                self._journal.append({"upload": self._meta(meta)})
-        for uid in evicted:
-            self._inmem.pop(uid, None)
-            if self._dir is not None:
-                self._rmtree(self._dir / uid)
+            for uid in evicted:
+                old = self._uploads.pop(uid)
+                self._drop_parts(old)
         return meta
 
     def _touch(self, meta: UploadMeta) -> UploadMeta:
         """Lazy expiry — journals the tombstone once, unlinks parts."""
         if meta.status == "pending" and time.time() > meta.expires_at:
-            meta.status = "expired"
-            self._drop_parts(meta)
             if self._journal is not None:
                 self._journal.append(
                     {"upload_terminal": {"upload_id": meta.upload_id, "status": "expired"}}
                 )
+            meta.status = "expired"
+            self._drop_parts(meta)
         return meta
 
     def get(self, upload_id: str) -> UploadMeta | None:
@@ -373,10 +380,7 @@ class UploadStore:
                     fh.flush()
                     os.fsync(fh.fileno())
                 os.replace(tmp, blob)
-            else:
-                self._inmem[meta.upload_id][part_id] = bytes(data)
             created_at = int(time.time())
-            meta.parts[part_id] = len(data)
             if self._journal is not None:
                 self._journal.append(
                     {
@@ -387,30 +391,65 @@ class UploadStore:
                         }
                     }
                 )
+            if self._dir is None:
+                self._inmem[meta.upload_id][part_id] = bytes(data)
+            meta.parts[part_id] = len(data)
         return upload_part_object(part_id, upload_id, created_at)
 
+    def _assemble_locked(self, meta: UploadMeta, part_ids: list[str]) -> bytes:
+        if not part_ids:
+            raise UploadStoreError(400, "part_ids is empty", "invalid_request")
+        missing = [p for p in part_ids if p not in meta.parts]
+        if missing:
+            raise UploadStoreError(400, f"parts not found: {missing!r}", "part_not_found")
+        out = bytearray()
+        for pid in part_ids:
+            if self._dir is not None:
+                blob = self._blob(meta.upload_id, pid)
+                if not blob.is_file():
+                    raise UploadStoreError(
+                        400, f"part {pid!r} content is missing", "part_not_found"
+                    )
+                out += blob.read_bytes()
+            else:
+                out += self._inmem[meta.upload_id][pid]
+        return bytes(out)
+
     def assemble(self, upload_id: str, part_ids: list[str]) -> bytes:
-        """Read the caller's part order into one payload — the step
-        before the file store's ``put``."""
+        """Read the caller's part order into one payload."""
         with self._lock:
-            meta = self._pending(upload_id)
-            if not part_ids:
-                raise UploadStoreError(400, "part_ids is empty", "invalid_request")
-            missing = [p for p in part_ids if p not in meta.parts]
-            if missing:
-                raise UploadStoreError(400, f"parts not found: {missing!r}", "part_not_found")
-            out = bytearray()
-            for pid in part_ids:
-                if self._dir is not None:
-                    blob = self._blob(meta.upload_id, pid)
-                    if not blob.is_file():
-                        raise UploadStoreError(
-                            400, f"part {pid!r} content is missing", "part_not_found"
-                        )
-                    out += blob.read_bytes()
-                else:
-                    out += self._inmem[meta.upload_id][pid]
-            return bytes(out)
+            return self._assemble_locked(self._pending(upload_id), part_ids)
+
+    @staticmethod
+    def _validate_complete(
+        meta: UploadMeta, part_ids: list[str], content: bytes, md5: str | None
+    ) -> None:
+        declared = sum(meta.parts[p] for p in part_ids)
+        if declared != meta.nbytes or len(content) != meta.nbytes:
+            raise UploadStoreError(
+                400,
+                f"assembled bytes {len(content)} != declared {meta.nbytes}",
+                "upload_incomplete",
+            )
+        if md5 is not None and (
+            hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
+        ):
+            raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
+
+    def _complete_locked(self, meta: UploadMeta, file_id: str) -> None:
+        if self._journal is not None:
+            self._journal.append(
+                {
+                    "upload_terminal": {
+                        "upload_id": meta.upload_id,
+                        "status": "completed",
+                        "file_id": file_id,
+                    }
+                }
+            )
+        meta.status = "completed"
+        meta.file_id = file_id
+        self._drop_parts(meta)
 
     def complete(
         self,
@@ -421,36 +460,61 @@ class UploadStore:
         file_id: str,
         md5: str | None = None,
     ) -> UploadMeta:
-        """Terminal complete — the caller assembles ``content`` via
-        ``assemble`` and mints the file first; this only validates the
-        declared/actual contract and transitions the record."""
+        """Validate and record an already-minted file as terminal.
+
+        Callers that mint a file should use ``complete_with`` to serialize
+        publication with cancellation, expiry, eviction and other completes.
+        """
         with self._lock:
             meta = self._pending(upload_id)
-            declared = sum(meta.parts[p] for p in part_ids)
-            if declared != meta.nbytes or len(content) != meta.nbytes:
-                raise UploadStoreError(
-                    400,
-                    f"assembled bytes {len(content)} != declared {meta.nbytes}",
-                    "upload_incomplete",
-                )
+            self._validate_complete(meta, part_ids, content, md5)
+            self._complete_locked(meta, file_id)
+        return meta
+
+    def complete_with[ResultT](
+        self,
+        upload_id: str,
+        part_ids: list[str],
+        *,
+        publish: Callable[[UploadMeta, bytes], tuple[str, ResultT]],
+        rollback: Callable[[str], None],
+        md5: str | None = None,
+    ) -> tuple[UploadMeta, ResultT]:
+        """Validate, publish and complete while owning the lifecycle lock.
+
+        Callbacks must not re-enter this store. A pre-write upload-journal
+        failure keeps the upload pending and rolls back the newly minted
+        file. If a failed append changed the journal, retain the file for
+        recovery: its terminal reference may already be durable. Separate
+        file/upload journals are not crash-atomic, and rollback does not
+        restore file-store capacity evictions.
+        """
+        with self._lock:
+            meta = self._pending(upload_id)
+            content = self._assemble_locked(meta, part_ids)
             if md5 is not None and (
                 hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
             ):
                 raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
-            meta.status = "completed"
-            meta.file_id = file_id
-            self._drop_parts(meta)
+            self._validate_complete(meta, part_ids, content, None)
+            journal_size = 0
             if self._journal is not None:
-                self._journal.append(
-                    {
-                        "upload_terminal": {
-                            "upload_id": meta.upload_id,
-                            "status": "completed",
-                            "file_id": file_id,
-                        }
-                    }
-                )
-        return meta
+                with suppress(FileNotFoundError):
+                    journal_size = self._journal.path.stat().st_size
+            file_id, result = publish(meta, content)
+            try:
+                self._complete_locked(meta, file_id)
+            except Exception:
+                # A cleanup failure after a successful terminal append must
+                # not delete the file named by the committed upload.
+                unchanged = self._journal is None
+                if self._journal is not None:
+                    with suppress(OSError):
+                        unchanged = self._journal.path.stat().st_size == journal_size
+                if meta.status == "pending" and unchanged:
+                    rollback(file_id)
+                raise
+            return meta, result
 
     def cancel(self, upload_id: str) -> UploadMeta:
         """Cancel a pending upload. Completed uploads stay terminal
@@ -465,10 +529,10 @@ class UploadStore:
                 raise UploadStoreError(409, f"upload {upload_id!r} is completed", "upload_terminal")
             if meta.status in ("cancelled", "expired"):
                 return meta
-            meta.status = "cancelled"
-            self._drop_parts(meta)
             if self._journal is not None:
                 self._journal.append(
                     {"upload_terminal": {"upload_id": upload_id, "status": "cancelled"}}
                 )
+            meta.status = "cancelled"
+            self._drop_parts(meta)
         return meta

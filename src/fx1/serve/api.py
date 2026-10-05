@@ -231,6 +231,7 @@ from fx1.serve.openai_compat import (
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.uploads import (
+    UploadMeta,
     UploadStore,
     UploadStoreError,
     upload_object,
@@ -1468,10 +1469,9 @@ class KeyServedUsage(_Model):
 
 
 class ApiKeyUsageResponse(_Model):
-    """Usage card for one managed key: live counters (``uses`` /
-    ``tokens_used`` reset on restart like every live meter), declared
-    budgets with derived headroom, the rpm window state, and the
-    completion-ring spend split."""
+    """Usage card for one managed key: lifetime ``uses`` and ``tokens_used``
+    survive a clean ``--state-dir`` restart; RPM windows remain process-local.
+    Includes declared budgets, derived headroom, and completion-ring spend."""
 
     id: str
     object: Literal["key_usage"] = "key_usage"
@@ -2577,12 +2577,13 @@ def _mount_job_routes(
             try:
                 key = _idem_key(req.idempotency_key)
 
-                def _submit(
-                    req: HarnessRunRequest = req, key: str | None = key
+                def _submit_one(
+                    req: HarnessRunRequest = req,
+                    key: str | None = key,
                 ) -> JobSubmitResponse:
                     return _submit_job(req, key, lab, job_store, metrics, inflight, jobs_executor)
 
-                resp = await _run_claimed(job_store.async_claim_lock(key), _submit)
+                resp = await _run_claimed(job_store.async_claim_lock(key), _submit_one)
                 items.append(
                     JobBatchItemResponse(
                         index=i,
@@ -5232,22 +5233,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
-            # even under ``store=false`` on the response itself
-            conv = conv_store.get(conv_cid)
-            if conv is not None:
-                appended = [
-                    *response_input_items_for_store(body.input, rid=str(envelope["id"])),
-                    *[it for it in envelope["output"] if isinstance(it, dict)],
-                ]
-                conv_store.put(
-                    conv,
-                    items={
-                        "items": [
-                            *(conv_store.get_items(conv_cid, "items") or []),
-                            *appended,
-                        ]
-                    },
-                )
+            # even under ``store=false`` on the response itself.
+            # ``mutate_items`` merges under the store lock: two turns
+            # completing together can't lose each other's append, and a
+            # delete landing mid-turn resolves as a skip, never a
+            # get-then-put resurrection of the container.
+            appended = [
+                *response_input_items_for_store(body.input, rid=str(envelope["id"])),
+                *[it for it in envelope["output"] if isinstance(it, dict)],
+            ]
+            conv_store.mutate_items(conv_cid, "items", lambda current: [*current, *appended])
         return envelope, cid, out.usage
 
     def _openai_embeddings_core(
@@ -6717,9 +6712,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ) -> dict[str, Any]:
         """Update a conversation — ``metadata`` replaces wholesale."""
         conv = _stored_conversation(conversation_id)
-        conv["metadata"] = dict(body.metadata) if body.metadata is not None else {}
-        conv_store.put(conv)
-        return conv
+        new_conv = dict(conv)
+        new_conv["metadata"] = dict(body.metadata) if body.metadata is not None else {}
+        # put-if-present: a delete racing between fetch and write must
+        # win — an unconditional re-put would resurrect the tombstone.
+        if not conv_store.put_if_present(new_conv):
+            raise ApiError(
+                404,
+                f"{conversation_id!r} not found — no conversation under this id",
+                code="not_found",
+            )
+        return new_conv
 
     @app.delete(
         "/v1/conversations/{conversation_id}",
@@ -6770,10 +6773,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Append items to a conversation — returns the minted items as a
         list object. ``item_ids`` (alias-by-reference) is refused: items
         are minted per append, never aliased."""
-        conv = _stored_conversation(conversation_id)
-        minted = response_input_items_for_store(body.items or [], rid=conversation_id)
-        merged = [*(conv_store.get_items(conversation_id, "items") or []), *minted]
-        conv_store.put(conv, items={"items": merged})
+        _stored_conversation(conversation_id)
+        minted: list[dict[str, Any]] = []
+
+        def _extend(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            # A fresh append namespace avoids reusing ids after deletion;
+            # the list merge remains atomic under the store lock.
+            minted.extend(
+                response_input_items_for_store(
+                    body.items or [], rid=f"{conversation_id}:{uuid.uuid4().hex}"
+                )
+            )
+            return [*current, *minted]
+
+        merged = conv_store.mutate_items(conversation_id, "items", _extend)
+        if merged is None:
+            raise ApiError(
+                404,
+                f"{conversation_id!r} not found — no conversation under this id",
+                code="not_found",
+            )
         return {
             "object": "list",
             "data": minted,
@@ -6809,13 +6828,21 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Delete one item from a conversation — the conv object returns;
         a missing item id is a 404."""
         conv = _stored_conversation(conversation_id)
-        items = conv_store.get_items(conversation_id, "items") or []
-        kept = [it for it in items if it.get("id") != item_id]
-        if len(kept) == len(items):
+
+        def _drop(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            kept = [it for it in current if it.get("id") != item_id]
+            if len(kept) == len(current):
+                raise ApiError(
+                    404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
+                )
+            return kept
+
+        if conv_store.mutate_items(conversation_id, "items", _drop) is None:
             raise ApiError(
-                404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
+                404,
+                f"{conversation_id!r} not found — no conversation under this id",
+                code="not_found",
             )
-        conv_store.put(conv, items={"items": kept})
         return conv
 
     # --- /v1/vector_stores ---------------------------------------------------
@@ -7583,27 +7610,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_upload_complete",
     )
     def openai_upload_complete(upload_id: str, body: OpenAIUploadCompleteRequest) -> JSONResponse:
-        """Assemble the declared parts into a ``file-`` record. The md5
-        check runs BEFORE the file mints so a checksum failure leaves no
-        orphan; the upload then transitions terminal."""
-        try:
-            content = upload_store.assemble(upload_id, body.part_ids)
-            meta = upload_store.get(upload_id)
-            if meta is None:  # unreachable — assemble raises first
-                raise UploadStoreError(404, "upload gone", "upload_not_found")
-            if body.md5 is not None and (
-                hashlib.md5(content, usedforsecurity=False).hexdigest() != body.md5.lower()
-            ):
-                raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
-            if len(content) != meta.nbytes:
-                raise UploadStoreError(
-                    400,
-                    f"assembled bytes {len(content)} != declared {meta.nbytes}",
-                    "upload_incomplete",
-                )
+        """Validate and mint one file under the upload lifecycle lock."""
+
+        def publish(meta: UploadMeta, content: bytes) -> tuple[str, _FileRecord]:
             rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
-            done = upload_store.complete(
-                upload_id, body.part_ids, content=content, file_id=rec.file_id
+            return rec.file_id, rec
+
+        def rollback(file_id: str) -> None:
+            file_store.delete(file_id)
+
+        try:
+            done, rec = upload_store.complete_with(
+                upload_id, body.part_ids, publish=publish, rollback=rollback, md5=body.md5
             )
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc
@@ -8820,10 +8838,10 @@ def _mount_key_lifecycle(
         operation_id="key_usage",
     )
     def key_usage(key_id: str, request: Request) -> ApiKeyUsageResponse:
-        """One key's usage card — live counters, declared budgets with
-        derived headroom, the rpm window state, and the completion-ring
-        spend split. Counters are live meters (not journaled) and reset
-        on restart like ``uses``."""
+        """One key's usage card — lifetime counters, declared budgets with
+        derived headroom, RPM window state, and completion-ring spend.
+        Journaled ``uses`` and ``tokens_used`` survive a clean ``--state-dir``
+        restart; the RPM window remains process-local and resets."""
         _require_admin(request)
         rec = key_store.get(key_id)
         if rec is None:
@@ -9089,8 +9107,12 @@ def create_app(
     envelope_store = OpenAIEnvelopeStore(store_max)
     # Named conversation containers — ``POST /v1/conversations`` mints
     # them, ``conversation`` on a response joins one. Same bounded LRU
-    # contract as the envelope store; items live in subitems.
-    conv_store = OpenAIEnvelopeStore(store_max)
+    # contract as the envelope store; items live in subitems. Journaled
+    # under state_dir like the other stateful surfaces — a named
+    # container whose contents die on restart is a stateful surface that
+    # isn't; the retrieval index above stays a documented in-memory
+    # fetch cache.
+    conv_store = OpenAIEnvelopeStore(store_max, journal=_journal("conversations.jsonl"))
     # Vector stores borrow file content through the reader closure — a
     # deleted/oversized file fails the attach honestly rather than
     # silently indexing nothing; journaled under state_dir like the
@@ -9181,11 +9203,8 @@ def create_app(
     app.state.rate_limiter = limiter
     app.state.breaker = breaker
 
-    # Register on starlette's base HTTPException, not fastapi's subclass —
-    # body-parse failures (multipart/body errors raised by starlette's own
-    # request parsing and fastapi's routing layer) raise the parent class;
-    # the subclass-only registration let them escape as bare {"detail":...}
-    # instead of the surface's {error: {message, type, param, code}} envelope.
+    # Routing errors raise the Starlette base; FastAPI and ApiError subclasses
+    # still resolve to this handler through their exception hierarchy.
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         if is_openai_path(request.url.path):
