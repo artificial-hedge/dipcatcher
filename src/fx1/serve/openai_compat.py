@@ -2829,19 +2829,23 @@ class OpenAIEnvelopeStore:
         envelope: dict[str, Any],
         *,
         forbidden: Iterable[str],
+        require_existing: bool = False,
         items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
     ) -> bool:
         """``put`` guarded on the *stored* envelope's status: refuses
         when a record under the id already carries a status in
         ``forbidden``. A terminal verdict (``cancelled``) is sticky — a
         worker's late result never overwrites it. Returns whether the
-        put landed."""
+        put landed. ``require_existing`` protects background updates
+        from recreating an envelope that was deleted or evicted."""
         eid = envelope.get("id")
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         blocked = frozenset(forbidden)
         with self._lock:
             cur = self._items.get(eid)
+            if cur is None and require_existing:
+                return False
             if cur is not None and cur.get("status") in blocked:
                 return False
             self._items.pop(eid, None)

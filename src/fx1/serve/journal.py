@@ -34,8 +34,8 @@ import json
 import os
 import threading
 from collections import OrderedDict
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -120,42 +120,43 @@ class JobJournal:
         A clean replay returns every payload in order. A torn tail or
         mid-file edit stops at that line — ``truncated_at`` records the
         byte offset so the caller can report the dropped span."""
-        out = ReplayResult(payloads=[])
-        if not self.path.exists():
+        with self._lock:
+            out = ReplayResult(payloads=[])
+            if not self.path.exists():
+                return out
+            data = self.path.read_bytes()
+            seq = 0
+            chain = "0" * 64
+            offset = 0
+            for raw in data.splitlines(keepends=True):
+                offset += len(raw)
+                try:
+                    line = json.loads(raw)
+                    payload_raw = json.dumps(line["payload"], sort_keys=True, separators=(",", ":"))
+                    expect = hashlib.sha256(
+                        f"{line['seq']}|{line['chain']}|{payload_raw}".encode()
+                    ).hexdigest()
+                    ok = line["seq"] == seq and line["chain"] == chain and line["sha256"] == expect
+                except Exception:  # noqa: BLE001 — corrupt line, verified shape only
+                    ok = False
+                    line = None
+                if not ok:
+                    out.truncated_at = offset - len(raw)
+                    out.dropped = len(data[out.truncated_at :].splitlines())
+                    # torn tail = unparseable final line (crash mid-append);
+                    # everything else is tamper-shaped and fail-close worthy.
+                    out.torn_tail = line is None and offset >= len(data)
+                    out.warnings.append(
+                        f"journal {self.path.name}: chain broke at byte "
+                        f"{out.truncated_at} ({out.dropped} line(s) dropped)"
+                    )
+                    break
+                out.payloads.append(line["payload"])
+                chain = hashlib.sha256(raw).hexdigest()
+                seq += 1
+            self._seq = seq
+            self._chain = chain
             return out
-        data = self.path.read_bytes()
-        seq = 0
-        chain = "0" * 64
-        offset = 0
-        for raw in data.splitlines(keepends=True):
-            offset += len(raw)
-            try:
-                line = json.loads(raw)
-                payload_raw = json.dumps(line["payload"], sort_keys=True, separators=(",", ":"))
-                expect = hashlib.sha256(
-                    f"{line['seq']}|{line['chain']}|{payload_raw}".encode()
-                ).hexdigest()
-                ok = line["seq"] == seq and line["chain"] == chain and line["sha256"] == expect
-            except Exception:  # noqa: BLE001 — corrupt line, verified shape only
-                ok = False
-                line = None
-            if not ok:
-                out.truncated_at = offset - len(raw)
-                out.dropped = len(data[out.truncated_at :].splitlines())
-                # torn tail = unparseable final line (crash mid-append);
-                # everything else is tamper-shaped and fail-close worthy.
-                out.torn_tail = line is None and offset >= len(data)
-                out.warnings.append(
-                    f"journal {self.path.name}: chain broke at byte "
-                    f"{out.truncated_at} ({out.dropped} line(s) dropped)"
-                )
-                break
-            out.payloads.append(line["payload"])
-            chain = hashlib.sha256(raw).hexdigest()
-            seq += 1
-        self._seq = seq
-        self._chain = chain
-        return out
 
     # ---- maintenance ---------------------------------------------------
 
@@ -184,42 +185,86 @@ class JobJournal:
             self._appends_since_compact = 0
 
 
-class _ClaimLocks:
-    """Bounded map of per-key mutexes — the single-execution primitive
-    for ``Idempotency-Key`` check+insert.
+@dataclass
+class _Claim:
+    lock: threading.Lock = field(default_factory=threading.Lock)
+    users: int = 0
 
-    A route holds its key's lock across the store lookup, the work, and
-    the ``put``: same-key racers serialize behind the leader, and the
-    second comer replays the stored answer instead of double-executing
-    (the check-then-put window is the defect this closes). Entries are
-    bounded like the store itself — the oldest *unheld* lock evicts
-    first, so a lock is never stolen mid-flight; if every lock is held
-    the map overshoots the bound rather than break dedup."""
+
+class _ClaimLocks:
+    """Bounded registry of per-key mutexes for idempotent execution.
+
+    A reservation counts both holders and waiters before they leave the
+    registry lock. Only entries without reservations may be evicted: an
+    unlocked mutex may still have an acquiring thread or queued waiters.
+    Active keys may temporarily exceed the cache bound; the excess is
+    reclaimed as claims finish.
+    """
 
     def __init__(self, bound: int) -> None:
         self._guard = threading.Lock()
-        self._locks: OrderedDict[str, threading.Lock] = OrderedDict()
-        self._bound = bound
+        self._locks: OrderedDict[str, _Claim] = OrderedDict()
+        self._bound = max(1, bound)
+
+    def _prune_idle(self) -> None:
+        """Evict idle entries while the registry lock is held."""
+        while len(self._locks) > self._bound:
+            stale = next((k for k, claim in self._locks.items() if claim.users == 0), None)
+            if stale is None:
+                break
+            del self._locks[stale]
+
+    def _reserve(self, key: str) -> _Claim:
+        with self._guard:
+            claim = self._locks.get(key)
+            if claim is None:
+                claim = _Claim()
+                self._locks[key] = claim
+            claim.users += 1
+            self._locks.move_to_end(key)
+            self._prune_idle()
+            return claim
+
+    def _release(self, claim: _Claim) -> None:
+        with self._guard:
+            claim.users -= 1
+            self._prune_idle()
 
     @contextmanager
     def hold(self, key: str | None) -> Iterator[None]:
-        """Hold ``key``'s mutex for the lookup+execute+put span.
-
-        ``None`` (no idempotency key) is a no-op hold — unsynchronized
-        calls keep their plain path."""
+        """Serialize a key's lookup, execution, and insertion; None bypasses."""
         if key is None:
             yield
             return
-        with self._guard:
-            lock = self._locks.get(key)
-            if lock is None:
-                lock = threading.Lock()
-                self._locks[key] = lock
-            self._locks.move_to_end(key)
-            while len(self._locks) > self._bound:
-                stale = next((k for k, held in self._locks.items() if not held.locked()), None)
-                if stale is None:
-                    break
-                del self._locks[stale]
-        with lock:
+        claim = self._reserve(key)
+        try:
+            with claim.lock:
+                yield
+        finally:
+            self._release(claim)
+
+    @asynccontextmanager
+    async def ahold(self, key: str | None) -> AsyncIterator[None]:
+        """Wait cooperatively without occupying a request worker thread.
+
+        A sync yield dependency can strand its holder: waiting retries
+        consume every threadpool token before the holder's handler can
+        run. Nonblocking acquisition preserves the shared sync mutex
+        while yielding the event loop between attempts. Cancellation
+        releases the reservation even when acquisition never succeeds.
+        """
+        if key is None:
             yield
+            return
+        from anyio import sleep
+
+        claim = self._reserve(key)
+        try:
+            while not claim.lock.acquire(blocking=False):
+                await sleep(0.01)
+            try:
+                yield
+            finally:
+                claim.lock.release()
+        finally:
+            self._release(claim)

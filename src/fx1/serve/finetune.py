@@ -35,7 +35,7 @@ import time
 import uuid
 from collections import OrderedDict
 from collections.abc import Callable
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal
 
@@ -386,6 +386,10 @@ class FTJobStore:
         same-key concurrent submits single-mint instead of each missing
         the check-then-put window."""
         return self._claims.hold(key)
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        """Claim an idempotency key without consuming a request worker."""
+        return self._claims.ahold(key)
 
     def put(self, job: FTJob, idem_key: str | None, body_fp: str) -> FTJobEntry:
         entry = FTJobEntry(job, idem_key, body_fp)

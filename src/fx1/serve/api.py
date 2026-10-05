@@ -1934,25 +1934,23 @@ def _idem_lookup[IdemT: BaseModel](
 
 
 class _ClaimableStore(Protocol):
-    """Anything with a per-key ``claim_lock`` — ``_IdemStore``,
-    ``_JobStore``, ``EvalStore``, ``FTJobStore`` all conform."""
+    """Idempotency stores with a cooperative request-claim context."""
 
-    def claim_lock(self, key: str | None) -> AbstractContextManager[None]: ...
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]: ...
 
 
-def _idem_guard(store: _ClaimableStore) -> Callable[..., Iterator[None]]:
-    """Depends factory: hold the request's ``Idempotency-Key`` claim for
-    the whole handler span — the same ``claim_lock`` window
-    ``/harness/runs`` wraps inline, applied at the signature so
-    lookup+execute+put can never be crossed by a same-key racer (the
-    second comer serializes, then replays the leader's stored answer).
-    Declared before ``slot`` so claims queue ahead of work admission —
-    a slot holder never waits on a claim."""
+def _idem_guard(store: _ClaimableStore) -> Callable[..., AsyncIterator[None]]:
+    """Hold a claim across the handler without blocking threadpool dispatch.
 
-    def _guard(
+    Same-key retries wait cooperatively before work admission. The
+    holder can always obtain a worker thread to execute and release its
+    claim, even when retries exceed the request threadpool's capacity.
+    """
+
+    async def _guard(
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    ) -> Iterator[None]:
-        with store.claim_lock(_idem_key(idempotency_key)):
+    ) -> AsyncIterator[None]:
+        async with store.async_claim_lock(_idem_key(idempotency_key)):
             yield
 
     return _guard
@@ -2553,6 +2551,10 @@ class _IdemStore[IdemT: BaseModel]:
         +put — makes the check-and-insert atomic so concurrent same-key
         submits single-execute instead of each missing the cache."""
         return self._claims.hold(key)
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        """Claim an idempotency key without consuming a request worker."""
+        return self._claims.ahold(key)
 
     def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
@@ -4894,15 +4896,20 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             # a bg run's envelope id already holds a record (queued ->
             # in_progress); a cancelled verdict is sticky — the worker's
             # late result must never overwrite it.
-            envelope_store.put_unless_status(
+            stored = envelope_store.put_unless_status(
                 envelope,
-                forbidden={"cancelled"},
+                forbidden=OPENAI_RESPONSE_TERMINAL,
+                require_existing=rid is not None,
                 items={
                     "input_items": response_input_items_for_store(
                         eff_body.input, rid=str(envelope["id"])
                     )
                 },
             )
+            if rid is not None and not stored:
+                # A cancelled/deleted background result stays in the
+                # completion log but must not alter its conversation.
+                return envelope, cid, out.usage
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
@@ -6063,7 +6070,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     # CAS, not get+put: a queued record claims in_progress
                     # exactly once — and never over a cancel that landed
                     # while the worker was queued.
-                    envelope_store.transition_status(rid, expect={"queued"}, status="in_progress")
+                    if not envelope_store.transition_status(
+                        rid, expect={"queued"}, status="in_progress"
+                    ):
+                        return
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
@@ -6098,17 +6108,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 "code": "internal_error",
                             },
                         )
-                    else:
-                        if cancel_ev.is_set():
-                            # the run finished but cancel won the race —
-                            # flip the stored terminal back to cancelled,
-                            # atomically (a concurrent cancel put can
-                            # never be clobbered back to completed)
-                            envelope_store.transition_status(
-                                rid,
-                                expect={"completed", "incomplete"},
-                                status="cancelled",
-                            )
                 finally:
                     inflight.release()
                     bg_cancel.pop(rid, None)
@@ -6123,7 +6122,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 cur["error"] = error
                 # a terminal record (a cancel racing the failure, or the
                 # delete route dropping it) is never overwritten
-                envelope_store.put_unless_status(cur, forbidden=OPENAI_RESPONSE_TERMINAL)
+                envelope_store.put_unless_status(
+                    cur, forbidden=OPENAI_RESPONSE_TERMINAL, require_existing=True
+                )
 
             if key is not None:
                 openai_idem_store.put(
@@ -6323,15 +6324,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "in_progress responses cancel",
                 code="cancel_terminal",
             )
+        # Commit the verdict before signalling the worker. A worker
+        # that has already completed wins; its terminal status cannot
+        # be changed by a cancellation request that lost this race.
+        if not envelope_store.transition_status(
+            response_id, expect={"queued", "in_progress"}, status="cancelled"
+        ):
+            current = _stored_envelope(response_id, object_="response")
+            raise ApiError(
+                409,
+                f"{response_id!r} is already {current['status']} — only queued or "
+                "in_progress responses cancel",
+                code="cancel_terminal",
+            )
         ev = bg_cancel.get(response_id)
         if ev is not None:
             ev.set()
         env["status"] = "cancelled"
-        # guard the put on the *stored* status: a worker landing its
-        # terminal verdict between the check and the write wins — the
-        # cancel then replays the stored terminal record unchanged.
-        if not envelope_store.put_unless_status(env, forbidden=OPENAI_RESPONSE_TERMINAL):
-            return envelope_store.get(response_id) or env
         return env
 
     # --- /v1/conversations ---------------------------------------------------
