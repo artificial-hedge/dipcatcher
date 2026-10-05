@@ -98,6 +98,7 @@ from fx1.serve.anthropic_compat import (
     AnthropicCountTokensRequest,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
+    _rfc3339,
     anthropic_batch_object,
     anthropic_batch_result,
     anthropic_count_messages,
@@ -160,7 +161,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
-from fx1.serve.keys import SCOPES, ApiKeyStore, KeyStoreError
+from fx1.serve.keys import CLEARABLE_KEY_FIELDS, SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -291,6 +292,13 @@ _CORS_EXPOSE_HEADERS = [
     "X-RateLimit-Remaining-Requests",
     "X-RateLimit-Reset-Requests",
     "X-Request-ID",
+    # Anthropic-grammar responses (/v1/messages*) — the stock anthropic
+    # SDK's names for the same request-id / standing-budget surfaces
+    "Anthropic-RateLimit-Requests-Limit",
+    "Anthropic-RateLimit-Requests-Remaining",
+    "Anthropic-RateLimit-Requests-Reset",
+    "Request-ID",
+    "X-Should-Retry",
 ]
 _CORS_ALLOW_HEADERS = [
     "Content-Type",
@@ -308,6 +316,12 @@ _CORS_ALLOW_HEADERS = [
     "X-Fx1-Receipt-Hashes",
     "X-Fx1-Timeout",
     "X-Request-ID",
+    # the Anthropic-grammar request headers — the stock anthropic SDK
+    # sends these unconditionally on /v1/messages*
+    "Anthropic-Beta",
+    "Anthropic-Dangerous-Direct-Browser-Access",
+    "Anthropic-Version",
+    "X-Api-Key",
 ]
 _RATE_LIMIT_KEYS_MAX = 4096
 
@@ -373,6 +387,33 @@ _DECLARED_RATELIMIT_HEADERS: dict[str, dict[str, Any]] = {
         "description": "Seconds until the bucket refills.",
     },
 }
+# Anthropic-dialect responses (/v1/messages*, or /v1/* under an
+# `anthropic-version` header) carry the same request-id / standing-budget
+# surfaces under the names the stock anthropic SDK reads.
+_DECLARED_ANTHROPIC_HEADERS: dict[str, dict[str, Any]] = {
+    "request-id": {
+        "schema": {"type": "string"},
+        "description": "Anthropic's request-id header — the same id as X-Request-ID.",
+    },
+    "anthropic-ratelimit-requests-limit": {
+        "schema": {"type": "integer"},
+        "description": "Managed-key rpm window size — present only when the "
+        "credential carries a declared rpm window.",
+    },
+    "anthropic-ratelimit-requests-remaining": {
+        "schema": {"type": "integer"},
+        "description": "Requests left in the key's fixed 60 s window after this response.",
+    },
+    "anthropic-ratelimit-requests-reset": {
+        "schema": {"type": "string", "format": "date-time"},
+        "description": "RFC 3339 instant when the key's rpm window reopens.",
+    },
+    "x-should-retry": {
+        "schema": {"type": "string", "enum": ["true", "false"]},
+        "description": "Retry guidance for the stock anthropic SDK on statuses its "
+        "default policy would get wrong.",
+    },
+}
 _DECLARED_RETRY_AFTER: dict[str, Any] = {
     "schema": {"type": "integer"},
     "description": "Seconds to wait before retrying (429 rate-limit and 503 capacity responses).",
@@ -387,7 +428,7 @@ def _declare_response_headers(app: FastAPI, rate_limited: bool) -> None:
     """Materialize the cached spec once and stamp the headers the middleware
     actually sets — generated clients inherit the contract instead of guessing."""
     spec = app.openapi()
-    for item in spec.get("paths", {}).values():
+    for path, item in spec.get("paths", {}).items():
         for op in item.values():
             if not isinstance(op, dict):
                 continue
@@ -396,6 +437,8 @@ def _declare_response_headers(app: FastAPI, rate_limited: bool) -> None:
                     continue
                 hdrs = resp.setdefault("headers", {})
                 hdrs.update(_DECLARED_COMMON_HEADERS)
+                if _is_anthropic_path(path):
+                    hdrs.update(_DECLARED_ANTHROPIC_HEADERS)
                 if rate_limited:
                     hdrs.update(_DECLARED_RATELIMIT_HEADERS)
                 if code in ("429", "503"):
@@ -1325,6 +1368,7 @@ class ApiKeyMintResponse(_Model):
     expires_at: float | None
     created_at: float
     tokens_used: int
+    rotated_from: str | None
     key: str
 
 
@@ -1348,11 +1392,58 @@ class ApiKeyRecordModel(_Model):
     uses: int
     tokens_used: int
     last_used_at: float | None
+    rotated_from: str | None
 
 
 class ApiKeyListResponse(_Model):
     object: Literal["list"] = "list"
     data: list[ApiKeyRecordModel]
+
+
+class ApiKeyRotateRequest(_Model):
+    """Rotate body — every field optional; omitted fields inherit the
+    predecessor's declared policy verbatim."""
+
+    name: str | None = None
+    ttl_s: float | None = Field(default=None, gt=0)
+    revoke_old: bool = True
+
+
+class ApiKeyRotateResponse(_Model):
+    """Rotation response — ``key`` is the minted successor (raw secret
+    shown once); ``revoked_previous`` reports whether the predecessor
+    was tombstoned atomically with the mint."""
+
+    object: Literal["key_rotation"] = "key_rotation"
+    key: ApiKeyMintResponse
+    rotated_from: str
+    revoked_previous: bool
+
+
+class ApiKeyPatchRequest(_Model):
+    """Patch body — every field optional; the three states are
+    distinct: omitted keeps the declared policy, explicit ``null``
+    clears a nullable bound (``name``/``rpm``/``max_requests``/
+    ``max_tokens``/``expires_at`` — the unbounded default), and a
+    concrete value replaces it. ``scopes``/``admin`` take concrete
+    values when sent (``null`` clears nothing there — an explicit
+    list or flag instead). ``enabled`` and the live counters are
+    never patchable — revocation is permanent."""
+
+    name: str | None = Field(default=None, max_length=128)
+    rpm: int | None = Field(default=None, ge=1, le=1_000_000)
+    scopes: list[str] | None = None
+    admin: bool | None = None
+    max_requests: int | None = Field(default=None, ge=1, le=2_147_483_647)
+    max_tokens: int | None = Field(default=None, ge=1, le=9_223_372_036_854_775_807)
+    expires_at: float | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _concrete_when_sent(self) -> ApiKeyPatchRequest:
+        for field in ("scopes", "admin"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} must take a concrete value when sent")
+        return self
 
 
 class KeyUsageBackendSplit(_Model):
@@ -1387,6 +1478,7 @@ class ApiKeyUsageResponse(_Model):
     created_at: float
     expires_at: float | None
     revoked_at: float | None
+    rotated_from: str | None
     uses: int
     tokens_used: int
     last_used_at: float | None
@@ -1435,6 +1527,26 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
         uses=rec["uses"],
         tokens_used=int(rec.get("tokens_used") or 0),
         last_used_at=rec["last_used_at"],
+        rotated_from=rec.get("rotated_from"),
+    )
+
+
+def _key_mint_wire(rec: dict[str, Any], raw: str) -> ApiKeyMintResponse:
+    """Mint/rotate response — the record plus the raw secret, shown once."""
+    return ApiKeyMintResponse(
+        id=rec["key_id"],
+        name=rec["name"],
+        prefix=rec["prefix"],
+        admin=bool(rec.get("admin")),
+        scopes=list(rec["scopes"]),
+        rpm=rec.get("rpm"),
+        max_requests=rec.get("max_requests"),
+        max_tokens=rec.get("max_tokens"),
+        expires_at=rec.get("expires_at"),
+        created_at=rec["created_at"],
+        tokens_used=int(rec.get("tokens_used") or 0),
+        rotated_from=rec.get("rotated_from"),
+        key=raw,
     )
 
 
@@ -1595,6 +1707,8 @@ class JobStatusResponse(_Model):
     callback_url: str | None = None
     callback_status: Literal["delivered", "failed"] | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
     callback_error: str | None = None
     callback_attempts: int = 0
 
@@ -1972,10 +2086,18 @@ def _deliver_callback(
     worker and never changes the record's own status. Transient faults
     (network errors, 5xx) retry ``WEBHOOK_MAX_ATTEMPTS`` times with
     capped backoff; a 4xx is a definitive rejection and is never
-    retried."""
+    retried. Fire-once: the first call for a record wins the
+    ``_callback_fired`` flag under ``_callback_lock`` — duplicate terminal
+    transitions (a repeated DELETE on a cancelled record, a cancel+
+    complete race, expiry-on-read re-projects) never re-deliver. Recovery
+    also claims this flag because callback secrets are never journaled."""
     url = rec.callback_url
     if not url:
         return
+    with rec._callback_lock:
+        if rec._callback_fired:
+            return
+        rec._callback_fired = True
     payload = body if body is not None else rec.model_dump_json().encode()
     ok, err, attempts = deliver_signed(url, rec._callback_secret, payload)
     rec.callback_status = "delivered" if ok else "failed"
@@ -2068,8 +2190,10 @@ def _submit_job(
             job.error = f"{type(exc).__name__}: {exc}"
             job.status = "failed"
         finally:
+            # stamp finished_at before the webhook fires — the delivered
+            # record is the final record, never a pre-terminal snapshot
+            job.finished_at = time.time()
             _deliver_callback(job)
-        job.finished_at = time.time()
         job_store.mark(job)
         metrics.release()
         inflight.release()
@@ -2612,6 +2736,8 @@ class _JobStore:
                 if "job" not in payload:
                     continue
                 job = JobStatusResponse.model_validate(payload["job"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                job._callback_fired = True
                 self._jobs[job.job_id] = job
                 self._jobs.move_to_end(job.job_id)
                 key, fp = payload.get("key"), payload.get("fp")
@@ -2959,6 +3085,8 @@ class _BatchStore:
                 if "batch" not in payload:
                     continue
                 batch = _BatchRecord.model_validate(payload["batch"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                batch._callback_fired = True
                 self._batches[batch.batch_id] = batch
                 self._batches.move_to_end(batch.batch_id)
             for batch in self._batches.values():
@@ -3078,6 +3206,8 @@ class _AnthropicBatchStore:
                 if "batch" not in payload:
                     continue
                 batch = _AnthropicBatchRecord.model_validate(payload["batch"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                batch._callback_fired = True
                 self._batches[batch.batch_id] = batch
                 self._batches.move_to_end(batch.batch_id)
             for batch in self._batches.values():
@@ -3191,6 +3321,48 @@ def _request_id(raw: str | None) -> str:
     return uuid.uuid4().hex
 
 
+def _is_anthropic_path(path: str) -> bool:
+    """The Anthropic-grammar surface — ``/v1/messages`` and everything
+    beneath it (count_tokens, message batches)."""
+    return path == "/v1/messages" or path.startswith("/v1/messages/")
+
+
+def _is_anthropic_surface(request: Request) -> bool:
+    """Requests answered in Anthropic's dialect — the /v1/messages tree,
+    plus any /v1/* path addressed with an ``anthropic-version`` header
+    (the dual-grammar routes, e.g. model listing)."""
+    return _is_anthropic_path(request.url.path) or "anthropic-version" in request.headers
+
+
+# Statuses the stock anthropic SDK retries by default — x-should-retry
+# confirms them — and the ones its default gets wrong here: 409
+# (idempotency-key conflict) and 501 (unimplemented knob) are terminal,
+# never retried. Every other status omits the header.
+_ANTHROPIC_RETRY_TRUE = frozenset({408, 429, 500, 502, 503, 504, 529})
+_ANTHROPIC_RETRY_FALSE = frozenset({409, 501})
+
+
+def _anthropic_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
+    """Anthropic's standing rate-limit headers for a managed key with a
+    declared rpm window — the requests family only (there is no token
+    window to report); empty for env/loopback auth or unwindowed keys
+    (no false scarcity, same honesty rule as the X-RateLimit-* family)."""
+    if key_id in (None, "env"):
+        return {}
+    ws = key_store.window_state(key_id)
+    if ws is None:
+        return {}
+    out = {
+        "anthropic-ratelimit-requests-limit": str(ws[0]),
+        "anthropic-ratelimit-requests-remaining": str(ws[1]),
+    }
+    reset = _rfc3339(time.time() + ws[2])
+    if reset is not None:
+        # Anthropic's convention: an instant, not a countdown
+        out["anthropic-ratelimit-requests-reset"] = reset
+    return out
+
+
 logger = logging.getLogger("fx1.serve.api")
 if not logger.handlers:  # embedders may still attach their own handlers
     _log_handler = logging.StreamHandler()
@@ -3210,6 +3382,16 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
+    if _is_anthropic_surface(request):
+        # the stock anthropic SDK reads `request-id` (same id, its name)
+        # and `x-should-retry` where its defaults disagree with our
+        # terminal shapes
+        response.headers["request-id"] = request_id
+        status = response.status_code
+        if status in _ANTHROPIC_RETRY_TRUE:
+            response.headers.setdefault("x-should-retry", "true")
+        elif status in _ANTHROPIC_RETRY_FALSE:
+            response.headers.setdefault("x-should-retry", "false")
     if is_openai_path(request.url.path):
         # OpenAI's api-version response header — the stock SDK + proxies
         # log it for compat debugging on every /v1 call
@@ -3577,7 +3759,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
     ) -> Any:
         """Resolve one chain link — per-link kwargs: the byok override binds
-        only a 'byok' link, checkpoint_dir only a 'local_fx1' link."""
+        only a 'byok' link, checkpoint_dir only a 'local_fx1' link.
+        ``resolve_backend`` is create_app's normalized request resolver
+        (``_resolve_request_backend``) — resolver faults already arrive as
+        the wire map's errors."""
         return resolve_backend(
             name,
             body.checkpoint_dir if name == "local_fx1" else None,
@@ -3587,11 +3772,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     def _resolve_chain(
         body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
+        *,
+        out: list[BackendAttempt] | None = None,
     ) -> tuple[str, Any, list[BackendAttempt]]:
         """First chain link that admits + resolves serves; a 503
         (unconfigured / unavailable / circuit open) records the attempt and
-        moves on. Any other error is a request fault and aborts."""
-        attempts: list[BackendAttempt] = []
+        moves on. Any other error is a request fault and aborts. ``out``
+        shares the attempts list with the caller so a dead chain still seals
+        which links were tried on the failed record."""
+        attempts: list[BackendAttempt] = out if out is not None else []
         last: ApiError | None = None
         for cand in [body.backend, *body.fallbacks]:
             key = _breaker_key_name(cand, body.byok)
@@ -3616,12 +3805,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _submit_eval(
         body: EvalSubmitRequest,
         idempotency_key: str | None,
+        *,
+        eval_spec: str | None = None,
+        eval_model: str | None = None,
     ) -> EvalSubmitResponse:
         """Eval submission core — the job contract (idempotency lookup ->
         drain check -> slot admission -> background execution) applied to
         the eval suites. The slot is held for the eval's lifetime and
         released by the worker, so evals queue no deeper than
-        ``max_inflight``."""
+        ``max_inflight``. ``eval_spec``/``eval_model`` bind a /v1/evals
+        run at construction so every journal entry and the terminal
+        callback carry the binding — a fast eval can never fire its
+        webhook before the binding lands."""
         key = (idempotency_key or "").strip() or None
         if key is not None and len(key) > _IDEM_KEY_MAX:
             raise ApiError(400, "Idempotency-Key must be <= 256 chars")
@@ -3657,20 +3852,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             created_at=time.time(),
             sampling=EVAL_SAMPLING.body_fields(),
             callback_url=body.callback_url,
+            eval_spec=eval_spec,
+            eval_model=eval_model,
         )
         record._callback_secret = body.callback_secret
 
         def _exec() -> None:
-            if record.status == "cancelled":
-                metrics.release()
-                inflight.release()
-                return
-            record.status = "running"
-            eval_store.mark(record)
+            chain_att: list[BackendAttempt] = []
+            backend: Any = None
+            judge_obj: Any = None
+            finalize = False
             try:
-                name, backend, attempts = _resolve_chain(body)
+                # The claim itself journals and can fail. It belongs to
+                # the same exception and capacity boundary as model work.
+                if eval_store.start(record.eval_id) is None:
+                    return
+                finalize = True
+                name, backend, _ = _resolve_chain(body, out=chain_att)
                 record.backend = name
-                record.attempts = [a.model_dump(mode="json") for a in attempts]
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 model = metered_model(
                     backend,
                     metric_key=f"eval:{body.suite}:{name}",
@@ -3697,26 +3897,55 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     )
                 run_eval_record(record, model=model, judge=judge)
             except ApiError as exc:
+                finalize = True
                 record.error = f"{exc.status_code}: {exc.detail}"
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 record.status = "failed"
                 record.finished_at = time.time()
             except Exception as exc:  # noqa: BLE001 — worker faults land in the record
+                finalize = True
                 record.error = f"{type(exc).__name__}: {exc}"
+                record.attempts = [a.model_dump(mode="json") for a in chain_att]
                 record.status = "failed"
                 record.finished_at = time.time()
             finally:
-                _deliver_callback(record)
-                eval_store.mark(record)
-            metrics.release()
-            inflight.release()
+                try:
+                    try:
+                        if judge_obj is not backend:
+                            _close_backend(judge_obj)
+                    finally:
+                        _close_backend(backend)
+                finally:
+                    try:
+                        if finalize:
+                            try:
+                                _deliver_callback(record)
+                            finally:
+                                eval_store.mark(record)
+                    finally:
+                        # Cleanup faults must not skip the remaining
+                        # resources, durable transition, or capacity release.
+                        metrics.release()
+                        inflight.release()
 
+        # Put before the executor hand-off: the worker's atomic start() claim
+        # can only ever lose to a cancel that already landed — never to a
+        # store that doesn't know the record yet.
+        handed_off = False
         try:
-            jobs_executor.submit(_exec)
-        except RuntimeError as exc:  # executor gone (shutdown race)
-            metrics.release()
-            inflight.release()
-            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        eval_store.put(record, key, body_fp)
+            eval_store.put(record, key, body_fp)
+            try:
+                jobs_executor.submit(_exec)
+            except RuntimeError as exc:  # executor gone (shutdown race)
+                raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+            handed_off = True
+        finally:
+            if not handed_off:
+                try:
+                    eval_store.delete(record.eval_id)
+                finally:
+                    metrics.release()
+                    inflight.release()
         return EvalSubmitResponse(eval_id=record.eval_id, status=record.status, replayed=False)
 
     @app.post(
@@ -3881,7 +4110,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def eval_spec_list(limit: int = 20, after: str | None = None) -> EvalSpecPage:
         if not 1 <= limit <= 100:
             raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
-        page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        try:
+            page, more = eval_spec_store.list_specs(limit=limit, after=after)
+        except ValueError as exc:
+            raise ApiError(400, str(exc), code="invalid_cursor") from exc
         return EvalSpecPage(
             data=[EvalSpecWire.model_validate(spec_wire(s)) for s in page], has_more=more
         )
@@ -3961,14 +4193,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         # The run's dedupe namespace is scoped to the spec — the same
         # Idempotency-Key under a different eval is a different run.
         scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
-        submitted = _submit_eval(sub, scoped_key)
+        submitted = _submit_eval(sub, scoped_key, eval_spec=spec.spec_id, eval_model=body.model)
         rec = eval_store.get(submitted.eval_id)
         if rec is None:
             raise ApiError(404, f"run '{submitted.eval_id}' evicted")
-        if not submitted.replayed:
-            rec.eval_spec = spec.spec_id
-            rec.eval_model = body.model
-            eval_store.mark(rec)
         response.headers["Location"] = f"/v1/evals/{eval_id}/runs/{rec.eval_id}"
         return EvalRunObject.model_validate(run_wire(rec))
 
@@ -3984,7 +4212,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
         records, _total = eval_store.list_records(spec=eval_id)
         if after is not None:
-            idx = next((i for i, r in enumerate(records) if r.eval_id == after), None)
+            # The wire hands out run ids as ``evalrun_<id>`` — the cursor
+            # round-trips in that shape or bare.
+            bare_after = after.removeprefix("evalrun_")
+            idx = next((i for i, r in enumerate(records) if r.eval_id == bare_after), None)
             if idx is None:
                 raise ApiError(
                     400,
@@ -4056,8 +4287,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         start = 0
         if after is not None:
-            m = re.fullmatch(r"evalrun_.+-(\d+)", after)
-            start = int(m.group(1)) + 1 if m else 0
+            m = re.fullmatch(r"evalrun_(.+)-(\d+)", after)
+            if m is None or m.group(1) != rec.eval_id:
+                raise ApiError(
+                    400,
+                    f"cursor {after!r} is not an item id under run {run_id!r}",
+                    code="invalid_cursor",
+                )
+            start = int(m.group(2)) + 1
         page = tasks[start : start + limit]
         items = [
             EvalOutputItem(
@@ -4239,7 +4476,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 call_latency_ms = (time.monotonic() - t0) * 1000.0
                 if breaker is not None:
                     breaker.report(cand_key, True)
-                usage_snap = getattr(backend, "last_usage", None)
+                usage_snap = _billable_usage(getattr(backend, "last_usage", None))
                 model_snap = getattr(backend, "_model", None)
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
@@ -4376,6 +4613,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         messages = [{"role": m.role, "content": cast(str, m.content)} for m in body.messages]
         sampling_params = _sampling_of(body)
         sampling_fields = sampling_params.body_fields()
+        # The record is appended from the streaming generator / worker
+        # thread, where this request's contextvars are long gone — the
+        # credential fingerprint is captured while it is still bound and
+        # stamped on the record explicitly (same play as the batch path).
+        req_key_id = _REQUEST_KEY_ID.get()
 
         def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None, str]:
             """Buffer + gate the backend stream; raises the mapped errors.
@@ -4427,7 +4669,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(_breaker_key_name(serving, body.byok), True)
             finally:
-                usage_snap = getattr(backend, "last_usage", None)
+                usage_snap = _billable_usage(getattr(backend, "last_usage", None))
                 model_snap = getattr(backend, "_model", None)
                 joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
@@ -4452,6 +4694,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         sampling=sampling_fields,
                         user=body.user,
                         metadata=body.metadata,
+                        key_id=req_key_id,
                         output_sha256=(
                             hashlib.sha256(joined_snap.encode("utf-8")).hexdigest()
                             if call_ok
@@ -4949,7 +5192,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(cand_key, True)
                 data_out = result.data
-                usage_snap = result.usage
+                usage_snap = _billable_usage(result.usage)
                 model_out = result.model or ereq.model
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
@@ -5407,10 +5650,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         once — expiry-on-read is a terminal transition too."""
         if not batch.callback_url or batch.status != "ended":
             return
-        with batch._callback_lock:
-            if batch._callback_fired:
-                return
-            batch._callback_fired = True
         _deliver_callback(
             batch,
             body=json.dumps(anthropic_batch_object(batch.model_dump(mode="json"))).encode(),
@@ -6993,10 +7232,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         The first terminal transition fires; expiry-on-read is one."""
         if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
             return
-        with batch._callback_lock:
-            if batch._callback_fired:
-                return
-            batch._callback_fired = True
         _deliver_callback(
             batch,
             body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),
@@ -7512,9 +7747,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             serving,
                             item_ok,
                             (time.monotonic() - t0) * 1000.0,
-                            usage=getattr(backend, "last_usage", None)
-                            if isinstance(getattr(backend, "last_usage", None), dict)
-                            else None,
+                            usage=_billable_usage(getattr(backend, "last_usage", None)),
                         )
                     _log_item(True, content, None, None)
                     if breaker is not None:
@@ -7636,9 +7869,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 f"probe:{name}",
                 ok,
                 (time.monotonic() - t0) * 1000.0,
-                usage=getattr(backend, "last_usage", None)
-                if isinstance(getattr(backend, "last_usage", None), dict)
-                else None,
+                usage=_billable_usage(getattr(backend, "last_usage", None)),
             )
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
@@ -8158,6 +8389,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
 
+def _billable_usage(snap: Any) -> dict[str, int] | None:
+    """The billable-value sieve on a provider usage claim: only genuine
+    ints count — a bool is not a token count, and strings/floats can
+    never reach the ledger. ``None`` for an absent channel, a non-dict
+    payload, or a claim with nothing billable in it. Negative ints are
+    kept verbatim (the provider's claim, reported faithfully — the
+    charge path clamps them at zero)."""
+    if not isinstance(snap, dict):
+        return None
+    clean = {str(k): v for k, v in snap.items() if isinstance(v, int) and not isinstance(v, bool)}
+    return clean or None
+
+
+def _as_tokens(value: Any) -> int:
+    """One usage claim → its billable int, or 0 — bools, strings, and
+    floats are unbillable and never reach the ledger."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
 def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
     """Fold one served call's provider-reported usage into the key's
     live token-budget meter. ``usage`` is None when the backend has no
@@ -8167,24 +8417,36 @@ def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
     if rec.key_id in (None, "env") or not usage:
         return
     total = usage.get("total_tokens")
-    if not isinstance(total, int):
-        pt = usage.get("prompt_tokens")
-        ct = usage.get("completion_tokens")
-        total = (pt if isinstance(pt, int) else 0) + (ct if isinstance(ct, int) else 0)
+    if not isinstance(total, int) or isinstance(total, bool):
+        total = _as_tokens(usage.get("prompt_tokens")) + _as_tokens(usage.get("completion_tokens"))
     key_store.charge_tokens(rec.key_id or "", total)
 
 
-def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore) -> JSONResponse:
+def _key_refusal_response(
+    exc: KeyStoreError, request: Request, key_store: ApiKeyStore
+) -> JSONResponse:
     """429 shape for a managed-key refusal. ``quota_exceeded`` is a hard
     budget — no ``Retry-After`` (it never clears inside a call, so
     clients must not retry it); ``rate_limited`` is a window refusal —
-    an honest ``Retry-After`` plus the key's standing budget headers."""
+    an honest ``Retry-After`` plus the key's standing budget headers.
+    ``insufficient_scope`` is the authorization refusal — a 403 in the
+    path's own error grammar."""
+    path = request.url.path
+    if exc.code == "insufficient_scope":
+        msg = str(exc)
+        scope_body: dict[str, Any] = {"detail": msg, "code": exc.code}
+        if is_openai_path(path):
+            scope_body = _v1_error_body(path, msg, 403, exc.code)
+        return JSONResponse(status_code=403, content=scope_body)
     if exc.code == "quota_exceeded":
         msg = str(exc)
         body: dict[str, Any] = {"detail": msg, "code": exc.code}
         if is_openai_path(path):
             body = _v1_error_body(path, msg, 429, exc.code)
-        return JSONResponse(status_code=429, content=body)
+        # A hard budget cannot recover through retry. Keep this explicit
+        # route hint when _finish applies generic transient-status hints.
+        headers = {"x-should-retry": "false"} if _is_anthropic_surface(request) else None
+        return JSONResponse(status_code=429, content=body, headers=headers)
     wait_s = max(1, math.ceil(exc.retry_after or 1.0))
     rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
     rl_body: dict[str, Any] = {"detail": rl_msg, "code": exc.code}
@@ -8192,6 +8454,8 @@ def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore)
         rl_body = _v1_error_body(path, rl_msg, 429, exc.code)
     headers = {"Retry-After": str(wait_s)}
     headers.update(_key_budget_headers(key_store, exc.key_id))
+    if _is_anthropic_surface(request):
+        headers.update(_anthropic_budget_headers(key_store, exc.key_id))
     return JSONResponse(status_code=429, content=rl_body, headers=headers)
 
 
@@ -8232,10 +8496,10 @@ def _key_served_usage(records: list[CompletionRecord], key_id: str) -> KeyServed
             continue
         calls += 1
         usage = rec.usage or {}
-        p = int(usage.get("prompt_tokens") or 0)
-        c = int(usage.get("completion_tokens") or 0)
+        p = _as_tokens(usage.get("prompt_tokens"))
+        c = _as_tokens(usage.get("completion_tokens"))
         t = usage.get("total_tokens")
-        tt = int(t) if t is not None else p + c
+        tt = t if isinstance(t, int) and not isinstance(t, bool) else p + c
         prompt += p
         completion += c
         total_all += tt
@@ -8275,6 +8539,7 @@ def _key_usage_response(
         created_at=rec["created_at"],
         expires_at=rec.get("expires_at"),
         revoked_at=rec.get("revoked_at"),
+        rotated_from=rec.get("rotated_from"),
         uses=uses,
         tokens_used=tokens_used,
         last_used_at=rec.get("last_used_at"),
@@ -8291,15 +8556,93 @@ def _key_usage_response(
     )
 
 
-def _mount_key_introspection(
+def _mount_key_lifecycle(
     app: FastAPI,
     *,
     key_store: ApiKeyStore,
     completion_log: _CompletionLog,
 ) -> None:
-    """Per-key usage introspection: the admin card on
-    ``/harness/keys/{id}/usage`` and the caller's own card on
-    ``/harness/self`` (read scope — any credential watches itself)."""
+    """Key lifecycle routes beyond mint/get/revoke: the usage cards and
+    rotation. Lifted out of ``create_app`` for the ruff complexity
+    ceiling."""
+
+    @app.post(
+        "/harness/keys/{key_id}/rotate",
+        response_model=ApiKeyRotateResponse,
+        status_code=201,
+        tags=["ops"],
+        operation_id="key_rotate",
+    )
+    def key_rotate(
+        key_id: str, body: ApiKeyRotateRequest, request: Request
+    ) -> ApiKeyRotateResponse:
+        """Atomic rotation: mint a successor inheriting the predecessor's
+        declared policy (name/scopes/admin/rpm/budgets) and, by default,
+        tombstone the predecessor in the same store transaction. The new
+        raw secret is returned once; lineage (``rotated_from``) is
+        journaled with the successor record. Without ``ttl_s`` the
+        successor inherits the predecessor's absolute ``expires_at`` —
+        rotation never extends a credential's lifetime."""
+        _require_admin(request)
+        try:
+            raw, rec = key_store.rotate(
+                key_id,
+                revoke_old=body.revoke_old,
+                name=body.name,
+                ttl_s=body.ttl_s,
+            )
+        except KeyStoreError as exc:
+            raise ApiError(
+                404 if exc.code == "key_not_found" else 409,
+                str(exc),
+                code=exc.code,
+            ) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_rotation") from exc
+        return ApiKeyRotateResponse(
+            key=_key_mint_wire(rec, raw),
+            rotated_from=key_id,
+            revoked_previous=body.revoke_old,
+        )
+
+    @app.patch(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_patch",
+    )
+    def key_patch(key_id: str, body: ApiKeyPatchRequest, request: Request) -> ApiKeyRecordModel:
+        """Mutable policy update on a live managed key — the patched
+        record returns, shaped like ``key_get``. Omitted fields keep
+        the declared policy; explicit ``null`` clears a nullable
+        bound (``name``/``rpm``/``max_requests``/``max_tokens``/
+        ``expires_at``); ``admin:true`` unions the admin scope the
+        mint way while ``admin:false`` never strips a declared scope.
+        Patching is in place — no new secret, no slot consumed — and
+        the updated record journals so a ``--state-dir`` restart
+        restores it. ``enabled``/live counters stay unpatchable:
+        revocation is permanent (rotate covers re-keying)."""
+        _require_admin(request)
+        sent = body.model_fields_set
+        clear = {f for f in CLEARABLE_KEY_FIELDS if f in sent and getattr(body, f) is None}
+        try:
+            rec = key_store.update(
+                key_id,
+                name=body.name,
+                rpm=body.rpm,
+                scopes=body.scopes,
+                admin=body.admin,
+                max_requests=body.max_requests,
+                max_tokens=body.max_tokens,
+                expires_at=body.expires_at,
+                clear=clear,
+            )
+        except KeyStoreError as exc:
+            status = {"key_not_found": 404, "key_revoked": 409}.get(exc.code, 422)
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_patch") from exc
+        return _key_wire(rec)
 
     @app.get(
         "/harness/keys/{key_id}/usage",
@@ -8407,7 +8750,10 @@ def _resolve_auth(
         if provided and api_key and hmac.compare_digest(provided, api_key):
             return ("env", True, None)
         if provided:
-            key_rec = key_store.authenticate(provided)
+            key_rec = key_store.authenticate(
+                provided,
+                required_scope=_required_scope(request.method, request.url.path),
+            )
             if key_rec is not None:
                 scopes = key_rec.get("scopes")
                 scope_set = frozenset(scopes) if isinstance(scopes, list) else None
@@ -8767,12 +9113,14 @@ def create_app(
         except KeyStoreError as exc:
             # a managed key past its declared rpm/budget refuses 429 —
             # same fail-closed shape as the global limiter, keyed to the
-            # credential's own window/budget
-            metrics.record_rate_limited()
+            # credential's own window/budget; a scope denial is 403, not
+            # rate limiting
+            if exc.code != "insufficient_scope":
+                metrics.record_rate_limited()
             return _finish(
                 request,
                 request_id,
-                _key_refusal_response(exc, request.url.path, key_store),
+                _key_refusal_response(exc, request, key_store),
                 started,
             )
         if isinstance(auth, JSONResponse):
@@ -8793,6 +9141,8 @@ def create_app(
             # standing budget on every answer (OpenAI header names) —
             # env-key and loopback auth declare no window and get none
             response.headers.update(_key_budget_headers(key_store, key_id))
+            if _is_anthropic_surface(request):
+                response.headers.update(_anthropic_budget_headers(key_store, key_id))
         if rl_headers is not None:
             response.headers.update(rl_headers)
         return _finish(request, request_id, response, started)
@@ -8887,6 +9237,8 @@ def create_app(
                 "key_scopes": True,
                 "key_quotas": True,
                 "key_usage": True,
+                "key_rotation": True,
+                "key_patch": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -9049,20 +9401,7 @@ def create_app(
             )
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
-        return ApiKeyMintResponse(
-            id=rec["key_id"],
-            name=rec["name"],
-            prefix=rec["prefix"],
-            admin=bool(rec.get("admin")),
-            scopes=list(rec["scopes"]),
-            rpm=rec.get("rpm"),
-            max_requests=rec.get("max_requests"),
-            max_tokens=rec.get("max_tokens"),
-            expires_at=rec.get("expires_at"),
-            created_at=rec["created_at"],
-            tokens_used=int(rec.get("tokens_used") or 0),
-            key=raw,
-        )
+        return _key_mint_wire(rec, raw)
 
     @app.get(
         "/harness/keys",
@@ -9190,7 +9529,7 @@ def create_app(
         return resp
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
-    _mount_key_introspection(app, key_store=key_store, completion_log=completion_log)
+    _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
 
     def _resolve_request_backend(
         backend_name: str,

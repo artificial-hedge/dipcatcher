@@ -78,6 +78,7 @@ class _SdkBackend:
     def __init__(self) -> None:
         self.last_usage: dict[str, int] | None = None
         self.last_messages: list[dict[str, Any]] | None = None
+        self.last_sampling: SamplingParams | None = None
         self.counted_messages: list[dict[str, Any]] | None = None
 
     def complete(
@@ -87,6 +88,7 @@ class _SdkBackend:
         sampling: SamplingParams | None = None,
     ) -> str:
         self.last_messages = messages
+        self.last_sampling = sampling
         self.last_usage = {
             "prompt_tokens": 3,
             "completion_tokens": 2,
@@ -113,6 +115,7 @@ class _SdkBackend:
         from fx1.serve.backends import ToolCompletion
 
         self.last_messages = messages
+        self.last_sampling = sampling
         self.last_usage = {
             "prompt_tokens": 3,
             "completion_tokens": 2,
@@ -272,28 +275,45 @@ async def _probe_messages(cl: Any, stub: _SdkBackend, out: dict[str, Any]) -> No
         metadata={"user_id": "u-1"},
         messages=[{"role": "user", "content": "hi"}],
     )
-    out["sdk_msg_metadata"] = tagged.type == "message" and tagged.content[0].type == "text"
+    out["sdk_msg_metadata"] = (
+        tagged.type == "message"
+        and tagged.content[0].type == "text"
+        and stub.last_sampling is not None
+        and stub.last_sampling.user == "u-1"
+    )
     stopped = await cl.messages.create(
         model="fx1",
         max_tokens=8,
         stop_sequences=["\n", "END"],
         messages=[{"role": "user", "content": "hi"}],
     )
-    out["sdk_msg_stop_sequences"] = stopped.id.startswith("msg_")
+    out["sdk_msg_stop_sequences"] = (
+        stopped.id.startswith("msg_")
+        and stub.last_sampling is not None
+        and stub.last_sampling.stop == ("\n", "END")
+    )
     warm = await cl.messages.create(
         model="fx1",
         max_tokens=8,
         extra_body={"temperature": 0.3},
         messages=[{"role": "user", "content": "hi"}],
     )
-    out["sdk_msg_temperature"] = warm.id.startswith("msg_")
+    out["sdk_msg_temperature"] = (
+        warm.id.startswith("msg_")
+        and stub.last_sampling is not None
+        and stub.last_sampling.temperature == 0.3
+    )
     focused = await cl.messages.create(
         model="fx1",
         max_tokens=8,
         extra_body={"top_p": 0.5},
         messages=[{"role": "user", "content": "hi"}],
     )
-    out["sdk_msg_top_p"] = focused.id.startswith("msg_")
+    out["sdk_msg_top_p"] = (
+        focused.id.startswith("msg_")
+        and stub.last_sampling is not None
+        and stub.last_sampling.top_p == 0.5
+    )
     multi = await cl.messages.create(
         model="fx1",
         max_tokens=8,
