@@ -15071,6 +15071,14 @@ from quant_fund.research.benches_w1884 import (
     bench_medghassen_qa_studies_family,
     bench_tanezruft_qa_studies_family,
 )
+from quant_fund.research.benches_w1885 import (
+    bench_amenokal_qa_studies_family,
+    bench_ammonion_qa_studies_family,
+    bench_atlas_deity_qa_studies_family,
+    bench_imajeghen_qa_studies_family,
+    bench_melqart_libya_qa_studies_family,
+    bench_tritogeneia_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
