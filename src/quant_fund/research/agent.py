@@ -15007,6 +15007,14 @@ from quant_fund.research.benches_w1876 import (
     bench_shadash_qa_studies_family,
     bench_sinn_bedri_qa_studies_family,
 )
+from quant_fund.research.benches_w1877 import (
+    bench_amayya_qa_studies_family,
+    bench_atete_qa_studies_family,
+    bench_guzil_qa_studies_family,
+    bench_igal_qa_studies_family,
+    bench_tiniri_qa_studies_family,
+    bench_warpon_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

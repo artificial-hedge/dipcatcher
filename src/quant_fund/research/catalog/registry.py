@@ -6400,6 +6400,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "safun_hu_qa_studies",
         "shadash_qa_studies",
         "sinn_bedri_qa_studies",
+        # Wave-1877 garamantian canon.
+        "amayya_qa_studies",
+        "atete_qa_studies",
+        "guzil_qa_studies",
+        "igal_qa_studies",
+        "tiniri_qa_studies",
+        "warpon_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
