@@ -6022,6 +6022,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gamunjang2_qa_studies",
         "hwanung2_qa_studies",
         "jacheongbi2_qa_studies",
+        # Wave-1823 mongolian-myth-2 canon.
+        "almas2_qa_studies",
+        "khangai2_qa_studies",
+        "shunu2_qa_studies",
+        "sulde2_qa_studies",
+        "tengri2_qa_studies",
+        "ukerm2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
