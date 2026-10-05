@@ -6869,6 +6869,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leyak_qa_studies",
         "pocong_qa_studies",
         "tuyul_qa_studies",
+        # Wave-1944 korean-gwishin canon.
+        "cheonyeo_gwishin_qa_studies",
+        "dokkaebi_qa_studies",
+        "gumiho_qa_studies",
+        "gwishin_qa_studies",
+        "mul_gwishin_qa_studies",
+        "oeggwi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
