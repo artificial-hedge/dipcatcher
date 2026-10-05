@@ -1,0 +1,74 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "71813e82038e4260d62f460a8f23148e9b7f8e931f641096f6988944f8ee9f46",
+  "inputs_sha256": "47adb9dc626346e49ee4d3404a129d3947f0b0397ad27c9e383389bb2821bab6",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "97fc45941e3b02cffe9ed1095b6ecea50b79be221bfc240fff89937e931b9919",
+  "members": [
+    {
+      "name": "corpus_epoch_b52c1e2f6ba28091.json",
+      "sha256": "0d3ef925a6b404757dd275da8c47795fbad61edcf34320b1025bbfea338259be"
+    },
+    {
+      "name": "corpus_epoch_d730d2181a933d63.json",
+      "sha256": "1c87e64c12ae2d78efbebf89419979d9901731e3dba7aca3199c7fb1881bead3"
+    },
+    {
+      "name": "quant_core/Cargo.lock",
+      "sha256": "95b6bd9432ae16423f1e83d49108446d4fbca8dded69c7d47b93d6ebdf0f57f3"
+    },
+    {
+      "name": "quant_core/Cargo.toml",
+      "sha256": "cfae7eb8c3bc01d0bd58d8964373f554178df7c0f9ab49b272ccf8c245a83f68"
+    },
+    {
+      "name": "quant_core/README.md",
+      "sha256": "44e5032d18cc34fb46374185c9dda2063ae0dc9c79accd34120b8a47c1a22977"
+    },
+    {
+      "name": "quant_core/pyproject.toml",
+      "sha256": "f53e1659c6fa76a3d6fbc07a03aab398f1966b106cd156d48c811857d66f27ea"
+    },
+    {
+      "name": "quant_core/rust-toolchain.toml",
+      "sha256": "3f063eeef2b96ed4c19173cb06f9f47031f2539e5f15040bcb24177d0da7b225"
+    },
+    {
+      "name": "quant_core/src/book.rs",
+      "sha256": "c5950a0a7f55adb8acc4948da6e3d961ed67b495fee8a759976ff3d6aef1d094"
+    },
+    {
+      "name": "quant_core/src/hashing.rs",
+      "sha256": "82c393f8e8d28c961a8d2f57058cd1720e4e7c9c2c15c77b5bb422c09f5d4558"
+    },
+    {
+      "name": "quant_core/src/lib.rs",
+      "sha256": "96855e6aea2ed79596645b8a848d5812ef497be0ab5a439560fe39b14e58e222"
+    },
+    {
+      "name": "quant_core/src/returns.rs",
+      "sha256": "91fb7e7bd502b2aee77111baa09d908c9bc383e3ca9b5c82b234190435e7bbcb"
+    },
+    {
+      "name": "quant_core/src/rolling.rs",
+      "sha256": "41b9ca7aa01dc0b26f63615d90b873f1272e2dc72d4d1bd80f32561cdc646eef"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_d730d2181a933d63.json"
+  ],
+  "members_removed": [],
+  "n_members": 12,
+  "params": {
+    "head_sha": "c429a59eec5efdedb5f5099b4ce5c8ff1c0ff132",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_d730d2181a933d63.json",
+  "prev_epoch_sha256": "7641114e846cb687b5671f8d38837c4996d65cca39d54842bd0216fb61c668b8",
+  "receipt_sha256": "f0b3257b3bf6c2ce050fd83faef8af996e4e76d3391d33ddfd81ae6b07f9f7bc",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
