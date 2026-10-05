@@ -599,10 +599,10 @@ export interface paths {
         };
         /**
          * Key Usage
-         * @description One key's usage card — live counters, declared budgets with
-         *     derived headroom, the rpm window state, and the completion-ring
-         *     spend split. Counters are live meters (not journaled) and reset
-         *     on restart like ``uses``.
+         * @description One key's usage card — journaled counters, declared budgets
+         *     with derived headroom, the rpm window state, and the
+         *     completion-ring spend split. Counters ride the key journal, so
+         *     a ``--state-dir`` restart restores the spend.
          */
         get: operations["key_usage"];
         put?: never;
@@ -2702,10 +2702,10 @@ export interface components {
         };
         /**
          * ApiKeyUsageResponse
-         * @description Usage card for one managed key: live counters (``uses`` /
-         *     ``tokens_used`` reset on restart like every live meter), declared
-         *     budgets with derived headroom, the rpm window state, and the
-         *     completion-ring spend split.
+         * @description Usage card for one managed key: journaled counters (``uses`` /
+         *     ``tokens_used`` survive restart on a ``--state-dir`` store),
+         *     declared budgets with derived headroom, the rpm window state, and
+         *     the completion-ring spend split.
          */
         ApiKeyUsageResponse: {
             /** Admin */

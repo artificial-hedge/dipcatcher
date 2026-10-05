@@ -303,9 +303,8 @@ honesty-gate refusals or 4xx.
 
 Every served response stamps the credential's fingerprint on the
 completion record, so `key_id`-filtered usage is exact even when callers
-share a base URL. Live meters (`uses`, `last_used_at`, `tokens_used`)
-and rate-window updates are not journaled per request. On restart the
-store restores the most recent durable key snapshot, normally the
-mint-time counters for an active key. Declared budgets persist, but their
-lifetime usage meters are not restart-durable; a snapshot written by a
-later key operation may contain newer counter values.
+share a base URL. The meters (`uses`, `last_used_at`, `tokens_used`) and
+the rpm window occupancy are journaled as counter snapshots on every
+admitted request, and the journal compacts to one record per key on
+boot. On restart the store restores the full spend — declared budgets
+and their lifetime usage meters are restart-durable.

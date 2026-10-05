@@ -17,9 +17,12 @@ Honesty rules:
   delete — the audit trail of which key existed stays.
 - Under ``--state-dir`` every mint/revoke is journaled (hash-chained
   JSONL, verified on replay) so a restart does not resurrect a revoked
-  key or lose a minted one. ``uses``/``last_used_at`` are live
-  operational counters — deliberately NOT journaled (a per-request fsync
-  would tax the hot path); they reset honestly to zero on restart.
+  key or lose a minted one. ``uses``/``tokens_used``/``last_used_at``
+  and the rpm window occupancy ride the same journal as
+  counter-snapshot records — a restart restores the spend instead of
+  handing an exhausted budget (or a half-spent window) back. Boot
+  replays then compact the journal, folding counter-snapshot churn
+  into one record per key.
 - Auth failure is uniform: bad credentials and absent credentials get
   the same 401 shape as a wrong env key — no oracle for which entries
   exist. Expired keys fail the same way — a dead credential is a dead
@@ -29,8 +32,9 @@ Honesty rules:
   remaining seconds — the wire maps it to 429 + ``Retry-After``) and
   ``ttl_s`` bakes an ``expires_at`` into the record. Both are journaled
   fields (declared at mint, durable policy); the live window counters
-  are not journaled, like ``uses``. A refused request — over-limit or
-  expired — never bumps the use counter.
+  ride the counter snapshot the same way — a mid-window restart keeps
+  the window instead of reopening it. A refused request — over-limit
+  or expired — never bumps the use counter.
 - ``scopes`` declares which surface classes the key may touch:
   ``read`` (safe methods anywhere), ``write`` (mutating calls outside
   the control plane), and ``admin`` (key management + drain). The wire
@@ -44,8 +48,8 @@ Honesty rules:
   refuses ``quota_exceeded`` once ``uses`` reaches ``max_requests``
   authenticated calls, or once its reported token spend (charged out of
   the completion log as providers report it) reaches ``max_tokens``.
-  Budgets are declared durably at mint but meter on live counters —
-  like ``uses``, they reset on restart; a budget gates the *next*
+  Budgets are declared durably at mint and meter on journaled counters —
+  like ``uses``, they survive restart; a budget gates the *next*
   call, so the request that crosses the token line completes and only
   then counts against the next one.
 """
@@ -137,8 +141,8 @@ def _record(
         "rpm": rpm,
         "max_requests": max_requests,
         "max_tokens": max_tokens,
-        # live meter for the token budget — journaled as 0 like
-        # ``uses`` and charged post-response off the completion log.
+        # live meter for the token budget — journaled like ``uses``
+        # and charged post-response off the completion log.
         "tokens_used": 0,
         "created_at": created_at,
         "expires_at": expires_at,
@@ -217,10 +221,21 @@ class ApiKeyStore:
                         rec.setdefault("max_tokens", None)
                         rec.setdefault("tokens_used", 0)
                         rec.setdefault("rotated_from", None)
+                        # records journaled before the meters existed
+                        rec.setdefault("uses", 0)
+                        rec.setdefault("last_used_at", None)
                         self._by_hash[rec["sha256"]] = rec
                         kid = rec.get("key_id")
                         if isinstance(kid, str):
                             self._by_id[kid] = rec["sha256"]
+            # Compact on boot like _JobStore — folds counter-snapshot
+            # churn into one record per key and repairs a torn tail so
+            # post-recovery mints land on a healthy chain. Only when
+            # there is state to fold or repair: a virgin store creates
+            # its journal lazily on first mint, so a never-written
+            # state dir never gains an empty file.
+            if res.payloads or res.dropped > 0:
+                self._compact_locked()
 
     @property
     def has_keys(self) -> bool:
@@ -232,6 +247,14 @@ class ApiKeyStore:
     def _append(self, rec: dict[str, Any]) -> None:
         if self._journal is not None:
             self._journal.append({"record": rec})
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal holding only the live records — same
+        boot-time fold as ``_JobStore._compact_locked``: dead history
+        and counter-snapshot churn never accumulate. Caller holds
+        ``self._lock`` or runs at construction."""
+        if self._journal is not None:
+            self._journal.compact([{"record": rec} for rec in self._by_hash.values()])
 
     def mint(
         self,
@@ -320,7 +343,8 @@ class ApiKeyStore:
 
     def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
-        Bumps the live use counters (not journaled).
+        Bumps the use counters and journals the counter snapshot so a
+        restart restores the spend instead of resetting it.
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
@@ -365,6 +389,9 @@ class ApiKeyStore:
             self._consume_window(rec, now)
             rec["uses"] += 1
             rec["last_used_at"] = now
+            # journal the counter snapshot under the same lock — a restart
+            # restores the spend instead of resetting the budget
+            self._append(rec)
             return _wire(rec)
 
     def window_state(self, key_id: str) -> tuple[int, int, int] | None:
@@ -401,6 +428,8 @@ class ApiKeyStore:
             rec = self._by_hash.get(sha) if sha is not None else None
             if rec is not None:
                 rec["tokens_used"] = int(rec.get("tokens_used", 0)) + int(tokens)
+                # the token meter is spend — journal it like the use counter
+                self._append(rec)
 
     def get(self, key_id: str) -> dict[str, Any] | None:
         with self._lock:
