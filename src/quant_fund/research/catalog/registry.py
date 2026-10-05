@@ -6232,6 +6232,11 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lallus_qa_studies",
         "macurgum_qa_studies",
         "melyakina_qa_studies",
+        # Wave-1853 kushite-myth canon.
+        "amesemi_qa_studies",
+        "aresnuphis_qa_studies",
+        "dedun_qa_studies",
+        "sabios_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

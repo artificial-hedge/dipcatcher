@@ -14815,6 +14815,12 @@ from quant_fund.research.benches_w1852 import (
     bench_macurgum_qa_studies_family,
     bench_melyakina_qa_studies_family,
 )
+from quant_fund.research.benches_w1853 import (
+    bench_amesemi_qa_studies_family,
+    bench_aresnuphis_qa_studies_family,
+    bench_dedun_qa_studies_family,
+    bench_sabios_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
