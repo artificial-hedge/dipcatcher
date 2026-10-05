@@ -2019,6 +2019,56 @@ export class HarnessApiClient {
     return (await res.json()) as Record<string, unknown>;
   }
 
+  /**
+   * GET /v1/responses/{id}?stream=true — the replay stream: the stored
+   * response replayed as the Responses SSE event grammar. A terminal
+   * response emits the full recorded sequence (create-time frames
+   * byte-identical to what `responsesCreateStream` delivered); a still
+   * `queued`/`in_progress` background response emits its prelude then
+   * live-follows until the terminal frame (`response.completed`/
+   * `incomplete`/`failed`/`cancelled`) or the `timeoutS` deadline.
+   * `startingAfter` resumes past sequence N — the frames' `id:` cursor.
+   * `onEvent` receives each parsed payload; unknown/deleted/`store=false`
+   * ids throw `HarnessApiError` off the 404 envelope.
+   */
+  async responseReplay(
+    responseId: string,
+    onEvent: (payload: Record<string, unknown>) => void,
+    opts: { startingAfter?: number; timeoutS?: number } = {},
+  ): Promise<string | null> {
+    const q = new URLSearchParams({ stream: "true" });
+    if (opts.startingAfter !== undefined)
+      q.set("starting_after", String(opts.startingAfter));
+    if (opts.timeoutS !== undefined) q.set("timeout_s", String(opts.timeoutS));
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/responses/${encodeURIComponent(responseId)}?${q.toString()}`,
+      idempotent: true,
+      headers: { Accept: "text/event-stream" },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    let terminal = false;
+    for await (const ev of readSse(res)) {
+      const payload = JSON.parse(ev.data) as Record<string, unknown>;
+      onEvent(payload);
+      if (
+        payload.type === "response.completed" ||
+        payload.type === "response.incomplete" ||
+        payload.type === "response.failed" ||
+        payload.type === "response.cancelled"
+      ) {
+        terminal = true;
+        break;
+      }
+    }
+    if (!terminal)
+      throw new HarnessApiError(
+        0,
+        "replay stream ended before a terminal response.* event",
+      );
+    return res.headers.get("X-Fx1-Completion-Id");
+  }
+
   /** DELETE /v1/responses/{id} — drop the stored envelope. */
   async deleteResponse(responseId: string): Promise<Record<string, unknown>> {
     const res = await this.send({

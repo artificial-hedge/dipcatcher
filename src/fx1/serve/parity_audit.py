@@ -3501,6 +3501,33 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _csdk.openai_response_get(_c_sdk1["id"])["status"] == "cancelled"
         and _cremote.retrieve_response(_c_wl1["id"])["status"] == "cancelled"
     )
+    # replay parity — GET /v1/responses/{id}?stream=true is one contract:
+    # the SDK's openai_response_replay and the wire leg's responses_replay
+    # emit the same typed event grammar off the stored envelope (the
+    # starting_after cursor slices identically), and each leg's terminal
+    # frame payload is its own stored response object verbatim.
+    _rp_sdk1, _ = sdk.openai_response(
+        {"model": "hosted_k3", "input": "replay-p", "fx1": {"backend": "byok"}}
+    )
+    _rp_wl1 = client.post(
+        "/v1/responses",
+        json={"model": "fx1", "input": "replay-p", "fx1": {"backend": "byok"}},
+    ).json()
+    _rp_sdk_ev, _rp_sdk_cid = sdk.openai_response_replay(_rp_sdk1["id"])
+    _rp_wl_ev, _rp_wl_cid = remote.responses_replay(_rp_wl1["id"])
+    _rp_sdk_sl, _ = sdk.openai_response_replay(_rp_sdk1["id"], starting_after=2)
+    _rp_wl_sl, _ = remote.responses_replay(_rp_wl1["id"], starting_after=2)
+    out["response_replay_parity"] = (
+        [ev for ev, _p in _rp_sdk_ev] == [p["type"] for p in _rp_wl_ev]
+        and _rp_sdk_ev[-1][1]["response"]["id"] == _rp_sdk1["id"]
+        and _rp_wl_ev[-1]["response"]["id"] == _rp_wl1["id"]
+        and _rp_wl_ev[-1]["response"]["status"] == "completed"
+        and _rp_sdk_cid is not None
+        and _rp_wl_cid is not None
+        and [ev for ev, _p in _rp_sdk_sl] == [p["type"] for p in _rp_wl_sl]
+        and _rp_sdk_sl[0][0] != "response.created"
+        and len(_rp_sdk_sl) == len(_rp_sdk_ev) - 3
+    )
     # fail-closed parity — background+store=false refuses identically on
     # both legs before any work queues
     _s_sdk: tuple[str, str] = ("", "")
