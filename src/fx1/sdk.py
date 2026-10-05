@@ -136,6 +136,7 @@ from fx1.serve.openai_compat import (
     openai_models,
     openai_response_events,
     openai_response_object,
+    openai_response_replay_events,
     openai_to_kwargs,
     paged_item_list,
     response_cap_call_items,
@@ -3016,7 +3017,12 @@ class Fx1Harness:
         )
         if body.store is not False:
             self._openai_store.put(
-                envelope,
+                {
+                    **envelope,
+                    # the completion-log link the replay surface returns
+                    # with its events — stripped before any wire read
+                    "_fx1_completion_id": result.completion_id,
+                },
                 items={
                     "input_items": response_input_items_for_store(
                         eff_body.input, rid=str(envelope["id"])
@@ -3155,7 +3161,11 @@ class Fx1Harness:
         )
         if body.store is not False:
             self._openai_store.put(
-                env_s,
+                {
+                    **env_s,
+                    # same completion-log link the replay surface returns
+                    "_fx1_completion_id": result.completion_id,
+                },
                 items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
             )
         self._conv_append(conv_cid, body, env_s)
@@ -3446,6 +3456,48 @@ class Fx1Harness:
         env["status"] = "cancelled"
         self._openai_store.put(env)
         return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_response_replay(
+        self,
+        response_id: str,
+        *,
+        starting_after: int | None = None,
+        timeout_s: float = 600.0,
+        poll_s: float = 0.25,
+    ) -> tuple[list[tuple[str, dict[str, Any]]], str | None]:
+        """``GET /v1/responses/{id}?stream=true`` in-process — the stored
+        envelope's replay grammar as ``(event, payload)`` pairs, identical
+        to what the wire serializes into ``event:``/``id:``/``data:``
+        frames. A terminal envelope returns the full recorded sequence;
+        a still-``queued``/``in_progress`` background response emits its
+        prelude then live-follows (polling ``poll_s``) until the terminal
+        frame or the ``timeout_s`` deadline — the same contract the wire
+        generator runs. ``starting_after`` resumes past sequence N (the
+        frame's ``id:`` cursor). Returns ``(events, completion_id)`` — the
+        completion-log link the wire answers via ``X-Fx1-Completion-Id``;
+        a record deleted mid-follow returns the events seen so far
+        (no terminal frame), matching the wire's silent close."""
+        if starting_after is not None and starting_after < 0:
+            raise ValueError(f"starting_after must be >= 0, got {starting_after}")
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        skip = (starting_after + 1) if starting_after is not None else 0
+        deadline = time.monotonic() + timeout_s
+        cursor = 0
+        events: list[tuple[str, dict[str, Any]]] = []
+        while env is not None and env.get("object") == "response":
+            evs = list(openai_response_replay_events(env))
+            events.extend(evs[cursor:])
+            cursor = len(evs)
+            if env.get("status") in OPENAI_RESPONSE_TERMINAL:
+                break
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(poll_s)
+            env = self._openai_store.get(response_id)
+        cid = env.get("_fx1_completion_id") if isinstance(env, dict) else None
+        return events[skip:], (cid if isinstance(cid, str) else None)
 
     def openai_chat_messages(
         self,

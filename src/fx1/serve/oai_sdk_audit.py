@@ -352,6 +352,31 @@ async def _probe_responses(cl: Any, out: dict[str, Any]) -> None:
         out["sdk_resp_deleted_404"] = False
     except openai.NotFoundError:
         out["sdk_resp_deleted_404"] = True
+    # retrieve(stream=True) — the stock SDK's replay-shaped call: the
+    # typed event stream rebuilds the same Response the non-stream
+    # retrieve returned (the real drop-in conformance claim), and the
+    # grammar is identical to a create-time stream.
+    r2 = await cl.responses.create(model="fx1", input="hi")
+    replayed = [ev async for ev in await cl.responses.retrieve(r2.id, stream=True)]
+    out["sdk_resp_replay"] = (
+        bool(replayed)
+        and replayed[0].type == "response.created"
+        and replayed[-1].type == "response.completed"
+        and replayed[-1].response.id == r2.id
+        and replayed[-1].response.status == "completed"
+        and replayed[-1].response.output[0].content[0].text == r2.output[0].content[0].text
+        and replayed[-1].response.usage is not None
+    )
+    # starting_after=N slices to events with sequence > N — the prelude
+    # is skipped and the terminal frame still parses typed.
+    sliced = [ev async for ev in await cl.responses.retrieve(r2.id, stream=True, starting_after=1)]
+    out["sdk_resp_replay_starting_after"] = (
+        bool(sliced)
+        and sliced[0].type != "response.created"
+        and sliced[-1].type == "response.completed"
+        and sliced[-1].response.id == r2.id
+        and len(sliced) == len(replayed) - 2
+    )
 
 
 async def _probe_files_batches_ft(cl: Any, out: dict[str, Any]) -> None:
