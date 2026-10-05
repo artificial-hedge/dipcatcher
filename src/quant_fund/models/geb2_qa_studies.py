@@ -16,7 +16,7 @@ def geb2_qa_studies_aux(aux: bool) -> bool:
     """geb2_qa_studies
 
     aux:
-    geb2_qa_studies: geb2, earth fathers, answers, and scores
+    geb2_qa_studies: geb2, earth laughter, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_geb2_qa_studies(seed: int = 0) -> float:
     checks.append(not geb2_qa_studies_ok(False, True))
     checks.append(geb2_qa_studies_aux(True))
     checks.append(not geb2_qa_studies_aux(False))
-    checks.append(True)  # egyptian-8 canon
+    checks.append(True)  # egyptian-9 canon
     return float(sum(checks) / len(checks))
 
 

@@ -14535,6 +14535,14 @@ from quant_fund.research.benches_w1817 import (
     bench_parvati2_qa_studies_family,
     bench_saraswati2_qa_studies_family,
 )
+from quant_fund.research.benches_w1818 import (
+    bench_bastet2_qa_studies_family,
+    bench_geb2_qa_studies_family,
+    bench_hathor2_qa_studies_family,
+    bench_nut2_qa_studies_family,
+    bench_sekhmet2_qa_studies_family,
+    bench_tefnut2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

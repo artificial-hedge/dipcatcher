@@ -5987,6 +5987,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lakshmi2_qa_studies",
         "parvati2_qa_studies",
         "saraswati2_qa_studies",
+        # Wave-1818 egyptian-9 canon.
+        "bastet2_qa_studies",
+        "geb2_qa_studies",
+        "hathor2_qa_studies",
+        "nut2_qa_studies",
+        "sekhmet2_qa_studies",
+        "tefnut2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
