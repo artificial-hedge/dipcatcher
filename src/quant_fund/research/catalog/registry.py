@@ -6288,6 +6288,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "igraine_qa_studies",
         "morgan_qa_studies",
         "vivien_qa_studies",
+        # Wave-1861 arthurian-2 canon.
+        "bedivere_qa_studies",
+        "galahad_qa_studies",
+        "gawain_qa_studies",
+        "lancelot_qa_studies",
+        "percival_qa_studies",
+        "tristan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
