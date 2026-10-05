@@ -15527,6 +15527,14 @@ from quant_fund.research.benches_w1941 import (
     bench_mrenh_kongveal_qa_studies_family,
     bench_neak_ta_qa_studies_family,
 )
+from quant_fund.research.benches_w1942 import (
+    bench_co_hon_qa_studies_family,
+    bench_hon_ma_qa_studies_family,
+    bench_ngu_tinh_qa_studies_family,
+    bench_quy_am_qa_studies_family,
+    bench_tinh_linh_qa_studies_family,
+    bench_yeu_quai_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

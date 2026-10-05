@@ -6855,6 +6855,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kmoch_qa_studies",
         "mrenh_kongveal_qa_studies",
         "neak_ta_qa_studies",
+        # Wave-1942 vietnamese-demon canon.
+        "co_hon_qa_studies",
+        "hon_ma_qa_studies",
+        "ngu_tinh_qa_studies",
+        "quy_am_qa_studies",
+        "tinh_linh_qa_studies",
+        "yeu_quai_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
