@@ -146,7 +146,11 @@ def fx1_tail_audit() -> dict[str, Any]:
         out["traj_sha_stable"] = (
             t1.sha256 == hashlib.sha256(t1.model_dump_json().encode()).hexdigest()
         )
-        out["flag_sha_includes_timestamp"] = t1.sha256 != _traj(verify_ok=True).sha256
+        # sha256 must cover ``recorded_utc``: re-mint the identical
+        # trajectory with a different stamp (explicit update — not a
+        # second ``now()`` call, which can collide on coarse clocks).
+        t2 = t1.model_copy(update={"recorded_utc": "1970-01-01T00:00:00+00:00"})
+        out["flag_sha_includes_timestamp"] = t1.sha256 != t2.sha256
 
     # ---------------- notebooks ---------------------------------
     with tempfile.TemporaryDirectory() as td:

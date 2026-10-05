@@ -416,8 +416,10 @@ def e2e_audit() -> dict[str, bool]:
 
         # blocking drain over the real wire: a job holds a slot, drain
         # wait_s=0 reports not drained, wait_s=10 blocks until it empties.
+        # The job must outlive the submit→drain round-trip by a wide
+        # margin or the "not drained" probe races the scheduler.
         def _slow_runner(a: list[str], t: float) -> tuple[int, str, str]:
-            time.sleep(0.5)
+            time.sleep(2.0)
             return (0, "ran:" + " ".join(a), "")
 
         server4, server4_thread, port4 = _serve_uvicorn(
@@ -479,10 +481,18 @@ def e2e_audit() -> dict[str, bool]:
             )
             # /health is a public path — exempt from the limiter by design;
             # the burst must hit a metered route to prove 429s happen.
+            # Under slow scheduling a fixed 6-call burst can straddle the
+            # limiter window and meter no denials — keep bursting (bounded)
+            # until the server records at least one. The client retries
+            # each 429 transparently, so every call still returns "ok".
             results = [_raises(lambda: rl.commands()) or "ok" for _ in range(6)]
             m = rl.metrics()
+            deadline = time.monotonic() + 15.0
+            while m.rate_limited_total < 1 and time.monotonic() < deadline:
+                results.append(_raises(lambda: rl.commands()) or "ok")
+                m = rl.metrics()
             out["e2e_rate_limit_retries_succeed"] = (
-                results == ["ok"] * 6 and m.rate_limited_total >= 1
+                all(r == "ok" for r in results) and m.rate_limited_total >= 1
             )
             # Prometheus scrape over the real socket — content-negotiated
             # exposition, parseable lines, live counters.
