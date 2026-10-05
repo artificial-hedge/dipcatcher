@@ -5910,6 +5910,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "haurvatat2_qa_studies",
         "spenta2_qa_studies",
         "verethragna2_qa_studies",
+        # Wave-1807 hittite-3 canon.
+        "hannahanna2_qa_studies",
+        "ilib2_qa_studies",
+        "kamrusepa2_qa_studies",
+        "kumarbi2_qa_studies",
+        "pirinkir2_qa_studies",
+        "tesub2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
