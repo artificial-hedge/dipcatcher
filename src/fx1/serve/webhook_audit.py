@@ -76,9 +76,18 @@ if TYPE_CHECKING:
 
 __all__ = ["webhook_audit", "webhook_audit_bench"]
 
-_SECRET = "whsec-audit"
+_SECRET = "whsec-audit"  # NOSONAR — loopback-only test key, not a real credential
 _JOB_TERMINAL = ("succeeded", "failed", "cancelled")
 _WAIT_S = 15.0
+
+# intentionally insecure callback URLs — every surface must refuse them
+_URL_FILE = "file:///etc/passwd"  # NOSONAR — intentionally insecure scheme
+_URL_GOPHER = "gopher://x/hook"  # NOSONAR — intentionally insecure scheme
+_URL_FTP = "ftp://x/hook"  # NOSONAR — intentionally insecure scheme
+_URL_EMPTY_NETLOC = "http:///hook"  # NOSONAR — intentionally malformed URL
+_URL_JS = "javascript:alert(1)"  # NOSONAR — intentionally insecure scheme
+_URL_USERINFO = "http://user:pass@127.0.0.1/hook"  # NOSONAR — intentionally insecure URL
+_URL_NXHOST = "http://nonexistent.invalid./hook"  # NOSONAR — intentionally unresolvable
 
 _ENV_KEYS = (
     "FX1_API_KEY",
@@ -905,17 +914,15 @@ def _probe_security(ctx: _Ctx) -> dict[str, bool]:
         _abatch_create_code,
     )
 
-    out["security_file_scheme_refused"] = all(fn("file:///etc/passwd") == 422 for fn in surfaces)
+    out["security_file_scheme_refused"] = all(fn(_URL_FILE) == 422 for fn in surfaces)
     out["security_gopher_ftp_refused"] = all(
-        fn("gopher://x/hook") == 422 and fn("ftp://x/hook") == 422 for fn in surfaces
+        fn(_URL_GOPHER) == 422 and fn(_URL_FTP) == 422 for fn in surfaces
     )
-    out["security_empty_netloc_refused"] = all(fn("http:///hook") == 422 for fn in surfaces)
-    out["security_javascript_refused"] = all(fn("javascript:alert(1)") == 422 for fn in surfaces)
+    out["security_empty_netloc_refused"] = all(fn(_URL_EMPTY_NETLOC) == 422 for fn in surfaces)
+    out["security_javascript_refused"] = all(fn(_URL_JS) == 422 for fn in surfaces)
     # userinfo smuggle: credentials inside the authority must refuse at
     # create — the validator rejects userinfo, not just bad schemes
-    out["security_userinfo_refused"] = all(
-        fn("http://user:pass@127.0.0.1/hook") == 422 for fn in surfaces
-    )
+    out["security_userinfo_refused"] = all(fn(_URL_USERINFO) == 422 for fn in surfaces)
     out["security_secret_requires_url"] = (
         client.post("/harness/jobs", json={"command": "doctor", "callback_secret": "x"}).status_code
         == 422
@@ -942,7 +949,7 @@ def _probe_security(ctx: _Ctx) -> dict[str, bool]:
         "/harness/jobs",
         json={
             "command": "doctor",
-            "callback_url": "http://nonexistent.invalid./hook",
+            "callback_url": _URL_NXHOST,
         },
     )
     submit_s = time.monotonic() - t0
