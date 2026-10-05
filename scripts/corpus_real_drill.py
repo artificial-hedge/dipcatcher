@@ -56,8 +56,16 @@ def main() -> int:
         out_path.unlink()
 
     report = corpus_audit(receipts_dir, q=args.q, glob=args.glob, members=members)
-    report.pop("code_revision", None)
-    report.pop("meta", None)
+    # Volatile provenance must not enter the sealed artifact — the replay
+    # carrier re-runs this script at a different commit and compares bytes.
+    for stamp in (
+        "code_revision",
+        "meta",
+        "generated_at",
+        "generated_at_commit",
+        "git_revision",
+    ):
+        report.pop(stamp, None)
     if membership_sha256 is not None:
         report["params"]["membership"] = str(args.membership)
         report["params"]["membership_sha256"] = membership_sha256

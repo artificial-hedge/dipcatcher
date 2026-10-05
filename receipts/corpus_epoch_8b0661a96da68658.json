@@ -1,10 +1,10 @@
 {
   "data_label": "CORPUS",
-  "epoch_root_sha256": "44b60815592a546a64fd17d95931f92c5508021c96f84ff97076cfa92516c968",
+  "epoch_root_sha256": "1db1e673629465f81cdf8bdd1de114208afad66d0383136d147342fe9103b5f7",
   "inputs_sha256": "d23289bc5460ee9635d163efd1df7e32b757005aabd6dbfaa9646326d2ee6947",
   "kind": "corpus_epoch.v1",
   "live_pnl_claim": false,
-  "member_tree_root": "0bace900fbb3d1cd6db6b2465b3aa783f19b5db050e7cd9aea56bc92138d31f1",
+  "member_tree_root": "a031abbfefe41fbb754533664de715cbb0ddd349cae7353d22cf2ca27ad2de13",
   "members": [
     {
       "name": "abc_calibrate_amzn.json",
@@ -360,7 +360,7 @@
     },
     {
       "name": "corpus_real_drill.json",
-      "sha256": "73480e0552cadd866dcb0703ac74de7dfe757236e992b2cd8224a58412691906"
+      "sha256": "6d39dd0a04228d7871ba4465517b4b56d0fab764d31254b1884d33d50d7f4aed"
     },
     {
       "name": "cost_calibration_eval_df9b8d7068bf709b.json",
@@ -1777,12 +1777,12 @@
   "members_removed": [],
   "n_members": 375,
   "params": {
-    "head_sha": "9bbd4210d24027a571f7ebe7b3d9d2d556df50c7",
+    "head_sha": "f5860d7c9e3db40ebac1b7b56d84ce1dfed4efab",
     "pattern": "*.json"
   },
   "prev_epoch_receipt": "corpus_epoch_959513b12d66742b.json",
   "prev_epoch_sha256": "ff5c1c2d974331e9d4b23af34208dc435ef184ff37f5e74a23eb305a4f43394d",
-  "receipt_sha256": "736cf5e3056ef0ce5e23312cad68ba7a41da106092f84c206008a1cad737a57d",
+  "receipt_sha256": "8b0661a96da68658a85da5e02c3a79bdbf4d4f366595b7b2347545716e1bc9e3",
   "research_only": true,
   "schema": "corpus_epoch.v1",
   "simulated_only": false,

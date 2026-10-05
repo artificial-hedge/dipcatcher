@@ -10,7 +10,6 @@
     "evalue_product_merge_diagnostic_only",
     "tagged_claim_provenance"
   ],
-  "generated_at_commit": "9bbd4210d24027a571f7ebe7b3d9d2d556df50c7",
   "inputs_sha256": "ac239a9b24c169e324c9cf2dcb16b6eda07166eda82214d35d6fc70ab100bf0b",
   "kind": "corpus_inference.v1",
   "live_pnl_claim": false,
@@ -100,7 +99,7 @@
     "q": 0.05
   },
   "parse_errors": [],
-  "receipt_sha256": "e97c03e527f8e318777a413e142b81bd4dc4e32be35315723e7bfdc4d164af5e",
+  "receipt_sha256": "507d476c0fe536ff15729bbc3ca2481cfe773c85cfe9eb3f92bb58a19103efa9",
   "research_only": true,
   "retracted": {},
   "schema": "corpus_inference.v1",
