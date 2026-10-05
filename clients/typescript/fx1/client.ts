@@ -325,6 +325,13 @@ export class HarnessApiClient {
   private cbOpenUntil = 0;
   /** `X-Fx1-Api-Version` stamped by the most recent response. */
   lastApiVersion: string | null = null;
+  /** Lowercased name → value map of the most recent response — the
+   * drop-in header surface (`x-request-id`, `openai-processing-ms`,
+   * `openai-version`, `x-ratelimit-*`, plus `request-id` /
+   * `anthropic-ratelimit-*` / `x-should-retry` on the Anthropic
+   * grammar). `null` before the first call or after a transport fault
+   * (no response arrived). */
+  lastResponseHeaders: Record<string, string> | null = null;
 
   constructor(options: HarnessApiClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? "http://127.0.0.1:8011").replace(
@@ -366,6 +373,11 @@ export class HarnessApiClient {
   private stampVersion(res: Response): void {
     const v = res.headers.get("x-fx1-api-version");
     if (v !== null) this.lastApiVersion = v;
+    const snap: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      snap[key.toLowerCase()] = value;
+    });
+    this.lastResponseHeaders = snap;
   }
 
   private async parse(res: Response): Promise<unknown> {
@@ -472,9 +484,13 @@ export class HarnessApiClient {
         return res;
       }
     } catch (exc) {
-      if (exc instanceof HarnessTransportError) this.cbTrip();
+      if (exc instanceof HarnessTransportError) {
+        this.lastResponseHeaders = null;
+        this.cbTrip();
+      }
       throw exc;
     }
+    this.lastResponseHeaders = null;
     throw new HarnessTransportError(
       `harness ${init.method} ${init.path} exhausted ${retries} retries`,
     );

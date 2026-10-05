@@ -273,6 +273,7 @@ class HarnessClient:
         self._cb_reset_s = circuit_reset_s
         self._clock = clock
         self._last_api_version: str | None = None
+        self._last_response_headers: dict[str, str] = {}
         self._cb_failures = 0
         self._cb_open_until = 0.0
 
@@ -304,6 +305,9 @@ class HarnessClient:
                         {**self._headers, **(extra_headers or {})},
                         self._timeout_s,
                     )
+                    self._last_response_headers = {
+                        str(k).lower(): str(v) for k, v in headers.items()
+                    }
                     for hk, hv in headers.items():
                         if hk.lower() == "x-fx1-api-version":
                             self._last_api_version = hv
@@ -326,6 +330,7 @@ class HarnessClient:
                 return status, headers, body
             raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
         except HarnessTransportError:
+            self._last_response_headers = {}
             self._cb_trip()
             raise
 
@@ -3375,6 +3380,16 @@ class HarnessClient:
         (``X-Fx1-Api-Version``); ``None`` before the first call or when
         talking to a pre-versioning server."""
         return self._last_api_version
+
+    @property
+    def last_response_headers(self) -> dict[str, str]:
+        """Lowercased name → value map of the last transport response —
+        the drop-in header surface (``x-request-id``,
+        ``openai-processing-ms``, ``openai-version``, ``x-ratelimit-*``,
+        plus ``request-id`` / ``anthropic-ratelimit-*`` /
+        ``x-should-retry`` on the Anthropic grammar). ``{}`` before the
+        first call or after a transport fault (no response arrived)."""
+        return dict(self._last_response_headers)
 
     def server_version(self) -> dict[str, Any]:
         """GET /harness/version — the server's ``{"api_version",

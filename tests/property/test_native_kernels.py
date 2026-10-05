@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 
 import numpy as np
 import pytest
-from hypothesis import given, settings
+from hypothesis import example, given, settings
 from hypothesis import strategies as st
 
 from quant_fund import native
@@ -90,6 +90,8 @@ def test_rolling_std_bit_exact(values: list[float], window: int) -> None:
 
 
 @given(st.lists(_FINITE, min_size=1, max_size=32), st.integers(1, 16))
+@example(values=[1.0, 7.492], window=1)
+@example(values=[-1.0, 1.0], window=2)
 @settings(max_examples=30, deadline=None)
 def test_ema_rsi_bollinger_close(values: list[float], window: int) -> None:
     series = np.asarray(values, dtype=np.float64)

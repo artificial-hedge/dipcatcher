@@ -53,6 +53,7 @@ Honesty rules:
 from __future__ import annotations
 
 import hashlib
+import math
 import secrets
 import threading
 import time
@@ -99,6 +100,15 @@ def _wire(rec: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in rec.items() if k != "sha256" and not k.startswith("_")}
 
 
+def _is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _record(
     raw: str,
     sha: str,
@@ -115,6 +125,8 @@ def _record(
     """One journaled key record — mint and rotate share the shape; the
     caller computes the policy values (scopes resolved, expiry
     inherited or fresh) and this stamps the record around them."""
+    if expires_at is not None and not _is_finite_number(expires_at):
+        raise ValueError("expires_at must be finite")
     resolved = list(scopes)
     return {
         "key_id": sha[:16],
@@ -190,21 +202,25 @@ class ApiKeyStore:
         if journal is not None:
             res = journal.replay()
             for payload in res.payloads:
-                rec = payload.get("record")
-                if isinstance(rec, dict) and isinstance(rec.get("sha256"), str):
-                    rec.setdefault("admin", False)
-                    # records journaled before scopes existed keep the
-                    # old unrestricted contract
-                    rec.setdefault("scopes", list(SCOPES) if rec["admin"] else ["read", "write"])
-                    # pre-quota records carried no budget declaration
-                    rec.setdefault("max_requests", None)
-                    rec.setdefault("max_tokens", None)
-                    rec.setdefault("tokens_used", 0)
-                    rec.setdefault("rotated_from", None)
-                    self._by_hash[rec["sha256"]] = rec
-                    kid = rec.get("key_id")
-                    if isinstance(kid, str):
-                        self._by_id[kid] = rec["sha256"]
+                # A rotation journals the tombstone and successor in one
+                # verified line. Older replayers still see the tombstone.
+                for rec in (payload.get("record"), payload.get("successor")):
+                    if isinstance(rec, dict) and isinstance(rec.get("sha256"), str):
+                        rec.setdefault("admin", False)
+                        # records journaled before scopes existed keep the
+                        # old unrestricted contract
+                        rec.setdefault(
+                            "scopes", list(SCOPES) if rec["admin"] else ["read", "write"]
+                        )
+                        # pre-quota records carried no budget declaration
+                        rec.setdefault("max_requests", None)
+                        rec.setdefault("max_tokens", None)
+                        rec.setdefault("tokens_used", 0)
+                        rec.setdefault("rotated_from", None)
+                        self._by_hash[rec["sha256"]] = rec
+                        kid = rec.get("key_id")
+                        if isinstance(kid, str):
+                            self._by_id[kid] = rec["sha256"]
 
     @property
     def has_keys(self) -> bool:
@@ -252,8 +268,8 @@ class ApiKeyStore:
         usage charged by the wire after each served response."""
         if rpm is not None and rpm < 1:
             raise ValueError("rpm must be >= 1")
-        if ttl_s is not None and ttl_s <= 0:
-            raise ValueError("ttl_s must be > 0")
+        if ttl_s is not None and (not _is_finite_number(ttl_s) or ttl_s <= 0):
+            raise ValueError("ttl_s must be finite and > 0")
         if max_requests is not None and max_requests < 1:
             raise ValueError("max_requests must be >= 1")
         if max_tokens is not None and max_tokens < 1:
@@ -281,14 +297,37 @@ class ApiKeyStore:
             self._by_id[rec["key_id"]] = sha
         return raw, _wire(rec)
 
-    def authenticate(self, raw: str) -> dict[str, Any] | None:
+    def _consume_window(self, rec: dict[str, Any], now: float) -> None:
+        """Take one slot in the key's declared ``rpm`` window, or raise
+        ``rate_limited`` when the window is exhausted. Mutates ``rec``'s
+        private ``_window_*`` fields; caller holds ``self._lock``."""
+        rpm = rec.get("rpm")
+        if rpm is None:
+            return
+        start = rec.get("_window_start")
+        if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
+            rec["_window_start"] = now
+            rec["_window_count"] = 0
+        if rec["_window_count"] >= rpm:
+            retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
+            raise KeyStoreError(
+                "rate_limited",
+                f"key exceeds its {rpm}/min request limit",
+                retry_after=retry,
+                key_id=rec["key_id"],
+            )
+        rec["_window_count"] += 1
+
+    def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
         Bumps the live use counters (not journaled).
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
-        answering — the wire maps that to 429. Refusals do not count
-        as uses."""
+        answering — the wire maps that to 429. ``required_scope`` is the
+        authorization bound the request needs: a key missing it raises
+        ``insufficient_scope`` — the wire maps that to 403. Refusals do
+        not count as uses."""
         if not isinstance(raw, str) or not raw.startswith(KEY_PREFIX):
             return None
         now = self._clock()
@@ -297,7 +336,7 @@ class ApiKeyStore:
             if rec is None or not rec["enabled"]:
                 return None
             expires = rec.get("expires_at")
-            if expires is not None and now >= expires:
+            if expires is not None and (not _is_finite_number(expires) or now >= expires):
                 return None
             # hard budgets refuse before the rate window — an exhausted
             # key never consumes a window slot
@@ -315,21 +354,15 @@ class ApiKeyStore:
                     f"key exhausted its {max_tok} token budget",
                     key_id=rec["key_id"],
                 )
-            rpm = rec.get("rpm")
-            if rpm is not None:
-                start = rec.get("_window_start")
-                if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
-                    rec["_window_start"] = now
-                    rec["_window_count"] = 0
-                if rec["_window_count"] >= rpm:
-                    retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
-                    raise KeyStoreError(
-                        "rate_limited",
-                        f"key exceeds its {rpm}/min request limit",
-                        retry_after=retry,
-                        key_id=rec["key_id"],
-                    )
-                rec["_window_count"] += 1
+            # the scope check runs before any counter moves — a denied
+            # call never counts as a use nor consumes a window slot
+            if required_scope is not None and required_scope not in (rec.get("scopes") or []):
+                raise KeyStoreError(
+                    "insufficient_scope",
+                    f"key lacks required scope {required_scope!r}",
+                    key_id=rec["key_id"],
+                )
+            self._consume_window(rec, now)
             rec["uses"] += 1
             rec["last_used_at"] = now
             return _wire(rec)
@@ -407,8 +440,8 @@ class ApiKeyStore:
         same name, admin, scopes, rpm, and budgets — stamped
         ``rotated_from`` on the journaled record so the lineage survives
         a restart. ``revoke_old`` (default) tombstones the predecessor
-        inside the same lock, so the swap is atomic: the old secret dies
-        in the same instant the new one exists. With
+        in the same journal line and lock: recovery sees both records
+        or neither, and the old secret dies as the new one appears. With
         ``revoke_old=False`` both secrets authenticate until the old key
         is revoked or expires — the overlap is the operator's choice,
         declared on the response.
@@ -420,8 +453,8 @@ class ApiKeyStore:
         revoked credential raises ``key_revoked`` (a dead secret cannot
         mint a live one); a full store raises ``keys_cap`` BEFORE the
         predecessor is touched."""
-        if ttl_s is not None and ttl_s <= 0:
-            raise ValueError("ttl_s must be > 0")
+        if ttl_s is not None and (not _is_finite_number(ttl_s) or ttl_s <= 0):
+            raise ValueError("ttl_s must be finite and > 0")
         with self._lock:
             sha = self._by_id.get(key_id)
             old = self._by_hash.get(sha) if sha is not None else None
@@ -448,13 +481,15 @@ class ApiKeyStore:
                 expires_at=(created + ttl_s) if ttl_s is not None else old.get("expires_at"),
                 rotated_from=key_id,
             )
-            self._append(rec)
-            self._by_hash[new_sha] = rec
-            self._by_id[rec["key_id"]] = new_sha
             if revoke_old and sha is not None:
                 revoked = {**old, "enabled": False, "revoked_at": created}
-                self._append(revoked)
+                if self._journal is not None:
+                    self._journal.append({"record": revoked, "successor": rec})
                 self._by_hash[sha] = revoked
+            else:
+                self._append(rec)
+            self._by_hash[new_sha] = rec
+            self._by_id[rec["key_id"]] = new_sha
             return raw, _wire(rec)
 
     def update(
@@ -491,12 +526,12 @@ class ApiKeyStore:
             raise ValueError("max_requests must be >= 1")
         if max_tokens is not None and max_tokens < 1:
             raise ValueError("max_tokens must be >= 1")
-        if expires_at is not None and expires_at <= 0:
-            raise ValueError("expires_at must be > 0")
-        bad_clear = sorted(set(clear) - CLEARABLE_KEY_FIELDS)
+        if expires_at is not None and (not _is_finite_number(expires_at) or expires_at <= 0):
+            raise ValueError("expires_at must be finite and > 0")
+        clears = set(clear)
+        bad_clear = sorted(clears - CLEARABLE_KEY_FIELDS)
         if bad_clear:
             raise ValueError(f"cannot clear non-nullable field {bad_clear[0]!r}")
-        clears = set(clear) & CLEARABLE_KEY_FIELDS
         with self._lock:
             sha = self._by_id.get(key_id)
             old = self._by_hash.get(sha) if sha is not None else None
