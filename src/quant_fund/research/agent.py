@@ -14821,6 +14821,22 @@ from quant_fund.research.benches_w1853 import (
     bench_dedun_qa_studies_family,
     bench_sabios_qa_studies_family,
 )
+from quant_fund.research.benches_w1854 import (
+    bench_astarte_punic_qa_studies_family,
+    bench_baal_hammon_qa_studies_family,
+    bench_mekal_qa_studies_family,
+    bench_sid_qa_studies_family,
+    bench_tanit_punic_qa_studies_family,
+    bench_yamm_qa_studies_family,
+)
+from quant_fund.research.benches_w1855 import (
+    bench_ataecina_qa_studies_family,
+    bench_bandua_qa_studies_family,
+    bench_cariocecus_qa_studies_family,
+    bench_endovellicus_qa_studies_family,
+    bench_nabia_qa_studies_family,
+    bench_trebaruna_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
