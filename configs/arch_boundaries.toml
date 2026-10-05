@@ -344,8 +344,3 @@ module = "quant_fund.research.receipt_v2"
 rule = "layer-order"
 note = "contract_probe verifies receipts via research.receipt_v2 from foundation"
 
-[[baseline]]
-file = "src/quant_fund/proofcore/ci.py"
-module = "quant_fund.utils.receipt"
-rule = "proofcore-standalone"
-note = "ci glue lazily resolves the receipt corpus verifier — not part of the kernel's import surface"
