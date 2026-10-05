@@ -15439,6 +15439,14 @@ from quant_fund.research.benches_w1930 import (
     bench_gnod_sbyin_qa_studies_family,
     bench_srin_po_qa_studies_family,
 )
+from quant_fund.research.benches_w1931 import (
+    bench_deer_woman_qa_studies_family,
+    bench_kachina_qa_studies_family,
+    bench_manitou_qa_studies_family,
+    bench_mishipeshu_qa_studies_family,
+    bench_naagloshii_qa_studies_family,
+    bench_pukwudgie_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

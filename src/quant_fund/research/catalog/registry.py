@@ -6778,6 +6778,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gdon_qa_studies",
         "gnod_sbyin_qa_studies",
         "srin_po_qa_studies",
+        # Wave-1931 native-american-spirit canon.
+        "deer_woman_qa_studies",
+        "kachina_qa_studies",
+        "manitou_qa_studies",
+        "mishipeshu_qa_studies",
+        "naagloshii_qa_studies",
+        "pukwudgie_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
