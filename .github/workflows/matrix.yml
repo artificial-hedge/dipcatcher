@@ -152,10 +152,12 @@ jobs:
           # holds inside every invocation.
           chunk=200
           for ((i = 0; i < ${#files[@]}; i += chunk)); do
-            # --frozen/--no-sync: env is already synced by the Sync step;
-            # don't relock, re-resolve, or rebuild inside the shard step
-            # (sonar S8541/S8544). --no-build is wrong here: sdists installed
-            # by the sync (hmmlearn on py3.14 Windows has no wheel) re-enter
-            # resolution under `uv run` and get rejected outright.
-            uv run --frozen --no-sync pytest -q -m "not network" "${files[@]:i:chunk}"
+            # --frozen/--no-build/--no-sync: env is already synced by the
+            # Sync step; don't relock, re-resolve, or build inside the shard
+            # step. --no-build alone is rejected on py3.14 Windows where
+            # hmmlearn ships no wheel (the sync-built sdist re-enters
+            # resolution under `uv run`); --no-sync skips sync entirely so it
+            # never gets that far, while --no-build keeps the sonar
+            # S8541/S8544 guard visible on the command line.
+            uv run --frozen --no-sync --no-build pytest -q -m "not network" "${files[@]:i:chunk}"
           done
