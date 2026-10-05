@@ -15543,6 +15543,14 @@ from quant_fund.research.benches_w1943 import (
     bench_pocong_qa_studies_family,
     bench_tuyul_qa_studies_family,
 )
+from quant_fund.research.benches_w1944 import (
+    bench_cheonyeo_gwishin_qa_studies_family,
+    bench_dokkaebi_qa_studies_family,
+    bench_gumiho_qa_studies_family,
+    bench_gwishin_qa_studies_family,
+    bench_mul_gwishin_qa_studies_family,
+    bench_oeggwi_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
