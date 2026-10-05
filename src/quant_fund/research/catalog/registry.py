@@ -5945,6 +5945,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ptah2_qa_studies",
         "sekhmet2_qa_studies",
         "thoth2_qa_studies",
+        # Wave-1812 aztec-deity-5 canon.
+        "centeotl2_qa_studies",
+        "mayahuel2_qa_studies",
+        "mixcoatl2_qa_studies",
+        "tlaloc2_qa_studies",
+        "xipe2_qa_studies",
+        "xochipilli2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
