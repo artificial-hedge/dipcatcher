@@ -416,10 +416,13 @@ def e2e_audit() -> dict[str, bool]:
 
         # blocking drain over the real wire: a job holds a slot, drain
         # wait_s=0 reports not drained, wait_s=10 blocks until it empties.
-        # The job must outlive the submit→drain round-trip by a wide
-        # margin or the "not drained" probe races the scheduler.
+        # The runner waits on a gate released between the two probes, so
+        # neither observes timing — any fixed sleep can be outlived by a
+        # scheduler stall and flip the "not drained" read.
+        gate4 = threading.Event()
+
         def _slow_runner(a: list[str], t: float) -> tuple[int, str, str]:
-            time.sleep(2.0)
+            gate4.wait(timeout=120)
             return (0, "ran:" + " ".join(a), "")
 
         server4, server4_thread, port4 = _serve_uvicorn(
@@ -430,20 +433,26 @@ def e2e_audit() -> dict[str, bool]:
             wremote.submit_run("doctor")
             d0 = wremote.drain(wait_s=0.01)
             out["e2e_drain_wait_timeout"] = d0["drained"] is False
+            gate4.set()  # let the held job finish so the blocking drain empties
             d1 = wremote.drain(wait_s=10.0)
             out["e2e_drain_wait_blocks"] = d1["drained"] is True and d1["inflight"] == 0
         finally:
+            gate4.set()
             server4.should_exit = True
             server4_thread.join(timeout=15)
 
         # cooperative cancel over the real wire: occupy both executor
         # workers without slots (slots == workers) so jobs stay queued.
+        # The pinners wait on a gate — a fixed sleep can expire under
+        # scheduler stall, letting a queued job start early and flipping
+        # the "queued" status reads.
+        gate5 = threading.Event()
         server5_app = api_mod.create_app(harness=Harness(runner=_slow_runner), max_inflight=2)
         server5, server5_thread, port5 = _serve_uvicorn(server5_app)
         try:
             cremote = HarnessClient(f"http://127.0.0.1:{port5}", api_key=_API_KEY, timeout_s=15.0)
-            server5_app.state.jobs_executor.submit(lambda: time.sleep(4.0))
-            server5_app.state.jobs_executor.submit(lambda: time.sleep(4.0))
+            server5_app.state.jobs_executor.submit(lambda: gate5.wait(timeout=120))
+            server5_app.state.jobs_executor.submit(lambda: gate5.wait(timeout=120))
             c1 = cremote.submit_run("doctor")
             c2 = cremote.submit_run("doctor")
             out["e2e_job_queued_while_workers_busy"] = (
@@ -455,7 +464,8 @@ def e2e_audit() -> dict[str, bool]:
                 _raises(lambda: cremote.wait_run(c2, poll_s=0.05, timeout_s=15.0))
                 == "HarnessJobError"
             )
-            # the surviving queued job runs once a worker frees
+            # the surviving queued job runs once the pinned workers free
+            gate5.set()
             dl = time.monotonic() + 15.0
             st = cremote.job_status(c1)
             while st["status"] == "queued" and time.monotonic() < dl:
@@ -463,13 +473,20 @@ def e2e_audit() -> dict[str, bool]:
                 st = cremote.job_status(c1)
             out["e2e_job_survivor_runs"] = st["status"] in ("running", "succeeded")
         finally:
+            gate5.set()
             server5.should_exit = True
             server5_thread.join(timeout=15)
             server4_thread.join(timeout=15)
 
         # rate limiting over the real wire: the client retries a 429 with
         # Retry-After transparently, and the denial is metered.
-        server6_app = api_mod.create_app(harness=Harness(runner=fake_runner), rate_limit_rps=3.0)
+        # The bucket is per-host (capacity = max(1, rps), refill = rps/s):
+        # at 3rps a denial needs ~4 calls inside a refill period — under
+        # scheduler stall each call outlives the refill and the bucket
+        # never empties. rps=0.5 gives capacity 1: the first call drains
+        # the token and the next call inside ~2s denies at any stall,
+        # while Retry-After ≈ 2s still fits max_retry_wait_s=5.
+        server6_app = api_mod.create_app(harness=Harness(runner=fake_runner), rate_limit_rps=0.5)
         server6, server6_thread, port6 = _serve_uvicorn(server6_app)
         try:
             rl = HarnessClient(
@@ -487,7 +504,7 @@ def e2e_audit() -> dict[str, bool]:
             # each 429 transparently, so every call still returns "ok".
             results = [_raises(lambda: rl.commands()) or "ok" for _ in range(6)]
             m = rl.metrics()
-            deadline = time.monotonic() + 15.0
+            deadline = time.monotonic() + 45.0
             while m.rate_limited_total < 1 and time.monotonic() < deadline:
                 results.append(_raises(lambda: rl.commands()) or "ok")
                 m = rl.metrics()
