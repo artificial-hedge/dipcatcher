@@ -33,6 +33,9 @@ import hashlib
 import json
 import os
 import threading
+from collections import OrderedDict
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -96,8 +99,11 @@ class JobJournal:
     def append(self, payload: dict[str, Any]) -> None:
         """Append one record; fsync before returning so a confirmed
         transition is durable before the caller moves on."""
-        line = _line_bytes(self._seq, self._chain, payload)
         with self._lock:
+            # ``seq``/``chain`` must be read under the lock: two appends
+            # racing on stale values mint twin seqs and break the chain
+            # at replay — a self-inflicted tamper drop.
+            line = _line_bytes(self._seq, self._chain, payload)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("ab") as fh:
                 fh.write(line)
@@ -176,3 +182,44 @@ class JobJournal:
             self._seq = seq
             self._chain = chain
             self._appends_since_compact = 0
+
+
+class _ClaimLocks:
+    """Bounded map of per-key mutexes — the single-execution primitive
+    for ``Idempotency-Key`` check+insert.
+
+    A route holds its key's lock across the store lookup, the work, and
+    the ``put``: same-key racers serialize behind the leader, and the
+    second comer replays the stored answer instead of double-executing
+    (the check-then-put window is the defect this closes). Entries are
+    bounded like the store itself — the oldest *unheld* lock evicts
+    first, so a lock is never stolen mid-flight; if every lock is held
+    the map overshoots the bound rather than break dedup."""
+
+    def __init__(self, bound: int) -> None:
+        self._guard = threading.Lock()
+        self._locks: OrderedDict[str, threading.Lock] = OrderedDict()
+        self._bound = bound
+
+    @contextmanager
+    def hold(self, key: str | None) -> Iterator[None]:
+        """Hold ``key``'s mutex for the lookup+execute+put span.
+
+        ``None`` (no idempotency key) is a no-op hold — unsynchronized
+        calls keep their plain path."""
+        if key is None:
+            yield
+            return
+        with self._guard:
+            lock = self._locks.get(key)
+            if lock is None:
+                lock = threading.Lock()
+                self._locks[key] = lock
+            self._locks.move_to_end(key)
+            while len(self._locks) > self._bound:
+                stale = next((k for k, held in self._locks.items() if not held.locked()), None)
+                if stale is None:
+                    break
+                del self._locks[stale]
+        with lock:
+            yield
