@@ -251,6 +251,8 @@ class EvalRecord(BaseModel):
     eval_spec: str | None = None
     eval_model: str | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 class EvalStore:
@@ -290,6 +292,8 @@ class EvalStore:
                 if "record" not in payload:
                     continue
                 rec = EvalRecord.model_validate(payload["record"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                rec._callback_fired = True
                 self._records[rec.eval_id] = rec
                 self._records.move_to_end(rec.eval_id)
                 key, fp = payload.get("key"), payload.get("fp")
