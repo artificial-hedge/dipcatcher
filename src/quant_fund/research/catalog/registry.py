@@ -5896,6 +5896,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "namtar2_qa_studies",
         "ninurta2_qa_studies",
         "zababa2_qa_studies",
+        # Wave-1805 slavic-myth-5 canon.
+        "bereginia2_qa_studies",
+        "bogdan2_qa_studies",
+        "kupalo2_qa_studies",
+        "radegast2_qa_studies",
+        "rod2_qa_studies",
+        "ziva2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
