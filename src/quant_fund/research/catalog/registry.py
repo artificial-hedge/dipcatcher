@@ -6554,6 +6554,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "penanggalan_qa_studies",
         "pontianak_qa_studies",
         "toyol_qa_studies",
+        # Wave-1899 hindu-demon canon.
+        "aghasura_qa_studies",
+        "bakasura_qa_studies",
+        "daitya_qa_studies",
+        "diti_qa_studies",
+        "pishacha_qa_studies",
+        "putana_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
