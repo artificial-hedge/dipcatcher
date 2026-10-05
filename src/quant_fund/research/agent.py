@@ -15239,6 +15239,14 @@ from quant_fund.research.benches_w1905 import (
     bench_uwan_qa_studies_family,
     bench_waira_qa_studies_family,
 )
+from quant_fund.research.benches_w1906 import (
+    bench_amefuri_kozo_qa_studies_family,
+    bench_dosanjin_qa_studies_family,
+    bench_fuon_qa_studies_family,
+    bench_kejoro_qa_studies_family,
+    bench_nakisawame_qa_studies_family,
+    bench_yama_waro_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
