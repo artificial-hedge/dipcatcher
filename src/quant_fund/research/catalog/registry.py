@@ -6561,6 +6561,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "diti_qa_studies",
         "pishacha_qa_studies",
         "putana_qa_studies",
+        # Wave-1900 yokai-6 canon.
+        "enenra_qa_studies",
+        "goryo_qa_studies",
+        "kiyohime_qa_studies",
+        "kodama_shirakawa_qa_studies",
+        "nure_onna_qa_studies",
+        "yurei_muzen_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
