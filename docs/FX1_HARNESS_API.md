@@ -480,6 +480,18 @@ resource group: models, chat (incl. `store`+`list`), responses (incl.
 embeddings, moderations, uploads, evals, conversations, vector
 stores.
 
+Vendor-spec conformance (not just our OpenAPI export) is pinned by
+`receipts/fx1_spec_audit.json`
+(`fx1.serve.spec_audit.spec_audit_bench`): a frozen, hand-checked
+subset of the published OpenAI and Anthropic wire schemas is vendored
+in-module and checked against live responses — chat + SSE chunk
+grammar, `response`/`text_completion`/`model`/`file`/`batch`/
+`fine_tuning.job` objects, the Anthropic `message`/`message_batch`/
+cursor-paged model list, both vendor error envelopes, negative-shape
+guards (no cross-vendor keys), and the 429/401/403 header contract
+(`Retry-After` + `X-RateLimit-*` on rpm limits, none on
+`quota_exceeded`).
+
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed
 `OpenAIChatRequest`) and optional `X-Fx1-*` header kwargs, and returns
