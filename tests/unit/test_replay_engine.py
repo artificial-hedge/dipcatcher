@@ -230,6 +230,11 @@ def mint_fixture(
         trade_log=synthetic_trade_log(5),
         engine_metrics={"total_return": 0.01, "label": "SYNTHETIC"},
         bundle_dir=bundle_dir,
+        # the runner mint passes round_config=False: trace.spec_sha256 commits
+        # to the UNROUNDED spec dump, so the config sidecar must not be
+        # float-rounded either — a 12-digit round breaks replay's hash check
+        # for high-precision params.
+        round_config=False,
     )
     bundle_id = bundle.bundle_id
     for kind, payload in sidecar_bytes.items():

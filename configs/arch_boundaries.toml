@@ -25,6 +25,7 @@ packages = [
     "hmm",          # regime models, no intra-repo deps
     "observe",      # observability sinks, no intra-repo deps
     "calendars",    # trading calendars/sessions, no intra-repo deps
+    "_typing",      # shared typing helpers — imported under TYPE_CHECKING only
 ]
 
 [[layers]]
@@ -85,6 +86,7 @@ packages = [
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
+    "parity_leak_audit", # root-level parity/leakage audit module
 ]
 
 [[layers]]
@@ -199,6 +201,10 @@ allowed = [
     # cli/api/paper coupling may enter through them.
     "quant_fund.models.iv_approx",
     "quant_fund.models.options",
+    # receipt_v2 is the receipt-seal/verify leaf every fx1 audit module pins
+    # (verify_receipt_file/payload) — same intentional-seam reasoning as the
+    # options oracle above: one leaf service, no research.* fan-out.
+    "quant_fund.research.receipt_v2",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 
@@ -281,3 +287,65 @@ file = "src/quant_fund/validation/gates.py"
 module = "quant_fund.research.verify"
 rule = "layer-order"
 note = "validation gates reach up into research.verify"
+
+# --- drift landed by direct-to-main lanes (CI never gated them); itemized so
+# the gate stays green while owners relocate the imports. ---
+[[baseline]]
+file = "src/quant_fund/fusion/stack_watch.py"
+module = "quant_fund.research.evalues"
+rule = "layer-order"
+note = "stack_watch reads research.evalues from market_data"
+
+[[baseline]]
+file = "src/quant_fund/metrics/signature_features.py"
+module = "quant_fund.models.path_signatures"
+rule = "layer-order"
+note = "signature_features reaches up into models.path_signatures"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/event_time_flow.py"
+module = "quant_fund.models.changepoint"
+rule = "layer-order"
+note = "event_time_flow reaches up into models.changepoint"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/grammar_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "grammar_map seals receipts via research.receipt_v2 from market_data"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/sigkernel_mmd.py"
+module = "quant_fund.models.sigkernel"
+rule = "layer-order"
+note = "sigkernel_mmd reaches up into models.sigkernel"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/wave23_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "wave23_map seals receipts via research.receipt_v2 from market_data"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/wave24_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "wave24_map seals receipts via research.receipt_v2 from market_data"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/zone_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "zone_map seals receipts via research.receipt_v2 from market_data"
+
+[[baseline]]
+file = "src/quant_fund/registry/contract_probe.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "contract_probe verifies receipts via research.receipt_v2 from foundation"
+
+[[baseline]]
+file = "src/quant_fund/proofcore/ci.py"
+module = "quant_fund.utils.receipt"
+rule = "proofcore-standalone"
+note = "ci glue lazily resolves the receipt corpus verifier — not part of the kernel's import surface"

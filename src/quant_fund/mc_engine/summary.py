@@ -132,8 +132,14 @@ class ChunkSummary:
                 td_recovery_weight=self.td_recovery_weight,
                 exceedances=self.exceedances,
             )
-            with tmp.open("rb") as handle:
-                os.fsync(handle.fileno())
+            # fsync needs a write-capable handle on Windows (FlushFileBuffers
+            # rejects read-only fds); the np.savez handle is already closed,
+            # so reopen O_RDWR — any handle to the file flushes its pages.
+            fd = os.open(tmp, os.O_RDWR)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
             os.replace(tmp, path)
         finally:
             tmp.unlink(missing_ok=True)
