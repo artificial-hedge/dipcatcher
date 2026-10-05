@@ -15631,6 +15631,14 @@ from quant_fund.research.benches_w1954 import (
     bench_vapula_qa_studies_family,
     bench_zagan_qa_studies_family,
 )
+from quant_fund.research.benches_w1955 import (
+    bench_amdusias_qa_studies_family,
+    bench_andromalius_qa_studies_family,
+    bench_dantalion_qa_studies_family,
+    bench_decarabia_qa_studies_family,
+    bench_malphas_qa_studies_family,
+    bench_seere_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
