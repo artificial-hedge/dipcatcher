@@ -19,6 +19,8 @@ EXAMPLES = (
     "03_synthetic_l2_book.py",
     "04_hf_ohlcv_1m.py",
     "05_phase1_evidence.py",
+    "fx1_quickstart_http.py",
+    "fx1_quickstart_sdk.py",
 )
 TIMEOUT_SECONDS = 120
 BANNED_IMPORT_PREFIXES = (
@@ -197,3 +199,18 @@ def test_example_runs_offline(name: str) -> None:
             assert "live_pnl_claim=false" in stdout
             assert "state=blocked" in stdout
             assert "state=complete" in stdout
+    elif name == "fx1_quickstart_sdk.py":
+        assert "data_label=OPS" in stdout
+        assert "eval_status=succeeded" in stdout
+        assert "eval_tasks=12" in stdout
+        assert "completion_receipt_valid=true" in stdout
+        assert "eval_receipt_valid=true" in stdout
+    elif name == "fx1_quickstart_http.py":
+        assert "data_label=OPS" in stdout
+        assert "server_status=ok" in stdout
+        assert "eval_status=succeeded" in stdout
+        assert "completion_receipt_valid=true" in stdout
+        assert "eval_receipt_valid=true" in stdout
+        assert "self_credential=managed" in stdout
+        assert "revoked_key_rejected=true" in stdout
+        assert "draining=true" in stdout

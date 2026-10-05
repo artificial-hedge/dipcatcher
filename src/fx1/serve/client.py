@@ -26,13 +26,14 @@ tests route it at a ``fastapi.testclient.TestClient``.
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,10 @@ Transport = Callable[
     [str, str, dict[str, Any] | bytes | None, dict[str, str], float],
     "tuple[int, Mapping[str, str], bytes]",
 ]
+
+# Patch three-state: an omitted kwarg keeps the declared policy while
+# an explicit ``None`` sends the JSON-null that clears the bound.
+_UNSET: Any = object()
 
 
 class HarnessTransportError(RuntimeError):
@@ -129,6 +134,12 @@ def _urllib_transport(
         return exc.code, dict(exc.headers or {}), body
     except urllib.error.URLError as exc:
         raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
+    except (http.client.HTTPException, OSError) as exc:
+        # socket faults before a status line exists — e.g. a mid-upload
+        # reset when the server rejects early on headers alone (413
+        # body-cap) — are transport errors under the same contract as
+        # URLError; don't leak raw errno classes to callers.
+        raise HarnessTransportError(f"harness transport fault at {url}: {exc}") from exc
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
@@ -220,6 +231,41 @@ def _responses_sse_events(body: bytes) -> list[dict[str, Any]]:
     return events
 
 
+_REPLAY_TERMINAL_EVENTS = frozenset(
+    {
+        "response.completed",
+        "response.incomplete",
+        "response.failed",
+        "response.cancelled",
+    }
+)
+
+
+def _responses_replay_events(body: bytes) -> list[dict[str, Any]]:
+    """Collect Responses *replay* frames until the terminal event.
+
+    Wider than :func:`_responses_sse_events`: a replayed record can end
+    in any terminal status — ``response.failed`` and ``response.cancelled``
+    are terminals here (a create-time stream never emits them).
+    """
+    events: list[dict[str, Any]] = []
+    saw_terminal = False
+    for line in body.decode().splitlines():
+        if not line.startswith("data: "):
+            continue
+        frame = json.loads(line[len("data: ") :])
+        events.append(frame)
+        if frame.get("type") in _REPLAY_TERMINAL_EVENTS:
+            saw_terminal = True
+            break
+    if not saw_terminal:
+        raise HarnessTransportError(
+            "replay stream ended without a terminal response.* event "
+            "(response.completed/incomplete/failed/cancelled)"
+        )
+    return events
+
+
 class HarnessClient:
     """Remote harness client — the SDK contract over HTTP."""
 
@@ -269,6 +315,7 @@ class HarnessClient:
         self._cb_reset_s = circuit_reset_s
         self._clock = clock
         self._last_api_version: str | None = None
+        self._last_response_headers: dict[str, str] = {}
         self._cb_failures = 0
         self._cb_open_until = 0.0
 
@@ -300,6 +347,9 @@ class HarnessClient:
                         {**self._headers, **(extra_headers or {})},
                         self._timeout_s,
                     )
+                    self._last_response_headers = {
+                        str(k).lower(): str(v) for k, v in headers.items()
+                    }
                     for hk, hv in headers.items():
                         if hk.lower() == "x-fx1-api-version":
                             self._last_api_version = hv
@@ -322,6 +372,7 @@ class HarnessClient:
                 return status, headers, body
             raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
         except HarnessTransportError:
+            self._last_response_headers = {}
             self._cb_trip()
             raise
 
@@ -1290,6 +1341,70 @@ class HarnessClient:
         live counters, declared budgets with headroom, rate-window
         state, and the completion-ring spend split. Needs admin."""
         return dict(self._json("GET", f"/harness/keys/{key_id}/usage", idempotent=True))
+
+    def key_rotate(
+        self,
+        key_id: str,
+        *,
+        revoke_old: bool = True,
+        name: str | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """``POST /harness/keys/{id}/rotate`` — atomic rotation: the
+        successor mints under the predecessor's declared policy, the old
+        secret tombstones in the same transaction unless ``revoke_old``
+        is false, and the response's ``key.key`` is the only place the
+        new secret appears. Without ``ttl_s`` the successor inherits the
+        predecessor's absolute expiry — rotation never extends a
+        credential's lifetime."""
+        body: dict[str, Any] = {"revoke_old": revoke_old}
+        if name is not None:
+            body["name"] = name
+        if ttl_s is not None:
+            body["ttl_s"] = ttl_s
+        return dict(self._json("POST", f"/harness/keys/{key_id}/rotate", body))
+
+    def key_update(
+        self,
+        key_id: str,
+        *,
+        name: str | None = _UNSET,
+        rpm: int | None = _UNSET,
+        scopes: list[str] | tuple[str, ...] | None = _UNSET,
+        admin: bool | None = _UNSET,
+        max_requests: int | None = _UNSET,
+        max_tokens: int | None = _UNSET,
+        expires_at: float | None = _UNSET,
+        clear: Iterable[str] = (),
+    ) -> dict[str, Any]:
+        """``PATCH /harness/keys/{id}`` — mutable policy update on a
+        live managed key. An omitted kwarg keeps the declared policy;
+        an explicit ``None`` sends the JSON-null that clears the bound
+        (``name``/``rpm``/``max_requests``/``max_tokens``/
+        ``expires_at`` — ``clear=`` names the same fields);
+        ``scopes``/``admin`` take concrete values when given —
+        ``admin:true`` unions the admin scope while ``admin:false``
+        never strips one. Returns the updated record; ``KeyError`` on
+        404, ``ValueError`` on 422, a refused revoked key maps the
+        wire's 409."""
+        body: dict[str, Any] = {}
+        for field, value in (
+            ("name", name),
+            ("rpm", rpm),
+            ("scopes", scopes),
+            ("admin", admin),
+            ("max_requests", max_requests),
+            ("max_tokens", max_tokens),
+            ("expires_at", expires_at),
+        ):
+            if value is _UNSET:
+                continue
+            body[field] = (
+                list(value) if field == "scopes" and isinstance(value, (list, tuple)) else value
+            )
+        for field in clear:
+            body[field] = None
+        return dict(self._json("PATCH", f"/harness/keys/{key_id}", body))
 
     def self_usage(self) -> dict[str, Any]:
         """``GET /harness/self`` — the calling credential's own card:
@@ -2731,6 +2846,41 @@ class HarnessClient:
             self._json("POST", f"/v1/responses/{urllib.parse.quote(response_id)}/cancel", {})
         )
 
+    def responses_replay(
+        self,
+        response_id: str,
+        *,
+        starting_after: int | None = None,
+        timeout_s: float | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """``GET /v1/responses/{id}?stream=true`` — the replay stream:
+        returns ``(events, completion_id)`` where events are the parsed
+        Responses event payloads replayed from the stored envelope — the
+        full grammar for a terminal response, or the prelude plus a live
+        follow for a still-``queued``/``in_progress`` background call.
+        ``starting_after`` resumes past sequence N (the frames' ``id:``
+        cursor); ``timeout_s`` bounds a live follow server-side. Unknown,
+        deleted, or ``store=false`` ids raise ``KeyError`` off the 404
+        envelope like :meth:`retrieve_response`; a stream that closes
+        without a terminal ``response.*`` frame raises
+        ``HarnessTransportError`` (record vanished mid-follow)."""
+        q = "stream=true"
+        if starting_after is not None:
+            q += f"&starting_after={starting_after}"
+        if timeout_s is not None:
+            q += f"&timeout_s={timeout_s}"
+        _status, headers, body = self._request(
+            "GET",
+            f"/v1/responses/{urllib.parse.quote(response_id)}?{q}",
+            idempotent=True,
+            extra_headers=extra_headers,
+        )
+        return (
+            _responses_replay_events(body),
+            _hget(headers, "X-Fx1-Completion-Id"),
+        )
+
     def list_chat_completions(
         self,
         *,
@@ -3307,6 +3457,16 @@ class HarnessClient:
         (``X-Fx1-Api-Version``); ``None`` before the first call or when
         talking to a pre-versioning server."""
         return self._last_api_version
+
+    @property
+    def last_response_headers(self) -> dict[str, str]:
+        """Lowercased name → value map of the last transport response —
+        the drop-in header surface (``x-request-id``,
+        ``openai-processing-ms``, ``openai-version``, ``x-ratelimit-*``,
+        plus ``request-id`` / ``anthropic-ratelimit-*`` /
+        ``x-should-retry`` on the Anthropic grammar). ``{}`` before the
+        first call or after a transport fault (no response arrived)."""
+        return dict(self._last_response_headers)
 
     def server_version(self) -> dict[str, Any]:
         """GET /harness/version — the server's ``{"api_version",

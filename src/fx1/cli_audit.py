@@ -22,6 +22,7 @@ Sealed ``cli_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import hashlib
+import math
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -225,6 +226,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "response-get",
         "response-delete",
         "response-cancel",
+        "response-replay",
         "response-input-items",
         "score",
         "commands",
@@ -403,6 +405,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "response-get",
                 "response-delete",
                 "response-cancel",
+                "response-replay",
             )
         )
         # the stored-request subresources inherit the same contract —
@@ -661,6 +664,20 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                     ("response.completed", {"response": {}}),
                 ],
                 None,
+            )
+
+        def openai_response_replay(
+            self, response_id: str, **kw: Any
+        ) -> tuple[list[tuple[str, dict[str, Any]]], str | None]:
+            self.stream_calls.append({"responses_replay": response_id, **dict(kw)})
+            return (
+                [
+                    ("response.created", {"type": "response.created", "response": {}}),
+                    (_DELTA_EVENT, {"delta": "re"}),
+                    (_DELTA_EVENT, {"delta": "play"}),
+                    ("response.completed", {"type": "response.completed", "response": {}}),
+                ],
+                "cid-replay",
             )
 
         def openai_completion(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
@@ -1041,6 +1058,32 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "served": {"calls": 0},
             }
 
+        def key_rotate(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("rotate", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "object": "key_rotation",
+                "rotated_from": key_id,
+                "revoked_previous": bool(_kw.get("revoke_old", True)),
+                "key": {
+                    "id": "kfake2",
+                    "object": "key",
+                    "rotated_from": key_id,
+                    "key": "fx1k_raw2",
+                },
+            }
+
+        def key_update(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("update", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": key_id,
+                "object": "key",
+                "name": _kw.get("name"),
+                "rpm": _kw.get("rpm"),
+                "enabled": True,
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "env", "metered": False}
@@ -1074,6 +1117,17 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+        # response-replay in-process: SDK (event, payload) pairs — only
+        # the .delta strings concatenate onto stdout; cursor flags forward
+        rrp = runner.invoke(
+            app, ["harness", "response-replay", "resp_fake", "--starting-after", "2"]
+        )
+        out["response_replay_local_concat"] = (
+            rrp.exit_code == 0
+            and rrp.stdout == "replay\n"
+            and fake.stream_calls[-1].get("responses_replay") == "resp_fake"
+            and fake.stream_calls[-1].get("starting_after") == 2
+        )
 
         # text-completion in-process leg — the legacy surface through the
         # SDK twin: envelope prints as JSON; --stream prints the text
@@ -1553,6 +1607,70 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(ss.stdout)["credential"] == "env"
             and fake.last_key_call == ("self", None)
         )
+        rj = runner.invoke(app, ["harness", "key-rotate", "kfake"])
+        out["key_rotate_json"] = (
+            rj.exit_code == 0
+            and json.loads(rj.stdout)["object"] == "key_rotation"
+            and json.loads(rj.stdout)["rotated_from"] == "kfake"
+            and fake.last_key_call == ("rotate", "kfake")
+            and fake.last_key_kw == {"revoke_old": True, "name": None, "ttl_s": None}
+        )
+        rk = runner.invoke(
+            app,
+            ["harness", "key-rotate", "kfake", "--keep-old", "--name", "n2", "--ttl-s", "30"],
+        )
+        out["key_rotate_flags_forward"] = (
+            rk.exit_code == 0
+            and json.loads(rk.stdout)["revoked_previous"] is False
+            and fake.last_key_kw == {"revoke_old": False, "name": "n2", "ttl_s": 30.0}
+        )
+        kpu = runner.invoke(app, ["harness", "key-patch", "kfake"])
+        out["key_patch_json"] = (
+            kpu.exit_code == 0
+            and json.loads(kpu.stdout)["object"] == "key"
+            and json.loads(kpu.stdout)["id"] == "kfake"
+            and fake.last_key_call == ("update", "kfake")
+            and fake.last_key_kw == {}
+        )
+        kpf = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-patch",
+                "kfake",
+                "--name",
+                "np",
+                "--rpm",
+                "9",
+                "--scope",
+                "read",
+                "--scope",
+                "admin",
+                "--admin",
+                "--max-requests",
+                "5",
+                "--max-tokens",
+                "50",
+                "--expires-at",
+                "99.5",
+                "--clear",
+                "name",
+                "--clear",
+                "rpm",
+            ],
+        )
+        out["key_patch_flags_forward"] = kpf.exit_code == 0 and fake.last_key_kw == {
+            "name": "np",
+            "rpm": 9,
+            "scopes": ["read", "admin"],
+            "admin": True,
+            "max_requests": 5,
+            "max_tokens": 50,
+            "expires_at": 99.5,
+            "clear": ["name", "rpm"],
+        }
+        kpn = runner.invoke(app, ["harness", "key-patch", "kfake", "--no-admin"])
+        out["key_patch_no_admin_flag"] = kpn.exit_code == 0 and fake.last_key_kw == {"admin": False}
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:
@@ -1581,6 +1699,9 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_kw: dict[str, Any] | None = None
             self.ft_actions: list[tuple[str, str]] = []
             self.vs_calls: list[tuple[str, tuple[Any, ...], dict[str, Any]]] = []
+            # the wire snapshot HarnessClient keeps — CLI surfaces read
+            # x-request-id off it for the just-answered call
+            self.last_response_headers: dict[str, str] = {"x-request-id": "req-cli-fake"}
 
         def usage(self, **kw: Any) -> Any:
             from fx1.serve.usage_report import UsageReport
@@ -2250,6 +2371,20 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"resp_cancel": response_id}
             return {"id": response_id, "object": "response", "status": "cancelled"}
 
+        def responses_replay(
+            self, response_id: str, **kw: Any
+        ) -> tuple[list[dict[str, Any]], str | None]:
+            self.last_ft_query = {"resp_replay": response_id, **kw}
+            return (
+                [
+                    {"type": "response.created", "response": {}},
+                    {"type": _DELTA_EVENT, "delta": "re"},
+                    {"type": _DELTA_EVENT, "delta": "played"},
+                    {"type": "response.completed", "response": {"id": response_id}},
+                ],
+                "cid-replay",
+            )
+
         def list_chat_completions(self, **kw: Any) -> dict[str, Any]:
             self.last_ft_query = {"chat_list": True, **kw}
             return {
@@ -2512,6 +2647,27 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_key_call = ("usage", key_id)
             return {"id": key_id, "object": "key_usage", "uses": 3}
 
+        def key_rotate(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("rotate", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "object": "key_rotation",
+                "rotated_from": key_id,
+                "revoked_previous": bool(_kw.get("revoke_old", True)),
+                "key": {"id": "kremote2", "key": "fx1k_rraw"},
+            }
+
+        def key_update(self, key_id: str, **_kw: Any) -> dict[str, Any]:
+            self.last_key_call = ("update", key_id)
+            self.last_key_kw = dict(_kw)
+            return {
+                "id": key_id,
+                "object": "key",
+                "name": _kw.get("name"),
+                "rpm": _kw.get("rpm"),
+                "enabled": True,
+            }
+
         def self_usage(self, **_kw: Any) -> dict[str, Any]:
             self.last_key_call = ("self", None)
             return {"object": "self_usage", "credential": "managed"}
@@ -2674,6 +2830,58 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(ss.stdout)["credential"] == "managed"
             and remotes[-1].last_key_call == ("self", None)
         )
+        rjr = runner.invoke(app, ["harness", "key-rotate", "krem", "--remote", "http://h.test"])
+        out["key_rotate_remote"] = (
+            rjr.exit_code == 0
+            and json.loads(rjr.stdout)["object"] == "key_rotation"
+            and remotes[-1].last_key_call == ("rotate", "krem")
+            and remotes[-1].last_key_kw == {"revoke_old": True, "name": None, "ttl_s": None}
+        )
+        rkr = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-rotate",
+                "krem",
+                "--keep-old",
+                "--name",
+                "rn",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["key_rotate_remote_flags"] = rkr.exit_code == 0 and remotes[-1].last_key_kw == {
+            "revoke_old": False,
+            "name": "rn",
+            "ttl_s": None,
+        }
+        pur = runner.invoke(app, ["harness", "key-patch", "krem", "--remote", "http://h.test"])
+        out["key_patch_remote"] = (
+            pur.exit_code == 0
+            and json.loads(pur.stdout)["object"] == "key"
+            and remotes[-1].last_key_call == ("update", "krem")
+            and remotes[-1].last_key_kw == {}
+        )
+        pfr = runner.invoke(
+            app,
+            [
+                "harness",
+                "key-patch",
+                "krem",
+                "--name",
+                "rpn",
+                "--no-admin",
+                "--clear",
+                "max_requests",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["key_patch_remote_flags"] = pfr.exit_code == 0 and remotes[-1].last_key_kw == {
+            "name": "rpn",
+            "admin": False,
+            "clear": ["max_requests"],
+        }
         out["remote_list_names"] = (
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
             == "cmd-a"
@@ -2720,6 +2928,11 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and json.loads(rcp.stdout)["compatible"] is True
             and remotes[-1].last_compat_strict is False
         )
+        # the wire's request-id for the just-answered call rides the
+        # version/compat payloads — the trace surface ops paste into
+        # bug reports; absent when the client saw no response headers
+        out["remote_version_request_id"] = json.loads(rv.stdout).get("request_id") == "req-cli-fake"
+        out["remote_compat_request_id"] = json.loads(rcp.stdout).get("request_id") == "req-cli-fake"
         rj = runner.invoke(
             app,
             [
@@ -2916,6 +3129,18 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         and json.loads(rv_local.stdout)["api_version"] == "1"
         and json.loads(rv_local.stdout)["local"] is True
     )
+    out["version_local_no_request_id"] = "request_id" not in json.loads(rv_local.stdout)
+    # a remote whose client reports no wire headers (pre-channel peer,
+    # transport fault) prints no request_id — the key is never fabricated
+    with patch("fx1.serve.client.HarnessClient") as mc_h:
+        mc_h.return_value.server_version.return_value = {
+            "api_version": "1",
+            "fx1_version": "0.4.0",
+        }
+        rv2 = runner.invoke(app, ["harness", "version", "--remote", "http://h.test"])
+        out["remote_version_no_headers_omits_rid"] = (
+            rv2.exit_code == 0 and "request_id" not in json.loads(rv2.stdout)
+        )
 
     # compat on a wire-contract mismatch exits 1 but still prints the report
     with patch("fx1.serve.client.HarnessClient") as mc2:
@@ -3883,6 +4108,60 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "response-delete",
                 "response-cancel",
             )
+        )
+        # response-replay remote-side: bare payload dicts — the deltas
+        # concatenate and the id/cursor/timeout kwargs forward verbatim
+        _rrp = runner.invoke(
+            app,
+            [
+                "harness",
+                "response-replay",
+                "resp_x",
+                "--starting-after",
+                "4",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_response_replay"] = (
+            _rrp.exit_code == 0
+            and _rrp.stdout == "replayed\n"
+            and (remotes[-1].last_ft_query or {}).get("resp_replay") == "resp_x"
+            and (remotes[-1].last_ft_query or {}).get("starting_after") == 4
+            and isinstance(
+                _rts := (remotes[-1].last_ft_query or {}).get("timeout_s"),
+                (int, float),
+            )
+            and math.isclose(float(_rts), 30.0)
+        )
+
+        # a replay that lands a cancelled terminal says so on stderr —
+        # a quiet delta stream would look like a full answer
+        class _CancelledReplayRemote(_FakeRemote):
+            def responses_replay(
+                self, response_id: str, **kw: Any
+            ) -> tuple[list[dict[str, Any]], str | None]:
+                self.last_ft_query = {"resp_replay": response_id, **kw}
+                return (
+                    [
+                        {"type": "response.in_progress", "response": {}},
+                        {
+                            "type": "response.cancelled",
+                            "response": {"id": response_id, "status": "cancelled"},
+                        },
+                    ],
+                    "cid-cx",
+                )
+
+        with patch(
+            "fx1.serve.client.HarnessClient",
+            side_effect=lambda u, **kw: _CancelledReplayRemote(u, **kw),
+        ):
+            _rrcx = runner.invoke(
+                app, ["harness", "response-replay", "resp_cx", "--remote", "http://h.test"]
+            )
+        out["response_replay_cancelled_stderr"] = (
+            _rrcx.exit_code == 0 and "[stream ended: cancelled]" in _rrcx.stderr
         )
         # chat-update --remote forwards the metadata payload verbatim
         out["remote_chat_update"] = json.loads(

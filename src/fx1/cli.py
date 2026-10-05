@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
@@ -111,6 +111,18 @@ def _surface(
     )
 
 
+def _last_request_id(client: Any) -> str | None:
+    """``x-request-id`` off the client's last wire response, when it
+    reports one — the trace id a bug report would quote. ``None`` for
+    clients without a header channel or a transport that saw no
+    response."""
+    hmap = getattr(client, "last_response_headers", None)
+    if not isinstance(hmap, Mapping):
+        return None
+    rid = hmap.get("x-request-id")
+    return rid if isinstance(rid, str) and rid else None
+
+
 def _or_exit[T](fn: Callable[[], T]) -> T:
     """Run a surface call; faults print one clean line and exit 2."""
     try:
@@ -182,6 +194,16 @@ def _response_frame_of(event: Any) -> tuple[str | None, str | None]:
         details = resp.get("incomplete_details") if isinstance(resp, dict) else None
         if isinstance(details, dict) and isinstance(details.get("reason"), str):
             reason = details["reason"]
+    if payload.get("type") == "response.failed":
+        resp = payload.get("response")
+        err = resp.get("error") if isinstance(resp, dict) else None
+        reason = (
+            f"failed: {err['message']}"
+            if isinstance(err, dict) and isinstance(err.get("message"), str)
+            else "failed"
+        )
+    if payload.get("type") == "response.cancelled":
+        reason = "cancelled"
     delta = payload.get("delta")
     return delta if isinstance(delta, str) else None, reason
 
@@ -190,19 +212,19 @@ def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
     nothing else. Accepts bare payload dicts (remote) or ``(event,
-    payload)`` pairs (in-process SDK). A ``response.incomplete`` terminal
-    reports its truncation reason on stderr — a quiet text stream would
-    look like a full answer."""
-    incomplete_reason: str | None = None
+    payload)`` pairs (in-process SDK). A ``response.incomplete``/``failed``/
+    ``cancelled`` terminal reports its reason on stderr — a quiet text
+    stream would look like a full answer."""
+    terminal_reason: str | None = None
     for event in events:
         delta, reason = _response_frame_of(event)
         if delta is not None:
             typer.echo(delta, nl=False)
         if reason is not None:
-            incomplete_reason = reason
+            terminal_reason = reason
     typer.echo()
-    if incomplete_reason is not None:
-        typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
+    if terminal_reason is not None:
+        typer.echo(f"[stream ended: {terminal_reason}]", err=True)
 
 
 def _emit_anthropic_deltas(events: Iterable[Any]) -> None:
@@ -1071,7 +1093,13 @@ def harness_version(
     /harness/version, local mode prints this install's own pair."""
     if remote is not None:
         client = _remote_client(remote, api_key, timeout_s)
-        typer.echo(json.dumps(_or_exit(lambda: client.server_version())))
+        out = _or_exit(lambda: client.server_version())
+        # the wire's request-id for this very call — the trace surface a
+        # deploy loop would paste into a bug report
+        rid = _last_request_id(client)
+        if rid is not None:
+            out = {**out, "request_id": rid}
+        typer.echo(json.dumps(out))
         return
     from fx1 import __version__
     from fx1.serve.contract import API_VERSION
@@ -1320,6 +1348,111 @@ def harness_key_usage(
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
+@harness_app.command("key-rotate")
+def harness_key_rotate(
+    key_id: str,
+    revoke_old: bool = typer.Option(
+        True,
+        "--revoke-old/--keep-old",
+        help="Tombstone the predecessor atomically with the mint (default). "
+        "--keep-old leaves both secrets live until the old key is revoked or expires.",
+    ),
+    name: str | None = typer.Option(
+        None, "--name", help="Successor display name — defaults to the predecessor's."
+    ),
+    ttl_s: float | None = typer.Option(
+        None,
+        "--ttl-s",
+        min=1e-9,
+        help="Fresh lifetime for the successor (seconds). Omitted: inherits the "
+        "predecessor's absolute expires_at — rotation never extends a credential.",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Rotate a managed key — mints a successor under the predecessor's
+    declared policy and, by default, tombstones the old secret in the
+    same transaction. The response's ``key.key`` is the only place the
+    new secret appears."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(
+        lambda: surface.key_rotate(key_id, revoke_old=revoke_old, name=name, ttl_s=ttl_s)
+    )
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-patch")
+def harness_key_patch(
+    key_id: str,
+    name: str | None = typer.Option(
+        None, "--name", help="New display name — unset keeps the declared name."
+    ),
+    rpm: int | None = typer.Option(
+        None,
+        "--rpm",
+        min=1,
+        help="New per-60s request bound — unset keeps the declared one.",
+    ),
+    scopes: list[str] = typer.Option(
+        [],
+        "--scope",
+        help="Replace the surface classes: read | write | admin (repeatable).",
+    ),
+    admin: bool | None = typer.Option(
+        None,
+        "--admin/--no-admin",
+        help="--admin unions the admin scope onto the surviving list; "
+        "--no-admin never strips a declared scope (purely additive, like mint).",
+    ),
+    max_requests: int | None = typer.Option(
+        None, "--max-requests", min=1, help="New authenticated-call budget."
+    ),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", min=1, help="New provider-reported token budget."
+    ),
+    expires_at: float | None = typer.Option(
+        None,
+        "--expires-at",
+        min=1e-9,
+        help="New absolute expiry (unix seconds).",
+    ),
+    clear: list[str] = typer.Option(
+        [],
+        "--clear",
+        help="Clear a nullable bound back to unbounded: name | rpm | "
+        "max_requests | max_tokens | expires_at (repeatable).",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Patch a live managed key's policy in place — prints the updated
+    record. Unset flags keep the declared policy; ``--clear FIELD``
+    sends the JSON-null that unbounds it; ``enabled`` and the live
+    counters are not patchable — revocation is permanent."""
+    kw: dict[str, Any] = {}
+    if name is not None:
+        kw["name"] = name
+    if rpm is not None:
+        kw["rpm"] = rpm
+    if scopes:
+        kw["scopes"] = scopes
+    if admin is not None:
+        kw["admin"] = admin
+    if max_requests is not None:
+        kw["max_requests"] = max_requests
+    if max_tokens is not None:
+        kw["max_tokens"] = max_tokens
+    if expires_at is not None:
+        kw["expires_at"] = expires_at
+    if clear:
+        kw["clear"] = clear
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_update(key_id, **kw))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
 @harness_app.command("self")
 def harness_self(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -1350,6 +1483,9 @@ def harness_compat(
         raise typer.Exit(code=2)
     client = _remote_client(remote, api_key, timeout_s)
     report = _or_exit(lambda: client.check_compat(strict=False))
+    rid = _last_request_id(client)
+    if rid is not None:
+        report = {**report, "request_id": rid}
     typer.echo(json.dumps(report))
     if not report["compatible"]:
         raise typer.Exit(code=1)
@@ -3804,6 +3940,42 @@ def harness_response_cancel(
 
     out = _or_exit(lambda: Fx1Harness().openai_response_cancel(response_id))
     typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-replay")
+def harness_response_replay(
+    response_id: str = typer.Argument(..., help=_RESPONSE_ID_HELP),
+    starting_after: int | None = typer.Option(
+        None,
+        "--starting-after",
+        help="Resume past sequence N — only events whose sequence number "
+        "exceeds N (the frames' id: cursor).",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/responses/{id}?stream=true`` — replay the stored response
+    as the Responses SSE event stream: the full grammar for a terminal
+    response, or the prelude plus a live follow for a still-running
+    ``background:true`` call. Prints the text-delta channel like
+    ``respond --stream``; unknown/deleted ids exit 2 (``not_found``)."""
+    if remote is not None:
+        revents, _cid = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).responses_replay(
+                response_id, starting_after=starting_after, timeout_s=timeout_s
+            )
+        )
+        _emit_response_deltas(revents)
+        return
+    from fx1.sdk import Fx1Harness
+
+    sevents, _cid = _or_exit(
+        lambda: Fx1Harness().openai_response_replay(
+            response_id, starting_after=starting_after, timeout_s=timeout_s
+        )
+    )
+    _emit_response_deltas(sevents)
 
 
 @harness_app.command("chat-list")

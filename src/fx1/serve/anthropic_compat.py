@@ -79,7 +79,10 @@ ANTHROPIC_ERR_TYPES: dict[int, str] = {
 
 # Request fields Anthropic documents but the gated pipeline cannot honor.
 # Refusing beats silently ignoring — the caller learns the truth at the
-# boundary, not after a hallucinated assumption.
+# boundary, not after a hallucinated assumption. ``cache_control`` at the
+# top level, ``diagnostics``, and ``output_config`` (the v1 SDK's effort/
+# format channel) are the same class: the SDK serializes them onto the
+# wire and this pipeline would silently drop them.
 ANTHROPIC_UNSUPPORTED = frozenset(
     {
         "top_k",
@@ -95,6 +98,9 @@ ANTHROPIC_UNSUPPORTED = frozenset(
         "safety_identifier",
         "agent",
         "effort",
+        "cache_control",
+        "diagnostics",
+        "output_config",
     }
 )
 

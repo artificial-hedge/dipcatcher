@@ -172,8 +172,8 @@ def _swap_lines(path: Path, i: int, j: int) -> None:
 
 
 def _probe_journal_recovery() -> dict[str, bool]:
-    """Malformed/reordered journal lines: prefix recovery holds, but the
-    key store swallows every replay warning and can resurrect revokes."""
+    """Corruption retains verified prefix records as disabled metadata,
+    reports the break, and never restores a revoked credential."""
     out: dict[str, bool] = {}
     with tempfile.TemporaryDirectory() as td:
         p = Path(td) / "keys.jsonl"
@@ -184,12 +184,17 @@ def _probe_journal_recovery() -> dict[str, bool]:
         res = JobJournal(p).replay()
         out["journal_corrupt_tail_reports_dropped"] = res.dropped >= 1
         reloaded = ApiKeyStore(journal=JobJournal(p))
+        recovered_a = reloaded.get(rec_a["key_id"])
         out["keystore_recovers_prefix_keys"] = (
-            reloaded.authenticate(raw_a) is not None and reloaded.get(rec_b["key_id"]) is None
+            recovered_a is not None
+            and recovered_a.get("enabled") is False
+            and recovered_a.get("quarantined") is True
+            and reloaded.authenticate(raw_a) is None
+            and reloaded.get(rec_b["key_id"]) is None
         )
-        # divergence: job/idem stores publish `recover_warnings`; the key
-        # store drops the list, so an operator sees a healthy boot while
-        # a minted key is gone
+        # Retain verified prefix metadata, but never trust its credentials
+        # after losing a record that could have carried a revocation.
+        # Every dropped record must remain visible to the operator.
         out["keystore_warns_on_corrupt_journal"] = bool(getattr(reloaded, "recover_warnings", None))
         # resurrect: corrupt the revoke record itself — replay drops it
         # and everything after; the dead key must still stay dead
@@ -206,13 +211,16 @@ def _probe_journal_recovery() -> dict[str, bool]:
             and not rec_v2.get("enabled", True)
             and s3.authenticate(raw_v) is None
         )
-        # post-corruption mint: accepted and works in memory, but the
-        # journal still truncates at the torn line — the new key is
-        # unreachable on the next boot
+        # A fresh operator-provisioned key must survive restart after
+        # journal repair; quarantined historical credentials stay dead.
         raw_c, rec_c = s3.mint(name="post")
         s4 = ApiKeyStore(journal=JobJournal(p2))
+        restored_c = s4.get(rec_c["key_id"])
         out["post_corruption_mint_survives_restart"] = (
-            s3.authenticate(raw_c) is not None and s4.get(rec_c["key_id"]) is not None
+            restored_c is not None
+            and restored_c.get("enabled") is True
+            and s4.authenticate(raw_c) is not None
+            and s4.authenticate(raw_v) is None
         )
         p3 = Path(td) / "keys3.jsonl"
         s5 = ApiKeyStore(journal=JobJournal(p3))
@@ -314,9 +322,8 @@ def _probe_lifecycle() -> dict[str, bool]:
         raw_q, rec_q = s1.mint(max_requests=2)
         s1.authenticate(raw_q)
         s2 = ApiKeyStore(journal=JobJournal(p))
-        # divergence: uses/tokens_used are in-memory mutations — the
-        # journal only carries mint/revoke records, so a restart hands a
-        # spent key its full budget back
+        # A restart must restore the spent request budget from its
+        # durable counter snapshot, never grant the original budget again.
         rec_q2 = s2.get(rec_q["key_id"])
         out["quota_persists_across_restart"] = rec_q2 is not None and rec_q2["uses"] == 1
 
@@ -656,7 +663,7 @@ def fault_audit_bench() -> dict[str, Any]:
     from quant_fund.utils.reproducibility import git_revision
 
     r = fault_audit()
-    ok = all(v is True for v in r.values())
+    ok = bool(r) and all(v is True for v in r.values())
     defects = sorted(k for k, v in r.items() if v is not True)
     out: dict[str, Any] = {
         "kind": "fault_audit",
@@ -668,8 +675,10 @@ def fault_audit_bench() -> dict[str, Any]:
         "claim": {"results": r, "ok": ok},
         "interpretation": (
             "Harness holds under adversarial conditions: journal "
-            "corruption recovers the clean prefix and reports it, key "
-            "races lose no updates, TTL/quota/rpm boundaries are exact, "
+            "corruption retains verified prefix metadata, quarantines "
+            "old credentials and reports it; fresh replacement keys and "
+            "quota counters survive restart, key races lose no updates, "
+            "TTL/quota/rpm boundaries are exact, "
             "wire abuse gets the uniform error envelope, header and BYOK "
             "smuggling fail closed, idempotent replays and conflicts "
             "survive drain, and unreadable state dirs fail loudly."

@@ -3,7 +3,12 @@
 The dipcatcher harness (registry + backends + honesty gate + receipt
 verifier) is one code path exposed four ways. This page is the
 integrator reference; `docs/FX1.md` has the model overview and
-`docs/FX1_API_STABILITY.md` the versioning policy.
+`docs/FX1_API_STABILITY.md` the versioning policy. Operator docs:
+`docs/FX1_DEPLOY.md` (production runbook — launch, durability, keys,
+webhooks, drain, deploy gates, failure modes), `docs/FX1_CLIENTS.md`
+(the four legs side-by-side), `docs/FX1_BYOK_RUNBOOK.md` (BYOK request
+shapes, credentials, provider quirks). Runnable walkthroughs:
+`examples/fx1_quickstart_sdk.py` and `examples/fx1_quickstart_http.py`.
 
 ## Consumption modes
 
@@ -161,6 +166,26 @@ specific counters (e.g. `cached_tokens`) land in `other_usage` rather
 than dropping silently. `since > until` fails closed 400. The
 in-process twin `Fx1Harness.usage()` aggregates the same way.
 
+**Accounting contract:** provider usage claims pass a billable-value
+sieve before they reach any ledger — only genuine ints count (a bool
+is not a token count; strings/floats are unbillable and dropped);
+negative ints sum verbatim into the buckets as the provider's claim,
+while the charge path clamps them at zero so a budget never goes
+negative. A managed key's `uses` counts *authenticated requests* —
+a call that fails after auth still counts; a call refused by a
+budget, rate window, scope check, or bad credential never does and
+leaves no record. `tokens_used` equals the per-record charge
+(`total_tokens` else `prompt+completion`) summed over the key's
+records plus the declared batch `usage_total` delta — streamed calls
+attribute and bill like sync ones, and idempotent replays never
+double-bill. When the ring evicts, `totals` cover only retained
+records while evicted calls stay billed (the charge fires at append;
+a key card's `log_dropped` marks `served` as the lower bound). The
+conservation battery `fx1.serve.usage_audit` (50 probes — bucket
+folds, filter partitions, meter reconciliation, ring honesty,
+fallback attribution, adversarial usage payloads) seals this
+contract as `receipts/fx1_usage_audit.json`.
+
 **Response-side seal:** responses that carry `X-Fx1-Completion-Id` also
 carry `X-Fx1-Receipt-Sha256` — the `receipt_sha256` of the sealed
 `fx1_completion_record.v1` document, so a client pins the evidence
@@ -206,6 +231,8 @@ same digested shape the job record embeds.
 | `GET /harness/keys/{id}` | one key's record → `404 key_not_found`. `Fx1Harness.key_get` / `HarnessClient.key_get` / `fx1 harness key-get` |
 | `DELETE /harness/keys/{id}` | tombstone a key (`enabled:false` + `revoked_at`) — auth with it fails closed immediately; the record survives for audit. `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_revoke` / `HarnessClient.key_revoke` / `fx1 harness key-revoke` |
 | `GET /harness/keys/{id}/usage` | one key's usage card — live counters (`uses`, `tokens_used`, `last_used_at`), declared budgets with derived headroom (`requests_remaining` / `tokens_remaining`, `null` when unbounded), the rpm window's live `window_remaining` / `window_reset_s` (`null` when no rpm), and `served` — the completion-ring spend split (`calls`/`prompt_tokens`/`completion_tokens`/`total_tokens` + `by_backend`). `log_cap` / `log_dropped` bound `served` honestly: the ring is bounded, so a `log_dropped > 0` card is a lower bound. Admin scope. `404 key_not_found`. `Fx1Harness.key_usage` / `HarnessClient.key_usage` / `fx1 harness key-usage` |
+| `POST /harness/keys/{id}/rotate` | atomic rotation → `201 key_rotation`: mints a successor under the predecessor's declared policy (name/scopes/admin/rpm/budgets inherited verbatim; `name`/`ttl_s` overridable in the body) and tombstones the old secret in the same transaction unless `revoke_old:false` — with keep-old both secrets authenticate until the predecessor is revoked or expires (the declared `revoked_previous` reports which happened). Without `ttl_s` the successor inherits the predecessor's absolute `expires_at` — rotation never extends a credential's lifetime. Lineage stamps `rotated_from` on the journaled successor record (visible on `key_get`/`usage`). Rotating a revoked credential is refused `409 key_revoked` (a dead secret cannot mint a live one); a full store fails `keys_cap` before the predecessor is touched. `404 key_not_found`. `Fx1Harness.key_rotate` / `HarnessClient.key_rotate` / `fx1 harness key-rotate [--keep-old] [--name N] [--ttl-s S]` |
+| `PATCH /harness/keys/{id}` | mutable policy update on a live key → `200` key record (same shape as `key_get`). Body fields all optional (`name`, `rpm`, `scopes`, `admin`, `max_requests`, `max_tokens`, `expires_at` absolute): an omitted field keeps the declared policy, a concrete value replaces it, and an explicit JSON `null` on a nullable field (`name`/`rpm`/`max_requests`/`max_tokens`/`expires_at`) clears the bound back to unbounded — `scopes`/`admin` take concrete values only when sent. `admin:true` unions the admin scope onto the surviving list (explicit `scopes` or the record's) the mint way; `admin:false` never strips a declared scope — the flag is purely additive. Validation mirrors mint (`rpm>0`, budgets `>=1`, `expires_at>0`, scopes ⊆ `{read,write,admin}`). Patching is in place — no new secret, no store slot consumed — and the updated record journals like a revocation, so a `--state-dir` restart replays it. `enabled` and the live counters (`uses`/`tokens_used`) are unpatchable (`422` via `extra="forbid"`): revocation is permanent and `key_revoked` keys stay dead — `404 key_not_found`, `409 key_revoked`. `Fx1Harness.key_update` / `HarnessClient.key_update` / `fx1 harness key-patch [--name N] [--rpm N] [--scope …] [--admin/--no-admin] [--max-requests N] [--max-tokens N] [--expires-at T] [--clear FIELD …]` |
 | `GET /harness/self` | the calling credential's own card — `credential: managed` (with the full usage card under `key`) for minted keys, `env` for the bootstrap credential, `none` for loopback dev mode; `metered` reports whether budgets/quota bind this credential (managed `true`, env/loopback `false`), `scopes` the effective set. Only needs `read` scope — a key watches its own budgets without admin. `Fx1Harness.self_usage` / `HarnessClient.self_usage` / `fx1 harness self` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter — `Fx1Harness.commands` / `HarnessClient.commands` / `fx1 harness commands [--role]` |
 | `POST /harness/runs` | synchronous command run |
@@ -262,7 +289,7 @@ same digested shape the job record embeds.
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
 | `POST /v1/chat/completions/{id}` | update a stored completion — `metadata` replaces wholesale (≤16 pairs, keys ≤64 chars, values ≤512), choices/usage sealed; `Fx1Harness.openai_chat_update` / `HarnessClient.update_chat_completion` / `client.updateChatCompletion` / `fx1 harness chat-update` |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
-| `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
+| `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object — `?stream=true` instead replays it as SSE (`response.*` grammar; `starting_after=N` resumes past sequence N, the `id:` cursor) — `Fx1Harness.openai_response_replay` / `HarnessClient.responses_replay` / `client.responseReplay` / `fx1 harness response-replay` |
 | `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
 | `GET /v1/responses/{id}/input_items` | the `input` items a stored response ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `input_items.list` |
 | `POST /v1/conversations` | mint a `conv_*` container (`items` seeds, `metadata` string pairs) — `Fx1Harness.openai_conversation_create` / `HarnessClient.conversation_create` / `client.conversationCreate` / `fx1 harness conv-create` |
@@ -458,7 +485,27 @@ streams, typed error classes (`BadRequestError`/`ConflictError`/
 resource group: models, chat (incl. `store`+`list`), responses (incl.
 `background`+cancel+input_items), files+batches+fine-tuning,
 embeddings, moderations, uploads, evals, conversations, vector
-stores.
+stores. The Anthropic twin is measured the same way:
+`receipts/fx1_anthropic_sdk_audit.json`
+(`fx1.serve.anthropic_sdk_audit.anthropic_sdk_audit_bench`) drives
+the stock `anthropic` SDK — typed `Message`/stream-event/batch-object
+parsing, `stream()` + raw SSE grammar, `count_tokens`, cursor
+auto-pagination, batches create→cancel→results JSONL, and the typed
+exception classes (`AuthenticationError`/`PermissionDeniedError`/
+`RateLimitError`/`InternalServerError`/…) — against the whole
+`/v1/messages*` surface.
+
+Vendor-spec conformance (not just our OpenAPI export) is pinned by
+`receipts/fx1_spec_audit.json`
+(`fx1.serve.spec_audit.spec_audit_bench`): a frozen, hand-checked
+subset of the published OpenAI and Anthropic wire schemas is vendored
+in-module and checked against live responses — chat + SSE chunk
+grammar, `response`/`text_completion`/`model`/`file`/`batch`/
+`fine_tuning.job` objects, the Anthropic `message`/`message_batch`/
+cursor-paged model list, both vendor error envelopes, negative-shape
+guards (no cross-vendor keys), and the 429/401/403 header contract
+(`Retry-After` + `X-RateLimit-*` on rpm limits, none on
+`quota_exceeded`).
 
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed
@@ -559,7 +606,14 @@ same OpenAI error taxonomy:
   the harness drains). Poll `GET /v1/responses/{id}` until
   `status` lands terminal (`completed` / `failed` / `cancelled` /
   `incomplete`); `POST /v1/responses/{id}/cancel` flips a live
-  one to `cancelled` (409 `cancel_terminal` once terminal).
+  one to `cancelled` (409 `cancel_terminal` once terminal). A
+  dropped connection isn't a lost stream: `GET
+  /v1/responses/{id}?stream=true` re-attaches — a queued/
+  in-progress record emits its event prelude then live-follows
+  to the terminal frame (`response.completed`/`incomplete`/
+  `failed`/`cancelled`), and a terminal record replays the
+  whole grammar from the stored envelope; `starting_after=N`
+  resumes past sequence N.
   `background` requires `store` (400 `background_requires_store`
   otherwise) and can't nest inside a batch line (the batch is
   already the async surface). `previous_response_id` chains
@@ -589,12 +643,16 @@ same OpenAI error taxonomy:
   body is 409.
 
 Client-side: `HarnessClient.responses_create` /
-`responses_create_stream` / `cancel_response` in Python
+`responses_create_stream` / `cancel_response` /
+`responses_replay` in Python
 (`Fx1Harness.openai_response` / `openai_response_stream` /
-`openai_response_cancel` in-process — same `(envelope|events, cid)`
+`openai_response_cancel` / `openai_response_replay` in-process —
+same `(envelope|events, cid)`
 returns); `HarnessApiClient.responsesCreate` /
-`responsesCreateStream` / `cancelResponse` in TS; `fx1 harness
-respond [--background]` / `response-get` / `response-cancel` on the
+`responsesCreateStream` / `cancelResponse` / `responseReplay` in
+TS; `fx1 harness
+respond [--background]` / `response-get` / `response-cancel` /
+`response-replay` on the
 CLI.
 
 ### Embeddings (`/v1/embeddings`)
@@ -981,6 +1039,35 @@ stores fail closed `vector_store_not_found` (404 on the wire,
   the OpenAPI spec itself, so generated clients see them typed.
   `X-RateLimit-*` declarations appear only on builds where the limiter
   is enabled.
+- Drop-in SDK headers: `Openai-Processing-Ms` (integer wall-clock ms)
+  and `openai-version` ride every response on the `/v1` grammar —
+  `openai-version` is our own wire contract (`API_VERSION`, currently
+  `"1"`), not a dated OpenAI deployment spec, since the surface is a
+  contract superset rather than a snapshot of one upstream version.
+  The Anthropic dialect (`/v1/messages*`, or any `/v1/*` request under
+  an `anthropic-version` header) answers with Anthropic's names for
+  the same surfaces: `request-id` (the same id `X-Request-ID` stamps,
+  echoed from an inbound `X-Request-ID` or minted, on success, error,
+  and SSE-open alike) and `x-should-retry` — `true` on the transient
+  statuses the stock SDK retries (408/429/500/502/503/504/529),
+  `false` on the ones its defaults would get wrong here (409
+  idempotency conflict, 501 unimplemented, and exhausted hard-budget
+  429 responses), omitted everywhere else. Explicit route retry hints
+  take precedence over the generic status defaults.
+  A managed key minted with `rpm` reports its standing window on the
+  Anthropic surface too — `anthropic-ratelimit-requests-limit` /
+  `-remaining` / `-reset` (an RFC 3339 instant, Anthropic's
+  convention) beside the `X-RateLimit-*-Requests` family; env /
+  loopback / unwindowed keys emit neither (no false scarcity), and
+  there is no token-window family because no token window is metered.
+  We deliberately do **not** emit `openai-organization`, `cf-*`, or
+  other org/edge provenance headers — no organization layer or CDN
+  fronts this process, so minting them would fabricate provenance.
+  `HarnessClient.last_response_headers`,
+  `Fx1Harness.last_response_headers` (stamped per gated call), and the
+  TS client's `lastResponseHeaders` expose the last response's
+  lowercased header map on their respective legs — `{}`/`null` before
+  the first call or after a transport fault.
 - `circuit_breaker_threshold` + `circuit_reset_s` on `HarnessClient`
   fast-fail a dead peer (`HarnessTransportError`) and half-open after
   the reset window.
@@ -1018,10 +1105,14 @@ version.
 client.check_compat()  # raises HarnessCompatError on mismatch
 client.check_compat(strict=False)  # returns {"compatible": bool, ...}
 client.last_api_version  # stamped header from the last response
+client.last_response_headers  # the last response's full header map
 ```
 
 `fx1 harness compat --remote URL` prints the report and exits 1 on
-mismatch — deploy pipelines gate on it before routing traffic.
+mismatch — deploy pipelines gate on it before routing traffic. Both
+`compat` and `version --remote` fold the just-answered call's
+`x-request-id` into their JSON (`request_id`) when the peer stamps
+one — the trace id a bug report should quote.
 
 `fx1 harness capabilities --remote URL` (`client.capabilities()` /
 `HarnessApiClient.capabilities()`) returns the server's declared feature
@@ -1121,6 +1212,23 @@ HTTP before returning. `POST /v1/messages/batches` accepts the same pair —
 its terminal webhook posts the `message_batch` envelope and the verdict
 fields ride on it under the same names.
 
+The whole delivery contract is pinned end-to-end by
+`fx1.serve.webhook_audit` (`receipts/fx1_webhook_audit.json`, sealed
+`webhook_audit.v1`): a real loopback HTTP sink measures signature
+correctness (recompute/wrong-secret/tamper/stale-replay), fire-once per
+terminal transition on all five surfaces (repeated DELETEs and repeated
+GETs never re-fire — the fire-once flag rides the record), bounded 5xx
+retries vs definitive 4xx, loud `callback_status='failed'` verdicts on
+dead/stalling hosts, payload fidelity (the delivered body is the final
+record — `finished_at` populated), verdict visibility on GET, and
+fail-closed URL validation (scheme, netloc, and userinfo credentials
+refused at create; `callback_secret` requires `callback_url`). A `307`
+is not followed — the signed body never re-POSTs to a different path.
+Recovered records never re-fire callbacks: signing secrets stay in
+memory, and recovery makes every restored record ineligible for a new
+delivery. This also applies when the process stopped before its first
+delivery attempt.
+
 Poll with `GET /harness/jobs/{id}`, or stream
 `/harness/jobs/{id}/events` (`HarnessClient.stream_job`,
 `wait_run_stream`, `fx1 harness watch`).
@@ -1160,6 +1268,16 @@ conflated with user traffic.
   (`X-Fx1-Webhook-Signature`, verified with
   `fx1.serve.webhooks.verify_webhook`), and delivery state lands on the
   record (`callback_status`/`callback_attempts`/`callback_error`).
+
+The whole lifecycle — four submit legs (HTTP, `Fx1Harness`,
+`HarnessClient`, CLI in-process and `--remote`), idempotent replay, the
+queued→running→terminal machine with the atomic cancel claim, drain and
+capacity refusals, fallback-chain attribution, sealed
+`fx1_eval_record.v1` receipts, `--state-dir` durability and
+restart-failed honesty, the `/v1/evals` spec/run surface, cursor
+fail-closed semantics, scoped auth, terminal webhooks, and the diff
+gate — is pinned by `receipts/fx1_eval_lifecycle_audit.json`
+(`fx1.serve.eval_lifecycle_audit.eval_lifecycle_audit_bench`).
 
 ## Ops knobs
 

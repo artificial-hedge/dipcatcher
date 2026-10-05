@@ -102,6 +102,9 @@ dev = [
     # stock OpenAI client for serve/oai_sdk_audit.py — the drop-in
     # compatibility claim is verified against the real SDK, not our own
     "openai>=3.0",
+    # stock Anthropic client for serve/anthropic_sdk_audit.py — same
+    # drop-in claim on the /v1/messages* dialect
+    "anthropic>=0.40",
 ]
 docs = [
     "mkdocs-material>=9.6",

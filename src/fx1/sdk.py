@@ -40,7 +40,7 @@ import time
 import urllib.parse
 import uuid
 from collections import OrderedDict
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -75,6 +75,7 @@ from fx1.serve.backends import (
     truncate_chunks,
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
+from fx1.serve.contract import API_VERSION
 from fx1.serve.evals import (
     EvalDiff,
     EvalRecord,
@@ -135,6 +136,7 @@ from fx1.serve.openai_compat import (
     openai_models,
     openai_response_events,
     openai_response_object,
+    openai_response_replay_events,
     openai_to_kwargs,
     paged_item_list,
     response_cap_call_items,
@@ -281,6 +283,10 @@ class _CompletionLog:
 
 
 _BACKEND_NAMES = ("hosted_k3", "local_fx1", "byok")
+
+# Patch three-state: an omitted kwarg stays the declared policy while
+# an explicit ``None`` clears the bound — the wire's JSON-null.
+_UNSET: Any = object()
 
 
 def _fallback_chain(backend: str, fallbacks: list[str] | None) -> list[str]:
@@ -543,6 +549,10 @@ class Fx1Harness:
         # durable half).
         self._files: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._files_lock = threading.Lock()
+        # The wire-correlate headers of the last gated call — stamped by
+        # ``_record_call`` so in-process callers read the same tracing
+        # surface the HTTP middleware emits for that call.
+        self._last_response_headers: dict[str, str] = {}
         # Managed API keys — the wire's ApiKeyStore twin. Bound to
         # ``state_dir/keys.jsonl`` when durable, so provisioning keys
         # from the SDK writes the same journal the server replays.
@@ -608,7 +618,28 @@ class Fx1Harness:
                 metadata=metadata,
             )
         )
+        # No transport means no socket headers — but every quantity the
+        # middleware stamps is owned here: a per-call trace id, the wire
+        # contract, the call's own wall-clock, and the completion id.
+        self._last_response_headers = {
+            "x-request-id": uuid.uuid4().hex,
+            "x-fx1-api-version": API_VERSION,
+            "openai-processing-ms": str(int(latency_ms)),
+        }
+        if ok:
+            # the wire's X-Fx1-Completion-Id appears on served responses;
+            # a refused/failed call's error envelope carries none
+            self._last_response_headers["x-fx1-completion-id"] = cid
         return cid
+
+    @property
+    def last_response_headers(self) -> dict[str, str]:
+        """The headers the HTTP surface would stamp for the same gated
+        call — ``x-request-id`` (minted per call), ``x-fx1-api-version``,
+        ``openai-processing-ms`` (the call's measured latency), and
+        ``x-fx1-completion-id`` — so SDK and remote callers read the same
+        tracing surface. ``{}`` before the first gated call."""
+        return dict(self._last_response_headers)
 
     def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
         """Newest-first window on the in-process completion log — the
@@ -703,8 +734,117 @@ class Fx1Harness:
             "expires_at": rec.get("expires_at"),
             "created_at": rec["created_at"],
             "tokens_used": int(rec.get("tokens_used") or 0),
+            "rotated_from": rec.get("rotated_from"),
             "key": raw,
         }
+
+    def key_rotate(
+        self,
+        key_id: str,
+        *,
+        revoke_old: bool = True,
+        name: str | None = None,
+        ttl_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Atomic rotation — the in-process twin of
+        ``POST /harness/keys/{id}/rotate``: mints a successor under the
+        predecessor's declared policy (name/scopes/admin/rpm/budgets),
+        ``revoke_old`` (default) tombstones the predecessor in the same
+        store transaction, and without ``ttl_s`` the successor inherits
+        the predecessor's absolute expiry — rotation never extends a
+        credential's lifetime. Returns the ``key_rotation`` envelope with
+        the minted ``key`` (raw secret shown once). ``KeyError`` when
+        unknown; ``ValueError`` when the predecessor is already revoked
+        or ``ttl_s`` is invalid."""
+        from fx1.serve.keys import KeyStoreError  # noqa: PLC0415
+
+        try:
+            raw, rec = self._key_store.rotate(key_id, revoke_old=revoke_old, name=name, ttl_s=ttl_s)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return {
+            "object": "key_rotation",
+            "key": {
+                "id": rec["key_id"],
+                "object": "key",
+                "name": rec["name"],
+                "prefix": rec["prefix"],
+                "admin": bool(rec.get("admin")),
+                "scopes": list(rec["scopes"]),
+                "rpm": rec.get("rpm"),
+                "max_requests": rec.get("max_requests"),
+                "max_tokens": rec.get("max_tokens"),
+                "expires_at": rec.get("expires_at"),
+                "created_at": rec["created_at"],
+                "tokens_used": int(rec.get("tokens_used") or 0),
+                "rotated_from": rec.get("rotated_from"),
+                "key": raw,
+            },
+            "rotated_from": key_id,
+            "revoked_previous": revoke_old,
+        }
+
+    def key_update(
+        self,
+        key_id: str,
+        *,
+        name: str | None = _UNSET,
+        rpm: int | None = _UNSET,
+        scopes: list[str] | tuple[str, ...] | None = _UNSET,
+        admin: bool | None = _UNSET,
+        max_requests: int | None = _UNSET,
+        max_tokens: int | None = _UNSET,
+        expires_at: float | None = _UNSET,
+        clear: Iterable[str] = (),
+    ) -> dict[str, Any]:
+        """Mutable policy update on a live key — the in-process twin of
+        ``PATCH /harness/keys/{id}``: an omitted kwarg keeps the
+        declared policy, an explicit ``None`` clears the bound back to
+        unbounded (the wire's JSON-null; ``clear=`` names the same
+        fields), and a concrete value replaces it. ``admin=True``
+        unions the admin scope the mint way; ``admin=False`` never
+        strips a declared scope — ``scopes``/``admin`` take concrete
+        values when given (an explicit ``None`` is a ``ValueError``,
+        like the wire's 422). ``enabled`` and the live counters are
+        not patchable — revocation is permanent. Returns the updated
+        record. ``KeyError`` when unknown; ``ValueError`` when the key
+        is revoked, a constraint is violated, or ``clear`` names a
+        non-nullable field."""
+        from fx1.serve.keys import CLEARABLE_KEY_FIELDS, KeyStoreError  # noqa: PLC0415
+
+        clears = {f for f in clear}
+        patch: dict[str, Any] = {}
+        for fname, value in (
+            ("name", name),
+            ("rpm", rpm),
+            ("max_requests", max_requests),
+            ("max_tokens", max_tokens),
+            ("expires_at", expires_at),
+        ):
+            if value is _UNSET:
+                continue
+            if value is None:
+                clears.add(fname)
+            else:
+                patch[fname] = value
+        for fname, cval in (("scopes", scopes), ("admin", admin)):
+            if cval is _UNSET:
+                continue
+            if cval is None:
+                raise ValueError(f"{fname} must take a concrete value when given")
+            patch[fname] = cval
+        bad = sorted(clears - CLEARABLE_KEY_FIELDS)
+        if bad:
+            raise ValueError(f"cannot clear non-nullable field {bad[0]!r}")
+        try:
+            rec = self._key_store.update(key_id, clear=clears, **patch)
+        except KeyStoreError as exc:
+            if exc.code == "key_not_found":
+                raise KeyError(key_id) from exc
+            raise ValueError(str(exc)) from exc
+        return self._key_wire(rec)
 
     def keys(self) -> list[dict[str, Any]]:
         """Every minted key's fingerprint + metadata — never secrets."""
@@ -787,6 +927,7 @@ class Fx1Harness:
             "created_at": rec["created_at"],
             "expires_at": rec.get("expires_at"),
             "revoked_at": rec.get("revoked_at"),
+            "rotated_from": rec.get("rotated_from"),
             "uses": uses,
             "tokens_used": tokens_used,
             "last_used_at": rec.get("last_used_at"),
@@ -834,6 +975,7 @@ class Fx1Harness:
             "uses": rec["uses"],
             "tokens_used": int(rec.get("tokens_used") or 0),
             "last_used_at": rec["last_used_at"],
+            "rotated_from": rec.get("rotated_from"),
         }
 
     def completion_receipt(self, completion_id: str) -> dict[str, Any]:
@@ -2875,7 +3017,12 @@ class Fx1Harness:
         )
         if body.store is not False:
             self._openai_store.put(
-                envelope,
+                {
+                    **envelope,
+                    # the completion-log link the replay surface returns
+                    # with its events — stripped before any wire read
+                    "_fx1_completion_id": result.completion_id,
+                },
                 items={
                     "input_items": response_input_items_for_store(
                         eff_body.input, rid=str(envelope["id"])
@@ -3014,7 +3161,11 @@ class Fx1Harness:
         )
         if body.store is not False:
             self._openai_store.put(
-                env_s,
+                {
+                    **env_s,
+                    # same completion-log link the replay surface returns
+                    "_fx1_completion_id": result.completion_id,
+                },
                 items={"input_items": response_input_items_for_store(eff_body.input, rid=rid)},
             )
         self._conv_append(conv_cid, body, env_s)
@@ -3305,6 +3456,48 @@ class Fx1Harness:
         env["status"] = "cancelled"
         self._openai_store.put(env)
         return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_response_replay(
+        self,
+        response_id: str,
+        *,
+        starting_after: int | None = None,
+        timeout_s: float = 600.0,
+        poll_s: float = 0.25,
+    ) -> tuple[list[tuple[str, dict[str, Any]]], str | None]:
+        """``GET /v1/responses/{id}?stream=true`` in-process — the stored
+        envelope's replay grammar as ``(event, payload)`` pairs, identical
+        to what the wire serializes into ``event:``/``id:``/``data:``
+        frames. A terminal envelope returns the full recorded sequence;
+        a still-``queued``/``in_progress`` background response emits its
+        prelude then live-follows (polling ``poll_s``) until the terminal
+        frame or the ``timeout_s`` deadline — the same contract the wire
+        generator runs. ``starting_after`` resumes past sequence N (the
+        frame's ``id:`` cursor). Returns ``(events, completion_id)`` — the
+        completion-log link the wire answers via ``X-Fx1-Completion-Id``;
+        a record deleted mid-follow returns the events seen so far
+        (no terminal frame), matching the wire's silent close."""
+        if starting_after is not None and starting_after < 0:
+            raise ValueError(f"starting_after must be >= 0, got {starting_after}")
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        skip = (starting_after + 1) if starting_after is not None else 0
+        deadline = time.monotonic() + timeout_s
+        cursor = 0
+        events: list[tuple[str, dict[str, Any]]] = []
+        while env is not None and env.get("object") == "response":
+            evs = list(openai_response_replay_events(env))
+            events.extend(evs[cursor:])
+            cursor = len(evs)
+            if env.get("status") in OPENAI_RESPONSE_TERMINAL:
+                break
+            if time.monotonic() >= deadline:
+                break
+            time.sleep(poll_s)
+            env = self._openai_store.get(response_id)
+        cid = env.get("_fx1_completion_id") if isinstance(env, dict) else None
+        return events[skip:], (cid if isinstance(cid, str) else None)
 
     def openai_chat_messages(
         self,

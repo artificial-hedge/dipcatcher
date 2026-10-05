@@ -131,6 +131,8 @@ class FTJob(BaseModel, extra="forbid"):
     callback_attempts: int = 0
     callback_error: str | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 class FTJobList(BaseModel, extra="forbid"):
@@ -319,6 +321,8 @@ class FTJobStore:
                 if "ft_job" not in payload:
                     continue
                 job = FTJob.model_validate(payload["ft_job"])
+                # Signing secrets are not journaled; recovered records never re-deliver.
+                job._callback_fired = True
                 key = payload.get("key")
                 fp = payload.get("fp")
                 entry = FTJobEntry(

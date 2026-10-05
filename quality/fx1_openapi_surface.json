@@ -443,6 +443,36 @@
           "200",
           "422"
         ]
+      },
+      "patch": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/keys/{key_id}/rotate": {
+      "post": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
       }
     },
     "/harness/keys/{key_id}/usage": {
@@ -1689,6 +1719,21 @@
             "name": "response_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "starting_after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "stream",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "timeout_s",
+            "in": "query",
+            "required": false
           }
         ],
         "request_body_required": null,
@@ -2128,5 +2173,5 @@
       }
     }
   },
-  "schema_sha256": "c59c6d2ba640b61b29f20b3d098e6626dae61aa330b8daf144ba660f4422ae62"
+  "schema_sha256": "de9e984ff5afde57b7867509599246c3f8bc5df11e43ef8648daedd71dc98c2e"
 }

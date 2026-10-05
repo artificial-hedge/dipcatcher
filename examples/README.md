@@ -9,6 +9,8 @@ Runnable research gallery. Each file is a [jupytext](https://jupytext.readthedoc
 | `03_synthetic_l2_book.py` | SYNTHETIC | Synthetic L2 book, VPIN proxy, queue imbalance, candle/book as-of join |
 | `04_hf_ohlcv_1m.py` | fixture, or network | `hf_ohlcv_1m` on a checked-in fixture. `HF_OHLCV_1M_ALLOW_DOWNLOAD=1` fetches one monthly file for a one-day AAPL window into a temp cache |
 | `05_phase1_evidence.py` | tracked real snapshot | `verify_phase1_index` / `verify_phase1_run` on the sealed Phase-1 evidence index |
+| `fx1_quickstart_sdk.py` | SYNTHETIC (stub backend) | `Fx1Harness` in-process: one gated completion + one seeded `tooluse` eval, ops receipts sealed to disk and re-verified. `docs/FX1_DEPLOY.md` has the operator runbook |
+| `fx1_quickstart_http.py` | SYNTHETIC (stub backend) | `create_app` on loopback + `HarnessClient`: mint a scoped managed key, complete + eval over HTTP, revoke, drain. `docs/FX1_CLIENTS.md` has all four consumption legs |
 
 ```bash
 uv run python examples/01_receipt_round_trip.py
