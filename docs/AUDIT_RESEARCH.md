@@ -112,7 +112,7 @@ no defects found.
 | `catalog/__init__.py` | CLEAN | Split of the audited monolith — re-export shim bank only |
 | `catalog/_helpers.py`, `catalog/predicates.py` | CLEAN | Compatibility re-exports of the pre-split names; no logic |
 | `catalog/batteries.py` | CLEAN | Required-battery key groups (Kupiec/ES/dist-CRPS) + `*_missing_keys` presence checks; fail-closed on absent markers |
-| `catalog/candle.py` | CLEAN | Candle/L2-family honesty verifiers; IC-method allow-list; `*_honesty_errors` uniformly emit errors on non-finite/out-of-range claims |
+| `catalog/candle.py` | CLEAN | Candle/L2 honesty verifiers; IC-method allow-list; `*_honesty_errors` uniformly emit errors on non-finite/out-of-range claims |
 | `catalog/consistency.py` | CLEAN | Cross-family consistency checks (means-vs-IC, counts) skip rather than fabricate on absent evidence |
 | `catalog/constants.py` | CLEAN | Constants only |
 | `catalog/dispatch.py` | CLEAN | `NORTHSET_RECEIPT_HONESTY_HELPERS` fan-out verified — all helpers wired; error strings only, never claims |
