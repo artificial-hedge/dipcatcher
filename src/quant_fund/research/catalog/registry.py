@@ -5980,6 +5980,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "raijin2_qa_studies",
         "susanoo2_qa_studies",
         "tsukuyomi2_qa_studies",
+        # Wave-1817 hindu-myth-7 canon.
+        "durga2_qa_studies",
+        "ganga2_qa_studies",
+        "kali2_qa_studies",
+        "lakshmi2_qa_studies",
+        "parvati2_qa_studies",
+        "saraswati2_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
