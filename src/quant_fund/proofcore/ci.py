@@ -107,15 +107,30 @@ def coverage_gate(
     return failures
 
 
+# Mirrors utils/receipt.py QUARANTINED_SUBDIRS — inlined because the
+# proofcore-standalone contract bars every quant_fund edge from this
+# package, lazy included (test_proofcore_layering LAZY_WHITELIST).
+_QUARANTINED_SUBDIRS = frozenset({"legacy-unsealed"})
+
+
 def receipt_paths(receipts_dir: Path) -> list[Path]:
     """Committed receipt files, sorted for deterministic CI logs.
 
     Recursive (epoch-chain member semantics): a receipt under a
     subdirectory is still evidence; quarantined subdirs are governed by
-    ``quality/legacy_quarantine.json`` instead."""
-    from quant_fund.utils.receipt import verified_corpus_files
-
-    return verified_corpus_files(Path(receipts_dir))
+    ``quality/legacy_quarantine.json`` instead. Same rglob/quarantine
+    semantics as utils/receipt.verified_corpus_files — kept inline per
+    the standalone contract noted above."""
+    root = Path(receipts_dir)
+    return sorted(
+        p
+        for p in root.rglob("*.json")
+        if p.is_file()
+        and not (
+            len(p.relative_to(root).parts) > 1
+            and p.relative_to(root).parts[0] in _QUARANTINED_SUBDIRS
+        )
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +284,14 @@ def _cli_verifier(path: Path) -> bool:
     module's import graph (layering contract, DESIGN.md §1.3).
     """
     proc = subprocess.run(
-        [sys.executable, "-m", "quant_fund.cli.main", "verify-receipt", str(path)],
+        [
+            sys.executable,
+            "-m",
+            "quant_fund.cli.main",
+            "verify-receipt",
+            "--honor-legacy",
+            str(path),
+        ],
         capture_output=True,
         text=True,
     )

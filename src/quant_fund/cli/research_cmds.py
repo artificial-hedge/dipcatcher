@@ -417,6 +417,12 @@ def calibration_eval_cmd(
 @app.command("verify-receipt")
 def verify_receipt_cmd(
     path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
+    honor_legacy: bool = typer.Option(
+        False,
+        "--honor-legacy",
+        help="Exit zero for byte-pinned legacy exemptions "
+        "(research/legacy_unsealed.py); the JSON verdict stays truthful.",
+    ),
 ) -> None:
     """Verify a sealed receipt: structure plus hash consistency.
 
@@ -425,15 +431,32 @@ def verify_receipt_cmd(
     known kinds) dataset/params digests are re-derived. Older v1 receipts get
     a ``receipt_sha256`` seal check (canonical or strict JSON convention);
     ``fleet_eval.v1`` payloads get their writer's contract too. Exits non-zero
-    on any violation — fail-closed.
+    on any violation — fail-closed. ``--honor-legacy`` applies the same
+    shrink-only exemptions ``suite-health --strict`` uses so corpus sweeps
+    (receipts-reverify) keep auditing rather than ignoring pre-contract
+    artifacts.
     """
     import json
 
+    from quant_fund.research.legacy_unsealed import (
+        is_known_contract_legacy,
+        is_known_unsealed,
+    )
     from quant_fund.research.receipt_v2 import verify_receipt_file
 
     result = verify_receipt_file(path)
+    exempt = (
+        honor_legacy
+        and not result["valid"]
+        and (
+            is_known_unsealed(path, result["errors"])
+            or is_known_contract_legacy(path, result["errors"])
+        )
+    )
+    if exempt:
+        result["legacy_exempt"] = True
     typer.echo(json.dumps(result, indent=2))
-    raise typer.Exit(code=0 if result["valid"] else 1)
+    raise typer.Exit(code=0 if result["valid"] or exempt else 1)
 
 
 @app.command("verify-all")
