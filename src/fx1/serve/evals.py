@@ -32,6 +32,7 @@ import threading
 import time
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
+from contextlib import AbstractContextManager
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -43,7 +44,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from fx1.eval.suite import ModelFn
 from fx1.serve.backends import SamplingParams
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 
 __all__ = [
     "EVAL_SUITES",
@@ -275,6 +276,7 @@ class EvalStore:
         self._record_key: dict[str, str] = {}
         self._record_fp: dict[str, str] = {}
         self._journal = journal
+        self._claims = _ClaimLocks(max_entries)
         self.recover_warnings: list[str] = []
         if journal is not None:
             res = journal.replay()
@@ -403,6 +405,12 @@ class EvalStore:
                 if self._journal is not None:
                     self._journal.append(self._record(rec))
             return out
+
+    def claim_lock(self, key: str | None) -> AbstractContextManager[None]:
+        """Per-key mutex spanning submit's get_key+execute+put — same-key
+        concurrent submits single-mint instead of each missing the
+        check-then-put window."""
+        return self._claims.hold(key)
 
     def get_key(self, key: str) -> tuple[str, str] | None:
         with self._lock:

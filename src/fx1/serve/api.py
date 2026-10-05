@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import builtins
 import contextvars
+import copy
 import hashlib
 import hmac
 import inspect
@@ -60,7 +61,7 @@ from contextlib import (
     contextmanager,
 )
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 from fastapi import (
     Depends,
@@ -160,7 +161,7 @@ from fx1.serve.finetune import (
     default_ft_runner,
     validate_chat_jsonl,
 )
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 from fx1.serve.keys import SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
@@ -1932,6 +1933,29 @@ def _idem_lookup[IdemT: BaseModel](
     return key, cached.model_copy(update={"replayed": True})
 
 
+class _ClaimableStore(Protocol):
+    """Idempotency stores with a cooperative request-claim context."""
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]: ...
+
+
+def _idem_guard(store: _ClaimableStore) -> Callable[..., AsyncIterator[None]]:
+    """Hold a claim across the handler without blocking threadpool dispatch.
+
+    Same-key retries wait cooperatively before work admission. The
+    holder can always obtain a worker thread to execute and release its
+    claim, even when retries exceed the request threadpool's capacity.
+    """
+
+    async def _guard(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        async with store.async_claim_lock(_idem_key(idempotency_key)):
+            yield
+
+    return _guard
+
+
 _RESUME_MISS_MSG = (
     "Last-Event-ID resume needs a pinned stream under this Idempotency-Key — nothing stored"
 )
@@ -2086,6 +2110,10 @@ def _submit_job(
             metrics.release()
             inflight.release()
 
+        # freeze the emitted record before dispatch: ``_exec`` mutates
+        # ``job`` in place, so a response built after submit could leak
+        # post-submit status (a torn submit view).
+        submitted = JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
         try:
             jobs_executor.submit(_exec)
         except RuntimeError as exc:  # executor gone (shutdown race)
@@ -2093,7 +2121,7 @@ def _submit_job(
             inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
         job_store.put(job, key, body_fp)
-        return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
+        return submitted
 
 
 def _make_lifespan(
@@ -2459,47 +2487,6 @@ def _mount_job_routes(
         )
 
 
-class _ClaimLocks:
-    """Bounded map of per-key mutexes — the single-execution primitive
-    for ``Idempotency-Key`` check+insert.
-
-    A route holds its key's lock across the store lookup, the work, and
-    the ``put``: same-key racers serialize behind the leader, and the
-    second comer replays the stored answer instead of double-executing
-    (the check-then-put window is the defect this closes). Entries are
-    bounded like the store itself — the oldest *unheld* lock evicts
-    first, so a lock is never stolen mid-flight; if every lock is held
-    the map overshoots the bound rather than break dedup."""
-
-    def __init__(self, bound: int) -> None:
-        self._guard = threading.Lock()
-        self._locks: OrderedDict[str, threading.Lock] = OrderedDict()
-        self._bound = bound
-
-    @contextmanager
-    def hold(self, key: str | None) -> Iterator[None]:
-        """Hold ``key``'s mutex for the lookup+execute+put span.
-
-        ``None`` (no idempotency key) is a no-op hold — unsynchronized
-        calls keep their plain path."""
-        if key is None:
-            yield
-            return
-        with self._guard:
-            lock = self._locks.get(key)
-            if lock is None:
-                lock = threading.Lock()
-                self._locks[key] = lock
-            self._locks.move_to_end(key)
-            while len(self._locks) > self._bound:
-                stale = next((k for k, held in self._locks.items() if not held.locked()), None)
-                if stale is None:
-                    break
-                del self._locks[stale]
-        with lock:
-            yield
-
-
 class _IdemStore[IdemT: BaseModel]:
     """Bounded LRU of ``Idempotency-Key`` -> stored response.
 
@@ -2564,6 +2551,10 @@ class _IdemStore[IdemT: BaseModel]:
         +put — makes the check-and-insert atomic so concurrent same-key
         submits single-execute instead of each missing the cache."""
         return self._claims.hold(key)
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        """Claim an idempotency key without consuming a request worker."""
+        return self._claims.ahold(key)
 
     def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
@@ -3697,98 +3688,106 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if key is not None and len(key) > _IDEM_KEY_MAX:
             raise ApiError(400, "Idempotency-Key must be <= 256 chars")
         body_fp = _body_fp(body)
-        if key is not None:
-            entry = eval_store.get_key(key)
-            if entry is not None:
-                fp, eval_id = entry
-                if fp != body_fp:
-                    raise ApiError(
-                        409,
-                        "Idempotency-Key reuse with a different request body",
-                    )
-                rec = eval_store.get(eval_id)
-                if rec is not None:
-                    return EvalSubmitResponse(eval_id=eval_id, status=rec.status, replayed=True)
-        if metrics.draining.is_set():
-            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
-        if not inflight.acquire(blocking=False):
-            raise ApiError(
-                503,
-                f"harness at max_inflight={metrics.max_inflight} — retry later",
-                code="over_capacity",
-                headers={"Retry-After": "1"},
-            )
-        metrics.acquire()
-        record = EvalRecord(
-            eval_id=uuid.uuid4().hex,
-            suite=body.suite,
-            backend=body.backend,
-            seed=body.seed,
-            status="queued",
-            created_at=time.time(),
-            sampling=EVAL_SAMPLING.body_fields(),
-            callback_url=body.callback_url,
-        )
-        record._callback_secret = body.callback_secret
-
-        def _exec() -> None:
-            if record.status == "cancelled":
-                metrics.release()
-                inflight.release()
-                return
-            record.status = "running"
-            eval_store.mark(record)
-            try:
-                name, backend, attempts = _resolve_chain(body)
-                record.backend = name
-                record.attempts = [a.model_dump(mode="json") for a in attempts]
-                model = metered_model(
-                    backend,
-                    metric_key=f"eval:{body.suite}:{name}",
-                    record=metrics.record_complete,
+        # the claim spans lookup+submit+put: a same-key racer serializes
+        # behind the leader and replays its stored submission
+        with eval_store.claim_lock(key):
+            if key is not None:
+                entry = eval_store.get_key(key)
+                if entry is not None:
+                    fp, eval_id = entry
+                    if fp != body_fp:
+                        raise ApiError(
+                            409,
+                            "Idempotency-Key reuse with a different request body",
+                        )
+                    rec = eval_store.get(eval_id)
+                    if rec is not None:
+                        return EvalSubmitResponse(eval_id=eval_id, status=rec.status, replayed=True)
+            if metrics.draining.is_set():
+                raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+            if not inflight.acquire(blocking=False):
+                raise ApiError(
+                    503,
+                    f"harness at max_inflight={metrics.max_inflight} — retry later",
+                    code="over_capacity",
+                    headers={"Retry-After": "1"},
                 )
-                judge = None
-                if body.judge_backend is not None:
-                    judge_key = _breaker_key_name(body.judge_backend, body.judge_byok)
-                    _breaker_admit(judge_key)
-                    judge_obj = resolve_backend(
-                        body.judge_backend,
-                        None,
-                        (
-                            body.judge_byok.model_dump()
-                            if body.judge_backend == "byok" and body.judge_byok is not None
-                            else None
-                        ),
-                        body.timeout_s,
-                    )
-                    judge = metered_model(
-                        judge_obj,
-                        metric_key=f"eval:{body.suite}:judge:{body.judge_backend}",
+            metrics.acquire()
+            record = EvalRecord(
+                eval_id=uuid.uuid4().hex,
+                suite=body.suite,
+                backend=body.backend,
+                seed=body.seed,
+                status="queued",
+                created_at=time.time(),
+                sampling=EVAL_SAMPLING.body_fields(),
+                callback_url=body.callback_url,
+            )
+            record._callback_secret = body.callback_secret
+
+            def _exec() -> None:
+                if record.status == "cancelled":
+                    metrics.release()
+                    inflight.release()
+                    return
+                record.status = "running"
+                eval_store.mark(record)
+                try:
+                    name, backend, attempts = _resolve_chain(body)
+                    record.backend = name
+                    record.attempts = [a.model_dump(mode="json") for a in attempts]
+                    model = metered_model(
+                        backend,
+                        metric_key=f"eval:{body.suite}:{name}",
                         record=metrics.record_complete,
                     )
-                run_eval_record(record, model=model, judge=judge)
-            except ApiError as exc:
-                record.error = f"{exc.status_code}: {exc.detail}"
-                record.status = "failed"
-                record.finished_at = time.time()
-            except Exception as exc:  # noqa: BLE001 — worker faults land in the record
-                record.error = f"{type(exc).__name__}: {exc}"
-                record.status = "failed"
-                record.finished_at = time.time()
-            finally:
-                _deliver_callback(record)
-                eval_store.mark(record)
-            metrics.release()
-            inflight.release()
+                    judge = None
+                    if body.judge_backend is not None:
+                        judge_key = _breaker_key_name(body.judge_backend, body.judge_byok)
+                        _breaker_admit(judge_key)
+                        judge_obj = resolve_backend(
+                            body.judge_backend,
+                            None,
+                            (
+                                body.judge_byok.model_dump()
+                                if body.judge_backend == "byok" and body.judge_byok is not None
+                                else None
+                            ),
+                            body.timeout_s,
+                        )
+                        judge = metered_model(
+                            judge_obj,
+                            metric_key=f"eval:{body.suite}:judge:{body.judge_backend}",
+                            record=metrics.record_complete,
+                        )
+                    run_eval_record(record, model=model, judge=judge)
+                except ApiError as exc:
+                    record.error = f"{exc.status_code}: {exc.detail}"
+                    record.status = "failed"
+                    record.finished_at = time.time()
+                except Exception as exc:  # noqa: BLE001 — worker faults land in the record
+                    record.error = f"{type(exc).__name__}: {exc}"
+                    record.status = "failed"
+                    record.finished_at = time.time()
+                finally:
+                    _deliver_callback(record)
+                    eval_store.mark(record)
+                metrics.release()
+                inflight.release()
 
-        try:
-            jobs_executor.submit(_exec)
-        except RuntimeError as exc:  # executor gone (shutdown race)
-            metrics.release()
-            inflight.release()
-            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        eval_store.put(record, key, body_fp)
-        return EvalSubmitResponse(eval_id=record.eval_id, status=record.status, replayed=False)
+            # freeze the emitted record before dispatch — ``_exec``
+            # mutates ``record`` in place (same torn-submit hazard).
+            submitted = EvalSubmitResponse(
+                eval_id=record.eval_id, status=record.status, replayed=False
+            )
+            try:
+                jobs_executor.submit(_exec)
+            except RuntimeError as exc:  # executor gone (shutdown race)
+                metrics.release()
+                inflight.release()
+                raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+            eval_store.put(record, key, body_fp)
+            return submitted
 
     @app.post(
         "/harness/evals",
@@ -4159,6 +4158,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def complete(
         body: CompleteRequest,
         response: Response,
+        _idem_held: None = Depends(_idem_guard(complete_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteResponse:
@@ -4893,33 +4893,35 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             incomplete_details=inc_details,
         )
         if body.store is not False:
-            envelope_store.put(
+            # a bg run's envelope id already holds a record (queued ->
+            # in_progress); a cancelled verdict is sticky — the worker's
+            # late result must never overwrite it.
+            stored = envelope_store.put_unless_status(
                 envelope,
+                forbidden=OPENAI_RESPONSE_TERMINAL,
+                require_existing=rid is not None,
                 items={
                     "input_items": response_input_items_for_store(
                         eff_body.input, rid=str(envelope["id"])
                     )
                 },
             )
+            if rid is not None and not stored:
+                # A cancelled/deleted background result stays in the
+                # completion log but must not alter its conversation.
+                return envelope, cid, out.usage
         if conv_cid is not None:
             # the conv accumulates each turn's own items (request input +
             # response output) — the conv IS the store, so this happens
             # even under ``store=false`` on the response itself
-            conv = conv_store.get(conv_cid)
-            if conv is not None:
-                appended = [
-                    *response_input_items_for_store(body.input, rid=str(envelope["id"])),
-                    *[it for it in envelope["output"] if isinstance(it, dict)],
-                ]
-                conv_store.put(
-                    conv,
-                    items={
-                        "items": [
-                            *(conv_store.get_items(conv_cid, "items") or []),
-                            *appended,
-                        ]
-                    },
-                )
+            appended = [
+                *response_input_items_for_store(body.input, rid=str(envelope["id"])),
+                *[it for it in envelope["output"] if isinstance(it, dict)],
+            ]
+            # mutate_items runs the append under the store lock — two
+            # responses ending into one conv must not lose each other's
+            # items (read+put outside the lock would clobber)
+            conv_store.mutate_items(conv_cid, "items", lambda items: [*items, *appended])
         return envelope, cid, out.usage
 
     def _openai_embeddings_core(
@@ -5193,6 +5195,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_chat_completions(
         body: OpenAIChatRequest,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(openai_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -5291,6 +5294,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def anthropic_messages(
         body: AnthropicMessagesRequest,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(anthropic_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -5546,6 +5550,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def anthropic_batches_create(
         body: AnthropicBatchCreate,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(anthropic_idem_store)),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit an Anthropic message batch — ``requests`` ride inline
@@ -5594,6 +5599,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        # project before dispatch: ``_exec_abatch`` mutates ``batch`` in
+        # place, so a projection built after submit could leak
+        # post-submit state (a torn submit view).
+        env = _abatch_project(batch)
         try:
             jobs_executor.submit(_exec_abatch, batch)
         except RuntimeError as exc:
@@ -5601,7 +5610,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
         abatch_store.put(batch)
-        env = _abatch_project(batch)
         if key is not None:
             anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
         return JSONResponse(env)
@@ -5787,6 +5795,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_completions(
         body: OpenAICompletionRequest,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(legacy_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -5864,6 +5873,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_responses(
         body: OpenAIResponseRequest,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(openai_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -6057,10 +6067,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 try:
                     if cancel_ev.is_set():
                         return
-                    cur = envelope_store.get(rid)
-                    if cur is not None and cur.get("status") == "queued":
-                        cur["status"] = "in_progress"
-                        envelope_store.put(cur)
+                    # CAS, not get+put: a queued record claims in_progress
+                    # exactly once — and never over a cancel that landed
+                    # while the worker was queued.
+                    if not envelope_store.transition_status(
+                        rid, expect={"queued"}, status="in_progress"
+                    ):
+                        return
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
@@ -6095,12 +6108,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 "code": "internal_error",
                             },
                         )
-                    else:
-                        if cancel_ev.is_set():
-                            done = envelope_store.get(rid)
-                            if done is not None:
-                                done["status"] = "cancelled"
-                                envelope_store.put(done)
                 finally:
                     inflight.release()
                     bg_cancel.pop(rid, None)
@@ -6113,7 +6120,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     return
                 cur["status"] = "failed"
                 cur["error"] = error
-                envelope_store.put(cur)
+                # a terminal record (a cancel racing the failure, or the
+                # delete route dropping it) is never overwritten
+                envelope_store.put_unless_status(
+                    cur, forbidden=OPENAI_RESPONSE_TERMINAL, require_existing=True
+                )
 
             if key is not None:
                 openai_idem_store.put(
@@ -6127,13 +6138,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         }
                     ),
                 )
+            # render the submit body before dispatch: ``queued`` IS the
+            # stored record — the worker's in-place status flip would
+            # otherwise leak into the emitted JSON (a torn submit view).
+            submitted = JSONResponse(queued, status_code=200)
             try:
                 jobs_executor.submit(_bg_run)
             except RuntimeError as exc:  # executor gone (shutdown race)
                 envelope_store.delete(rid)
                 bg_cancel.pop(rid, None)
                 raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-            return JSONResponse(queued, status_code=200)
+            return submitted
         try:
             envelope, cid, usage = _openai_response_core(body, request.headers)
         except OpenAICompatError as exc:
@@ -6309,11 +6324,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "in_progress responses cancel",
                 code="cancel_terminal",
             )
+        # Commit the verdict before signalling the worker. A worker
+        # that has already completed wins; its terminal status cannot
+        # be changed by a cancellation request that lost this race.
+        if not envelope_store.transition_status(
+            response_id, expect={"queued", "in_progress"}, status="cancelled"
+        ):
+            current = _stored_envelope(response_id, object_="response")
+            raise ApiError(
+                409,
+                f"{response_id!r} is already {current['status']} — only queued or "
+                "in_progress responses cancel",
+                code="cancel_terminal",
+            )
         ev = bg_cancel.get(response_id)
         if ev is not None:
             ev.set()
         env["status"] = "cancelled"
-        envelope_store.put(env)
         return env
 
     # --- /v1/conversations ---------------------------------------------------
@@ -6427,10 +6454,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Append items to a conversation — returns the minted items as a
         list object. ``item_ids`` (alias-by-reference) is refused: items
         are minted per append, never aliased."""
-        conv = _stored_conversation(conversation_id)
+        _stored_conversation(conversation_id)
         minted = response_input_items_for_store(body.items or [], rid=conversation_id)
-        merged = [*(conv_store.get_items(conversation_id, "items") or []), *minted]
-        conv_store.put(conv, items={"items": merged})
+        # the merge runs under the store lock: parallel appends to one
+        # conversation must serialize (read+put outside the lock lost
+        # one racer's items)
+        if (
+            conv_store.mutate_items(conversation_id, "items", lambda items: [*items, *minted])
+            is None
+        ):
+            raise ApiError(404, f"conversation {conversation_id!r} not found", code="not_found")
         return {
             "object": "list",
             "data": minted,
@@ -6466,13 +6499,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Delete one item from a conversation — the conv object returns;
         a missing item id is a 404."""
         conv = _stored_conversation(conversation_id)
-        items = conv_store.get_items(conversation_id, "items") or []
-        kept = [it for it in items if it.get("id") != item_id]
-        if len(kept) == len(items):
-            raise ApiError(
-                404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
-            )
-        conv_store.put(conv, items={"items": kept})
+
+        def _drop(items: list[dict[str, Any]]) -> Sequence[dict[str, Any]]:
+            kept = [it for it in items if it.get("id") != item_id]
+            if len(kept) == len(items):
+                raise ApiError(
+                    404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
+                )
+            return kept
+
+        # delete+append can race — the filter must run inside the
+        # store's lock, against the list it writes
+        if conv_store.mutate_items(conversation_id, "items", _drop) is None:
+            raise ApiError(404, f"conversation {conversation_id!r} not found", code="not_found")
         return conv
 
     # --- /v1/vector_stores ---------------------------------------------------
@@ -7292,6 +7331,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_batches_create(
         body: OpenAIBatchRequest,
         request: Request,
+        _idem_held: None = Depends(_idem_guard(openai_idem_store)),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit a batch over an uploaded input file. One worker slot
@@ -7369,6 +7409,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        # project before dispatch — ``_exec_batch`` mutates ``batch`` in
+        # place (same torn-submit hazard).
+        env = _batch_project(batch)
         try:
             jobs_executor.submit(_exec_batch, batch)
         except RuntimeError as exc:
@@ -7376,7 +7419,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
         batch_store.put(batch)
-        env = _batch_project(batch)
         if key is not None:
             openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
         return JSONResponse(env)
@@ -7452,6 +7494,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     )
     def complete_batch(
         body: CompleteBatchRequest,
+        _idem_held: None = Depends(_idem_guard(complete_batch_idem_store)),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteBatchResponse:
@@ -7924,6 +7967,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     @app.post("/v1/fine_tuning/jobs", tags=["openai"], operation_id="create_finetune_job")
     def create_finetune_job(
         body: FTJobRequest,
+        _idem_held: None = Depends(_idem_guard(ft_store)),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> FTJob:
         """Queue a gated fine-tuning run against an uploaded chat-format
@@ -8050,13 +8094,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             f"training file validated: {n_examples} examples",
             {"training_file": body.training_file, "examples": n_examples},
         )
+        # freeze the emitted record before dispatch: ``_ft_worker``
+        # mutates ``entry.job`` in place and the response model
+        # serializes after return — a torn submit view otherwise leaks.
+        submitted = copy.deepcopy(job)
         try:
             jobs_executor.submit(_ft_worker, entry, spec)
         except RuntimeError as exc:  # executor gone (shutdown race)
             metrics.release()
             inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        return job
+        return submitted
 
     @app.get(
         "/v1/fine_tuning/jobs",

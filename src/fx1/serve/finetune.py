@@ -35,13 +35,14 @@ import time
 import uuid
 from collections import OrderedDict
 from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 from fx1.serve.backends import InferenceBackend
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 from fx1.serve.webhooks import check_callback_url
 
 TRAINABLE_MODELS = ("fx1", "local_fx1")
@@ -287,6 +288,7 @@ class FTJobStore:
     def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max(1, max_entries)
+        self._claims = _ClaimLocks(self._max)
         self._entries: OrderedDict[str, FTJobEntry] = OrderedDict()
         self._keys: dict[str, str] = {}
         # fine-tuned model registry: ft:<model>:<suffix>:<job12> -> ref
@@ -378,6 +380,16 @@ class FTJobStore:
         if self._journal is not None:
             with self._lock:
                 self._journal.append(self._record(entry))
+
+    def claim_lock(self, key: str | None) -> AbstractContextManager[None]:
+        """Per-key mutex spanning submit's lookup_idem+execute+put —
+        same-key concurrent submits single-mint instead of each missing
+        the check-then-put window."""
+        return self._claims.hold(key)
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        """Claim an idempotency key without consuming a request worker."""
+        return self._claims.ahold(key)
 
     def put(self, job: FTJob, idem_key: str | None, body_fp: str) -> FTJobEntry:
         entry = FTJobEntry(job, idem_key, body_fp)

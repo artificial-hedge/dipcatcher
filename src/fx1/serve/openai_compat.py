@@ -2783,6 +2783,81 @@ class OpenAIEnvelopeStore:
             env["metadata"] = dict(metadata)
             return dict(env)
 
+    def mutate_items(
+        self,
+        envelope_id: str,
+        key: str,
+        fn: Callable[[list[dict[str, Any]]], Sequence[dict[str, Any]]],
+    ) -> list[dict[str, Any]] | None:
+        """Read-modify-write on a stored item list, under the store lock.
+
+        ``get_items`` → merge → ``put`` outside the lock loses one of two
+        parallel appends (both read the same prefix, the later put
+        clobbers the earlier): the merge must happen where the write is
+        serialized. ``fn`` takes the current list and returns the new
+        one; returns the stored result, ``None`` when the id is gone."""
+        with self._lock:
+            if envelope_id not in self._items:
+                return None
+            bucket = self._subitems.setdefault(envelope_id, {})
+            merged = [dict(it) for it in fn([dict(it) for it in bucket.get(key, [])])]
+            bucket[key] = merged
+            return merged
+
+    def transition_status(
+        self,
+        envelope_id: str,
+        *,
+        expect: Iterable[str],
+        status: str,
+    ) -> bool:
+        """Compare-and-set on the stored envelope's status — the bg
+        worker's ``queued → in_progress`` claim lands only while no
+        terminal verdict has. A status the poller has already seen can
+        never regress: the write is refused when the stored status is
+        not in ``expect``."""
+        allowed = frozenset(expect)
+        with self._lock:
+            cur = self._items.get(envelope_id)
+            if cur is None or cur.get("status") not in allowed:
+                return False
+            cur["status"] = status
+            return True
+
+    def put_unless_status(
+        self,
+        envelope: dict[str, Any],
+        *,
+        forbidden: Iterable[str],
+        require_existing: bool = False,
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+    ) -> bool:
+        """``put`` guarded on the *stored* envelope's status: refuses
+        when a record under the id already carries a status in
+        ``forbidden``. A terminal verdict (``cancelled``) is sticky — a
+        worker's late result never overwrites it. Returns whether the
+        put landed. ``require_existing`` protects background updates
+        from recreating an envelope that was deleted or evicted."""
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        blocked = frozenset(forbidden)
+        with self._lock:
+            cur = self._items.get(eid)
+            if cur is None and require_existing:
+                return False
+            if cur is not None and cur.get("status") in blocked:
+                return False
+            self._items.pop(eid, None)
+            self._items[eid] = envelope
+            if items is not None:
+                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+            return True
+
     def __len__(self) -> int:
         with self._lock:
             return len(self._items)
