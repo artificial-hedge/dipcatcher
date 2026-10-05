@@ -152,5 +152,7 @@ jobs:
           # holds inside every invocation.
           chunk=200
           for ((i = 0; i < ${#files[@]}; i += chunk)); do
-            uv run pytest -q -m "not network" "${files[@]:i:chunk}"
+            # --frozen/--no-build: env is already synced by setup-uv; don't
+            # relock or build sdists inside the shard step (sonar S8541/S8544).
+            uv run --frozen --no-build pytest -q -m "not network" "${files[@]:i:chunk}"
           done
