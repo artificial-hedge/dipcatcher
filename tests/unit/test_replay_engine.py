@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from tests.unit.proof_fake_vault import synthetic_signal_log, synthetic_trade_log
 
 from quant_fund.proof import replay
 from quant_fund.proof.bundle import METRIC_KEYS, canonical_json_bytes
@@ -41,7 +42,6 @@ from quant_fund.proofcore.contracts import (
     sha256_hex_json,
     trace_row_hash,
 )
-from tests.unit.proof_fake_vault import synthetic_signal_log, synthetic_trade_log
 
 T0 = datetime(2024, 1, 1, tzinfo=UTC)
 

@@ -10,6 +10,7 @@
     "evalue_product_merge_diagnostic_only",
     "tagged_claim_provenance"
   ],
+  "generated_at_commit": "dbf7d35edafdbef91df069905a927544f7f85905",
   "inputs_sha256": "ac239a9b24c169e324c9cf2dcb16b6eda07166eda82214d35d6fc70ab100bf0b",
   "kind": "corpus_inference.v1",
   "live_pnl_claim": false,
@@ -17,7 +18,6 @@
   "n_p_findings": 85,
   "n_parse_errors": 0,
   "n_receipts": 71,
-  "n_retracted": 0,
   "n_survivors": 24,
   "params": {
     "glob": "*.json",
@@ -99,9 +99,8 @@
     "q": 0.05
   },
   "parse_errors": [],
-  "receipt_sha256": "507d476c0fe536ff15729bbc3ca2481cfe773c85cfe9eb3f92bb58a19103efa9",
+  "receipt_sha256": "2ee42848a1d51937ffa9aeec9b9d16a3cbb2aba1eafbd6330dc0448878295641",
   "research_only": true,
-  "retracted": {},
   "schema": "corpus_inference.v1",
   "surviving_claims": [
     {

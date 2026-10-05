@@ -651,15 +651,8 @@ def check_chain(
         }
         if declared_added != set(cur_members) - set(prev_members):
             errors.append(f"members_added_dishonest:{cur_name!a}")
-        # Mutated members: same name, different digest. A mutation whose
-        # outgoing digest is pinned in ``allowed_removals`` is an
-        # acknowledged rewrite — same rule as corpus_epoch.check_epoch_chain.
         for kept in set(prev_members) & set(cur_members):
-            if (
-                prev_members[kept] != cur_members[kept]
-                and not allow_member_updates
-                and allowed.get(kept) != prev_members[kept]
-            ):
+            if prev_members[kept] != cur_members[kept] and not allow_member_updates:
                 errors.append(f"member_mutated:{kept!a}@{cur_name!a}")
 
     heads = set(by_name) - set(child_of)

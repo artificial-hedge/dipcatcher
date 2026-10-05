@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/corpus_real_drill.py",
-  "receipt_sha256": "507d476c0fe536ff15729bbc3ca2481cfe773c85cfe9eb3f92bb58a19103efa9",
+  "receipt_sha256": "0318c81d28c53ce333c2c97f35eac3c9cf0323d370cbc99d7450a70767f786a2",
   "replay": {
     "argv": [
       "scripts/corpus_real_drill.py",
@@ -17,7 +17,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/corpus_real_drill.json",
-        "sha256": "6d39dd0a04228d7871ba4465517b4b56d0fab764d31254b1884d33d50d7f4aed"
+        "sha256": "c05393795df5af2153068456ff5d3665c75a496f7f50cdd9b114a584748cc3f6"
       }
     ],
     "input_tapes": [
@@ -315,7 +315,7 @@
     {
       "claim_diff_keys": [],
       "claims_equal": true,
-      "committed_sha256": "6d39dd0a04228d7871ba4465517b4b56d0fab764d31254b1884d33d50d7f4aed",
+      "committed_sha256": "25230923d07164342facbe10ec0520975ee04c0ef690b3661f5daaf9d69f250e",
       "receipt": "receipts/corpus_real_drill.json"
     }
   ],

@@ -1985,7 +1985,7 @@ def _responses_replay_frames(
             yield _frame(event, payload, i)
         if env.get("status") in OPENAI_RESPONSE_TERMINAL:
             return
-        cursor = len(events)
+        cursor = max(cursor, len(events))
         now = time.monotonic()
         if now >= deadline:
             return
