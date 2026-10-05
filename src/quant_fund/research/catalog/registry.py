@@ -6813,6 +6813,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "muki_qa_studies",
         "pishtaco_qa_studies",
         "sirenito_qa_studies",
+        # Wave-1936 guarani-demon canon.
+        "aoao_qa_studies",
+        "jasy_jatere_qa_studies",
+        "kurupi_qa_studies",
+        "luison_qa_studies",
+        "mboitui_qa_studies",
+        "pombero_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
