@@ -14655,6 +14655,14 @@ from quant_fund.research.benches_w1832 import (
     bench_tanit2_qa_studies_family,
     bench_yam2_qa_studies_family,
 )
+from quant_fund.research.benches_w1833 import (
+    bench_anahit2_qa_studies_family,
+    bench_aramazd2_qa_studies_family,
+    bench_astghik2_qa_studies_family,
+    bench_mher2_qa_studies_family,
+    bench_tir2_qa_studies_family,
+    bench_vahagn2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
