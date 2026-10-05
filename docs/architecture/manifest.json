@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 967,
+  "module_count": 1246,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -13,6 +13,22 @@
     {
       "dst": "fx1.bench.dip",
       "src": "fx1.bench.run"
+    },
+    {
+      "dst": "fx1.data.sources.registry",
+      "src": "fx1.capabilities"
+    },
+    {
+      "dst": "fx1.extensions.feature_catalog",
+      "src": "fx1.capabilities"
+    },
+    {
+      "dst": "fx1.extensions.naming",
+      "src": "fx1.capabilities"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.capabilities"
     },
     {
       "dst": "fx1",
@@ -471,6 +487,742 @@
       "src": "fx1.eval.ts_reasoning"
     },
     {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions"
+    },
+    {
+      "dst": "fx1.extensions.registry",
+      "src": "fx1.extensions"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.contracts"
+    },
+    {
+      "dst": "fx1.data.sources",
+      "src": "fx1.extensions.contracts"
+    },
+    {
+      "dst": "fx1.extensions.feature_catalog",
+      "src": "fx1.extensions.contracts"
+    },
+    {
+      "dst": "fx1.extensions.naming",
+      "src": "fx1.extensions.contracts"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.extensions.contracts"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.adv"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.adv"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.adv_ratio_20_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.adv_ratio_20_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.amihud"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.amihud"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.amihud_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.amihud_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.beta_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.beta_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.cs_z_planted_signal"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.cs_z_planted_signal"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.cs_z_ret_1"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.cs_z_ret_1"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.dollar_volume"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.dollar_volume"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.downside_vol_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.downside_vol_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.high_52w_prox"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.high_52w_prox"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.idio_mom_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.idio_mom_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.idio_vol_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.idio_vol_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.kurt_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.kurt_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.log_price"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.log_price"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.log_ret_1"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.log_ret_1"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.max_ret_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.max_ret_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.min_ret_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.min_ret_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_126"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_126"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_12_1"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_12_1"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_252"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_252"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_5"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_5"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.mom_skip_5_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.mom_skip_5_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.planted_signal"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.planted_signal"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.rel_volume"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.rel_volume"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_1"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_1"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_5"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_5"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_intraday_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_intraday_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_open_close"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_open_close"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_overnight"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_overnight"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.ret_overnight_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.ret_overnight_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.reversal_1"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.reversal_1"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.skew_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.skew_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.turnover_proxy"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.turnover_proxy"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_ewma"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_ewma"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_garman_klass"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_garman_klass"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_of_vol"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_of_vol"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_parkinson"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_parkinson"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.vol_ratio_20_60"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.vol_ratio_20_60"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.volume_vol"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.volume_vol"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.features.z_vs_ma20"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.features.z_vs_ma20"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.binance_crypto"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.binance_crypto"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.caixin"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.caixin"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.cls"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.cls"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.dongcai"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.dongcai"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.finance_fetch"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.finance_fetch"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.finance_research"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.finance_research"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.finenter"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.finenter"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.gildata"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.gildata"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.ifind"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.ifind"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.igo_open_data"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.igo_open_data"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.imf"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.imf"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.sec_edgar"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.sec_edgar"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.sp_data"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.sp_data"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.tianyancha"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.tianyancha"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.wind"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.wind"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.world_bank"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.world_bank"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.xhcj"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.xhcj"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.plugins.yahoo_finance"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.plugins.yahoo_finance"
+    },
+    {
+      "dst": "fx1.data.sources.registry",
+      "src": "fx1.extensions.registry"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.registry"
+    },
+    {
+      "dst": "fx1.extensions.feature_catalog",
+      "src": "fx1.extensions.registry"
+    },
+    {
+      "dst": "fx1.extensions.naming",
+      "src": "fx1.extensions.registry"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.extensions.registry"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.backtest"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.backtest"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.book_panel"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.book_panel"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.build_features"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.build_features"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.build_labels"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.build_labels"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.candle_book"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.candle_book"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.collect"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.collect"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.doctor"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.doctor"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.forecast"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.forecast"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.ingest"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.ingest"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.kronos_forecast"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.kronos_forecast"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.kyle_ofi"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.kyle_ofi"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.monitor"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.monitor"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.northset"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.northset"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.optimize"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.optimize"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.paper"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.paper"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.report"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.report"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.research"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.research"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.session_book"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.session_book"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.tearsheet"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.tearsheet"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.train"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.train"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.validate"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.validate"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.vendor_book_map"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.vendor_book_map"
+    },
+    {
+      "dst": "fx1.capabilities",
+      "src": "fx1.extensions.skills.verify_research"
+    },
+    {
+      "dst": "fx1.extensions.contracts",
+      "src": "fx1.extensions.skills.verify_research"
+    },
+    {
       "dst": "fx1.forecast.artifacts",
       "src": "fx1.forecast"
     },
@@ -627,12 +1379,860 @@
       "src": "fx1.forecast.signals"
     },
     {
+      "dst": "fx1.capabilities",
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "fx1.extensions.naming",
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "fx1.extensions.registry",
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "fx1.operations.registry",
+      "src": "fx1.harness"
+    },
+    {
       "dst": "fx1.honesty",
       "src": "fx1.hypotheses"
     },
     {
+      "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.app",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.shell",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive.wizard",
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.doctor",
+      "src": "fx1.interactive.actions"
+    },
+    {
+      "dst": "fx1.harness",
+      "src": "fx1.interactive.actions"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.actions"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.actions"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.actions"
+    },
+    {
+      "dst": "fx1",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.shell",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.interactive.wizard",
+      "src": "fx1.interactive.app"
+    },
+    {
+      "dst": "fx1.serve.backends",
+      "src": "fx1.interactive.profiles"
+    },
+    {
+      "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.shell"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.shell"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.shell"
+    },
+    {
+      "dst": "fx1.interactive.actions",
+      "src": "fx1.interactive.wizard"
+    },
+    {
+      "dst": "fx1.interactive.orb",
+      "src": "fx1.interactive.wizard"
+    },
+    {
+      "dst": "fx1.interactive.profiles",
+      "src": "fx1.interactive.wizard"
+    },
+    {
+      "dst": "fx1.interactive.shell",
+      "src": "fx1.interactive.wizard"
+    },
+    {
       "dst": "fx1.modelcard",
       "src": "fx1.mrm"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.align_event_sequences"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.assign_horizon_targets"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_artifact_assembly"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_bar_integrity"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_cross_field_contracts"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_dependency_releases"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_duplicate_keys"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_effective_intervals"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_feature_provenance"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_forecast_panel"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_join_fanout"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_lineage_graph"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_missingness"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_missingness_association"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_monotonic_sequences"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_nested_folds"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_observation_windows"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_panel_gaps"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_partition_ranges"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_point_in_time"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_price_basis"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_referential_integrity"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_release_revisions"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_resampling_groups"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_resource_reservations"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_revision_conflicts"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_schema_compatibility"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_schema_drift"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_session_coverage"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_snapshot_manifests"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_source_chains"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_source_coverage"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_source_migrations"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_split_leakage"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_stream_offsets"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_task_leases"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_temporal_constraints"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_temporal_resamples"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_transaction_batches"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_unit_conversions"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.audit_vintage_transitions"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.bipower_variation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_availability_frontier"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_block_resamples"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_conformal_intervals"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_group_stratified_folds"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_stationary_resamples"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_stratified_folds"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.build_walk_forward_folds"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.burg_autoregression"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.circular_summary"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.circular_summary"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.compositional_logratios"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.compositional_logratios"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.convex_hull_2d"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.convex_hull_2d"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.cusum_events"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.detrended_fluctuation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.detrended_fluctuation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.discrete_optimal_transport"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.distance_correlation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.distance_correlation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.drawdown_path"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.dynamic_time_warping"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.empirical_characteristic_function"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.empirical_characteristic_function"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.empirical_copula"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.empirical_wasserstein"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.empirical_wasserstein"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.estimate_product_limit"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.ewma_variance"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.fractional_difference"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.graph_effective_resistance"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.haar_decomposition"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.hayashi_yoshida_covariance"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_artifact_bundle"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_audit_ledger"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_gzip"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_hdf5_superblock"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_netcdf_classic"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_numpy_array"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_parquet"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_research_receipt"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_safetensors"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_sqlite"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_tar"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_tiff_directory"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_zarr_metadata"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.inspect_zip"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.isotonic_quantile_repair"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.join_asof_observations"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.join_time_windows"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.kernel_density_grid"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.label_uniqueness"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.lead_lag_signature"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.linear_constraint_feasibility"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.linear_gaussian_filter"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.lomb_scargle_periodogram"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.lomb_scargle_periodogram"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.markov_absorption"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.maximum_flow"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.minimum_spanning_forest"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.monotone_cubic_interpolation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.multilinear_grid_interpolation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.partial_autocorrelation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.permutation_entropy"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.poisson_binomial_distribution"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.poisson_binomial_distribution"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.principal_coordinates"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.principal_coordinates"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_arff"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_arrow_ipc"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_avro_container"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_bson"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_cbor"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_csv"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_dbase"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_fits_table"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_fixed_width"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_jsonl"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_libsvm"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_matrix_market"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_messagepack"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_nrrd"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_ply"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_sparse_npz"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_stl"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_toml"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_wav_pcm"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_xml"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.read_yaml"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.reconcile_aggregates"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.reconstruct_order_book"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.registry"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.resolve_security_identity"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_autocorrelation"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_linear_trend"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_mad"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_rank"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_robust_regression"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.rolling_zscore"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.sample_entropy"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_binary_forecasts"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_censored_brier"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_competing_risks"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_count_forecasts"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_empirical_crps"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_energy"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_gaussian_forecasts"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.score_gaussian_mixtures"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_gaussian_mixtures"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_hierarchical_probabilities"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_histogram_density"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_intervals"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_joint_categorical"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_markov_paths"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_piecewise_hazards"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_probability_kernel"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_quantiles"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_ranked_probability"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_variance_qlike"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.score_variogram"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.segment_mean_changes"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.select_asof_revisions"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.select_revision_tombstones"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.select_universe_membership"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.set_function_attribution"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.simple_returns"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.singular_spectrum_analysis"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.singular_spectrum_analysis"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.spectral_summary"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.summarize_ingestion_latency"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.summarize_pit"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.summarize_pit"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.thin_plate_spline"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.time_weighted_mean"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.verify_file_hash"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.verify_merkle_consistency"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.verify_merkle_inclusion"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.verify_signed_checkpoint"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.weighted_covariance"
+    },
+    {
+      "dst": "fx1.operations._numeric",
+      "src": "fx1.operations.weighted_geometric_median"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.weighted_geometric_median"
+    },
+    {
+      "dst": "fx1.operations.base",
+      "src": "fx1.operations.weighted_quantile_binning"
     },
     {
       "dst": "fx1.honesty",
@@ -1327,6 +2927,10 @@
       "src": "quant_fund.cli._app"
     },
     {
+      "dst": "quant_fund.cli.sota_cmds",
+      "src": "quant_fund.cli._app"
+    },
+    {
       "dst": "quant_fund.config",
       "src": "quant_fund.cli._app"
     },
@@ -1364,6 +2968,14 @@
     },
     {
       "dst": "quant_fund.reality.cli",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.research.allocation_cli",
+      "src": "quant_fund.cli._app"
+    },
+    {
+      "dst": "quant_fund.research.explainability_cli",
       "src": "quant_fund.cli._app"
     },
     {
@@ -1508,6 +3120,14 @@
     },
     {
       "dst": "quant_fund.proofcore.contracts",
+      "src": "quant_fund.cli.data_cmds"
+    },
+    {
+      "dst": "quant_fund.research.total_return",
+      "src": "quant_fund.cli.data_cmds"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
       "src": "quant_fund.cli.data_cmds"
     },
     {
@@ -1795,6 +3415,18 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
+      "dst": "quant_fund.research.coherence",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.compare",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.concordance",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
       "dst": "quant_fund.research.corpus_inference",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -1808,6 +3440,10 @@
     },
     {
       "dst": "quant_fund.research.evidence_audit",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.expert_mixture",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -1836,6 +3472,10 @@
     },
     {
       "dst": "quant_fund.research.monitor_run",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.multih_fleet",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -1877,6 +3517,38 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.cli.support",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.forward_evidence",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.forward_shadow",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.prospective_sota",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.shadow_journal",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.sota_evidence",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.research.sota_protocol",
+      "src": "quant_fund.cli.sota_cmds"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.cli.sota_cmds"
     },
     {
       "dst": "quant_fund.cli._app",
@@ -6959,6 +8631,14 @@
       "src": "quant_fund.reality.cli"
     },
     {
+      "dst": "quant_fund.research.reality_survivorship",
+      "src": "quant_fund.reality.cli"
+    },
+    {
+      "dst": "quant_fund.research.reality_sweep",
+      "src": "quant_fund.reality.cli"
+    },
+    {
       "dst": "quant_fund.utils.atomicio",
       "src": "quant_fund.reality.cli"
     },
@@ -7159,6 +8839,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w18",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -7225,6 +8909,10 @@
     {
       "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.research.allocation.receipt"
+    },
+    {
+      "dst": "quant_fund.research.allocation",
+      "src": "quant_fund.research.allocation_cli"
     },
     {
       "dst": "quant_fund.config.models",
@@ -7839,6 +9527,18 @@
       "src": "quant_fund.research.benches_w17"
     },
     {
+      "dst": "quant_fund.research.energy_score",
+      "src": "quant_fund.research.benches_w18"
+    },
+    {
+      "dst": "quant_fund.research.selective_inference",
+      "src": "quant_fund.research.benches_w18"
+    },
+    {
+      "dst": "quant_fund.research.spa_test",
+      "src": "quant_fund.research.benches_w18"
+    },
+    {
       "dst": "quant_fund.metrics.anytime_fdr",
       "src": "quant_fund.research.benches_w810"
     },
@@ -8389,6 +10089,14 @@
     {
       "dst": "quant_fund.metrics.scoring",
       "src": "quant_fund.research.explainability.scoring"
+    },
+    {
+      "dst": "quant_fund.research.explainability",
+      "src": "quant_fund.research.explainability_cli"
+    },
+    {
+      "dst": "quant_fund.research.explainability.scoring",
+      "src": "quant_fund.research.explainability_cli"
     },
     {
       "dst": "quant_fund.metrics.probability",
@@ -9936,6 +11644,7 @@
     "fx1.bench",
     "fx1.bench.dip",
     "fx1.bench.run",
+    "fx1.capabilities",
     "fx1.cli",
     "fx1.data",
     "fx1.data.corpus",
@@ -9972,6 +11681,100 @@
     "fx1.eval.timepart",
     "fx1.eval.tooluse_eval",
     "fx1.eval.ts_reasoning",
+    "fx1.extensions",
+    "fx1.extensions.contracts",
+    "fx1.extensions.feature_catalog",
+    "fx1.extensions.features",
+    "fx1.extensions.features.adv",
+    "fx1.extensions.features.adv_ratio_20_60",
+    "fx1.extensions.features.amihud",
+    "fx1.extensions.features.amihud_60",
+    "fx1.extensions.features.beta_60",
+    "fx1.extensions.features.cs_z_planted_signal",
+    "fx1.extensions.features.cs_z_ret_1",
+    "fx1.extensions.features.dollar_volume",
+    "fx1.extensions.features.downside_vol_20",
+    "fx1.extensions.features.high_52w_prox",
+    "fx1.extensions.features.idio_mom_20",
+    "fx1.extensions.features.idio_vol_60",
+    "fx1.extensions.features.kurt_20",
+    "fx1.extensions.features.log_price",
+    "fx1.extensions.features.log_ret_1",
+    "fx1.extensions.features.max_ret_20",
+    "fx1.extensions.features.min_ret_20",
+    "fx1.extensions.features.mom_126",
+    "fx1.extensions.features.mom_12_1",
+    "fx1.extensions.features.mom_20",
+    "fx1.extensions.features.mom_252",
+    "fx1.extensions.features.mom_5",
+    "fx1.extensions.features.mom_60",
+    "fx1.extensions.features.mom_skip_5_20",
+    "fx1.extensions.features.planted_signal",
+    "fx1.extensions.features.rel_volume",
+    "fx1.extensions.features.ret_1",
+    "fx1.extensions.features.ret_20",
+    "fx1.extensions.features.ret_5",
+    "fx1.extensions.features.ret_intraday_20",
+    "fx1.extensions.features.ret_open_close",
+    "fx1.extensions.features.ret_overnight",
+    "fx1.extensions.features.ret_overnight_20",
+    "fx1.extensions.features.reversal_1",
+    "fx1.extensions.features.skew_20",
+    "fx1.extensions.features.turnover_proxy",
+    "fx1.extensions.features.vol_20",
+    "fx1.extensions.features.vol_60",
+    "fx1.extensions.features.vol_ewma",
+    "fx1.extensions.features.vol_garman_klass",
+    "fx1.extensions.features.vol_of_vol",
+    "fx1.extensions.features.vol_parkinson",
+    "fx1.extensions.features.vol_ratio_20_60",
+    "fx1.extensions.features.volume_vol",
+    "fx1.extensions.features.z_vs_ma20",
+    "fx1.extensions.naming",
+    "fx1.extensions.plugins",
+    "fx1.extensions.plugins.binance_crypto",
+    "fx1.extensions.plugins.caixin",
+    "fx1.extensions.plugins.cls",
+    "fx1.extensions.plugins.dongcai",
+    "fx1.extensions.plugins.finance_fetch",
+    "fx1.extensions.plugins.finance_research",
+    "fx1.extensions.plugins.finenter",
+    "fx1.extensions.plugins.gildata",
+    "fx1.extensions.plugins.ifind",
+    "fx1.extensions.plugins.igo_open_data",
+    "fx1.extensions.plugins.imf",
+    "fx1.extensions.plugins.sec_edgar",
+    "fx1.extensions.plugins.sp_data",
+    "fx1.extensions.plugins.tianyancha",
+    "fx1.extensions.plugins.wind",
+    "fx1.extensions.plugins.world_bank",
+    "fx1.extensions.plugins.xhcj",
+    "fx1.extensions.plugins.yahoo_finance",
+    "fx1.extensions.registry",
+    "fx1.extensions.skills",
+    "fx1.extensions.skills.backtest",
+    "fx1.extensions.skills.book_panel",
+    "fx1.extensions.skills.build_features",
+    "fx1.extensions.skills.build_labels",
+    "fx1.extensions.skills.candle_book",
+    "fx1.extensions.skills.collect",
+    "fx1.extensions.skills.doctor",
+    "fx1.extensions.skills.forecast",
+    "fx1.extensions.skills.ingest",
+    "fx1.extensions.skills.kronos_forecast",
+    "fx1.extensions.skills.kyle_ofi",
+    "fx1.extensions.skills.monitor",
+    "fx1.extensions.skills.northset",
+    "fx1.extensions.skills.optimize",
+    "fx1.extensions.skills.paper",
+    "fx1.extensions.skills.report",
+    "fx1.extensions.skills.research",
+    "fx1.extensions.skills.session_book",
+    "fx1.extensions.skills.tearsheet",
+    "fx1.extensions.skills.train",
+    "fx1.extensions.skills.validate",
+    "fx1.extensions.skills.vendor_book_map",
+    "fx1.extensions.skills.verify_research",
     "fx1.forecast",
     "fx1.forecast.artifacts",
     "fx1.forecast.config",
@@ -9986,8 +11789,188 @@
     "fx1.harness",
     "fx1.honesty",
     "fx1.hypotheses",
+    "fx1.interactive",
+    "fx1.interactive.actions",
+    "fx1.interactive.app",
+    "fx1.interactive.orb",
+    "fx1.interactive.profiles",
+    "fx1.interactive.shell",
+    "fx1.interactive.wizard",
     "fx1.modelcard",
     "fx1.mrm",
+    "fx1.operations",
+    "fx1.operations._numeric",
+    "fx1.operations.align_event_sequences",
+    "fx1.operations.assign_horizon_targets",
+    "fx1.operations.audit_artifact_assembly",
+    "fx1.operations.audit_bar_integrity",
+    "fx1.operations.audit_cross_field_contracts",
+    "fx1.operations.audit_dependency_releases",
+    "fx1.operations.audit_duplicate_keys",
+    "fx1.operations.audit_effective_intervals",
+    "fx1.operations.audit_feature_provenance",
+    "fx1.operations.audit_forecast_panel",
+    "fx1.operations.audit_join_fanout",
+    "fx1.operations.audit_lineage_graph",
+    "fx1.operations.audit_missingness",
+    "fx1.operations.audit_missingness_association",
+    "fx1.operations.audit_monotonic_sequences",
+    "fx1.operations.audit_nested_folds",
+    "fx1.operations.audit_observation_windows",
+    "fx1.operations.audit_panel_gaps",
+    "fx1.operations.audit_partition_ranges",
+    "fx1.operations.audit_point_in_time",
+    "fx1.operations.audit_price_basis",
+    "fx1.operations.audit_referential_integrity",
+    "fx1.operations.audit_release_revisions",
+    "fx1.operations.audit_resampling_groups",
+    "fx1.operations.audit_resource_reservations",
+    "fx1.operations.audit_revision_conflicts",
+    "fx1.operations.audit_schema_compatibility",
+    "fx1.operations.audit_schema_drift",
+    "fx1.operations.audit_session_coverage",
+    "fx1.operations.audit_snapshot_manifests",
+    "fx1.operations.audit_source_chains",
+    "fx1.operations.audit_source_coverage",
+    "fx1.operations.audit_source_migrations",
+    "fx1.operations.audit_split_leakage",
+    "fx1.operations.audit_stream_offsets",
+    "fx1.operations.audit_task_leases",
+    "fx1.operations.audit_temporal_constraints",
+    "fx1.operations.audit_temporal_resamples",
+    "fx1.operations.audit_transaction_batches",
+    "fx1.operations.audit_unit_conversions",
+    "fx1.operations.audit_vintage_transitions",
+    "fx1.operations.base",
+    "fx1.operations.bipower_variation",
+    "fx1.operations.build_availability_frontier",
+    "fx1.operations.build_block_resamples",
+    "fx1.operations.build_conformal_intervals",
+    "fx1.operations.build_group_stratified_folds",
+    "fx1.operations.build_stationary_resamples",
+    "fx1.operations.build_stratified_folds",
+    "fx1.operations.build_walk_forward_folds",
+    "fx1.operations.burg_autoregression",
+    "fx1.operations.circular_summary",
+    "fx1.operations.compositional_logratios",
+    "fx1.operations.convex_hull_2d",
+    "fx1.operations.cusum_events",
+    "fx1.operations.detrended_fluctuation",
+    "fx1.operations.discrete_optimal_transport",
+    "fx1.operations.distance_correlation",
+    "fx1.operations.drawdown_path",
+    "fx1.operations.dynamic_time_warping",
+    "fx1.operations.empirical_characteristic_function",
+    "fx1.operations.empirical_copula",
+    "fx1.operations.empirical_wasserstein",
+    "fx1.operations.estimate_product_limit",
+    "fx1.operations.ewma_variance",
+    "fx1.operations.fractional_difference",
+    "fx1.operations.graph_effective_resistance",
+    "fx1.operations.haar_decomposition",
+    "fx1.operations.hayashi_yoshida_covariance",
+    "fx1.operations.inspect_artifact_bundle",
+    "fx1.operations.inspect_audit_ledger",
+    "fx1.operations.inspect_gzip",
+    "fx1.operations.inspect_hdf5_superblock",
+    "fx1.operations.inspect_netcdf_classic",
+    "fx1.operations.inspect_numpy_array",
+    "fx1.operations.inspect_parquet",
+    "fx1.operations.inspect_research_receipt",
+    "fx1.operations.inspect_safetensors",
+    "fx1.operations.inspect_sqlite",
+    "fx1.operations.inspect_tar",
+    "fx1.operations.inspect_tiff_directory",
+    "fx1.operations.inspect_zarr_metadata",
+    "fx1.operations.inspect_zip",
+    "fx1.operations.isotonic_quantile_repair",
+    "fx1.operations.join_asof_observations",
+    "fx1.operations.join_time_windows",
+    "fx1.operations.kernel_density_grid",
+    "fx1.operations.label_uniqueness",
+    "fx1.operations.lead_lag_signature",
+    "fx1.operations.linear_constraint_feasibility",
+    "fx1.operations.linear_gaussian_filter",
+    "fx1.operations.lomb_scargle_periodogram",
+    "fx1.operations.markov_absorption",
+    "fx1.operations.maximum_flow",
+    "fx1.operations.minimum_spanning_forest",
+    "fx1.operations.monotone_cubic_interpolation",
+    "fx1.operations.multilinear_grid_interpolation",
+    "fx1.operations.partial_autocorrelation",
+    "fx1.operations.permutation_entropy",
+    "fx1.operations.poisson_binomial_distribution",
+    "fx1.operations.principal_coordinates",
+    "fx1.operations.read_arff",
+    "fx1.operations.read_arrow_ipc",
+    "fx1.operations.read_avro_container",
+    "fx1.operations.read_bson",
+    "fx1.operations.read_cbor",
+    "fx1.operations.read_csv",
+    "fx1.operations.read_dbase",
+    "fx1.operations.read_fits_table",
+    "fx1.operations.read_fixed_width",
+    "fx1.operations.read_jsonl",
+    "fx1.operations.read_libsvm",
+    "fx1.operations.read_matrix_market",
+    "fx1.operations.read_messagepack",
+    "fx1.operations.read_nrrd",
+    "fx1.operations.read_ply",
+    "fx1.operations.read_sparse_npz",
+    "fx1.operations.read_stl",
+    "fx1.operations.read_toml",
+    "fx1.operations.read_wav_pcm",
+    "fx1.operations.read_xml",
+    "fx1.operations.read_yaml",
+    "fx1.operations.reconcile_aggregates",
+    "fx1.operations.reconstruct_order_book",
+    "fx1.operations.registry",
+    "fx1.operations.resolve_security_identity",
+    "fx1.operations.rolling_autocorrelation",
+    "fx1.operations.rolling_linear_trend",
+    "fx1.operations.rolling_mad",
+    "fx1.operations.rolling_rank",
+    "fx1.operations.rolling_robust_regression",
+    "fx1.operations.rolling_zscore",
+    "fx1.operations.sample_entropy",
+    "fx1.operations.score_binary_forecasts",
+    "fx1.operations.score_censored_brier",
+    "fx1.operations.score_competing_risks",
+    "fx1.operations.score_count_forecasts",
+    "fx1.operations.score_empirical_crps",
+    "fx1.operations.score_energy",
+    "fx1.operations.score_gaussian_forecasts",
+    "fx1.operations.score_gaussian_mixtures",
+    "fx1.operations.score_hierarchical_probabilities",
+    "fx1.operations.score_histogram_density",
+    "fx1.operations.score_intervals",
+    "fx1.operations.score_joint_categorical",
+    "fx1.operations.score_markov_paths",
+    "fx1.operations.score_piecewise_hazards",
+    "fx1.operations.score_probability_kernel",
+    "fx1.operations.score_quantiles",
+    "fx1.operations.score_ranked_probability",
+    "fx1.operations.score_variance_qlike",
+    "fx1.operations.score_variogram",
+    "fx1.operations.segment_mean_changes",
+    "fx1.operations.select_asof_revisions",
+    "fx1.operations.select_revision_tombstones",
+    "fx1.operations.select_universe_membership",
+    "fx1.operations.set_function_attribution",
+    "fx1.operations.simple_returns",
+    "fx1.operations.singular_spectrum_analysis",
+    "fx1.operations.spectral_summary",
+    "fx1.operations.summarize_ingestion_latency",
+    "fx1.operations.summarize_pit",
+    "fx1.operations.thin_plate_spline",
+    "fx1.operations.time_weighted_mean",
+    "fx1.operations.verify_file_hash",
+    "fx1.operations.verify_merkle_consistency",
+    "fx1.operations.verify_merkle_inclusion",
+    "fx1.operations.verify_signed_checkpoint",
+    "fx1.operations.weighted_covariance",
+    "fx1.operations.weighted_geometric_median",
+    "fx1.operations.weighted_quantile_binning",
     "fx1.reward",
     "fx1.sbom",
     "fx1.serve",
@@ -10060,6 +12043,7 @@
     "quant_fund.cli.ops_cmds",
     "quant_fund.cli.report_cmds",
     "quant_fund.cli.research_cmds",
+    "quant_fund.cli.sota_cmds",
     "quant_fund.cli.support",
     "quant_fund.cli.train_cmds",
     "quant_fund.compute",
@@ -10707,6 +12691,7 @@
     "quant_fund.research.allocation.engines",
     "quant_fund.research.allocation.evaluation",
     "quant_fund.research.allocation.receipt",
+    "quant_fund.research.allocation_cli",
     "quant_fund.research.benches",
     "quant_fund.research.benches.common",
     "quant_fund.research.benches.families",
@@ -10720,6 +12705,7 @@
     "quant_fund.research.benches_w15",
     "quant_fund.research.benches_w16",
     "quant_fund.research.benches_w17",
+    "quant_fund.research.benches_w18",
     "quant_fund.research.benches_w810",
     "quant_fund.research.blueprint_federated_evidence",
     "quant_fund.research.blueprint_graph_evidence",
@@ -10773,6 +12759,7 @@
     "quant_fund.research.explainability.receipt",
     "quant_fund.research.explainability.report",
     "quant_fund.research.explainability.scoring",
+    "quant_fund.research.explainability_cli",
     "quant_fund.research.fleet_eval",
     "quant_fund.research.fleet_race",
     "quant_fund.research.forward_evidence",
@@ -10912,6 +12899,21 @@
       "src": "fx1.bench"
     },
     {
+      "dst": "fx1.data",
+      "imports": 1,
+      "src": "fx1.capabilities"
+    },
+    {
+      "dst": "fx1.extensions",
+      "imports": 2,
+      "src": "fx1.capabilities"
+    },
+    {
+      "dst": "fx1.harness",
+      "imports": 1,
+      "src": "fx1.capabilities"
+    },
+    {
       "dst": "fx1",
       "imports": 1,
       "src": "fx1.cli"
@@ -11032,6 +13034,26 @@
       "src": "fx1.eval"
     },
     {
+      "dst": "fx1.capabilities",
+      "imports": 87,
+      "src": "fx1.extensions"
+    },
+    {
+      "dst": "fx1.data",
+      "imports": 2,
+      "src": "fx1.extensions"
+    },
+    {
+      "dst": "fx1.extensions",
+      "imports": 93,
+      "src": "fx1.extensions"
+    },
+    {
+      "dst": "fx1.harness",
+      "imports": 2,
+      "src": "fx1.extensions"
+    },
+    {
       "dst": "fx1.forecast",
       "imports": 25,
       "src": "fx1.forecast"
@@ -11067,14 +13089,59 @@
       "src": "fx1.forecast"
     },
     {
+      "dst": "fx1.capabilities",
+      "imports": 1,
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "fx1.extensions",
+      "imports": 2,
+      "src": "fx1.harness"
+    },
+    {
+      "dst": "fx1.operations",
+      "imports": 1,
+      "src": "fx1.harness"
+    },
+    {
       "dst": "fx1.honesty",
       "imports": 1,
       "src": "fx1.hypotheses"
     },
     {
+      "dst": "fx1",
+      "imports": 1,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.doctor",
+      "imports": 1,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.harness",
+      "imports": 1,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.interactive",
+      "imports": 19,
+      "src": "fx1.interactive"
+    },
+    {
+      "dst": "fx1.serve",
+      "imports": 2,
+      "src": "fx1.interactive"
+    },
+    {
       "dst": "fx1.modelcard",
       "imports": 1,
       "src": "fx1.mrm"
+    },
+    {
+      "dst": "fx1.operations",
+      "imports": 184,
+      "src": "fx1.operations"
     },
     {
       "dst": "fx1.honesty",
@@ -11298,7 +13365,7 @@
     },
     {
       "dst": "quant_fund.cli",
-      "imports": 35,
+      "imports": 37,
       "src": "quant_fund.cli"
     },
     {
@@ -11408,12 +13475,12 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 28,
+      "imports": 42,
       "src": "quant_fund.cli"
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.cli"
     },
     {
@@ -11423,7 +13490,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 9,
+      "imports": 10,
       "src": "quant_fund.cli"
     },
     {
@@ -12282,6 +14349,11 @@
       "src": "quant_fund.reality"
     },
     {
+      "dst": "quant_fund.research",
+      "imports": 2,
+      "src": "quant_fund.reality"
+    },
+    {
       "dst": "quant_fund.utils",
       "imports": 1,
       "src": "quant_fund.reality"
@@ -12418,7 +14490,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 224,
+      "imports": 231,
       "src": "quant_fund.research"
     },
     {

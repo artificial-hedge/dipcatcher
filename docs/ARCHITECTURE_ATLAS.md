@@ -122,16 +122,20 @@ flowchart LR
   subgraph cluster_fx1["fx1 (model project)"]
     fx1["fx1"]
     fx1_bench["fx1.bench"]
+    fx1_capabilities["fx1.capabilities"]
     fx1_cli["fx1.cli"]
     fx1_data["fx1.data"]
     fx1_doctor["fx1.doctor"]
     fx1_eval["fx1.eval"]
+    fx1_extensions["fx1.extensions"]
     fx1_forecast["fx1.forecast"]
     fx1_harness["fx1.harness"]
     fx1_honesty["fx1.honesty"]
     fx1_hypotheses["fx1.hypotheses"]
+    fx1_interactive["fx1.interactive"]
     fx1_modelcard["fx1.modelcard"]
     fx1_mrm["fx1.mrm"]
+    fx1_operations["fx1.operations"]
     fx1_reward["fx1.reward"]
     fx1_sbom["fx1.sbom"]
     fx1_serve["fx1.serve"]
@@ -139,6 +143,9 @@ flowchart LR
     fx1_train["fx1.train"]
   end
   fx1_bench -->|1| fx1_honesty
+  fx1_capabilities -->|1| fx1_data
+  fx1_capabilities -->|2| fx1_extensions
+  fx1_capabilities -->|1| fx1_harness
   fx1_cli -->|1| fx1
   fx1_cli -->|2| fx1_bench
   fx1_cli -->|7| fx1_data
@@ -161,13 +168,23 @@ flowchart LR
   fx1_eval -->|10| fx1_honesty
   fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
+  fx1_extensions -->|87| fx1_capabilities
+  fx1_extensions -->|2| fx1_data
+  fx1_extensions -->|2| fx1_harness
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|3| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
   fx1_forecast -->|4| quant_fund_schemas
   fx1_forecast -->|2| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
+  fx1_harness -->|1| fx1_capabilities
+  fx1_harness -->|2| fx1_extensions
+  fx1_harness -->|1| fx1_operations
   fx1_hypotheses -->|1| fx1_honesty
+  fx1_interactive -->|1| fx1
+  fx1_interactive -->|1| fx1_doctor
+  fx1_interactive -->|1| fx1_harness
+  fx1_interactive -->|2| fx1_serve
   fx1_mrm -->|1| fx1_modelcard
   fx1_reward -->|1| fx1_honesty
   fx1_serve -->|1| fx1
@@ -228,10 +245,10 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|28| quant_fund_research
-  quant_fund_cli -->|1| quant_fund_schemas
+  quant_fund_cli -->|42| quant_fund_research
+  quant_fund_cli -->|2| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
-  quant_fund_cli -->|9| quant_fund_utils
+  quant_fund_cli -->|10| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
   quant_fund_config -->|1| quant_fund_models
   quant_fund_config -->|1| quant_fund_utils
@@ -371,6 +388,7 @@ flowchart LR
   quant_fund_public -->|1| quant_fund_risk
   quant_fund_reality -->|6| quant_fund_metrics
   quant_fund_reality -->|6| quant_fund_proofcore
+  quant_fund_reality -->|2| quant_fund_research
   quant_fund_reality -->|1| quant_fund_utils
   quant_fund_registry -->|1| quant_fund_config
   quant_fund_registry -->|2| quant_fund_utils
@@ -611,16 +629,20 @@ sequenceDiagram
 |---|---|
 | `fx1` | 1 |
 | `fx1.bench` | 3 |
+| `fx1.capabilities` | 1 |
 | `fx1.cli` | 1 |
 | `fx1.data` | 14 |
 | `fx1.doctor` | 1 |
 | `fx1.eval` | 20 |
+| `fx1.extensions` | 94 |
 | `fx1.forecast` | 11 |
 | `fx1.harness` | 1 |
 | `fx1.honesty` | 1 |
 | `fx1.hypotheses` | 1 |
+| `fx1.interactive` | 7 |
 | `fx1.modelcard` | 1 |
 | `fx1.mrm` | 1 |
+| `fx1.operations` | 173 |
 | `fx1.reward` | 1 |
 | `fx1.sbom` | 1 |
 | `fx1.serve` | 6 |
@@ -631,7 +653,7 @@ sequenceDiagram
 | `quant_fund.audit` | 11 |
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
-| `quant_fund.cli` | 16 |
+| `quant_fund.cli` | 17 |
 | `quant_fund.compute` | 3 |
 | `quant_fund.config` | 3 |
 | `quant_fund.data` | 42 |
@@ -667,7 +689,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 2 |
 | `quant_fund.reporting` | 4 |
-| `quant_fund.research` | 127 |
+| `quant_fund.research` | 130 |
 | `quant_fund.risk` | 5 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -676,9 +698,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **967**
-- Packages: **66**
-- Cross-package import edges: **286**
+- Modules scanned: **1246**
+- Packages: **70**
+- Cross-package import edges: **300**
 
 <!-- END GENERATED: coverage -->
 

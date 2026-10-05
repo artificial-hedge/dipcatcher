@@ -8,9 +8,15 @@ total / 104B active MoE, Kimi K3 License).
 
 **dipcatcher** is the harness: the data engine, evaluation bench, and
 verification layer. `src/fx1/harness.py` is the typed bridge; `fx1 harness list`
-shows the registered lab surfaces. `fx1 harness capabilities` searches the
-million-record skill, datasource-plugin, and feature recipe catalog; see
-[`FX1_CAPABILITIES.md`](FX1_CAPABILITIES.md) for its pack format and limits.
+shows the registered lab surfaces. `fx1 harness operations` discovers 157
+independently implemented features, audit/scoring skills, and local data
+plugins; `fx1 harness execute-operation` runs them with validated JSON inputs.
+See [FX1_OPERATIONS.md](FX1_OPERATIONS.md) for schemas, usage, and limits.
+`fx1 harness capabilities` searches the
+million-record skill, datasource-plugin, and feature recipe catalog, while
+`fx1 harness extension KIND OWNER` loads one separately packaged extension
+module; see [`FX1_CAPABILITIES.md`](FX1_CAPABILITIES.md) for module layout,
+pack format, and limits.
 
 ## What the plumbing enforces
 
@@ -27,6 +33,8 @@ run, and a record of what the package checks today.
 
 ## Package layout (`src/fx1/`)
 
+- `operations/` — one source file per independent capability, with explicit
+  discovery, input/output schemas, and a host-controlled workspace for readers.
 - `data/receipts.py` — receipt loading and eligibility (`research_only=true`,
   `live_pnl_claim=false`); ineligible artifacts become negative examples.
 - `data/corpus.py` — SFT corpus builder → JSONL, one `SFTExample` per line,

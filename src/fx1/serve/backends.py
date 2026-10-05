@@ -29,19 +29,24 @@ class InferenceBackend(Protocol):
 
 
 class HostedK3Backend:
-    """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps)."""
+    """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps).
+
+    Endpoint override: ``api_url`` wins, then the ``FX1_BASE_URL``
+    environment variable, then the pinned Moonshot URL. The API key comes
+    from the ``api_key`` argument or ``MOONSHOT_API_KEY`` — never hardcoded.
+    """
 
     def __init__(
         self,
         api_key: str | None = None,
         model: str = "kimi-k3",
-        api_url: str = MOONSHOT_API_URL,
+        api_url: str | None = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("MOONSHOT_API_KEY", "")
         if not self._api_key:
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
         self._model = model
-        self._api_url = api_url
+        self._api_url = api_url or os.environ.get("FX1_BASE_URL") or MOONSHOT_API_URL
 
     def complete(self, messages: list[dict[str, str]]) -> str:
         # temperature pinned to 0 — eval/teacher runs must be deterministic;

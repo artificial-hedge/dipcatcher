@@ -73,6 +73,8 @@ data/lake/
 coverage.xml
 # MkDocs build output (`make docs`).
 site/
+# JavaScript dependency trees are regenerated from their lockfiles.
+node_modules/
 .coverage
 .coverage.*
 # TLC download (scripts/run_tlc.sh). The jar is not source.
@@ -93,3 +95,11 @@ proofs/
 leakage-report.json
 # TypeScript API client uses a committed npm lockfile; installed tools are local.
 clients/typescript/node_modules/
+# Generated fx-1 capability declaration shards (17 MB / ~1M lines). Byte-reproducible
+# via `uv run python scripts/seed_fx1_capabilities.py`; each shard says "Regenerate;
+# do not edit." Not wheel-packaged (pyproject packages only src/fx1, src/quant_fund).
+# README.md is hand-written and NOT regenerated, so it stays tracked. The pattern is
+# `dir/*` not `dir/` on purpose: git cannot re-include a file whose parent directory
+# is excluded, so excluding the directory itself would swallow the README too.
+scripts/generated_capability_declarations/*
+!scripts/generated_capability_declarations/README.md

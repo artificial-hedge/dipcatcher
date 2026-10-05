@@ -327,7 +327,7 @@ def test_federated_cli_rejects_rehashed_scores_and_changed_training_labels(tmp_p
 
     from quant_fund.api import blueprint
     from quant_fund.api.app import app as api_app
-    from quant_fund.cli.blueprint_cmds import _federated_hash
+    from quant_fund.research.blueprint_federated_evidence import _federated_hash
 
     inputs = tmp_path / "federated.json"
     inputs.write_text(json.dumps(_federated_input()))

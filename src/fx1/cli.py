@@ -244,6 +244,7 @@ def harness_capabilities(
     kind: str | None = typer.Option(None, help="Filter: skill | plugin | feature."),
     command_name: str | None = typer.Option(None, "--command", help="Registered harness command."),
     source: str | None = typer.Option(None, help="Registered datasource id."),
+    feature: str | None = typer.Option(None, help="Registered point-in-time feature name."),
     market: str | None = typer.Option(None, help="Market filter, such as cn, us, or crypto."),
     asset: str | None = typer.Option(None, help="Asset filter, such as equity or macro."),
     offset: int = typer.Option(0, min=0, help="Number of matching entries to skip."),
@@ -257,12 +258,109 @@ def harness_capabilities(
         kind=kind,
         command=command_name,
         source=source,
+        feature=feature,
         market=market,
         asset=asset,
         offset=offset,
         limit=limit,
     )
     typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+@harness_app.command("extension")
+def harness_extension(
+    kind: str = typer.Argument(..., help="skill | plugin | feature"),
+    owner: str = typer.Argument(..., help="Registered command, datasource, or feature name."),
+) -> None:
+    """Load one separately packaged capability module by its approved identity."""
+    from fx1.harness import Harness
+
+    result = Harness().extension_manifest(kind, owner)
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
+
+
+@harness_app.command("operations")
+def harness_operations(
+    query: str = typer.Argument(
+        "", help="Words to find in independently implemented capabilities."
+    ),
+    kind: str | None = typer.Option(None, help="Filter: skill | plugin | feature."),
+    offset: int = typer.Option(0, min=0, help="Number of matching implementations to skip."),
+    limit: int = typer.Option(20, min=1, max=100, help="Maximum results to return."),
+) -> None:
+    """Discover separately implemented operations with a bounded result list."""
+    from fx1.harness import Harness
+
+    try:
+        result = Harness().invoke_discovery_tool(
+            "list_operations", {"query": query, "kind": kind, "offset": offset, "limit": limit}
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
+
+
+@harness_app.command("describe-operation")
+def harness_describe_operation(
+    operation_id: str = typer.Argument(..., help="Registered id, such as features.simple_returns."),
+) -> None:
+    """Print the exact input and output schemas of one registered implementation."""
+    from fx1.harness import Harness
+
+    try:
+        result = Harness().invoke_discovery_tool(
+            "describe_operation", {"operation_id": operation_id}
+        )
+    except (KeyError, ValueError) as exc:
+        raise typer.BadParameter(str(exc), param_hint="operation_id") from exc
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
+
+
+def _operation_arguments(arguments: str | None, arguments_file: Path | None) -> dict[str, object]:
+    """Read one bounded JSON object from an explicit inline value or local file."""
+    if (arguments is None) == (arguments_file is None):
+        raise ValueError("provide exactly one of --arguments or --arguments-file")
+    if arguments_file is not None:
+        with arguments_file.open("rb") as stream:
+            content = stream.read(2_000_001)
+    else:
+        assert arguments is not None
+        content = arguments.encode("utf-8")
+    if len(content) > 2_000_000:
+        raise ValueError("operation arguments exceed the 2 MB budget")
+    value = json.loads(content)
+    if not isinstance(value, dict):
+        raise ValueError("operation arguments must be a JSON object")
+    return value
+
+
+@harness_app.command("execute-operation")
+def harness_execute_operation(
+    operation_id: str = typer.Argument(..., help="Registered feature, skill, or plugin id."),
+    arguments: str | None = typer.Option(
+        None, "--arguments", help="Input arguments as a JSON object."
+    ),
+    arguments_file: Path | None = typer.Option(
+        None, "--arguments-file", exists=True, dir_okay=False, help="File containing input JSON."
+    ),
+    workspace_root: Path | None = typer.Option(
+        None,
+        "--workspace-root",
+        exists=True,
+        file_okay=False,
+        resolve_path=True,
+        help="Host workspace for data-reader paths; defaults to the current directory.",
+    ),
+) -> None:
+    """Run one schema-validated operation and print its result with content hashes."""
+    from fx1.harness import Harness
+
+    try:
+        payload = _operation_arguments(arguments, arguments_file)
+        result = Harness(workspace_root=workspace_root).execute_operation(operation_id, payload)
+    except (KeyError, ValueError, OSError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False))
 
 
 @harness_app.command("run")
@@ -284,16 +382,17 @@ def eval_bank(
     backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     out: Path = typer.Option(Path("data/fx1/eval.json")),
+    model: str = typer.Option("kimi-k3", help="Model id to send to the hosted backend."),
 ) -> None:
     """Run the built-in eval task bank against an fx-1 backend."""
     from fx1.eval import DEFAULT_BANK, run_suite
     from fx1.serve import get_backend
 
     if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
+        model_backend = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
     else:
-        model = get_backend("hosted_k3")
-    summary = run_suite(model.complete, list(DEFAULT_BANK))
+        model_backend = get_backend("hosted_k3", model=model)
+    summary = run_suite(model_backend.complete, list(DEFAULT_BANK))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     typer.echo(

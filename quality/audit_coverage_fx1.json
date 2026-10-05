@@ -36,6 +36,21 @@
       "status": "audited",
       "n_modules": 9,
       "doc": "docs/AUDIT_LEDGER.md"
+    },
+    "extensions": {
+      "status": "pending",
+      "n_modules": 94,
+      "doc": "docs/AUDIT_LEDGER.md"
+    },
+    "operations": {
+      "status": "pending",
+      "n_modules": 173,
+      "doc": "docs/AUDIT_LEDGER.md"
+    },
+    "interactive": {
+      "status": "pending",
+      "n_modules": 7,
+      "doc": "docs/AUDIT_LEDGER.md"
     }
   },
   "modules": {
@@ -115,6 +130,13 @@
       "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
       "evidence": [
         "tests/fx1/test_strategy.py"
+      ]
+    },
+    "capabilities.py": {
+      "status": "partial",
+      "reason": "Capabilities catalog, seed generation and extension-module writer. Focused tests exist (tests/fx1/test_capability_eval.py); independent line-level audit of the full module remains incomplete. This module does not inherit any directory audit.",
+      "evidence": [
+        "tests/fx1/test_capability_eval.py"
       ]
     }
   }

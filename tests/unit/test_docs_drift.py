@@ -48,7 +48,13 @@ FENCE_RE = re.compile(r"```([^\n]*)\n(.*?)```", re.S)
 
 # Path-boundary lookbehind: a leading `/` means the token is a URL route
 # (`/research/latest`) or the tail of a longer path (`metadata/research/x.json`).
-SYMBOL_RE = re.compile(r"(?<![\w/.-])((?:quant_fund|fx1)(?:\.[A-Za-z_]\w*)+)")
+# Trailing `(?![\w-])` rejects versioned schema identifiers such as
+# `fx1.capability-pack-entry/v1` and `fx1.operation-result/v1`, which are data
+# strings, not importable module paths. Without it the match truncates at the
+# hyphen and reports a phantom `fx1.capability` / `fx1.operation` module. The
+# lookahead must include `\w` as well as `-`: with `(?!-)` alone the engine
+# backtracks to a shorter partial match (`fx1.capabilit`) instead of giving up.
+SYMBOL_RE = re.compile(r"(?<![\w/.-])((?:quant_fund|fx1)(?:\.[A-Za-z_]\w*)+)(?![\w-])")
 PATH_RE = re.compile(
     r"(?<![\w/.-])((?:scripts|configs|docs|src|tests|examples|spec|third_party|rust|web|"
     r"deploy|docker|verifier|quality|clients|notebooks|replay|research|artifacts|receipts)"

@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 16,
+      "n_modules": 17,
       "status": "audited"
     },
     "compute": {
@@ -96,7 +96,7 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 51,
+      "n_modules": 52,
       "status": "audited"
     },
     "models": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 123,
+      "n_modules": 130,
       "status": "audited"
     },
     "risk": {
@@ -479,6 +479,54 @@
       "evidence": [
         "tests/unit/research/test_script_receipts.py",
         "tests/unit/research/test_microstructure_receipts.py"
+      ]
+    },
+    "microstructure/price_clustering.py": {
+      "status": "pending",
+      "reason": "SYNTHETIC round-number clustering diagnostics. Not imported by any module or test as of 2026-10-04; no wiring and no coverage exist yet. Audit queued."
+    },
+    "research/energy_score.py": {
+      "status": "pending",
+      "reason": "Multivariate distributional-calibration energy score. Not imported by any module or test as of 2026-10-04. The wired univariate implementation is quant_fund.metrics.energy_score; the overlap needs owner disposition before an audit scope can be stated."
+    },
+    "research/selective_inference.py": {
+      "status": "pending",
+      "reason": "Lee-Sun polyhedral confidence intervals after argmin selection. Not imported by any module or test as of 2026-10-04. The wired implementation is quant_fund.models.selective_inference; the overlap needs owner disposition before an audit scope can be stated."
+    },
+    "research/spa_test.py": {
+      "status": "pending",
+      "reason": "White Reality Check plus Romano-Wolf stepdown. Not imported by any module or test as of 2026-10-04. quant_fund.metrics.snooping already ships reality_check, spa_test, stepm and model_confidence_set with test coverage, so this looks like a parallel reimplementation; owner disposition required before audit."
+    },
+    "research/total_return.py": {
+      "status": "pending",
+      "reason": "Dividend-reinvestment total-return basis for research backtests. Not imported by any module or test as of 2026-10-04. Audit queued."
+    },
+    "cli/sota_cmds.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/cli/test_sota_cmds.py"
+      ]
+    },
+    "research/allocation_cli.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_allocation_cli.py"
+      ]
+    },
+    "research/benches_w18.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_benches_w18.py"
+      ]
+    },
+    "research/explainability_cli.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_explainability_cli.py"
       ]
     }
   },

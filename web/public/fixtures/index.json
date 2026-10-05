@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-01T14:53:48.461238+00:00",
+ "generated_at": "2026-10-04T14:29:48.927679+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed": "src/quant_fund/public.py",
@@ -112,6 +112,39 @@
    "n_hashes": 2,
    "research_only": true,
    "schema": "corpus_inference.v1"
+  },
+  {
+   "created_at": "2026-10-01T15:15:21.843773+00:00",
+   "evidence_level": null,
+   "file": "receipts/cost_calibration_eval_14854d2ce01e8241.json",
+   "id": "cost_calibration_eval_14854d2ce01e8241",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 3,
+   "research_only": true,
+   "schema": "cost_calibration.v1"
+  },
+  {
+   "created_at": "2026-10-01T09:59:01.631701+00:00",
+   "evidence_level": null,
+   "file": "receipts/cost_calibration_eval_ba55657b00b4b84d.json",
+   "id": "cost_calibration_eval_ba55657b00b4b84d",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 3,
+   "research_only": true,
+   "schema": "cost_calibration.v1"
+  },
+  {
+   "created_at": "2026-10-01T13:52:45.753609+00:00",
+   "evidence_level": null,
+   "file": "receipts/cost_calibration_eval_c39b86859ddac0c7.json",
+   "id": "cost_calibration_eval_c39b86859ddac0c7",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 3,
+   "research_only": true,
+   "schema": "cost_calibration.v1"
   },
   {
    "created_at": "2026-09-28T16:46:41.013669+00:00",
@@ -1082,7 +1115,7 @@
    "schema": "vpin.v1"
   }
  ],
- "repo_revision": "f4c8ac801be4cf82064bfe185682d0653b5bc184",
+ "repo_revision": "0e6f5a1b104c6757c45d8a26d697aba037178863",
  "strategies": [
   {
    "data_source": "UNVERIFIED",

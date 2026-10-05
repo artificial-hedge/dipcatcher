@@ -2149,6 +2149,237 @@ counted. Prose that contains such a token is quoted verbatim.
     - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
     - `value`: 1.0262118132145719e-05
 
+### `receipts/cost_calibration_eval_14854d2ce01e8241.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_14854d2ce01e8241.json | 498bb34045755a77a23fabf94afd11f0ba949af302cb6d8942e4e588944613cd | 14854d2ce01e8241b622aa20ce5f1a720a144ab2528fe27ec9e7ae69e26fc957 | not_checked | 5113838c888c2820c9fcffbdc16a1b12051bd6e3 | inputs_sha256=0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_relative`: 0.0008081198205963833
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-10-01T15:15:21.843773+00:00
+- `git_revision`: 5113838c888c2820c9fcffbdc16a1b12051bd6e3
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `n_dates`: 20
+- `n_names`: 3
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: 14854d2ce01e8241b622aa20ce5f1a720a144ab2528fe27ec9e7ae69e26fc957
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: flat
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 625.1519380423003
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 2437.6575722223597
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 3062.8095102646603
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 625.5662666663776
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 37
+    - `research_only`: true
+    - `spread`: 739.1584537248116
+    - `spread_estimator`: roll
+    - `total_cost`: 1364.7247203911893
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
+### `receipts/cost_calibration_eval_ba55657b00b4b84d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_ba55657b00b4b84d.json | 788e1296607fa3485eeee941b32b191e82a3ff936d5eae1fca828dc20ed60fe1 | ba55657b00b4b84de0d462c25599878bd873fecf23c6c8c0f93da018607e1471 | not_checked | f4c8ac801be4cf82064bfe185682d0653b5bc184 | inputs_sha256=0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_relative`: 0.0008081198205963833
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-10-01T09:59:01.631701+00:00
+- `git_revision`: f4c8ac801be4cf82064bfe185682d0653b5bc184
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `n_dates`: 20
+- `n_names`: 3
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: ba55657b00b4b84de0d462c25599878bd873fecf23c6c8c0f93da018607e1471
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: flat
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 625.1519380423003
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 2437.6575722223597
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 3062.8095102646603
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 625.5662666663776
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 37
+    - `research_only`: true
+    - `spread`: 739.1584537248116
+    - `spread_estimator`: roll
+    - `total_cost`: 1364.7247203911893
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
+### `receipts/cost_calibration_eval_c39b86859ddac0c7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_c39b86859ddac0c7.json | 0403336d64e6769a9c7a7c5d2f3b8f7abe4b82b88bbf3c955c6be3b482b07c0f | c39b86859ddac0c72b430b99165a3663028ffcd8ad1ee803c2aa060cd61c7743 | not_checked | f4c8ac801be4cf82064bfe185682d0653b5bc184 | inputs_sha256=0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_relative`: 0.0008081198205963833
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-10-01T13:52:45.753609+00:00
+- `git_revision`: f4c8ac801be4cf82064bfe185682d0653b5bc184
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `n_dates`: 20
+- `n_names`: 3
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: c39b86859ddac0c72b430b99165a3663028ffcd8ad1ee803c2aa060cd61c7743
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: flat
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 625.1519380423003
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 2437.6575722223597
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 3062.8095102646603
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 625.5662666663776
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 37
+    - `research_only`: true
+    - `spread`: 739.1584537248116
+    - `spread_estimator`: roll
+    - `total_cost`: 1364.7247203911893
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
 ### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |

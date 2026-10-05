@@ -2,10 +2,11 @@
 
 The relationship, inverted: **fx-1 is the model; dipcatcher is the harness
 that builds, evaluates, and verifies it.** This module is the typed bridge —
-every lab capability fx-1 is allowed to touch is registered here as a
-:class:`HarnessCommand` and executed through an injectable runner, so tests
-never spawn real lab processes and fx-1 can never reach an unregistered
-command.
+lab CLI surfaces are registered here as :class:`HarnessCommand` objects and
+executed through an injectable runner, so tests never spawn real lab processes.
+Independent feature, skill, and plugin implementations use the explicit
+``fx1.operations`` registry and a host-controlled workspace root. Neither
+execution path accepts unregistered commands or arbitrary module names.
 
 Harness roles:
 - *Data engine* — ingest/collect/features/labels feed ``fx1.data``.
@@ -201,9 +202,12 @@ def _subprocess_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
 class Harness:
     """The fx-1 side of the dipcatcher harness."""
 
-    def __init__(self, runner: Runner | None = None) -> None:
+    def __init__(self, runner: Runner | None = None, *, workspace_root: Path | None = None) -> None:
         self._runner = runner or _subprocess_runner
         self._registry = {c.name: c for c in HARNESS_REGISTRY}
+        self._workspace_root = (
+            workspace_root if workspace_root is not None else Path.cwd()
+        ).resolve()
 
     def list_commands(self, role: HarnessRole | None = None) -> list[HarnessCommand]:
         commands = list(self._registry.values())
@@ -218,6 +222,7 @@ class Harness:
         kind: str | None = None,
         command: str | None = None,
         source: str | None = None,
+        feature: str | None = None,
         market: str | None = None,
         asset: str | None = None,
         offset: int = 0,
@@ -236,6 +241,7 @@ class Harness:
             kind=cast(CapabilityKind | None, kind),
             command=command,
             source=source,
+            feature=feature,
             market=market,
             asset=asset,
             offset=offset,
@@ -243,15 +249,48 @@ class Harness:
         )
 
     def discovery_tool_specs(self) -> list[dict[str, object]]:
-        """Return AI-callable discovery tools separate from lab subprocesses."""
-        from fx1.capabilities import CAPABILITY_SEARCH_TOOL_SPEC
+        """Return AI discovery and operation tools separate from lab subprocesses."""
+        from fx1.capabilities import CAPABILITY_SEARCH_TOOL_SPEC, EXTENSION_MANIFEST_TOOL_SPEC
+        from fx1.operations.registry import operation_tool_specs
 
-        return [CAPABILITY_SEARCH_TOOL_SPEC]
+        return [
+            CAPABILITY_SEARCH_TOOL_SPEC,
+            EXTENSION_MANIFEST_TOOL_SPEC,
+            *operation_tool_specs(),
+        ]
+
+    def execute_operation(
+        self, operation_id: str, arguments: dict[str, object]
+    ) -> dict[str, object]:
+        """Run a registered implementation inside the host-selected workspace."""
+        from fx1.operations.registry import execute_operation
+
+        return execute_operation(operation_id, arguments, workspace_root=self._workspace_root)
+
+    def extension_manifest(self, kind: str, owner: str) -> dict[str, object]:
+        """Load one approved extension manifest through the fixed package registry."""
+        from fx1.extensions.naming import ExtensionKind
+        from fx1.extensions.registry import extension_manifest
+
+        return extension_manifest(cast(ExtensionKind, kind), owner)
 
     def invoke_discovery_tool(self, name: str, arguments: dict[str, object]) -> dict[str, object]:
-        """Invoke a registered read-only discovery tool with a validated schema."""
+        """Invoke a schema-validated discovery or operation tool by its fixed name."""
+        if name in ("list_operations", "describe_operation", "execute_operation"):
+            from fx1.operations.registry import invoke_operation_tool
+
+            return invoke_operation_tool(name, arguments, workspace_root=self._workspace_root)
+        if name == "get_extension_manifest":
+            from fx1.capabilities import ExtensionManifestArguments
+
+            parsed_manifest = ExtensionManifestArguments.model_validate(arguments)
+            return self.extension_manifest(parsed_manifest.kind, parsed_manifest.owner)
         if name != "search_capabilities":
-            raise KeyError(f"unknown discovery tool {name!r}; known: ['search_capabilities']")
+            raise KeyError(
+                "unknown discovery tool "
+                f"{name!r}; known: ['search_capabilities', 'get_extension_manifest', "
+                "'list_operations', 'describe_operation', 'execute_operation']"
+            )
         from fx1.capabilities import CapabilitySearchArguments, search_capabilities
 
         parsed = CapabilitySearchArguments.model_validate(arguments)
@@ -260,6 +299,7 @@ class Harness:
             kind=parsed.kind,
             command=parsed.command,
             source=parsed.source,
+            feature=parsed.feature,
             market=parsed.market,
             asset=parsed.asset,
             offset=parsed.offset,
