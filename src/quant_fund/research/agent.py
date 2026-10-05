@@ -15575,6 +15575,14 @@ from quant_fund.research.benches_w1947 import (
     bench_papa_legba_qa_studies_family,
     bench_simbi_qa_studies_family,
 )
+from quant_fund.research.benches_w1948 import (
+    bench_asmodeus_qa_studies_family,
+    bench_astaroth_qa_studies_family,
+    bench_belial_qa_studies_family,
+    bench_furfur_qa_studies_family,
+    bench_paimon_qa_studies_family,
+    bench_stolas_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
