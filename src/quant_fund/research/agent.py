@@ -15503,6 +15503,14 @@ from quant_fund.research.benches_w1938 import (
     bench_phi_hong_qa_studies_family,
     bench_phi_pha_qa_studies_family,
 )
+from quant_fund.research.benches_w1939 import (
+    bench_phi_khao_qa_studies_family,
+    bench_phi_pret_qa_studies_family,
+    bench_phi_puay_qa_studies_family,
+    bench_phi_rai_qa_studies_family,
+    bench_phi_taen_qa_studies_family,
+    bench_phi_yuan_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
