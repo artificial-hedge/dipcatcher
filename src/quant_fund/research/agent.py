@@ -14543,6 +14543,14 @@ from quant_fund.research.benches_w1818 import (
     bench_sekhmet2_qa_studies_family,
     bench_tefnut2_qa_studies_family,
 )
+from quant_fund.research.benches_w1819 import (
+    bench_bragi2_qa_studies_family,
+    bench_forseti2_qa_studies_family,
+    bench_heimdall2_qa_studies_family,
+    bench_norna2_qa_studies_family,
+    bench_ve2_qa_studies_family,
+    bench_vili2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
