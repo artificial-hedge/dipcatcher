@@ -149,6 +149,7 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from fx1.serve.uploads import (
+    UploadMeta,
     UploadStore,
     UploadStoreError,
     upload_object,
@@ -527,8 +528,15 @@ class Fx1Harness:
         # The /v1 retrieval index, in-process — store=false keeps a call
         # out of it, matching the wire's OpenAIEnvelopeStore semantics.
         self._openai_store = OpenAIEnvelopeStore(256)
-        # Named conversation containers — the wire's conv_store twin.
-        self._conv_store = OpenAIEnvelopeStore(256)
+        # Named conversation containers — the wire's conv_store twin;
+        # journaled under state_dir like every other store so a fresh
+        # harness on the same dir sees the same conversations.
+        self._conv_store = OpenAIEnvelopeStore(
+            256,
+            journal=(
+                JobJournal(state_path / "conversations.jsonl") if state_path is not None else None
+            ),
+        )
         # Cancel flags for background responses — a set event means the
         # stored envelope was flipped to ``cancelled`` and the worker must
         # not overwrite it with a terminal result.
@@ -3044,22 +3052,15 @@ class Fx1Harness:
         on it even when the response itself carried ``store=false``."""
         if conv_cid is None:
             return
-        conv = self._conv_store.get(conv_cid)
-        if conv is None:
+        if self._conv_store.get(conv_cid) is None:
             return  # deleted mid-flight — the response record stands alone
         appended = [
             *response_input_items_for_store(body.input, rid=str(envelope["id"])),
             *[it for it in envelope["output"] if isinstance(it, dict)],
         ]
-        self._conv_store.put(
-            conv,
-            items={
-                "items": [
-                    *(self._conv_store.get_items(conv_cid, "items") or []),
-                    *appended,
-                ]
-            },
-        )
+        # merged under the store lock — parallel turns can't lose each
+        # other's append; a delete racing in resolves as a skip.
+        self._conv_store.mutate_items(conv_cid, "items", lambda current: [*current, *appended])
 
     def _chain_response_input(
         self, body: OpenAIResponseRequest
@@ -3580,9 +3581,11 @@ class Fx1Harness:
         """``POST /v1/conversations/{id}`` in-process — metadata replaces
         wholesale."""
         conv = self._conversation_get(conversation_id)
-        conv["metadata"] = dict(metadata) if metadata is not None else {}
-        self._conv_store.put(conv)
-        return conv
+        new_conv = dict(conv)
+        new_conv["metadata"] = dict(metadata) if metadata is not None else {}
+        if not self._conv_store.put_if_present(new_conv):
+            raise KeyError(f"conversation {conversation_id!r} not found")
+        return new_conv
 
     def openai_conversation_delete(self, conversation_id: str) -> dict[str, Any]:
         """``DELETE /v1/conversations/{id}`` in-process — the conv and its
@@ -3618,17 +3621,19 @@ class Fx1Harness:
     ) -> dict[str, Any]:
         """``POST /v1/conversations/{id}/items`` in-process — appends the
         dicts (minted per append), returns the minted list."""
-        conv = self._conversation_get(conversation_id)
-        minted = response_input_items_for_store(items, rid=conversation_id)
-        self._conv_store.put(
-            conv,
-            items={
-                "items": [
-                    *(self._conv_store.get_items(conversation_id, "items") or []),
-                    *minted,
-                ]
-            },
-        )
+        self._conversation_get(conversation_id)
+        minted: list[dict[str, Any]] = []
+
+        def _extend(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            # A fresh namespace avoids id reuse after deleting earlier items;
+            # the merge remains inside the store lock.
+            minted.extend(
+                response_input_items_for_store(items, rid=f"{conversation_id}:{uuid.uuid4().hex}")
+            )
+            return [*current, *minted]
+
+        if self._conv_store.mutate_items(conversation_id, "items", _extend) is None:
+            raise KeyError(f"conversation {conversation_id!r} not found")
         return {
             "object": "list",
             "data": minted,
@@ -3659,11 +3664,15 @@ class Fx1Harness:
         """``DELETE /v1/conversations/{id}/items/{item_id}`` in-process —
         drops one item; a missing id raises ``KeyError``."""
         conv = self._conversation_get(conversation_id)
-        items = self._conv_store.get_items(conversation_id, "items") or []
-        kept = [it for it in items if it.get("id") != item_id]
-        if len(kept) == len(items):
-            raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
-        self._conv_store.put(conv, items={"items": kept})
+
+        def _drop(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            kept = [it for it in current if it.get("id") != item_id]
+            if len(kept) == len(current):
+                raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
+            return kept
+
+        if self._conv_store.mutate_items(conversation_id, "items", _drop) is None:
+            raise KeyError(f"conversation {conversation_id!r} not found")
         return conv
 
     # --- vector stores (the /v1/vector_stores twin) --------------------------
@@ -4204,35 +4213,33 @@ class Fx1Harness:
         """``POST /v1/uploads/{id}/complete`` — assemble the parts into a
         process-local ``file-`` record (fetch bytes back with
         :meth:`file_content`). The md5 check runs before the mint, same
-        as the wire."""
-        content = self._upload_store.assemble(upload_id, part_ids)
-        meta = self._upload_store.get(upload_id)
-        assert meta is not None  # assemble() already raised otherwise
-        if md5 is not None and (
-            hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
-        ):
-            raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
-        if len(content) != meta.nbytes:
-            raise UploadStoreError(
-                400,
-                f"assembled bytes {len(content)} != declared {meta.nbytes}",
-                "upload_incomplete",
-            )
-        file_id = f"file-{uuid.uuid4().hex}"
-        fobj = {
-            "id": file_id,
-            "object": "file",
-            "purpose": meta.purpose,
-            "filename": meta.filename,
-            "bytes": len(content),
-            "created_at": int(time.time()),
-            "status": "processed",
-        }
-        with self._files_lock:
-            self._files[file_id] = {**fobj, "_content": content}
-            while len(self._files) > 256:
-                self._files.popitem(last=False)
-        done = self._upload_store.complete(upload_id, part_ids, content=content, file_id=file_id)
+        as the wire. Validation and publication share one upload
+        transition so concurrent completes cannot mint extra files."""
+
+        def _publish(meta: UploadMeta, content: bytes) -> tuple[str, dict[str, Any]]:
+            file_id = f"file-{uuid.uuid4().hex}"
+            fobj = {
+                "id": file_id,
+                "object": "file",
+                "purpose": meta.purpose,
+                "filename": meta.filename,
+                "bytes": len(content),
+                "created_at": int(time.time()),
+                "status": "processed",
+            }
+            with self._files_lock:
+                self._files[file_id] = {**fobj, "_content": content}
+                while len(self._files) > 256:
+                    self._files.popitem(last=False)
+            return file_id, fobj
+
+        def _rollback(file_id: str) -> None:
+            with self._files_lock:
+                self._files.pop(file_id, None)
+
+        done, fobj = self._upload_store.complete_with(
+            upload_id, part_ids, publish=_publish, rollback=_rollback, md5=md5
+        )
         return upload_object(done, file_obj=fobj)
 
     def upload_cancel(self, upload_id: str) -> dict[str, Any]:

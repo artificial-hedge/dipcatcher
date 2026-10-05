@@ -104,3 +104,32 @@ resolved source: it names an earlier parent revision and the original helper
 assertions were incomplete. No historical receipt was rewritten. A passing
 local battery is a bounded correctness check, not exhaustive input coverage,
 network-transport validation, external-process restart evidence or market evidence.
+
+
+### Upload lifecycle maintenance (PR #2808)
+
+The new `uploads_audit` checks 93 selected upload lifecycle, checksum, part-bound,
+expiry, tenancy, recovery, downstream-plumbing and client-error contracts using
+SYNTHETIC stubs. Its existing empty-result refusal is retained and now explicitly
+names `no_probes`. A resource stack closes clients and joins their job workers
+before removing private state, including on probe failures; replay probes close
+one application before constructing the next. Ambient FX1/MOONSHOT settings are
+restored. Run this diagnostic in a dedicated process because environment overrides
+are process-wide. Worker exceptions propagate instead of being lost in threads.
+
+Additional deterministic regressions exposed a publication race: two completions
+could mint two files while only one upload completed. HTTP and SDK now use one
+store-owned completion operation, holding the upload lock across assembly, checksum
+validation, publication and the durable terminal transition. Before-write upload
+journal failures preserve retryable metadata and previously durable part bytes;
+a newly published file is removed only when the terminal journal is demonstrably
+unchanged. Add-part, cancel, expiry and create/eviction also journal before making
+the corresponding state visible or dropping durable parts.
+
+These checks do not establish atomicity across the separate upload and file
+journals, recovery from arbitrary partial filesystem writes, rollback of unrelated
+file-capacity evictions, external-process crash recovery, network behavior, or
+fine-tuning corpus/training quality. The error-envelope handler was already fixed
+in #2805. The incoming all-pass `fx1_uploads_audit.json` names the earlier parent
+`a0cb7c9` and is excluded; historical receipts remain unchanged. The serve census
+moves from 39 to 40 and remains `partial`.

@@ -33,13 +33,17 @@ import time
 import urllib.parse
 import uuid
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from typing import Any, Literal
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Literal
 
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from fx1.serve.receipt_store import SHA256_HEX
 from fx1.serve.webhooks import check_callback_url
+
+if TYPE_CHECKING:
+    from fx1.serve.journal import JobJournal
 
 __all__ = [
     "OPENAI_BACKENDS",
@@ -1576,15 +1580,18 @@ def response_input_item_dicts(input_: str | list[dict[str, Any]]) -> list[dict[s
 
 
 def response_input_items_for_store(
-    input_: str | list[dict[str, Any]], *, rid: str
+    input_: str | list[dict[str, Any]], *, rid: str, start_at: int = 0
 ) -> list[dict[str, Any]]:
     """``input`` in retrieval shape for
     ``GET /v1/responses/{id}/input_items`` — the items as submitted
     (a plain string wraps as one user message item with ``input_text``),
-    each carrying a caller-supplied or digest ``msg_`` id."""
+    each carrying a caller-supplied or digest ``msg_`` id. ``start_at``
+    offsets deterministic positions within one request. An append must
+    use a fresh ``rid`` namespace: list length alone cannot prevent id
+    reuse after earlier items have been deleted."""
     out: list[dict[str, Any]] = []
     for i, item in enumerate(response_input_item_dicts(input_)):
-        item.setdefault("id", _stored_item_id("msg", rid, i))
+        item.setdefault("id", _stored_item_id("msg", rid, start_at + i))
         out.append(item)
     return out
 
@@ -2835,9 +2842,17 @@ class OpenAIEnvelopeStore:
     routes. ``store=false`` keeps a call out of this index — the
     completion log still records it; retrieval is a convenience surface,
     not the evidence. Oldest entries evict at ``cap`` (insertion order —
-    a re-put refreshes the id's position)."""
+    a re-put refreshes the id's position).
 
-    def __init__(self, cap: int = 256) -> None:
+    With a ``JobJournal`` bound, every mutation is journaled inside the
+    store lock before the in-memory write lands, and boot replays the
+    chain then compacts to the live records. Invalid journal records
+    refuse startup without rewriting the file: replaying an older
+    verified prefix could otherwise resurrect a deleted conversation.
+    Evictions re-derive from insertion order; explicit deletions are
+    journaled before their envelopes disappear from memory."""
+
+    def __init__(self, cap: int = 256, journal: JobJournal | None = None) -> None:
         if cap < 1:
             raise ValueError(f"store cap must be >= 1, got {cap}")
         self._cap = cap
@@ -2849,6 +2864,131 @@ class OpenAIEnvelopeStore:
         # line, and SSE replay source — a stash key would serialize onto
         # the wire. Items share their envelope's lifetime.
         self._subitems: dict[str, dict[str, list[dict[str, Any]]]] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            if res.truncated_at is not None or res.dropped:
+                raise RuntimeError("envelope journal is damaged; recovery requires operator repair")
+            try:
+                for payload in res.payloads:
+                    self._apply(payload)
+            except ValueError as exc:
+                raise RuntimeError("envelope journal contains an invalid operation") from exc
+            self._compact_locked()
+
+    def _journal_op(self, payload: dict[str, Any]) -> None:
+        """Append one mutation record — callers hold ``self._lock``, so
+        the journal's line order matches the in-memory mutation order."""
+        self._validate_op(payload)
+        if self._journal is not None:
+            self._journal.append(payload)
+
+    @staticmethod
+    def _validate_op(payload: dict[str, Any]) -> None:
+        """Reject semantically invalid records, even when their hash verifies."""
+        if not isinstance(payload, dict):
+            raise ValueError("envelope journal operation must be an object")
+        op = payload.get("op")
+        if op == "put":
+            env = payload.get("envelope")
+            if not isinstance(env, dict) or not isinstance(env.get("id"), str) or not env["id"]:
+                raise ValueError("envelope journal put requires a nonempty string id")
+            if "refresh" in payload and not isinstance(payload["refresh"], bool):
+                raise ValueError("envelope journal refresh must be boolean")
+            if "items" in payload:
+                items = payload["items"]
+                if not isinstance(items, dict) or any(
+                    not isinstance(key, str)
+                    or not isinstance(values, list)
+                    or any(not isinstance(item, dict) for item in values)
+                    for key, values in items.items()
+                ):
+                    raise ValueError("envelope journal put has invalid items")
+        elif op in ("set_items", "delete"):
+            if not isinstance(payload.get("id"), str) or not payload["id"]:
+                raise ValueError("envelope journal operation requires a nonempty string id")
+            if op == "set_items" and (
+                not isinstance(payload.get("key"), str)
+                or not isinstance(payload.get("items"), list)
+                or any(not isinstance(item, dict) for item in payload["items"])
+            ):
+                raise ValueError("envelope journal set_items has invalid items")
+        else:
+            raise ValueError("unknown envelope journal operation")
+
+    def _apply(self, payload: dict[str, Any]) -> None:
+        """Replay one journaled op onto the in-memory maps (boot path —
+        never re-journals)."""
+        self._validate_op(payload)
+        op = payload.get("op")
+        if op == "put":
+            env = deepcopy(payload["envelope"])
+            eid = str(env["id"])
+            if payload.get("refresh", True):
+                self._items.pop(eid, None)
+            self._items[eid] = env
+            items = payload.get("items")
+            if items is not None:
+                self._subitems[eid] = deepcopy(items)
+            while len(self._items) > self._cap:
+                evicted = next(iter(self._items))
+                self._items.pop(evicted)
+                self._subitems.pop(evicted, None)
+        elif op == "set_items":
+            sid, key, items = (
+                payload.get("id"),
+                payload.get("key"),
+                payload.get("items"),
+            )
+            if (
+                isinstance(sid, str)
+                and sid in self._items
+                and isinstance(key, str)
+                and isinstance(items, list)
+            ):
+                self._subitems.setdefault(sid, {})[key] = deepcopy(items)
+                self._items[sid] = self._items.pop(sid)
+        elif op == "delete":
+            did = payload.get("id")
+            if isinstance(did, str):
+                self._items.pop(did, None)
+                self._subitems.pop(did, None)
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        after a fully verified replay so dead history does not accumulate."""
+        if self._journal is not None:
+            self._journal.compact(
+                [
+                    {
+                        "op": "put",
+                        "envelope": env,
+                        "items": {
+                            k: [dict(it) for it in v]
+                            for k, v in self._subitems.get(eid, {}).items()
+                        },
+                    }
+                    for eid, env in self._items.items()
+                ]
+            )
+
+    def _put_locked(
+        self,
+        envelope: dict[str, Any],
+        items: Mapping[str, Sequence[dict[str, Any]]] | None = None,
+        *,
+        refresh: bool = True,
+    ) -> None:
+        """Snapshot, journal, then publish with the same ordering as replay."""
+        payload: dict[str, Any] = {"op": "put", "envelope": deepcopy(envelope)}
+        if not refresh:
+            payload["refresh"] = False
+        if items is not None:
+            payload["items"] = {key: deepcopy(list(values)) for key, values in items.items()}
+        self._journal_op(payload)
+        self._apply(payload)
 
     def put(
         self,
@@ -2860,14 +3000,7 @@ class OpenAIEnvelopeStore:
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         with self._lock:
-            self._items.pop(eid, None)
-            self._items[eid] = envelope
-            if items is not None:
-                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
-            while len(self._items) > self._cap:
-                evicted = next(iter(self._items))
-                self._items.pop(evicted)
-                self._subitems.pop(evicted, None)
+            self._put_locked(envelope, items)
 
     def transition_status(
         self,
@@ -2886,7 +3019,9 @@ class OpenAIEnvelopeStore:
             cur = self._items.get(envelope_id)
             if cur is None or cur.get("status") not in allowed:
                 return False
-            cur["status"] = status
+            updated = deepcopy(cur)
+            updated["status"] = status
+            self._put_locked(updated, refresh=False)
             return True
 
     def put_unless_status(
@@ -2913,14 +3048,7 @@ class OpenAIEnvelopeStore:
                 return False
             if cur is not None and cur.get("status") in blocked:
                 return False
-            self._items.pop(eid, None)
-            self._items[eid] = envelope
-            if items is not None:
-                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
-            while len(self._items) > self._cap:
-                evicted = next(iter(self._items))
-                self._items.pop(evicted)
-                self._subitems.pop(evicted, None)
+            self._put_locked(envelope, items)
             return True
 
     def repin(self, envelope: dict[str, Any]) -> dict[str, Any]:
@@ -2935,14 +3063,10 @@ class OpenAIEnvelopeStore:
         if not isinstance(eid, str) or not eid:
             raise ValueError("envelope carries no string 'id'")
         with self._lock:
-            live = self._items.pop(eid, None)
+            live = self._items.get(eid)
             selected = live if live is not None else envelope
-            self._items[eid] = selected
-            while len(self._items) > self._cap:
-                evicted = next(iter(self._items))
-                self._items.pop(evicted)
-                self._subitems.pop(evicted, None)
-            return dict(selected)
+            self._put_locked(selected)
+            return deepcopy(selected)
 
     def put_if_present(
         self,
@@ -2960,20 +3084,13 @@ class OpenAIEnvelopeStore:
         with self._lock:
             if eid not in self._items:
                 return False
-            self._items.pop(eid)
-            self._items[eid] = envelope
-            if items is not None:
-                self._subitems[eid] = {k: [dict(it) for it in v] for k, v in items.items()}
-            while len(self._items) > self._cap:
-                evicted = next(iter(self._items))
-                self._items.pop(evicted)
-                self._subitems.pop(evicted, None)
+            self._put_locked(envelope, items)
             return True
 
     def get(self, envelope_id: str) -> dict[str, Any] | None:
         with self._lock:
             env = self._items.get(envelope_id)
-            return dict(env) if env is not None else None
+            return deepcopy(env) if env is not None else None
 
     def get_items(self, envelope_id: str, key: str) -> list[dict[str, Any]] | None:
         """The request items stored under ``key`` for ``envelope_id`` —
@@ -2982,15 +3099,42 @@ class OpenAIEnvelopeStore:
             if envelope_id not in self._items:
                 return None
             its = self._subitems.get(envelope_id, {}).get(key)
-            return [dict(it) for it in its] if its is not None else []
+            return deepcopy(its) if its is not None else []
 
     def list_envelopes(self, object_: str) -> list[dict[str, Any]]:
         """All stored envelopes of one ``object`` type, oldest first."""
         with self._lock:
-            return [dict(env) for env in self._items.values() if env.get("object") == object_]
+            return [deepcopy(env) for env in self._items.values() if env.get("object") == object_]
+
+    def mutate_items(
+        self,
+        envelope_id: str,
+        key: str,
+        fn: Callable[[list[dict[str, Any]]], Sequence[dict[str, Any]]],
+    ) -> list[dict[str, Any]] | None:
+        """Read-modify-write one item list under the store lock: ``fn``
+        gets a copy of the current list (``[]`` when the envelope never
+        carried items under ``key``) and its return becomes the list.
+        The whole merge — read, transform, store — is one critical
+        section, so parallel mutators can't lose each other's writes and
+        a delete racing in resolves as ``None`` instead of a get-then-put
+        resurrection. Returns the merged list, or ``None`` when the id is
+        gone."""
+        with self._lock:
+            if envelope_id not in self._items:
+                return None
+            bucket = self._subitems.get(envelope_id, {})
+            merged = deepcopy(list(fn(deepcopy(bucket.get(key, [])))))
+            payload = {"op": "set_items", "id": envelope_id, "key": key, "items": merged}
+            self._journal_op(payload)
+            self._apply(payload)
+            return deepcopy(merged)
 
     def delete(self, envelope_id: str) -> bool:
         with self._lock:
+            existed = envelope_id in self._items or envelope_id in self._subitems
+            if existed:
+                self._journal_op({"op": "delete", "id": envelope_id})
             self._subitems.pop(envelope_id, None)
             return self._items.pop(envelope_id, None) is not None
 
@@ -3003,8 +3147,10 @@ class OpenAIEnvelopeStore:
             env = self._items.get(envelope_id)
             if env is None:
                 return None
-            env["metadata"] = dict(metadata)
-            return dict(env)
+            updated = deepcopy(env)
+            updated["metadata"] = dict(metadata)
+            self._put_locked(updated, refresh=False)
+            return deepcopy(updated)
 
     def __len__(self) -> int:
         with self._lock:
