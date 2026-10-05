@@ -161,6 +161,26 @@ specific counters (e.g. `cached_tokens`) land in `other_usage` rather
 than dropping silently. `since > until` fails closed 400. The
 in-process twin `Fx1Harness.usage()` aggregates the same way.
 
+**Accounting contract:** provider usage claims pass a billable-value
+sieve before they reach any ledger — only genuine ints count (a bool
+is not a token count; strings/floats are unbillable and dropped);
+negative ints sum verbatim into the buckets as the provider's claim,
+while the charge path clamps them at zero so a budget never goes
+negative. A managed key's `uses` counts *authenticated requests* —
+a call that fails after auth still counts; a call refused by a
+budget, rate window, scope check, or bad credential never does and
+leaves no record. `tokens_used` equals the per-record charge
+(`total_tokens` else `prompt+completion`) summed over the key's
+records plus the declared batch `usage_total` delta — streamed calls
+attribute and bill like sync ones, and idempotent replays never
+double-bill. When the ring evicts, `totals` cover only retained
+records while evicted calls stay billed (the charge fires at append;
+a key card's `log_dropped` marks `served` as the lower bound). The
+conservation battery `fx1.serve.usage_audit` (50 probes — bucket
+folds, filter partitions, meter reconciliation, ring honesty,
+fallback attribution, adversarial usage payloads) seals this
+contract as `receipts/fx1_usage_audit.json`.
+
 **Response-side seal:** responses that carry `X-Fx1-Completion-Id` also
 carry `X-Fx1-Receipt-Sha256` — the `receipt_sha256` of the sealed
 `fx1_completion_record.v1` document, so a client pins the evidence
