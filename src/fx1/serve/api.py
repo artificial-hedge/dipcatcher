@@ -1468,10 +1468,9 @@ class KeyServedUsage(_Model):
 
 
 class ApiKeyUsageResponse(_Model):
-    """Usage card for one managed key: live counters (``uses`` /
-    ``tokens_used`` reset on restart like every live meter), declared
-    budgets with derived headroom, the rpm window state, and the
-    completion-ring spend split."""
+    """Usage card for one managed key: lifetime ``uses`` and ``tokens_used``
+    survive a clean ``--state-dir`` restart; RPM windows remain process-local.
+    Includes declared budgets, derived headroom, and completion-ring spend."""
 
     id: str
     object: Literal["key_usage"] = "key_usage"
@@ -8819,10 +8818,10 @@ def _mount_key_lifecycle(
         operation_id="key_usage",
     )
     def key_usage(key_id: str, request: Request) -> ApiKeyUsageResponse:
-        """One key's usage card — live counters, declared budgets with
-        derived headroom, the rpm window state, and the completion-ring
-        spend split. Counters are live meters (not journaled) and reset
-        on restart like ``uses``."""
+        """One key's usage card — lifetime counters, declared budgets with
+        derived headroom, RPM window state, and completion-ring spend.
+        Journaled ``uses`` and ``tokens_used`` survive a clean ``--state-dir``
+        restart; the RPM window remains process-local and resets."""
         _require_admin(request)
         rec = key_store.get(key_id)
         if rec is None:
