@@ -6883,6 +6883,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pukaua_qa_studies",
         "sanguma_qa_studies",
         "tambaran_qa_studies",
+        # Wave-1946 chinese-underworld canon.
+        "egui_qa_studies",
+        "heibai_qa_studies",
+        "meng_po_qa_studies",
+        "niutou_qa_studies",
+        "wangliang_qa_studies",
+        "yanwang_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
