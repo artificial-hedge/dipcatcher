@@ -85,6 +85,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 
 from fx1 import __version__
@@ -487,7 +488,7 @@ class ApiError(HTTPException):
         self.code = code or _STATUS_CODES.get(status_code, "internal")
 
 
-def _err_code(exc: HTTPException) -> str:
+def _err_code(exc: StarletteHTTPException) -> str:
     if isinstance(exc, ApiError):
         return exc.code
     return _STATUS_CODES.get(exc.status_code, "internal")
@@ -9179,8 +9180,10 @@ def create_app(
     app.state.rate_limiter = limiter
     app.state.breaker = breaker
 
-    @app.exception_handler(HTTPException)
-    async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    # Routing errors raise the Starlette base; FastAPI and ApiError subclasses
+    # still resolve to this handler through their exception hierarchy.
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         if is_openai_path(request.url.path):
             return JSONResponse(
                 status_code=exc.status_code,

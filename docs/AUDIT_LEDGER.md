@@ -86,3 +86,21 @@ Parallel manifest, same schema + ratchet tests: 115/116 modules `audited`
 - `test_audited_dirs_pin_file_count` fails the build if an audited dir gains or
   loses a module without a manifest update.
 - `AUDITED_FLOOR` ratchets only upward.
+
+### Observability audit maintenance (PR #2805)
+
+`observe_audit` checks selected health/readiness, metrics, Prometheus,
+drain, request-id, error-envelope, scope and client contracts using SYNTHETIC
+stub backends and in-process ASGI clients. Routing-level 404/405 exceptions
+now use the existing structured error handler without losing exception headers.
+The resolved audit rejects empty results, checks HELP < TYPE < first sample,
+isolates app creation from ambient backend/state settings, and observes a real
+condition wait before releasing the held drain workload. A resource stack closes
+HTTP clients and joins job-executor workers on both successful and failed audits,
+before temporary persistent state is removed.
+
+The incoming `fx1_observe_audit.json` was not accepted as evidence for this
+resolved source: it names an earlier parent revision and the original helper
+assertions were incomplete. No historical receipt was rewritten. A passing
+local battery is a bounded correctness check, not exhaustive input coverage,
+network-transport validation, external-process restart evidence or market evidence.
