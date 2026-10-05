@@ -15615,6 +15615,14 @@ from quant_fund.research.benches_w1952 import (
     bench_furcas_qa_studies_family,
     bench_gaap_qa_studies_family,
 )
+from quant_fund.research.benches_w1953 import (
+    bench_amy_qa_studies_family,
+    bench_andrealphus_qa_studies_family,
+    bench_gremory_qa_studies_family,
+    bench_murmur_qa_studies_family,
+    bench_orobas_qa_studies_family,
+    bench_ose_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
