@@ -57,6 +57,7 @@ from contextlib import (
     AbstractAsyncContextManager,
     asynccontextmanager,
     contextmanager,
+    suppress,
 )
 from pathlib import Path
 from typing import Any, Literal, cast
@@ -3013,6 +3014,13 @@ class _FileRecord(_Model):
     size: int
     created_at: int
     content: bytes
+    # New records bind metadata to exact bytes. ``None`` keeps journals
+    # written before this field backward-compatible; a clean replay upgrades
+    # them before compaction.
+    content_sha256: str | None = None
+
+
+_FILE_STORE_ID = re.compile(r"file-[0-9a-f]{32}")
 
 
 class _FileStore:
@@ -3036,6 +3044,10 @@ class _FileStore:
         max_bytes: int,
         state_dir: Path | None = None,
     ) -> None:
+        if max_entries < 1:
+            raise ValueError(f"file store max_entries must be >= 1, got {max_entries}")
+        if max_bytes < 1:
+            raise ValueError(f"file store max_bytes must be >= 1, got {max_bytes}")
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes
@@ -3048,52 +3060,119 @@ class _FileStore:
         if self._journal is not None:
             res = self._journal.replay()
             self.recover_warnings = list(res.warnings)
-            for payload in res.payloads:
-                for evict in payload.get("evicted") or ():
-                    fid = str(evict)
-                    self._files.pop(fid, None)
-                    self._blob(fid).unlink(missing_ok=True)
-                if "file_deleted" in payload:
-                    fid = str(payload["file_deleted"])
-                    self._files.pop(fid, None)
-                    self._blob(fid).unlink(missing_ok=True)
-                    continue
-                if "file" not in payload:
-                    continue
-                meta = payload["file"]
-                fid = str(meta["file_id"])
-                blob = self._blob(fid)
-                if not blob.is_file():
-                    self.recover_warnings.append(
-                        f"file {fid}: journaled without its content blob — dropped"
+            # Never rewrite a damaged journal around the last verified prefix:
+            # doing so would destroy the corrupt suffix and can resurrect a
+            # record whose delete lived there. Operator repair is required.
+            if res.truncated_at is not None or res.dropped:
+                raise RuntimeError("file journal is damaged; recovery requires operator repair")
+            try:
+                for payload in res.payloads:
+                    self._apply_replay_op(payload)
+                for file_id, rec in list(self._files.items()):
+                    content = self._blob(file_id).read_bytes()
+                    digest = hashlib.sha256(content).hexdigest()
+                    if rec.size != len(content) or rec.size > self._max_bytes:
+                        raise ValueError(
+                            f"file {file_id}: metadata size does not match its content blob "
+                            "or exceeds the configured byte cap"
+                        )
+                    if rec.content_sha256 is not None and not hmac.compare_digest(
+                        rec.content_sha256, digest
+                    ):
+                        raise ValueError(f"file {file_id}: content sha256 does not match metadata")
+                    self._files[file_id] = rec.model_copy(
+                        update={"content": content, "content_sha256": digest}
                     )
-                    continue
-                rec = _FileRecord.model_validate({**meta, "content": blob.read_bytes()})
-                self._files[fid] = rec
-                self._files.move_to_end(fid)
-            # GC blobs with no live record (torn tail / mid-eviction crash)
+                if len(self._files) > self._max:
+                    raise ValueError("file journal live set exceeds the configured entry cap")
+            except (OSError, ValueError) as exc:
+                raise RuntimeError("file journal contains an invalid operation") from exc
+            # GC only after the complete chain and every referenced blob have
+            # validated. A corrupt suffix may still be the sole owner of a blob.
             blobs = (
                 self._dir.glob("file-*.bin") if self._dir is not None and self._dir.is_dir() else ()
             )
             for blob in blobs:
                 if blob.stem not in self._files:
                     blob.unlink(missing_ok=True)
+            temporary = (
+                self._dir.glob(".file-*.tmp")
+                if self._dir is not None and self._dir.is_dir()
+                else ()
+            )
+            for tmp in temporary:
+                tmp.unlink(missing_ok=True)
             self._compact_locked()
+
+    @staticmethod
+    def _valid_id(file_id: str) -> bool:
+        return _FILE_STORE_ID.fullmatch(file_id) is not None
 
     def _blob(self, file_id: str) -> Path:
         if self._dir is None:  # only reachable in the journal-less mode
             raise RuntimeError("file store has no state_dir — nothing durable to address")
+        if not self._valid_id(file_id):
+            raise ValueError(f"invalid file id {file_id!r}")
         return self._dir / f"{file_id}.bin"
 
     @staticmethod
     def _meta(rec: _FileRecord) -> dict[str, Any]:
         return rec.model_dump(mode="json", exclude={"content"})
 
+    def _apply_replay_op(self, payload: dict[str, Any]) -> None:
+        """Validate and apply one legacy-compatible journal operation."""
+        if not isinstance(payload, dict):
+            raise ValueError("file journal operation must be an object")
+        evicted = payload.get("evicted", [])
+        if not isinstance(evicted, list) or any(
+            not isinstance(file_id, str) or not self._valid_id(file_id) for file_id in evicted
+        ):
+            raise ValueError("file journal evicted must be a list of valid ids")
+        for file_id in evicted:
+            self._files.pop(file_id, None)
+
+        if "file" in payload:
+            meta = payload["file"]
+            if not isinstance(meta, dict):
+                raise ValueError("file journal metadata must be an object")
+            file_id = meta.get("file_id")
+            if not isinstance(file_id, str) or not self._valid_id(file_id):
+                raise ValueError("file journal metadata requires a valid file_id")
+            # Content is hydrated after every operation has replayed: a blob
+            # legitimately may be absent when a later tombstone removes this
+            # record from the final live set.
+            rec = _FileRecord.model_validate({**meta, "content": b""})
+            self._files[file_id] = rec
+            self._files.move_to_end(file_id)
+            allowed = {"file", "evicted"}
+        elif "file_deleted" in payload:
+            file_id = payload["file_deleted"]
+            if not isinstance(file_id, str) or not self._valid_id(file_id):
+                raise ValueError("file journal delete requires a valid file id")
+            self._files.pop(file_id, None)
+            allowed = {"file_deleted"}
+        elif "file_touched" in payload:
+            file_id = payload["file_touched"]
+            if (
+                not isinstance(file_id, str)
+                or not self._valid_id(file_id)
+                or file_id not in self._files
+            ):
+                raise ValueError("file journal touch requires a live file id")
+            self._files.move_to_end(file_id)
+            allowed = {"file_touched"}
+        else:
+            raise ValueError("unknown file journal operation")
+        if set(payload) - allowed:
+            raise ValueError("file journal operation contains unexpected fields")
+
     def _compact_locked(self) -> None:
         if self._journal is not None:
             self._journal.compact([{"file": self._meta(r)} for r in self._files.values()])
 
     def put(self, *, filename: str, purpose: str, content: bytes) -> _FileRecord:
+        if len(content) > self._max_bytes:
+            raise ValueError(f"file exceeds the {self._max_bytes}-byte cap")
         rec = _FileRecord(
             file_id=f"file-{uuid.uuid4().hex}",
             filename=filename,
@@ -3101,6 +3180,7 @@ class _FileStore:
             size=len(content),
             created_at=int(time.time()),
             content=content,
+            content_sha256=hashlib.sha256(content).hexdigest(),
         )
         if self._dir is not None:
             # Blob first, fsync'd: the journaled metadata line may only ever
@@ -3108,23 +3188,47 @@ class _FileStore:
             self._dir.mkdir(parents=True, exist_ok=True)
             blob = self._blob(rec.file_id)
             tmp = self._dir / f".{rec.file_id}.tmp"
-            with tmp.open("wb") as fh:
-                fh.write(content)
-                fh.flush()
-                os.fsync(fh.fileno())
-            os.replace(tmp, blob)
+            try:
+                with tmp.open("wb") as fh:
+                    fh.write(content)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                os.replace(tmp, blob)
+            except Exception:
+                tmp.unlink(missing_ok=True)
+                blob.unlink(missing_ok=True)
+                raise
         evicted: list[str] = []
-        with self._lock:
-            self._files[rec.file_id] = rec
-            self._files.move_to_end(rec.file_id)
-            while len(self._files) > self._max:
-                old_id, _ = self._files.popitem(last=False)
-                evicted.append(old_id)
-            if self._journal is not None:
-                payload: dict[str, Any] = {"file": self._meta(rec)}
-                if evicted:
-                    payload["evicted"] = evicted
-                self._journal.append(payload)
+        journal_size = 0
+        if self._journal is not None:
+            with suppress(FileNotFoundError):
+                journal_size = self._journal.path.stat().st_size
+        try:
+            with self._lock:
+                evicted = list(self._files)[: max(0, len(self._files) + 1 - self._max)]
+                if self._journal is not None:
+                    payload: dict[str, Any] = {"file": self._meta(rec)}
+                    if evicted:
+                        payload["evicted"] = evicted
+                    self._journal.append(payload)
+                for old_id in evicted:
+                    self._files.pop(old_id, None)
+                self._files[rec.file_id] = rec
+                self._files.move_to_end(rec.file_id)
+        except Exception:
+            if self._dir is not None:
+                # Before-write failures leave an orphan blob and are safe to
+                # clean. If the journal length changed, retain it: the append
+                # may be durable or torn and repair needs the referenced bytes.
+                unchanged = self._journal is None
+                if self._journal is not None:
+                    try:
+                        unchanged = self._journal.path.stat().st_size == journal_size
+                    except OSError:
+                        unchanged = False
+                if unchanged:
+                    self._blob(rec.file_id).unlink(missing_ok=True)
+            raise
         if self._dir is not None:
             for fid in evicted:
                 self._blob(fid).unlink(missing_ok=True)
@@ -3134,24 +3238,32 @@ class _FileStore:
         with self._lock:
             rec = self._files.get(file_id)
             if rec is not None:
-                self._files.move_to_end(file_id)
-            return rec
+                # Avoid an fsync on repeated reads of the current MRU entry.
+                # Only an order-changing touch needs durable representation.
+                if next(reversed(self._files)) != file_id:
+                    if self._journal is not None:
+                        self._journal.append({"file_touched": file_id})
+                    self._files.move_to_end(file_id)
+                return rec.model_copy(deep=True)
+            return None
 
     def list(self) -> builtins.list[_FileRecord]:
         """Newest-first snapshot."""
         with self._lock:
-            out = list(self._files.values())
+            out = [rec.model_copy(deep=True) for rec in self._files.values()]
         out.reverse()
         return out
 
     def delete(self, file_id: str) -> _FileRecord | None:
         with self._lock:
-            rec = self._files.pop(file_id, None)
+            rec = self._files.get(file_id)
             if rec is not None and self._journal is not None:
                 self._journal.append({"file_deleted": file_id})
+            if rec is not None:
+                self._files.pop(file_id)
         if rec is not None and self._dir is not None:
             self._blob(file_id).unlink(missing_ok=True)
-        return rec
+        return rec.model_copy(deep=True) if rec is not None else None
 
     @property
     def max_bytes(self) -> int:
@@ -3197,6 +3309,12 @@ class _BatchRecord(_Model):
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _key_id: str | None = PrivateAttr(default=None)
+    # Serializes every lifecycle transition and snapshot.  A plain
+    # check-then-write is not sufficient here: expiry/cancel routes and the
+    # worker run on different threads and can otherwise overwrite a terminal
+    # verdict after observing an older status.
+    _state_lock: threading.RLock = PrivateAttr(default_factory=threading.RLock)
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -3261,7 +3379,12 @@ class _BatchStore:
         mutates ``batch`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(batch))
+                # A worker may start just before put(), or finish after the
+                # bounded store evicts its record.  put() snapshots the first
+                # case; ignoring the second prevents a late journal row from
+                # resurrecting an evicted batch on restart.
+                if self._batches.get(batch.batch_id) is batch:
+                    self._journal.append(self._record(batch))
 
     def put(self, batch: _BatchRecord) -> None:
         with self._lock:
@@ -3316,10 +3439,14 @@ class _AnthropicBatchRecord(_Model):
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _items: builtins.list[AnthropicBatchItem] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _key_id: str | None = PrivateAttr(default=None)
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
-    _row_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
+    # Covers result rows and every lifecycle transition.  Reentrancy lets
+    # the shared finish path be called by a route that already stabilized
+    # the record.
+    _row_lock: threading.RLock = PrivateAttr(default_factory=threading.RLock)
 
 
 _ABATCH_TERMINAL = frozenset({"ended"})
@@ -3405,7 +3532,12 @@ class _AnthropicBatchStore:
         mutates ``batch`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(batch))
+                # A terminal webhook may finish while DELETE removes the
+                # batch.  Whichever operation obtains the store lock first
+                # wins; a late mark after delete is ignored so replay cannot
+                # resurrect the tombstone.
+                if self._batches.get(batch.batch_id) is batch:
+                    self._journal.append(self._record(batch))
 
     def put(self, batch: _AnthropicBatchRecord) -> None:
         with self._lock:
@@ -5815,6 +5947,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             batch.ended_at = int(time.time())
         abatch_store.mark(batch)
         _abatch_webhook(batch)
+        # Delivery outcome is part of the public record.  Persist it after
+        # the callback attempt as well as the terminal state before it.
+        abatch_store.mark(batch)
 
     def _abatch_webhook(batch: _AnthropicBatchRecord) -> None:
         """Fire-once terminal webhook: the projected ``message_batch``
@@ -5833,6 +5968,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``canceled`` rows for the tail. Holds ONE inflight slot for the
         batch's lifetime (the jobs-channel contract) — released in
         ``finally`` so a cancel or worker fault never leaks it."""
+        ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
         try:
             for item in batch._items:
                 if batch._cancel.is_set():
@@ -5846,27 +5982,43 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     batch.result_lines.append(
                         json.dumps(row, sort_keys=True, separators=(",", ":"))
                     )
+                # Result rows are declared durable.  Persist each committed
+                # row rather than waiting for the terminal transition: a
+                # crash after item N must not turn already-served work into
+                # restart-error rows.
+                abatch_store.mark(batch)
             _abatch_finish(batch)
         except Exception as exc:  # noqa: BLE001 — a worker fault ends the batch, not the process
-            for cid in _abatch_unfinished(batch):
-                batch.result_lines.append(
-                    json.dumps(
-                        anthropic_batch_result(
-                            cid,
-                            {
-                                "type": "errored",
-                                "error": anthropic_error_body(f"{type(exc).__name__}: {exc}", 500)[
-                                    "error"
-                                ],
-                            },
-                        ),
-                        sort_keys=True,
-                        separators=(",", ":"),
-                    )
-                )
-            if batch.status != "ended":
-                _abatch_finish(batch)
+            with batch._row_lock:
+                if batch.status != "ended":
+                    for cid in _abatch_unfinished(batch):
+                        batch.result_lines.append(
+                            json.dumps(
+                                anthropic_batch_result(
+                                    cid,
+                                    {
+                                        "type": "errored",
+                                        "error": anthropic_error_body(
+                                            f"{type(exc).__name__}: {exc}", 500
+                                        )["error"],
+                                    },
+                                ),
+                                sort_keys=True,
+                                separators=(",", ":"),
+                            )
+                        )
+                    batch.request_counts = _abatch_tally(batch)
+                    batch.status = "ended"
+                    batch.ended_at = int(time.time())
+                    should_finish = True
+                else:
+                    should_finish = False
+            if should_finish:
+                abatch_store.mark(batch)
+                _abatch_webhook(batch)
+                abatch_store.mark(batch)
         finally:
+            _REQUEST_KEY_ID.reset(ctx_key)
             metrics.release()
             inflight.release()
 
@@ -5876,7 +6028,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if batch.status != "ended" and time.time() > batch.expires_at:
             batch._cancel.set()  # the worker exits its loop at the next item
             _abatch_finish(batch, "expired")
-        return anthropic_batch_object(batch.model_dump(mode="json"))
+        with batch._row_lock:
+            return anthropic_batch_object(batch.model_dump(mode="json"))
+
+    async def _anthropic_batch_idem_claim(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        """Serialize first use of one batch idempotency key.
+
+        The claim is an async dependency so waiters yield the event loop
+        instead of consuming every sync-handler worker while the winner
+        creates and stores the batch response.
+        """
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        async with anthropic_idem_store.async_claim_lock(key):
+            yield
 
     @app.post(
         "/v1/messages/batches",
@@ -5886,6 +6054,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def anthropic_batches_create(
         body: AnthropicBatchCreate,
         request: Request,
+        _idem_claim_held: None = Depends(_anthropic_batch_idem_claim),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit an Anthropic message batch — ``requests`` ride inline
@@ -5934,6 +6103,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        batch._key_id = _REQUEST_KEY_ID.get()
         try:
             jobs_executor.submit(_exec_abatch, batch)
         except RuntimeError as exc:
@@ -6004,17 +6174,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch = abatch_store.get(batch_id)
         if batch is None:
             raise ApiError(404, f"message batch {batch_id!r} not found", code="not_found")
-        if batch.status == "ended":
-            raise ApiError(
-                400,
-                f"message batch {batch_id!r} has already ended",
-                code="invalid_request",
-            )
-        if batch.status == "canceling":
+        with batch._row_lock:
+            if batch.status == "ended":
+                raise ApiError(
+                    400,
+                    f"message batch {batch_id!r} has already ended",
+                    code="invalid_request",
+                )
+            if batch.status == "canceling":
+                already_canceling = True
+            else:
+                already_canceling = False
+                batch._cancel.set()
+                batch.status = "canceling"
+                batch.cancel_initiated_at = int(time.time())
+        if already_canceling:
             return JSONResponse(_abatch_project(batch))
-        batch._cancel.set()
-        batch.status = "canceling"
-        batch.cancel_initiated_at = int(time.time())
         abatch_store.mark(batch)
         return JSONResponse(_abatch_project(batch))
 
@@ -7391,57 +7566,112 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _exec_batch(batch: _BatchRecord) -> None:
         """Worker: validate → in_progress → per-line through the gated cores
         → finalizing → write the output file → terminal status. Holds ONE
-        inflight slot for the whole batch (the jobs-channel contract)."""
+        inflight slot for the whole batch (the jobs-channel contract).
+
+        Every status write respects an already-terminal record: expiry-on-
+        read can flip the batch while it queues or runs, and a terminal
+        state is never overwritten. The submitter's ``key_id`` is re-
+        installed per line — worker threads do not inherit request
+        contextvars, and every line must still attribute + meter under
+        the credential that submitted the batch."""
+        ctx_key: contextvars.Token[str | None] | None = None
+        out_lines: builtins.list[str] = []
         try:
-            batch.status = "in_progress"
-            batch.in_progress_at = int(time.time())
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    return  # expiry-on-read already terminalized it while queued
+                if batch._cancel.is_set():
+                    # Cancellation won before the worker started.  Preserve
+                    # the monotone lifecycle instead of regressing
+                    # cancelling -> in_progress for an empty batch.
+                    batch.status = "cancelled"
+                    batch.cancelled_at = int(time.time())
+                    return
+                ctx_key = _REQUEST_KEY_ID.set(batch._key_id)
+                batch.status = "in_progress"
+                batch.in_progress_at = int(time.time())
             batch_store.mark(batch)
-            out_lines: builtins.list[str] = []
-            counts = batch.request_counts
             cancelled = False
             for line in batch._lines:
                 if batch._cancel.is_set():
                     cancelled = True
                     break
                 out = _run_batch_line(line, batch)
-                if out["response"]["status_code"] == 200:
-                    counts.completed += 1
-                else:
-                    counts.failed += 1
-                out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
-            batch.status = "finalizing"
-            batch.finalizing_at = int(time.time())
+                with batch._state_lock:
+                    if batch.status in _BATCH_TERMINAL:
+                        # Expiry won while the provider call was in flight.
+                        # Terminal records are immutable: usage remains in
+                        # the completion ledger, but no late result is
+                        # attached to an already-delivered terminal payload.
+                        return
+                    if out["response"]["status_code"] == 200:
+                        batch.request_counts.completed += 1
+                    else:
+                        batch.request_counts.failed += 1
+                    out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    return
+                batch.status = "finalizing"
+                batch.finalizing_at = int(time.time())
             batch_store.mark(batch)
+            rec: _FileRecord | None = None
             if out_lines:
                 rec = file_store.put(
                     filename=f"{batch.batch_id}_output.jsonl",
                     purpose="batch_output",
                     content=("\n".join(out_lines) + "\n").encode(),
                 )
-                batch.output_file_id = rec.file_id
-            if cancelled:
-                batch.status = "cancelled"
-                batch.cancelled_at = int(time.time())
-            else:
-                batch.status = "completed"
-                batch.completed_at = int(time.time())
+            with batch._state_lock:
+                if batch.status in _BATCH_TERMINAL:
+                    terminal_won = True
+                else:
+                    terminal_won = False
+                    if rec is not None:
+                        batch.output_file_id = rec.file_id
+                    if cancelled or batch._cancel.is_set():
+                        batch.status = "cancelled"
+                        batch.cancelled_at = int(time.time())
+                    else:
+                        batch.status = "completed"
+                        batch.completed_at = int(time.time())
+            if terminal_won and rec is not None:
+                # Expiry won while the output blob was being published.
+                # Roll back the unreferenced file; terminal state and webhook
+                # payload remain immutable.
+                file_store.delete(rec.file_id)
         except Exception as exc:  # noqa: BLE001 — worker fault fails the batch, not the process
-            batch.status = "failed"
-            batch.failed_at = int(time.time())
-            batch.errors = {
-                "object": "list",
-                "data": [{"code": "internal_error", "message": f"{type(exc).__name__}: {exc}"}],
-            }
-            try:
-                err_rec = file_store.put(
-                    filename=f"{batch.batch_id}_errors.jsonl",
-                    purpose="batch_output",
-                    content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
-                )
-                batch.error_file_id = err_rec.file_id
-            except Exception:  # noqa: BLE001,S110 — error-file write must never mask the failure
-                pass
+            with batch._state_lock:
+                can_fail = batch.status not in _BATCH_TERMINAL
+            err_rec: _FileRecord | None = None
+            if can_fail:
+                with suppress(Exception):
+                    err_rec = file_store.put(
+                        filename=f"{batch.batch_id}_errors.jsonl",
+                        purpose="batch_output",
+                        content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
+                    )
+                with batch._state_lock:
+                    if batch.status not in _BATCH_TERMINAL:
+                        batch.status = "failed"
+                        batch.failed_at = int(time.time())
+                        batch.errors = {
+                            "object": "list",
+                            "data": [
+                                {
+                                    "code": "internal_error",
+                                    "message": f"{type(exc).__name__}: {exc}",
+                                }
+                            ],
+                        }
+                        if err_rec is not None:
+                            batch.error_file_id = err_rec.file_id
+                        err_rec = None
+                if err_rec is not None:
+                    file_store.delete(err_rec.file_id)
         finally:
+            if ctx_key is not None:
+                _REQUEST_KEY_ID.reset(ctx_key)
             metrics.release()
             inflight.release()
             _batch_webhook(batch)
@@ -7451,21 +7681,36 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Fire-once terminal webhook: the projected OpenAI envelope is the
         payload (the same shape GET returns — never the internal record).
         The first terminal transition fires; expiry-on-read is one."""
-        if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
-            return
+        with batch._state_lock:
+            if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
+                return
+            payload = json.dumps(batch_object(batch.model_dump(mode="json"))).encode()
         _deliver_callback(
             batch,
-            body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),
+            body=payload,
         )
 
     def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
-        """Expiry check + envelope projection."""
-        if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
-            batch.status = "expired"
-            batch.expired_at = int(time.time())
+        """Expiry check + envelope projection.
+
+        Expiry sets ``_cancel`` (mirroring the Anthropic dialect) so a
+        queued worker returns early and a mid-flight worker stops after
+        its current line.  A result that returns after expiry is still
+        metered in the completion ledger but is not attached to the already
+        terminal batch or its fire-once webhook payload."""
+        expired_now = False
+        with batch._state_lock:
+            if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
+                batch._cancel.set()  # the worker exits its loop at the next line
+                batch.status = "expired"
+                batch.expired_at = int(time.time())
+                expired_now = True
+        if expired_now:
             batch_store.mark(batch)
             _batch_webhook(batch)  # expiry is a terminal transition too
-        return batch_object(batch.model_dump())
+            batch_store.mark(batch)  # persist callback outcome as well
+        with batch._state_lock:
+            return batch_object(batch.model_dump())
 
     @app.post(
         "/v1/files",
@@ -7524,23 +7769,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``has_more`` + ``first_id``/``last_id``) so stock-SDK
         auto-pagination terminates; ``purpose`` filters by the upload's
         declared intent."""
-        if order not in ("asc", "desc"):
-            raise OpenAICompatError(
-                f"order must be 'asc' or 'desc', got {order!r}",
-                status=400,
-                code="invalid_cursor",
+        try:
+            if order not in ("asc", "desc"):
+                raise OpenAICompatError(
+                    f"order must be 'asc' or 'desc', got {order!r}",
+                    status=400,
+                    code="invalid_cursor",
+                )
+            records = file_store.list()
+            if purpose is not None:
+                records = [r for r in records if r.purpose == purpose]
+            items = [file_object(r.model_dump()) for r in records]
+            # the store is newest-first — that IS desc; "asc" flips to
+            # oldest-first before the shared pager walks it
+            if order == "asc":
+                items.reverse()
+            return JSONResponse(
+                paged_item_list(items, limit=limit, after=after, before=before, order="asc")
             )
-        records = file_store.list()
-        if purpose is not None:
-            records = [r for r in records if r.purpose == purpose]
-        items = [file_object(r.model_dump()) for r in records]
-        # the store is newest-first — that IS desc; "asc" flips to
-        # oldest-first before the shared pager walks it
-        if order == "asc":
-            items.reverse()
-        return JSONResponse(
-            paged_item_list(items, limit=limit, after=after, before=before, order="asc")
-        )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
     @app.get(
         "/v1/files/{file_id}",
@@ -7666,6 +7914,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise _upload_err(exc) from exc
         return JSONResponse(upload_object(meta))
 
+    async def _openai_batch_idem_claim(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        """Serialize lookup + creation + insertion for one batch key."""
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        async with openai_idem_store.async_claim_lock(key):
+            yield
+
     @app.post(
         "/v1/batches",
         tags=["openai"],
@@ -7674,6 +7932,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_batches_create(
         body: OpenAIBatchRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_openai_batch_idem_claim),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Submit a batch over an uploaded input file. One worker slot
@@ -7751,6 +8010,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch._headers = {
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
+        # every line runs under the submitting credential's fingerprint —
+        # worker threads do not inherit request contextvars, so the key_id
+        # rides the record and the worker re-installs it per line.
+        batch._key_id = _REQUEST_KEY_ID.get()
         try:
             jobs_executor.submit(_exec_batch, batch)
         except RuntimeError as exc:
@@ -7776,8 +8039,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         items = batch_store.list()
         if after is not None:
             idx = next((i for i, b in enumerate(items) if b.batch_id == after), None)
-            if idx is not None:
-                items = items[idx + 1 :]
+            if idx is None:
+                raise ApiError(400, f"cursor {after!r} is not a batch id", code="invalid_cursor")
+            items = items[idx + 1 :]
         page = items[:limit]
         return JSONResponse(
             {
@@ -7812,17 +8076,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         batch = batch_store.get(batch_id)
         if batch is None:
             raise ApiError(404, f"batch {batch_id!r} not found", code="batch_not_found")
-        if batch.status in _BATCH_TERMINAL:
-            raise ApiError(
-                409,
-                f"batch {batch_id!r} is already {batch.status}",
-                code="batch_terminal",
-            )
-        if batch.status == "cancelling":
+        with batch._state_lock:
+            if batch.status in _BATCH_TERMINAL:
+                raise ApiError(
+                    409,
+                    f"batch {batch_id!r} is already {batch.status}",
+                    code="batch_terminal",
+                )
+            if batch.status == "cancelling":
+                already_cancelling = True
+            else:
+                already_cancelling = False
+                batch._cancel.set()
+                batch.status = "cancelling"
+                batch.cancelling_at = int(time.time())
+        if already_cancelling:
             return JSONResponse(_batch_project(batch))
-        batch._cancel.set()
-        batch.status = "cancelling"
-        batch.cancelling_at = int(time.time())
         batch_store.mark(batch)
         return JSONResponse(_batch_project(batch))
 
@@ -8961,7 +9230,19 @@ def _resolve_auth(
             auth_hdr = request.headers.get("Authorization", "")
             if auth_hdr.startswith("Bearer "):
                 provided = auth_hdr[len("Bearer ") :]
-        if provided and api_key and hmac.compare_digest(provided, api_key):
+        # compare_digest refuses non-ASCII str; the utf-8 encodings keep
+        # ordinary header values byte-exact. ``os.environ`` can contain
+        # surrogate-escaped bytes on POSIX, so surrogatepass is required
+        # on both sides as well: a malformed configured key must not turn
+        # an otherwise ordinary bad credential into a server fault.
+        if (
+            provided
+            and api_key
+            and hmac.compare_digest(
+                provided.encode("utf-8", errors="surrogatepass"),
+                api_key.encode("utf-8", errors="surrogatepass"),
+            )
+        ):
             return ("env", True, None)
         if provided:
             key_rec = key_store.authenticate(
