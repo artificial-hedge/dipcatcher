@@ -6848,6 +6848,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shwe_nabay_qa_studies",
         "taungmagyi_qa_studies",
         "thagya_min_qa_studies",
+        # Wave-1941 khmer-demon canon.
+        "ahp_qa_studies",
+        "arak_qa_studies",
+        "boramei_qa_studies",
+        "kmoch_qa_studies",
+        "mrenh_kongveal_qa_studies",
+        "neak_ta_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
