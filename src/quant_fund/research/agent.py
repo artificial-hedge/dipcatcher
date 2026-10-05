@@ -14511,6 +14511,14 @@ from quant_fund.research.benches_w1814 import (
     bench_tiamat2_qa_studies_family,
     bench_utu2_qa_studies_family,
 )
+from quant_fund.research.benches_w1815 import (
+    bench_demeter2_qa_studies_family,
+    bench_hecate2_qa_studies_family,
+    bench_hestia2_qa_studies_family,
+    bench_iris2_qa_studies_family,
+    bench_nike2_qa_studies_family,
+    bench_persephone2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
