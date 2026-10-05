@@ -231,6 +231,7 @@ from fx1.serve.openai_compat import (
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.uploads import (
+    UploadMeta,
     UploadStore,
     UploadStoreError,
     upload_object,
@@ -7609,27 +7610,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_upload_complete",
     )
     def openai_upload_complete(upload_id: str, body: OpenAIUploadCompleteRequest) -> JSONResponse:
-        """Assemble the declared parts into a ``file-`` record. The md5
-        check runs BEFORE the file mints so a checksum failure leaves no
-        orphan; the upload then transitions terminal."""
-        try:
-            content = upload_store.assemble(upload_id, body.part_ids)
-            meta = upload_store.get(upload_id)
-            if meta is None:  # unreachable — assemble raises first
-                raise UploadStoreError(404, "upload gone", "upload_not_found")
-            if body.md5 is not None and (
-                hashlib.md5(content, usedforsecurity=False).hexdigest() != body.md5.lower()
-            ):
-                raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
-            if len(content) != meta.nbytes:
-                raise UploadStoreError(
-                    400,
-                    f"assembled bytes {len(content)} != declared {meta.nbytes}",
-                    "upload_incomplete",
-                )
+        """Validate and mint one file under the upload lifecycle lock."""
+
+        def publish(meta: UploadMeta, content: bytes) -> tuple[str, _FileRecord]:
             rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
-            done = upload_store.complete(
-                upload_id, body.part_ids, content=content, file_id=rec.file_id
+            return rec.file_id, rec
+
+        def rollback(file_id: str) -> None:
+            file_store.delete(file_id)
+
+        try:
+            done, rec = upload_store.complete_with(
+                upload_id, body.part_ids, publish=publish, rollback=rollback, md5=body.md5
             )
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc

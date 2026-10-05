@@ -149,6 +149,7 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from fx1.serve.uploads import (
+    UploadMeta,
     UploadStore,
     UploadStoreError,
     upload_object,
@@ -4212,35 +4213,33 @@ class Fx1Harness:
         """``POST /v1/uploads/{id}/complete`` — assemble the parts into a
         process-local ``file-`` record (fetch bytes back with
         :meth:`file_content`). The md5 check runs before the mint, same
-        as the wire."""
-        content = self._upload_store.assemble(upload_id, part_ids)
-        meta = self._upload_store.get(upload_id)
-        assert meta is not None  # assemble() already raised otherwise
-        if md5 is not None and (
-            hashlib.md5(content, usedforsecurity=False).hexdigest() != md5.lower()
-        ):
-            raise UploadStoreError(400, "md5 mismatch", "checksum_mismatch")
-        if len(content) != meta.nbytes:
-            raise UploadStoreError(
-                400,
-                f"assembled bytes {len(content)} != declared {meta.nbytes}",
-                "upload_incomplete",
-            )
-        file_id = f"file-{uuid.uuid4().hex}"
-        fobj = {
-            "id": file_id,
-            "object": "file",
-            "purpose": meta.purpose,
-            "filename": meta.filename,
-            "bytes": len(content),
-            "created_at": int(time.time()),
-            "status": "processed",
-        }
-        with self._files_lock:
-            self._files[file_id] = {**fobj, "_content": content}
-            while len(self._files) > 256:
-                self._files.popitem(last=False)
-        done = self._upload_store.complete(upload_id, part_ids, content=content, file_id=file_id)
+        as the wire. Validation and publication share one upload
+        transition so concurrent completes cannot mint extra files."""
+
+        def _publish(meta: UploadMeta, content: bytes) -> tuple[str, dict[str, Any]]:
+            file_id = f"file-{uuid.uuid4().hex}"
+            fobj = {
+                "id": file_id,
+                "object": "file",
+                "purpose": meta.purpose,
+                "filename": meta.filename,
+                "bytes": len(content),
+                "created_at": int(time.time()),
+                "status": "processed",
+            }
+            with self._files_lock:
+                self._files[file_id] = {**fobj, "_content": content}
+                while len(self._files) > 256:
+                    self._files.popitem(last=False)
+            return file_id, fobj
+
+        def _rollback(file_id: str) -> None:
+            with self._files_lock:
+                self._files.pop(file_id, None)
+
+        done, fobj = self._upload_store.complete_with(
+            upload_id, part_ids, publish=_publish, rollback=_rollback, md5=md5
+        )
         return upload_object(done, file_obj=fobj)
 
     def upload_cancel(self, upload_id: str) -> dict[str, Any]:
