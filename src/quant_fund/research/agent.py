@@ -15583,6 +15583,14 @@ from quant_fund.research.benches_w1948 import (
     bench_paimon_qa_studies_family,
     bench_stolas_qa_studies_family,
 )
+from quant_fund.research.benches_w1949 import (
+    bench_agares_qa_studies_family,
+    bench_amon_qa_studies_family,
+    bench_barbatos_qa_studies_family,
+    bench_gusion_qa_studies_family,
+    bench_valefor_qa_studies_family,
+    bench_vasago_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
