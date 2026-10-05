@@ -6162,6 +6162,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "milcom_qa_studies",
         "moloch2_qa_studies",
         "sodom2_qa_studies",
+        # Wave-1843 philistine-myth canon.
+        "ashtoreth_qa_studies",
+        "baalzebub_qa_studies",
+        "dagon2_qa_studies",
+        "delilah_qa_studies",
+        "goliath_qa_studies",
+        "samson_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",

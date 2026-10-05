@@ -14735,6 +14735,14 @@ from quant_fund.research.benches_w1842 import (
     bench_moloch2_qa_studies_family,
     bench_sodom2_qa_studies_family,
 )
+from quant_fund.research.benches_w1843 import (
+    bench_ashtoreth_qa_studies_family,
+    bench_baalzebub_qa_studies_family,
+    bench_dagon2_qa_studies_family,
+    bench_delilah_qa_studies_family,
+    bench_goliath_qa_studies_family,
+    bench_samson_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
