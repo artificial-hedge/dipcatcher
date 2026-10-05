@@ -14783,6 +14783,14 @@ from quant_fund.research.benches_w1848 import (
     bench_miket_qa_studies_family,
     bench_sebiumeker_qa_studies_family,
 )
+from quant_fund.research.benches_w1849 import (
+    bench_alouq_qa_studies_family,
+    bench_aster2_qa_studies_family,
+    bench_beher_qa_studies_family,
+    bench_mahrem_qa_studies_family,
+    bench_medr_qa_studies_family,
+    bench_ruda_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
