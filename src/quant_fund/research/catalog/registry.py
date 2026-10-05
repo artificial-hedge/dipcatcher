@@ -6736,6 +6736,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maymene_qa_studies",
         "ubir_qa_studies",
         "uor_qa_studies",
+        # Wave-1925 siberian-demon canon.
+        "abaasy_qa_studies",
+        "chedipe_qa_studies",
+        "kus_qa_studies",
+        "kyys_qa_studies",
+        "oror_qa_studies",
+        "urgut_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
