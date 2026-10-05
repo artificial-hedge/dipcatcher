@@ -548,6 +548,45 @@ export interface paths {
         delete: operations["key_revoke"];
         options?: never;
         head?: never;
+        /**
+         * Key Patch
+         * @description Mutable policy update on a live managed key — the patched
+         *     record returns, shaped like ``key_get``. Omitted fields keep
+         *     the declared policy; explicit ``null`` clears a nullable
+         *     bound (``name``/``rpm``/``max_requests``/``max_tokens``/
+         *     ``expires_at``); ``admin:true`` unions the admin scope the
+         *     mint way while ``admin:false`` never strips a declared scope.
+         *     Patching is in place — no new secret, no slot consumed — and
+         *     the updated record journals so a ``--state-dir`` restart
+         *     restores it. ``enabled``/live counters stay unpatchable:
+         *     revocation is permanent (rotate covers re-keying).
+         */
+        patch: operations["key_patch"];
+        trace?: never;
+    };
+    "/harness/keys/{key_id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Key Rotate
+         * @description Atomic rotation: mint a successor inheriting the predecessor's
+         *     declared policy (name/scopes/admin/rpm/budgets) and, by default,
+         *     tombstone the predecessor in the same store transaction. The new
+         *     raw secret is returned once; lineage (``rotated_from``) is
+         *     journaled with the successor record. Without ``ttl_s`` the
+         *     successor inherits the predecessor's absolute ``expires_at`` —
+         *     rotation never extends a credential's lifetime.
+         */
+        post: operations["key_rotate"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -2530,12 +2569,41 @@ export interface components {
             object: "key";
             /** Prefix */
             prefix: string;
+            /** Rotated From */
+            rotated_from: string | null;
             /** Rpm */
             rpm: number | null;
             /** Scopes */
             scopes: string[];
             /** Tokens Used */
             tokens_used: number;
+        };
+        /**
+         * ApiKeyPatchRequest
+         * @description Patch body — every field optional; the three states are
+         *     distinct: omitted keeps the declared policy, explicit ``null``
+         *     clears a nullable bound (``name``/``rpm``/``max_requests``/
+         *     ``max_tokens``/``expires_at`` — the unbounded default), and a
+         *     concrete value replaces it. ``scopes``/``admin`` take concrete
+         *     values when sent (``null`` clears nothing there — an explicit
+         *     list or flag instead). ``enabled`` and the live counters are
+         *     never patchable — revocation is permanent.
+         */
+        ApiKeyPatchRequest: {
+            /** Admin */
+            admin?: boolean | null;
+            /** Expires At */
+            expires_at?: number | null;
+            /** Max Requests */
+            max_requests?: number | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Rpm */
+            rpm?: number | null;
+            /** Scopes */
+            scopes?: string[] | null;
         };
         /**
          * ApiKeyRecordModel
@@ -2571,6 +2639,8 @@ export interface components {
             prefix: string;
             /** Revoked At */
             revoked_at: number | null;
+            /** Rotated From */
+            rotated_from: string | null;
             /** Rpm */
             rpm: number | null;
             /** Scopes */
@@ -2579,6 +2649,41 @@ export interface components {
             tokens_used: number;
             /** Uses */
             uses: number;
+        };
+        /**
+         * ApiKeyRotateRequest
+         * @description Rotate body — every field optional; omitted fields inherit the
+         *     predecessor's declared policy verbatim.
+         */
+        ApiKeyRotateRequest: {
+            /** Name */
+            name?: string | null;
+            /**
+             * Revoke Old
+             * @default true
+             */
+            revoke_old: boolean;
+            /** Ttl S */
+            ttl_s?: number | null;
+        };
+        /**
+         * ApiKeyRotateResponse
+         * @description Rotation response — ``key`` is the minted successor (raw secret
+         *     shown once); ``revoked_previous`` reports whether the predecessor
+         *     was tombstoned atomically with the mint.
+         */
+        ApiKeyRotateResponse: {
+            key: components["schemas"]["ApiKeyMintResponse"];
+            /**
+             * Object
+             * @default key_rotation
+             * @constant
+             */
+            object: "key_rotation";
+            /** Revoked Previous */
+            revoked_previous: boolean;
+            /** Rotated From */
+            rotated_from: string;
         };
         /**
          * ApiKeyUsageResponse
@@ -2620,6 +2725,8 @@ export interface components {
             requests_remaining: number | null;
             /** Revoked At */
             revoked_at: number | null;
+            /** Rotated From */
+            rotated_from: string | null;
             /** Rpm */
             rpm: number | null;
             served: components["schemas"]["KeyServedUsage"];
@@ -7124,6 +7231,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRecordModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    key_rotate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyRotateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyRotateResponse"];
                 };
             };
             /** @description Validation Error */

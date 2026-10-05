@@ -161,7 +161,7 @@ from fx1.serve.finetune import (
     validate_chat_jsonl,
 )
 from fx1.serve.journal import JobJournal
-from fx1.serve.keys import SCOPES, ApiKeyStore, KeyStoreError
+from fx1.serve.keys import CLEARABLE_KEY_FIELDS, SCOPES, ApiKeyStore, KeyStoreError
 from fx1.serve.openai_compat import (
     OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
@@ -1368,6 +1368,7 @@ class ApiKeyMintResponse(_Model):
     expires_at: float | None
     created_at: float
     tokens_used: int
+    rotated_from: str | None
     key: str
 
 
@@ -1391,11 +1392,58 @@ class ApiKeyRecordModel(_Model):
     uses: int
     tokens_used: int
     last_used_at: float | None
+    rotated_from: str | None
 
 
 class ApiKeyListResponse(_Model):
     object: Literal["list"] = "list"
     data: list[ApiKeyRecordModel]
+
+
+class ApiKeyRotateRequest(_Model):
+    """Rotate body — every field optional; omitted fields inherit the
+    predecessor's declared policy verbatim."""
+
+    name: str | None = None
+    ttl_s: float | None = Field(default=None, gt=0)
+    revoke_old: bool = True
+
+
+class ApiKeyRotateResponse(_Model):
+    """Rotation response — ``key`` is the minted successor (raw secret
+    shown once); ``revoked_previous`` reports whether the predecessor
+    was tombstoned atomically with the mint."""
+
+    object: Literal["key_rotation"] = "key_rotation"
+    key: ApiKeyMintResponse
+    rotated_from: str
+    revoked_previous: bool
+
+
+class ApiKeyPatchRequest(_Model):
+    """Patch body — every field optional; the three states are
+    distinct: omitted keeps the declared policy, explicit ``null``
+    clears a nullable bound (``name``/``rpm``/``max_requests``/
+    ``max_tokens``/``expires_at`` — the unbounded default), and a
+    concrete value replaces it. ``scopes``/``admin`` take concrete
+    values when sent (``null`` clears nothing there — an explicit
+    list or flag instead). ``enabled`` and the live counters are
+    never patchable — revocation is permanent."""
+
+    name: str | None = Field(default=None, max_length=128)
+    rpm: int | None = Field(default=None, ge=1, le=1_000_000)
+    scopes: list[str] | None = None
+    admin: bool | None = None
+    max_requests: int | None = Field(default=None, ge=1, le=2_147_483_647)
+    max_tokens: int | None = Field(default=None, ge=1, le=9_223_372_036_854_775_807)
+    expires_at: float | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _concrete_when_sent(self) -> ApiKeyPatchRequest:
+        for field in ("scopes", "admin"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} must take a concrete value when sent")
+        return self
 
 
 class KeyUsageBackendSplit(_Model):
@@ -1430,6 +1478,7 @@ class ApiKeyUsageResponse(_Model):
     created_at: float
     expires_at: float | None
     revoked_at: float | None
+    rotated_from: str | None
     uses: int
     tokens_used: int
     last_used_at: float | None
@@ -1478,6 +1527,26 @@ def _key_wire(rec: dict[str, Any]) -> ApiKeyRecordModel:
         uses=rec["uses"],
         tokens_used=int(rec.get("tokens_used") or 0),
         last_used_at=rec["last_used_at"],
+        rotated_from=rec.get("rotated_from"),
+    )
+
+
+def _key_mint_wire(rec: dict[str, Any], raw: str) -> ApiKeyMintResponse:
+    """Mint/rotate response — the record plus the raw secret, shown once."""
+    return ApiKeyMintResponse(
+        id=rec["key_id"],
+        name=rec["name"],
+        prefix=rec["prefix"],
+        admin=bool(rec.get("admin")),
+        scopes=list(rec["scopes"]),
+        rpm=rec.get("rpm"),
+        max_requests=rec.get("max_requests"),
+        max_tokens=rec.get("max_tokens"),
+        expires_at=rec.get("expires_at"),
+        created_at=rec["created_at"],
+        tokens_used=int(rec.get("tokens_used") or 0),
+        rotated_from=rec.get("rotated_from"),
+        key=raw,
     )
 
 
@@ -8464,6 +8533,7 @@ def _key_usage_response(
         created_at=rec["created_at"],
         expires_at=rec.get("expires_at"),
         revoked_at=rec.get("revoked_at"),
+        rotated_from=rec.get("rotated_from"),
         uses=uses,
         tokens_used=tokens_used,
         last_used_at=rec.get("last_used_at"),
@@ -8480,15 +8550,93 @@ def _key_usage_response(
     )
 
 
-def _mount_key_introspection(
+def _mount_key_lifecycle(
     app: FastAPI,
     *,
     key_store: ApiKeyStore,
     completion_log: _CompletionLog,
 ) -> None:
-    """Per-key usage introspection: the admin card on
-    ``/harness/keys/{id}/usage`` and the caller's own card on
-    ``/harness/self`` (read scope — any credential watches itself)."""
+    """Key lifecycle routes beyond mint/get/revoke: the usage cards and
+    rotation. Lifted out of ``create_app`` for the ruff complexity
+    ceiling."""
+
+    @app.post(
+        "/harness/keys/{key_id}/rotate",
+        response_model=ApiKeyRotateResponse,
+        status_code=201,
+        tags=["ops"],
+        operation_id="key_rotate",
+    )
+    def key_rotate(
+        key_id: str, body: ApiKeyRotateRequest, request: Request
+    ) -> ApiKeyRotateResponse:
+        """Atomic rotation: mint a successor inheriting the predecessor's
+        declared policy (name/scopes/admin/rpm/budgets) and, by default,
+        tombstone the predecessor in the same store transaction. The new
+        raw secret is returned once; lineage (``rotated_from``) is
+        journaled with the successor record. Without ``ttl_s`` the
+        successor inherits the predecessor's absolute ``expires_at`` —
+        rotation never extends a credential's lifetime."""
+        _require_admin(request)
+        try:
+            raw, rec = key_store.rotate(
+                key_id,
+                revoke_old=body.revoke_old,
+                name=body.name,
+                ttl_s=body.ttl_s,
+            )
+        except KeyStoreError as exc:
+            raise ApiError(
+                404 if exc.code == "key_not_found" else 409,
+                str(exc),
+                code=exc.code,
+            ) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_rotation") from exc
+        return ApiKeyRotateResponse(
+            key=_key_mint_wire(rec, raw),
+            rotated_from=key_id,
+            revoked_previous=body.revoke_old,
+        )
+
+    @app.patch(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_patch",
+    )
+    def key_patch(key_id: str, body: ApiKeyPatchRequest, request: Request) -> ApiKeyRecordModel:
+        """Mutable policy update on a live managed key — the patched
+        record returns, shaped like ``key_get``. Omitted fields keep
+        the declared policy; explicit ``null`` clears a nullable
+        bound (``name``/``rpm``/``max_requests``/``max_tokens``/
+        ``expires_at``); ``admin:true`` unions the admin scope the
+        mint way while ``admin:false`` never strips a declared scope.
+        Patching is in place — no new secret, no slot consumed — and
+        the updated record journals so a ``--state-dir`` restart
+        restores it. ``enabled``/live counters stay unpatchable:
+        revocation is permanent (rotate covers re-keying)."""
+        _require_admin(request)
+        sent = body.model_fields_set
+        clear = {f for f in CLEARABLE_KEY_FIELDS if f in sent and getattr(body, f) is None}
+        try:
+            rec = key_store.update(
+                key_id,
+                name=body.name,
+                rpm=body.rpm,
+                scopes=body.scopes,
+                admin=body.admin,
+                max_requests=body.max_requests,
+                max_tokens=body.max_tokens,
+                expires_at=body.expires_at,
+                clear=clear,
+            )
+        except KeyStoreError as exc:
+            status = {"key_not_found": 404, "key_revoked": 409}.get(exc.code, 422)
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        except ValueError as exc:
+            raise ApiError(422, str(exc), code="invalid_patch") from exc
+        return _key_wire(rec)
 
     @app.get(
         "/harness/keys/{key_id}/usage",
@@ -9083,6 +9231,8 @@ def create_app(
                 "key_scopes": True,
                 "key_quotas": True,
                 "key_usage": True,
+                "key_rotation": True,
+                "key_patch": True,
                 "score": True,
                 "evals": True,
                 "eval_diff": True,
@@ -9245,20 +9395,7 @@ def create_app(
             )
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
-        return ApiKeyMintResponse(
-            id=rec["key_id"],
-            name=rec["name"],
-            prefix=rec["prefix"],
-            admin=bool(rec.get("admin")),
-            scopes=list(rec["scopes"]),
-            rpm=rec.get("rpm"),
-            max_requests=rec.get("max_requests"),
-            max_tokens=rec.get("max_tokens"),
-            expires_at=rec.get("expires_at"),
-            created_at=rec["created_at"],
-            tokens_used=int(rec.get("tokens_used") or 0),
-            key=raw,
-        )
+        return _key_mint_wire(rec, raw)
 
     @app.get(
         "/harness/keys",
@@ -9386,7 +9523,7 @@ def create_app(
         return resp
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
-    _mount_key_introspection(app, key_store=key_store, completion_log=completion_log)
+    _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
 
     def _resolve_request_backend(
         backend_name: str,

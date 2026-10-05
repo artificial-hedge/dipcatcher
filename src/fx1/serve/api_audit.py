@@ -2967,6 +2967,205 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["key_bootstrapped_works"] = (
         noenv_client.get("/harness/commands", headers={"X-API-Key": m_raw}).status_code == 200
     )
+    # --- key rotation ---------------------------------------------------
+    # POST /harness/keys/{id}/rotate mints a successor under the
+    # predecessor's declared policy and tombstones the old secret in the
+    # same transaction by default.
+    rt_mint = keys_client.post(
+        "/harness/keys",
+        json={
+            "name": "rot-src",
+            "rpm": 45,
+            "scopes": ["read"],
+            "max_requests": 50,
+            "max_tokens": 500,
+        },
+        headers=root_h,
+    )
+    rt_old_id = rt_mint.json()["id"]
+    rt_old_raw = str(rt_mint.json().get("key", ""))
+    rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    rotj = rot.json() if rot.status_code == 201 else {}
+    rtk = rotj.get("key", {})
+    out["key_rotate_201"] = (
+        rot.status_code == 201
+        and rotj.get("object") == "key_rotation"
+        and rotj.get("rotated_from") == rt_old_id
+        and rotj.get("revoked_previous") is True
+        and str(rtk.get("key", "")).startswith("fx1k_")
+    )
+    out["key_rotate_inherits_policy"] = (
+        rtk.get("name") == "rot-src"
+        and rtk.get("rpm") == 45
+        and rtk.get("scopes") == ["read"]
+        and rtk.get("admin") is False
+        and rtk.get("max_requests") == 50
+        and rtk.get("max_tokens") == 500
+        and rtk.get("rotated_from") == rt_old_id
+        and rtk.get("id") != rt_old_id
+    )
+    # the swap is atomic: the old secret fails closed immediately
+    out["key_rotate_old_fails_closed"] = (
+        keys_client.get("/harness/self", headers={"X-API-Key": rt_old_raw}).status_code == 401
+        and keys_client.get(
+            "/harness/self", headers={"X-API-Key": str(rtk.get("key", ""))}
+        ).status_code
+        == 200
+    )
+    # the record carries lineage on key_get
+    rot_get = keys_client.get(f"/harness/keys/{rtk.get('id', '')}", headers=root_h)
+    out["key_rotate_lineage_on_record"] = (
+        rot_get.status_code == 200 and rot_get.json().get("rotated_from") == rt_old_id
+    )
+    # keep-old: both secrets authenticate until the old key is revoked
+    rt2_mint = keys_client.post("/harness/keys", json={"name": "rot-keep"}, headers=root_h)
+    rt2_id = rt2_mint.json()["id"]
+    rt2_raw = str(rt2_mint.json().get("key", ""))
+    keep = keys_client.post(
+        f"/harness/keys/{rt2_id}/rotate", json={"revoke_old": False}, headers=root_h
+    )
+    keep_j = keep.json() if keep.status_code == 201 else {}
+    keep_rec = keys_client.get(f"/harness/keys/{rt2_id}", headers=root_h)
+    out["key_rotate_keep_old"] = (
+        keep.status_code == 201
+        and keep_j.get("revoked_previous") is False
+        and keys_client.get("/harness/self", headers={"X-API-Key": rt2_raw}).status_code == 200
+        and keep_rec.status_code == 200
+        and keep_rec.json().get("enabled") is True
+    )
+    # expiry: omitted ttl_s inherits the predecessor's absolute deadline;
+    # a declared ttl_s mints the successor a fresh lifetime
+    rt3_mint = keys_client.post(
+        "/harness/keys", json={"name": "rot-ttl", "ttl_s": 300}, headers=root_h
+    )
+    rt3_id = rt3_mint.json()["id"]
+    rt3_exp = rt3_mint.json()["expires_at"]
+    inher = keys_client.post(f"/harness/keys/{rt3_id}/rotate", json={}, headers=root_h)
+    inher_k = inher.json().get("key", {})
+    fresh = keys_client.post(
+        f"/harness/keys/{inher_k.get('id')}/rotate", json={"ttl_s": 7200}, headers=root_h
+    )
+    out["key_rotate_expiry"] = (
+        inher.status_code == 201
+        and abs(float(inher_k.get("expires_at") or 0.0) - float(rt3_exp)) < 1e-6
+        and fresh.status_code == 201
+        and float(fresh.json()["key"]["expires_at"]) > float(rt3_exp) + 3000
+    )
+    # scope binding: rotate is admin-plane — a read-scope key is refused
+    out["key_rotate_admin_scope"] = (
+        keys_client.post(
+            f"/harness/keys/{rt2_id}/rotate", json={}, headers={"X-API-Key": ro_raw}
+        ).status_code
+        == 403
+    )
+    out["key_rotate_404"] = (
+        keys_client.post(
+            "/harness/keys/0000000000000000/rotate", json={}, headers=root_h
+        ).status_code
+        == 404
+    )
+    # a revoked credential cannot mint a live successor
+    rev_rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    out["key_rotate_revoked_409"] = (
+        rev_rot.status_code == 409 and rev_rot.json().get("code") == "key_revoked"
+    )
+    # --- mutable key policy: PATCH /harness/keys/{id} ------------------
+    # three states: omitted keeps the declared policy, a concrete value
+    # replaces it, explicit JSON null clears a nullable bound.
+    pt_mint = keys_client.post(
+        "/harness/keys",
+        json={"name": "patch-me", "rpm": 30, "scopes": ["read"], "max_requests": 20},
+        headers=root_h,
+    )
+    pt_id = pt_mint.json()["id"]
+    pt_raw = str(pt_mint.json().get("key", ""))
+    pt_exp = time.time() + 3600.0
+    pt = keys_client.patch(
+        f"/harness/keys/{pt_id}",
+        json={
+            "name": "patched",
+            "rpm": 7,
+            "max_requests": 9,
+            "max_tokens": 77,
+            "expires_at": pt_exp,
+        },
+        headers=root_h,
+    )
+    ptj = pt.json() if pt.status_code == 200 else {}
+    out["key_patch_200"] = (
+        pt.status_code == 200
+        and ptj.get("object") == "key"
+        and ptj.get("id") == pt_id
+        and ptj.get("name") == "patched"
+        and ptj.get("rpm") == 7
+        and ptj.get("max_requests") == 9
+        and ptj.get("max_tokens") == 77
+        and abs(float(ptj.get("expires_at") or 0) - pt_exp) < 1.0
+        and ptj.get("scopes") == ["read"]
+        and ptj.get("enabled") is True
+    )
+    # the patch is in place and journaled: key_get reads the same record
+    pt_get = keys_client.get(f"/harness/keys/{pt_id}", headers=root_h)
+    out["key_patch_persists"] = (
+        pt_get.status_code == 200
+        and pt_get.json().get("name") == "patched"
+        and pt_get.json().get("rpm") == 7
+        and pt_get.json().get("max_requests") == 9
+        and pt_get.json().get("uses") == ptj.get("uses") == 0
+    )
+    # explicit null unbounds: cleared rpm emits no rate-limit headers on
+    # the key's next authenticated call — no false scarcity
+    pc = keys_client.patch(f"/harness/keys/{pt_id}", json={"rpm": None}, headers=root_h)
+    cleared = keys_client.get("/harness/commands", headers={"X-API-Key": pt_raw})
+    out["key_patch_clear_unbounds"] = (
+        pc.status_code == 200
+        and pc.json().get("rpm") is None
+        and cleared.status_code == 200
+        and "x-ratelimit-limit-requests" not in cleared.headers
+    )
+    # admin is purely additive like mint: ``admin:true`` unions the
+    # scope onto the surviving list; an explicit scopes list is literal
+    # — ``admin:false`` never strips a declared scope
+    adm = keys_client.patch(f"/harness/keys/{pt_id}", json={"admin": True}, headers=root_h)
+    lit = keys_client.patch(
+        f"/harness/keys/{pt_id}", json={"scopes": ["write"], "admin": False}, headers=root_h
+    )
+    out["key_patch_admin_union"] = (
+        adm.status_code == 200
+        and adm.json().get("scopes") == ["read", "admin"]
+        and adm.json().get("admin") is True
+        and lit.status_code == 200
+        and lit.json().get("scopes") == ["write"]
+        and lit.json().get("admin") is False
+    )
+    # fail closed: unknown id, a non-admin scope, and an unpatchable
+    # field (enabled — revocation is permanent) all refuse
+    out["key_patch_404"] = (
+        keys_client.patch(
+            "/harness/keys/0000000000000000", json={"name": "x"}, headers=root_h
+        ).status_code
+        == 404
+    )
+    out["key_patch_admin_scope"] = (
+        keys_client.patch(
+            f"/harness/keys/{pt_id}", json={"name": "x"}, headers={"X-API-Key": ro_raw}
+        ).status_code
+        == 403
+    )
+    out["key_patch_enabled_422"] = (
+        keys_client.patch(
+            f"/harness/keys/{pt_id}", json={"enabled": False}, headers=root_h
+        ).status_code
+        == 422
+    )
+    # a tombstoned credential stays dead — patch cannot resurrect it
+    dead_mint = keys_client.post("/harness/keys", json={"name": "dead"}, headers=root_h)
+    dead_id = dead_mint.json()["id"]
+    keys_client.delete(f"/harness/keys/{dead_id}", headers=root_h)
+    dead_patch = keys_client.patch(f"/harness/keys/{dead_id}", json={"name": "x"}, headers=root_h)
+    out["key_patch_revoked_409"] = (
+        dead_patch.status_code == 409 and dead_patch.json().get("code") == "key_revoked"
+    )
     # the FIRST mint on a no-env deployment carries admin so the operator
     # keeps a control plane after provisioning turns auth on
     noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))

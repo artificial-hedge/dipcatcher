@@ -43,6 +43,8 @@ export type UsageReport = components["schemas"]["UsageReport"];
 export type ApiKeyMintResponse = components["schemas"]["ApiKeyMintResponse"];
 export type ApiKeyRecord = components["schemas"]["ApiKeyRecordModel"];
 export type ApiKeyUsageResponse = components["schemas"]["ApiKeyUsageResponse"];
+export type ApiKeyRotateResponse =
+  components["schemas"]["ApiKeyRotateResponse"];
 export type SelfUsageResponse = components["schemas"]["SelfUsageResponse"];
 export type EvalDiff = components["schemas"]["EvalDiff"];
 export type EvalListResponse = components["schemas"]["EvalListResponse"];
@@ -826,6 +828,73 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as ApiKeyUsageResponse;
+  }
+
+  /**
+   * POST /harness/keys/{id}/rotate — atomic rotation: the successor
+   * mints under the predecessor's declared policy (name/scopes/admin/
+   * rpm/budgets), `revokeOld` (default) tombstones the predecessor in
+   * the same transaction, and `key.key` is the only place the new
+   * secret appears. Without `ttlS` the successor inherits the
+   * predecessor's absolute expiry — rotation never extends it.
+   */
+  async keyRotate(
+    keyId: string,
+    opts?: { revokeOld?: boolean; name?: string; ttlS?: number },
+  ): Promise<ApiKeyRotateResponse> {
+    const body: { revoke_old: boolean; name?: string; ttl_s?: number } = {
+      revoke_old: opts?.revokeOld ?? true,
+    };
+    if (opts?.name !== undefined) body.name = opts.name;
+    if (opts?.ttlS !== undefined) body.ttl_s = opts.ttlS;
+    const res = await this.send({
+      method: "POST",
+      path: `/harness/keys/${encodeURIComponent(keyId)}/rotate`,
+      body,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRotateResponse;
+  }
+
+  /**
+   * PATCH /harness/keys/{id} — mutable policy update on a live managed
+   * key: an omitted option keeps the declared policy, an explicit
+   * `null` clears the bound back to unbounded (`name`/`rpm`/
+   * `maxRequests`/`maxTokens`/`expiresAt` — `clear` names the same
+   * fields), and `admin:true` unions the admin scope the mint way
+   * while `admin:false` never strips a declared scope. Returns the
+   * updated record; `enabled` and the live counters are not
+   * patchable — revocation is permanent.
+   */
+  async keyUpdate(
+    keyId: string,
+    opts?: {
+      name?: string | null;
+      rpm?: number | null;
+      scopes?: string[];
+      admin?: boolean;
+      maxRequests?: number | null;
+      maxTokens?: number | null;
+      expiresAt?: number | null;
+      clear?: string[];
+    },
+  ): Promise<ApiKeyRecord> {
+    const body: Record<string, unknown> = {};
+    if (opts?.name !== undefined) body.name = opts.name;
+    if (opts?.rpm !== undefined) body.rpm = opts.rpm;
+    if (opts?.scopes !== undefined) body.scopes = opts.scopes;
+    if (opts?.admin !== undefined) body.admin = opts.admin;
+    if (opts?.maxRequests !== undefined) body.max_requests = opts.maxRequests;
+    if (opts?.maxTokens !== undefined) body.max_tokens = opts.maxTokens;
+    if (opts?.expiresAt !== undefined) body.expires_at = opts.expiresAt;
+    for (const field of opts?.clear ?? []) body[field] = null;
+    const res = await this.send({
+      method: "PATCH",
+      path: `/harness/keys/${encodeURIComponent(keyId)}`,
+      body,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as ApiKeyRecord;
   }
 
   /**

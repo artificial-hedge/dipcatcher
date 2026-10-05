@@ -382,6 +382,8 @@ def _tc_transport(client: TestClient) -> Any:
             resp = client.get(path, headers=headers)
         elif method == "DELETE":
             resp = client.delete(path, headers=headers)
+        elif method == "PATCH":
+            resp = client.patch(path, json=payload, headers=headers)
         elif isinstance(payload, bytes):
             resp = client.post(path, content=payload, headers=headers)
         else:
@@ -4037,6 +4039,46 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and _su_sdk["credential"] == "env"
         and _su_sdk["metered"] is False
         and _su_sdk["key"] is None
+    )
+    # rotation is identical on both legs — the successor inherits the
+    # declared policy, lineage stamps rotated_from, and the default
+    # tombstones the predecessor atomically
+    _rts = sdk.key_create("rot-par", rpm=12, scopes=["read"], max_requests=5)
+    _rtw = _admin_remote.key_create("rot-par", rpm=12, scopes=["read"], max_requests=5)
+    _rot_s = sdk.key_rotate(_rts["id"])
+    _rot_w = _admin_remote.key_rotate(_rtw["id"])
+    out["key_rotate_parity"] = (
+        _rot_s["object"] == _rot_w["object"] == "key_rotation"
+        and _rot_s["rotated_from"] == _rts["id"]
+        and _rot_w["rotated_from"] == _rtw["id"]
+        and _rot_s["revoked_previous"] == _rot_w["revoked_previous"] is True
+        and _rot_s["key"]["scopes"] == _rot_w["key"]["scopes"] == ["read"]
+        and _rot_s["key"]["rpm"] == _rot_w["key"]["rpm"] == 12
+        and _rot_s["key"]["max_requests"] == _rot_w["key"]["max_requests"] == 5
+        and _rot_s["key"]["name"] == _rot_w["key"]["name"] == "rot-par"
+        and _rot_s["key"]["key"].startswith("fx1k_")
+        and _rot_w["key"]["key"].startswith("fx1k_")
+        and sdk.key_get(_rts["id"])["revoked_at"] is not None
+        and _admin_remote.key_get(_rtw["id"])["revoked_at"] is not None
+        and _raises(lambda: sdk.key_rotate("nope"))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_rotate("nope"))[0] == "KeyError"
+    )
+    # patch is identical on both legs — the updated record envelope
+    # matches field for field, and an explicit None clears the bound
+    # back to unbounded on both
+    _pts = sdk.key_create("patch-par", rpm=15, scopes=["read"], max_requests=6)
+    _ptw = _admin_remote.key_create("patch-par", rpm=15, scopes=["read"], max_requests=6)
+    _up_s = sdk.key_update(_pts["id"], name="patch-par-2", rpm=None, max_tokens=33)
+    _up_w = _admin_remote.key_update(_ptw["id"], name="patch-par-2", rpm=None, max_tokens=33)
+    out["key_update_parity"] = (
+        _up_s["object"] == _up_w["object"] == "key"
+        and _up_s["name"] == _up_w["name"] == "patch-par-2"
+        and _up_s["rpm"] == _up_w["rpm"] is None
+        and _up_s["max_requests"] == _up_w["max_requests"] == 6
+        and _up_s["max_tokens"] == _up_w["max_tokens"] == 33
+        and _up_s["scopes"] == _up_w["scopes"] == ["read"]
+        and _raises(lambda: sdk.key_update("nope"))[0] == "KeyError"
+        and _raises(lambda: _admin_remote.key_update("nope"))[0] == "KeyError"
     )
     # One translation module (fx1.serve.anthropic_compat) serves all
     # surfaces: the same request over the wire, in-process, and through
