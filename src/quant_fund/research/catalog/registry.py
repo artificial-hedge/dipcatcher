@@ -6757,6 +6757,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "qivittoq_qa_studies",
         "tornit_qa_studies",
         "tupilaq_qa_studies",
+        # Wave-1928 polynesian-demon canon.
+        "kehua_qa_studies",
+        "maero_qa_studies",
+        "ngarara_qa_studies",
+        "patupaiarehe_qa_studies",
+        "ponaturi_qa_studies",
+        "taipo_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
