@@ -14599,6 +14599,14 @@ from quant_fund.research.benches_w1825 import (
     bench_velnias2_qa_studies_family,
     bench_zemyna2_qa_studies_family,
 )
+from quant_fund.research.benches_w1826 import (
+    bench_alkarisi2_qa_studies_family,
+    bench_baiyz2_qa_studies_family,
+    bench_erlik2_qa_studies_family,
+    bench_kydyr2_qa_studies_family,
+    bench_tenger2_qa_studies_family,
+    bench_ulgen2_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
