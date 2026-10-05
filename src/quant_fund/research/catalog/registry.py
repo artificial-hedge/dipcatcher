@@ -6078,6 +6078,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "siyum2_qa_studies",
         "wulukanni2_qa_studies",
         "zintuhi2_qa_studies",
+        # Wave-1831 canaanite-3 canon.
+        "asherah3_qa_studies",
+        "baal3_qa_studies",
+        "el3_qa_studies",
+        "kothar3_qa_studies",
+        "lotan3_qa_studies",
+        "mot3_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
