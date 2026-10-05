@@ -6932,6 +6932,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "foras_qa_studies",
         "furcas_qa_studies",
         "gaap_qa_studies",
+        # Wave-1953 goetic-ordinance canon.
+        "amy_qa_studies",
+        "andrealphus_qa_studies",
+        "gremory_qa_studies",
+        "murmur_qa_studies",
+        "orobas_qa_studies",
+        "ose_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
