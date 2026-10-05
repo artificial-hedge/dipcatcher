@@ -6463,6 +6463,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "imajeghen_qa_studies",
         "melqart_libya_qa_studies",
         "tritogeneia_qa_studies",
+        # Wave-1886 arabian-bestiary canon.
+        "bahamut_qa_studies",
+        "falak_qa_studies",
+        "ghoula_qa_studies",
+        "karkadann_qa_studies",
+        "nasnas_qa_studies",
+        "shahmaran_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
