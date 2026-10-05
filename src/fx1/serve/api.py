@@ -3009,6 +3009,13 @@ class _FileRecord(_Model):
     size: int
     created_at: int
     content: bytes
+    # New records bind metadata to exact bytes. ``None`` keeps journals
+    # written before this field backward-compatible; a clean replay upgrades
+    # them before compaction.
+    content_sha256: str | None = None
+
+
+_FILE_STORE_ID = re.compile(r"file-[0-9a-f]{32}")
 
 
 class _FileStore:
@@ -3032,6 +3039,10 @@ class _FileStore:
         max_bytes: int,
         state_dir: Path | None = None,
     ) -> None:
+        if max_entries < 1:
+            raise ValueError(f"file store max_entries must be >= 1, got {max_entries}")
+        if max_bytes < 1:
+            raise ValueError(f"file store max_bytes must be >= 1, got {max_bytes}")
         self._lock = threading.Lock()
         self._max = max_entries
         self._max_bytes = max_bytes
@@ -3044,52 +3055,119 @@ class _FileStore:
         if self._journal is not None:
             res = self._journal.replay()
             self.recover_warnings = list(res.warnings)
-            for payload in res.payloads:
-                for evict in payload.get("evicted") or ():
-                    fid = str(evict)
-                    self._files.pop(fid, None)
-                    self._blob(fid).unlink(missing_ok=True)
-                if "file_deleted" in payload:
-                    fid = str(payload["file_deleted"])
-                    self._files.pop(fid, None)
-                    self._blob(fid).unlink(missing_ok=True)
-                    continue
-                if "file" not in payload:
-                    continue
-                meta = payload["file"]
-                fid = str(meta["file_id"])
-                blob = self._blob(fid)
-                if not blob.is_file():
-                    self.recover_warnings.append(
-                        f"file {fid}: journaled without its content blob — dropped"
+            # Never rewrite a damaged journal around the last verified prefix:
+            # doing so would destroy the corrupt suffix and can resurrect a
+            # record whose delete lived there. Operator repair is required.
+            if res.truncated_at is not None or res.dropped:
+                raise RuntimeError("file journal is damaged; recovery requires operator repair")
+            try:
+                for payload in res.payloads:
+                    self._apply_replay_op(payload)
+                for file_id, rec in list(self._files.items()):
+                    content = self._blob(file_id).read_bytes()
+                    digest = hashlib.sha256(content).hexdigest()
+                    if rec.size != len(content) or rec.size > self._max_bytes:
+                        raise ValueError(
+                            f"file {file_id}: metadata size does not match its content blob "
+                            "or exceeds the configured byte cap"
+                        )
+                    if rec.content_sha256 is not None and not hmac.compare_digest(
+                        rec.content_sha256, digest
+                    ):
+                        raise ValueError(f"file {file_id}: content sha256 does not match metadata")
+                    self._files[file_id] = rec.model_copy(
+                        update={"content": content, "content_sha256": digest}
                     )
-                    continue
-                rec = _FileRecord.model_validate({**meta, "content": blob.read_bytes()})
-                self._files[fid] = rec
-                self._files.move_to_end(fid)
-            # GC blobs with no live record (torn tail / mid-eviction crash)
+                if len(self._files) > self._max:
+                    raise ValueError("file journal live set exceeds the configured entry cap")
+            except (OSError, ValueError) as exc:
+                raise RuntimeError("file journal contains an invalid operation") from exc
+            # GC only after the complete chain and every referenced blob have
+            # validated. A corrupt suffix may still be the sole owner of a blob.
             blobs = (
                 self._dir.glob("file-*.bin") if self._dir is not None and self._dir.is_dir() else ()
             )
             for blob in blobs:
                 if blob.stem not in self._files:
                     blob.unlink(missing_ok=True)
+            temporary = (
+                self._dir.glob(".file-*.tmp")
+                if self._dir is not None and self._dir.is_dir()
+                else ()
+            )
+            for tmp in temporary:
+                tmp.unlink(missing_ok=True)
             self._compact_locked()
+
+    @staticmethod
+    def _valid_id(file_id: str) -> bool:
+        return _FILE_STORE_ID.fullmatch(file_id) is not None
 
     def _blob(self, file_id: str) -> Path:
         if self._dir is None:  # only reachable in the journal-less mode
             raise RuntimeError("file store has no state_dir — nothing durable to address")
+        if not self._valid_id(file_id):
+            raise ValueError(f"invalid file id {file_id!r}")
         return self._dir / f"{file_id}.bin"
 
     @staticmethod
     def _meta(rec: _FileRecord) -> dict[str, Any]:
         return rec.model_dump(mode="json", exclude={"content"})
 
+    def _apply_replay_op(self, payload: dict[str, Any]) -> None:
+        """Validate and apply one legacy-compatible journal operation."""
+        if not isinstance(payload, dict):
+            raise ValueError("file journal operation must be an object")
+        evicted = payload.get("evicted", [])
+        if not isinstance(evicted, list) or any(
+            not isinstance(file_id, str) or not self._valid_id(file_id) for file_id in evicted
+        ):
+            raise ValueError("file journal evicted must be a list of valid ids")
+        for file_id in evicted:
+            self._files.pop(file_id, None)
+
+        if "file" in payload:
+            meta = payload["file"]
+            if not isinstance(meta, dict):
+                raise ValueError("file journal metadata must be an object")
+            file_id = meta.get("file_id")
+            if not isinstance(file_id, str) or not self._valid_id(file_id):
+                raise ValueError("file journal metadata requires a valid file_id")
+            # Content is hydrated after every operation has replayed: a blob
+            # legitimately may be absent when a later tombstone removes this
+            # record from the final live set.
+            rec = _FileRecord.model_validate({**meta, "content": b""})
+            self._files[file_id] = rec
+            self._files.move_to_end(file_id)
+            allowed = {"file", "evicted"}
+        elif "file_deleted" in payload:
+            file_id = payload["file_deleted"]
+            if not isinstance(file_id, str) or not self._valid_id(file_id):
+                raise ValueError("file journal delete requires a valid file id")
+            self._files.pop(file_id, None)
+            allowed = {"file_deleted"}
+        elif "file_touched" in payload:
+            file_id = payload["file_touched"]
+            if (
+                not isinstance(file_id, str)
+                or not self._valid_id(file_id)
+                or file_id not in self._files
+            ):
+                raise ValueError("file journal touch requires a live file id")
+            self._files.move_to_end(file_id)
+            allowed = {"file_touched"}
+        else:
+            raise ValueError("unknown file journal operation")
+        if set(payload) - allowed:
+            raise ValueError("file journal operation contains unexpected fields")
+
     def _compact_locked(self) -> None:
         if self._journal is not None:
             self._journal.compact([{"file": self._meta(r)} for r in self._files.values()])
 
     def put(self, *, filename: str, purpose: str, content: bytes) -> _FileRecord:
+        if len(content) > self._max_bytes:
+            raise ValueError(f"file exceeds the {self._max_bytes}-byte cap")
         rec = _FileRecord(
             file_id=f"file-{uuid.uuid4().hex}",
             filename=filename,
@@ -3097,6 +3175,7 @@ class _FileStore:
             size=len(content),
             created_at=int(time.time()),
             content=content,
+            content_sha256=hashlib.sha256(content).hexdigest(),
         )
         if self._dir is not None:
             # Blob first, fsync'd: the journaled metadata line may only ever
@@ -3104,23 +3183,47 @@ class _FileStore:
             self._dir.mkdir(parents=True, exist_ok=True)
             blob = self._blob(rec.file_id)
             tmp = self._dir / f".{rec.file_id}.tmp"
-            with tmp.open("wb") as fh:
-                fh.write(content)
-                fh.flush()
-                os.fsync(fh.fileno())
-            os.replace(tmp, blob)
+            try:
+                with tmp.open("wb") as fh:
+                    fh.write(content)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                os.replace(tmp, blob)
+            except Exception:
+                tmp.unlink(missing_ok=True)
+                blob.unlink(missing_ok=True)
+                raise
         evicted: list[str] = []
-        with self._lock:
-            self._files[rec.file_id] = rec
-            self._files.move_to_end(rec.file_id)
-            while len(self._files) > self._max:
-                old_id, _ = self._files.popitem(last=False)
-                evicted.append(old_id)
-            if self._journal is not None:
-                payload: dict[str, Any] = {"file": self._meta(rec)}
-                if evicted:
-                    payload["evicted"] = evicted
-                self._journal.append(payload)
+        journal_size = 0
+        if self._journal is not None:
+            with suppress(FileNotFoundError):
+                journal_size = self._journal.path.stat().st_size
+        try:
+            with self._lock:
+                evicted = list(self._files)[: max(0, len(self._files) + 1 - self._max)]
+                if self._journal is not None:
+                    payload: dict[str, Any] = {"file": self._meta(rec)}
+                    if evicted:
+                        payload["evicted"] = evicted
+                    self._journal.append(payload)
+                for old_id in evicted:
+                    self._files.pop(old_id, None)
+                self._files[rec.file_id] = rec
+                self._files.move_to_end(rec.file_id)
+        except Exception:
+            if self._dir is not None:
+                # Before-write failures leave an orphan blob and are safe to
+                # clean. If the journal length changed, retain it: the append
+                # may be durable or torn and repair needs the referenced bytes.
+                unchanged = self._journal is None
+                if self._journal is not None:
+                    try:
+                        unchanged = self._journal.path.stat().st_size == journal_size
+                    except OSError:
+                        unchanged = False
+                if unchanged:
+                    self._blob(rec.file_id).unlink(missing_ok=True)
+            raise
         if self._dir is not None:
             for fid in evicted:
                 self._blob(fid).unlink(missing_ok=True)
@@ -3130,24 +3233,32 @@ class _FileStore:
         with self._lock:
             rec = self._files.get(file_id)
             if rec is not None:
-                self._files.move_to_end(file_id)
-            return rec
+                # Avoid an fsync on repeated reads of the current MRU entry.
+                # Only an order-changing touch needs durable representation.
+                if next(reversed(self._files)) != file_id:
+                    if self._journal is not None:
+                        self._journal.append({"file_touched": file_id})
+                    self._files.move_to_end(file_id)
+                return rec.model_copy(deep=True)
+            return None
 
     def list(self) -> builtins.list[_FileRecord]:
         """Newest-first snapshot."""
         with self._lock:
-            out = list(self._files.values())
+            out = [rec.model_copy(deep=True) for rec in self._files.values()]
         out.reverse()
         return out
 
     def delete(self, file_id: str) -> _FileRecord | None:
         with self._lock:
-            rec = self._files.pop(file_id, None)
+            rec = self._files.get(file_id)
             if rec is not None and self._journal is not None:
                 self._journal.append({"file_deleted": file_id})
+            if rec is not None:
+                self._files.pop(file_id)
         if rec is not None and self._dir is not None:
             self._blob(file_id).unlink(missing_ok=True)
-        return rec
+        return rec.model_copy(deep=True) if rec is not None else None
 
     @property
     def max_bytes(self) -> int:
@@ -7633,23 +7744,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         (``has_more`` + ``first_id``/``last_id``) so stock-SDK
         auto-pagination terminates; ``purpose`` filters by the upload's
         declared intent."""
-        if order not in ("asc", "desc"):
-            raise OpenAICompatError(
-                f"order must be 'asc' or 'desc', got {order!r}",
-                status=400,
-                code="invalid_cursor",
+        try:
+            if order not in ("asc", "desc"):
+                raise OpenAICompatError(
+                    f"order must be 'asc' or 'desc', got {order!r}",
+                    status=400,
+                    code="invalid_cursor",
+                )
+            records = file_store.list()
+            if purpose is not None:
+                records = [r for r in records if r.purpose == purpose]
+            items = [file_object(r.model_dump()) for r in records]
+            # the store is newest-first — that IS desc; "asc" flips to
+            # oldest-first before the shared pager walks it
+            if order == "asc":
+                items.reverse()
+            return JSONResponse(
+                paged_item_list(items, limit=limit, after=after, before=before, order="asc")
             )
-        records = file_store.list()
-        if purpose is not None:
-            records = [r for r in records if r.purpose == purpose]
-        items = [file_object(r.model_dump()) for r in records]
-        # the store is newest-first — that IS desc; "asc" flips to
-        # oldest-first before the shared pager walks it
-        if order == "asc":
-            items.reverse()
-        return JSONResponse(
-            paged_item_list(items, limit=limit, after=after, before=before, order="asc")
-        )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
 
     @app.get(
         "/v1/files/{file_id}",
@@ -7900,8 +8014,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         items = batch_store.list()
         if after is not None:
             idx = next((i for i, b in enumerate(items) if b.batch_id == after), None)
-            if idx is not None:
-                items = items[idx + 1 :]
+            if idx is None:
+                raise ApiError(400, f"cursor {after!r} is not a batch id", code="invalid_cursor")
+            items = items[idx + 1 :]
         page = items[:limit]
         return JSONResponse(
             {
