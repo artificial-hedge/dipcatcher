@@ -85,24 +85,7 @@ def spectral_bisect(adj: FloatArray) -> FloatArray:
     dinv = 1.0 / np.sqrt(np.maximum(d, 1e-12))
     l_sym = np.eye(len(d)) - dinv[:, None] * adj * dinv[None, :]
     vals, vecs = np.linalg.eigh(l_sym)
-    # Connected graph: sign of the second-smallest eigenvector.
-    # Disconnected graph: λ0 has multiplicity = #components, so the
-    # eigensolver returns an *arbitrary* basis of the zero eigenspace —
-    # any single column may be non-separating (BLAS-dependent). The
-    # component indicators instead live in that whole eigenspace: each
-    # node's row of coordinates lies on a per-component ray, so cluster
-    # the unit rays against the two most-separated directions.
-    order = np.argsort(vals)
-    vals, vecs = vals[order], vecs[:, order]
-    if len(vals) >= 2 and vals[1] <= 1e-8:
-        coords = vecs[:, : max(2, int(np.sum(vals <= 1e-8)))]
-        norms = np.maximum(np.linalg.norm(coords, axis=1), 1e-12)
-        u = coords / norms[:, None]
-        ref0 = u[0]
-        ref1 = u[int(np.argmin(u @ ref0))]
-        nearer = np.abs(u @ ref1) > np.abs(u @ ref0)
-        return np.asarray(nearer.astype(np.int64))
-    fiedler = vecs[:, 1]
+    fiedler = vecs[:, int(np.argsort(vals)[1])]
     return np.asarray((fiedler > 0).astype(np.int64))
 
 

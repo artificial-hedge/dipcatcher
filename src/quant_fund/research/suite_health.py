@@ -144,16 +144,7 @@ def suite_health(
     if epoch_check is None:
         epoch_state: dict[str, Any] = {"available": False}
     else:
-        # Acknowledged removals/mutations live next to the heads pin in the
-        # conventional quality/ dir — same map `corpus-epoch --check
-        # --allowed-removals` reads so both paths agree on a deliberate
-        # retire.
-        allowed_path = root.parent / "quality" / "epoch_allowed_removals.json"
-        allowed: dict[str, str] | None = None
-        if allowed_path.is_file():
-            raw = json.loads(allowed_path.read_text(encoding="utf-8"))
-            allowed = dict(raw) if isinstance(raw, dict) else None
-        chain = epoch_check(root, allowed_removals=allowed)
+        chain = epoch_check(root)
         epoch_state = {
             "available": True,
             "head": chain.get("head"),

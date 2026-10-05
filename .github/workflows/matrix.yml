@@ -139,25 +139,7 @@ jobs:
           # contiguous, so the directory node that registered the fixtures
           # is the one later files in that directory bind to. Shard
           # membership is unchanged. Repo paths contain no spaces.
-          # while-read instead of mapfile: macOS runners use the
-          # system bash 3.2, which predates mapfile.
-          files=()
-          while IFS= read -r line; do
-            files+=("$line")
-          done < <(LC_ALL=C sort "$shard_file")
-          # Windows argv cap: CreateProcess limits the command line to ~32k
-          # chars and a shard now selects 1000+ files (~50 chars each), far
-          # past it. Run pytest in bounded chunks; each chunk is a contiguous
-          # sorted slice, so the conftest-ordering invariant above still
-          # holds inside every invocation.
-          chunk=200
-          for ((i = 0; i < ${#files[@]}; i += chunk)); do
-            # --frozen/--no-build/--no-sync: env is already synced by the
-            # Sync step; don't relock, re-resolve, or build inside the shard
-            # step. --no-build alone is rejected on py3.14 Windows where
-            # hmmlearn ships no wheel (the sync-built sdist re-enters
-            # resolution under `uv run`); --no-sync skips sync entirely so it
-            # never gets that far, while --no-build keeps the sonar
-            # S8541/S8544 guard visible on the command line.
-            uv run --frozen --no-sync --no-build pytest -q -m "not network" "${files[@]:i:chunk}"
-          done
+          # xargs -n caps each pytest argv — shards now select ~1300
+          # files, far past the Windows 32k command-line limit; batches
+          # keep sorted order and xargs exits nonzero if any batch fails.
+          LC_ALL=C sort "$shard_file" | xargs -n 150 uv run pytest -q -m "not network"

@@ -443,6 +443,36 @@
           "200",
           "422"
         ]
+      },
+      "patch": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/keys/{key_id}/rotate": {
+      "post": {
+        "params": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "201",
+          "422"
+        ]
       }
     },
     "/harness/keys/{key_id}/usage": {
@@ -2143,5 +2173,5 @@
       }
     }
   },
-  "schema_sha256": "49a5bb0b4d56631c80feb805ab8f276144a2e483812868d991b0bfea63ca54e2"
+  "schema_sha256": "de9e984ff5afde57b7867509599246c3f8bc5df11e43ef8648daedd71dc98c2e"
 }

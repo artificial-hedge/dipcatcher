@@ -25,7 +25,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Annotated, Any, Literal, NotRequired, TypedDict
+from typing import Annotated, Any, Literal, TypedDict
 
 import numpy as np
 from pydantic import (
@@ -338,9 +338,6 @@ class ReceiptVerification(TypedDict):
     digest_convention: str | None
     errors: list[str]
     warnings: list[str]
-    # Set only by `verify-receipt --honor-legacy`: the verdict stays
-    # truthful while corpus sweeps honor the byte-pinned exemption.
-    legacy_exempt: NotRequired[bool]
 
 
 def _result(

@@ -1,11 +1,13 @@
-"""stream_audit — SSE wire-format battery over every streaming surface.
+"""stream_audit — buffered SSE-body checks across streaming surfaces.
 
 ``api_audit`` pins the wire contract's happy paths; this battery attacks
 the *byte-level grammar* every ``text/event-stream`` response speaks —
 ``/v1/chat/completions``, ``/v1/completions``, ``/v1/responses``
 (create + ``GET`` replay), ``/v1/messages``, and
 ``/harness/complete/stream`` — against a live in-process app (nothing
-leaves the box):
+leaves the box). Starlette TestClient buffers each ASGI response before
+the client can read it; these probes inspect completed response bodies,
+not live network delivery or client-disconnect propagation:
 
 - *Frame grammar* — blocks are blank-line delimited; every physical line
   is a legal SSE field (``id:``/``event:``/``data:`` or a ``:`` comment);
@@ -45,13 +47,14 @@ leaves the box):
   byte-identically; ``Last-Event-ID`` re-emits the strict byte suffix
   (400 malformed/non-stream/no-key, 409 on a miss); the live-follow
   stream on an in-flight background response emits its prelude then
-  ``: keepalive`` comments until the terminal event; a deleted record
-  ends the stream without a terminal frame and stays deleted.
+  ``: keepalive`` comments until the terminal event. A separate buffered
+  follow fixture contains no terminal frame before record deletion;
+  post-deletion checks continue to return 404.
 - *Concurrency* — N parallel streams over one app never interleave:
   every body's frames carry only that request's content with dense ids.
 - *Failures* — pre-stream errors are ordinary dialect-JSON errors, never
-  SSE; early client disconnects leave the stored record uncorrupted and
-  the app fully responsive.
+  SSE. Partial reads of already-buffered responses preserve stored
+  records and responsiveness; they do not exercise an early disconnect.
 
 Probes are literal bools: ``True`` pins a contract that holds;
 ``False`` pins a measured divergence — the sealed receipt names every
@@ -1383,7 +1386,7 @@ def _probe_replay_cancel_delete(workdir: Path) -> dict[str, bool]:
     g2 = ctx.client.get(f"/v1/responses/{rid}", params={"stream": "true"})
     out["replay_cancelled_deterministic"] = g2.text == g.text
     backend.gate.set()  # drain the still-blocked worker before teardown
-    # --- deleted mid-follow: the stream ends without a terminal frame ---
+    # --- delete after the follow response has already been buffered ---
     backend2 = _GatedBackend()
     ctx2 = _make_ctx(workdir / "del", backend2, sse_keepalive_s=0.05)
     env2 = ctx2.client.post(
@@ -1394,20 +1397,23 @@ def _probe_replay_cancel_delete(workdir: Path) -> dict[str, bool]:
     with ctx2.client.stream("GET", f"/v1/responses/{rid2}?stream=true&timeout_s=20") as s:
         it = s.iter_lines()
         blanks = 0
-        for ln in it:  # consume the prelude (>= 2 frames) while in-flight
+        for ln in it:  # read a prelude from the already-buffered response
             lines.append(ln)
             if ln == "":
                 blanks += 1
             if blanks >= 2:
                 break
-        # the record is dropped while the stream is mid-follow
+        # TestClient has already consumed the ASGI response. This deletion
+        # does not test termination of an active client connection.
         dr = ctx2.client.delete(f"/v1/responses/{rid2}")
         for ln in it:  # drain to stream end
             lines.append(ln)
     frames2 = _sse_frames("\n".join(lines))
     events2 = _event_payloads(frames2)
-    out["replay_middelete_200"] = dr.status_code == 200 and dr.json().get("deleted") is True
-    out["replay_middelete_no_terminal"] = len(events2) >= 1 and all(
+    out["replay_delete_after_buffered_follow_200"] = (
+        dr.status_code == 200 and dr.json().get("deleted") is True
+    )
+    out["replay_buffered_follow_no_terminal"] = len(events2) >= 1 and all(
         e not in _TERMINAL_EVENTS for e, _ in events2
     )
     # releasing the worker must not resurrect the deleted record
@@ -1421,13 +1427,13 @@ def _probe_replay_cancel_delete(workdir: Path) -> dict[str, bool]:
 
 
 # ---------------------------------------------------------------------------
-# Client disconnect — partial reads must leave the stored record intact
+# Buffered partial reads — no live client disconnect is exercised
 # ---------------------------------------------------------------------------
 
 
-def _probe_disconnect(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
+def _probe_buffered_reads(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
     out: dict[str, bool] = {}
-    # partial read of a keyed live stream, then a full replay
+    # Partial consumer read of a completed, buffered body, then a replay.
     key = "dc-1"
     body = _chat_body(_ECHO_PROMPT, stream=True)
     with ctx.client.stream(
@@ -1440,19 +1446,20 @@ def _probe_disconnect(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
                 prefix.append(next(it))
             except StopIteration:
                 break
-        # leaving the context closes the response mid-stream
+        # Closing here releases a buffered response; its ASGI producer
+        # already finished before TestClient exposed the first line.
     r_full = ctx.client.post("/v1/chat/completions", json=body, headers={"Idempotency-Key": key})
-    out["disconnect_prefix_was_wire"] = r_full.text.startswith("\n".join(prefix))
-    out["disconnect_record_intact"] = (
+    out["buffered_prefix_matches_replay"] = r_full.text.startswith("\n".join(prefix))
+    out["buffered_partial_read_record_intact"] = (
         r_full.status_code == 200
         and r_full.headers.get("x-fx1-idempotent-replay") == "true"
         and r_full.text.endswith("data: [DONE]\n\n")
         and _data_frames(_sse_frames(r_full.text))[-1].data == "[DONE]"
     )
-    out["disconnect_app_responsive"] = (
+    out["buffered_partial_read_app_responsive"] = (
         ctx.client.post("/v1/chat/completions", json=_chat_body("pong")).status_code == 200
     )
-    # early close on a live-follow replay leaves the record uncorrupted
+    # Read part of a buffered follow response, then inspect its record.
     backend2 = _GatedBackend()
     ctx2 = _make_ctx(workdir / "dc", backend2, sse_keepalive_s=0.05)
     env = ctx2.client.post(
@@ -1466,7 +1473,8 @@ def _probe_disconnect(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
                 next(it)
             except StopIteration:
                 break
-        # close mid-follow — generator abandoned against a live record
+        # This closes the completed TestClient buffer, not a live ASGI
+        # connection; disconnect handling remains outside this audit.
     backend2.gate.set()
     end = time.monotonic() + 15.0
     rec: dict[str, Any] = {}
@@ -1475,11 +1483,11 @@ def _probe_disconnect(ctx: _Ctx, workdir: Path) -> dict[str, bool]:
         if rec.get("status") == "completed":
             break
         time.sleep(0.05)
-    out["disconnect_follow_record_intact"] = rec.get("status") == "completed"
+    out["buffered_follow_record_intact"] = rec.get("status") == "completed"
     g = ctx2.client.get(f"/v1/responses/{rid}", params={"stream": "true"})
     events = _event_payloads(_sse_frames(g.text))
-    out["disconnect_follow_replays"] = bool(events) and events[-1][0] == ("response.completed")
-    out["disconnect_follow_responsive"] = (
+    out["buffered_follow_replays"] = bool(events) and events[-1][0] == ("response.completed")
+    out["buffered_follow_responsive"] = (
         ctx2.client.post("/v1/responses", json={"model": "fx1", "input": "pong"}).status_code == 200
     )
     return out
@@ -1620,7 +1628,7 @@ def stream_audit() -> dict[str, Any]:
             out.update(_probe_replay_failed(ctx_fail))
             out.update(_probe_prestream(ctx_fail))
             out.update(_probe_replay_cancel_delete(wd / "j"))
-            out.update(_probe_disconnect(ctx, wd / "k"))
+            out.update(_probe_buffered_reads(ctx, wd / "k"))
             out.update(_probe_concurrent(ctx, ctx_stream, rid_pool))
     finally:
         for k, v in saved.items():
@@ -1637,8 +1645,8 @@ def stream_audit_bench() -> dict[str, Any]:
     from quant_fund.utils.reproducibility import git_revision
 
     r = stream_audit()
-    ok = all(v is True for v in r.values())
-    defects = sorted(k for k, v in r.items() if v is not True)
+    ok = bool(r) and all(v is True for v in r.values())
+    defects = sorted(k for k, v in r.items() if v is not True) if r else ["no_probes"]
     out: dict[str, Any] = {
         "kind": "stream_audit",
         "schema": "stream_audit.v1",
@@ -1647,10 +1655,18 @@ def stream_audit_bench() -> dict[str, Any]:
         "research_only": True,
         "live_pnl_claim": False,
         "claim": {"results": r, "ok": ok},
+        "coverage": {
+            "transport": "Starlette TestClient buffered ASGI response bodies",
+            "not_verified": [
+                "early client disconnect propagation",
+                "deletion during an active network follow response",
+                "network streaming delivery timing",
+            ],
+        },
         "interpretation": (
-            "SSE wire contract holds across all five surfaces: every frame "
-            "is a well-formed blank-line-delimited block of legal SSE "
-            "fields with absolute dense ``id:`` indices; chat/completions "
+            "Buffered SSE-body fixture checks pass across the five surfaces: "
+            "frames are well-formed blank-line-delimited blocks of legal SSE "
+            "fields, with dense ``id:`` indices where the dialect uses them; chat/completions "
             "emit role→content→finish chunks under one completion id "
             "ending ``[DONE]``; the Responses dialect emits the full "
             "event lifecycle ending ``response.completed`` with deltas "
@@ -1663,10 +1679,13 @@ def stream_audit_bench() -> dict[str, Any]:
             "under HTTP 200; keyed replays are byte-identical, "
             "``Last-Event-ID``/``starting_after`` slice by absolute frame "
             "index with loud 400/409 refusals, background responses "
-            "live-follow with ``: keepalive`` comments, deletes end the "
-            "stream without a terminal frame and stay 404; parallel "
-            "streams never interleave; and pre-stream failures stay "
-            "dialect-JSON, never SSE."
+            "follow fixtures include ``: keepalive`` comments; buffered follow "
+            "bodies have no terminal frame before deletion and post-deletion "
+            "checks return 404. Parallel fixture bodies show no interleaving; "
+            "pre-stream failures stay "
+            "dialect-JSON, never SSE. This buffered transport does not verify "
+            "early disconnects, deletion during an active network response, "
+            "or network delivery timing."
             if ok
             else f"STREAM AUDIT DEFECTS: {defects}"
         ),

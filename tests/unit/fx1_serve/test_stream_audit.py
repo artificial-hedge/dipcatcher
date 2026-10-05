@@ -31,3 +31,10 @@ def test_receipt_deterministic() -> None:
     a = stream_audit_bench()
     b = stream_audit_bench()
     assert a["receipt_sha256"] == b["receipt_sha256"]
+
+
+def test_empty_audit_result_is_not_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("fx1.serve.stream_audit.stream_audit", lambda: {})
+    blob = stream_audit_bench()
+    assert blob["claim"]["ok"] is False
+    assert "no_probes" in blob["interpretation"]
