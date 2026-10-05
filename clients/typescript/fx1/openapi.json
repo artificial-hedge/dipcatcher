@@ -22047,7 +22047,7 @@
     },
     "/v1/messages/batches": {
       "get": {
-        "description": "Newest-first batch listing; ``after_id`` pages to entries newer\nthan the cursor id, ``before_id`` to entries older than it.",
+        "description": "Newest-first batch listing; ``after_id`` pages to entries\nolder than the cursor id (the page that follows it in list\norder), ``before_id`` to entries newer than it \u2014 the same\ncursor grammar ``/v1/models`` speaks, so the stock SDK's\nauto-pagination walks the full list.",
         "operationId": "anthropic_batches_list",
         "parameters": [
           {

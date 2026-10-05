@@ -458,7 +458,15 @@ streams, typed error classes (`BadRequestError`/`ConflictError`/
 resource group: models, chat (incl. `store`+`list`), responses (incl.
 `background`+cancel+input_items), files+batches+fine-tuning,
 embeddings, moderations, uploads, evals, conversations, vector
-stores.
+stores. The Anthropic twin is measured the same way:
+`receipts/fx1_anthropic_sdk_audit.json`
+(`fx1.serve.anthropic_sdk_audit.anthropic_sdk_audit_bench`) drives
+the stock `anthropic` SDK — typed `Message`/stream-event/batch-object
+parsing, `stream()` + raw SSE grammar, `count_tokens`, cursor
+auto-pagination, batches create→cancel→results JSONL, and the typed
+exception classes (`AuthenticationError`/`PermissionDeniedError`/
+`RateLimitError`/`InternalServerError`/…) — against the whole
+`/v1/messages*` surface.
 
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed

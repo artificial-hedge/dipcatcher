@@ -10108,11 +10108,18 @@ def _probe_backend_probes(  # NOSONAR
         and "last_id" in ablist
         and "has_more" in ablist
     )
-    abpage2 = ab_app.get(f"{_MESSAGES_PATH}/batches?limit=50&before_id={ablist['last_id']}").json()
+    ab_after = ab_app.get(f"{_MESSAGES_PATH}/batches?limit=50&after_id={ablist['last_id']}").json()
+    ab_before = ab_app.get(f"{_MESSAGES_PATH}/batches?limit=50&before_id={ab1b['id']}").json()
     out["anthropic_batch_list_cursor"] = (
-        abpage2["has_more"] is False
-        and all(b["id"] != ablist["last_id"] for b in abpage2["data"])
-        and len(abpage2["data"]) >= 1
+        # after_id pages forward past the cursor — the next page of
+        # entries after it in list order, the way /v1/models (and the
+        # stock SDK's auto-pagination) expects
+        [b["id"] for b in ab_after["data"]] == [ab1b["id"]]
+        and ab_after["has_more"] is False
+        # before_id returns the tail of the window before the cursor —
+        # the entries listed ahead of it, the cursor itself excluded
+        and [b["id"] for b in ab_before["data"]] == [abi1.json()["id"]]
+        and ab_before["has_more"] is False
     )
     # error grammar + terminal-state rules: unknown id 404s in the
     # Anthropic envelope; ended batches refuse cancel (400) and delete

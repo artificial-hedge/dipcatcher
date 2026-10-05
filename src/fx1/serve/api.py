@@ -5545,16 +5545,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         before_id: str | None = Query(default=None),
         after_id: str | None = Query(default=None),
     ) -> JSONResponse:
-        """Newest-first batch listing; ``after_id`` pages to entries newer
-        than the cursor id, ``before_id`` to entries older than it."""
+        """Newest-first batch listing; ``after_id`` pages to entries
+        older than the cursor id (the page that follows it in list
+        order), ``before_id`` to entries newer than it — the same
+        cursor grammar ``/v1/models`` speaks, so the stock SDK's
+        auto-pagination walks the full list."""
         items = abatch_store.list()
         if after_id is not None:
             idx = next((i for i, b in enumerate(items) if b.batch_id == after_id), None)
-            items = items[:idx] if idx is not None else []
+            items = items[idx + 1 :] if idx is not None else []
         if before_id is not None:
             idx = next((i for i, b in enumerate(items) if b.batch_id == before_id), None)
-            items = items[idx + 1 :] if idx is not None else []
-        page = items[:limit]
+            items = items[:idx] if idx is not None else []
+        # ``before_id`` pages *backward* — the tail of the remaining
+        # window, so first_id chains through the list the way after_id
+        # chains forward through last_id.
+        page = items[-limit:] if before_id is not None else items[:limit]
         return JSONResponse(
             {
                 "data": [_abatch_project(b) for b in page],
