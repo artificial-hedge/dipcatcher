@@ -1243,6 +1243,16 @@ conflated with user traffic.
   `fx1.serve.webhooks.verify_webhook`), and delivery state lands on the
   record (`callback_status`/`callback_attempts`/`callback_error`).
 
+The whole lifecycle — four submit legs (HTTP, `Fx1Harness`,
+`HarnessClient`, CLI in-process and `--remote`), idempotent replay, the
+queued→running→terminal machine with the atomic cancel claim, drain and
+capacity refusals, fallback-chain attribution, sealed
+`fx1_eval_record.v1` receipts, `--state-dir` durability and
+restart-failed honesty, the `/v1/evals` spec/run surface, cursor
+fail-closed semantics, scoped auth, terminal webhooks, and the diff
+gate — is pinned by `receipts/fx1_eval_lifecycle_audit.json`
+(`fx1.serve.eval_lifecycle_audit.eval_lifecycle_audit_bench`).
+
 ## Ops knobs
 
 CLI flags on `fx1 harness serve`, falling back to env, fail-closed on
