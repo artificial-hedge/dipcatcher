@@ -29,7 +29,8 @@
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 30,
-      "status": "audited"
+      "status": "partial",
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
     "train": {
       "doc": "docs/AUDIT_LEDGER.md",

@@ -275,8 +275,8 @@ class _CallFailBackend(_ParityBackend):
     def stream(
         self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
     ) -> Iterator[str]:
+        yield from ()
         raise RuntimeError("backend exploded")
-        yield
 
 
 class _FlakyBackend(_ParityBackend):
@@ -2138,6 +2138,23 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             )[0]
             == "HarnessTransportError"
         )
+        # drop-in header parity: the remote leg snapshots the wire's
+        # headers per response (request-id/api-version/processing-ms —
+        # SDKs read these for tracing); the SDK's in-process twin stamps
+        # the same surface for its gated call
+        remote.health()
+        sdk_h = sdk.complete(msg, backend="byok")
+        out["client_last_response_headers"] = (
+            bool(remote.last_response_headers.get("x-request-id"))
+            and remote.last_response_headers.get("x-fx1-api-version") is not None
+            and int(remote.last_response_headers.get("openai-processing-ms", "-1")) >= 0
+            and sdk.last_response_headers.get("x-fx1-completion-id") == sdk_h.completion_id
+        )
+        # a transport fault leaves an honest empty map — no stale headers
+        # posing as a live response
+        hdr_dead = HarnessClient("http://harness.test", transport=_dead_transport)
+        _raises(lambda: hdr_dead.health())
+        out["client_headers_cleared_on_fault"] = hdr_dead.last_response_headers == {}
         out["client_auth_error_maps"] = (
             _raises(
                 lambda: HarnessClient(

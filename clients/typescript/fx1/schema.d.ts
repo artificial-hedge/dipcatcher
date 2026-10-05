@@ -10967,6 +10967,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -10994,6 +11004,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11036,6 +11056,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11063,6 +11093,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11107,6 +11147,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11134,6 +11184,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11174,6 +11234,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11201,6 +11271,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11241,6 +11321,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11268,6 +11358,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11308,6 +11408,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11335,6 +11445,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11375,6 +11495,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11402,6 +11532,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11444,6 +11584,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -11471,6 +11621,16 @@ export interface operations {
                     "X-RateLimit-Reset-Requests"?: number;
                     /** @description Request id — echoed from the inbound X-Request-ID or minted. */
                     "X-Request-ID"?: string;
+                    /** @description Managed-key rpm window size — present only when the credential carries a declared rpm window. */
+                    "anthropic-ratelimit-requests-limit"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "anthropic-ratelimit-requests-remaining"?: number;
+                    /** @description RFC 3339 instant when the key's rpm window reopens. */
+                    "anthropic-ratelimit-requests-reset"?: string;
+                    /** @description Anthropic's request-id header — the same id as X-Request-ID. */
+                    "request-id"?: string;
+                    /** @description Retry guidance for the stock anthropic SDK on statuses its default policy would get wrong. */
+                    "x-should-retry"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {

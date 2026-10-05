@@ -209,17 +209,15 @@ def _env_float(name: str, override: float | None, default: float) -> float:
 def _extract_usage(payload: Any) -> dict[str, int] | None:
     """Pull the ``usage`` dict off an OpenAI-compatible response.
 
-    Returns only int-valued keys (``prompt_tokens``/``completion_tokens``/
-    ``total_tokens`` and friends); a missing or malformed block is ``None``
-    — the caller reports no usage rather than fabricating counts."""
+    Returns only genuine integer counters (``prompt_tokens``/
+    ``completion_tokens``/``total_tokens`` and friends). Booleans,
+    strings, and floats are unbillable, including non-finite floats;
+    never coerce them into token counts. A missing or wholly malformed
+    block is ``None`` rather than fabricated usage."""
     usage = payload.get("usage") if isinstance(payload, dict) else None
     if not isinstance(usage, dict):
         return None
-    ints = {
-        str(k): int(v)
-        for k, v in usage.items()
-        if isinstance(v, (int, float)) and not isinstance(v, bool)
-    }
+    ints = {str(k): v for k, v in usage.items() if isinstance(v, int) and not isinstance(v, bool)}
     return ints or None
 
 
@@ -539,7 +537,10 @@ def _openai_chat_stream(
                     usage_out.append(u)
                 choices = chunk.get("choices") if isinstance(chunk, dict) else None
                 if choices is None:
-                    if u is not None:
+                    # A usage-only frame is valid even when its counters
+                    # are absent or unbillable. Frame recognition must not
+                    # depend on whether the accounting sieve accepted any.
+                    if isinstance(chunk, dict) and isinstance(chunk.get("usage"), dict):
                         continue
                     raise RuntimeError(f"malformed {label} stream chunk: missing choices")
                 if not choices:

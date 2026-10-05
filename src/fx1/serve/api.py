@@ -98,6 +98,7 @@ from fx1.serve.anthropic_compat import (
     AnthropicCountTokensRequest,
     AnthropicMessageObject,
     AnthropicMessagesRequest,
+    _rfc3339,
     anthropic_batch_object,
     anthropic_batch_result,
     anthropic_count_messages,
@@ -291,6 +292,13 @@ _CORS_EXPOSE_HEADERS = [
     "X-RateLimit-Remaining-Requests",
     "X-RateLimit-Reset-Requests",
     "X-Request-ID",
+    # Anthropic-grammar responses (/v1/messages*) — the stock anthropic
+    # SDK's names for the same request-id / standing-budget surfaces
+    "Anthropic-RateLimit-Requests-Limit",
+    "Anthropic-RateLimit-Requests-Remaining",
+    "Anthropic-RateLimit-Requests-Reset",
+    "Request-ID",
+    "X-Should-Retry",
 ]
 _CORS_ALLOW_HEADERS = [
     "Content-Type",
@@ -308,6 +316,12 @@ _CORS_ALLOW_HEADERS = [
     "X-Fx1-Receipt-Hashes",
     "X-Fx1-Timeout",
     "X-Request-ID",
+    # the Anthropic-grammar request headers — the stock anthropic SDK
+    # sends these unconditionally on /v1/messages*
+    "Anthropic-Beta",
+    "Anthropic-Dangerous-Direct-Browser-Access",
+    "Anthropic-Version",
+    "X-Api-Key",
 ]
 _RATE_LIMIT_KEYS_MAX = 4096
 
@@ -373,6 +387,33 @@ _DECLARED_RATELIMIT_HEADERS: dict[str, dict[str, Any]] = {
         "description": "Seconds until the bucket refills.",
     },
 }
+# Anthropic-dialect responses (/v1/messages*, or /v1/* under an
+# `anthropic-version` header) carry the same request-id / standing-budget
+# surfaces under the names the stock anthropic SDK reads.
+_DECLARED_ANTHROPIC_HEADERS: dict[str, dict[str, Any]] = {
+    "request-id": {
+        "schema": {"type": "string"},
+        "description": "Anthropic's request-id header — the same id as X-Request-ID.",
+    },
+    "anthropic-ratelimit-requests-limit": {
+        "schema": {"type": "integer"},
+        "description": "Managed-key rpm window size — present only when the "
+        "credential carries a declared rpm window.",
+    },
+    "anthropic-ratelimit-requests-remaining": {
+        "schema": {"type": "integer"},
+        "description": "Requests left in the key's fixed 60 s window after this response.",
+    },
+    "anthropic-ratelimit-requests-reset": {
+        "schema": {"type": "string", "format": "date-time"},
+        "description": "RFC 3339 instant when the key's rpm window reopens.",
+    },
+    "x-should-retry": {
+        "schema": {"type": "string", "enum": ["true", "false"]},
+        "description": "Retry guidance for the stock anthropic SDK on statuses its "
+        "default policy would get wrong.",
+    },
+}
 _DECLARED_RETRY_AFTER: dict[str, Any] = {
     "schema": {"type": "integer"},
     "description": "Seconds to wait before retrying (429 rate-limit and 503 capacity responses).",
@@ -387,7 +428,7 @@ def _declare_response_headers(app: FastAPI, rate_limited: bool) -> None:
     """Materialize the cached spec once and stamp the headers the middleware
     actually sets — generated clients inherit the contract instead of guessing."""
     spec = app.openapi()
-    for item in spec.get("paths", {}).values():
+    for path, item in spec.get("paths", {}).items():
         for op in item.values():
             if not isinstance(op, dict):
                 continue
@@ -396,6 +437,8 @@ def _declare_response_headers(app: FastAPI, rate_limited: bool) -> None:
                     continue
                 hdrs = resp.setdefault("headers", {})
                 hdrs.update(_DECLARED_COMMON_HEADERS)
+                if _is_anthropic_path(path):
+                    hdrs.update(_DECLARED_ANTHROPIC_HEADERS)
                 if rate_limited:
                     hdrs.update(_DECLARED_RATELIMIT_HEADERS)
                 if code in ("429", "503"):
@@ -3191,6 +3234,48 @@ def _request_id(raw: str | None) -> str:
     return uuid.uuid4().hex
 
 
+def _is_anthropic_path(path: str) -> bool:
+    """The Anthropic-grammar surface — ``/v1/messages`` and everything
+    beneath it (count_tokens, message batches)."""
+    return path == "/v1/messages" or path.startswith("/v1/messages/")
+
+
+def _is_anthropic_surface(request: Request) -> bool:
+    """Requests answered in Anthropic's dialect — the /v1/messages tree,
+    plus any /v1/* path addressed with an ``anthropic-version`` header
+    (the dual-grammar routes, e.g. model listing)."""
+    return _is_anthropic_path(request.url.path) or "anthropic-version" in request.headers
+
+
+# Statuses the stock anthropic SDK retries by default — x-should-retry
+# confirms them — and the ones its default gets wrong here: 409
+# (idempotency-key conflict) and 501 (unimplemented knob) are terminal,
+# never retried. Every other status omits the header.
+_ANTHROPIC_RETRY_TRUE = frozenset({408, 429, 500, 502, 503, 504, 529})
+_ANTHROPIC_RETRY_FALSE = frozenset({409, 501})
+
+
+def _anthropic_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
+    """Anthropic's standing rate-limit headers for a managed key with a
+    declared rpm window — the requests family only (there is no token
+    window to report); empty for env/loopback auth or unwindowed keys
+    (no false scarcity, same honesty rule as the X-RateLimit-* family)."""
+    if key_id in (None, "env"):
+        return {}
+    ws = key_store.window_state(key_id)
+    if ws is None:
+        return {}
+    out = {
+        "anthropic-ratelimit-requests-limit": str(ws[0]),
+        "anthropic-ratelimit-requests-remaining": str(ws[1]),
+    }
+    reset = _rfc3339(time.time() + ws[2])
+    if reset is not None:
+        # Anthropic's convention: an instant, not a countdown
+        out["anthropic-ratelimit-requests-reset"] = reset
+    return out
+
+
 logger = logging.getLogger("fx1.serve.api")
 if not logger.handlers:  # embedders may still attach their own handlers
     _log_handler = logging.StreamHandler()
@@ -3210,6 +3295,16 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
+    if _is_anthropic_surface(request):
+        # the stock anthropic SDK reads `request-id` (same id, its name)
+        # and `x-should-retry` where its defaults disagree with our
+        # terminal shapes
+        response.headers["request-id"] = request_id
+        status = response.status_code
+        if status in _ANTHROPIC_RETRY_TRUE:
+            response.headers.setdefault("x-should-retry", "true")
+        elif status in _ANTHROPIC_RETRY_FALSE:
+            response.headers.setdefault("x-should-retry", "false")
     if is_openai_path(request.url.path):
         # OpenAI's api-version response header — the stock SDK + proxies
         # log it for compat debugging on every /v1 call
@@ -8187,13 +8282,16 @@ def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
     key_store.charge_tokens(rec.key_id or "", total)
 
 
-def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore) -> JSONResponse:
+def _key_refusal_response(
+    exc: KeyStoreError, request: Request, key_store: ApiKeyStore
+) -> JSONResponse:
     """429 shape for a managed-key refusal. ``quota_exceeded`` is a hard
     budget — no ``Retry-After`` (it never clears inside a call, so
     clients must not retry it); ``rate_limited`` is a window refusal —
     an honest ``Retry-After`` plus the key's standing budget headers.
     ``insufficient_scope`` is the authorization refusal — a 403 in the
     path's own error grammar."""
+    path = request.url.path
     if exc.code == "insufficient_scope":
         msg = str(exc)
         scope_body: dict[str, Any] = {"detail": msg, "code": exc.code}
@@ -8205,7 +8303,10 @@ def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore)
         body: dict[str, Any] = {"detail": msg, "code": exc.code}
         if is_openai_path(path):
             body = _v1_error_body(path, msg, 429, exc.code)
-        return JSONResponse(status_code=429, content=body)
+        # A hard budget cannot recover through retry. Keep this explicit
+        # route hint when _finish applies generic transient-status hints.
+        headers = {"x-should-retry": "false"} if _is_anthropic_surface(request) else None
+        return JSONResponse(status_code=429, content=body, headers=headers)
     wait_s = max(1, math.ceil(exc.retry_after or 1.0))
     rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
     rl_body: dict[str, Any] = {"detail": rl_msg, "code": exc.code}
@@ -8213,6 +8314,8 @@ def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore)
         rl_body = _v1_error_body(path, rl_msg, 429, exc.code)
     headers = {"Retry-After": str(wait_s)}
     headers.update(_key_budget_headers(key_store, exc.key_id))
+    if _is_anthropic_surface(request):
+        headers.update(_anthropic_budget_headers(key_store, exc.key_id))
     return JSONResponse(status_code=429, content=rl_body, headers=headers)
 
 
@@ -8798,7 +8901,7 @@ def create_app(
             return _finish(
                 request,
                 request_id,
-                _key_refusal_response(exc, request.url.path, key_store),
+                _key_refusal_response(exc, request, key_store),
                 started,
             )
         if isinstance(auth, JSONResponse):
@@ -8819,6 +8922,8 @@ def create_app(
             # standing budget on every answer (OpenAI header names) —
             # env-key and loopback auth declare no window and get none
             response.headers.update(_key_budget_headers(key_store, key_id))
+            if _is_anthropic_surface(request):
+                response.headers.update(_anthropic_budget_headers(key_store, key_id))
         if rl_headers is not None:
             response.headers.update(rl_headers)
         return _finish(request, request_id, response, started)
