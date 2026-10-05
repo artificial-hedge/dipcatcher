@@ -6792,6 +6792,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nahualli_qa_studies",
         "vucub_qa_studies",
         "xtabay_qa_studies",
+        # Wave-1933 caribbean-demon canon.
+        "bacoo_qa_studies",
+        "duppy_qa_studies",
+        "jumbie_qa_studies",
+        "lagahoo_qa_studies",
+        "ole_higue_qa_studies",
+        "soucouyant_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
