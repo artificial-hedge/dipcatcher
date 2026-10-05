@@ -6470,6 +6470,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "karkadann_qa_studies",
         "nasnas_qa_studies",
         "shahmaran_qa_studies",
+        # Wave-1887 indo-iranian canon.
+        "dakini_qa_studies",
+        "indra_hindu_qa_studies",
+        "jamshid_qa_studies",
+        "varuna_qa_studies",
+        "vritra_qa_studies",
+        "zurvan_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
