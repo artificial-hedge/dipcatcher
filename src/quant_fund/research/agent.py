@@ -14367,6 +14367,14 @@ from quant_fund.research.benches_w1796 import (
     bench_nanna3_qa_studies_family,
     bench_ullr2_qa_studies_family,
 )
+from quant_fund.research.benches_w1797 import (
+    bench_atropos_qa_studies_family,
+    bench_dikaion_qa_studies_family,
+    bench_eunomia_qa_studies_family,
+    bench_lachesis_qa_studies_family,
+    bench_metis2_qa_studies_family,
+    bench_peitho_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,

@@ -5840,6 +5840,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "idun2_qa_studies",
         "nanna3_qa_studies",
         "ullr2_qa_studies",
+        # Wave-1797 greek-myth-10 canon.
+        "atropos_qa_studies",
+        "dikaion_qa_studies",
+        "eunomia_qa_studies",
+        "lachesis_qa_studies",
+        "metis2_qa_studies",
+        "peitho_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
