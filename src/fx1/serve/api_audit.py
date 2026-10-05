@@ -2967,6 +2967,205 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["key_bootstrapped_works"] = (
         noenv_client.get("/harness/commands", headers={"X-API-Key": m_raw}).status_code == 200
     )
+    # --- key rotation ---------------------------------------------------
+    # POST /harness/keys/{id}/rotate mints a successor under the
+    # predecessor's declared policy and tombstones the old secret in the
+    # same transaction by default.
+    rt_mint = keys_client.post(
+        "/harness/keys",
+        json={
+            "name": "rot-src",
+            "rpm": 45,
+            "scopes": ["read"],
+            "max_requests": 50,
+            "max_tokens": 500,
+        },
+        headers=root_h,
+    )
+    rt_old_id = rt_mint.json()["id"]
+    rt_old_raw = str(rt_mint.json().get("key", ""))
+    rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    rotj = rot.json() if rot.status_code == 201 else {}
+    rtk = rotj.get("key", {})
+    out["key_rotate_201"] = (
+        rot.status_code == 201
+        and rotj.get("object") == "key_rotation"
+        and rotj.get("rotated_from") == rt_old_id
+        and rotj.get("revoked_previous") is True
+        and str(rtk.get("key", "")).startswith("fx1k_")
+    )
+    out["key_rotate_inherits_policy"] = (
+        rtk.get("name") == "rot-src"
+        and rtk.get("rpm") == 45
+        and rtk.get("scopes") == ["read"]
+        and rtk.get("admin") is False
+        and rtk.get("max_requests") == 50
+        and rtk.get("max_tokens") == 500
+        and rtk.get("rotated_from") == rt_old_id
+        and rtk.get("id") != rt_old_id
+    )
+    # the swap is atomic: the old secret fails closed immediately
+    out["key_rotate_old_fails_closed"] = (
+        keys_client.get("/harness/self", headers={"X-API-Key": rt_old_raw}).status_code == 401
+        and keys_client.get(
+            "/harness/self", headers={"X-API-Key": str(rtk.get("key", ""))}
+        ).status_code
+        == 200
+    )
+    # the record carries lineage on key_get
+    rot_get = keys_client.get(f"/harness/keys/{rtk.get('id', '')}", headers=root_h)
+    out["key_rotate_lineage_on_record"] = (
+        rot_get.status_code == 200 and rot_get.json().get("rotated_from") == rt_old_id
+    )
+    # keep-old: both secrets authenticate until the old key is revoked
+    rt2_mint = keys_client.post("/harness/keys", json={"name": "rot-keep"}, headers=root_h)
+    rt2_id = rt2_mint.json()["id"]
+    rt2_raw = str(rt2_mint.json().get("key", ""))
+    keep = keys_client.post(
+        f"/harness/keys/{rt2_id}/rotate", json={"revoke_old": False}, headers=root_h
+    )
+    keep_j = keep.json() if keep.status_code == 201 else {}
+    keep_rec = keys_client.get(f"/harness/keys/{rt2_id}", headers=root_h)
+    out["key_rotate_keep_old"] = (
+        keep.status_code == 201
+        and keep_j.get("revoked_previous") is False
+        and keys_client.get("/harness/self", headers={"X-API-Key": rt2_raw}).status_code == 200
+        and keep_rec.status_code == 200
+        and keep_rec.json().get("enabled") is True
+    )
+    # expiry: omitted ttl_s inherits the predecessor's absolute deadline;
+    # a declared ttl_s mints the successor a fresh lifetime
+    rt3_mint = keys_client.post(
+        "/harness/keys", json={"name": "rot-ttl", "ttl_s": 300}, headers=root_h
+    )
+    rt3_id = rt3_mint.json()["id"]
+    rt3_exp = rt3_mint.json()["expires_at"]
+    inher = keys_client.post(f"/harness/keys/{rt3_id}/rotate", json={}, headers=root_h)
+    inher_k = inher.json().get("key", {})
+    fresh = keys_client.post(
+        f"/harness/keys/{inher_k.get('id')}/rotate", json={"ttl_s": 7200}, headers=root_h
+    )
+    out["key_rotate_expiry"] = (
+        inher.status_code == 201
+        and abs(float(inher_k.get("expires_at") or 0.0) - float(rt3_exp)) < 1e-6
+        and fresh.status_code == 201
+        and float(fresh.json()["key"]["expires_at"]) > float(rt3_exp) + 3000
+    )
+    # scope binding: rotate is admin-plane — a read-scope key is refused
+    out["key_rotate_admin_scope"] = (
+        keys_client.post(
+            f"/harness/keys/{rt2_id}/rotate", json={}, headers={"X-API-Key": ro_raw}
+        ).status_code
+        == 403
+    )
+    out["key_rotate_404"] = (
+        keys_client.post(
+            "/harness/keys/0000000000000000/rotate", json={}, headers=root_h
+        ).status_code
+        == 404
+    )
+    # a revoked credential cannot mint a live successor
+    rev_rot = keys_client.post(f"/harness/keys/{rt_old_id}/rotate", json={}, headers=root_h)
+    out["key_rotate_revoked_409"] = (
+        rev_rot.status_code == 409 and rev_rot.json().get("code") == "key_revoked"
+    )
+    # --- mutable key policy: PATCH /harness/keys/{id} ------------------
+    # three states: omitted keeps the declared policy, a concrete value
+    # replaces it, explicit JSON null clears a nullable bound.
+    pt_mint = keys_client.post(
+        "/harness/keys",
+        json={"name": "patch-me", "rpm": 30, "scopes": ["read"], "max_requests": 20},
+        headers=root_h,
+    )
+    pt_id = pt_mint.json()["id"]
+    pt_raw = str(pt_mint.json().get("key", ""))
+    pt_exp = time.time() + 3600.0
+    pt = keys_client.patch(
+        f"/harness/keys/{pt_id}",
+        json={
+            "name": "patched",
+            "rpm": 7,
+            "max_requests": 9,
+            "max_tokens": 77,
+            "expires_at": pt_exp,
+        },
+        headers=root_h,
+    )
+    ptj = pt.json() if pt.status_code == 200 else {}
+    out["key_patch_200"] = (
+        pt.status_code == 200
+        and ptj.get("object") == "key"
+        and ptj.get("id") == pt_id
+        and ptj.get("name") == "patched"
+        and ptj.get("rpm") == 7
+        and ptj.get("max_requests") == 9
+        and ptj.get("max_tokens") == 77
+        and abs(float(ptj.get("expires_at") or 0) - pt_exp) < 1.0
+        and ptj.get("scopes") == ["read"]
+        and ptj.get("enabled") is True
+    )
+    # the patch is in place and journaled: key_get reads the same record
+    pt_get = keys_client.get(f"/harness/keys/{pt_id}", headers=root_h)
+    out["key_patch_persists"] = (
+        pt_get.status_code == 200
+        and pt_get.json().get("name") == "patched"
+        and pt_get.json().get("rpm") == 7
+        and pt_get.json().get("max_requests") == 9
+        and pt_get.json().get("uses") == ptj.get("uses") == 0
+    )
+    # explicit null unbounds: cleared rpm emits no rate-limit headers on
+    # the key's next authenticated call — no false scarcity
+    pc = keys_client.patch(f"/harness/keys/{pt_id}", json={"rpm": None}, headers=root_h)
+    cleared = keys_client.get("/harness/commands", headers={"X-API-Key": pt_raw})
+    out["key_patch_clear_unbounds"] = (
+        pc.status_code == 200
+        and pc.json().get("rpm") is None
+        and cleared.status_code == 200
+        and "x-ratelimit-limit-requests" not in cleared.headers
+    )
+    # admin is purely additive like mint: ``admin:true`` unions the
+    # scope onto the surviving list; an explicit scopes list is literal
+    # — ``admin:false`` never strips a declared scope
+    adm = keys_client.patch(f"/harness/keys/{pt_id}", json={"admin": True}, headers=root_h)
+    lit = keys_client.patch(
+        f"/harness/keys/{pt_id}", json={"scopes": ["write"], "admin": False}, headers=root_h
+    )
+    out["key_patch_admin_union"] = (
+        adm.status_code == 200
+        and adm.json().get("scopes") == ["read", "admin"]
+        and adm.json().get("admin") is True
+        and lit.status_code == 200
+        and lit.json().get("scopes") == ["write"]
+        and lit.json().get("admin") is False
+    )
+    # fail closed: unknown id, a non-admin scope, and an unpatchable
+    # field (enabled — revocation is permanent) all refuse
+    out["key_patch_404"] = (
+        keys_client.patch(
+            "/harness/keys/0000000000000000", json={"name": "x"}, headers=root_h
+        ).status_code
+        == 404
+    )
+    out["key_patch_admin_scope"] = (
+        keys_client.patch(
+            f"/harness/keys/{pt_id}", json={"name": "x"}, headers={"X-API-Key": ro_raw}
+        ).status_code
+        == 403
+    )
+    out["key_patch_enabled_422"] = (
+        keys_client.patch(
+            f"/harness/keys/{pt_id}", json={"enabled": False}, headers=root_h
+        ).status_code
+        == 422
+    )
+    # a tombstoned credential stays dead — patch cannot resurrect it
+    dead_mint = keys_client.post("/harness/keys", json={"name": "dead"}, headers=root_h)
+    dead_id = dead_mint.json()["id"]
+    keys_client.delete(f"/harness/keys/{dead_id}", headers=root_h)
+    dead_patch = keys_client.patch(f"/harness/keys/{dead_id}", json={"name": "x"}, headers=root_h)
+    out["key_patch_revoked_409"] = (
+        dead_patch.status_code == 409 and dead_patch.json().get("code") == "key_revoked"
+    )
     # the FIRST mint on a no-env deployment carries admin so the operator
     # keeps a control plane after provisioning turns auth on
     noenv2 = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
@@ -3276,12 +3475,18 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["usage_absent_when_backend_silent"] = (
         silent.status_code == 200 and silent.json()["usage"] is None
     )
-    # The pure extractor: non-int values drop, missing/malformed → None.
+    # Keep genuine integer claims; malformed counters never become charges.
     import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
     out["usage_extract_filters"] = (
-        _be_mod._extract_usage({"usage": {"prompt_tokens": 3.0, "weird": "no", "neg": -1}})
-        == {"prompt_tokens": 3, "neg": -1}
+        _be_mod._extract_usage(
+            {"usage": {"prompt_tokens": 3, "completion_tokens": 0, "weird": "no", "neg": -1}}
+        )
+        == {"prompt_tokens": 3, "completion_tokens": 0, "neg": -1}
+        and all(
+            _be_mod._extract_usage({"usage": {"prompt_tokens": value}}) is None
+            for value in (True, False, "3", 3.0, 3.5, float("nan"), float("inf"), float("-inf"))
+        )
         and _be_mod._extract_usage({}) is None
         and _be_mod._extract_usage({"usage": "broken"}) is None
     )
@@ -10321,6 +10526,140 @@ def _probe_backend_probes(  # NOSONAR
         and a_404.json().get("error", {}).get("type") == "not_found_error"
     )
 
+    # ---- drop-in response headers ------------------------------------------
+    # `request-id` is the Anthropic grammar's name for the same id —
+    # dialect responses carry both names with one value; an inbound
+    # X-Request-ID echoes on both.
+    a_echo = oi_clean.get(
+        "/v1/models",
+        headers={"anthropic-version": "2023-06-01", "X-Request-ID": "am-trace.1"},
+    )
+    out["anthropic_request_id_echo"] = (
+        a_echo.status_code == 200
+        and a_echo.headers.get("request-id") == "am-trace.1"
+        and a_echo.headers.get("x-request-id") == "am-trace.1"
+    )
+    out["anthropic_request_id_200"] = am.headers.get("request-id") is not None and am.headers.get(
+        "request-id"
+    ) == am.headers.get("x-request-id")
+    out["anthropic_request_id_error"] = (
+        ai3.headers.get("request-id") is not None
+        and ai3.headers.get("request-id") == ai3.headers.get("x-request-id")
+        and a_404.headers.get("request-id") == a_404.headers.get("x-request-id")
+    )
+    # SSE: terminal frames can't carry metadata — request-id and
+    # processing-ms ride the stream's opening headers, like OpenAI's
+    out["anthropic_stream_headers"] = (
+        ams.headers.get("request-id") is not None
+        and ams.headers.get("request-id") == ams.headers.get("x-request-id")
+        and int(ams.headers.get("openai-processing-ms", "-1")) >= 0
+    )
+    # x-should-retry: the stock SDK retries 429/5xx by default and treats
+    # the rest as terminal — a 409 idempotency conflict carries false,
+    # a clean 2xx omits the header (the SDK's default is already right)
+    out["anthropic_retry_hint_terminal"] = ai3.headers.get("x-should-retry") == "false"
+    out["anthropic_retry_hint_absent_2xx"] = (
+        "x-should-retry" not in am.headers and "x-should-retry" not in a_404.headers
+    )
+    # openai surface never speaks Anthropic's names — and vice versa the
+    # /harness routes carry neither grammar's headers
+    o_models = oi_clean.get("/v1/models")
+    out["openai_surface_no_anthropic_headers"] = (
+        "request-id" not in o_models.headers
+        and "anthropic-ratelimit-requests-limit" not in o_models.headers
+        and "x-should-retry" not in o_models.headers
+        and o_models.headers.get("openai-version") is not None
+    )
+    out["openai_version_openai_only"] = (
+        o_models.headers.get("openai-version") == api_mod.API_VERSION
+        and "openai-version" not in client.get("/harness/version").headers
+    )
+    # managed-key budget: the anthropic-ratelimit-requests-* family reports
+    # the same declared window the X-RateLimit-* family does — remaining
+    # decrements per call, reset is Anthropic's RFC 3339 instant, and the
+    # over-limit 429 carries both the window and x-should-retry:true.
+    # Env/loopback credentials declare no window and emit none — same
+    # no-false-scarcity rule as the OpenAI family.
+    saved_api_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "k3y-material"
+    try:
+        a_sec = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    finally:
+        if saved_api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_api_key
+    a_rpm = a_sec.post("/harness/keys", json={"rpm": 2}, headers={"X-API-Key": "k3y-material"})
+    a_rkey = str(a_rpm.json().get("key", ""))
+    a_kh = {"X-API-Key": a_rkey}
+    a_r1 = a_sec.post(
+        _MESSAGES_PATH,
+        json={"model": "fx1", "max_tokens": 8, "messages": [{"role": "user", "content": "a"}]},
+        headers=a_kh,
+    )
+    a_r2 = a_sec.get("/v1/models", headers={**a_kh, "anthropic-version": "2023-06-01"})
+    a_r3 = a_sec.get("/v1/models", headers={**a_kh, "anthropic-version": "2023-06-01"})
+    out["anthropic_ratelimit_managed"] = (
+        a_r1.status_code == 200
+        and a_r1.headers.get("anthropic-ratelimit-requests-limit") == "2"
+        and a_r1.headers.get("anthropic-ratelimit-requests-remaining") == "1"
+        and a_r1.headers.get("anthropic-ratelimit-requests-reset", "").endswith("Z")
+        and a_r1.headers.get("x-ratelimit-limit-requests") == "2"
+        and a_r2.headers.get("anthropic-ratelimit-requests-remaining") == "0"
+        and a_r2.headers.get("x-ratelimit-remaining-requests") == "0"
+    )
+    out["anthropic_ratelimit_429"] = (
+        a_r3.status_code == 429
+        and a_r3.headers.get("anthropic-ratelimit-requests-limit") == "2"
+        and a_r3.headers.get("anthropic-ratelimit-requests-remaining") == "0"
+        and a_r3.headers.get("x-should-retry") == "true"
+        and int(a_r3.headers.get("retry-after", "0")) >= 1
+    )
+    out["anthropic_ratelimit_absent_env_loopback"] = (
+        "anthropic-ratelimit-requests-limit" not in am.headers
+        and "anthropic-ratelimit-requests-limit"
+        not in a_sec.get(
+            "/harness/version",
+            headers={"X-API-Key": "k3y-material", "anthropic-version": "2023-06-01"},
+        ).headers
+    )
+    # headers we deliberately DON'T emit: no org/proxy/edge provenance —
+    # there is no organization layer or CDN in front of this process
+    out["no_proxy_header_leak"] = all(
+        h not in am.headers and h not in a_r1.headers
+        for h in ("openai-organization", "cf-ray", "cf-cache-status", "cf-request-id")
+    )
+    # the spec itself declares the Anthropic family on /v1/messages* ops
+    # only — generated clients see them typed on the right surface
+    a_spec = oi_clean.get("/openapi.json").json()
+    a_msg_ops = [
+        op
+        for p, item in a_spec["paths"].items()
+        if p == _MESSAGES_PATH or p.startswith(_MESSAGES_PATH + "/")
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    a_other_ops = [
+        op
+        for p, item in a_spec["paths"].items()
+        if not (p == _MESSAGES_PATH or p.startswith(_MESSAGES_PATH + "/"))
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    out["openapi_declares_anthropic_headers"] = (
+        bool(a_msg_ops)
+        and all(
+            "request-id" in resp.get("headers", {})
+            for op in a_msg_ops
+            for resp in op.get("responses", {}).values()
+        )
+        and all(
+            "request-id" not in resp.get("headers", {})
+            for op in a_other_ops
+            for resp in op.get("responses", {}).values()
+        )
+    )
+
     # ---- legacy /v1/completions drop-in ------------------------------------
     # the pre-chat text surface: each prompt element is one user turn
     # through the same gated pipeline (honesty gate, fail-closed
@@ -10492,7 +10831,18 @@ def api_audit_bench() -> dict[str, Any]:
             "DELETE /v1/models/{id} unregisters an ft: name with a real "
             "tombstone (list/retrieve/chat all 404 after; built-ins "
             "refuse 400), and every X-Fx1-* request knob is in the CORS "
-            "allow-headers list so browser clients can send them."
+            "allow-headers list so browser clients can send them. "
+            "Drop-in response headers hold: every Anthropic-dialect "
+            "response carries `request-id` (the same id as X-Request-ID, "
+            "echoed when supplied) on 2xx, error, and SSE-open alike; "
+            "x-should-retry pins the statuses the stock SDK's defaults "
+            "would get wrong (true on transient 429/5xx, false on "
+            "terminal 409/501); managed-key rpm windows report as "
+            "anthropic-ratelimit-requests-* alongside X-RateLimit-* "
+            "(remaining decrements, reset an RFC 3339 instant, absent "
+            "for env/loopback — no false scarcity); the OpenAI surface "
+            "never speaks Anthropic's names; and no org/proxy/edge "
+            "headers leak (no openai-organization, no cf-*)."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
@@ -109,6 +109,18 @@ def _surface(
         api_key=api_key or os.environ.get("FX1_API_KEY") or None,
         timeout_s=timeout_s,
     )
+
+
+def _last_request_id(client: Any) -> str | None:
+    """``x-request-id`` off the client's last wire response, when it
+    reports one — the trace id a bug report would quote. ``None`` for
+    clients without a header channel or a transport that saw no
+    response."""
+    hmap = getattr(client, "last_response_headers", None)
+    if not isinstance(hmap, Mapping):
+        return None
+    rid = hmap.get("x-request-id")
+    return rid if isinstance(rid, str) and rid else None
 
 
 def _or_exit[T](fn: Callable[[], T]) -> T:
@@ -1071,7 +1083,13 @@ def harness_version(
     /harness/version, local mode prints this install's own pair."""
     if remote is not None:
         client = _remote_client(remote, api_key, timeout_s)
-        typer.echo(json.dumps(_or_exit(lambda: client.server_version())))
+        out = _or_exit(lambda: client.server_version())
+        # the wire's request-id for this very call — the trace surface a
+        # deploy loop would paste into a bug report
+        rid = _last_request_id(client)
+        if rid is not None:
+            out = {**out, "request_id": rid}
+        typer.echo(json.dumps(out))
         return
     from fx1 import __version__
     from fx1.serve.contract import API_VERSION
@@ -1320,6 +1338,111 @@ def harness_key_usage(
     typer.echo(json.dumps(out, indent=2, sort_keys=True))
 
 
+@harness_app.command("key-rotate")
+def harness_key_rotate(
+    key_id: str,
+    revoke_old: bool = typer.Option(
+        True,
+        "--revoke-old/--keep-old",
+        help="Tombstone the predecessor atomically with the mint (default). "
+        "--keep-old leaves both secrets live until the old key is revoked or expires.",
+    ),
+    name: str | None = typer.Option(
+        None, "--name", help="Successor display name — defaults to the predecessor's."
+    ),
+    ttl_s: float | None = typer.Option(
+        None,
+        "--ttl-s",
+        min=1e-9,
+        help="Fresh lifetime for the successor (seconds). Omitted: inherits the "
+        "predecessor's absolute expires_at — rotation never extends a credential.",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Rotate a managed key — mints a successor under the predecessor's
+    declared policy and, by default, tombstones the old secret in the
+    same transaction. The response's ``key.key`` is the only place the
+    new secret appears."""
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(
+        lambda: surface.key_rotate(key_id, revoke_old=revoke_old, name=name, ttl_s=ttl_s)
+    )
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
+@harness_app.command("key-patch")
+def harness_key_patch(
+    key_id: str,
+    name: str | None = typer.Option(
+        None, "--name", help="New display name — unset keeps the declared name."
+    ),
+    rpm: int | None = typer.Option(
+        None,
+        "--rpm",
+        min=1,
+        help="New per-60s request bound — unset keeps the declared one.",
+    ),
+    scopes: list[str] = typer.Option(
+        [],
+        "--scope",
+        help="Replace the surface classes: read | write | admin (repeatable).",
+    ),
+    admin: bool | None = typer.Option(
+        None,
+        "--admin/--no-admin",
+        help="--admin unions the admin scope onto the surviving list; "
+        "--no-admin never strips a declared scope (purely additive, like mint).",
+    ),
+    max_requests: int | None = typer.Option(
+        None, "--max-requests", min=1, help="New authenticated-call budget."
+    ),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", min=1, help="New provider-reported token budget."
+    ),
+    expires_at: float | None = typer.Option(
+        None,
+        "--expires-at",
+        min=1e-9,
+        help="New absolute expiry (unix seconds).",
+    ),
+    clear: list[str] = typer.Option(
+        [],
+        "--clear",
+        help="Clear a nullable bound back to unbounded: name | rpm | "
+        "max_requests | max_tokens | expires_at (repeatable).",
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Patch a live managed key's policy in place — prints the updated
+    record. Unset flags keep the declared policy; ``--clear FIELD``
+    sends the JSON-null that unbounds it; ``enabled`` and the live
+    counters are not patchable — revocation is permanent."""
+    kw: dict[str, Any] = {}
+    if name is not None:
+        kw["name"] = name
+    if rpm is not None:
+        kw["rpm"] = rpm
+    if scopes:
+        kw["scopes"] = scopes
+    if admin is not None:
+        kw["admin"] = admin
+    if max_requests is not None:
+        kw["max_requests"] = max_requests
+    if max_tokens is not None:
+        kw["max_tokens"] = max_tokens
+    if expires_at is not None:
+        kw["expires_at"] = expires_at
+    if clear:
+        kw["clear"] = clear
+    surface = _surface(remote, api_key or os.environ.get("FX1_API_KEY"), timeout_s)
+    out = _or_exit(lambda: surface.key_update(key_id, **kw))
+    typer.echo(json.dumps(out, indent=2, sort_keys=True))
+
+
 @harness_app.command("self")
 def harness_self(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -1350,6 +1473,9 @@ def harness_compat(
         raise typer.Exit(code=2)
     client = _remote_client(remote, api_key, timeout_s)
     report = _or_exit(lambda: client.check_compat(strict=False))
+    rid = _last_request_id(client)
+    if rid is not None:
+        report = {**report, "request_id": rid}
     typer.echo(json.dumps(report))
     if not report["compatible"]:
         raise typer.Exit(code=1)

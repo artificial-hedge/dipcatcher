@@ -28,6 +28,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import socket
 import tempfile
@@ -39,9 +40,6 @@ from typing import Any
 os.environ["MLFLOW_DISABLE_AGENT_HINT"] = "1"
 
 import uvicorn
-
-from fx1.serve.api import create_app
-from fx1.serve.client import HarnessAuthError, HarnessClient
 
 # Probe credential standing in for the real bootstrap secret. A real
 # deployment injects FX1_API_KEY from its secret store and never writes
@@ -83,22 +81,66 @@ class _StubBackend:
         self.closed += 1
 
 
-def _serve(app: Any) -> tuple[uvicorn.Server, threading.Thread, int]:
-    """Run a FastAPI app on a free loopback port — the same uvicorn
-    invocation `fx1 harness serve` makes, minus the CLI flags."""
-    with socket.socket() as probe:
-        probe.bind(("127.0.0.1", 0))
-        port = probe.getsockname()[1]
-    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="critical")
-    server = uvicorn.Server(config)
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    while not server.started:
-        time.sleep(0.01)
-    return server, thread, port
+def _serve(
+    app: Any, *, startup_timeout_s: float = 10.0
+) -> tuple[uvicorn.Server, threading.Thread, int]:
+    """Start on a reserved loopback socket; fail within a bounded startup wait."""
+    if not math.isfinite(startup_timeout_s) or startup_timeout_s <= 0:
+        raise ValueError("startup_timeout_s must be finite and positive")
+    listener = socket.socket()
+    try:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+        config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="critical")
+        server = uvicorn.Server(config)
+    except BaseException:
+        listener.close()
+        raise
+    failures: list[BaseException] = []
+
+    def _run() -> None:
+        try:
+            # Keep the reservation until uvicorn takes over this socket;
+            # closing a port probe first leaves a bind race.
+            server.run(sockets=[listener])
+        except BaseException as exc:
+            failures.append(exc)
+        finally:
+            listener.close()
+
+    thread = threading.Thread(target=_run, daemon=True)
+    deadline = time.monotonic() + startup_timeout_s
+    try:
+        thread.start()
+        while not server.started:
+            if not thread.is_alive():
+                raise RuntimeError("quickstart HTTP server exited before startup") from (
+                    failures[0] if failures else None
+                )
+            if time.monotonic() >= deadline:
+                raise TimeoutError("quickstart HTTP server startup timed out")
+            time.sleep(0.01)
+        if not thread.is_alive():
+            raise RuntimeError("quickstart HTTP server exited during startup") from (
+                failures[0] if failures else None
+            )
+        return server, thread, port
+    except BaseException:
+        server.should_exit = True
+        if thread.ident is not None:
+            thread.join(timeout=1.0)
+            if thread.is_alive():
+                server.force_exit = True
+                listener.close()
+                thread.join(timeout=1.0)
+        listener.close()
+        raise
 
 
 def main() -> None:
+    from fx1.serve.api import create_app
+    from fx1.serve.client import HarnessAuthError, HarnessClient
+
     with tempfile.TemporaryDirectory(prefix="fx1-quickstart-http-") as tmp:
         receipts_dir = Path(tmp) / "receipts"
         receipts_dir.mkdir()

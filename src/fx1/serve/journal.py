@@ -86,8 +86,8 @@ class JobJournal:
     def append(self, payload: dict[str, Any]) -> None:
         """Append one record; fsync before returning so a confirmed
         transition is durable before the caller moves on."""
-        line = _line_bytes(self._seq, self._chain, payload)
         with self._lock:
+            line = _line_bytes(self._seq, self._chain, payload)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             with self.path.open("ab") as fh:
                 fh.write(line)
@@ -104,39 +104,40 @@ class JobJournal:
         A clean replay returns every payload in order. A torn tail or
         mid-file edit stops at that line — ``truncated_at`` records the
         byte offset so the caller can report the dropped span."""
-        out = ReplayResult(payloads=[])
-        if not self.path.exists():
+        with self._lock:
+            out = ReplayResult(payloads=[])
+            if not self.path.exists():
+                return out
+            data = self.path.read_bytes()
+            seq = 0
+            chain = "0" * 64
+            offset = 0
+            for raw in data.splitlines(keepends=True):
+                offset += len(raw)
+                try:
+                    line = json.loads(raw)
+                    payload_raw = json.dumps(line["payload"], sort_keys=True, separators=(",", ":"))
+                    expect = hashlib.sha256(
+                        f"{line['seq']}|{line['chain']}|{payload_raw}".encode()
+                    ).hexdigest()
+                    ok = line["seq"] == seq and line["chain"] == chain and line["sha256"] == expect
+                except Exception:  # noqa: BLE001 — corrupt line, verified shape only
+                    ok = False
+                    line = None
+                if not ok:
+                    out.truncated_at = offset - len(raw)
+                    out.dropped = len(data[out.truncated_at :].splitlines())
+                    out.warnings.append(
+                        f"journal {self.path.name}: chain broke at byte "
+                        f"{out.truncated_at} ({out.dropped} line(s) dropped)"
+                    )
+                    break
+                out.payloads.append(line["payload"])
+                chain = hashlib.sha256(raw).hexdigest()
+                seq += 1
+            self._seq = seq
+            self._chain = chain
             return out
-        data = self.path.read_bytes()
-        seq = 0
-        chain = "0" * 64
-        offset = 0
-        for raw in data.splitlines(keepends=True):
-            offset += len(raw)
-            try:
-                line = json.loads(raw)
-                payload_raw = json.dumps(line["payload"], sort_keys=True, separators=(",", ":"))
-                expect = hashlib.sha256(
-                    f"{line['seq']}|{line['chain']}|{payload_raw}".encode()
-                ).hexdigest()
-                ok = line["seq"] == seq and line["chain"] == chain and line["sha256"] == expect
-            except Exception:  # noqa: BLE001 — corrupt line, verified shape only
-                ok = False
-                line = None
-            if not ok:
-                out.truncated_at = offset - len(raw)
-                out.dropped = len(data[out.truncated_at :].splitlines())
-                out.warnings.append(
-                    f"journal {self.path.name}: chain broke at byte "
-                    f"{out.truncated_at} ({out.dropped} line(s) dropped)"
-                )
-                break
-            out.payloads.append(line["payload"])
-            chain = hashlib.sha256(raw).hexdigest()
-            seq += 1
-        self._seq = seq
-        self._chain = chain
-        return out
 
     # ---- maintenance ---------------------------------------------------
 

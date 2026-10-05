@@ -157,8 +157,10 @@ Usage and introspection:
 
 ### Rotation drill
 
-Key records are **immutable after mint** — there is no PATCH or
-rotate endpoint. Rotation is mint → switch callers → revoke:
+Use the mint and revoke APIs for this rotation drill: mint a replacement,
+switch callers, then revoke the old key. Re-declare the intended scopes
+and budgets on the replacement. This procedure lets callers verify the
+new credential before the old one stops working:
 
 ```bash
 # 1. mint the replacement (same scopes/budgets — re-declare them)
@@ -302,4 +304,8 @@ honesty-gate refusals or 4xx.
 Every served response stamps the credential's fingerprint on the
 completion record, so `key_id`-filtered usage is exact even when callers
 share a base URL. Live meters (`uses`, `last_used_at`, `tokens_used`)
-reset on restart; journaled records and budgets do not.
+and rate-window updates are not journaled per request. On restart the
+store restores the most recent durable key snapshot, normally the
+mint-time counters for an active key. Declared budgets persist, but their
+lifetime usage meters are not restart-durable; a snapshot written by a
+later key operation may contain newer counter values.

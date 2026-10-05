@@ -192,10 +192,11 @@ const out = await api.completeBatch(
 
 ## Task 4 — rotate a managed key
 
-There is no rotate/PATCH route — key records are immutable post-mint.
-Rotation is mint → cut callers over → revoke (a tombstone, not a delete):
-the record stays for audit and the old credential fails closed
-immediately.
+The mint → switch callers → revoke procedure below uses the existing
+key-creation and revocation APIs. Re-declare the scopes and budgets on the
+replacement, and verify it before revoking the old key.
+Revocation leaves a tombstone for audit, and subsequent requests using
+the old credential fail closed immediately.
 
 **curl**
 
