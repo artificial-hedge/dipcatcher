@@ -6253,6 +6253,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "endovellicus_qa_studies",
         "nabia_qa_studies",
         "trebaruna_qa_studies",
+        # Wave-1856 gallic-myth canon.
+        "cernunnos_qa_studies",
+        "epona_qa_studies",
+        "esus_qa_studies",
+        "rosmerta_qa_studies",
+        "taranis_qa_studies",
+        "teutates_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
