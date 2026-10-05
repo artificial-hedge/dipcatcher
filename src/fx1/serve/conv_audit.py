@@ -27,8 +27,8 @@ Coverage map:
   ``400 conversation_not_found``; ``conversation`` is mutually exclusive
   with ``previous_response_id`` (422) and refuses inside a batch line
   (``invalid_request`` in the output row); a conv deleted mid-flight
-  while a background turn is queued fails the turn honestly instead of
-  resurrecting the container.
+  after a background turn has frozen its input does not resurrect the
+  container; the independent response may still finish.
 - *Coexistence* — a conv id as ``previous_response_id`` and a response
   id as ``conversation`` each refuse with the right code; chain turns
   and conv turns in one process never cross-contaminate.
@@ -46,7 +46,8 @@ Coverage map:
 - *Durability* — under ``state_dir``, create/metadata/items/deletes
   journal to ``conversations.jsonl``; a fresh process on the same dir
   replays container + items verbatim (order, ids, metadata), tombstones
-  stay deleted, and a torn tail truncates at the first bad record.
+  stay deleted. A damaged journal refuses startup without rewriting the
+  evidence, since an unverified suffix may contain a deletion.
 - *Concurrency* — barrier-released parallel item adds land every append
   with unique ids; add-vs-delete and turn-vs-delete races resolve
   atomically (the container is either honestly gone or honestly whole —
@@ -75,6 +76,9 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -87,21 +91,43 @@ __all__ = ["conv_audit", "conv_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
 _ROOT = "k3y-material"
-_SWEPT_ENVS = (
-    _API_KEY_ENV,
-    "MOONSHOT_API_KEY",
-    "FX1_API_STATE_DIR",
-    "FX1_BYOK_BASE_URL",
-    "FX1_BYOK_API_KEY",
-    "FX1_BYOK_MODEL",
-    "FX1_LOCAL_SERVE_URL",
-    "FX1_LOCAL_SERVE_CMD",
-    "FX1_LOCAL_MODEL",
-    "FX1_LOCAL_API_KEY",
-    "FX1_CHECKPOINT_DIR",
-    "FX1_API_STORE_MAX",
-    "FX1_SDK_STATE_DIR",
-)
+_AUDIT_LOCK = threading.Lock()
+_RESOURCES: ContextVar[ExitStack] = ContextVar("conv_audit_resources")
+
+
+@contextmanager
+def _audit_context() -> Iterator[None]:
+    """Restore ambient configuration and close all synthetic resources.
+
+    Run this diagnostic in a dedicated process: its environment and
+    rate-window overrides are process-wide, not application configuration.
+    The lock serializes calls made through this module.
+    """
+    with _AUDIT_LOCK:
+        saved = {
+            name: value
+            for name, value in os.environ.items()
+            if name.startswith("FX1_") or name == "MOONSHOT_API_KEY"
+        }
+        for name in saved:
+            os.environ.pop(name, None)
+        try:
+            with ExitStack() as resources:
+                token = _RESOURCES.set(resources)
+                try:
+                    yield
+                finally:
+                    _RESOURCES.reset(token)
+        finally:
+            for name in list(os.environ):
+                if name.startswith("FX1_") or name == "MOONSHOT_API_KEY":
+                    os.environ.pop(name, None)
+            os.environ.update(saved)
+
+
+def _temporary_directory() -> Path:
+    return Path(_RESOURCES.get().enter_context(tempfile.TemporaryDirectory(prefix="conv_audit_")))
+
 
 _MODEL = "byok"
 _N = 8
@@ -165,29 +191,34 @@ def _client(
     def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, "ok", ""
 
-    saved = {k: os.environ.get(k) for k in _SWEPT_ENVS}
+    resources = _RESOURCES.get()
+    isolated = _temporary_directory()
+    receipts = isolated / "receipts"
+    receipts.mkdir()
+    saved_key = os.environ.get(_API_KEY_ENV)
     try:
-        for k in _SWEPT_ENVS:
-            os.environ.pop(k, None)
-        if api_key is not None:
+        if api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
             os.environ[_API_KEY_ENV] = api_key
-        extra: dict[str, Any] = {}
-        if state_dir is not None:
-            extra["state_dir"] = state_dir
-        if store_max is not None:
-            extra["store_max"] = store_max
         app = api_mod.create_app(
             harness=Harness(runner=fake_runner),
             backend_resolver=lambda name, *a, **k: (backend_map or {})[name](),
-            **extra,
+            state_dir=state_dir if state_dir is not None else isolated / "state",
+            store_max=store_max,
+            receipts_dir=receipts,
+            ft_dir=isolated / "fine_tuning",
         )
-        return TestClient(app, raise_server_exceptions=False), api_mod
+        resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
+        client = TestClient(app, raise_server_exceptions=False)
+        resources.callback(client.close)
+        resources.enter_context(client)
+        return client, api_mod
     finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        if saved_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = saved_key
 
 
 def _h(auth: str | None) -> dict[str, str]:
@@ -672,6 +703,7 @@ def _probe_background_binding() -> dict[str, bool]:
 
     gb = _GateBackend()
     gated_client, _api2 = _client({_MODEL: lambda: gb})
+    _RESOURCES.get().callback(gb.gate.set)
     gconv = _conv_create(gated_client)
     gcid = str(gconv["id"])
     gbg = gated_client.post(
@@ -885,52 +917,53 @@ def _probe_tenancy() -> dict[str, bool]:
 
 def _probe_durability() -> dict[str, bool]:
     out: dict[str, bool] = {}
-    with tempfile.TemporaryDirectory(prefix="conv-audit-") as td:
-        state = Path(td)
-        c1, _api = _client({_MODEL: _StubBackend}, state_dir=state)
-        conv = _conv_create(c1, items=[_msg("d0")], metadata={"t": "1"})
-        cid = str(conv["id"])
-        _items_add(c1, cid, [_msg("d1"), _msg("d2")])
-        resp = _respond_ok(c1, cid, "durable-turn")
-        doomed = _conv_create(c1)
-        c1.delete(f"/v1/conversations/{doomed['id']}")
-        out["dur_journal_file_written"] = (state / "conversations.jsonl").exists()
+    td = _temporary_directory()
+    state = Path(td)
+    c1, _api = _client({_MODEL: _StubBackend}, state_dir=state)
+    conv = _conv_create(c1, items=[_msg("d0")], metadata={"t": "1"})
+    cid = str(conv["id"])
+    _items_add(c1, cid, [_msg("d1"), _msg("d2")])
+    resp = _respond_ok(c1, cid, "durable-turn")
+    doomed = _conv_create(c1)
+    c1.delete(f"/v1/conversations/{doomed['id']}")
+    out["dur_journal_file_written"] = (state / "conversations.jsonl").exists()
 
-        # fresh process: new app, same dir
-        c2, _api2 = _client({_MODEL: _StubBackend}, state_dir=state)
-        got = c2.get(f"/v1/conversations/{cid}")
-        out["dur_conv_survives"] = (
-            got.status_code == 200
-            and got.json().get("metadata") == {"t": "1"}
-            and got.json().get("created_at") == conv["created_at"]
-        )
-        items = _items(c2, cid, limit=100)["data"]
-        texts = [p.get("text") for it in items for p in it.get("content", [])]
-        out["dur_items_survive_order"] = texts[:3] == ["d0", "d1", "d2"]
-        out["dur_ids_verbatim"] = len({it["id"] for it in items}) == len(items)
-        out["dur_tombstone_survives"] = (
-            c2.get(f"/v1/conversations/{doomed['id']}").status_code == 404
-        )
-        out["dur_response_index_not_restored"] = (
-            c2.get(f"/v1/responses/{resp['id']}").status_code == 404
-        )
-        # the recovered container is live: post-restart appends + turns
-        r2 = _respond_ok(c2, cid, "post-restart-turn")
-        after = _items(c2, cid, limit=100)["data"]
-        out["dur_restart_appendable"] = r2["status"] == "completed" and len(after) == len(items) + 2
-        out["dur_restart_ids_unique"] = len({it["id"] for it in after}) == len(after)
+    # fresh process: new app, same dir
+    c2, _api2 = _client({_MODEL: _StubBackend}, state_dir=state)
+    got = c2.get(f"/v1/conversations/{cid}")
+    out["dur_conv_survives"] = (
+        got.status_code == 200
+        and got.json().get("metadata") == {"t": "1"}
+        and got.json().get("created_at") == conv["created_at"]
+    )
+    items = _items(c2, cid, limit=100)["data"]
+    texts = [p.get("text") for it in items for p in it.get("content", [])]
+    out["dur_items_survive_order"] = texts[:3] == ["d0", "d1", "d2"]
+    out["dur_ids_verbatim"] = len({it["id"] for it in items}) == len(items)
+    out["dur_tombstone_survives"] = c2.get(f"/v1/conversations/{doomed['id']}").status_code == 404
+    out["dur_response_index_not_restored"] = (
+        c2.get(f"/v1/responses/{resp['id']}").status_code == 404
+    )
+    # the recovered container is live: post-restart appends + turns
+    r2 = _respond_ok(c2, cid, "post-restart-turn")
+    after = _items(c2, cid, limit=100)["data"]
+    out["dur_restart_appendable"] = r2["status"] == "completed" and len(after) == len(items) + 2
+    out["dur_restart_ids_unique"] = len({it["id"] for it in after}) == len(after)
 
-        # torn tail: truncate the last journal line mid-record — the
-        # chain truncates at the first bad record; earlier lines replay
-        jpath = state / "conversations.jsonl"
-        data = jpath.read_bytes()
-        cut = data.rindex(b"\n", 0, len(data) - 1)
-        jpath.write_bytes(data[: cut + 20])
-        c3, _api3 = _client({_MODEL: _StubBackend}, state_dir=state)
-        got3 = c3.get(f"/v1/conversations/{cid}")
-        items3 = _items(c3, cid, limit=100)["data"] if got3.status_code == 200 else []
-        out["dur_torn_tail_conv_survives"] = got3.status_code == 200
-        out["dur_torn_tail_truncates"] = len(items3) <= len(after)
+    # Unknown lost history can contain a delete; never expose the older
+    # prefix or compact away the corrupt evidence as a valid live state.
+    jpath = state / "conversations.jsonl"
+    data = jpath.read_bytes()
+    cut = data.rindex(b"\n", 0, len(data) - 1)
+    damaged = data[: cut + 20]
+    jpath.write_bytes(damaged)
+    try:
+        _client({_MODEL: _StubBackend}, state_dir=state)
+        refused = False
+    except RuntimeError:
+        refused = True
+    out["dur_torn_tail_fails_closed"] = refused
+    out["dur_torn_tail_preserves_evidence"] = jpath.read_bytes() == damaged
     return out
 
 
@@ -1091,6 +1124,7 @@ def _probe_sdk() -> dict[str, bool]:
     sdk = Fx1Harness(
         harness=Harness(runner=_runner),
         backend_resolver=lambda name, *a, **k: _StubBackend(),
+        state_dir=_temporary_directory(),
     )
     conv = sdk.openai_conversation_create(items=[_msg("sdk-seed")])
     cid = str(conv["id"])
@@ -1157,32 +1191,32 @@ def _probe_sdk_durability() -> dict[str, bool]:
     def _runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, "ok", ""
 
-    with tempfile.TemporaryDirectory(prefix="conv-sdk-") as td:
-        sdk1 = Fx1Harness(
-            harness=Harness(runner=_runner),
-            backend_resolver=lambda name, *a, **k: _StubBackend(),
-            state_dir=td,
-        )
-        conv = sdk1.openai_conversation_create(items=[_msg("sdk-dur")])
-        cid = str(conv["id"])
-        sdk1.openai_conversation_items_add(cid, [_msg("sdk-dur-2")])
-        out["sdk_dur_journal_written"] = (Path(td) / "conversations.jsonl").exists()
+    td = _temporary_directory()
+    sdk1 = Fx1Harness(
+        harness=Harness(runner=_runner),
+        backend_resolver=lambda name, *a, **k: _StubBackend(),
+        state_dir=td,
+    )
+    conv = sdk1.openai_conversation_create(items=[_msg("sdk-dur")])
+    cid = str(conv["id"])
+    sdk1.openai_conversation_items_add(cid, [_msg("sdk-dur-2")])
+    out["sdk_dur_journal_written"] = (Path(td) / "conversations.jsonl").exists()
 
-        sdk2 = Fx1Harness(
-            harness=Harness(runner=_runner),
-            backend_resolver=lambda name, *a, **k: _StubBackend(),
-            state_dir=td,
-        )
-        got = sdk2.openai_conversation_get(cid)
-        items = sdk2.openai_conversation_items(cid, limit=10)["data"]
-        out["sdk_dur_conv_survives"] = got["id"] == cid
-        out["sdk_dur_items_survive"] = [p.get("text") for it in items for p in it["content"]] == [
-            "sdk-dur",
-            "sdk-dur-2",
-        ]
-        out["sdk_dur_restart_appends"] = (
-            len(sdk2.openai_conversation_items_add(cid, [_msg("post")])["data"]) == 1
-        )
+    sdk2 = Fx1Harness(
+        harness=Harness(runner=_runner),
+        backend_resolver=lambda name, *a, **k: _StubBackend(),
+        state_dir=td,
+    )
+    got = sdk2.openai_conversation_get(cid)
+    items = sdk2.openai_conversation_items(cid, limit=10)["data"]
+    out["sdk_dur_conv_survives"] = got["id"] == cid
+    out["sdk_dur_items_survive"] = [p.get("text") for it in items for p in it["content"]] == [
+        "sdk-dur",
+        "sdk-dur-2",
+    ]
+    out["sdk_dur_restart_appends"] = (
+        len(sdk2.openai_conversation_items_add(cid, [_msg("post")])["data"]) == 1
+    )
     return out
 
 
@@ -1194,10 +1228,7 @@ def _probe_sdk_durability() -> dict[str, bool]:
 def conv_audit() -> dict[str, bool]:
     """Every probe, measured end-to-end against a fresh app per section."""
     out: dict[str, bool] = {}
-    saved = {k: os.environ.get(k) for k in _SWEPT_ENVS}
-    try:
-        for k in _SWEPT_ENVS:
-            os.environ.pop(k, None)
+    with _audit_context():
         out.update(_probe_lifecycle())
         out.update(_probe_items())
         out.update(_probe_item_types())
@@ -1213,12 +1244,6 @@ def conv_audit() -> dict[str, bool]:
         out.update(_probe_envelope())
         out.update(_probe_sdk())
         out.update(_probe_sdk_durability())
-    finally:
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
     return out
 
 
@@ -1244,6 +1269,9 @@ def conv_audit_bench() -> dict[str, Any]:
                 "multi-process writers on one state_dir (single-process lock)",
                 "cursor stability across concurrent appends mid-walk",
                 "item payloads beyond size limits none documented",
+                "real network delivery/disconnect timing (TestClient buffers)",
+                "power-loss durability or rollback of valid journal suffixes",
+                "uniqueness of caller-supplied item ids (preserved verbatim)",
             ],
         },
         "interpretation": (
@@ -1256,8 +1284,8 @@ def conv_audit_bench() -> dict[str, Any]:
             "turns bound by ``conversation`` accumulate input+output items "
             "under store=false too; the anchor is exclusive with "
             "previous_response_id, refuses in batch lines, and a "
-            "mid-flight delete fails the queued turn without resurrecting "
-            "the container. Tenancy is scope-based (read keys GET, write "
+            "mid-flight delete never resurrects the container even when "
+            "the independent response finishes from its frozen input. Tenancy is scope-based (read keys GET, write "
             "keys mutate) — the container is shared workspace state, "
             "key-agnostic like the retrieval index. Every refusal lands "
             "in the wire error envelope. The SDK twin matches."

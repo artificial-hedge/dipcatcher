@@ -3624,10 +3624,10 @@ class Fx1Harness:
         minted: list[dict[str, Any]] = []
 
         def _extend(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
-            # mint inside the lock at the live length so successive
-            # appends never double-mint a position's id
+            # A fresh namespace avoids id reuse after deleting earlier items;
+            # the merge remains inside the store lock.
             minted.extend(
-                response_input_items_for_store(items, rid=conversation_id, start_at=len(current))
+                response_input_items_for_store(items, rid=f"{conversation_id}:{uuid.uuid4().hex}")
             )
             return [*current, *minted]
 
@@ -3663,17 +3663,15 @@ class Fx1Harness:
         """``DELETE /v1/conversations/{id}/items/{item_id}`` in-process —
         drops one item; a missing id raises ``KeyError``."""
         conv = self._conversation_get(conversation_id)
-        removed = [0]
 
         def _drop(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
             kept = [it for it in current if it.get("id") != item_id]
-            removed[0] = len(current) - len(kept)
+            if len(kept) == len(current):
+                raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
             return kept
 
         if self._conv_store.mutate_items(conversation_id, "items", _drop) is None:
             raise KeyError(f"conversation {conversation_id!r} not found")
-        if removed[0] == 0:
-            raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
         return conv
 
     # --- vector stores (the /v1/vector_stores twin) --------------------------

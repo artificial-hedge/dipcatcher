@@ -1179,7 +1179,10 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
   the item lists, so containers and contents both survive), and
   `idem_{runs,complete,complete_batch,openai}.jsonl`. On boot each chain is verified line-by-line — a torn
   tail or edited line truncates at the first bad record — and the
-  stores are rebuilt: terminal records return as-was, anything still
+  stores are rebuilt. Conversation journals are stricter: a damaged chain
+  or malformed operation refuses startup without rewriting the file, because
+  lost history may contain a deletion. Restore a verified backup before
+  reopening that store. For the async job stores, terminal records return as-was, anything still
   `queued`/`running`/`validating`/`in_progress`/`finalizing`/
   `cancelling` at the crash recovers as `failed` with a
   restart-explaining `error` (payloads are not journaled, so nothing is

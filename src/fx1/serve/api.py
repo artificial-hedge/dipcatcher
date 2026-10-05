@@ -85,6 +85,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
 
 from fx1 import __version__
@@ -487,7 +488,7 @@ class ApiError(HTTPException):
         self.code = code or _STATUS_CODES.get(status_code, "internal")
 
 
-def _err_code(exc: HTTPException) -> str:
+def _err_code(exc: StarletteHTTPException) -> str:
     if isinstance(exc, ApiError):
         return exc.code
     return _STATUS_CODES.get(exc.status_code, "internal")
@@ -1467,10 +1468,9 @@ class KeyServedUsage(_Model):
 
 
 class ApiKeyUsageResponse(_Model):
-    """Usage card for one managed key: live counters (``uses`` /
-    ``tokens_used`` reset on restart like every live meter), declared
-    budgets with derived headroom, the rpm window state, and the
-    completion-ring spend split."""
+    """Usage card for one managed key: lifetime ``uses`` and ``tokens_used``
+    survive a clean ``--state-dir`` restart; RPM windows remain process-local.
+    Includes declared budgets, derived headroom, and completion-ring spend."""
 
     id: str
     object: Literal["key_usage"] = "key_usage"
@@ -6776,11 +6776,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         minted: list[dict[str, Any]] = []
 
         def _extend(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
-            # mint inside the lock: ids index at the live list's length,
-            # so successive appends never double-mint a position's id.
+            # A fresh append namespace avoids reusing ids after deletion;
+            # the list merge remains atomic under the store lock.
             minted.extend(
                 response_input_items_for_store(
-                    body.items or [], rid=conversation_id, start_at=len(current)
+                    body.items or [], rid=f"{conversation_id}:{uuid.uuid4().hex}"
                 )
             )
             return [*current, *minted]
@@ -6827,11 +6827,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Delete one item from a conversation — the conv object returns;
         a missing item id is a 404."""
         conv = _stored_conversation(conversation_id)
-        removed = [0]
 
         def _drop(current: list[dict[str, Any]]) -> list[dict[str, Any]]:
             kept = [it for it in current if it.get("id") != item_id]
-            removed[0] = len(current) - len(kept)
+            if len(kept) == len(current):
+                raise ApiError(
+                    404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
+                )
             return kept
 
         if conv_store.mutate_items(conversation_id, "items", _drop) is None:
@@ -6839,10 +6841,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 404,
                 f"{conversation_id!r} not found — no conversation under this id",
                 code="not_found",
-            )
-        if removed[0] == 0:
-            raise ApiError(
-                404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found"
             )
         return conv
 
@@ -8848,10 +8846,10 @@ def _mount_key_lifecycle(
         operation_id="key_usage",
     )
     def key_usage(key_id: str, request: Request) -> ApiKeyUsageResponse:
-        """One key's usage card — live counters, declared budgets with
-        derived headroom, the rpm window state, and the completion-ring
-        spend split. Counters are live meters (not journaled) and reset
-        on restart like ``uses``."""
+        """One key's usage card — lifetime counters, declared budgets with
+        derived headroom, RPM window state, and completion-ring spend.
+        Journaled ``uses`` and ``tokens_used`` survive a clean ``--state-dir``
+        restart; the RPM window remains process-local and resets."""
         _require_admin(request)
         rec = key_store.get(key_id)
         if rec is None:
@@ -9213,8 +9211,10 @@ def create_app(
     app.state.rate_limiter = limiter
     app.state.breaker = breaker
 
-    @app.exception_handler(HTTPException)
-    async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    # Routing errors raise the Starlette base; FastAPI and ApiError subclasses
+    # still resolve to this handler through their exception hierarchy.
+    @app.exception_handler(StarletteHTTPException)
+    async def _http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         if is_openai_path(request.url.path):
             return JSONResponse(
                 status_code=exc.status_code,

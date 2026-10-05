@@ -1,92 +1,86 @@
-"""Tests for fx1.serve.conv_audit — /v1/conversations lifecycle battery."""
+"""Conversation audit evidence and isolated resource lifecycle checks."""
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+from typing import Any
+
 import pytest
 
-from fx1.serve.conv_audit import _SWEPT_ENVS, conv_audit, conv_audit_bench
+from fx1.serve import conv_audit as audit
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
-# Probes that pin the contracts repaired by this lane's defects: unique
-# id minting (was positional dup ids), atomic item mutation (was
-# read-modify-write races), and the conversations journal (was no
-# durability). Each was measured divergent on unfixed main and now holds
-# against the repaired store.
-_FORMER_DEFECTS = {
-    "create_seed_ids_unique",
-    "ids_unique_across_appends",
-    "seed_append_ids_unique",
-    "turn_ids_unique_all",
-    "turn_ids_unique_vs_seed",
-    "dup_submit_appends_both",
-    "item_delete_exact",
-    "conc_parallel_adds_all_land",
-    "conc_parallel_adds_sorted",
-    "conc_parallel_adds_unique_ids",
-    "conc_add_delete_atomic",
-    "conc_parallel_turns_all_items",
-    "conc_parallel_turns_unique_ids",
-    "bg_mid_delete_no_resurrect",
-    "delete_update_404",
-    "dur_journal_file_written",
-    "dur_conv_survives",
-    "dur_items_survive_order",
-    "dur_ids_verbatim",
-    "dur_tombstone_survives",
-    "dur_restart_appendable",
-    "dur_restart_ids_unique",
-    "dur_torn_tail_conv_survives",
-    "dur_torn_tail_truncates",
-    "dur_response_index_not_restored",
-    "sdk_dur_journal_written",
-    "sdk_dur_conv_survives",
-    "sdk_dur_items_survive",
-    "sdk_dur_restart_appends",
-}
+
+@pytest.fixture(scope="module")
+def measured() -> dict[str, bool]:
+    return audit.conv_audit()
 
 
-@pytest.fixture(autouse=True)
-def _clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in _SWEPT_ENVS:
-        monkeypatch.delenv(name, raising=False)
+def test_contract_probes_hold(measured: dict[str, bool]) -> None:
+    assert len(measured) == 141
+    assert all(value is True for value in measured.values()), measured
 
 
-def test_contract_probes_hold() -> None:
-    results = conv_audit()
-    assert len(results) == 141
-    for name, ok in results.items():
-        assert ok is True, f"probe {name} failed"
+def test_recovery_refuses_corruption(measured: dict[str, bool]) -> None:
+    assert measured["dur_torn_tail_fails_closed"] is True
+    assert measured["dur_torn_tail_preserves_evidence"] is True
+    assert measured["dur_conv_survives"] is True
+    assert measured["dur_tombstone_survives"] is True
 
 
-def test_repaired_defect_probes_hold() -> None:
-    """Every repaired-defect probe must keep its corrected contract."""
-    results = conv_audit()
-    assert results.keys() >= _FORMER_DEFECTS
-    for name in sorted(_FORMER_DEFECTS):
-        assert results[name] is True, f"defect {name} returned"
+@pytest.mark.parametrize("results", [{}, {"probe": False}, {"probe": 1}, {"probe": None}])
+def test_empty_or_nonliteral_audit_never_succeeds(
+    monkeypatch: pytest.MonkeyPatch, results: dict[str, Any]
+) -> None:
+    monkeypatch.setattr(audit, "conv_audit", lambda: results)
+    receipt = audit.conv_audit_bench()
+    assert receipt["claim"]["ok"] is False
+    assert receipt["claim"]["results"] == results
+    assert verify_receipt_payload(receipt)["valid"] is True
 
 
-def test_receipt_verifies() -> None:
-    blob = conv_audit_bench()
-    assert blob["claim"]["ok"] is True
-    assert blob["data_label"] == "SYNTHETIC"
-    assert blob["research_only"] is True
-    assert blob["live_pnl_claim"] is False
-    verdict = verify_receipt_payload(blob)
-    assert verdict["valid"] is True
+def test_measured_receipt_verifies_without_rerunning(
+    measured: dict[str, bool], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(audit, "conv_audit", lambda: measured)
+    receipt = audit.conv_audit_bench()
+    assert receipt["claim"]["ok"] is True
+    assert receipt["data_label"] == "SYNTHETIC"
+    assert receipt["live_pnl_claim"] is False
+    assert verify_receipt_payload(receipt)["valid"] is True
+    assert receipt == audit.conv_audit_bench()
 
 
-def test_receipt_deterministic() -> None:
-    a = conv_audit_bench()
-    b = conv_audit_bench()
-    assert a["receipt_sha256"] == b["receipt_sha256"]
-
-
-def test_empty_audit_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
-    import fx1.serve.conv_audit as audit_module
-
-    monkeypatch.setattr(audit_module, "conv_audit", lambda: {})
-    blob = conv_audit_bench()
-    assert blob["claim"]["results"] == {}
-    assert blob["claim"]["ok"] is False
-    assert blob["data_label"] == "SYNTHETIC"
+def test_client_resources_and_ambient_state_survive_probe_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    ambient = tmp_path / "operator"
+    ambient.mkdir()
+    sentinel = ambient / "conversations.jsonl"
+    sentinel.write_text("operator data must remain unchanged\n")
+    config = {
+        "FX1_API_STATE_DIR": str(ambient),
+        "FX1_API_RECEIPTS_DIR": str(ambient),
+        "FX1_FT_DIR": str(ambient),
+        "FX1_SDK_STATE_DIR": str(ambient),
+        "FX1_API_JOB_MAX": "invalid ambient value",
+        "MOONSHOT_API_KEY": "synthetic ambient sentinel",
+    }
+    for name, value in config.items():
+        monkeypatch.setenv(name, value)
+    with pytest.raises(RuntimeError, match="deliberate failure"), audit._audit_context():
+        assert all(name not in os.environ for name in config)
+        temporary = audit._temporary_directory()
+        client, _ = audit._client({audit._MODEL: audit._StubBackend})
+        audit._conv_create(client)
+        executor = client.app.state.jobs_executor
+        assert executor.submit(lambda: 2).result(timeout=1) == 2
+        raise RuntimeError("deliberate failure")
+    assert client.is_closed
+    assert not temporary.exists()
+    with pytest.raises(RuntimeError, match="shutdown"):
+        executor.submit(lambda: None)
+    assert all(os.environ[name] == value for name, value in config.items())
+    assert list(ambient.iterdir()) == [sentinel]
+    assert sentinel.read_text() == "operator data must remain unchanged\n"
