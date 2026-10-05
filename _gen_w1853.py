@@ -4,12 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 
-ROOT = Path("/Users/devin/repos/dipcatcher")
+ROOT = Path(__file__).resolve().parent
 WAVE = 1853
 SEED = WAVE * 10
 THEME = "kushite-myth canon"
 
 FAMILIES = ["apedemak_qa_studies", "amesemi_qa_studies", "sebiumeker_qa_studies", "dedun_qa_studies", "sabios_qa_studies", "aresnuphis_qa_studies"]
+
+# Wave 1848 already owns these fixtures; keep its imports and model files.
+REGISTERED_FAMILIES = [
+    fam
+    for fam in FAMILIES
+    if fam not in {"apedemak_qa_studies", "sebiumeker_qa_studies"}
+]
 
 # (check-blurb, aux-blurb) — unique docstring cores per function.
 BLURBS = {"apedemak_qa_studies": "lion war god", "amesemi_qa_studies": "moon consort", "sebiumeker_qa_studies": "city founder", "dedun_qa_studies": "nubian sky god", "sabios_qa_studies": "desert watcher", "aresnuphis_qa_studies": "companion guardian"}
@@ -53,10 +60,10 @@ def bench_{fam}(seed: int = 0) -> dict[str, float]:
 
 
 def write_models() -> None:
-    for fam in FAMILIES:
+    for fam in REGISTERED_FAMILIES:
         b = BLURBS[fam]
         (ROOT / "src/quant_fund/models" / f"{fam}.py").write_text(
-            MODEL_TEMPLATE.format(fam=fam, check_blurb=b[0], aux_blurb=b[1], theme=THEME)
+            MODEL_TEMPLATE.format(fam=fam, check_blurb=b, aux_blurb=f"{b} auxiliary flag", theme=THEME)
         )
 
 
@@ -143,10 +150,13 @@ def test_benches_w{WAVE}(fam):
 def wire_agent() -> None:
     agent = ROOT / "src/quant_fund/research/agent.py"
     text = agent.read_text()
-    fams = "\n".join(f"    bench_{fam}_family," for fam in sorted(FAMILIES))
+    fams = "\n".join(f"    bench_{fam}_family," for fam in sorted(REGISTERED_FAMILIES))
     block = f"from quant_fund.research.benches_w{WAVE} import (\n{fams}\n)\n"
+    if block in text:
+        return
     anchor = "from quant_fund.research.catalog import ("
-    assert anchor in text
+    if anchor not in text:
+        raise ValueError("Missing research catalog import anchor")
     text = text.replace(anchor, block + anchor, 1)
 
     agent.write_text(text)
@@ -156,24 +166,40 @@ def wire_registry() -> None:
     reg = ROOT / "src/quant_fund/research/catalog/registry.py"
     text = reg.read_text()
     block = f"        # Wave-{WAVE} {THEME}.\n" + "".join(
-        f'        "{f}",\n' for f in sorted(FAMILIES)
+        f'        "{f}",\n' for f in sorted(REGISTERED_FAMILIES)
     )
+    if block in text:
+        return
     anchor = "        # Wave-1399 retrieval-eval canon."
-    assert anchor in text
+    if anchor not in text:
+        raise ValueError("Missing registry wave insertion anchor")
     text = text.replace(anchor, block + anchor, 1)
     reg.write_text(text)
 
 
 def wire_inflight() -> None:
     f = ROOT / "INFLIGHT"
-    base = 9903 + 6 * (WAVE - 1659)
-    f.write_text(f"w{WAVE} {THEME}: {', '.join(sorted(FAMILIES))} ({base}->{base + 6})\n" + f.read_text())
+    text = f.read_text()
+    prefix = f"w{WAVE} {THEME}:"
+    if any(line.startswith(prefix) for line in text.splitlines()):
+        return
+    line = (
+        f"{prefix} {', '.join(sorted(REGISTERED_FAMILIES))} "
+        f"({len(REGISTERED_FAMILIES)} new unique optional families; "
+        "apedemak_qa_studies and sebiumeker_qa_studies retained from w1848)\n"
+    )
+    f.write_text(line + text)
 
 
-write_models()
-write_benches()
-write_tests()
-wire_agent()
-wire_registry()
-wire_inflight()
-print("w1713 generated")
+def main() -> None:
+    write_models()
+    write_benches()
+    write_tests()
+    wire_agent()
+    wire_registry()
+    wire_inflight()
+    print(f"w{WAVE} generated")
+
+
+if __name__ == "__main__":
+    main()

@@ -6234,11 +6234,9 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "melyakina_qa_studies",
         # Wave-1853 kushite-myth canon.
         "amesemi_qa_studies",
-        "apedemak_qa_studies",
         "aresnuphis_qa_studies",
         "dedun_qa_studies",
         "sabios_qa_studies",
-        "sebiumeker_qa_studies",
         # Wave-1854 carthaginian-myth canon.
         "astarte_punic_qa_studies",
         "baal_hammon_qa_studies",
