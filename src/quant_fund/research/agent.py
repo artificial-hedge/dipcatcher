@@ -14863,6 +14863,14 @@ from quant_fund.research.benches_w1858 import (
     bench_quangeio_qa_studies_family,
     bench_reo_qa_studies_family,
 )
+from quant_fund.research.benches_w1859 import (
+    bench_beli_qa_studies_family,
+    bench_cassivellaunus_qa_studies_family,
+    bench_llefelys_qa_studies_family,
+    bench_manawydan_qa_studies_family,
+    bench_matholwch_qa_studies_family,
+    bench_pwll_qa_studies_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
