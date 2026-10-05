@@ -6890,6 +6890,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "niutou_qa_studies",
         "wangliang_qa_studies",
         "yanwang_qa_studies",
+        # Wave-1947 vodou-loa canon.
+        "baron_samedi_qa_studies",
+        "damballa_qa_studies",
+        "ezili_dantor_qa_studies",
+        "ogou_feray_qa_studies",
+        "papa_legba_qa_studies",
+        "simbi_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
