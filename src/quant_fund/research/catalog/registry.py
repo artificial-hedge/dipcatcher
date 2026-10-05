@@ -6295,6 +6295,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lancelot_qa_studies",
         "percival_qa_studies",
         "tristan_qa_studies",
+        # Wave-1862 arthurian-3 canon.
+        "agravaine_qa_studies",
+        "isolde_qa_studies",
+        "kay_qa_studies",
+        "lyonesse_qa_studies",
+        "mark_cornwall_qa_studies",
+        "mordred_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
