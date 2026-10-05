@@ -104,13 +104,15 @@ def _bucket(records: list[_Record]) -> UsageBucket:
             continue
         usage_reported += 1
         for key, value in rec.usage.items():
+            if not isinstance(value, int) or isinstance(value, bool):
+                continue  # an unbillable claim is never summed
             if key == "prompt_tokens":
                 prompt_tokens += value
             elif key == "completion_tokens":
                 completion_tokens += value
             elif key == "total_tokens":
                 total_tokens += value
-            elif isinstance(value, int):
+            else:
                 other[key] = other.get(key, 0) + value
     return UsageBucket(
         requests=requests,

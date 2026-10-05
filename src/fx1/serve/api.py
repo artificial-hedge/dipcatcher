@@ -4239,7 +4239,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 call_latency_ms = (time.monotonic() - t0) * 1000.0
                 if breaker is not None:
                     breaker.report(cand_key, True)
-                usage_snap = getattr(backend, "last_usage", None)
+                usage_snap = _billable_usage(getattr(backend, "last_usage", None))
                 model_snap = getattr(backend, "_model", None)
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
@@ -4376,6 +4376,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         messages = [{"role": m.role, "content": cast(str, m.content)} for m in body.messages]
         sampling_params = _sampling_of(body)
         sampling_fields = sampling_params.body_fields()
+        # The record is appended from the streaming generator / worker
+        # thread, where this request's contextvars are long gone — the
+        # credential fingerprint is captured while it is still bound and
+        # stamped on the record explicitly (same play as the batch path).
+        req_key_id = _REQUEST_KEY_ID.get()
 
         def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None, str]:
             """Buffer + gate the backend stream; raises the mapped errors.
@@ -4427,7 +4432,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(_breaker_key_name(serving, body.byok), True)
             finally:
-                usage_snap = getattr(backend, "last_usage", None)
+                usage_snap = _billable_usage(getattr(backend, "last_usage", None))
                 model_snap = getattr(backend, "_model", None)
                 joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
@@ -4452,6 +4457,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         sampling=sampling_fields,
                         user=body.user,
                         metadata=body.metadata,
+                        key_id=req_key_id,
                         output_sha256=(
                             hashlib.sha256(joined_snap.encode("utf-8")).hexdigest()
                             if call_ok
@@ -4949,7 +4955,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(cand_key, True)
                 data_out = result.data
-                usage_snap = result.usage
+                usage_snap = _billable_usage(result.usage)
                 model_out = result.model or ereq.model
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
@@ -7506,9 +7512,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             serving,
                             item_ok,
                             (time.monotonic() - t0) * 1000.0,
-                            usage=getattr(backend, "last_usage", None)
-                            if isinstance(getattr(backend, "last_usage", None), dict)
-                            else None,
+                            usage=_billable_usage(getattr(backend, "last_usage", None)),
                         )
                     _log_item(True, content, None, None)
                     if breaker is not None:
@@ -7630,9 +7634,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 f"probe:{name}",
                 ok,
                 (time.monotonic() - t0) * 1000.0,
-                usage=getattr(backend, "last_usage", None)
-                if isinstance(getattr(backend, "last_usage", None), dict)
-                else None,
+                usage=_billable_usage(getattr(backend, "last_usage", None)),
             )
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
@@ -8152,6 +8154,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
 
+def _billable_usage(snap: Any) -> dict[str, int] | None:
+    """The billable-value sieve on a provider usage claim: only genuine
+    ints count — a bool is not a token count, and strings/floats can
+    never reach the ledger. ``None`` for an absent channel, a non-dict
+    payload, or a claim with nothing billable in it. Negative ints are
+    kept verbatim (the provider's claim, reported faithfully — the
+    charge path clamps them at zero)."""
+    if not isinstance(snap, dict):
+        return None
+    clean = {str(k): v for k, v in snap.items() if isinstance(v, int) and not isinstance(v, bool)}
+    return clean or None
+
+
+def _as_tokens(value: Any) -> int:
+    """One usage claim → its billable int, or 0 — bools, strings, and
+    floats are unbillable and never reach the ledger."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
 def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
     """Fold one served call's provider-reported usage into the key's
     live token-budget meter. ``usage`` is None when the backend has no
@@ -8161,10 +8182,8 @@ def _charge_key_tokens(rec: CompletionRecord, key_store: ApiKeyStore) -> None:
     if rec.key_id in (None, "env") or not usage:
         return
     total = usage.get("total_tokens")
-    if not isinstance(total, int):
-        pt = usage.get("prompt_tokens")
-        ct = usage.get("completion_tokens")
-        total = (pt if isinstance(pt, int) else 0) + (ct if isinstance(ct, int) else 0)
+    if not isinstance(total, int) or isinstance(total, bool):
+        total = _as_tokens(usage.get("prompt_tokens")) + _as_tokens(usage.get("completion_tokens"))
     key_store.charge_tokens(rec.key_id or "", total)
 
 
@@ -8172,7 +8191,15 @@ def _key_refusal_response(exc: KeyStoreError, path: str, key_store: ApiKeyStore)
     """429 shape for a managed-key refusal. ``quota_exceeded`` is a hard
     budget — no ``Retry-After`` (it never clears inside a call, so
     clients must not retry it); ``rate_limited`` is a window refusal —
-    an honest ``Retry-After`` plus the key's standing budget headers."""
+    an honest ``Retry-After`` plus the key's standing budget headers.
+    ``insufficient_scope`` is the authorization refusal — a 403 in the
+    path's own error grammar."""
+    if exc.code == "insufficient_scope":
+        msg = str(exc)
+        scope_body: dict[str, Any] = {"detail": msg, "code": exc.code}
+        if is_openai_path(path):
+            scope_body = _v1_error_body(path, msg, 403, exc.code)
+        return JSONResponse(status_code=403, content=scope_body)
     if exc.code == "quota_exceeded":
         msg = str(exc)
         body: dict[str, Any] = {"detail": msg, "code": exc.code}
@@ -8226,10 +8253,10 @@ def _key_served_usage(records: list[CompletionRecord], key_id: str) -> KeyServed
             continue
         calls += 1
         usage = rec.usage or {}
-        p = int(usage.get("prompt_tokens") or 0)
-        c = int(usage.get("completion_tokens") or 0)
+        p = _as_tokens(usage.get("prompt_tokens"))
+        c = _as_tokens(usage.get("completion_tokens"))
         t = usage.get("total_tokens")
-        tt = int(t) if t is not None else p + c
+        tt = t if isinstance(t, int) and not isinstance(t, bool) else p + c
         prompt += p
         completion += c
         total_all += tt
@@ -8401,7 +8428,10 @@ def _resolve_auth(
         if provided and api_key and hmac.compare_digest(provided, api_key):
             return ("env", True, None)
         if provided:
-            key_rec = key_store.authenticate(provided)
+            key_rec = key_store.authenticate(
+                provided,
+                required_scope=_required_scope(request.method, request.url.path),
+            )
             if key_rec is not None:
                 scopes = key_rec.get("scopes")
                 scope_set = frozenset(scopes) if isinstance(scopes, list) else None
@@ -8761,8 +8791,10 @@ def create_app(
         except KeyStoreError as exc:
             # a managed key past its declared rpm/budget refuses 429 —
             # same fail-closed shape as the global limiter, keyed to the
-            # credential's own window/budget
-            metrics.record_rate_limited()
+            # credential's own window/budget; a scope denial is 403, not
+            # rate limiting
+            if exc.code != "insufficient_scope":
+                metrics.record_rate_limited()
             return _finish(
                 request,
                 request_id,

@@ -125,10 +125,12 @@ def test_managed_key_authenticates_and_is_not_admin() -> None:
     # managed key serves gated routes
     ok = client.get("/harness/commands", headers={"X-API-Key": raw})
     assert ok.status_code == 200
-    # but key management is admin-only
+    # but key management is admin-only — the scope layer refuses before
+    # the route's own admin check (a default key's scopes are
+    # [read, write], never admin)
     denied = client.get("/harness/keys", headers={"X-API-Key": raw})
     assert denied.status_code == 403
-    assert denied.json()["code"] == "admin_required"
+    assert denied.json()["code"] == "insufficient_scope"
     # env key lists it
     listed = client.get("/harness/keys", headers=root)
     assert listed.status_code == 200

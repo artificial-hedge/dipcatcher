@@ -247,14 +247,16 @@ class ApiKeyStore:
             self._by_id[rec["key_id"]] = sha
         return raw, _wire(rec)
 
-    def authenticate(self, raw: str) -> dict[str, Any] | None:
+    def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
         Bumps the live use counters (not journaled).
 
         Expired keys fail closed like revoked ones; a key past its
         declared ``rpm`` window raises ``rate_limited`` instead of
-        answering — the wire maps that to 429. Refusals do not count
-        as uses."""
+        answering — the wire maps that to 429. ``required_scope`` is the
+        authorization bound the request needs: a key missing it raises
+        ``insufficient_scope`` — the wire maps that to 403. Refusals do
+        not count as uses."""
         if not isinstance(raw, str) or not raw.startswith(KEY_PREFIX):
             return None
         now = self._clock()
@@ -279,6 +281,14 @@ class ApiKeyStore:
                 raise KeyStoreError(
                     "quota_exceeded",
                     f"key exhausted its {max_tok} token budget",
+                    key_id=rec["key_id"],
+                )
+            # the scope check runs before any counter moves — a denied
+            # call never counts as a use nor consumes a window slot
+            if required_scope is not None and required_scope not in (rec.get("scopes") or []):
+                raise KeyStoreError(
+                    "insufficient_scope",
+                    f"key lacks required scope {required_scope!r}",
                     key_id=rec["key_id"],
                 )
             rpm = rec.get("rpm")
