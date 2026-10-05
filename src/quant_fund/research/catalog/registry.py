@@ -6862,6 +6862,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quy_am_qa_studies",
         "tinh_linh_qa_studies",
         "yeu_quai_qa_studies",
+        # Wave-1943 javanese-demon canon.
+        "genderuwo_qa_studies",
+        "jenglot_qa_studies",
+        "kuntilanak_qa_studies",
+        "leyak_qa_studies",
+        "pocong_qa_studies",
+        "tuyul_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
