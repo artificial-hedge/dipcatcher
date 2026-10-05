@@ -6967,6 +6967,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gamigin_qa_studies",
         "haagenti_qa_studies",
         "vuall_qa_studies",
+        # Wave-1958 goetic-hierarchy canon.
+        "bathin_qa_studies",
+        "buer_qa_studies",
+        "marax_qa_studies",
+        "marbas_qa_studies",
+        "purson_qa_studies",
+        "sallos_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
