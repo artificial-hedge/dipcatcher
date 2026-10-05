@@ -6918,6 +6918,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "leraje_qa_studies",
         "sitri_qa_studies",
         "zepar_qa_studies",
+        # Wave-1951 goetic-circle canon.
+        "berith_qa_studies",
+        "bune_qa_studies",
+        "forneus_qa_studies",
+        "glasya_labolas_qa_studies",
+        "naberius_qa_studies",
+        "ronove_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
