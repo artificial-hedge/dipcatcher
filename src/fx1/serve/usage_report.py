@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Sequence
-from typing import Protocol
+from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict
 
@@ -91,6 +91,12 @@ class UsageReport(BaseModel):
     by_key: dict[str, UsageBucket]
 
 
+def _billable_int(value: Any) -> int | None:
+    """An int claim that survives the usage sieve — bools, strings and
+    floats are unbillable and never summed."""
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
 def _bucket(records: list[_Record]) -> UsageBucket:
     requests = len(records)
     ok = sum(1 for r in records if r.ok)
@@ -104,16 +110,17 @@ def _bucket(records: list[_Record]) -> UsageBucket:
             continue
         usage_reported += 1
         for key, value in rec.usage.items():
-            if not isinstance(value, int) or isinstance(value, bool):
+            v = _billable_int(value)
+            if v is None:
                 continue  # an unbillable claim is never summed
             if key == "prompt_tokens":
-                prompt_tokens += value
+                prompt_tokens += v
             elif key == "completion_tokens":
-                completion_tokens += value
+                completion_tokens += v
             elif key == "total_tokens":
-                total_tokens += value
+                total_tokens += v
             else:
-                other[key] = other.get(key, 0) + value
+                other[key] = other.get(key, 0) + v
     return UsageBucket(
         requests=requests,
         ok=ok,

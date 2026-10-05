@@ -21,7 +21,9 @@ def test_receipt_verifies() -> None:
 
 
 def test_receipt_deterministic() -> None:
-    assert usage_audit_bench()["receipt_sha256"] == usage_audit_bench()["receipt_sha256"]
+    first = usage_audit_bench()["receipt_sha256"]
+    second = usage_audit_bench()["receipt_sha256"]
+    assert first == second
 
 
 def test_committed_receipt_still_verifies() -> None:

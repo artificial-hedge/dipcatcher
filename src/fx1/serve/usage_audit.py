@@ -94,6 +94,11 @@ _SWEPT_ENVS = (
 # stacks — this URL is never dialed (the injected resolver returns stubs).
 _BYOK_BASE_URL = "http://127.0.0.1:9/v1"  # NOSONAR(S5332) — never dialed
 
+_COMPLETE_PATH = "/harness/complete"
+_USAGE_PATH = "/harness/usage"
+_NONE_TAG = "(none)"
+_PILOT_MODEL = "fx1-ft:pilot-9"
+
 # Scripted provider usage payloads — the audit's ground truth.
 _BYOK_U = {"prompt_tokens": 4, "completion_tokens": 6, "total_tokens": 10, "cached_tokens": 1}
 _LOCAL_U = {"prompt_tokens": 2, "completion_tokens": 3, "total_tokens": 5}
@@ -128,14 +133,20 @@ class _MeterBackend:
                 self.total_usage[k] = self.total_usage.get(k, 0) + v
 
     def complete(
-        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> str:
         self.calls += 1
         self._report(dict(self._usage) if self._usage is not None else None)
         return f"ok:{messages[-1]['content']}"
 
     def stream(
-        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        self,
+        messages: list[dict[str, str]],  # NOSONAR(S1172) — protocol signature
+        *,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> Any:
         self.calls += 1
         use = self._stream_usage
@@ -144,7 +155,7 @@ class _MeterBackend:
         yield "tok-b"
 
     def close(self) -> None:
-        pass
+        """No resources to release — the stub holds nothing."""
 
 
 class _FailBackend:
@@ -154,14 +165,17 @@ class _FailBackend:
         self._model = model
 
     def complete(
-        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        self,
+        messages: list[dict[str, str]],  # NOSONAR(S1172) — protocol signature
+        *,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> str:
         from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
 
         raise BackendNotConfiguredError("no credentials configured")
 
     def close(self) -> None:
-        pass
+        """No resources to release — the stub holds nothing."""
 
 
 class _AnyUsageBackend:
@@ -174,13 +188,16 @@ class _AnyUsageBackend:
         self.last_usage: Any = None
 
     def complete(
-        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        self,
+        messages: list[dict[str, str]],  # NOSONAR(S1172) — protocol signature
+        *,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> str:
         self.last_usage = self._usage
         return "ok"
 
     def close(self) -> None:
-        pass
+        """No resources to release — the stub holds nothing."""
 
 
 class _BareBackend:
@@ -188,12 +205,15 @@ class _BareBackend:
     reads both through getattr defaults."""
 
     def complete(
-        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        self,
+        messages: list[dict[str, str]],  # NOSONAR(S1172) — protocol signature
+        *,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172)
     ) -> str:
         return "ok"
 
     def close(self) -> None:
-        pass
+        """No resources to release — the stub holds nothing."""
 
 
 @dataclass(frozen=True)
@@ -232,7 +252,7 @@ class _Ledger:
     def bucket(self, key: str) -> dict[str, dict[str, Any]]:
         out: dict[str, dict[str, Any]] = {}
         for r in self.records:
-            tag = r[key] if r[key] is not None else "(none)"
+            tag = r[key] if r[key] is not None else _NONE_TAG
             b = out.setdefault(tag, {"requests": 0, "ok": 0, "tokens": 0, "reported": 0})
             b["requests"] += 1
             b["ok"] += 1 if r["ok"] else 0
@@ -305,14 +325,14 @@ def _complete(
     **extra: Any,
 ) -> Any:
     return client.post(
-        "/harness/complete",
+        _COMPLETE_PATH,
         json={"backend": backend, "messages": [{"role": "user", "content": "hi"}], **extra},
         headers=headers or {},
     )
 
 
 def _usage(client: TestClient, headers: dict[str, str], **params: Any) -> dict[str, Any]:
-    r = client.get("/harness/usage", params=params, headers=headers)
+    r = client.get(_USAGE_PATH, params=params, headers=headers)
     assert r.status_code == 200, r.text
     body: dict[str, Any] = r.json()
     return body
@@ -332,13 +352,13 @@ def _completions(client: TestClient, root_h: dict[str, str]) -> list[dict[str, A
     return items
 
 
-def _scenario() -> dict[str, Any]:
+def _scenario() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fans out per accounting edge
     """The main battery — one app, scripted traffic, every published
     aggregate reconciled against an independent ledger."""
     out: dict[str, Any] = {}
     client, _ = _client(
         {
-            "byok": lambda: _MeterBackend("fx1-ft:pilot-9", dict(_BYOK_U), dict(_STREAM_U)),
+            "byok": lambda: _MeterBackend(_PILOT_MODEL, dict(_BYOK_U), dict(_STREAM_U)),
             "local_fx1": lambda: _MeterBackend("fx1-ckpt-1", dict(_LOCAL_U)),
             "hosted_k3": lambda: _FailBackend("dead-0"),
         },
@@ -356,7 +376,7 @@ def _scenario() -> dict[str, Any]:
 
     # --- env-credential traffic ------------------------------------------------
     for _ in range(2):
-        hit(_complete(client, "byok", root_h), "byok", "fx1-ft:pilot-9", True, _BYOK_U, "env")
+        hit(_complete(client, "byok", root_h), "byok", _PILOT_MODEL, True, _BYOK_U, "env")
     hit(
         _complete(client, "local_fx1", root_h, checkpoint_dir="synthetic-ckpt"),
         "local_fx1",
@@ -366,13 +386,13 @@ def _scenario() -> dict[str, Any]:
         "env",
     )
     # --- managed key: sync, SSE stream, anthropic leg, one dead link -----------
-    hit(_complete(client, "byok", k1_h), "byok", "fx1-ft:pilot-9", True, _BYOK_U, k1_id)
+    hit(_complete(client, "byok", k1_h), "byok", _PILOT_MODEL, True, _BYOK_U, k1_id)
     rs = client.post(
         "/harness/complete/stream",
         json={"backend": "byok", "messages": [{"role": "user", "content": "hi"}]},
         headers=k1_h,
     )
-    hit(rs, "byok", "fx1-ft:pilot-9", True, _STREAM_U, k1_id)
+    hit(rs, "byok", _PILOT_MODEL, True, _STREAM_U, k1_id)
     fail = _complete(client, "hosted_k3", k1_h)
     out["unreached_error_unbilled"] = (
         fail.status_code == 503 and fail.json().get("code") == "backend_unavailable"
@@ -387,7 +407,7 @@ def _scenario() -> dict[str, Any]:
         },
         headers={**k1_h, "X-Fx1-Backend": "byok"},
     )
-    hit(ra, "byok", "fx1-ft:pilot-9", True, _BYOK_U, k1_id)
+    hit(ra, "byok", _PILOT_MODEL, True, _BYOK_U, k1_id)
     # --- n-fanout on the OpenAI leg ---------------------------------------------
     rn = client.post(
         "/v1/chat/completions",
@@ -396,7 +416,7 @@ def _scenario() -> dict[str, Any]:
     )
     assert rn.status_code == 200, rn.text
     for _ in range(2):
-        led.add("byok", "fx1-ft:pilot-9", True, _BYOK_U, "env")
+        led.add("byok", _PILOT_MODEL, True, _BYOK_U, "env")
     # --- batch under its own key ------------------------------------------------
     k6_raw, k6_id = _mint(client, root_h)
     k6_h = {"X-API-Key": k6_raw}
@@ -411,7 +431,7 @@ def _scenario() -> dict[str, Any]:
     assert rb.status_code == 200, rb.text
     batch_usage_total = rb.json().get("usage_total")
     for _ in range(3):
-        led.add("byok", "fx1-ft:pilot-9", True, None, k6_id)
+        led.add("byok", _PILOT_MODEL, True, None, k6_id)
 
     # --- conservation -----------------------------------------------------------
     rep = _usage(client, root_h)
@@ -477,12 +497,12 @@ def _scenario() -> dict[str, Any]:
     out["model_filters_partition"] = all(
         _usage(client, root_h, model=m)["records_seen"] == exp_m[m]["requests"]
         for m in exp_m
-        if m != "(none)"
+        if m != _NONE_TAG
     )
     out["key_filters_partition"] = all(
         _usage(client, root_h, key_id=k)["records_seen"] == exp_k[k]["requests"]
         for k in exp_k
-        if k != "(none)"
+        if k != _NONE_TAG
     )
     ats = sorted(float(r["at"]) for r in items)
     lo, hi = ats[0], ats[-1]
@@ -493,8 +513,8 @@ def _scenario() -> dict[str, Any]:
         and _usage(client, root_h, since=hi + 1.0)["records_seen"] == 0
         and _usage(client, root_h, until=lo - 1.0)["records_seen"] == 0
     )
-    bad = client.get("/harness/usage", params={"since": hi, "until": lo}, headers=root_h)
-    neg = client.get("/harness/usage", params={"since": -1.0}, headers=root_h)
+    bad = client.get(_USAGE_PATH, params={"since": hi, "until": lo}, headers=root_h)
+    neg = client.get(_USAGE_PATH, params={"since": -1.0}, headers=root_h)
     out["window_inverted_400"] = bad.status_code == 400 and bad.json().get("code") == "bad_window"
     out["window_negative_422"] = neg.status_code == 422
     # --- managed-key meters ---------------------------------------------------------
@@ -529,8 +549,8 @@ def _scenario() -> dict[str, Any]:
     uses_before = card1["uses"]
     body = {"backend": "byok", "messages": [{"role": "user", "content": "replay-me"}]}
     h = {**k1_h, "Idempotency-Key": "rep-1"}
-    r1 = client.post("/harness/complete", json=body, headers=h)
-    r2 = client.post("/harness/complete", json=body, headers=h)
+    r1 = client.post(_COMPLETE_PATH, json=body, headers=h)
+    r2 = client.post(_COMPLETE_PATH, json=body, headers=h)
     mid = _key_card(client, root_h, k1_id)
     n_items = len(_completions(client, root_h))
     out["replay_never_double_bills"] = (
@@ -630,7 +650,7 @@ def _split_probes() -> dict[str, Any]:
     )
     root_h = {"X-API-Key": _ROOT}
     r = fb_client.post(
-        "/harness/complete",
+        _COMPLETE_PATH,
         json={
             "backend": "byok",
             "fallbacks": ["local_fx1"],
@@ -832,7 +852,7 @@ def _adversarial_probes() -> dict[str, Any]:
     out["silent_backend_reports_nothing"] = (
         rep["by_backend"]["hosted_k3"]["usage_reported"] == 0
         and rep["by_backend"]["hosted_k3"]["total_tokens"] == 0
-        and rep["by_model"]["(none)"]["requests"] == 1
+        and rep["by_model"][_NONE_TAG]["requests"] == 1
     )
     # a non-dict usage payload is dropped at the wire, not crammed in
     nd_client, _ = _client({"byok": lambda: _AnyUsageBackend("x-0", "not-a-dict")}, api_key=_ROOT)
@@ -846,7 +866,7 @@ def _adversarial_probes() -> dict[str, Any]:
     # "(none)" is a display label, not a queryable value — filtering on it
     # matches no record (a record's model is None, not the literal)
     out["model_none_label_not_queryable"] = (
-        _usage(client, root_h, model="(none)")["records_seen"] == 0
+        _usage(client, root_h, model=_NONE_TAG)["records_seen"] == 0
     )
     # unit-level: window edges are inclusive on both sides of `at`
     from fx1.serve.usage_report import aggregate_usage  # noqa: PLC0415
@@ -888,9 +908,9 @@ def _auth_surface_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
     client, _ = _client({"byok": lambda: _MeterBackend("m-0", dict(_BYOK_U))})
     _complete(client, "byok")
-    rep = client.get("/harness/usage").json()
+    rep = client.get(_USAGE_PATH).json()
     out["loopback_lands_none_bucket"] = (
-        rep["by_key"].get("(none)", {}).get("requests") == 1 and rep["totals"]["requests"] == 1
+        rep["by_key"].get(_NONE_TAG, {}).get("requests") == 1 and rep["totals"]["requests"] == 1
     )
     keyed, _ = _client({"byok": lambda: _MeterBackend("m-0", dict(_BYOK_U))}, api_key=_ROOT)
     _complete(keyed, "byok", {"X-API-Key": _ROOT})

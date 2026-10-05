@@ -247,6 +247,27 @@ class ApiKeyStore:
             self._by_id[rec["key_id"]] = sha
         return raw, _wire(rec)
 
+    def _consume_window(self, rec: dict[str, Any], now: float) -> None:
+        """Take one slot in the key's declared ``rpm`` window, or raise
+        ``rate_limited`` when the window is exhausted. Mutates ``rec``'s
+        private ``_window_*`` fields; caller holds ``self._lock``."""
+        rpm = rec.get("rpm")
+        if rpm is None:
+            return
+        start = rec.get("_window_start")
+        if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
+            rec["_window_start"] = now
+            rec["_window_count"] = 0
+        if rec["_window_count"] >= rpm:
+            retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
+            raise KeyStoreError(
+                "rate_limited",
+                f"key exceeds its {rpm}/min request limit",
+                retry_after=retry,
+                key_id=rec["key_id"],
+            )
+        rec["_window_count"] += 1
+
     def authenticate(self, raw: str, *, required_scope: str | None = None) -> dict[str, Any] | None:
         """Return the wire record for a presented raw key, else None.
         Bumps the live use counters (not journaled).
@@ -291,21 +312,7 @@ class ApiKeyStore:
                     f"key lacks required scope {required_scope!r}",
                     key_id=rec["key_id"],
                 )
-            rpm = rec.get("rpm")
-            if rpm is not None:
-                start = rec.get("_window_start")
-                if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
-                    rec["_window_start"] = now
-                    rec["_window_count"] = 0
-                if rec["_window_count"] >= rpm:
-                    retry = max(0.0, _RATE_WINDOW_S - (now - rec["_window_start"]))
-                    raise KeyStoreError(
-                        "rate_limited",
-                        f"key exceeds its {rpm}/min request limit",
-                        retry_after=retry,
-                        key_id=rec["key_id"],
-                    )
-                rec["_window_count"] += 1
+            self._consume_window(rec, now)
             rec["uses"] += 1
             rec["last_used_at"] = now
             return _wire(rec)
