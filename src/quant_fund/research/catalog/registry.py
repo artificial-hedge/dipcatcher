@@ -6799,6 +6799,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lagahoo_qa_studies",
         "ole_higue_qa_studies",
         "soucouyant_qa_studies",
+        # Wave-1934 mapuche-demon canon.
+        "cherufe_qa_studies",
+        "chonchon_qa_studies",
+        "colo_colo_qa_studies",
+        "kalku_qa_studies",
+        "peuchen_qa_studies",
+        "wekufe_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
