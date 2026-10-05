@@ -3302,9 +3302,9 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
         response.headers["request-id"] = request_id
         status = response.status_code
         if status in _ANTHROPIC_RETRY_TRUE:
-            response.headers["x-should-retry"] = "true"
+            response.headers.setdefault("x-should-retry", "true")
         elif status in _ANTHROPIC_RETRY_FALSE:
-            response.headers["x-should-retry"] = "false"
+            response.headers.setdefault("x-should-retry", "false")
     if is_openai_path(request.url.path):
         # OpenAI's api-version response header — the stock SDK + proxies
         # log it for compat debugging on every /v1 call
@@ -8276,7 +8276,10 @@ def _key_refusal_response(
         body: dict[str, Any] = {"detail": msg, "code": exc.code}
         if is_openai_path(path):
             body = _v1_error_body(path, msg, 429, exc.code)
-        return JSONResponse(status_code=429, content=body)
+        # A hard budget cannot recover through retry. Keep this explicit
+        # route hint when _finish applies generic transient-status hints.
+        headers = {"x-should-retry": "false"} if _is_anthropic_surface(request) else None
+        return JSONResponse(status_code=429, content=body, headers=headers)
     wait_s = max(1, math.ceil(exc.retry_after or 1.0))
     rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
     rl_body: dict[str, Any] = {"detail": rl_msg, "code": exc.code}

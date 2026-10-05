@@ -275,8 +275,8 @@ class _CallFailBackend(_ParityBackend):
     def stream(
         self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
     ) -> Iterator[str]:
+        yield from ()
         raise RuntimeError("backend exploded")
-        yield
 
 
 class _FlakyBackend(_ParityBackend):

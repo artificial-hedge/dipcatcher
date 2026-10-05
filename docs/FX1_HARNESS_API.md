@@ -993,7 +993,9 @@ stores fail closed `vector_store_not_found` (404 on the wire,
   and SSE-open alike) and `x-should-retry` — `true` on the transient
   statuses the stock SDK retries (408/429/500/502/503/504/529),
   `false` on the ones its defaults would get wrong here (409
-  idempotency conflict, 501 unimplemented), omitted everywhere else.
+  idempotency conflict, 501 unimplemented, and exhausted hard-budget
+  429 responses), omitted everywhere else. Explicit route retry hints
+  take precedence over the generic status defaults.
   A managed key minted with `rpm` reports its standing window on the
   Anthropic surface too — `anthropic-ratelimit-requests-limit` /
   `-remaining` / `-reset` (an RFC 3339 instant, Anthropic's

@@ -53,6 +53,7 @@ Honesty rules:
 from __future__ import annotations
 
 import hashlib
+import math
 import secrets
 import threading
 import time
@@ -124,6 +125,15 @@ class KeyStoreError(RuntimeError):
 
 def _hash(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _is_finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
 
 
 class ApiKeyStore:
@@ -209,8 +219,8 @@ class ApiKeyStore:
         usage charged by the wire after each served response."""
         if rpm is not None and rpm < 1:
             raise ValueError("rpm must be >= 1")
-        if ttl_s is not None and ttl_s <= 0:
-            raise ValueError("ttl_s must be > 0")
+        if ttl_s is not None and (not _is_finite_number(ttl_s) or ttl_s <= 0):
+            raise ValueError("ttl_s must be finite and > 0")
         if max_requests is not None and max_requests < 1:
             raise ValueError("max_requests must be >= 1")
         if max_tokens is not None and max_tokens < 1:
@@ -219,6 +229,9 @@ class ApiKeyStore:
         raw = KEY_PREFIX + secrets.token_hex(20)
         sha = _hash(raw)
         created = self._clock()
+        expires_at = (created + ttl_s) if ttl_s is not None else None
+        if expires_at is not None and not _is_finite_number(expires_at):
+            raise ValueError("ttl_s must produce a finite expires_at")
         rec: dict[str, Any] = {
             "key_id": sha[:16],
             "prefix": raw[:13],
@@ -232,7 +245,7 @@ class ApiKeyStore:
             # ``uses`` and charged post-response off the completion log.
             "tokens_used": 0,
             "created_at": created,
-            "expires_at": (created + ttl_s) if ttl_s is not None else None,
+            "expires_at": expires_at,
             "enabled": True,
             "revoked_at": None,
             "uses": 0,
@@ -263,7 +276,7 @@ class ApiKeyStore:
             if rec is None or not rec["enabled"]:
                 return None
             expires = rec.get("expires_at")
-            if expires is not None and now >= expires:
+            if expires is not None and (not _is_finite_number(expires) or now >= expires):
                 return None
             # hard budgets refuse before the rate window — an exhausted
             # key never consumes a window slot

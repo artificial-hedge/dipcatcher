@@ -3276,12 +3276,18 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["usage_absent_when_backend_silent"] = (
         silent.status_code == 200 and silent.json()["usage"] is None
     )
-    # The pure extractor: non-int values drop, missing/malformed → None.
+    # Keep genuine integer claims; malformed counters never become charges.
     import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
     out["usage_extract_filters"] = (
-        _be_mod._extract_usage({"usage": {"prompt_tokens": 3.0, "weird": "no", "neg": -1}})
-        == {"prompt_tokens": 3, "neg": -1}
+        _be_mod._extract_usage(
+            {"usage": {"prompt_tokens": 3, "completion_tokens": 0, "weird": "no", "neg": -1}}
+        )
+        == {"prompt_tokens": 3, "completion_tokens": 0, "neg": -1}
+        and all(
+            _be_mod._extract_usage({"usage": {"prompt_tokens": value}}) is None
+            for value in (True, False, "3", 3.0, 3.5, float("nan"), float("inf"), float("-inf"))
+        )
         and _be_mod._extract_usage({}) is None
         and _be_mod._extract_usage({"usage": "broken"}) is None
     )
