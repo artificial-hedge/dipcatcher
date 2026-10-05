@@ -6358,6 +6358,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "piskie_qa_studies",
         "spriggan_qa_studies",
         "tregeagle_qa_studies",
+        # Wave-1871 manx-myth canon.
+        "buggane_qa_studies",
+        "fenodyree_qa_studies",
+        "glashtyn_qa_studies",
+        "moddey_dhoo_qa_studies",
+        "phynnodderee_qa_studies",
+        "tarroo_ushtey_qa_studies",
         # Wave-1399 retrieval-eval canon.
         "asqa_lite_studies",
         "eli5_lite_studies",
