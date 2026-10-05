@@ -16,7 +16,7 @@ def susanoo2_qa_studies_aux(aux: bool) -> bool:
     """susanoo2_qa_studies
 
     aux:
-    susanoo2_qa_studies: susanoo2, storm slayers, answers, and scores
+    susanoo2_qa_studies: susanoo2, storm rebels, answers, and scores
     """
     return aux
 
@@ -27,7 +27,7 @@ def _bench_susanoo2_qa_studies(seed: int = 0) -> float:
     checks.append(not susanoo2_qa_studies_ok(False, True))
     checks.append(susanoo2_qa_studies_aux(True))
     checks.append(not susanoo2_qa_studies_aux(False))
-    checks.append(True)  # japanese-myth-7 canon
+    checks.append(True)  # japanese-myth-8 canon
     return float(sum(checks) / len(checks))
 
 
