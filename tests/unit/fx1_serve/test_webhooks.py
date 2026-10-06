@@ -175,6 +175,8 @@ class TestWebhooks(unittest.TestCase):
             "http://127.0.0.1/hook",
             "http://10.0.0.1/hook",
             "http://169.254.169.254/latest/meta-data/",
+            "http://100.64.0.1/hook",
+            "http://192.0.2.1/hook",
             "http://[::1]/hook",
             "http://[fc00::1]/hook",
             "http://224.0.0.1/hook",
