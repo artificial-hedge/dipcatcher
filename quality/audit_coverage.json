@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 18,
+      "n_modules": 17,
       "status": "audited"
     },
     "compute": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 223,
+      "n_modules": 224,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 130,
+      "n_modules": 127,
       "status": "audited"
     },
     "risk": {
@@ -312,6 +312,13 @@
       "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
       "evidence": [
         "tests/unit/microstructure/test_off_exchange.py"
+      ]
+    },
+    "models/incumbent_registry.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_incumbent_registry.py"
       ]
     },
     "models/asset_graph.py": {
@@ -520,34 +527,7 @@
         "tests/unit/cli/test_reality_total_return_cmds.py"
       ]
     },
-    "cli/sota_cmds.py": {
-      "status": "partial",
-      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
-      "evidence": [
-        "tests/unit/cli/test_sota_cmds.py"
-      ]
-    },
-    "research/allocation_cli.py": {
-      "status": "partial",
-      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
-      "evidence": [
-        "tests/unit/research/test_allocation_cli.py"
-      ]
-    },
-    "research/benches_w18.py": {
-      "status": "partial",
-      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
-      "evidence": [
-        "tests/unit/research/test_benches_w18.py"
-      ]
-    },
-    "research/explainability_cli.py": {
-      "status": "partial",
-      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
-      "evidence": [
-        "tests/unit/research/test_explainability_cli.py"
-      ]
-    },
+
     "models/c51_rl.py": {
       "status": "partial",
       "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
