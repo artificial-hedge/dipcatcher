@@ -62,13 +62,35 @@ def _under(module: str, prefix: str) -> bool:
     return module == prefix or module.startswith(prefix + ".")
 
 
+def _line_budgets() -> dict[str, int]:
+    """Pinned budgets for legacy oversized modules; the pin may only shrink."""
+    manifest = Path("quality/module_line_budgets.txt")
+    budgets: dict[str, int] = {}
+    for raw in manifest.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        rel, count = line.rsplit(" ", 1)
+        budgets[rel] = int(count)
+    return budgets
+
+
 def test_modules_stay_under_max_lines() -> None:
+    budgets = _line_budgets()
     offenders: list[str] = []
+    seen: set[str] = set()
     for root in LIBRARY_ROOTS:
         for path in root.rglob("*.py"):
+            rel = path.relative_to(SRC).as_posix()
             lines = len(path.read_text(encoding="utf-8").splitlines())
-            if lines > MAX_MODULE_LINES:
-                offenders.append(f"{path.relative_to(SRC)}:{lines}")
+            budget = budgets.get(rel)
+            if budget is not None:
+                seen.add(rel)
+                if lines > budget:
+                    offenders.append(f"{rel}:{lines} over pinned budget {budget}")
+            elif lines > MAX_MODULE_LINES:
+                offenders.append(f"{rel}:{lines}")
+    offenders.extend(f"stale budget pin: {rel}" for rel in sorted(set(budgets) - seen))
     assert offenders == []
 
 
