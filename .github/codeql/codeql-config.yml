@@ -3,6 +3,9 @@ paths:
   - src
   - tests
   - scripts
+  - web
+  - replay
+  - clients/typescript
 paths-ignore:
   - third_party
   - data

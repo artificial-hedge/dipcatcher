@@ -30,3 +30,15 @@ def test_dependency_review_fails_closed() -> None:
     assert "continue-on-error:" not in workflow
     assert "steps.review.outcome" not in workflow
     assert 'if [ "$code" = "404" ]' not in workflow
+
+
+def test_codeql_covers_supported_source_languages() -> None:
+    """Python and the repository's JavaScript/TypeScript must be analyzed."""
+
+    workflow = _workflow("codeql.yml")
+    config = (REPO_ROOT / ".github" / "codeql" / "codeql-config.yml").read_text(encoding="utf-8")
+
+    assert "language: [python, javascript-typescript]" in workflow
+    assert "languages: ${{ matrix.language }}" in workflow
+    for path in ("src", "tests", "scripts", "web", "replay", "clients/typescript"):
+        assert f"  - {path}\n" in config
