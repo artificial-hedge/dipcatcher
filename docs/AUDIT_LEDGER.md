@@ -346,3 +346,45 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Backends audit (transport/policy battery)
+
+The new `backends_audit` pins 198 contracts over `serve.backends` —
+the module every other audit patched at its seams but none probed.
+Probes are pure functions plus the documented `_openai_urlopen` seam:
+no sockets, no real child processes (a faked `Popen` records the spawn
+template), deterministic by construction.
+
+Coverage: `SamplingParams.body_fields` (deterministic `temperature`
+default, declared-fields-only, `stop` tuple→list, frozen dataclass);
+harness-side stop truncation including mid-chunk cuts and the
+empty-piece rule; URL normalization (`_chat_completions_url`,
+`_openai_sibling_url`) and `_env_float` precedence/refusals; the BYOK
+policy chain — `byok_base_url_problem` (userinfo/query/fragment/port/
+host refusals; reasons never echo the URL), `_byok_address_allowed`
+(private opt-in never admits link-local/multicast/unspecified),
+`_byok_resolved_addresses` fail-closed on prohibited or mixed answer
+sets with v4-mapped normalization; transport (`_RefuseRedirects`
+unconditional refusal, `_openai_urlopen` normal + DNS-pinned legs,
+non-2xx→HTTPError with response and connection closed, per-request
+policy stamps, `FX1_BYOK_ALLOW_PRIVATE_NETWORKS` truthy variants);
+`_extract_usage`/`_extract_token_count` rejecting bools, strings,
+non-finite floats; `_UsageTracker` concurrent accumulation; the
+fail-closed `tool_calls[]`/embeddings `data[]` shape validators; wire
+helpers (`_openai_chat_complete`, `..._tools`, `..._stream`,
+`_openai_tokenize_count`, `_openai_embeddings_complete`) — request
+shapes, labeled `RuntimeError` envelopes for HTTP/URL/transport/
+decode faults, `TokenCountUnavailableError` on refused tokenize
+routes (never an estimate), stream frame grammar (`[DONE]`,
+role frames, usage-only frames, `usage_out` capture,
+`stream_options` never sent); the three backend classes (key/env
+precedence, missing-config `BackendNotConfiguredError`, ship-gate +
+signature enforcement, `_ensure_engine` spawn template expansion +
+`FX1_CHECKPOINT_DIR`, `close()` semantics); `get_backend` dispatch;
+and the capability protocols (`InferenceBackend` deliberately not
+runtime-checkable — capability checks belong on the optional
+channels only).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
