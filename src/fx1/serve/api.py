@@ -9119,7 +9119,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     )
                 job.fine_tuned_model = outcome.fine_tuned_model
                 job.trained_tokens = outcome.trained_tokens
-                job.status = "succeeded"
                 if outcome.fine_tuned_model is not None and outcome.checkpoint:
                     ft_store.register_model(
                         outcome.fine_tuned_model,
@@ -9139,6 +9138,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     "job succeeded",
                     {"checkpoint": outcome.checkpoint},
                 )
+                # Publish the terminal status only after the complete event
+                # feed is durable. Otherwise a reader can observe
+                # ``succeeded`` and immediately retrieve a truncated feed.
+                job.status = "succeeded"
         except Exception as exc:  # noqa: BLE001 — a runner fault is job data
             if entry.cancel.is_set():
                 already = job.status == "cancelled"
@@ -9146,7 +9149,6 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if not already:
                     ft_store.add_event(job.id, "info", _EV_JOB_CANCELLED, None)
             else:
-                job.status = "failed"
                 job.error = FTJobError(
                     code="job_failed",
                     message=f"{type(exc).__name__}: {exc}",
@@ -9155,6 +9157,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 ft_store.add_event(
                     job.id, "error", f"job failed: {type(exc).__name__}: {exc}", None
                 )
+                # As on success, terminal status means terminal retrieval
+                # surfaces are already complete.
+                job.status = "failed"
         finally:
             job.finished_at = job.finished_at or int(time.time())
             _deliver_callback(job)

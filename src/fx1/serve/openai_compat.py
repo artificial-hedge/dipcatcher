@@ -1729,6 +1729,12 @@ def paged_item_list(
     page shape the stored-request subresources return — ``after`` /
     ``before`` are id cursors into the ordered list; an unknown cursor
     fails closed ``400 invalid_cursor`` rather than silently restarting."""
+    if not 1 <= limit <= 100:
+        raise OpenAICompatError(
+            "limit must be 1..100",
+            status=400,
+            code="invalid_limit",
+        )
     if order not in ("asc", "desc"):
         raise OpenAICompatError(
             f"order must be 'asc' or 'desc', got {order!r}",
@@ -1749,7 +1755,10 @@ def paged_item_list(
                 code="invalid_cursor",
             )
         ordered = ordered[idx + 1 :] if keep_after else ordered[:idx]
-    page = ordered[:limit]
+    # ``before`` means the page *preceding* the cursor — the tail of the
+    # remaining window (the same convention the anthropic before_id pagers
+    # pin), not its head: a backward walk chains first_id through the list.
+    page = ordered[-limit:] if before is not None else ordered[:limit]
     return {
         "object": "list",
         "data": page,

@@ -383,7 +383,10 @@ class _HookHandler(BaseHTTPRequestHandler):
 
 
 @pytest.fixture()
-def hook_server() -> Any:
+def hook_server(monkeypatch: pytest.MonkeyPatch) -> Any:
+    # Production callbacks reject loopback by default. These tests own the
+    # local sink and opt into the narrowly scoped development exception.
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     _CB_HITS.clear()
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _HookHandler)
     t = threading.Thread(target=srv.serve_forever, daemon=True)
