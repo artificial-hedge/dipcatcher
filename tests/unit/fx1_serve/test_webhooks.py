@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
+import socket
 import unittest
 from typing import Any
 from unittest.mock import patch
 
-from fx1.serve.webhooks import sign_webhook, verify_webhook
+from fx1.serve.webhooks import (
+    check_callback_url,
+    deliver_signed,
+    sign_webhook,
+    verify_webhook,
+)
 
 
 class TestWebhooks(unittest.TestCase):
@@ -162,6 +169,110 @@ class TestWebhooks(unittest.TestCase):
                 self.assertFalse(
                     verify_webhook(secret, "1000", self.signature("1000"), self.body, now=1000)
                 )
+
+    def test_private_and_special_use_ip_literals_are_rejected(self) -> None:
+        rejected = (
+            "http://127.0.0.1/hook",
+            "http://10.0.0.1/hook",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://100.64.0.1/hook",
+            "http://192.0.2.1/hook",
+            "http://[::1]/hook",
+            "http://[fc00::1]/hook",
+            "http://224.0.0.1/hook",
+            "http://0.0.0.0/hook",
+        )
+        with patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            for url in rejected:
+                with self.subTest(url=url), self.assertRaises(ValueError):
+                    check_callback_url(url)
+        self.assertEqual(check_callback_url("https://8.8.8.8/hook"), "https://8.8.8.8/hook")
+
+    def test_private_network_opt_in_is_explicit(self) -> None:
+        with patch.dict(os.environ, {"FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1"}):
+            self.assertEqual(
+                check_callback_url("http://127.0.0.1/hook"),
+                "http://127.0.0.1/hook",
+            )
+
+    def test_invalid_port_is_rejected_without_delivery_attempt(self) -> None:
+        delivered, error, attempts = deliver_signed(
+            "https://example.com:bad/hook",
+            None,
+            self.body,
+        )
+        self.assertFalse(delivered)
+        self.assertIn("invalid port", error or "")
+        self.assertEqual(attempts, 0)
+
+    def test_dns_answers_are_validated_before_connecting(self) -> None:
+        answers = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443)),
+        ]
+        with (
+            patch("fx1.serve.webhooks.socket.getaddrinfo", return_value=answers),
+            patch("fx1.serve.webhooks._post_once") as post,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook",
+                self.secret,
+                self.body,
+                max_attempts=1,
+                backoff_s=0,
+            )
+        self.assertFalse(delivered)
+        self.assertIn("private or special-use", error or "")
+        self.assertEqual(attempts, 1)
+        post.assert_not_called()
+
+    def test_delivery_connects_to_the_validated_numeric_address(self) -> None:
+        answers = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        with (
+            patch("fx1.serve.webhooks.socket.getaddrinfo", return_value=answers),
+            patch("fx1.serve.webhooks._post_once", return_value=204) as post,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook?x=1",
+                self.secret,
+                self.body,
+                max_attempts=1,
+                backoff_s=0,
+            )
+        self.assertTrue(delivered)
+        self.assertIsNone(error)
+        self.assertEqual(attempts, 1)
+        self.assertEqual(post.call_args.args[1], "93.184.216.34")
+
+    def test_dns_is_revalidated_on_every_retry(self) -> None:
+        public = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
+        ]
+        private = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443)),
+        ]
+        with (
+            patch(
+                "fx1.serve.webhooks.socket.getaddrinfo",
+                side_effect=[public, private],
+            ) as resolve,
+            patch("fx1.serve.webhooks._post_once", return_value=503) as post,
+        ):
+            delivered, error, attempts = deliver_signed(
+                "https://example.com/hook",
+                None,
+                self.body,
+                max_attempts=2,
+                backoff_s=0,
+            )
+        self.assertFalse(delivered)
+        self.assertIn("private or special-use", error or "")
+        self.assertEqual(attempts, 2)
+        self.assertEqual(resolve.call_count, 2)
+        post.assert_called_once()
 
 
 if __name__ == "__main__":
