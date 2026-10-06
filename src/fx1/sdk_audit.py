@@ -736,6 +736,7 @@ def sdk_audit() -> dict[str, bool]:
         s1 = Fx1Harness(state_dir=td)
         sm = s1.key_create("durable", rpm=11)
         s1.key_update(sm["id"], name="durable-2", rpm=None, max_requests=42)
+        s1.close()  # release single-writer claim — models process restart
         s2 = Fx1Harness(state_dir=td)
         replayed = s2.key_get(sm["id"])
         out["key_update_replay_durable"] = (

@@ -560,6 +560,7 @@ def journal_audit() -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as td:
         h = Fx1Harness(state_dir=td)
         srec = h.run_eval("calibration", model_fn=lambda msgs: "0.5")
+        h.close()  # release single-writer claim — models process restart
         h2 = Fx1Harness(state_dir=td)
         rec2 = h2.eval_record(srec.eval_id)
         r["sdk_eval_journaled"] = (
@@ -572,6 +573,7 @@ def journal_audit() -> dict[str, Any]:
         # a running eval record left by a 'crash' (put without mark)
         crash_rec = _mk_eval("sdk-crash", "queued")
         h2._eval_store.put(crash_rec, None, None)  # noqa: SLF001
+        h2.close()  # the 'crashed' writer releases before the next boot
         h3 = Fx1Harness(state_dir=td)
         r["sdk_inflight_recovers_failed"] = h3.eval_record("sdk-crash").status == "failed"
 

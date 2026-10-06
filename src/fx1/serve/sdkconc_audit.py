@@ -12,6 +12,16 @@ idempotency-key handling, and typed error envelopes). Wire-side store
 contention on the app itself is the sibling ``concurrency_audit`` lane;
 this lane covers the SDK half.
 
+Durable ``state_dir`` journals are single-writer: ``Fx1Harness`` claims
+each bound dir in a per-process weakref registry and refuses a second
+live bind at construction, released by ``close()`` or GC. Two live
+writers used to interleave the hash-chained journals — the next boot
+quarantined every recovered record. That was a real corruption path,
+not a passing semantic; it is now enforced, and the cross-process
+interleave case (a second *process*, which the registry cannot see) is
+the crash-torn class the journals already detect and quarantine —
+covered by ``journal_audit``'s recovery pins.
+
 Every probe is a measured statement — the battery exercises real
 end-to-end behavior (barrier-released thread storms, scripted
 transports, a real silent loopback socket) and reports booleans. The
@@ -20,11 +30,14 @@ battery is deterministic: bounded waits, no timing-dependent verdicts.
 
 from __future__ import annotations
 
+import contextlib
+import gc
 import json
+import os
 import threading
 import time
 import urllib.parse
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +77,136 @@ _HEADER_KEYS = {
     "openai-processing-ms",
     "x-fx1-completion-id",
 }
+
+
+# The exact battery contract: an audit that drops or renames a probe
+# fails loudly here, and ``bench`` refuses to seal an incomplete or
+# partial result set as a pass.
+_EXPECTED_PROBES: frozenset[str] = frozenset(
+    {
+        "api_key_header_sent",
+        "bg_all_terminal",
+        "bg_cancel_never_completed",
+        "bg_cancel_typed",
+        "bg_reader_no_traceback",
+        "bg_started",
+        "bg_submit_all_ok",
+        "bg_terminal_cancel_409",
+        "bg_untouched_completed",
+        "byok_client_typed",
+        "byok_kwargs_reach_resolver",
+        "byok_payload_verbatim",
+        "byok_wire_200s",
+        "byok_wire_all_answered",
+        "byok_wire_overcap_releases",
+        "byok_wire_overcap_typed",
+        "byok_wire_refusals_422",
+        "cb_halfopen_recovers",
+        "cb_open_fails_fast",
+        "cb_storm_all_typed",
+        "cl_404_mapped_per_lane",
+        "cl_429_no_ra_terminal",
+        "cl_500_terminal_no_retry",
+        "cl_retry_attempts_per_call",
+        "cl_retry_lanes_succeed",
+        "cl_retry_sleeps_recorded",
+        "ctx_billing_per_key",
+        "ctx_denied_no_billing",
+        "ctx_inflight_isolated",
+        "ctx_parked_served",
+        "ctx_post_storm_clean",
+        "ctx_statuses_honest",
+        "ctx_still_clean",
+        "ctx_storm_all_answered",
+        "headers_track_call",
+        "idem_auto_keys_distinct",
+        "idem_explicit_verbatim",
+        "idem_lanes_all_ok",
+        "idem_retry_same_key",
+        "identity_dirs_isolated",
+        "identity_post_release_writes",
+        "identity_replay_convs",
+        "identity_replay_keys",
+        "identity_second_live_bind_refused",
+        "identity_sep_logs",
+        "identity_shared_registry",
+        "interleave_backend_total",
+        "interleave_no_exceptions",
+        "interleave_provisioned_serves",
+        "interleave_sdk_isolated",
+        "interleave_wire_served",
+        "journal_gc_releases_claim",
+        "journal_post_release_mints",
+        "journal_replay_after_close",
+        "journal_second_writer_refused",
+        "mixed_all_succeed",
+        "mixed_anthropic",
+        "mixed_backend_total",
+        "mixed_batch_pairs",
+        "mixed_complete_marker",
+        "mixed_conv_ids",
+        "mixed_embeddings",
+        "mixed_eval_run_lands",
+        "mixed_eval_runs_listed",
+        "mixed_key_ids",
+        "mixed_openai_chat",
+        "mixed_self_usage_stable",
+        "mixed_stream_chunks",
+        "refuse_byok_shape",
+        "refuse_byok_url",
+        "refuse_missing_key",
+        "refuse_missing_spec",
+        "refuse_revoke_unknown",
+        "refuse_storm_all_typed",
+        "refuse_unknown_backend",
+        "socket_refused_fast",
+        "socket_refused_typed",
+        "socket_silent_bounded",
+        "socket_silent_typed",
+        "store_all_succeed",
+        "store_commands_listed",
+        "store_conv_items_land",
+        "store_file_roundtrip",
+        "store_gate_readers_honest",
+        "store_ids_all_fetchable",
+        "store_upload_assembles",
+        "storm_all_succeed",
+        "storm_backend_calls_exact",
+        "storm_close_per_call",
+        "storm_content_isolated",
+        "storm_ids_unique",
+        "storm_log_complete",
+        "storm_snapshots_coherent",
+        "storm_usage_exact",
+        "stream_error_frame_mapped",
+        "stream_lanes_isolated",
+        "stream_missing_done_refused",
+        "timeout_all_ok",
+        "timeout_kwarg_rides_payload",
+        "timeout_per_client_isolated",
+        "url_path_prefix_kept",
+        "url_scheme_preserved",
+        "url_trailing_slash_joined",
+        "url_v1_prefix_kept",
+    }
+)
+
+_STATE_DIR_ENV = "FX1_SDK_STATE_DIR"
+
+
+@contextlib.contextmanager
+def _sdkconc_context() -> Iterator[None]:
+    """Battery scope: serialize probes and pin ``FX1_SDK_STATE_DIR``
+    absent — an ambient export would bind every ``state_dir=None``
+    harness to one dir and the single-writer refusal would fail the
+    whole battery. The caller's value is restored verbatim."""
+    with _audit_context():
+        prev = os.environ.pop(_STATE_DIR_ENV, None)
+        try:
+            yield
+        finally:
+            if prev is not None:
+                os.environ[_STATE_DIR_ENV] = prev
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +320,19 @@ def _parallel(fn: Callable[[int], Any], n: int = _N) -> list[tuple[Any, BaseExce
         t.start()
     for t in ths:
         t.join(120)
+    # Fail closed: a lane that did not finish inside the join budget is
+    # an error, not a silent (None, None) — a wedged worker can never
+    # pass as "no error, no result".
+    for i, t in enumerate(ths):
+        if t.is_alive():
+            out[i] = (None, TimeoutError(f"lane {i} unfinished after join budget"))
     return out
+
+
+def _is(val: Any, exact: float) -> bool:
+    """Exact scripted-value comparison for floats — the transport
+    echoes the literal we sent, so equality is the assertion."""
+    return isinstance(val, int | float) and float(val) == exact  # NOSONAR(S1244)
 
 
 def _wait_for(pred: Callable[[], bool], *, timeout_s: float = 15.0) -> bool:
@@ -585,16 +740,23 @@ def _probe_sdk_identity() -> dict[str, bool]:
     s1 = _sdk(state_dir=shared)
     k1 = s1.key_create("k1")
     s1_conv = s1.openai_conversation_create(metadata={"owner": "s1"})
+    # Single-writer: a second live bind on the same dir is refused at
+    # construction — journals never see interleaved live writers.
+    refused = _exc(lambda: _sdk(state_dir=shared))
+    out["identity_second_live_bind_refused"] = isinstance(
+        refused, RuntimeError
+    ) and "single-writer" in str(refused)
+    s1.close()  # release — models process restart
     s2 = _sdk(state_dir=shared)
     out["identity_replay_keys"] = s2.key_get(k1["id"])["name"] == "k1"
     out["identity_replay_convs"] = (
         s2.openai_conversation_get(s1_conv["id"]).get("id") == s1_conv["id"]
     )
-    # Live stores are per-instance — a write after both booted does not
-    # propagate to the other instance's view.
+    # The released claim is the only shared-dir writer — post-release
+    # writes bind cleanly and read back in the sole live view.
     k2 = s2.key_create("k2")
-    out["identity_live_isolated"] = isinstance(_exc(lambda: s1.key_get(k2["id"])), KeyError)
-    out["identity_writer_survives"] = s2.key_get(k2["id"])["name"] == "k2"
+    out["identity_post_release_writes"] = s2.key_get(k2["id"])["name"] == "k2"
+    s2.close()
     # Shared command registry: two SDKs over one Harness object answer
     # the same command names — ``harness=`` is the identity contract.
     from fx1.harness import Harness  # noqa: PLC0415
@@ -607,35 +769,48 @@ def _probe_sdk_identity() -> dict[str, bool]:
 
 
 # ---------------------------------------------------------------------------
-# Fx1Harness journal — two live writers on one state_dir degrade honestly
+# Fx1Harness journal — durable state is single-writer, enforced
 # ---------------------------------------------------------------------------
 
 
 def _probe_sdk_journal_contention() -> dict[str, bool]:
+    """Writer discipline on ``state_dir`` journals.
+
+    Two live harnesses on one ``state_dir`` interleave the hash-chained
+    journals; the next boot then quarantines every recovered record —
+    measured data loss that this probe used to record as *passing*
+    booleans. The second live bind is now REFUSED at construction (a
+    per-process weakref claim in ``Fx1Harness``); the only shared-dir
+    pattern left is sequential write -> close -> replay.
+    """
     out: dict[str, bool] = {}
     iso = _temporary_directory()
     shared = iso / "jrnl"
     s1 = _sdk(state_dir=shared)
     pre1 = s1.key_create("pre-1")
-    s2 = _sdk(state_dir=shared)
-    pre2 = s2.key_create("pre-2")
-    lanes = _parallel(lambda i: (s1 if i % 2 == 0 else s2).key_create(f"w{i}"), _N)
-    out["journal_writes_never_raise"] = all(e is None for _, e in lanes)
-    # A fresh boot replays the shared journal honestly: cross-chained
-    # records fail verification, the store quarantines recovered keys,
-    # and the damage is REPORTED rather than silent.
+    # The second live writer is refused at construction — a typed
+    # RuntimeError, never a corrupt journal.
+    refused = _exc(lambda: _sdk(state_dir=shared))
+    out["journal_second_writer_refused"] = isinstance(
+        refused, RuntimeError
+    ) and "single-writer" in str(refused)
+    # ``close()`` models process shutdown: a fresh boot replays cleanly
+    # and keeps minting.
+    s1.close()
     s3 = _sdk(state_dir=shared)
-    store = s3._key_store  # noqa: SLF001 — the store's own recovery verdicts
-    out["journal_interleave_quarantines"] = (
-        store.recovery_quarantined is True and len(store.recover_warnings) > 0
-    )
-    out["journal_quarantined_keys_refuse"] = (
-        store.authenticate(pre1["key"]) is None and store.authenticate(pre2["key"]) is None
-    )
-    # Live writers keep their own view intact — the corruption is pinned
-    # to the replay boundary.
-    out["journal_live_views_intact"] = s1.key_get(pre1["id"])["name"] == "pre-1"
-    out["journal_post_quarantine_mints"] = _exc(lambda: s3.key_create("post-quarantine")) is None
+    out["journal_replay_after_close"] = s3.key_get(pre1["id"])["name"] == "pre-1"
+    out["journal_post_release_mints"] = _exc(lambda: s3.key_create("post-release")) is None
+    s3.close()
+    # A crashed/GC'd writer releases its claim — the registry is a
+    # weakref map, not a lock file, so nothing wedges the dir.
+    gc_dir = iso / "gc"
+    ep = _sdk(state_dir=gc_dir)
+    ep_id = ep.key_create("ep")["id"]
+    del ep
+    gc.collect()
+    s4 = _sdk(state_dir=gc_dir)
+    out["journal_gc_releases_claim"] = s4.key_get(ep_id)["name"] == "ep"
+    s4.close()
     return out
 
 
@@ -924,7 +1099,10 @@ def _probe_client_timeout_concurrent() -> dict[str, bool]:
     c3 = _mk(send2, timeout_s=5.0)
     c3.complete(_MSGS, backend="byok", timeout_s=1.5)
     out["timeout_kwarg_rides_payload"] = (
-        seen_t == [5.0] and isinstance(bodies[0], dict) and bodies[0].get("timeout_s") == 1.5
+        len(seen_t) == 1
+        and _is(seen_t[0], 5.0)
+        and isinstance(bodies[0], dict)
+        and _is(bodies[0].get("timeout_s"), 1.5)
     )
     return out
 
@@ -1285,7 +1463,7 @@ def _probe_sdk_byok_wire() -> dict[str, bool]:
 def sdkconc_audit() -> dict[str, bool]:
     """Run the whole SDK-concurrency battery."""
     results: dict[str, bool] = {}
-    with _audit_context():
+    with _sdkconc_context():
         for probe in (
             _probe_sdk_complete_storm,
             _probe_sdk_mixed_storm,
@@ -1306,6 +1484,13 @@ def sdkconc_audit() -> dict[str, bool]:
             _probe_sdk_byok_wire,
         ):
             results.update(probe())
+    missing = _EXPECTED_PROBES - results.keys()
+    extra = results.keys() - _EXPECTED_PROBES
+    if missing or extra:
+        raise AssertionError(
+            f"battery drifted from the pinned probe set — missing={sorted(missing)} "
+            f"extra={sorted(extra)}"
+        )
     return results
 
 
@@ -1321,9 +1506,18 @@ def sdkconc_audit_bench(results: dict[str, bool] | None = None) -> dict[str, Any
         "live_pnl_claim": False,
         "claim": {
             "results": measured,
-            "ok": bool(measured) and all(v is True for v in measured.values()),
+            "ok": set(measured) == _EXPECTED_PROBES and all(v is True for v in measured.values()),
         },
-        "coverage": {"n_probes": len(measured)},
+        "coverage": {
+            "n_probes": len(measured),
+            "not_verified": [
+                "cross-process two-writer contention on one state_dir — "
+                "the writer claim is per-process by design; OS-level "
+                "interleave between processes remains the crash-torn "
+                "case the journals detect and quarantine on next boot "
+                "(journal_audit covers that recovery path)",
+            ],
+        },
         "interpretation": (
             "Every probe is a measured statement about SDK concurrency "
             "behavior — Fx1Harness thread-safety, ContextVar hygiene, "

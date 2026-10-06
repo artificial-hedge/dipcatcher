@@ -443,6 +443,7 @@ class TestSdkVectorStores:
         up = h.openai_file_create(content=b"a b", filename="d.jsonl")
         vs = h.vector_store_create(name="kb")
         h.vector_store_file_create(vs["id"], up["id"])
+        h.close()  # release single-writer claim — models process restart
         h2 = Fx1Harness(state_dir=tmp_path, backend_resolver=lambda *a, **k: _B())
         assert h2.vector_store_get(vs["id"])["name"] == "kb"
         assert h2.vector_store_file_list(vs["id"])["data"][0]["id"] == up["id"]

@@ -38,6 +38,7 @@ import tempfile
 import threading
 import time
 import uuid
+import weakref
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
@@ -492,6 +493,38 @@ class OpsMetrics:
     complete: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
+# Live single-writer claims on durable state dirs — resolved absolute
+# path -> weakref to the harness holding it. The registry is deliberately
+# in-process: cross-process interleave is the crash-torn case the
+# journals already detect and quarantine on the next boot (measured in
+# sdkconc_audit's journal section); the refusal here covers the common
+# in-process double-bind, which corrupted chains silently until now.
+_STATE_DIR_CLAIMS: dict[str, weakref.ReferenceType[Fx1Harness]] = {}
+_STATE_DIR_CLAIMS_LOCK = threading.Lock()
+
+
+def _claim_state_dir(state_path: Path, owner: Fx1Harness) -> str:
+    """Register ``owner`` as the single live writer on ``state_path``.
+
+    Raises ``RuntimeError`` when a different live harness already holds
+    the dir — the hash-chained journals are single-writer and a second
+    live bind interleaves records that the next boot quarantines.
+    ``Fx1Harness.close()`` (or GC of the holder) releases the claim.
+    """
+    key = str(state_path.expanduser().resolve())
+    with _STATE_DIR_CLAIMS_LOCK:
+        holder = _STATE_DIR_CLAIMS.get(key)
+        live = holder() if holder is not None else None
+        if live is not None and live is not owner:
+            raise RuntimeError(
+                f"fx1 state_dir {key!r} is already bound by a live "
+                "Fx1Harness — durable journals are single-writer; "
+                "close() the prior harness or use a fresh state_dir"
+            )
+        _STATE_DIR_CLAIMS[key] = weakref.ref(owner)
+    return key
+
+
 class Fx1Harness:
     """In-process harness client: registry, runs, gated complete, verify."""
 
@@ -588,6 +621,35 @@ class Fx1Harness:
             return data, str(rec.get("filename") or file_id)
 
         self._vs_store = VectorStoreStore(512, state_dir=state_path, file_reader=_sdk_file_reader)
+        # Single live writer per ``state_dir``: two live harnesses on one
+        # dir interleave the hash-chained journals and the next boot
+        # quarantines every recovered record. The second bind is refused
+        # at construction; ``close()`` (or GC) releases the claim.
+        self._state_dir_claim: str | None = None
+        if state_path is not None:
+            self._state_dir_claim = _claim_state_dir(state_path, self)
+
+    def close(self) -> None:
+        """Release this harness's single-writer claim on ``state_dir``.
+
+        Models process shutdown for boot-replay: a second harness on
+        the same dir binds only after the prior one closes or is
+        garbage-collected. Idempotent and safe to call twice.
+        """
+        key = self._state_dir_claim
+        if key is None:
+            return
+        with _STATE_DIR_CLAIMS_LOCK:
+            ref = _STATE_DIR_CLAIMS.get(key)
+            if ref is not None and ref() is self:
+                _STATE_DIR_CLAIMS.pop(key, None)
+        self._state_dir_claim = None
+
+    def __enter__(self) -> Fx1Harness:
+        return self
+
+    def __exit__(self, *_exc_info: Any) -> None:
+        self.close()
 
     def _record_call(
         self,

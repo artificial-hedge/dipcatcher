@@ -1205,6 +1205,7 @@ def _probe_sdk_durability() -> dict[str, bool]:
     sdk1.openai_conversation_items_add(cid, [_msg("sdk-dur-2")])
     out["sdk_dur_journal_written"] = (Path(td) / "conversations.jsonl").exists()
 
+    sdk1.close()  # release the single-writer claim — models process restart
     sdk2 = Fx1Harness(
         harness=Harness(runner=_runner),
         backend_resolver=lambda name, *a, **k: _StubBackend(),
