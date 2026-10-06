@@ -10,12 +10,10 @@ KW-NPMLE recovers a two-point mixing mass.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
+from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from quant_fund._typing import FloatArray
+FloatArray = NDArray[np.float64]
 
 __all__ = [
     "robbins_poisson",
@@ -31,14 +29,14 @@ def robbins_poisson(x: FloatArray, smooth: bool = True) -> FloatArray:
     the ratio unstable in sparse tails — Maritz's
     fix smooths N with a short triangular kernel
     before forming the ratio."""
-    x = np.asarray(x, dtype=np.int64)
-    k_max = int(x.max()) + 3
-    counts = np.bincount(x, minlength=k_max).astype(np.float64)
+    xi = np.asarray(x, dtype=np.int64)
+    k_max = int(xi.max()) + 3
+    counts = np.bincount(xi, minlength=k_max).astype(np.float64)
     if smooth:
         kern = np.array([0.25, 0.5, 0.25])
         counts = np.convolve(counts, kern, mode="same")
-    est = (x + 1) * counts[x + 1] / np.maximum(counts[x], 1e-9)
-    return est
+    est = (xi + 1) * counts[xi + 1] / np.maximum(counts[xi], 1e-9)
+    return np.asarray(est, dtype=np.float64)
 
 
 def tweedie_mean(z: FloatArray, sigma: float = 1.0, deg: int = 3) -> dict[str, object]:
