@@ -192,57 +192,70 @@ const out = await api.completeBatch(
 
 ## Task 4 — rotate a managed key
 
-The mint → switch callers → revoke procedure below uses the existing
-key-creation and revocation APIs. Re-declare the scopes and budgets on the
-replacement, and verify it before revoking the old key.
-Revocation leaves a tombstone for audit, and subsequent requests using
-the old credential fail closed immediately.
+Rotation is atomic on every leg: the successor mints under the
+predecessor's declared policy (name/scopes/admin/rpm/budgets) and, by
+default, the old secret tombstones in the same transaction — the
+response's key payload is the only place the new raw secret appears.
+Pass keep-old (`revoke_old`/`revokeOld` false) for a verify-first
+cutover where both secrets authenticate until the old key is revoked or
+expires. Without `ttl_s`/`ttlS` the successor inherits the
+predecessor's absolute expiry — rotation never extends a credential's
+lifetime.
 
 **curl**
 
 ```bash
-NEW=$(curl -sf -X POST $URL/harness/keys -H "X-API-Key: $KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"deploy-v2","rpm":60,"scopes":["read","write"]}' | tee /dev/stderr | jq -r .key)
-# ^ 'key' is the only place the raw fx1k_… ever appears — capture it now;
-#   .id is the fingerprint used below.
-curl -sf -X DELETE $URL/harness/keys/<old-id> -H "X-API-Key: $KEY"   # tombstone
+NEW=$(curl -sf -X POST $URL/harness/keys/<old-id>/rotate -H "X-API-Key: $KEY" \
+  -H "Content-Type: application/json" -d '{"revoke_old":true}' | jq -r .key.key)
+# ^ 'key' under 'key' is the only place the raw fx1k_… ever appears;
+#   'id' is the fingerprint used below.
+curl -sf -X POST $URL/harness/keys/<old-id>/rotate -H "X-API-Key: $KEY" \
+  -H "Content-Type: application/json" -d '{"revoke_old":false}'         # overlap
 ```
 
 **Fx1Harness** (the in-process store is the same `ApiKeyStore`)
 
 ```python
-mint = fx.key_create("deploy-v2", rpm=60, scopes=["read", "write"])
-new_key, key_id = mint["key"], mint["id"]
-fx.key_revoke("<old-id>")
+rot = fx.key_rotate("<old-id>")  # {"object":"key_rotation", "key":{...,"key": raw}}
+new_key, new_id = rot["key"]["key"], rot["key"]["id"]
+rot = fx.key_rotate("<old-id>", revoke_old=False)  # both secrets live
+fx.key_update("<id>", rpm=120, clear=["max_tokens"])  # PATCH twin: in-place policy
 ```
 
 **HarnessClient + CLI**
 
 ```python
-mint = client.key_create("deploy-v2", rpm=60, scopes=["read", "write"])
-new_key, key_id = mint["key"], mint["id"]
-client.key_revoke("<old-id>")  # subsequent auth with it -> HarnessAuthError
+rot = client.key_rotate("<old-id>")  # rotate -> {"key": {..., "key": raw}}
+client.key_update("<id>", rpm=120, clear=["max_tokens"])  # -> updated record
+# unknown id -> KeyError; revoked -> 409-shaped error; auth with an old
+# revoked secret -> HarnessAuthError on the next call
 ```
 
 ```bash
-fx1 harness key-create --remote $URL --api-key $KEY --name deploy-v2 --rpm 60 --scope read --scope write
-fx1 harness key-revoke --remote $URL --api-key $KEY <old-id>
+fx1 harness key-rotate <old-id> --remote $URL --api-key $KEY             # atomic (default tombstone)
+fx1 harness key-rotate <old-id> --keep-old --ttl-s 86400 --remote $URL --api-key $KEY
+fx1 harness key-patch <id> --rpm 120 --clear max_tokens --remote $URL --api-key $KEY
 fx1 harness keys --remote $URL --api-key $KEY          # list incl. tombstones
 fx1 harness key-usage <id> --remote $URL --api-key $KEY  # budget headroom (admin)
 fx1 harness self --remote $URL --api-key $KEY            # caller's own card (read)
 ```
 
-**TypeScript** — `keyCreate` takes positional args:
+**TypeScript**
 
 ```ts
-const mint = await api.keyCreate("deploy-v2", false, 60, undefined, ["read", "write"]);
-//                                            name   admin  rpm   ttlS      scopes
-const newKey = mint.key;                              // raw fx1k_… — once only
-await api.keyRevoke("<old-id>");
-const card = await api.keyUsage(mint.id);             // budget headroom (admin scope)
-const mine = await api.selfUsage();                   // the calling key's own card (read)
+const rot = await api.keyRotate("<old-id>");        // { key: { key: raw, id, ... }, revoked_previous: true }
+const newKey = rot.key.key;                         // raw fx1k_… — once only
+await api.keyRotate("<old-id>", { revokeOld: false, ttlS: 86400 });
+await api.keyUpdate("<id>", { rpm: 120, clear: ["max_tokens"] });  // PATCH twin
+const card = await api.keyUsage(rot.key.id);        // budget headroom (admin scope)
+const mine = await api.selfUsage();                 // the calling key's own card (read)
 ```
+
+A manual mint → switch callers → revoke sequence still works when the
+successor should carry a *different* policy than the predecessor's
+(rotate inherits it verbatim): `keyCreate`/`key_create`, verify, then
+`keyRevoke`/`key_revoke`. Revocation leaves a tombstone for audit, and
+subsequent requests using the old credential fail closed immediately.
 
 ## Reading a failure the same way on every leg
 
