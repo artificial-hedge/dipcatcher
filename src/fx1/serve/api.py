@@ -2344,6 +2344,12 @@ def _resume_skip(last_event_id: str | None, *, stream: bool, idempotency_key: st
 # Headers every SSE leg on the create surfaces sends — the jobs-status
 # stream set the precedent: proxies must not buffer event frames.
 _SSE_STREAM_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+# OpenAI-dialect SSE wire literals shared by every create-stream leg.
+_SSE_DATA_PREFIX = "data: "
+_SSE_DONE = "data: [DONE]\n\n"
+# The chat-surface gated call's resolved payload: response envelope plus
+# the completion fingerprint that rides headers or in-band ids.
+_ChatEnv = tuple[dict[str, Any], str]
 
 
 def _grace_pipe(work: Callable[[], Any]) -> queue.Queue[tuple[str, Any]]:
@@ -2366,7 +2372,8 @@ def _grace_pipe(work: Callable[[], Any]) -> queue.Queue[tuple[str, Any]]:
             pipe.put(("ok", ctx.run(work)))
         except HTTPException as exc:
             pipe.put(("error", exc))
-        except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
+        except Exception as exc:  # noqa: BLE001
+            # a dead pipe is an honest in-band frame, never a hang
             pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
 
     threading.Thread(target=_produce, daemon=True).start()
@@ -5475,7 +5482,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
             yield (
-                "data: "
+                _SSE_DATA_PREFIX
                 + json.dumps(
                     {
                         "type": "final",
@@ -5490,7 +5497,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
                 + "\n\n"
             )
-            yield "data: [DONE]\n\n"
+            yield _SSE_DONE
 
         if sse_keepalive_s <= 0:
             chunks, model_name, latency_ms, usage, cid = _gather()
@@ -5506,7 +5513,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 pipe.put(("ok", _gather()))
             except HTTPException as exc:
                 pipe.put(("error", exc))
-            except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
+            except Exception as exc:  # noqa: BLE001
+                # a dead pipe is an honest in-band frame, never a hang
                 pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
 
         threading.Thread(target=_produce, daemon=True).start()
@@ -5538,7 +5546,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     continue
                 if tag == "error":
                     yield (
-                        "data: "
+                        _SSE_DATA_PREFIX
                         + json.dumps(
                             {
                                 "type": "error",
@@ -5549,7 +5557,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                         + "\n\n"
                     )
-                    yield "data: [DONE]\n\n"
+                    yield _SSE_DONE
                     return
                 chunks, model_name, latency_ms, usage, cid = payload
                 yield from _events(chunks, model_name, latency_ms, usage, cid)
@@ -5584,7 +5592,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _openai_chat_core(
         body: OpenAIChatRequest,
         headers: Mapping[str, str],
-    ) -> tuple[dict[str, Any], str]:
+    ) -> _ChatEnv:
         """The non-streaming chat-completions completion core, shared by
         the ``/v1/chat/completions`` route and the ``/v1/batches`` worker —
         one gated path, one envelope. Raises ``OpenAICompatError`` on
@@ -5870,7 +5878,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _openai_embeddings_core(
         body: OpenAIEmbeddingRequest,
         headers: Mapping[str, str],
-    ) -> tuple[dict[str, Any], str]:
+    ) -> _ChatEnv:
         """The embeddings core, shared by the ``/v1/embeddings`` route and
         the ``/v1/batches`` worker — same chain contract as chat:
         availability faults advance the fallback chain, capability gaps
@@ -6219,7 +6227,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
             return JSONResponse(env, headers=headers)
 
-        def _generate() -> tuple[dict[str, Any], str]:
+        def _generate() -> _ChatEnv:
             """The gated call packaged for the grace pipe — translation
             faults surface as ApiError so the keepalived leg answers them
             in grammar, and the keyed replay pins only on a real
@@ -6257,7 +6265,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             tag, payload = outcome
             if tag == "error":
                 raise cast("HTTPException", payload)
-            env_chat, cid = cast("tuple[dict[str, Any], str]", payload)
+            env_chat, cid = cast("_ChatEnv", payload)
             headers = _completion_headers(cid)
             if body.stream:
                 return StreamingResponse(
@@ -6284,7 +6292,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if tag == "error":
                     fault = cast("HTTPException", payload)
                     yield (
-                        "data: "
+                        _SSE_DATA_PREFIX
                         + json.dumps(
                             openai_error_body(
                                 str(fault.detail), fault.status_code, _err_code(fault)
@@ -6293,9 +6301,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                         + "\n\n"
                     )
-                    yield "data: [DONE]\n\n"
+                    yield _SSE_DONE
                     return
-                env_chat, cid = cast("tuple[dict[str, Any], str]", payload)
+                env_chat, cid = cast("_ChatEnv", payload)
                 yield from _sse_frames(env_chat, cid)
                 return
 
@@ -6386,7 +6394,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except ValidationError as exc:
             return _refusal(400, str(exc))
 
-        def _generate() -> tuple[dict[str, Any], str]:
+        def _generate() -> _ChatEnv:
             """The gated call packaged for the grace pipe — translation
             faults surface as HTTPException so the keepalived leg answers
             them in grammar, and the keyed replay pins only on a real
@@ -6415,7 +6423,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             if tag == "error":
                 fault = cast("HTTPException", payload)
                 return _refusal(fault.status_code, str(fault.detail))
-            env_chat, cid = cast("tuple[dict[str, Any], str]", payload)
+            env_chat, cid = cast("_ChatEnv", payload)
             headers = _completion_headers(cid)
             if body.stream:
                 return StreamingResponse(
@@ -6450,7 +6458,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         + "\n\n"
                     )
                     return
-                env_chat, _cid = cast("tuple[dict[str, Any], str]", payload)
+                env_chat, _cid = cast("_ChatEnv", payload)
                 yield from anthropic_sse(env_chat, model=body.model)
                 return
 
@@ -7009,7 +7017,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return JSONResponse(env_legacy, headers=headers)
         prompts = [body.prompt] if isinstance(body.prompt, str) else list(body.prompt)
 
-        def _generate() -> tuple[dict[str, Any], str]:
+        def _generate() -> _ChatEnv:
             """The gated call packaged for the grace pipe — one chat call
             per prompt element, translation faults surfacing as ApiError,
             the keyed replay pinning only on a real completion."""
@@ -7044,7 +7052,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             tag, payload = outcome
             if tag == "error":
                 raise cast("HTTPException", payload)
-            env_legacy, cid = cast("tuple[dict[str, Any], str]", payload)
+            env_legacy, cid = cast("_ChatEnv", payload)
             headers = _completion_headers(cid)
             if body.stream:
                 return StreamingResponse(
@@ -7069,7 +7077,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if tag == "error":
                     fault = cast("HTTPException", payload)
                     yield (
-                        "data: "
+                        _SSE_DATA_PREFIX
                         + json.dumps(
                             openai_error_body(
                                 str(fault.detail), fault.status_code, _err_code(fault)
@@ -7078,9 +7086,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         )
                         + "\n\n"
                     )
-                    yield "data: [DONE]\n\n"
+                    yield _SSE_DONE
                     return
-                env_legacy, _cid = cast("tuple[dict[str, Any], str]", payload)
+                env_legacy, _cid = cast("_ChatEnv", payload)
                 yield from _legacy_sse(env_legacy, body=body)
                 return
 

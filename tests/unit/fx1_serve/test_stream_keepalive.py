@@ -14,10 +14,10 @@ attribution and metering survive the thread hop.
 
 from __future__ import annotations
 
-import os
 import time
 from typing import Any
 
+import pytest
 from starlette.testclient import TestClient
 
 import fx1.serve.api as api_mod
@@ -104,7 +104,8 @@ def test_messages_grace_window_fast_path_unchanged() -> None:
     assert r.status_code == 200
     assert "x-fx1-completion-id" in r.headers
     assert '"type":"ping"' in r.text
-    assert "message_start" in r.text and "message_stop" in r.text
+    assert "message_start" in r.text
+    assert "message_stop" in r.text
     assert "clean:x" in r.text
 
 
@@ -127,7 +128,8 @@ def test_chat_keepalive_comments_then_chunks() -> None:
     first_keepalive = lines.index(": keepalive")
     first_chunk = next(i for i, ln in enumerate(lines) if ln == "id: 0")
     assert first_keepalive < first_chunk
-    assert "chatcmpl-" in r.text and "slow-answer" in r.text
+    assert "chatcmpl-" in r.text
+    assert "slow-answer" in r.text
     assert r.text.rstrip().endswith("data: [DONE]")
 
 
@@ -136,7 +138,8 @@ def test_chat_grace_window_fast_path_unchanged() -> None:
     assert r.status_code == 200
     assert "x-fx1-completion-id" in r.headers
     assert ": keepalive" not in r.text
-    assert "clean:x" in r.text and r.text.rstrip().endswith("data: [DONE]")
+    assert "clean:x" in r.text
+    assert r.text.rstrip().endswith("data: [DONE]")
 
 
 def test_chat_mid_window_fault_is_inband_error_frame() -> None:
@@ -151,7 +154,8 @@ def test_chat_mid_window_fault_is_inband_error_frame() -> None:
 def test_completions_legacy_keepalive() -> None:
     r = _app(_SlowBackend()).post("/v1/completions", json=_LEGACY)
     assert r.status_code == 200
-    assert ": keepalive" in r.text and "slow-answer" in r.text
+    assert ": keepalive" in r.text
+    assert "slow-answer" in r.text
     assert r.text.rstrip().endswith("data: [DONE]")
 
 
@@ -159,7 +163,8 @@ def test_responses_keepalive_comments_then_events() -> None:
     r = _app(_SlowBackend()).post("/v1/responses", json=_RESP)
     assert r.status_code == 200
     assert ": keepalive" in r.text
-    assert "response.created" in r.text and "response.completed" in r.text
+    assert "response.created" in r.text
+    assert "response.completed" in r.text
     # keepalive comments consume no id slot — resume counts only real events
     assert "id: 0" in r.text
 
@@ -167,7 +172,8 @@ def test_responses_keepalive_comments_then_events() -> None:
 def test_responses_mid_window_fault_is_event_error() -> None:
     r = _app(_FailBackend()).post("/v1/responses", json=_RESP)
     assert r.status_code == 200
-    assert "event: error" in r.text and '"error"' in r.text
+    assert "event: error" in r.text
+    assert '"error"' in r.text
     assert "response.completed" not in r.text
 
 
@@ -194,18 +200,11 @@ def test_non_stream_path_unchanged_json() -> None:
     assert "x-fx1-completion-id" in r.headers
 
 
-def test_managed_key_attribution_survives_worker_thread() -> None:
+def test_managed_key_attribution_survives_worker_thread(monkeypatch: pytest.MonkeyPatch) -> None:
     """The grace pipe copies request contextvars into the worker — a
     managed key on a keepalived stream is still attributed and metered."""
-    saved = os.environ.get(api_mod._API_KEY_ENV)
-    os.environ[api_mod._API_KEY_ENV] = "k3y-material"
-    try:
-        tc = _app(_SlowBackend())
-    finally:
-        if saved is None:
-            os.environ.pop(api_mod._API_KEY_ENV, None)
-        else:
-            os.environ[api_mod._API_KEY_ENV] = saved
+    monkeypatch.setenv(api_mod._API_KEY_ENV, "k3y-material")
+    tc = _app(_SlowBackend())
     root = {"X-API-Key": "k3y-material"}
     mint = tc.post("/harness/keys", json={"name": "svc"}, headers=root)
     assert mint.status_code == 201
@@ -213,6 +212,7 @@ def test_managed_key_attribution_survives_worker_thread() -> None:
     mkey = mint.json()["key"]
     usage_before = tc.get(f"/harness/keys/{kid}/usage", headers=root).json()
     r = tc.post("/v1/chat/completions", json=_CHAT, headers={"X-API-Key": mkey})
-    assert r.status_code == 200 and ": keepalive" in r.text
+    assert r.status_code == 200
+    assert ": keepalive" in r.text
     usage_after = tc.get(f"/harness/keys/{kid}/usage", headers=root).json()
     assert usage_after["served"]["calls"] == usage_before["served"]["calls"] + 1
