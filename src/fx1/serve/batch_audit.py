@@ -938,13 +938,15 @@ def _probe_submit_refusals(client: TestClient) -> dict[str, bool]:
         cap_r.status_code == 400
         and cap_r.json().get("error", {}).get("code") == "batch_input_limit"
     )
-    # drain latch refuses new batches with an enveloped 503
+    # drain latch refuses new batches with an enveloped 503 — the input
+    # file uploads pre-drain (file writes refuse under the latch too)
     dclient, _ = _client()
+    d_fid = _upload(dclient, [_line("d", _chat_body("d"))])
     dclient.post("/harness/drain", headers=h)
     d_openai = dclient.post(
         "/v1/batches",
         json={
-            "input_file_id": _upload(dclient, [_line("d", _chat_body("d"))]),
+            "input_file_id": d_fid,
             "endpoint": "/v1/chat/completions",
         },
         headers=h,

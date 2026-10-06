@@ -660,6 +660,9 @@ def _gate_probes() -> dict[str, bool]:
     client = _client(runner, api_key=_ROOT, max_inflight=1)
 
     _mint(client, _ROOT)
+    # minted pre-drain: the key lifecycle refuses under the latch, so the
+    # read-scope credential for the scope-beats-gate probe must exist first
+    ro = client.post("/harness/keys", json={"scopes": ["read"]}, headers=_h(_ROOT))
 
     # in-flight job survives a mid-run drain; new work refused
     jid_a = _submit(client, auth=_ROOT).json()["job_id"]
@@ -713,7 +716,6 @@ def _gate_probes() -> dict[str, bool]:
     # auth beats the gate; scope beats the gate
     r_bad = client.post(_JOBS, json={"command": "doctor"}, headers=_h("not-the-key"))
     out["auth_before_gate_401"] = r_bad.status_code == 401
-    ro = client.post("/harness/keys", json={"scopes": ["read"]}, headers=_h(_ROOT))
     r_scope = client.post(_JOBS, json={"command": "doctor"}, headers=_h(ro.json()["key"]))
     out["scope_before_gate_403"] = r_scope.status_code == 403
 
@@ -1280,6 +1282,12 @@ def _metering_probes() -> dict[str, bool]:
 
     minted = _mint(client, _ROOT)
     raw, kid = minted["key"], minted["id"]
+    # minted pre-drain: the key lifecycle refuses under the latch
+    ro = client.post("/harness/keys", json={"scopes": ["read"]}, headers=_h(_ROOT))
+    ro_raw, ro_id = ro.json()["key"], ro.json()["id"]
+    rpm_key = _mint(client, _ROOT, rpm=3)
+    rr, rid = rpm_key["key"], rpm_key["id"]
+    self_key = _mint(client, _ROOT)
 
     uses0 = _key_card(client, _ROOT, kid)["uses"]
     _submit(client, auth=raw)
@@ -1294,8 +1302,6 @@ def _metering_probes() -> dict[str, bool]:
     out["gate_refused_still_bills"] = uses2 - uses1 == 1
 
     # auth/scope refusals bill nothing
-    ro = client.post("/harness/keys", json={"scopes": ["read"]}, headers=_h(_ROOT))
-    ro_raw, ro_id = ro.json()["key"], ro.json()["id"]
     ro0 = _key_card(client, _ROOT, ro_id)["uses"]
     client.post(_JOBS, json={"command": "doctor"}, headers=_h(ro_raw))
     ro1 = _key_card(client, _ROOT, ro_id)["uses"]
@@ -1304,9 +1310,9 @@ def _metering_probes() -> dict[str, bool]:
     # tokens stay zero — harness jobs aren't model calls
     out["tokens_never_billed"] = _key_card(client, _ROOT, kid)["tokens_used"] == 0
 
-    # rpm cap: 4th authorized call on a 3/rpm key 429s and bills no use
-    rpm_key = _mint(client, _ROOT, rpm=3)
-    rr, rid = rpm_key["key"], rpm_key["id"]
+    # rpm cap: 4th authorized call on a 3/rpm key 429s and bills no use.
+    # The drain-refused submits above still authenticated, so they spend
+    # the window — the cap counts authentications, not admissions.
     for _ in range(3):
         client.post(_JOBS, json={"command": "doctor"}, headers=_h(rr))
     r_over = client.post(_JOBS, json={"command": "doctor"}, headers=_h(rr))
@@ -1316,7 +1322,6 @@ def _metering_probes() -> dict[str, bool]:
     out["rpm_retry_after"] = int(r_over.headers.get("Retry-After", "0")) >= 1
     out["rpm_limit_headers"] = r_over.headers.get("x-ratelimit-limit-requests") == "3"
 
-    self_key = _mint(client, _ROOT)
     self_r = client.get("/harness/self", headers=_h(self_key["key"]))
     out["self_meter_shape"] = (
         self_r.status_code == 200
