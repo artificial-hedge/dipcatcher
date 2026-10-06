@@ -621,7 +621,7 @@ def _idempotency_probes() -> dict[str, bool]:
                 transport=httpx.ASGITransport(papp2), base_url="http://localhost"
             ) as ac,
         ):
-            return list(
+            responses = list(
                 await asyncio.gather(
                     *[
                         ac.post(
@@ -633,12 +633,16 @@ def _idempotency_probes() -> dict[str, bool]:
                     ]
                 )
             )
+            # Do not leave the lifespan until every accepted worker has
+            # entered the runner. Shutdown cancels queued futures, which made
+            # this probe measure scheduler timing instead of the API contract.
+            deadline = time.monotonic() + _WAIT_S
+            while len(prunner2.calls) < 6 and time.monotonic() < deadline:
+                await asyncio.sleep(0.01)
+            return responses
 
     ds = asyncio.run(fan_distinct())
     djids = {r.json().get("job_id") for r in ds if r.status_code == 202}
-    deadline = time.monotonic() + _WAIT_S
-    while len(prunner2.calls) < 6 and time.monotonic() < deadline:
-        time.sleep(0.01)
     out["parallel_submit_distinct_ids"] = len(ds) == 6 and len(djids) == 6
     out["parallel_all_ran"] = len(prunner2.calls) == 6
     return out
