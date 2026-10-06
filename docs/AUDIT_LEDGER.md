@@ -346,3 +346,52 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+### Webhook delivery audit maintenance (PR pending)
+
+The new `webhook_delivery_audit` battery runs the outbound webhook
+dispatcher (`sign_webhook`/`verify_webhook`/`deliver_signed`) over a
+real loopback `http.server` recorder with an event-clock harness —
+`time.sleep` patched to a log so backoff arithmetic is measured, never
+slept — plus direct probes of the SSRF seams
+(`_resolved_addresses`, `_is_public_unicast`, the pinned connections).
+
+It pins the signature contract end to end: `sha256=`-prefixed hex
+over `<ts>.<raw body>` byte-exact (reserialized JSON fails), the
+`sha256=` prefix required, ASCII-only timestamp and signature, an
+inclusive `abs(ref - ts) <= tolerance` freshness window in both
+directions, negative tolerance disabling freshness, non-finite
+tolerance/timestamps refused, and a verify path that never raises on
+garbage. The callback-URL grammar is pinned scheme/host-validating
+with every literal-private form refused — loopback, RFC-1918, CGNAT,
+link-local, multicast, and IPv6 ULA/link-local — and
+`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` is checked live per call
+(`1`/`true`/`yes`), scoped per leg so the opt-in never leaks.
+
+The dispatcher semantics are pinned as measured: per-attempt fresh
+timestamps and signatures; `backoff_s << (attempt - 1)` sleeps;
+`4xx` definitive with no retry; `5xx` exhausting `max_attempts` then
+returning `(False, err, attempts)`; a connect/HTTP fault walking the
+validated address list while a `5xx` response short-circuits it into
+the outer retry; per-attempt `timeout_s` arming a slow endpoint into a
+retryable fault on loopback; unsigned delivery sending no signature or timestamp
+headers; `Content-Type`/`Content-Length` and the full path+query on
+the wire; `max_attempts <= 1` single-shot; invalid URLs refused with
+`(False, err, 0)` and zero network attempts; and a private literal
+target refused with zero attempts even when the resolver could
+resolve it.
+
+Zero production defects — every held semantic was already correct;
+the battery's only corrections were its own measurement seams
+(server delay moved off `time.sleep` so a patched backoff clock
+cannot speed the server, hits-keyed timestamp capture so `time.time`
+stays safe for the server's Date header).
+
+Not verified (documented in `coverage.not_verified`): real DNS
+resolution (the recorder is a literal loopback IP), HTTPS delivery
+(the pinned-HTTPS leg is probed at the connection object, not a live
+TLS socket), and the `fx1_job_record.v1` webhook path in the jobs
+lane's own battery.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
