@@ -1,0 +1,253 @@
+name: Full offline coverage
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/full-coverage.yml
+      - scripts/full_coverage.py
+      - tests/unit/test_full_coverage.py
+      - FULL_COVERAGE.md
+  workflow_dispatch:
+
+# No deployment, repository writes, hosted API keys, or signing keys.
+permissions:
+  contents: read
+
+concurrency:
+  group: full-coverage-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
+
+env:
+  OMP_NUM_THREADS: '1'
+  MKL_NUM_THREADS: '1'
+  OPENBLAS_NUM_THREADS: '1'
+  HYPOTHESIS_PROFILE: ci
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        lane: [python-1, python-2, python-3, python-4, fx1, examples, performance, native]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - name: Frozen environment
+        run: make sync
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        if: matrix.lane == 'native'
+      - name: Build the native extension before measuring wrapper tests
+        if: matrix.lane == 'native'
+        run: make native
+      - name: Execute all selected offline tests, including slow tests
+        run: >-
+          uv run --frozen python scripts/full_coverage.py run
+          --lane '${{ matrix.lane }}'
+          --output '${{ runner.temp }}/full-coverage-${{ matrix.lane }}'
+      - name: Preserve results even after a test failure
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: full-coverage-${{ matrix.lane }}
+          path: ${{ runner.temp }}/full-coverage-${{ matrix.lane }}/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  aggregate:
+    needs: python
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - run: make sync
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: full-coverage-*
+          path: ${{ runner.temp }}/downloaded-coverage
+      - name: Require every lane and enforce the inherited coverage floor
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/coverage-parts"
+          for directory in "$RUNNER_TEMP"/downloaded-coverage/full-coverage-*/; do
+            name="$(basename "$directory")"
+            mv "$directory" "$RUNNER_TEMP/coverage-parts/${name#full-coverage-}"
+          done
+          uv run --frozen python scripts/full_coverage.py combine \
+            --parts "$RUNNER_TEMP/coverage-parts" \
+            --output "$RUNNER_TEMP/full-coverage-report"
+      - name: Preserve per-file line and branch reports even below the floor
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: full-coverage-report
+          path: ${{ runner.temp }}/full-coverage-report/
+          include-hidden-files: true
+          if-no-files-found: error
+
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - id: sync
+        run: make sync
+      - name: Lint and ratchets
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make lint
+      - name: Harness types
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make typecheck
+      - name: FX1 full gate
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make fx1-gate
+      - name: Strict FX1 types
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: uv run --frozen mypy --strict src/fx1
+      - name: Static security analysis
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make security
+      - name: Locked Python dependencies, all platforms
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make audit
+      - name: Documentation build
+        if: ${{ !cancelled() && steps.sync.outcome == 'success' }}
+        run: make docs
+
+  javascript:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: [web, replay, clients/typescript, clients/typescript/fx1]
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '22'
+      - id: install
+        run: npm ci --ignore-scripts
+      - name: Dependency audit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm audit
+      - name: Typecheck API clients
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && startsWith(matrix.directory, 'clients/typescript') }}
+        run: npm run typecheck
+      - name: Build browser applications
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && !startsWith(matrix.directory, 'clients/typescript') }}
+        run: npm run build
+      - name: Browser test dependency
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && !startsWith(matrix.directory, 'clients/typescript') }}
+        run: npx --no-install playwright install --with-deps chromium
+      - name: Behavioral tests (missing test scripts are coverage gaps, not passes)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+      - name: Web end-to-end tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && matrix.directory == 'web' }}
+        run: npm run test:e2e
+
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+      - run: cargo test --locked --manifest-path rust/quant_core/Cargo.toml
+      - name: Install pinned audit tool
+        if: ${{ !cancelled() }}
+        run: cargo install cargo-audit --version 0.22.2 --locked
+      - name: Audit locked Rust dependencies
+        if: ${{ !cancelled() }}
+        run: make audit-rust
+
+  kronos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - run: make audit-kronos
+
+  epoch-candidate:
+    # Generate with the repository's own writer in a complete checkout, never
+    # hand-forge or overwrite an old receipt. Upload for review and integration;
+    # this read-only job cannot change the branch or mark evidence checks green.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          python-version: '3.12'
+          enable-cache: false
+      - run: make sync
+      - name: Prepare the required new workflow epoch and pin update
+        run: |
+          uv run --frozen dipcatcher corpus-epoch \
+            --corpus-dir .github/workflows --glob '*.yml' \
+            --out-dir .github/workflows --heads-pin quality/epoch_heads.json
+          git add --intent-to-add .github/workflows/corpus_epoch_*.json
+          git diff --binary -- .github/workflows quality/epoch_heads.json > "$RUNNER_TEMP/workflow-epoch.patch"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: workflow-epoch-candidate
+          path: ${{ runner.temp }}/workflow-epoch.patch
+          if-no-files-found: error
+
+  result:
+    needs: [python, aggregate, quality, javascript, rust, kronos, epoch-candidate]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reject missing, skipped, cancelled, or failed jobs
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ['RESULTS'])
+          for name, result in results.items():
+              print(f"{name}: {result['result']}")
+          sys.exit(0 if results and all(r['result'] == 'success' for r in results.values()) else 1)
+          PY
