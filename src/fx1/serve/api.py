@@ -55,12 +55,13 @@ from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import (
     AbstractAsyncContextManager,
+    AbstractContextManager,
     asynccontextmanager,
     contextmanager,
     suppress,
 )
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 from fastapi import (
     Depends,
@@ -2096,27 +2097,57 @@ def _breaker_key(body: CompleteRequest | CompleteBatchRequest) -> str:
     return _breaker_key_name(body.backend, body.byok)
 
 
+def _idem_scope(key: str | None, *, namespace: str | None = None) -> str | None:
+    """Credential-namespace an Idempotency-Key: the record stored under
+    ``key`` by credential A must never replay under credential B — the
+    recorded answer may carry tenant state B has no right to (a minted
+    secret, a private job, a queue slot). The env root credential is
+    ``env``, managed keys namespace under their ``key_id`` fingerprint,
+    and loopback dev sessions (no credential at all) share one
+    ``loopback`` scope. The caller-provided key is represented only by
+    its SHA-256 digest so journals never persist the raw header value.
+    ``namespace`` further partitions a key per
+    target/verb (``{scope}:{key}:{namespace}``) so one key can pin the
+    same logical request against different path objects — rotate vs
+    patch vs complete on different ``{id}`` path params never collide."""
+    if key is None:
+        return None
+    key_id = _REQUEST_KEY_ID.get()
+    key_digest = hashlib.sha256(key.encode()).hexdigest()
+    scoped = f"{key_id if key_id is not None else 'loopback'}:{key_digest}"
+    return f"{scoped}:{namespace}" if namespace is not None else scoped
+
+
 def _idem_lookup[IdemT: BaseModel](
     idempotency_key: str | None,
     store: _IdemStore[IdemT],
     body_fp: str,
+    *,
+    namespace: str | None = None,
 ) -> tuple[str | None, IdemT | None]:
-    """Shared Idempotency-Key preamble: normalize + bound the key, then
-    look up a stored replay. Returns ``(key, cached)`` — a cached hit
-    is the response to return verbatim plus ``replayed: True``; a key
-    reused with a different body fails closed 409."""
+    """Shared Idempotency-Key preamble: normalize + bound the key,
+    credential-scope it, then look up a stored replay. Returns
+    ``(scoped_key, cached)`` — a cached hit is the response to return
+    verbatim plus ``replayed: True``; a key reused with a different body
+    fails closed ``409 idempotency_conflict``."""
     key = (idempotency_key or "").strip() or None
     if key is None:
         return None, None
     if len(key) > _IDEM_KEY_MAX:
         raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-    entry = store.get(key)
+    skey = _idem_scope(key, namespace=namespace)
+    assert skey is not None  # noqa: S101 — key is not None here
+    entry = store.get(skey)
     if entry is None:
-        return key, None
+        return skey, None
     fp, cached = entry
     if fp != body_fp:
-        raise ApiError(409, "Idempotency-Key reuse with a different request body")
-    return key, cached.model_copy(update={"replayed": True})
+        raise ApiError(
+            409,
+            "Idempotency-Key reuse with a different request body",
+            code="idempotency_conflict",
+        )
+    return skey, cached.model_copy(update={"replayed": True})
 
 
 _RESUME_MISS_MSG = (
@@ -2220,6 +2251,32 @@ def _idem_key(key: str | None) -> str | None:
     return key
 
 
+class _IdemClaimStore(Protocol):
+    """Any store carrying per-key async claims — ``_IdemStore``,
+    ``_JobStore``, ``EvalStore``, ``FTJobStore`` all satisfy it."""
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]: ...
+
+
+def _idem_claim_dep(
+    store: _IdemClaimStore,
+) -> Callable[..., AsyncIterator[None]]:
+    """``Depends`` factory — hold the store's claim on the credential-
+    scoped key for the whole handler span, so a retry's lookup cannot
+    slide between a twin's lookup and replay-record publication
+    (async-acquire so waiters yield the event loop instead of stranding
+    sync-pool workers, same contract as the batch claim deps)."""
+
+    async def dep(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        key = _idem_key(idempotency_key)
+        async with store.async_claim_lock(_idem_scope(key)):
+            yield
+
+    return dep
+
+
 async def _run_claimed[ResultT](
     claim: AbstractAsyncContextManager[None], action: Callable[[], ResultT]
 ) -> ResultT:
@@ -2267,15 +2324,17 @@ def _submit_job(
     key = (idempotency_key or "").strip() or None
     if key is not None and len(key) > _IDEM_KEY_MAX:
         raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+    skey = _idem_scope(key)
     body_fp = _body_fp(body, exclude={"idempotency_key"})
-    if key is not None:
-        entry = job_store.get_key(key)
+    if skey is not None:
+        entry = job_store.get_key(skey)
         if entry is not None:
             fp, job_id = entry
             if fp != body_fp:
                 raise ApiError(
                     409,
                     "Idempotency-Key reuse with a different request body",
+                    code="idempotency_conflict",
                 )
             job = job_store.get(job_id)
             if job is not None:
@@ -2350,7 +2409,7 @@ def _submit_job(
         metrics.release()
         inflight.release()
         raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-    job_store.put(job, key, body_fp)
+    job_store.put(job, skey, body_fp)
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
 
@@ -2561,7 +2620,7 @@ def _mount_job_routes(
         contract as the sync route."""
         key = _idem_key(idempotency_key or body.idempotency_key)
         out = await _run_claimed(
-            job_store.async_claim_lock(key),
+            job_store.async_claim_lock(_idem_scope(key)),
             lambda: _submit_job(body, key, lab, job_store, metrics, inflight, jobs_executor),
         )
         response.headers["Location"] = f"/harness/jobs/{out.job_id}"
@@ -2594,7 +2653,7 @@ def _mount_job_routes(
                 ) -> JobSubmitResponse:
                     return _submit_job(req, key, lab, job_store, metrics, inflight, jobs_executor)
 
-                resp = await _run_claimed(job_store.async_claim_lock(key), _submit_one)
+                resp = await _run_claimed(job_store.async_claim_lock(_idem_scope(key)), _submit_one)
                 items.append(
                     JobBatchItemResponse(
                         index=i,
@@ -2780,19 +2839,54 @@ class _IdemStore[IdemT: BaseModel]:
 
     def put(self, key: str, fingerprint: str, resp: IdemT) -> None:
         with self._lock:
-            self._map[key] = (fingerprint, resp)
-            self._map.move_to_end(key)
+            # Build the next state without publishing it.  The replay
+            # journal is the durability boundary: if its fsync fails, the
+            # process-visible map must remain identical to what a restart
+            # will recover, including every entry that would have been
+            # evicted by this insertion.
+            stored = resp.model_copy(deep=True)
+            next_map = self._map.copy()
+            next_map[key] = (fingerprint, stored)
+            next_map.move_to_end(key)
             evicted: list[str] = []
-            while len(self._map) > self._max:
-                old_key, _ = self._map.popitem(last=False)
+            while len(next_map) > self._max:
+                old_key, _ = next_map.popitem(last=False)
                 evicted.append(old_key)
             if self._journal is not None:
                 payload: dict[str, Any] = {
-                    "idem": {"key": key, "fp": fingerprint, "resp": resp.model_dump(mode="json")}
+                    "idem": {
+                        "key": key,
+                        "fp": fingerprint,
+                        "resp": stored.model_dump(mode="json"),
+                    }
                 }
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
+            self._map = next_map
+
+
+def _has_stored_replay(request: Request, stores: Mapping[str, _IdemStore[Any]]) -> bool:
+    """Whether this keyed completion route can answer without work."""
+    store = stores.get(request.url.path)
+    if store is None:
+        return False
+    key = _idem_key(request.headers.get("Idempotency-Key"))
+    skey = _idem_scope(key)
+    return skey is not None and store.get(skey) is not None
+
+
+def _replay_aware_slot(
+    request: Request,
+    stores: Mapping[str, _IdemStore[Any]],
+    work_gate: Callable[[], AbstractContextManager[None]],
+) -> Iterator[None]:
+    """Skip admission only when the claimed key already has a record."""
+    if _has_stored_replay(request, stores):
+        yield
+        return
+    with work_gate():
+        yield
 
 
 class _OpenAIIdemRecord(_Model):
@@ -2808,6 +2902,17 @@ class _OpenAIIdemRecord(_Model):
     # ``_idem_lookup`` stamps this on a cache hit, matching the other
     # idempotent routes' ``replayed`` convention (surfaced on the wire
     # as the ``X-Fx1-Idempotent-Replay`` header).
+    replayed: bool = False
+
+
+class _JsonIdemRecord(_Model):
+    """Stored outcome for the mutating surfaces whose keyed replay is a
+    JSON body verbatim — file/upload mints, key mint/rotate/patch/
+    revoke. The wire envelope is served back byte-identical with the
+    ``X-Fx1-Idempotent-Replay`` header; only successful outcomes are
+    stored, so a refused request always re-executes on retry."""
+
+    envelope: dict[str, Any]
     replayed: bool = False
 
 
@@ -3937,7 +4042,7 @@ def _close_backend(backend: Any) -> None:
 def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/job surface
     app: FastAPI,
     *,
-    slot: Callable[[], Iterator[None]],
+    slot: Callable[..., Iterator[None]],
     resolve_backend: Callable[[str, str | None, dict[str, str] | None, float | None], Any],
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
@@ -3958,6 +4063,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     batch_store: _BatchStore,
     abatch_store: _AnthropicBatchStore,
     upload_store: UploadStore,
+    upload_idem_store: _IdemStore[_JsonIdemRecord],
     envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
@@ -3974,6 +4080,20 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     extracted from ``create_app`` to keep its branch complexity under the
     ruff cap. Evals share the complete chain resolution and the jobs
     executor's slot contract."""
+
+    # Idempotency-Key claims: the dep holds the store's per-key mutex for
+    # the whole handler span — lookup, model spend, and replay-record
+    # publication stay atomic against a retry racing the same key. The
+    # claim dep is declared before ``slot`` so waiters never queue on a
+    # worker slot while holding one.
+    _complete_idem_claim = _idem_claim_dep(complete_idem_store)
+    _complete_batch_idem_claim = _idem_claim_dep(complete_batch_idem_store)
+    _openai_idem_claim = _idem_claim_dep(openai_idem_store)
+    _anthropic_idem_claim = _idem_claim_dep(anthropic_idem_store)
+    _legacy_idem_claim = _idem_claim_dep(legacy_idem_store)
+    _file_idem_claim = _idem_claim_dep(upload_idem_store)
+    _upload_idem_claim = _idem_claim_dep(upload_idem_store)
+    _ft_idem_claim = _idem_claim_dep(ft_store)
 
     def _breaker_admit(name: str) -> None:
         """Fast-fail while the backend's circuit is open — the call never
@@ -4090,17 +4210,32 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         eval_spec: str | None = None,
         eval_model: str | None = None,
     ) -> EvalSubmitResponse:
+        """Serialize lookup -> create -> record insert under the key's
+        claim (the job contract's claim_lock, applied to the eval
+        suites): a retried submit can never slide between an in-flight
+        twin's lookup and its replay record."""
+        key = _idem_key(idempotency_key)
+        skey = _idem_scope(key)
+        with eval_store.claim_lock(skey):
+            return _submit_eval_claimed(body, skey, eval_spec=eval_spec, eval_model=eval_model)
+
+    def _submit_eval_claimed(
+        body: EvalSubmitRequest,
+        key: str | None,
+        *,
+        eval_spec: str | None = None,
+        eval_model: str | None = None,
+    ) -> EvalSubmitResponse:
         """Eval submission core — the job contract (idempotency lookup ->
         drain check -> slot admission -> background execution) applied to
-        the eval suites. The slot is held for the eval's lifetime and
-        released by the worker, so evals queue no deeper than
-        ``max_inflight``. ``eval_spec``/``eval_model`` bind a /v1/evals
-        run at construction so every journal entry and the terminal
-        callback carry the binding — a fast eval can never fire its
-        webhook before the binding lands."""
-        key = (idempotency_key or "").strip() or None
-        if key is not None and len(key) > _IDEM_KEY_MAX:
-            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        the eval suites under an already-held claim. The slot is held for
+        the eval's lifetime and released by the worker, so evals queue no
+        deeper than ``max_inflight``. ``key`` is the final credential-
+        scoped store key (already normalized + bounded by the caller).
+        ``eval_spec``/``eval_model`` bind a /v1/evals run at construction
+        so every journal entry and the terminal callback carry the
+        binding — a fast eval can never fire its webhook before the
+        binding lands."""
         body_fp = _body_fp(body)
         if key is not None:
             entry = eval_store.get_key(key)
@@ -4110,6 +4245,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     raise ApiError(
                         409,
                         "Idempotency-Key reuse with a different request body",
+                        code="idempotency_conflict",
                     )
                 rec = eval_store.get(eval_id)
                 if rec is not None:
@@ -4606,6 +4742,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def complete(
         body: CompleteRequest,
         response: Response,
+        _idem_claim_held: None = Depends(_complete_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteResponse:
@@ -5689,6 +5826,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_chat_completions(
         body: OpenAIChatRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_openai_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -5787,6 +5925,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def anthropic_messages(
         body: AnthropicMessagesRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_anthropic_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -6060,10 +6199,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         instead of consuming every sync-handler worker while the winner
         creates and stores the batch response.
         """
-        key = (idempotency_key or "").strip() or None
-        if key is not None and len(key) > _IDEM_KEY_MAX:
-            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-        async with anthropic_idem_store.async_claim_lock(key):
+        key = _idem_key(idempotency_key)
+        async with anthropic_idem_store.async_claim_lock(_idem_scope(key)):
             yield
 
     @app.post(
@@ -6332,6 +6469,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_completions(
         body: OpenAICompletionRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_legacy_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -6409,6 +6547,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_responses(
         body: OpenAIResponseRequest,
         request: Request,
+        _idem_claim_held: None = Depends(_openai_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
         last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
@@ -7740,11 +7879,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     async def openai_file_upload(
         file: UploadFile | None = File(default=None),
         purpose: str = Form(default=""),
+        _idem_claim_held: None = Depends(_file_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Upload a batch-input or fine-tuning JSONL (multipart/form-data).
         Purpose is fail-closed — ``batch`` and ``fine-tune`` are the only
         purposes served; the file is validated into the store as-is
-        (shape checks happen at batch submit / fine-tune submit)."""
+        (shape checks happen at batch submit / fine-tune submit).
+        ``Idempotency-Key`` pins the minted file: a retried multipart
+        upload replays the recorded object (same ``id``) instead of
+        storing a duplicate."""
         if file is None:
             raise ApiError(400, "multipart field 'file' is required", code="invalid_request")
         if purpose not in OPENAI_FILE_PURPOSE_ACCEPT:
@@ -7770,8 +7914,29 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 f"input must be a .jsonl file, got {filename!r}",
                 code="invalid_request",
             )
+        # Content fingerprint: same key + same purpose+name+bytes replays;
+        # same key + different bytes conflicts.
+        body_fp = hashlib.sha256(purpose.encode() + b"\0" + filename.encode() + b"\0" + data)
+        key, replay = _idem_lookup(
+            idempotency_key, upload_idem_store, body_fp.hexdigest(), namespace="file"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
         rec = file_store.put(filename=filename, purpose=purpose, content=data)
-        return JSONResponse(file_object(rec.model_dump()))
+        out = file_object(rec.model_dump())
+        if key is not None:
+            try:
+                upload_idem_store.put(key, body_fp.hexdigest(), _JsonIdemRecord(envelope=out))
+            except Exception:
+                # The file store committed before its minted id was known.
+                # If replay-record publication fails, remove that exact new
+                # file so a client retry cannot create a second durable copy.
+                # This is an in-process rollback; a crash between the two
+                # journals still needs a unified transaction to close.
+                with suppress(Exception):
+                    file_store.delete(rec.file_id)
+                raise
+        return JSONResponse(out)
 
     @app.get(
         "/v1/files",
@@ -7858,14 +8023,53 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _upload_err(exc: UploadStoreError) -> ApiError:
         return ApiError(exc.status, str(exc), code=exc.code)
 
+    async def _upload_part_idem_claim(
+        upload_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _idem_scope(_idem_key(idempotency_key), namespace=f"part:{upload_id}")
+        async with upload_idem_store.async_claim_lock(skey):
+            yield
+
+    def _upload_verb_skey(upload_id: str, verb: str, idempotency_key: str | None) -> str | None:
+        """Shared scoped-key compute for the per-upload verb routes — kept
+        as a helper so the deps below compose the exact same key the
+        handler's ``_idem_lookup`` does."""
+        return _idem_scope(_idem_key(idempotency_key), namespace=f"{verb}:{upload_id}")
+
+    async def _upload_complete_idem_claim(
+        upload_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _upload_verb_skey(upload_id, "complete", idempotency_key)
+        async with upload_idem_store.async_claim_lock(skey):
+            yield
+
+    async def _upload_cancel_idem_claim(
+        upload_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _upload_verb_skey(upload_id, "cancel", idempotency_key)
+        async with upload_idem_store.async_claim_lock(skey):
+            yield
+
     @app.post(
         "/v1/uploads",
         tags=["openai"],
         operation_id="openai_upload_create",
     )
-    def openai_upload_create(body: OpenAIUploadCreateRequest) -> JSONResponse:
+    def openai_upload_create(
+        body: OpenAIUploadCreateRequest,
+        _idem_claim_held: None = Depends(_upload_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JSONResponse:
         """Open an upload intent — parts land under ``.../parts`` until
-        ``complete`` assembles them into a file record."""
+        ``complete`` assembles them into a file record.``Idempotency-Key``
+        pins the intent: a retried create replays the same ``upload_id``."""
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, upload_idem_store, body_fp, namespace="create")
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
         try:
             validate_upload_intent(body.purpose, body.filename, OPENAI_FILE_PURPOSE_ACCEPT)
             meta = upload_store.create(
@@ -7876,7 +8080,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc
-        return JSONResponse(upload_object(meta), status_code=200)
+        out = upload_object(meta)
+        if key is not None:
+            upload_idem_store.put(key, body_fp, _JsonIdemRecord(envelope=out))
+        return JSONResponse(out, status_code=200)
 
     @app.post(
         "/v1/uploads/{upload_id}/parts",
@@ -7886,15 +8093,27 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     async def openai_upload_part(
         upload_id: str,
         data: UploadFile | None = File(default=None),
+        _idem_claim_held: None = Depends(_upload_part_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JSONResponse:
         """Add one part (multipart ``data`` field). Blob lands durable
-        before the journal names it."""
+        before the journal names it. A keyed retry replays the recorded
+        part instead of appending the bytes twice."""
         if data is None:
             raise ApiError(400, "multipart field 'data' is required", code="invalid_request")
+        blob = await data.read()
+        part_fp = hashlib.sha256(blob).hexdigest()
+        key, replay = _idem_lookup(
+            idempotency_key, upload_idem_store, part_fp, namespace=f"part:{upload_id}"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
         try:
-            part = upload_store.add_part(upload_id, await data.read())
+            part = upload_store.add_part(upload_id, blob)
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc
+        if key is not None:
+            upload_idem_store.put(key, part_fp, _JsonIdemRecord(envelope=part))
         return JSONResponse(part)
 
     @app.post(
@@ -7902,8 +8121,21 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_upload_complete",
     )
-    def openai_upload_complete(upload_id: str, body: OpenAIUploadCompleteRequest) -> JSONResponse:
-        """Validate and mint one file under the upload lifecycle lock."""
+    def openai_upload_complete(
+        upload_id: str,
+        body: OpenAIUploadCompleteRequest,
+        _idem_claim_held: None = Depends(_upload_complete_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JSONResponse:
+        """Validate and mint one file under the upload lifecycle lock. A
+        keyed retry replays the minted file object instead of failing on
+        the already-completed upload."""
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(
+            idempotency_key, upload_idem_store, body_fp, namespace=f"complete:{upload_id}"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
 
         def publish(meta: UploadMeta, content: bytes) -> tuple[str, _FileRecord]:
             rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
@@ -7918,30 +8150,44 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc
-        return JSONResponse(upload_object(done, file_obj=file_object(rec.model_dump())))
+        out = upload_object(done, file_obj=file_object(rec.model_dump()))
+        if key is not None:
+            upload_idem_store.put(key, body_fp, _JsonIdemRecord(envelope=out))
+        return JSONResponse(out)
 
     @app.post(
         "/v1/uploads/{upload_id}/cancel",
         tags=["openai"],
         operation_id="openai_upload_cancel",
     )
-    def openai_upload_cancel(upload_id: str) -> JSONResponse:
+    def openai_upload_cancel(
+        upload_id: str,
+        _idem_claim_held: None = Depends(_upload_cancel_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JSONResponse:
         """Cancel a pending upload — replays 200 on an already-cancelled
-        record, 409 once completed."""
+        record, 409 once completed; a keyed retry replays the recorded
+        cancel answer verbatim."""
+        key, replay = _idem_lookup(
+            idempotency_key, upload_idem_store, "cancel", namespace=f"cancel:{upload_id}"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
         try:
             meta = upload_store.cancel(upload_id)
         except UploadStoreError as exc:
             raise _upload_err(exc) from exc
-        return JSONResponse(upload_object(meta))
+        out = upload_object(meta)
+        if key is not None:
+            upload_idem_store.put(key, "cancel", _JsonIdemRecord(envelope=out))
+        return JSONResponse(out)
 
     async def _openai_batch_idem_claim(
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> AsyncIterator[None]:
         """Serialize lookup + creation + insertion for one batch key."""
-        key = (idempotency_key or "").strip() or None
-        if key is not None and len(key) > _IDEM_KEY_MAX:
-            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-        async with openai_idem_store.async_claim_lock(key):
+        key = _idem_key(idempotency_key)
+        async with openai_idem_store.async_claim_lock(_idem_scope(key)):
             yield
 
     @app.post(
@@ -8123,6 +8369,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     )
     def complete_batch(
         body: CompleteBatchRequest,
+        _idem_claim_held: None = Depends(_complete_batch_idem_claim),
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteBatchResponse:
@@ -8591,6 +8838,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     @app.post("/v1/fine_tuning/jobs", tags=["openai"], operation_id="create_finetune_job")
     def create_finetune_job(
         body: FTJobRequest,
+        _idem_claim_held: None = Depends(_ft_idem_claim),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> FTJob:
         """Queue a gated fine-tuning run against an uploaded chat-format
@@ -8601,8 +8849,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         is POSTed to the URL, HMAC-signed when the secret is set — the
         same delivery contract as ``/harness/jobs`` webhooks."""
         body_fp = _body_fp(body)
-        if idempotency_key is not None:
-            entry = ft_store.lookup_idem(idempotency_key)
+        skey = _idem_scope(_idem_key(idempotency_key))
+        if skey is not None:
+            entry = ft_store.lookup_idem(skey)
             if entry is not None:
                 if entry.body_fp != body_fp:
                     raise ApiError(
@@ -8701,7 +8950,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             work_dir=work_dir,
             ft_model_name=ft_name,
         )
-        entry = ft_store.put(job, idempotency_key, body_fp)
+        entry = ft_store.put(job, skey, body_fp)
         hp = body.hyperparameters.model_dump() if body.hyperparameters else {}
         if hp.get("batch_size"):
             ft_store.add_event(
@@ -9061,11 +9310,40 @@ def _mount_key_lifecycle(
     app: FastAPI,
     *,
     key_store: ApiKeyStore,
+    key_idem_store: _IdemStore[_JsonIdemRecord],
     completion_log: _CompletionLog,
 ) -> None:
     """Key lifecycle routes beyond mint/get/revoke: the usage cards and
     rotation. Lifted out of ``create_app`` for the ruff complexity
     ceiling."""
+
+    # The key-mutation dedupe namespace is per (credential, key, verb,
+    # target): the same header key can pin a rotate on K1 and a patch on
+    # K2 without colliding, while a keyed retry of the same verb+target
+    # replays the recorded answer.
+    async def _key_rotate_idem_claim(
+        key_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _idem_scope(_idem_key(idempotency_key), namespace=f"rotate:{key_id}")
+        async with key_idem_store.async_claim_lock(skey):
+            yield
+
+    async def _key_patch_idem_claim(
+        key_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _idem_scope(_idem_key(idempotency_key), namespace=f"patch:{key_id}")
+        async with key_idem_store.async_claim_lock(skey):
+            yield
+
+    async def _key_revoke_idem_claim(
+        key_id: str,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        skey = _idem_scope(_idem_key(idempotency_key), namespace=f"revoke:{key_id}")
+        async with key_idem_store.async_claim_lock(skey):
+            yield
 
     @app.post(
         "/harness/keys/{key_id}/rotate",
@@ -9075,16 +9353,32 @@ def _mount_key_lifecycle(
         operation_id="key_rotate",
     )
     def key_rotate(
-        key_id: str, body: ApiKeyRotateRequest, request: Request
-    ) -> ApiKeyRotateResponse:
+        key_id: str,
+        body: ApiKeyRotateRequest,
+        request: Request,
+        _idem_claim_held: None = Depends(_key_rotate_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> ApiKeyRotateResponse | JSONResponse:
         """Atomic rotation: mint a successor inheriting the predecessor's
         declared policy (name/scopes/admin/rpm/budgets) and, by default,
         tombstone the predecessor in the same store transaction. The new
         raw secret is returned once; lineage (``rotated_from``) is
         journaled with the successor record. Without ``ttl_s`` the
         successor inherits the predecessor's absolute ``expires_at`` —
-        rotation never extends a credential's lifetime."""
+        rotation never extends a credential's lifetime. A keyed retry
+        replays the recorded successor (same id, same raw secret)
+        instead of minting a third credential."""
         _require_admin(request)
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(
+            idempotency_key, key_idem_store, body_fp, namespace=f"rotate:{key_id}"
+        )
+        if replay is not None:
+            return JSONResponse(
+                replay.envelope,
+                status_code=201,
+                headers={"X-Fx1-Idempotent-Replay": "true"},
+            )
         try:
             raw, rec = key_store.rotate(
                 key_id,
@@ -9100,11 +9394,14 @@ def _mount_key_lifecycle(
             ) from exc
         except ValueError as exc:
             raise ApiError(422, str(exc), code="invalid_rotation") from exc
-        return ApiKeyRotateResponse(
+        resp = ApiKeyRotateResponse(
             key=_key_mint_wire(rec, raw),
             rotated_from=key_id,
             revoked_previous=body.revoke_old,
         )
+        if key is not None:
+            key_idem_store.put(key, body_fp, _JsonIdemRecord(envelope=resp.model_dump(mode="json")))
+        return resp
 
     @app.patch(
         "/harness/keys/{key_id}",
@@ -9112,7 +9409,13 @@ def _mount_key_lifecycle(
         tags=["ops"],
         operation_id="key_patch",
     )
-    def key_patch(key_id: str, body: ApiKeyPatchRequest, request: Request) -> ApiKeyRecordModel:
+    def key_patch(
+        key_id: str,
+        body: ApiKeyPatchRequest,
+        request: Request,
+        _idem_claim_held: None = Depends(_key_patch_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> ApiKeyRecordModel | JSONResponse:
         """Mutable policy update on a live managed key — the patched
         record returns, shaped like ``key_get``. Omitted fields keep
         the declared policy; explicit ``null`` clears a nullable
@@ -9122,8 +9425,15 @@ def _mount_key_lifecycle(
         Patching is in place — no new secret, no slot consumed — and
         the updated record journals so a ``--state-dir`` restart
         restores it. ``enabled``/live counters stay unpatchable:
-        revocation is permanent (rotate covers re-keying)."""
+        revocation is permanent (rotate covers re-keying). A keyed
+        retry replays the recorded patch outcome."""
         _require_admin(request)
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(
+            idempotency_key, key_idem_store, body_fp, namespace=f"patch:{key_id}"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
         sent = body.model_fields_set
         clear = {f for f in CLEARABLE_KEY_FIELDS if f in sent and getattr(body, f) is None}
         try:
@@ -9143,7 +9453,44 @@ def _mount_key_lifecycle(
             raise ApiError(status, str(exc), code=exc.code) from exc
         except ValueError as exc:
             raise ApiError(422, str(exc), code="invalid_patch") from exc
-        return _key_wire(rec)
+        resp = _key_wire(rec)
+        if key is not None:
+            key_idem_store.put(key, body_fp, _JsonIdemRecord(envelope=resp.model_dump(mode="json")))
+        return resp
+
+    @app.delete(
+        "/harness/keys/{key_id}",
+        response_model=ApiKeyRecordModel,
+        tags=["ops"],
+        operation_id="key_revoke",
+    )
+    def key_revoke(
+        key_id: str,
+        request: Request,
+        _idem_claim_held: None = Depends(_key_revoke_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> ApiKeyRecordModel | JSONResponse:
+        """Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
+        stays so the audit trail of which keys existed survives; auth
+        with it fails closed immediately after. A keyed retry replays
+        the recorded tombstone instead of 409ing on the second revoke."""
+        _require_admin(request)
+        key, replay = _idem_lookup(
+            idempotency_key, key_idem_store, "revoke", namespace=f"revoke:{key_id}"
+        )
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        try:
+            rec = key_store.revoke(key_id)
+        except KeyStoreError as exc:
+            status = 404 if exc.code == "key_not_found" else 409
+            raise ApiError(status, str(exc), code=exc.code) from exc
+        resp = _key_wire(rec)
+        if key is not None:
+            key_idem_store.put(
+                key, "revoke", _JsonIdemRecord(envelope=resp.model_dump(mode="json"))
+            )
+        return resp
 
     @app.get(
         "/harness/keys/{key_id}/usage",
@@ -9402,6 +9749,17 @@ def create_app(
     legacy_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(
         idem_max, journal=_journal("idem_legacy.jsonl"), model=_OpenAIIdemRecord
     )
+    # /v1/files + /v1/uploads pin the minted object envelope — journaled
+    # like the sibling replay ledgers (no secrets ride along).
+    upload_idem_store: _IdemStore[_JsonIdemRecord] = _IdemStore(
+        idem_max, journal=_journal("idem_uploads.jsonl"), model=_JsonIdemRecord
+    )
+    # Key-mint/rotate/patch/revoke replays stay process-local: the
+    # recorded mint answer carries the raw credential, and the journal
+    # contract refuses persisted secrets (same rule as callback
+    # secrets). A post-restart retry re-executes honestly instead of
+    # replaying an unjournaled record.
+    key_idem_store: _IdemStore[_JsonIdemRecord] = _IdemStore(idem_max)
     file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
     batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
@@ -9479,9 +9837,21 @@ def create_app(
             metrics.release()
             inflight.release()
 
-    def _slot() -> Iterator[None]:
-        with _work_gate():
-            yield
+    def _slot(request: Request) -> Iterator[None]:
+        # A stored replay/conflict performs no work and must stay readable
+        # while draining or saturated.  The route's claim dependency runs
+        # first, so an entry found here cannot disappear before the handler
+        # validates its fingerprint.  A conflicting body also bypasses the
+        # work gate only to fail closed 409 in the handler.
+        replay_stores: dict[str, _IdemStore[Any]] = {
+            "/harness/complete": complete_idem_store,
+            "/harness/complete/batch": complete_batch_idem_store,
+            "/v1/chat/completions": openai_idem_store,
+            "/v1/responses": openai_idem_store,
+            "/v1/messages": anthropic_idem_store,
+            "/v1/completions": legacy_idem_store,
+        }
+        yield from _replay_aware_slot(request, replay_stores, _work_gate)
 
     app = FastAPI(
         title="fx-1 harness API",
@@ -9882,6 +10252,16 @@ def create_app(
             until=until,
         )
 
+    async def _key_mint_idem_claim(
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> AsyncIterator[None]:
+        """Serialize first use of one mint key — a keyed retry replays the
+        recorded credential (same id, same raw secret) instead of minting
+        a second key."""
+        skey = _idem_scope(_idem_key(idempotency_key), namespace="mint")
+        async with key_idem_store.async_claim_lock(skey):
+            yield
+
     @app.post(
         "/harness/keys",
         response_model=ApiKeyMintResponse,
@@ -9889,11 +10269,26 @@ def create_app(
         tags=["ops"],
         operation_id="key_create",
     )
-    def key_create(body: ApiKeyCreateRequest, request: Request) -> ApiKeyMintResponse:
+    def key_create(
+        body: ApiKeyCreateRequest,
+        request: Request,
+        _idem_claim_held: None = Depends(_key_mint_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> ApiKeyMintResponse | JSONResponse:
         """Mint a managed API key. The raw ``key`` is returned once here
         and never stored — the store keeps only its sha256. Requires the
-        bootstrap credential (``FX1_API_KEY``) or loopback dev mode."""
+        bootstrap credential (``FX1_API_KEY``) or loopback dev mode.
+        ``Idempotency-Key`` pins the mint: a keyed retry replays the
+        recorded credential verbatim instead of minting a duplicate."""
         _require_admin(request)
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, key_idem_store, body_fp, namespace="mint")
+        if replay is not None:
+            return JSONResponse(
+                replay.envelope,
+                status_code=201,
+                headers={"X-Fx1-Idempotent-Replay": "true"},
+            )
         try:
             raw, rec = key_store.mint(
                 body.name,
@@ -9906,7 +10301,10 @@ def create_app(
             )
         except KeyStoreError as exc:
             raise ApiError(400, str(exc), code=exc.code) from exc
-        return _key_mint_wire(rec, raw)
+        resp = _key_mint_wire(rec, raw)
+        if key is not None:
+            key_idem_store.put(key, body_fp, _JsonIdemRecord(envelope=resp.model_dump(mode="json")))
+        return resp
 
     @app.get(
         "/harness/keys",
@@ -9932,24 +10330,6 @@ def create_app(
         rec = key_store.get(key_id)
         if rec is None:
             raise ApiError(404, f"unknown key {key_id!r}", code="key_not_found")
-        return _key_wire(rec)
-
-    @app.delete(
-        "/harness/keys/{key_id}",
-        response_model=ApiKeyRecordModel,
-        tags=["ops"],
-        operation_id="key_revoke",
-    )
-    def key_revoke(key_id: str, request: Request) -> ApiKeyRecordModel:
-        """Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
-        stays so the audit trail of which keys existed survives; auth
-        with it fails closed immediately after."""
-        _require_admin(request)
-        try:
-            rec = key_store.revoke(key_id)
-        except KeyStoreError as exc:
-            status = 404 if exc.code == "key_not_found" else 409
-            raise ApiError(status, str(exc), code=exc.code) from exc
         return _key_wire(rec)
 
     @app.post(
@@ -10035,10 +10415,15 @@ def create_app(
             return resp
 
         key = _idem_key(idempotency_key or body.idempotency_key)
-        return await _run_claimed(idem_store.async_claim_lock(key), execute)
+        return await _run_claimed(idem_store.async_claim_lock(_idem_scope(key)), execute)
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
-    _mount_key_lifecycle(app, key_store=key_store, completion_log=completion_log)
+    _mount_key_lifecycle(
+        app,
+        key_store=key_store,
+        key_idem_store=key_idem_store,
+        completion_log=completion_log,
+    )
 
     def _resolve_request_backend(
         backend_name: str,
@@ -10106,6 +10491,7 @@ def create_app(
         batch_store=batch_store,
         abatch_store=abatch_store,
         upload_store=upload_store,
+        upload_idem_store=upload_idem_store,
         ft_store=ft_store,
         ft_runner=ft_runner_eff,
         ft_dir=ft_work_root,

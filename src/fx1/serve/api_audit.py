@@ -2153,7 +2153,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     ).json()
     out["jobs_batch_idem_conflict"] = (
         b_conflict["failed"] == 1
-        and b_conflict["jobs"][0]["code"] == "conflict"
+        and b_conflict["jobs"][0]["code"] == "idempotency_conflict"
         and b_conflict["jobs"][0]["job_id"] is None
     )
     out["jobs_batch_empty_422"] = (
@@ -3326,7 +3326,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             json={"command": "doctor", "extra_args": ["--x"]},
             headers={"Idempotency-Key": "ec-conflict"},
         ).json()["code"]
-        == "conflict"
+        == "idempotency_conflict"
     )
     out["error_code_honesty_gate"] = rd.json()["code"] == "honesty_gate"
     out["stream_error_code_inband"] = err_frames[0]["code"] == "backend_failure"

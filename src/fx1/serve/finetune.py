@@ -35,13 +35,14 @@ import time
 import uuid
 from collections import OrderedDict
 from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 from fx1.serve.backends import InferenceBackend
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 from fx1.serve.webhooks import check_callback_url
 
 TRAINABLE_MODELS = ("fx1", "local_fx1")
@@ -289,6 +290,7 @@ class FTJobStore:
     def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max(1, max_entries)
+        self._claims = _ClaimLocks(max_entries)
         self._entries: OrderedDict[str, FTJobEntry] = OrderedDict()
         self._keys: dict[str, str] = {}
         # fine-tuned model registry: ft:<model>:<suffix>:<job12> -> ref
@@ -478,6 +480,12 @@ class FTJobStore:
         fine-tuned weights instead of the default link."""
         ref = self.get_model(name)
         return str(ref["checkpoint"]) if ref is not None else None
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        """Per-key submit claim — a keyed retry waits for an in-flight
+        twin's ``lookup_idem`` + ``put`` instead of double-executing
+        next to it (same contract as the job/eval stores)."""
+        return self._claims.ahold(key)
 
     def lookup_idem(self, key: str) -> FTJobEntry | None:
         with self._lock:

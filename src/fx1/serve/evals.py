@@ -32,6 +32,7 @@ import threading
 import time
 from collections import OrderedDict
 from collections.abc import Callable, Mapping
+from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from dataclasses import asdict, is_dataclass
 from datetime import date, datetime
 from enum import Enum
@@ -43,7 +44,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from fx1.eval.suite import ModelFn
 from fx1.serve.backends import SamplingParams
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 
 __all__ = [
     "EVAL_SUITES",
@@ -272,6 +273,7 @@ class EvalStore:
     def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
+        self._claims = _ClaimLocks(max_entries)
         self._records: OrderedDict[str, EvalRecord] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._record_key: dict[str, str] = {}
@@ -423,6 +425,15 @@ class EvalStore:
                 if self._journal is not None:
                     self._journal.append(self._record(rec))
             return out
+
+    def claim_lock(self, key: str | None) -> AbstractContextManager[None]:
+        """Serialize a key's lookup -> create -> record insert: a keyed
+        retry waits for an in-flight twin instead of double-executing
+        next to it (the job/eval submit contract post-claim-locks)."""
+        return self._claims.hold(key)
+
+    def async_claim_lock(self, key: str | None) -> AbstractAsyncContextManager[None]:
+        return self._claims.ahold(key)
 
     def get_key(self, key: str) -> tuple[str, str] | None:
         with self._lock:
