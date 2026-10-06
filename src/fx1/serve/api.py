@@ -2503,6 +2503,16 @@ async def _run_claimed[ResultT](
         return results[0]
 
 
+def _drain_refusal(metrics: _Metrics) -> None:
+    """The drain half of the work gate, standalone: mutating routes that
+    take no inflight slot (stored-resource writes, the key lifecycle)
+    still refuse once the latch is set — drain admits no new work at
+    all. Reads, replays, cancels, deletes, and the documented advisory
+    preflights stay open under it."""
+    if metrics.draining.is_set():
+        raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+
+
 def _submit_job(
     body: HarnessRunRequest,
     idempotency_key: str | None,
@@ -2538,8 +2548,7 @@ def _submit_job(
         lab.get(body.command)  # fail closed at submit, not in the worker
     except KeyError as exc:
         raise ApiError(404, str(exc)) from exc
-    if metrics.draining.is_set():
-        raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+    _drain_refusal(metrics)
     if not inflight.acquire(blocking=False):
         raise ApiError(
             503,
@@ -4514,8 +4523,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 rec = eval_store.get(eval_id)
                 if rec is not None:
                     return EvalSubmitResponse(eval_id=eval_id, status=rec.status, replayed=True)
-        if metrics.draining.is_set():
-            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        _drain_refusal(metrics)
         if not inflight.acquire(blocking=False):
             raise ApiError(
                 503,
@@ -4776,6 +4784,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["evals"],
     )
     def eval_spec_create(body: EvalSpecCreate) -> EvalSpecWire:
+        _drain_refusal(metrics)
         spec = EvalSpec(
             spec_id=f"eval_{uuid.uuid4().hex[:24]}",
             name=body.name,
@@ -4809,6 +4818,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["evals"],
     )
     def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
+        _drain_refusal(metrics)
         spec = _spec_or_404(eval_id)
         if body.name is not None:
             spec.name = body.name
@@ -7190,6 +7200,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_chat_update(completion_id: str, body: OpenAIChatUpdate) -> dict[str, Any]:
         """Update a stored chat completion's ``metadata`` (the only
         mutable field — choices/usage are sealed at creation)."""
+        _drain_refusal(metrics)
         env = envelope_store.get(completion_id)
         if env is None or env.get("object") != _OBJ_CHAT_COMPLETION:
             raise ApiError(
@@ -7348,6 +7359,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Create a conversation container (``conv_…``). ``items`` seeds
         the item list with message items; a response joins it with
         ``conversation`` and appends its turn when it completes."""
+        _drain_refusal(metrics)
         cid = f"conv_{uuid.uuid4().hex}"
         env = openai_conversation_object(cid=cid, metadata=body.metadata)
         conv_store.put(
@@ -7378,6 +7390,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         body: OpenAIConversationUpdate, conversation_id: str
     ) -> dict[str, Any]:
         """Update a conversation — ``metadata`` replaces wholesale."""
+        _drain_refusal(metrics)
         conv = _stored_conversation(conversation_id)
         new_conv = dict(conv)
         new_conv["metadata"] = dict(body.metadata) if body.metadata is not None else {}
@@ -7440,6 +7453,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Append items to a conversation — returns the minted items as a
         list object. ``item_ids`` (alias-by-reference) is refused: items
         are minted per append, never aliased."""
+        _drain_refusal(metrics)
         _stored_conversation(conversation_id)
         minted: list[dict[str, Any]] = []
 
@@ -7530,6 +7544,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Create a vector store — ``file_ids`` attach existing
         ``file-*`` records; an unresolvable id fails the whole create
         fail-closed (no partial store)."""
+        _drain_refusal(metrics)
         try:
             return vs_store.create(
                 name=body.name,
@@ -7564,6 +7579,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ) -> dict[str, Any]:
         """Update a vector store — ``name``/``metadata`` replace
         wholesale when present."""
+        _drain_refusal(metrics)
         try:
             return vs_store.update(
                 vector_store_id,
@@ -7620,6 +7636,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Attach a ``file-*`` record — the file is decoded, chunked,
         and indexed in-place; a file whose text is empty lands
         ``status: failed`` with ``last_error``, never silently."""
+        _drain_refusal(metrics)
         try:
             return vs_store.attach(
                 vector_store_id,
@@ -7757,6 +7774,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         synchronously; per-file refusals (missing, already attached,
         oversized, store full) count ``failed`` with ``last_error``,
         never abort the batch. Status is terminal at return."""
+        _drain_refusal(metrics)
         try:
             return vs_store.file_batch_create(
                 vector_store_id,
@@ -8230,6 +8248,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        _drain_refusal(metrics)
         rec = file_store.put(filename=filename, purpose=purpose, content=data)
         out = file_object(rec.model_dump())
         if key is not None:
@@ -8378,6 +8397,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         key, replay = _idem_lookup(idempotency_key, upload_idem_store, body_fp, namespace="create")
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        _drain_refusal(metrics)
         try:
             validate_upload_intent(body.purpose, body.filename, OPENAI_FILE_PURPOSE_ACCEPT)
             meta = upload_store.create(
@@ -8416,6 +8436,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        _drain_refusal(metrics)
         try:
             part = upload_store.add_part(upload_id, blob)
         except UploadStoreError as exc:
@@ -8444,6 +8465,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        _drain_refusal(metrics)
 
         def publish(meta: UploadMeta, content: bytes) -> tuple[str, _FileRecord]:
             rec = file_store.put(filename=meta.filename, purpose=meta.purpose, content=content)
@@ -9379,6 +9401,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Resume a paused job — restores the status pause captured
         (queued jobs re-queue, running jobs proceed from the boundary the
         worker parked at). Resuming a non-paused job is a 409."""
+        _drain_refusal(metrics)
         outcome = ft_store.request_resume(job_id)
         if outcome == "missing":
             raise ApiError(404, f"fine-tuning job {job_id!r} not found", code="job_not_found")
@@ -9617,6 +9640,7 @@ def _mount_key_lifecycle(
     key_store: ApiKeyStore,
     key_idem_store: _IdemStore[_JsonIdemRecord],
     completion_log: _CompletionLog,
+    metrics: _Metrics,
 ) -> None:
     """Key lifecycle routes beyond mint/get/revoke: the usage cards and
     rotation. Lifted out of ``create_app`` for the ruff complexity
@@ -9684,6 +9708,7 @@ def _mount_key_lifecycle(
                 status_code=201,
                 headers={"X-Fx1-Idempotent-Replay": "true"},
             )
+        _drain_refusal(metrics)
         try:
             raw, rec = key_store.rotate(
                 key_id,
@@ -9739,6 +9764,7 @@ def _mount_key_lifecycle(
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        _drain_refusal(metrics)
         sent = body.model_fields_set
         clear = {f for f in CLEARABLE_KEY_FIELDS if f in sent and getattr(body, f) is None}
         try:
@@ -9785,6 +9811,7 @@ def _mount_key_lifecycle(
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        # Revocation removes authority and must remain available during drain.
         try:
             rec = key_store.revoke(key_id)
         except KeyStoreError as exc:
@@ -10122,12 +10149,7 @@ def create_app(
 
     @contextmanager
     def _work_gate() -> Iterator[None]:
-        if metrics.draining.is_set():
-            raise ApiError(
-                503,
-                "harness is draining — no new work accepted",
-                code="draining",
-            )
+        _drain_refusal(metrics)
         if not inflight.acquire(blocking=False):
             raise ApiError(
                 503,
@@ -10575,6 +10597,7 @@ def create_app(
                 status_code=201,
                 headers={"X-Fx1-Idempotent-Replay": "true"},
             )
+        _drain_refusal(metrics)
         try:
             raw, rec = key_store.mint(
                 body.name,
@@ -10711,6 +10734,7 @@ def create_app(
         key_store=key_store,
         key_idem_store=key_idem_store,
         completion_log=completion_log,
+        metrics=metrics,
     )
 
     def _resolve_request_backend(

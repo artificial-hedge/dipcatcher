@@ -578,13 +578,16 @@ def _probe_dev_and_remote() -> dict[str, bool]:
         and client.get("/ready").status_code == 200
         and client.post("/harness/drain").status_code == 200
     )
+    # drain is a one-way latch whose refusal set includes the key
+    # lifecycle, so the mint-close probe runs on a fresh app
+    client2, _ = _client(api_key=None)
     # mint through the loopback admin surface, then unauthenticated reads
     # must refuse — first managed key closes the dev surface
-    raw, _ = _mint(client, {})
+    raw, _ = _mint(client2, {})
     out["first_mint_closes_dev_surface"] = (
-        client.get("/metrics").status_code == 401
-        and client.get("/metrics", headers={"X-API-Key": raw}).status_code == 200
-        and client.get("/health").status_code == 200
+        client2.get("/metrics").status_code == 401
+        and client2.get("/metrics", headers={"X-API-Key": raw}).status_code == 200
+        and client2.get("/health").status_code == 200
     )
     # non-loopback source host, no env key: refused except /health
     app2 = _make_app(api_key=None)

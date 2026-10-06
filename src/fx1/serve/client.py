@@ -1611,10 +1611,16 @@ class HarnessClient:
             elif payload.get("type") == "error":
                 # Terminal in-band error (keepalive mode committed the 200
                 # before the gate/backend resolved) — map it through the
-                # same table as HTTP error responses.
+                # same table as HTTP error responses; the frame's machine
+                # ``code`` survives so callers see e.g. "backend_unavailable".
                 raise self._map_error(
                     int(payload.get("status", 502)),
-                    json.dumps({"detail": payload.get("detail", "")}).encode(),
+                    json.dumps(
+                        {
+                            "detail": payload.get("detail", ""),
+                            "code": payload.get("code"),
+                        }
+                    ).encode(),
                 )
         if not saw_done:
             raise HarnessTransportError("stream ended without [DONE]")
@@ -2258,16 +2264,17 @@ class HarnessClient:
         """Poll ``message_batch`` until ``processing_status`` is
         ``ended``; returns the batch object. ``timeout_s`` None waits
         forever (the server expires the batch at ``expires_at``)."""
-        deadline = None if timeout_s is None else time.time() + timeout_s
+        deadline = None if timeout_s is None else self._clock() + timeout_s
         while True:
             batch = self.message_batch(batch_id)
             if batch.get("processing_status") == "ended":
                 return batch
-            if deadline is not None and time.time() >= deadline:
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
                 raise HarnessTransportError(
                     f"message batch {batch_id} did not end within {timeout_s}s"
                 )
-            time.sleep(poll_s)
+            self._sleep(poll_s if remaining is None else min(poll_s, remaining))
 
     def count_message_tokens(
         self, body: dict[str, Any], *, extra_headers: dict[str, str] | None = None

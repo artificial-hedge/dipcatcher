@@ -81,7 +81,10 @@ def test_distinction_independence_and_clock(measured: dict[str, Any]) -> None:
         assert measured[name] is True, name
 
 
-@pytest.mark.parametrize("results", [{}, {"probe": False}, {"probe": 1}, {"probe": None}])
+@pytest.mark.parametrize(
+    "results",
+    [{}, {"probe": True}, {"probe": False}, {"probe": 1}, {"probe": None}],
+)
 def test_receipt_refuses_empty_or_nonliteral_success(
     monkeypatch: pytest.MonkeyPatch, results: dict[str, Any]
 ) -> None:
@@ -106,7 +109,9 @@ def test_measured_receipt_verifies_without_rerunning(
     assert "TypeScript client runtime" in receipt["coverage"]["not_executed"]
 
 
-def test_committed_receipt_still_verifies() -> None:
+def test_committed_receipt_matches_fresh_measurement(
+    measured: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
     import json
 
     path = Path("receipts/fx1_quota2_audit.json")
@@ -117,6 +122,19 @@ def test_committed_receipt_still_verifies() -> None:
     verdict = verify_receipt_payload(payload)
     assert verdict["valid"] is True
     assert verdict["errors"] == []
+    monkeypatch.setattr(audit, "quota2_audit", lambda: measured)
+    fresh = audit.quota2_audit_bench()
+    for field in (
+        "kind",
+        "schema",
+        "data_label",
+        "research_only",
+        "live_pnl_claim",
+        "claim",
+        "coverage",
+        "interpretation",
+    ):
+        assert payload[field] == fresh[field], field
 
 
 def test_audit_context_restores_environment_and_removes_temp_state_on_error(
@@ -190,5 +208,7 @@ def test_retry_after_and_rfc3339_parsers_reject_invalid_values() -> None:
 
     assert audit._rfc3339_instant(None) is None
     assert audit._rfc3339_instant("not-a-date") is None
+    assert audit._rfc3339_instant("2026-10-06") is None
+    assert audit._rfc3339_instant("2026-10-06T01:00:00") is None
     instant = audit._rfc3339_instant("2026-10-06T01:00:00Z")
     assert isinstance(instant, float)

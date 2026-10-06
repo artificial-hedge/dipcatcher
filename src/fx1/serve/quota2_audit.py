@@ -71,12 +71,12 @@ Coverage map:
   then the server's own clock — client-supplied headers and body
   fields can never stamp it.
 - *persistence* — ``uses``/``tokens_used``/``last_used_at`` are
-  journaled and survive a ``--state-dir`` restart verbatim;
-  ``requests_remaining`` stays honest about the pre-restart spend. The
-  rpm window occupancy is the declared process-local policy (pinned
-  by ``quota_audit``): ``window_remaining`` re-opens to ``rpm`` after
-  restart while the durable budget keeps its spend — and the
-  ``served`` ring is this process's evidence, empty after restart even
+  journaled and replay into an independently constructed app verbatim;
+  ``requests_remaining`` stays honest about the prior spend. The rpm
+  window occupancy is the declared process-local policy (pinned by
+  ``quota_audit``): ``window_remaining`` re-opens to ``rpm`` in the new
+  app while the durable budget keeps its spend — and the ``served``
+  ring is this process's evidence, empty in the new app even
   though ``tokens_used`` persists (``log_cap``/``log_dropped`` bound
   it, so the horizon split is declared, not silent).
 - *metering precision* — ``tokens_used`` equals the summed
@@ -361,9 +361,12 @@ def _rfc3339_instant(value: object) -> float | None:
     if not isinstance(value, str):
         return None
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return None
+    if parsed.utcoffset() is None:
+        return None
+    return parsed.timestamp()
 
 
 def _parallel(client: TestClient, calls: list[Callable[[], Any]], workers: int) -> list[Any]:
@@ -520,14 +523,18 @@ def _admin_card_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     na_raw, _na_id = _mint(client, root_h)
     denied = client.get(f"{_KEYS_PATH}/{t_id}/usage", headers={_H_KEY: na_raw})
     out["usage_non_admin_refused_403"] = (
-        denied.status_code == 403 and denied.json().get("code") == "insufficient_scope"
+        denied.status_code == 403
+        and denied.json().get("code") == "insufficient_scope"
+        and _retry_after(denied) is None
     )
     out["usage_non_admin_enveloped"] = isinstance(denied.json().get("detail"), str)
 
     # an unknown id 404s enveloped — never a fabricated empty card
     missing = client.get(f"{_KEYS_PATH}/fx1k_deadbeefdead/usage", headers=admin_h)
     out["usage_unknown_key_404"] = (
-        missing.status_code == 404 and missing.json().get("code") == "key_not_found"
+        missing.status_code == 404
+        and missing.json().get("code") == "key_not_found"
+        and _retry_after(missing) is None
     )
 
     # a depleted card stays honest: still enabled, budget exhausted, and
@@ -962,7 +969,10 @@ def _metering_probes() -> dict[str, Any]:
     bad = client.post(_COMPLETE_PATH, json={"backend": "byok"}, headers=f_h)
     f_card = _usage_card(client, root_h, f_id)
     out["postauth_422_bills_use_not_tokens"] = (
-        bad.status_code == 422 and f_card["uses"] == 1 and f_card["tokens_used"] == 0
+        bad.status_code == 422
+        and _retry_after(bad) is None
+        and f_card["uses"] == 1
+        and f_card["tokens_used"] == 0
     )
 
     # --- a retried sequence bills only the admitted calls: refuse →
@@ -1153,14 +1163,20 @@ def _envelope_probes() -> dict[str, Any]:
         qe.status_code == 429
         and isinstance(qe_body.get("detail"), str)
         and qe_body.get("code") == "quota_exceeded"
+        and _retry_after(qe) is None
+        and not any(name.startswith("x-ratelimit-") for name in _rl_headers(qe))
     )
     unauth = _complete(client, {_H_KEY: "fx1k_forged"})
-    out["unauthorized_401_enveloped"] = unauth.status_code == 401 and isinstance(
-        unauth.json().get("detail"), str
+    out["unauthorized_401_enveloped"] = (
+        unauth.status_code == 401
+        and isinstance(unauth.json().get("detail"), str)
+        and _retry_after(unauth) is None
     )
     missing = client.get("/harness/keys/fx1k_deadbeef/usage", headers=root_h)
-    out["not_found_404_enveloped"] = missing.status_code == 404 and isinstance(
-        missing.json().get("detail"), str
+    out["not_found_404_enveloped"] = (
+        missing.status_code == 404
+        and isinstance(missing.json().get("detail"), str)
+        and _retry_after(missing) is None
     )
 
     # openai leg — {error: {code, message, type}}
@@ -1183,6 +1199,8 @@ def _envelope_probes() -> dict[str, Any]:
         oqe.status_code == 429
         and isinstance(oqe_err, dict)
         and oqe_err.get("code") == "quota_exceeded"
+        and _retry_after(oqe) is None
+        and not any(name.startswith("x-ratelimit-") for name in _rl_headers(oqe))
     )
     # the anthropic leg keeps its own retry grammar distinct
     am_raw, _am_id = _mint(client, root_h, max_requests=1)
@@ -1190,7 +1208,11 @@ def _envelope_probes() -> dict[str, Any]:
     _messages(client, am_h)
     ame = _messages(client, am_h)
     out["quota_exceeded_anthropic_terminal"] = (
-        ame.status_code == 429 and ame.headers.get(_H_SHOULD_RETRY) == "false"
+        ame.status_code == 429
+        and ame.headers.get(_H_SHOULD_RETRY) == "false"
+        and _retry_after(ame) is None
+        and isinstance(ame.json().get("error"), dict)
+        and not any(name.startswith("anthropic-ratelimit-") for name in _rl_headers(ame))
     )
     return out
 
@@ -1222,7 +1244,7 @@ def quota2_audit() -> dict[str, Any]:
 def quota2_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under quota2_audit.v1."""
     r = quota2_audit()
-    ok = bool(r) and all(v is True for v in r.values())
+    ok = len(r) == 107 and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "quota2_audit",
         "schema": "quota2_audit.v1",
@@ -1262,8 +1284,8 @@ def quota2_audit_bench() -> dict[str, Any]:
             "exhaustion never leaks onto a peer's card; created_at and "
             "last_used_at are server-stamped (None until first use, "
             "client headers can't forge them); uses, tokens and "
-            "last_used_at survive a --state-dir restart while the window "
-            "and the served ring stay honestly process-local. Refusals "
+            "last_used_at replay into a new app from --state-dir while the "
+            "window and the served ring stay honestly process-local. Refusals "
             "bill nothing, post-auth failures bill the use but never "
             "tokens, and every refusal lands enveloped on both grammars."
             if ok
