@@ -141,6 +141,11 @@ def verify_release(checkpoint_dir: str | Path) -> bool:
         if not hmac.compare_digest(expected, signature):
             return False
         manifest = ReleaseManifest.model_validate_json(manifest_bytes)
-        return build_manifest(root).artifacts == manifest.artifacts
+        paths = {str(path.relative_to(root)): path for path in _artifact_paths(root)}
+        if paths.keys() != manifest.artifacts.keys():
+            return False
+        # Reject cheap inventory mismatches before reading potentially huge weights.
+        # Hash every matching artifact afresh; metadata is not a digest cache.
+        return all(_hash_file(path) == manifest.artifacts[name] for name, path in paths.items())
     except (OSError, ValueError):
         return False
