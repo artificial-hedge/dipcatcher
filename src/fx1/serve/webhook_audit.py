@@ -100,6 +100,7 @@ _ENV_KEYS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
+    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
 )
 
 _FT_CORPUS = b'{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
@@ -989,6 +990,9 @@ def webhook_audit() -> dict[str, Any]:
     saved = {k: os.environ.get(k) for k in _ENV_KEYS}
     for k in _ENV_KEYS:
         os.environ.pop(k, None)
+    # The audit's real HTTP sink is deliberately loopback-only. Production
+    # callback delivery remains public-network-only unless explicitly opted in.
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     sink = _Sink()
     out: dict[str, Any] = {}
     try:
