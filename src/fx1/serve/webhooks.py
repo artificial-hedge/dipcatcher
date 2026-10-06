@@ -18,6 +18,9 @@ import contextlib
 import hashlib
 import hmac
 import math
+import urllib.error
+import urllib.request
+from typing import Any
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -36,6 +39,30 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
+
+
+class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
+    """Never replay a webhook request to a server-selected destination.
+
+    ``urllib`` follows 301/302/303 redirects by changing the signed POST
+    into a GET while retaining caller-supplied signature headers.  Besides
+    leaking those authentication headers across origins, that behavior can
+    report a delivery as successful even though the callback body never
+    reached the declared endpoint.  Every redirect is therefore a delivery
+    failure; callers may register the final URL explicitly instead.
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        del req, fp, code, msg, headers, newurl
+        return None
 
 
 def _signed_payload(timestamp: str, body: bytes) -> bytes:
@@ -130,10 +157,9 @@ def deliver_signed(
     is never retried. Delivery faults return as the error string — this
     helper never raises into its caller's worker."""
     import time  # noqa: PLC0415 — local import keeps the module leaf
-    import urllib.error  # noqa: PLC0415
-    import urllib.request  # noqa: PLC0415
 
     error: str | None = None
+    opener = urllib.request.build_opener(_RefuseRedirects)
     for attempt in range(max_attempts):
         if attempt:
             time.sleep(backoff_s * (1 << (attempt - 1)))
@@ -149,7 +175,7 @@ def deliver_signed(
                 headers=headers,
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
+            with opener.open(req, timeout=timeout_s) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
                 if resp.status < 400:
                     return True, None, attempt + 1
                 error = f"callback endpoint returned {resp.status}"
