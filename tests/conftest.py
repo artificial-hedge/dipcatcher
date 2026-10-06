@@ -11,7 +11,7 @@ from pathlib import Path
 # background configuration fetch on first use, even for file-backed tracking.
 # Disable that optional telemetry before test modules import MLflow so the
 # ``not network`` gate cannot disclose environment metadata or depend on egress.
-os.environ.setdefault("MLFLOW_DISABLE_TELEMETRY", "true")
+os.environ["MLFLOW_DISABLE_TELEMETRY"] = "true"
 
 import pytest
 
