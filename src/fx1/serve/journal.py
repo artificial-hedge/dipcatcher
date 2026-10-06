@@ -23,6 +23,9 @@ Honesty rules (the contract this module sells):
   hash + link and stops at the first bad one: a torn tail from a
   crash-mid-append truncates honestly instead of corrupting state, and
   a mid-journal edit invalidates the rest rather than smuggling.
+- Replay never rewrites damaged bytes. A malformed record or missing
+  newline blocks further appends until successful replay or explicit
+  compaction; new transitions cannot be hidden behind a broken chain.
 - ``append`` fsyncs before returning — a record the API has already
   answered with is durable before the worker transitions it.
 """
@@ -59,11 +62,34 @@ def _line_bytes(seq: int, chain: str, payload: dict[str, Any]) -> bytes:
     return line
 
 
+def _verified_payload(raw: bytes, seq: int, chain: str) -> dict[str, Any] | None:
+    """Validate one complete journal record without hiding programming errors."""
+    if not raw.endswith(b"\n"):
+        return None
+    try:
+        line = json.loads(raw)
+    except (ValueError, RecursionError):
+        # Includes malformed JSON/UTF-8 and the decoder's depth/integer limits.
+        return None
+    if not isinstance(line, dict):
+        return None
+    if type(line.get("seq")) is not int or line["seq"] != seq or line.get("chain") != chain:
+        return None
+    payload = line.get("payload")
+    if not isinstance(payload, dict):
+        return None
+    payload_raw = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    expected = hashlib.sha256(f"{seq}|{chain}|{payload_raw}".encode()).hexdigest()
+    if line.get("sha256") != expected:
+        return None
+    return payload
+
+
 @dataclass
 class ReplayResult:
     """What ``replay`` found: verified payloads in order, plus where the
     chain broke (``truncated_at`` is the byte offset of the first bad
-    line; ``dropped`` counts lines after it)."""
+    line; ``dropped`` includes the bad line and every subsequent line)."""
 
     payloads: list[dict[str, Any]]
     truncated_at: int | None = None
@@ -76,6 +102,8 @@ class JobJournal:
 
     Thread-safe: all mutations hold the internal lock. The file is opened
     lazily on first append so a read-only boot never creates files.
+    Replay an existing journal before appending. Locks protect this
+    instance only, not independent instances or other processes.
     """
 
     def __init__(self, path: str | os.PathLike[str]) -> None:
@@ -83,6 +111,7 @@ class JobJournal:
         self._lock = threading.Lock()
         self._seq = 0
         self._chain = "0" * 64
+        self._append_blocked = False
 
     # ---- write path ----------------------------------------------------
 
@@ -90,56 +119,61 @@ class JobJournal:
         """Append one record; fsync before returning so a confirmed
         transition is durable before the caller moves on."""
         with self._lock:
+            if self._append_blocked:
+                raise RuntimeError(f"journal {self.path.name}: replay or compact before appending")
             line = _line_bytes(self._seq, self._chain, payload)
             self.path.parent.mkdir(parents=True, exist_ok=True)
+            # An interrupted write/fsync may already have changed the file.
+            # Do not reuse its sequence until recovery establishes the tail.
+            self._append_blocked = True
             with self.path.open("ab") as fh:
                 fh.write(line)
                 fh.flush()
                 os.fsync(fh.fileno())
             self._chain = hashlib.sha256(line).hexdigest()
             self._seq += 1
+            self._append_blocked = False
 
     # ---- read path -----------------------------------------------------
 
     def replay(self) -> ReplayResult:
-        """Verify the chain line-by-line; stop at the first bad line.
+        """Verify records in a single streaming pass, preserving damaged bytes.
 
-        A clean replay returns every payload in order. A torn tail or
-        mid-file edit stops at that line — ``truncated_at`` records the
-        byte offset so the caller can report the dropped span."""
+        The returned payloads remain materialized for existing store callers;
+        raw file contents and split-line copies are no longer held in memory.
+        A broken chain leaves appends blocked until recovery or compaction.
+        """
         with self._lock:
+            self._append_blocked = True
             out = ReplayResult(payloads=[])
-            if not self.path.exists():
-                return out
-            data = self.path.read_bytes()
             seq = 0
             chain = "0" * 64
             offset = 0
-            for raw in data.splitlines(keepends=True):
-                offset += len(raw)
-                try:
-                    line = json.loads(raw)
-                    payload_raw = json.dumps(line["payload"], sort_keys=True, separators=(",", ":"))
-                    expect = hashlib.sha256(
-                        f"{line['seq']}|{line['chain']}|{payload_raw}".encode()
-                    ).hexdigest()
-                    ok = line["seq"] == seq and line["chain"] == chain and line["sha256"] == expect
-                except Exception:  # noqa: BLE001 — corrupt line, verified shape only
-                    ok = False
-                    line = None
-                if not ok:
-                    out.truncated_at = offset - len(raw)
-                    out.dropped = len(data[out.truncated_at :].splitlines())
-                    out.warnings.append(
-                        f"journal {self.path.name}: chain broke at byte "
-                        f"{out.truncated_at} ({out.dropped} line(s) dropped)"
-                    )
-                    break
-                out.payloads.append(line["payload"])
-                chain = hashlib.sha256(raw).hexdigest()
-                seq += 1
+            try:
+                fh = self.path.open("rb")
+            except FileNotFoundError:
+                self._seq = seq
+                self._chain = chain
+                self._append_blocked = False
+                return out
+            with fh:
+                for raw in fh:
+                    payload = _verified_payload(raw, seq, chain)
+                    if payload is None:
+                        out.truncated_at = offset
+                        out.dropped = 1 + sum(1 for _ in fh)
+                        out.warnings.append(
+                            f"journal {self.path.name}: chain broke at byte "
+                            f"{out.truncated_at} ({out.dropped} line(s) dropped)"
+                        )
+                        break
+                    out.payloads.append(payload)
+                    chain = hashlib.sha256(raw).hexdigest()
+                    seq += 1
+                    offset += len(raw)
             self._seq = seq
             self._chain = chain
+            self._append_blocked = out.truncated_at is not None
             return out
 
     # ---- maintenance ---------------------------------------------------
@@ -148,8 +182,9 @@ class JobJournal:
         """Rewrite the journal holding only the live records.
 
         Called on boot after replay (drops dead history) and safe to call
-        any time — the write is atomic (tmp + rename + fsync) so a crash
-        mid-compact leaves the old journal intact."""
+        any time. The replacement file is fsynced before atomic rename.
+        Parent-directory fsync and multi-process coordination are not
+        provided; this is not a power-loss durability guarantee."""
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
         with self._lock:
             tmp.parent.mkdir(parents=True, exist_ok=True)
@@ -167,6 +202,7 @@ class JobJournal:
             self._seq = seq
             self._chain = chain
             self._appends_since_compact = 0
+            self._append_blocked = False
 
 
 @dataclass
