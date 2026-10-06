@@ -12,12 +12,10 @@ separation.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
+from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from quant_fund._typing import FloatArray
+FloatArray = NDArray[np.float64]
 
 __all__ = [
     "lle",
@@ -28,7 +26,7 @@ __all__ = [
 ]
 
 
-def _knn(x: FloatArray, k: int) -> tuple[FloatArray, FloatArray]:
+def _knn(x: FloatArray, k: int) -> tuple[NDArray[np.intp], FloatArray]:
     d = np.linalg.norm(x[:, None, :] - x[None, :, :], axis=2)
     np.fill_diagonal(d, np.inf)
     idx = np.argsort(d, axis=1)[:, :k]

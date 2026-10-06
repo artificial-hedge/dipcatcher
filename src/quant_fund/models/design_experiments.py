@@ -11,12 +11,10 @@ a random design's log-det.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
+from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from quant_fund._typing import FloatArray
+FloatArray = NDArray[np.float64]
 
 __all__ = [
     "full_factorial_2k",

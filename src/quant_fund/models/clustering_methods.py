@@ -11,12 +11,10 @@ density case.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
+from numpy.typing import NDArray
 
-if TYPE_CHECKING:
-    from quant_fund._typing import FloatArray
+FloatArray = NDArray[np.float64]
 
 __all__ = [
     "kmeans_pp",
@@ -179,7 +177,7 @@ def bench_cluster(seed: int = 535) -> dict[str, float]:
     rng = np.random.default_rng(seed)
     out: dict[str, float] = {}
 
-    def purity(lab: FloatArray, truth: FloatArray) -> float:
+    def purity(lab: NDArray[np.intp], truth: NDArray[np.intp]) -> float:
         lab = np.asarray(lab)
         truth = np.asarray(truth)
         best = 0.0
@@ -201,8 +199,8 @@ def bench_cluster(seed: int = 535) -> dict[str, float]:
     truth = np.repeat([0, 1, 2], 60)
     km = kmeans_pp(blobs, 3, seed)
     pm = pam(blobs, 3, seed)
-    p_km = purity(km["labels"], truth)
-    p_pm = purity(pm["labels"], truth)
+    p_km = purity(np.asarray(km["labels"], dtype=np.intp), truth)
+    p_pm = purity(np.asarray(pm["labels"], dtype=np.intp), truth)
     out["synthetic_blobs_purity_km"] = p_km
     out["synthetic_blobs_purity_pm"] = p_pm
     if p_km < 0.98 or p_pm < 0.98:
