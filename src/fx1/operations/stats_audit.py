@@ -71,6 +71,10 @@ from fx1.operations.base import Operation, OperationContext
 
 __all__ = ["stats_audit", "stats_audit_bench"]
 
+_T_INIT = "2023-12-31T23:57:00+00:00"
+_T_MID = "2023-12-31T23:59:00+00:00"
+_T_LATE = "2023-12-31T23:59:30+00:00"
+
 
 def _ctx() -> OperationContext:
     # These transforms never read the workspace; a real (validated) root
@@ -153,7 +157,7 @@ def _probe_drawdown() -> dict[str, bool]:
     out["d_durations"] = r.durations == [0, 1, 2, 0, 1]
     out["d_all_nonpositive"] = all(d <= 0.0 for d in r.drawdowns)
     eq = mod.execute(mod.Input(prices=[100.0, 90.0, 100.0]), ctx)
-    out["d_reattain_resets"] = eq.durations == [0, 1, 0] and eq.drawdowns[2] == 0.0
+    out["d_reattain_resets"] = eq.durations == [0, 1, 0] and math.isclose(eq.drawdowns[2], 0.0)
     out["d_reject_zero_price"] = _refuses(mod.Input, prices=[0.0])
     out["d_reject_nan"] = _refuses(mod.Input, prices=[float("nan")])
     out["d_extra_forbid"] = _refuses(mod.Input, prices=[1.0], bogus=1)
@@ -169,7 +173,7 @@ def _probe_ewma() -> dict[str, bool]:
         ctx,
     )
     # forecasts are pre-observation: f0 = v0 = 0, f1 = .9*0 + .1*.01 = .001
-    out["e_forecasts_pre_observation"] = r.forecast_variances[0] == 0.0
+    out["e_forecasts_pre_observation"] = math.isclose(r.forecast_variances[0], 0.0)
     v1 = 0.9 * 0.0 + 0.1 * 0.01
     v2 = 0.9 * v1 + 0.1 * 0.01
     v3 = 0.9 * v2 + 0.1 * 0.04
@@ -242,7 +246,9 @@ def _probe_rolling_mad() -> dict[str, bool]:
         const.zscore_status[2] == "zero_mad" and const.robust_zscores[2] is None
     )
     out["m_median_still_reported"] = (
-        math.isclose(const.medians[2] or 0.0, 5.0) and const.median_absolute_deviations[2] == 0.0
+        const.median_absolute_deviations[2] is not None
+        and math.isclose(const.medians[2] or 0.0, 5.0)
+        and math.isclose(const.median_absolute_deviations[2], 0.0)
     )
     one = mod.execute(mod.Input(values=[7.0, 9.0], window=1), ctx)
     out["m_window_one_zero_mad"] = one.zscore_status == ["zero_mad"] * 2
@@ -317,7 +323,9 @@ def _probe_rolling_trend() -> dict[str, bool]:
     out["t_r2_perfect"] = math.isclose(r.r_squared[3] or 0.0, 1.0)
     const = mod.execute(mod.Input(values=[5.0, 5.0, 5.0, 5.0], window=4), ctx)
     out["t_constant_status"] = const.status[3] == "constant"
-    out["t_constant_slope_zero"] = const.slopes_per_observation[3] == 0.0
+    out["t_constant_slope_zero"] = const.slopes_per_observation[3] is not None and math.isclose(
+        const.slopes_per_observation[3], 0.0
+    )
     out["t_constant_r2_null"] = const.r_squared[3] is None
     out["t_constant_intercept_level"] = math.isclose(const.centered_intercepts[3] or 0.0, 5.0)
     out["t_dof_reported"] = r.residual_degrees_of_freedom == 2
@@ -341,7 +349,9 @@ def _probe_bipower() -> dict[str, bool]:
         (math.pi / 2.0) * (0.01 * 0.02 + 0.02 * 0.03),
         rel_tol=1e-12,
     )
-    out["b_factor_none_default"] = r.applied_finite_sample_factor == 1.0
+    out["b_factor_none_default"] = r.applied_finite_sample_factor is not None and math.isclose(
+        r.applied_finite_sample_factor, 1.0
+    )
     adj = mod.execute(
         mod.Input(returns=[0.01, -0.02, 0.03], finite_sample_policy="n_over_n_minus_1"),
         ctx,
@@ -376,7 +386,12 @@ def _probe_permutation_entropy() -> dict[str, bool]:
     mod = permutation_entropy
     ctx = _ctx()
     mono = mod.execute(mod.Input(values=[float(i) for i in range(30)], embedding_dimension=3), ctx)
-    out["p_monotone_zero_entropy"] = mono.entropy_nats == 0.0 and mono.normalized_entropy == 0.0
+    out["p_monotone_zero_entropy"] = (
+        mono.entropy_nats is not None
+        and mono.normalized_entropy is not None
+        and math.isclose(mono.entropy_nats, 0.0)
+        and math.isclose(mono.normalized_entropy, 0.0)
+    )
     out["p_monotone_one_pattern"] = mono.observed_pattern_count == 1
     alt = mod.execute(
         mod.Input(values=[0.0, 1.0] * 15, embedding_dimension=2, minimum_patterns=1),
@@ -487,7 +502,8 @@ def _probe_spectral() -> dict[str, bool]:
         const.peak_frequency_hz is None and const.spectral_entropy_nats is None
     )
     out["sp_constant_zero_positive"] = (
-        const.integrated_positive_frequency_power == 0.0 and const.positive_power_underflow is False
+        math.isclose(const.integrated_positive_frequency_power, 0.0)
+        and const.positive_power_underflow is False
     )
     out["sp_constant_entropy_status"] = const.entropy_status == "no_positive_frequency_power"
     three = mod.execute(mod.Input(values=[1.0, 0.0, 0.0], sample_interval_seconds=1.0), ctx)
@@ -549,20 +565,22 @@ def _probe_time_weighted() -> dict[str, bool]:
     # one obs live for the whole 120s window → mean = value
     r = mod.execute(
         mod.Input(
-            observations=[obs("2023-12-31T23:57:00+00:00", "2023-12-31T23:57:00+00:00", 2.0)],
+            observations=[obs(_T_INIT, _T_INIT, 2.0)],
             query_time=base,
             lookback_seconds=120,
         ),
         ctx,
     )
     out["tw_single_held"] = math.isclose(r.time_weighted_mean, 2.0)
-    out["tw_full_coverage"] = r.coverage_fraction == 1.0 and r.covered_seconds == 120.0
+    out["tw_full_coverage"] = math.isclose(r.coverage_fraction, 1.0) and math.isclose(
+        r.covered_seconds, 120.0
+    )
     # 0.0 held for first 60s of window, 4.0 for last 60s → mean 2.0
     r2 = mod.execute(
         mod.Input(
             observations=[
-                obs("2023-12-31T23:57:00+00:00", "2023-12-31T23:57:00+00:00", 0.0),
-                obs("2023-12-31T23:59:00+00:00", "2023-12-31T23:59:00+00:00", 4.0),
+                obs(_T_INIT, _T_INIT, 0.0),
+                obs(_T_MID, _T_MID, 4.0),
             ],
             query_time=base,
             lookback_seconds=120,
@@ -576,9 +594,9 @@ def _probe_time_weighted() -> dict[str, bool]:
     stale = mod.execute(
         mod.Input(
             observations=[
-                obs("2023-12-31T23:57:00+00:00", "2023-12-31T23:57:00+00:00", 0.0),
-                obs("2023-12-31T23:58:30+00:00", "2023-12-31T23:59:00+00:00", 9.0),
-                obs("2023-12-31T23:59:00+00:00", "2023-12-31T23:59:00+00:00", 4.0),
+                obs(_T_INIT, _T_INIT, 0.0),
+                obs("2023-12-31T23:58:30+00:00", _T_MID, 9.0),
+                obs(_T_MID, _T_MID, 4.0),
             ],
             query_time=base,
             lookback_seconds=120,
@@ -595,8 +613,8 @@ def _probe_time_weighted() -> dict[str, bool]:
     gated = mod.execute(
         mod.Input(
             observations=[
-                obs("2023-12-31T23:57:00+00:00", "2023-12-31T23:57:00+00:00", 1.0),
-                obs("2023-12-31T23:59:30+00:00", "2024-01-01T00:01:00+00:00", 9.0),
+                obs(_T_INIT, _T_INIT, 1.0),
+                obs(_T_LATE, "2024-01-01T00:01:00+00:00", 9.0),
             ],
             query_time=base,
             lookback_seconds=120,
@@ -610,7 +628,7 @@ def _probe_time_weighted() -> dict[str, bool]:
     try:
         mod.execute(
             mod.Input(
-                observations=[obs("2023-12-31T23:59:30+00:00", "2023-12-31T23:59:30+00:00", 1.0)],
+                observations=[obs(_T_LATE, _T_LATE, 1.0)],
                 query_time=base,
                 lookback_seconds=120,
             ),
@@ -623,12 +641,12 @@ def _probe_time_weighted() -> dict[str, bool]:
         mod.Input,
         observations=[
             {
-                "event_time": "2023-12-31T23:59:00+00:00",
-                "available_time": "2023-12-31T23:59:00+00:00",
+                "event_time": _T_MID,
+                "available_time": _T_MID,
                 "value": 1.0,
             },
             {
-                "event_time": "2023-12-31T23:59:00+00:00",
+                "event_time": _T_MID,
                 "available_time": "2023-12-31T23:59:10+00:00",
                 "value": 2.0,
             },
@@ -652,8 +670,8 @@ def _probe_time_weighted() -> dict[str, bool]:
         mod.Input,
         observations=[
             {
-                "event_time": "2023-12-31T23:59:00+00:00",
-                "available_time": "2023-12-31T23:59:00+00:00",
+                "event_time": _T_MID,
+                "available_time": _T_MID,
                 "value": 1.0,
             }
         ],
@@ -664,8 +682,8 @@ def _probe_time_weighted() -> dict[str, bool]:
         mod.Input,
         observations=[
             {
-                "event_time": "2023-12-31T23:59:00+00:00",
-                "available_time": "2023-12-31T23:59:00+00:00",
+                "event_time": _T_MID,
+                "available_time": _T_MID,
                 "value": 1.0,
             }
         ],
@@ -676,8 +694,8 @@ def _probe_time_weighted() -> dict[str, bool]:
         mod.Input,
         observations=[
             {
-                "event_time": "2023-12-31T23:57:00+00:00",
-                "available_time": "2023-12-31T23:57:00+00:00",
+                "event_time": _T_INIT,
+                "available_time": _T_INIT,
                 "value": 1.0,
             }
         ],
@@ -691,8 +709,8 @@ def _probe_time_weighted() -> dict[str, bool]:
         mod.Input,
         observations=[
             {
-                "event_time": "2023-12-31T23:59:00+00:00",
-                "available_time": "2023-12-31T23:59:00+00:00",
+                "event_time": _T_MID,
+                "available_time": _T_MID,
                 "value": 1.0,
             }
         ],
