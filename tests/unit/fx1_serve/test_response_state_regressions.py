@@ -197,7 +197,7 @@ def test_only_committed_background_results_append_to_conversation(intervention: 
         _file_search_turn=lambda request, effective: ([], effective),
         response_to_kwargs=lambda *args, **kwargs: {},
         ft_store=types.SimpleNamespace(checkpoint_for=lambda _: None),
-        _complete_request_from_kwargs=lambda kwargs: object(),
+        CompleteRequest=lambda **kwargs: types.SimpleNamespace(**kwargs),
         complete=complete,
         Response=object,
         validate_response_format=lambda *args: None,
@@ -212,6 +212,7 @@ def test_only_committed_background_results_append_to_conversation(intervention: 
         },
         response_input_items_for_store=lambda items, **kwargs: [dict(item) for item in items],
     )
+    bindings["_complete_request_from_kwargs"] = _handler("_complete_request_from_kwargs", bindings)
     envelope, completion_id, usage = _handler("_openai_response_core", bindings)(body, {}, rid=rid)
     assert completion_id == "completion_review" and usage == output.usage
     stored = store.get(rid)
