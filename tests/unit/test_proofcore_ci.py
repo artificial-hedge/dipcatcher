@@ -274,6 +274,11 @@ def test_workflow_declares_gate_matrix(workflow: dict) -> None:
     assert expected <= set(workflow["jobs"])
 
 
+def test_pull_request_jobs_do_not_receive_repository_signing_key(workflow: dict) -> None:
+    """PR-controlled commands must never receive the long-lived HMAC key."""
+    assert "PROOFCORE_SIGNING_KEY" not in yaml.safe_dump(workflow)
+
+
 def test_workflow_references_existing_make_targets(workflow: dict) -> None:
     makefile = MAKEFILE.read_text()
     targets = set(re.findall(r"^([a-zA-Z0-9_-]+):(?:\s|.*##)", makefile, flags=re.M))
