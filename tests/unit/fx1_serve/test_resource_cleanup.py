@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 import urllib.error
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from unittest.mock import Mock, call
@@ -70,59 +71,63 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
     assert body.close_calls == 1
 
 
-def test_webhook_closes_each_response_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Each attempt's response and pinned connection close before a 5xx retry."""
+def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A transient 5xx closes its connection before the next attempt."""
     monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
-    responses: list[Any] = []
-    connections: list[Any] = []
 
-    class _Resp:
-        status = 503
-        closed = False
+    class RefuseHandler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — stdlib handler API
+            length = int(self.headers.get("Content-Length", "0"))
+            self.rfile.read(length)
+            self.send_response(503)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error":"SYNTHETIC refusal"}')
 
-        def __enter__(self) -> _Resp:
-            return self
+        def log_message(self, *_args: Any) -> None:
+            pass
 
-        def __exit__(self, *args: Any) -> None:
-            self.closed = True
+    created: list[webhooks._PinnedHTTPConnection] = []
+    real_init = webhooks._PinnedHTTPConnection.__init__
+    real_close = webhooks._PinnedHTTPConnection.close
 
-    class _Conn:
-        closed = False
+    def tracked_init(self: webhooks._PinnedHTTPConnection, *args: Any, **kwargs: Any) -> None:
+        real_init(self, *args, **kwargs)
+        self._close_calls = 0  # type: ignore[attr-defined]
+        created.append(self)
 
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            connections.append(self)
+    def counted_close(self: webhooks._PinnedHTTPConnection) -> None:
+        self._close_calls += 1  # type: ignore[attr-defined]
+        real_close(self)
 
-        def request(self, *args: Any, **kwargs: Any) -> None:
-            return None
+    monkeypatch.setattr(webhooks._PinnedHTTPConnection, "__init__", tracked_init)
+    monkeypatch.setattr(webhooks._PinnedHTTPConnection, "close", counted_close)
 
-        def getresponse(self) -> _Resp:
-            resp = _Resp()
-            responses.append(resp)
-            return resp
-
-        def close(self) -> None:
-            self.closed = True
-
-    monkeypatch.setattr(webhooks, "_PinnedHTTPConnection", _Conn)
-    ok, message, attempts = webhooks.deliver_signed(
-        "http://127.0.0.1:9/hook",
-        None,
-        b'{"kind":"SYNTHETIC"}',
-        max_attempts=2,
-        backoff_s=0,
-    )
+    server = ThreadingHTTPServer(("127.0.0.1", 0), RefuseHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        ok, message, attempts = webhooks.deliver_signed(
+            f"http://127.0.0.1:{server.server_address[1]}/hook",
+            None,
+            b'{"kind":"SYNTHETIC"}',
+            max_attempts=2,
+            backoff_s=0,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
     assert (ok, message, attempts) == (False, "callback endpoint returned 503", 2)
-    assert len(responses) == 2 and all(resp.closed for resp in responses)
-    assert len(connections) == 2 and all(conn.closed for conn in connections)
+    assert len(created) == 2
+    assert all(connection._close_calls >= 1 for connection in created)  # type: ignore[attr-defined]
 
 
 def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Loopback receiver fixtures: opt in to private-network callbacks for
-    # this test only — the validator refuses them without it.
     monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []

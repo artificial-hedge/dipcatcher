@@ -119,6 +119,7 @@ _SWEPT_ENVS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
+    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
 )
 _WAIT_S = 20.0
 _OPENAI_TERMINAL = ("completed", "failed", "expired", "cancelled")
@@ -1602,12 +1603,8 @@ def batch_audit() -> dict[str, Any]:
     prev = {k: os.environ.get(k) for k in _SWEPT_ENVS}
     for k in _SWEPT_ENVS:
         os.environ.pop(k, None)
-    # Synthetic loopback receivers: opt in narrowly for this audit run — the
-    # webhook validator refuses private addresses without it (webhook_audit's
-    # convention); restored by the env umbrella in finally.
-    prev["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = os.environ.get(
-        "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
-    )
+    # The audit's webhook sink is deliberately loopback-only. Production
+    # callback delivery remains public-network-only unless explicitly opted in.
     os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     out: dict[str, Any] = {}
     try:

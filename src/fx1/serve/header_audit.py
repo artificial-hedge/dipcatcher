@@ -1845,6 +1845,8 @@ def header_audit() -> dict[str, Any]:
     """Run the header-surface battery; returns literal bools."""
     out: dict[str, Any] = {}
     with _audit_context():
+        # Timeout/garbage probes use owned loopback BYOK fixtures.
+        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         out.update(_timeout_parse_probes())
         out.update(_precedence_probes())
         out.update(_timeout_enforcement_probes())

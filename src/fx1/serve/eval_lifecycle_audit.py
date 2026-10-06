@@ -137,6 +137,7 @@ _SWEPT_ENVS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
+    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
 )
 # Deliberately-insecure literal: BYOK overrides accept http:// for local
 # stacks — this URL is never dialed (the injected resolver returns stubs).
@@ -546,6 +547,7 @@ def _legs_probes() -> dict[str, Any]:
             ["harness", "eval", "tooluse", "--backend", "byok", "--seed", "3"],
             env={
                 "FX1_BYOK_BASE_URL": f"http://127.0.0.1:{port}/v1",
+                "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
                 "FX1_BYOK_API_KEY": "stub-key",
                 "FX1_BYOK_MODEL": "stub-v0",
             },
@@ -1545,10 +1547,9 @@ def _callback_probes() -> dict[str, Any]:
     """Terminal webhook: payload is the record, secret signs but never echoes."""
     out: dict[str, Any] = {}
     sink = _Sink()
-    # Synthetic loopback receiver: opt in narrowly for this probe — the
-    # webhook validator refuses private addresses without it
-    # (webhook_audit's convention); restored in finally.
-    saved_webhook_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    # Loopback webhook sink — opt into private-network delivery for these
+    # probes; production callbacks stay public-only unless opted in.
+    hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
     os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         client, _api = _client({"byok": lambda: _EvalBackend()})
@@ -1627,11 +1628,15 @@ def _callback_probes() -> dict[str, Any]:
             got is not None and json.loads(got.body).get("status") == "cancelled"
         )
     finally:
-        sink.close()
-        if saved_webhook_env is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-        else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
+        try:
+            sink.close()
+        finally:
+            # Never leak the private-network callback opt-in if sink cleanup
+            # raises while unwinding the probe.
+            if hook_prev is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = hook_prev
     return out
 
 

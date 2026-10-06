@@ -10,7 +10,12 @@ from fx1.serve import get_backend
 from fx1.serve.byok_audit import byok_audit, byok_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
-_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+_ENVS = (
+    "FX1_BYOK_BASE_URL",
+    "FX1_BYOK_API_KEY",
+    "FX1_BYOK_MODEL",
+    "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
+)
 
 
 def test_all_probes_hold() -> None:

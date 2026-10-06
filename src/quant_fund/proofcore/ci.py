@@ -112,10 +112,22 @@ def receipt_paths(receipts_dir: Path) -> list[Path]:
 
     Recursive (epoch-chain member semantics): a receipt under a
     subdirectory is still evidence; quarantined subdirs are governed by
-    ``quality/legacy_quarantine.json`` instead."""
-    from quant_fund.utils.receipt import verified_corpus_files
+    ``quality/legacy_quarantine.json`` instead.
 
-    return verified_corpus_files(Path(receipts_dir))
+    This intentionally duplicates the tiny corpus-listing boundary instead
+    of importing ``quant_fund.utils.receipt``: proofcore is a standalone
+    contract kernel and may not depend on the rest of ``quant_fund``.
+    """
+    root = Path(receipts_dir)
+    quarantined = frozenset({"legacy-unsealed"})
+    return sorted(
+        path
+        for path in root.rglob("*.json")
+        if path.is_file()
+        and not (
+            len(path.relative_to(root).parts) > 1 and path.relative_to(root).parts[0] in quarantined
+        )
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -175,9 +175,7 @@ def attestation_audit_bench() -> dict[str, Any]:
         "unlisted_extra_verifies": rel["unlisted_extra_file_passes"],
     }
     ok = (
-        ok
-        and flags["quote_substring_nonce"] is False
-        and flags["unlisted_extra_verifies"] is False
+        ok and flags["quote_substring_nonce"] is False and flags["unlisted_extra_verifies"] is False
     )
     payload: dict[str, Any] = {
         "kind": "attestation_audit",

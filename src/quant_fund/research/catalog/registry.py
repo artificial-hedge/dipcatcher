@@ -5045,10 +5045,8 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # Wave-1683 hindu-myth-3 canon.
         "danava_qa_studies",
         "gana_qa_studies",
-        "gandharva_qa_studies",
         "kalakeya_qa_studies",
         "kimpurusha_qa_studies",
-        "rakshasa_qa_studies",
         # Wave-1684 aztec-deity-2 canon.
         "cihuacoatl_qa_studies",
         "mayahuel_qa_studies",
@@ -5081,16 +5079,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "indiges_qa_studies",
         "lar_qa_studies",
         "numen_qa_studies",
-        "penates_qa_studies",
         "terminus_qa_studies",
         "vertumnus_qa_studies",
         # Wave-1689 hindu-myth-4 canon.
-        "apsara_qa_studies",
         "bhairava_qa_studies",
         "bhuta_qa_studies",
         "pretas_qa_studies",
         "vetal_qa_studies",
-        "yaksha_qa_studies",
         # Wave-1690 slavic-myth-3 canon.
         "kladenets_qa_studies",
         "kostroma_qa_studies",

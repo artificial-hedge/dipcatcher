@@ -1574,6 +1574,9 @@ def jobs_audit() -> dict[str, Any]:
     from fx1.serve.conv_audit import _audit_context  # noqa: PLC0415
 
     with _audit_context():
+        # The webhook probes post to a real loopback sink; production
+        # callback delivery remains public-network-only unless opted in.
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         out: dict[str, Any] = {}
         out.update(_submit_lifecycle_probes())
         out.update(_validation_probes())

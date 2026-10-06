@@ -32,9 +32,7 @@ def emd_lp(xs: FloatArray, xt: FloatArray) -> float:
     m, n = xs.shape[0], xt.shape[0]
     cost = np.sqrt(
         np.maximum(
-            np.sum(xs**2, axis=1, keepdims=True)
-            + np.sum(xt**2, axis=1)[None, :]
-            - 2.0 * xs @ xt.T,
+            np.sum(xs**2, axis=1, keepdims=True) + np.sum(xt**2, axis=1)[None, :] - 2.0 * xs @ xt.T,
             0.0,
         )
     )

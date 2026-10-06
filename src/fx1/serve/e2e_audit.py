@@ -46,6 +46,7 @@ _E2E_ENV = (
     "FX1_BYOK_BASE_URL",
     "FX1_BYOK_API_KEY",
     "FX1_BYOK_MODEL",
+    "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
     "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
     "MOONSHOT_API_KEY",
 )
@@ -178,13 +179,12 @@ def e2e_audit() -> dict[str, bool]:
             {
                 "FX1_API_KEY": _API_KEY,
                 "FX1_BYOK_BASE_URL": f"http://127.0.0.1:{stub_port}/v1",
+                "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
+                # The job-webhook probe delivers to a loopback sink; production
+                # callbacks stay public-network-only unless opted in.
+                "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
                 "FX1_BYOK_API_KEY": "stub-engine-key",
                 "FX1_BYOK_MODEL": "stub-v0",
-                # Synthetic loopback receivers: opt in narrowly for this
-                # audit run — the webhook validator refuses private
-                # addresses without it (webhook_audit's convention);
-                # restored by the _E2E_ENV umbrella in finally.
-                "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
             }
         )
         os.environ.pop("MOONSHOT_API_KEY", None)
@@ -620,22 +620,26 @@ def e2e_audit() -> dict[str, bool]:
             hook_srv.server_close()
             hook_thread.join(timeout=5)
     finally:
-        if server is not None:
-            server.should_exit = True
-        if server_thread is not None:
-            server_thread.join(timeout=15)
-        if server2 is not None:
-            server2.should_exit = True
-        if server2_thread is not None:
-            server2_thread.join(timeout=15)
-        stub.shutdown()
-        stub.server_close()
-        stub_thread.join(timeout=5)
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        try:
+            if server is not None:
+                server.should_exit = True
+            if server_thread is not None:
+                server_thread.join(timeout=15)
+            if server2 is not None:
+                server2.should_exit = True
+            if server2_thread is not None:
+                server2_thread.join(timeout=15)
+            stub.shutdown()
+            stub.server_close()
+            stub_thread.join(timeout=5)
+        finally:
+            # Restore security-sensitive process state even when a server or
+            # thread cleanup operation raises.
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
     return out
 
 

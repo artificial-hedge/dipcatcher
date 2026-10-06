@@ -2312,7 +2312,7 @@ export class HarnessApiClient {
     fileIds?: string[];
     metadata?: Record<string, string>;
     expiresAfter?: { anchor: "last_active_at"; days: number };
-  }): Promise<Record<string, unknown>> {
+  }, idempotencyKey?: string): Promise<Record<string, unknown>> {
     const res = await this.send({
       method: "POST",
       path: "/v1/vector_stores",
@@ -2322,8 +2322,13 @@ export class HarnessApiClient {
         metadata: body?.metadata ?? null,
         expires_after: body?.expiresAfter ?? null,
       },
-      idempotent: false,
-      headers: { "Content-Type": "application/json" },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
@@ -2409,6 +2414,7 @@ export class HarnessApiClient {
       attributes?: Record<string, unknown>;
       chunkingStrategy?: Record<string, unknown>;
     },
+    idempotencyKey?: string,
   ): Promise<Record<string, unknown>> {
     const res = await this.send({
       method: "POST",
@@ -2418,8 +2424,13 @@ export class HarnessApiClient {
         attributes: body?.attributes ?? null,
         chunking_strategy: body?.chunkingStrategy ?? null,
       },
-      idempotent: false,
-      headers: { "Content-Type": "application/json" },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as Record<string, unknown>;
@@ -2526,10 +2537,12 @@ export class HarnessApiClient {
       attributes?: Record<string, unknown>;
       chunking_strategy?: Record<string, unknown>;
     },
+    idempotencyKey?: string,
   ): Promise<Record<string, unknown>> {
     return this.post(
       `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches`,
       body,
+      idempotencyKey,
     ) as Promise<Record<string, unknown>>;
   }
 
