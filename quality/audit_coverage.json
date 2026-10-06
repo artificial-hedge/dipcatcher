@@ -102,7 +102,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 10396,
+      "n_modules": 10397,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
@@ -246,6 +246,13 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "models/c51_rl.py": {
+      "status": "partial",
+      "reason": "C51 RL core (Bellemare 2017) with torch-free Algorithm-1, ZILobQuoteEnv adapter; wired via tests/unit/models/test_c51_rl.py (37 tests).",
+      "evidence": [
+        "tests/unit/models/test_c51_rl.py"
+      ]
     }
   },
   "schema_version": "audit-coverage/v1",
