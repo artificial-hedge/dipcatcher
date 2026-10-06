@@ -64,15 +64,23 @@ import os
 import tempfile
 import threading
 import time
-import urllib.parse
-from collections.abc import Callable, Mapping
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from fx1.harness import Harness
 from fx1.serve.backends import ToolCompletion
-from fx1.serve.finetune import FTJobOutcome
+from fx1.serve.client_audit import _remote
+from fx1.serve.stream_audit import (
+    _ENV_KEYS,
+    _Ctx,
+    _data_frames,
+    _event_payloads,
+    _fast_runner,
+    _ft_runner,
+    _grammar,
+    _parallel,
+    _sse_frames,
+)
 
 if TYPE_CHECKING:
     from fastapi import FastAPI
@@ -80,40 +88,9 @@ if TYPE_CHECKING:
 
 __all__ = ["replay_audit", "replay_audit_bench"]
 
-# every env that can bend app construction or backend resolution —
-# cleared for the audit so ambient settings never leak into a probe
-_ENV_KEYS = (
-    "FX1_API_KEY",
-    "MOONSHOT_API_KEY",
-    "FX1_CHECKPOINT_DIR",
-    "FX1_BYOK_BASE_URL",
-    "FX1_BYOK_API_KEY",
-    "FX1_BYOK_MODEL",
-    "FX1_LOCAL_SERVE_URL",
-    "FX1_LOCAL_SERVE_CMD",
-    "FX1_LOCAL_MODEL",
-    "FX1_LOCAL_API_KEY",
-    "FX1_FT_DIR",
-    "FX1_API_MAX_INFLIGHT",
-    "FX1_API_SSE_KEEPALIVE_S",
-    "FX1_API_IDEM_MAX",
-    "FX1_API_JOB_MAX",
-    "FX1_API_RATE_LIMIT_RPS",
-    "FX1_API_GZIP_MIN_BYTES",
-    "FX1_API_CORS_ORIGINS",
-    "FX1_API_BREAKER_THRESHOLD",
-    "FX1_API_BREAKER_COOLDOWN_S",
-    "FX1_API_RECEIPTS_DIR",
-    "FX1_API_BYOK_OVERRIDE",
-    "FX1_API_FILE_MAX",
-    "FX1_API_FILE_BYTES",
-    "FX1_API_BATCH_MAX",
-    "FX1_API_BATCH_LINES",
-    "FX1_API_STORE_MAX",
-    "FX1_API_STATE_DIR",
-    "FX1_API_HOST",
-    "FX1_API_PORT",
-)
+# _ENV_KEYS (imported from stream_audit): every env that can bend app
+# construction or backend resolution — cleared for the audit so ambient
+# settings never leak into a probe
 
 _SSE_CT = "text/event-stream"
 _ECHO_PROMPT = "replay-tick " + "echo " * 40  # ~200 chars → several delta pieces
@@ -141,83 +118,14 @@ _WAIT_S = 15.0
 
 
 # ---------------------------------------------------------------------------
-# SSE grammar parser — every physical line must be a spec field; anything
-# else is a malformed frame the probes flag by name.
+# SSE grammar helpers — ``_SseFrame``/``_sse_frames``/``_data_frames``/
+# ``_event_payloads``/``_grammar`` are imported from ``stream_audit`` (the
+# shared physical-layer parser + assertions every dialect inherits).
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class _SseFrame:
-    """One blank-line-delimited SSE block, classified line by line."""
-
-    raw: str
-    seq: str | None  # the ``id:`` field, verbatim
-    event: str | None  # the ``event:`` field
-    data: str | None  # joined ``data:`` payload lines (None when absent)
-    comment_only: bool  # every line a ``:`` comment (keepalive)
-    malformed: bool  # some line carried no legal SSE field
-
-
-def _sse_frames(body: str) -> list[_SseFrame]:
-    """Split a wire body into frames; a block that is not entirely
-    ``id:``/``event:``/``data:``/``:`` lines is flagged malformed."""
-    frames: list[_SseFrame] = []
-    for block in body.split("\n\n"):
-        block = block.strip("\r\n")
-        if not block:
-            continue
-        seq: str | None = None
-        event: str | None = None
-        datas: list[str] = []
-        comment = True
-        malformed = False
-        for ln in block.splitlines():
-            if ln.startswith(":"):
-                continue
-            comment = False
-            if ln.startswith("data:"):
-                datas.append(ln[5:].removeprefix(" "))
-            elif ln.startswith("id:"):
-                seq = ln[3:].removeprefix(" ")
-            elif ln.startswith("event:"):
-                event = ln[6:].removeprefix(" ")
-            else:
-                malformed = True
-        frames.append(
-            _SseFrame(
-                raw=block,
-                seq=seq,
-                event=event,
-                data="\n".join(datas) if datas else None,
-                comment_only=comment,
-                malformed=malformed,
-            )
-        )
-    return frames
-
-
-def _data_frames(frames: list[_SseFrame]) -> list[_SseFrame]:
-    return [f for f in frames if f.data is not None]
-
-
-def _event_payloads(frames: list[_SseFrame]) -> list[tuple[str, dict[str, Any]]]:
-    out = []
-    for f in _data_frames(frames):
-        if f.event is not None and f.data is not None:
-            out.append((f.event, json.loads(f.data)))
-    return out
 
 
 def _event_names(body: str) -> list[str]:
     return [e for e, _ in _event_payloads(_sse_frames(body))]
-
-
-def _grammar(out: dict[str, bool], tag: str, body: str, frames: list[_SseFrame]) -> None:
-    """The shared physical-layer assertions every dialect inherits."""
-    datas = _data_frames(frames)
-    out[f"{tag}_body_terminated"] = body.endswith("\n\n")
-    out[f"{tag}_no_malformed_lines"] = all(not f.malformed for f in frames)
-    out[f"{tag}_ids_dense"] = [f.seq for f in datas] == [str(i) for i in range(len(datas))]
 
 
 def _err_enveloped(resp: Any, *, status: int, code: str | None = None) -> bool:
@@ -318,26 +226,10 @@ class _ToolStubBackend(_StubBackend):
 
 
 # ---------------------------------------------------------------------------
-# App construction
+# App construction — ``_Ctx``/``_fast_runner``/``_ft_runner``/``_parallel``
+# are imported from ``stream_audit``; ``_app``/``_make_ctx`` stay local for
+# the extra ``max_inflight`` dial the executor-park probes need.
 # ---------------------------------------------------------------------------
-
-
-@dataclass
-class _Ctx:
-    """One app's test surface."""
-
-    client: TestClient
-    app: FastAPI
-
-
-def _fast_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-    del argv, timeout_s
-    return 0, "ok", ""
-
-
-def _ft_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
-    emit("info", "bench runner")
-    return FTJobOutcome(fine_tuned_model=None)
 
 
 def _app(
@@ -373,23 +265,6 @@ def _make_ctx(
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app)
 
 
-def _parallel(n: int, fn: Callable[[int], Any]) -> list[Any]:
-    """Run ``fn(i)`` on N barrier-released threads over one client."""
-    barrier = threading.Barrier(n)
-    out: list[Any] = [None] * n
-
-    def w(i: int) -> None:
-        barrier.wait()
-        out[i] = fn(i)
-
-    ts = [threading.Thread(target=w, args=(i,), daemon=True) for i in range(n)]
-    for t in ts:
-        t.start()
-    for t in ts:
-        t.join(timeout=60)
-    return out
-
-
 def _submit_bg(client: TestClient, payload: dict[str, Any] | None = None) -> str:
     """POST a background response; returns the queued response id."""
     body = {"model": "fx1", "input": "bg", "background": True}
@@ -423,36 +298,8 @@ def _busy_executor(app: FastAPI, release: threading.Event) -> None:
     time.sleep(0.15)
 
 
-def _tc_transport(client: TestClient) -> Any:
-    """Adapt HarnessClient's transport contract to a TestClient."""
-
-    def send(
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,  # NOSONAR(S1172) — TestClient has no timeout knob
-    ) -> tuple[int, Mapping[str, str], bytes]:
-        p = urllib.parse.urlparse(url)
-        path = p.path + (f"?{p.query}" if p.query else "")
-        if method == "GET":
-            resp = client.get(path, headers=headers)
-        elif method == "DELETE":
-            resp = client.delete(path, headers=headers)
-        elif isinstance(payload, bytes):
-            resp = client.post(path, content=payload, headers=headers)
-        else:
-            resp = client.post(path, json=payload, headers=headers)
-        return resp.status_code, dict(resp.headers), resp.content
-
-    return send
-
-
-def _remote(client: TestClient) -> Any:
-    """A HarnessClient bound to ``client``'s TestClient transport."""
-    from fx1.serve.client import HarnessClient  # noqa: PLC0415
-
-    return HarnessClient("http://fx1.test", transport=_tc_transport(client))
+# ``_tc_transport``/``_remote`` (imported from client_audit) bind a
+# HarnessClient to a TestClient transport — the replay probes' client leg.
 
 
 # ---------------------------------------------------------------------------
