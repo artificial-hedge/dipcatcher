@@ -48,10 +48,11 @@ def test_fixed_defect_regressions_stay_pinned(measured: dict[str, bool]) -> None
 
 
 def test_isolation_boundary_probes_hold(measured: dict[str, bool]) -> None:
-    """Where isolation is claimed, it holds: precedence, scopes,
+    """Where isolation is claimed, it holds: authentication, scopes,
     per-key budgets, revocation, and key material never escaping."""
-    assert measured["x_api_key_precedes_bearer_identity"] is True
-    assert measured["forged_x_api_key_not_rescued_by_bearer"] is True
+    assert measured["mixed_auth_refused_on_v1_400"] is True
+    assert measured["mixed_auth_refused_off_v1_400"] is True
+    assert measured["forged_x_api_key_with_bearer_refused_400"] is True
     assert measured["write_does_not_imply_read"] is True
     assert measured["cross_key_action_bills_actor"] is True
     assert measured["rpm_window_isolated_from_sibling"] is True

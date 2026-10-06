@@ -242,7 +242,7 @@ The new `tenancy_audit` checks 141 tenancy contracts — the ownership
 matrix over every stateful family (responses, conversations, files,
 uploads, batches, evals/specs, ft jobs, the `ft:` registry, vector
 stores, stored completions, harness jobs), secrets-leak channels,
-header precedence, per-key metering, idempotency namespacing, quota
+authentication ambiguity, per-key metering, idempotency namespacing, quota
 independence, BYOK isolation, revocation boundaries, drain, and
 restart durability — over SYNTHETIC stub/gate backends and isolated
 state dirs. The battery reuses the conversation lane's resource
@@ -252,7 +252,7 @@ The measured contract is scope-based shared workspace, not per-principal
 tenancy: every cross-key matrix cell holds — any key holding the verb's
 scope reads, mutates, and deletes any peer's resource; isolation is
 claimed (and proven) only for metering, admin surfaces, header
-precedence, key material, budgets, and tombstones. `rate_limit_rps` is
+ambiguity refusal, key material, budgets, and tombstones. `rate_limit_rps` is
 a per-client-host valve; eval runs expose no mid-flight cancel (409 for
 minter and peer alike); the max_tokens budget admits the call that
 crosses the cap and refuses the next.
@@ -269,3 +269,32 @@ the authenticated key id and stores only digested client keys.
 The incoming `fx1_tenancy_audit.json` names the earlier merge base and
 is excluded; historical receipts remain unchanged. The serve census
 moves from 45 to 46 and remains `partial`.
+
+### Header surface maintenance (PR #2819)
+
+The new `header_audit` checks selected header contracts across the
+`X-Fx1-*`, authentication, idempotency, request-id, Anthropic,
+rate-limit, CORS, response-evidence and request-framing surfaces. The
+battery uses SYNTHETIC stub backends, a resolver spy, in-process and raw
+ASGI calls, and loopback socket fixtures; it is correctness evidence,
+not a claim about every reverse proxy or HTTP server.
+
+Malformed BYOK header models now land in the caller's error grammar,
+managed-key refusals retain already-consumed global rate-limit headers,
+malformed `Content-Length` uses the route's error envelope, and token
+count transport failures map to `502 backend_failure`. Security-sensitive
+headers are singletons: duplicate `X-Fx1-*`, authorization, idempotency,
+request-id and framing headers fail closed before Starlette's first-value
+and translator last-value views can disagree. Mixed `Content-Length` /
+`Transfer-Encoding`, invalid or contradictory lengths, and actual bodies
+over the cap are rejected without trusting the declared length. Partial
+BYOK credential headers refuse instead of silently selecting another
+provider, and idempotency control characters refuse rather than becoming
+opaque store keys.
+
+PR #2819 was authored before the merged #2817 BYOK hardening. Integration
+retains #2817's shared URL rule, credential redaction, redirect refusal and
+sanitized transport errors; the older transport and validator variants are
+not reapplied. Historical receipts remain unchanged. The generated audit
+receipt is `SYNTHETIC`, `research_only`, and makes no live-PnL claim. The
+serve census moves from 46 to 47 and remains `partial`.

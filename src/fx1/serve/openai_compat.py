@@ -761,6 +761,17 @@ def _resolve_openai_link(
         "x-fx1-checkpoint-dir"
     )
     byok = ext.byok if ext is not None else None
+    byok_header_names = (
+        "x-fx1-byok-base-url",
+        "x-fx1-byok-api-key",
+        "x-fx1-byok-model",
+    )
+    if byok is None and any(name in hdrs for name in byok_header_names) and not byok_headers:
+        raise OpenAICompatError(
+            "X-Fx1-Byok-* headers require X-Fx1-Byok-Base-Url",
+            status=400,
+            code="invalid_byok_headers",
+        )
     if byok is None and byok_headers:
         api_key = hdrs.get("x-fx1-byok-api-key")
         byok_model = hdrs.get("x-fx1-byok-model") or (
@@ -779,6 +790,7 @@ def _resolve_openai_link(
             raise OpenAICompatError(
                 "; ".join(str(e.get("msg", "invalid byok override")) for e in exc.errors()),
                 status=422,
+                code="invalid_byok_headers",
             ) from exc
     if byok is not None and "byok" not in {backend, *fallbacks}:
         raise OpenAICompatError(
