@@ -7,6 +7,12 @@ import sys
 import time
 from pathlib import Path
 
+# The default test lane is explicitly offline.  MLflow otherwise starts a
+# background configuration fetch on first use, even for file-backed tracking.
+# Disable that optional telemetry before test modules import MLflow so the
+# ``not network`` gate cannot disclose environment metadata or depend on egress.
+os.environ.setdefault("MLFLOW_DISABLE_TELEMETRY", "true")
+
 import pytest
 
 _ROOT = Path(__file__).resolve().parents[1]
