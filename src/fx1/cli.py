@@ -2054,23 +2054,47 @@ def harness_eval_spec_update(
     metadata_json: str | None = typer.Option(
         None, "--metadata", help="Replacement metadata as a JSON object."
     ),
+    datasource_json: str | None = typer.Option(
+        None,
+        "--datasource",
+        help="Replacement data_source_config as a JSON object — hot-reloads "
+        "the declared shape only while no run binds the spec (409 once bound).",
+    ),
+    criteria_json: str | None = typer.Option(
+        None,
+        "--criteria",
+        help="Replacement testing_criteria as a JSON list — same bound-freeze rule.",
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Edit a spec's name/metadata — the datasource is frozen once runs bind."""
+    """Edit a spec's name/metadata, or hot-reload its declared shape while
+    it has no runs — datasource/criteria freeze once a run binds."""
     metadata = _json_meta(metadata_json)
+    datasource = _json_meta(datasource_json)
+    criteria = _json_list_opt(criteria_json, "--criteria")
     if remote is not None:
         spec = _or_exit(
             lambda: _remote_client(remote, api_key, timeout_s).eval_spec_update(
-                eval_id, name=name, metadata=metadata
+                eval_id,
+                name=name,
+                metadata=metadata,
+                data_source_config=datasource,
+                testing_criteria=criteria,
             )
         )
     else:
         from fx1.sdk import Fx1Harness
 
         spec = _or_exit(
-            lambda: Fx1Harness().eval_spec_update(eval_id, name=name, metadata=metadata)
+            lambda: Fx1Harness().eval_spec_update(
+                eval_id,
+                name=name,
+                metadata=metadata,
+                data_source_config=datasource,
+                testing_criteria=criteria,
+            )
         )
     typer.echo(json.dumps(spec, indent=2))
 

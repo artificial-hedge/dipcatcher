@@ -50,7 +50,6 @@ def _staged_added_lines() -> list[tuple[str, int, str]]:
     proc = subprocess.run(
         ["git", "diff", "--cached", "--unified=0", "--diff-filter=ACMR", "--no-color"],
         capture_output=True,
-        text=True,
         check=False,
     )
     if proc.returncode != 0:
@@ -59,7 +58,11 @@ def _staged_added_lines() -> list[tuple[str, int, str]]:
     hits: list[tuple[str, int, str]] = []
     path = ""
     new_line = 0
-    for line in proc.stdout.splitlines():
+    for raw in proc.stdout.split(b"\n"):
+        # The diff can carry non-UTF-8 bytes (a text-detected file with
+        # binary garbage in its hunks) — decode tolerantly; the credential
+        # patterns are ASCII so replaced bytes can't forge or hide a match.
+        line = raw.decode("utf-8", errors="replace")
         if line.startswith("+++ b/"):
             path = line[6:]
             continue

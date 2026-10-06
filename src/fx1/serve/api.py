@@ -1238,18 +1238,27 @@ class EvalSpecCreate(_Model):
 
 
 class EvalSpecUpdate(_Model):
-    """``POST /v1/evals/{id}`` — metadata/name edits; the datasource is
-    frozen (a spec's declared shape is evidence once runs bind to it)."""
+    """``POST /v1/evals/{id}`` — metadata/name edits plus the hot-reload
+    fields: ``data_source_config``/``testing_criteria`` replace the spec's
+    declared shape ONLY while no run binds it — once a run exists the
+    shape is evidence and the update answers 409 ``eval_spec_frozen``."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str | None = Field(default=None, min_length=1, max_length=255)
     metadata: dict[str, str] | None = None
+    data_source_config: EvalSpecDataSource | None = None
+    testing_criteria: list[EvalSpecCriterion] | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
     def _some_field(self) -> EvalSpecUpdate:
-        if self.name is None and self.metadata is None:
-            raise ValueError("update must carry name or metadata")
+        if (
+            self.name is None
+            and self.metadata is None
+            and self.data_source_config is None
+            and self.testing_criteria is None
+        ):
+            raise ValueError("update must carry a field")
         return self
 
 
@@ -4823,6 +4832,25 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def eval_spec_update(eval_id: str, body: EvalSpecUpdate) -> EvalSpecWire:
         _drain_refusal(metrics)
         spec = _spec_or_404(eval_id)
+        if body.data_source_config is not None or body.testing_criteria is not None:
+            # Hot-reload window: the declared shape may only change while
+            # no run binds the spec — a bound run's evidence must not have
+            # its criteria shifted under it. Total counts every record
+            # bound to the spec (queued/running/terminal all freeze it).
+            _page, bound = eval_store.list_records(spec=eval_id, limit=1)
+            if bound:
+                raise ApiError(
+                    409,
+                    f"eval '{eval_id}' is bound to {bound} run(s) — "
+                    "datasource/criteria are frozen evidence",
+                    code="eval_spec_frozen",
+                )
+            if body.data_source_config is not None:
+                spec.data_source_config = body.data_source_config.model_dump(exclude_none=True)
+            if body.testing_criteria is not None:
+                spec.testing_criteria = [
+                    c.model_dump(exclude_none=True) for c in body.testing_criteria
+                ]
         if body.name is not None:
             spec.name = body.name
         if body.metadata is not None:

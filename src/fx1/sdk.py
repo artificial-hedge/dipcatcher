@@ -1355,16 +1355,42 @@ class Fx1Harness:
         *,
         name: str | None = None,
         metadata: dict[str, str] | None = None,
+        data_source_config: dict[str, Any] | None = None,
+        testing_criteria: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        """``POST /v1/evals/{id}`` twin — name/metadata edits only; the
-        datasource is frozen once runs bind to it."""
+        """``POST /v1/evals/{id}`` twin — name/metadata edits always;
+        ``data_source_config``/``testing_criteria`` hot-reload the spec's
+        declared shape ONLY while no run binds it — the wire's 409
+        ``eval_spec_frozen`` arrives in-process as ``RuntimeError``."""
+        from fx1.serve.api import EvalSpecCriterion, EvalSpecDataSource  # noqa: PLC0415
         from fx1.serve.evals import spec_wire  # noqa: PLC0415
 
         spec = self._eval_spec_store.get(spec_id)
         if spec is None:
             raise KeyError(spec_id)
-        if name is None and metadata is None:
-            raise ValueError("update must carry name or metadata")
+        if (
+            name is None
+            and metadata is None
+            and data_source_config is None
+            and testing_criteria is None
+        ):
+            raise ValueError("update must carry a field")
+        if data_source_config is not None or testing_criteria is not None:
+            _page, bound = self._eval_store.list_records(spec=spec_id, limit=1)
+            if bound:
+                raise RuntimeError(
+                    f"eval '{spec_id}' is bound to {bound} run(s) — "
+                    "datasource/criteria are frozen evidence"
+                )
+            if data_source_config is not None:
+                spec.data_source_config = EvalSpecDataSource.model_validate(
+                    data_source_config
+                ).model_dump(exclude_none=True)
+            if testing_criteria is not None:
+                spec.testing_criteria = [
+                    EvalSpecCriterion.model_validate(c).model_dump(exclude_none=True)
+                    for c in testing_criteria
+                ]
         if name is not None:
             spec.name = name
         if metadata is not None:
