@@ -23,10 +23,17 @@ class TestMuon:
     def test_ns_orthogonal(self) -> None:
         import torch
 
+        torch.manual_seed(0)
         g = torch.randn(8, 8)
         x = _ns(g)
         gram = x @ x.T
         assert torch.allclose(gram, torch.eye(8), atol=0.35)
+        # The invariant across draws: 5 NS steps strictly improve
+        # semi-orthogonality of the normalized input.
+        gn = g / (g.norm() + 1e-7)
+        err_in = (gn @ gn.T - torch.eye(8)).abs().max()
+        err_out = (gram - torch.eye(8)).abs().max()
+        assert err_out < err_in
 
     def test_bench(self) -> None:
         out = bench_muon_opt(seed=5, iters=15)
