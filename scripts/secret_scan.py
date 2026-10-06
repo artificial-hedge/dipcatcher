@@ -50,7 +50,6 @@ def _staged_added_lines() -> list[tuple[str, int, str]]:
     proc = subprocess.run(
         ["git", "diff", "--cached", "--unified=0", "--diff-filter=ACMR", "--no-color"],
         capture_output=True,
-        text=True,
         check=False,
     )
     if proc.returncode != 0:
@@ -59,7 +58,10 @@ def _staged_added_lines() -> list[tuple[str, int, str]]:
     hits: list[tuple[str, int, str]] = []
     path = ""
     new_line = 0
-    for line in proc.stdout.splitlines():
+    # A diff may carry non-UTF-8 hunks (binary blobs, mislabeled artifacts):
+    # decode lossily so one bad byte can't crash the scan — credential
+    # shapes are pure ASCII, so replaced bytes can never match anyway.
+    for line in proc.stdout.decode("utf-8", "replace").splitlines():
         if line.startswith("+++ b/"):
             path = line[6:]
             continue
