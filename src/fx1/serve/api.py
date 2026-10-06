@@ -9256,50 +9256,71 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         job._callback_secret = body.callback_secret
         ft_name = f"ft:{body.model}:{body.suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
         work_dir = ft_dir / job.id
-        work_dir.mkdir(parents=True, exist_ok=True)
-        corpus_path = work_dir / "corpus.jsonl"
-        corpus_path.write_bytes(frec.content)
-        val_path = None
-        if vrec is not None:
-            val_path = work_dir / "validation.jsonl"
-            val_path.write_bytes(vrec.content)
-        spec = FTJobSpec(
-            job_id=job.id,
-            model=body.model,
-            corpus_path=corpus_path,
-            val_path=val_path,
-            hyperparameters=(
-                body.hyperparameters.model_dump(mode="json")
-                if body.hyperparameters is not None
-                else {}
-            ),
-            seed=body.seed if body.seed is not None else 17,
-            work_dir=work_dir,
-            ft_model_name=ft_name,
-        )
-        entry = ft_store.put(job, skey, body_fp)
-        hp = body.hyperparameters.model_dump() if body.hyperparameters else {}
-        if hp.get("batch_size"):
+        try:
+            work_dir.mkdir(parents=True, exist_ok=True)
+            corpus_path = work_dir / "corpus.jsonl"
+            corpus_path.write_bytes(frec.content)
+            val_path = None
+            if vrec is not None:
+                val_path = work_dir / "validation.jsonl"
+                val_path.write_bytes(vrec.content)
+            spec = FTJobSpec(
+                job_id=job.id,
+                model=body.model,
+                corpus_path=corpus_path,
+                val_path=val_path,
+                hyperparameters=(
+                    body.hyperparameters.model_dump(mode="json")
+                    if body.hyperparameters is not None
+                    else {}
+                ),
+                seed=body.seed if body.seed is not None else 17,
+                work_dir=work_dir,
+                ft_model_name=ft_name,
+            )
+            entry = ft_store.put(job, skey, body_fp)
+            hp = body.hyperparameters.model_dump() if body.hyperparameters else {}
+            if hp.get("batch_size"):
+                ft_store.add_event(
+                    job.id,
+                    "info",
+                    "batch_size is advisory — the staged pipeline's trainer "
+                    "decides batching; the value is recorded on the job",
+                    {"batch_size": hp["batch_size"]},
+                )
             ft_store.add_event(
                 job.id,
                 "info",
-                "batch_size is advisory — the staged pipeline's trainer "
-                "decides batching; the value is recorded on the job",
-                {"batch_size": hp["batch_size"]},
+                f"training file validated: {n_examples} examples",
+                {"training_file": body.training_file, "examples": n_examples},
             )
-        ft_store.add_event(
-            job.id,
-            "info",
-            f"training file validated: {n_examples} examples",
-            {"training_file": body.training_file, "examples": n_examples},
-        )
+        except Exception:
+            # the acquired gate is released on every pre-dispatch fault;
+            # ``delete`` tombstones the record only if ``put`` ran —
+            # a refused submit ghosts no job and no idem claim
+            try:
+                ft_store.delete(job.id)
+            finally:
+                metrics.release()
+                inflight.release()
+            raise
+        # freeze the emitted record before dispatch: ``_ft_worker``
+        # mutates ``entry.job`` in place and the response model
+        # serializes after return — a torn submit view otherwise leaks.
+        # ``deepcopy`` is not usable (the record carries a Lock private
+        # attr, unpicklable); re-validating the JSON projection drops
+        # private state and pins the submit-time fields.
+        submitted = FTJob.model_validate(job.model_dump(mode="json"))
         try:
             jobs_executor.submit(_ft_worker, entry, spec)
         except RuntimeError as exc:  # executor gone (shutdown race)
-            metrics.release()
-            inflight.release()
+            try:
+                ft_store.delete(job.id)
+            finally:
+                metrics.release()
+                inflight.release()
             raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        return job
+        return submitted
 
     @app.get(
         "/v1/fine_tuning/jobs",

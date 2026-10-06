@@ -346,3 +346,54 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### FT job audit maintenance (lane 167)
+
+The new `ft_audit` battery pins the fine-tuning surface end to end:
+`POST /v1/fine_tuning/jobs`, list/record/events/checkpoints GETs, and
+the `cancel`/`pause`/`resume` mutations. It exercises submit
+validation (`extra="forbid"` typing, hyperparameter bounds,
+trainable-model gate, file binding — purpose/deletion/malformed-JSONL
+refusals), the `queued→running→terminal` lifecycle with honest
+`error`/`fine_tuned_model`/`trained_tokens`/`result_files` fields, the
+`ft:` model registry (list, card, chat/responses resolution, delete,
+eviction), the 256-bounded event feed, the checkpoint listing
+(honest-empty mid-run; card-derived post-success), cancel and pause
+semantics (boundary events, idempotent second pause, `job_not_paused`
+vs `job_terminal` refusals), parallel-submit id distinctness,
+`Idempotency-Key` dedup/replay/conflict, the `max_inflight` and drain
+gates, `--state-dir` journal restart durability (terminal records as
+they were, non-terminal fail-closed, tombstones), metering, webhook
+fire-once signing/retry/definitiveness, the OpenAI error-envelope
+taxonomy, and the `HarnessClient` legs.
+
+Building the lane surfaced two real defects, fixed on the same PR:
+
+* `create_finetune_job` returned the live `entry.job` — the worker
+  mutates it in place after dispatch, so a submit racing the worker's
+  terminal flip serialized a torn view (`status`/`finished_at`/
+  `result_files` from the completed record instead of the queued
+  snapshot). The response now emits a re-validated projection taken
+  before `jobs_executor.submit` — `deepcopy` is unusable (the record
+  carries an unpicklable Lock private attr).
+* A `jobs_executor.submit` `RuntimeError` (executor dead — shutdown
+  race) left the freshly-put job queued forever: journaled, listed,
+  idem-claimed, never dispatched. The route now tombstones the record
+  via a new `FTJobStore.delete` (`{"deleted": job_id}` journal op,
+  dropped on replay) and releases both semaphores on every
+  pre-dispatch fault, matching the `_submit_job` convention.
+
+The battery also pins measured (pre-existing, non-defect) semantics:
+no `validating_files` status ever appears on the wire (validation is
+synchronous inside submit); a fresh job already carries the training
+file-validation event; `webhook_url`/`integrations` are 422
+`extra="forbid"` (fx1's knobs are `callback_url`/`callback_secret`);
+shared `training_file` ids get no exclusivity; checkpoints honestly
+report `step_number=null`/`metrics={}`; a pause landing pre-start vs
+at the stage gate records exactly one of two honest event strings;
+refused submits still bill `uses` (auth precedes the gate); and the
+`draining` 503 on resume precedes lookup so it beats a 404.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 49 to 50 and remains
+`partial`.

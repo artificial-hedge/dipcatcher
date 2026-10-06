@@ -307,6 +307,9 @@ class FTJobStore:
             for payload in res.payloads:
                 for evict in payload.get("evicted") or ():
                     self._drop(str(evict))
+                deleted = payload.get("deleted")
+                if deleted is not None:
+                    self._drop(str(deleted))
                 if "ft_model" in payload:
                     ref = payload["ft_model"]
                     self._models[str(ref["id"])] = dict(ref)
@@ -409,6 +412,19 @@ class FTJobStore:
             if idem_key is not None:
                 self._keys[f"ft:{idem_key}"] = job.id
         return entry
+
+    def delete(self, job_id: str) -> None:
+        """Drop a record plus a durable tombstone — the submit path's
+        compensation when executor hand-off fails after ``put``: a
+        refused submission leaves no ghost job and no phantom idem
+        claim (the same contract ``_JobStore.delete`` gives
+        ``/harness/jobs``)."""
+        with self._lock:
+            if job_id not in self._entries:
+                return
+            if self._journal is not None:
+                self._journal.append({"deleted": job_id})
+            self._drop(job_id)
 
     def register_model(self, name: str, *, job_id: str, checkpoint: str, created: int) -> None:
         """Bind an ``ft:`` model name to its producing job + checkpoint.
