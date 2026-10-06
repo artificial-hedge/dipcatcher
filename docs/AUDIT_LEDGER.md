@@ -348,7 +348,7 @@ no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
 
 
-### Selftest audit maintenance (PR #NNNN)
+### Selftest audit maintenance (PR #2861)
 
 The new `selftest_audit` battery pins the deploy-gate surfaces end to
 end — `fx1 harness selftest` (local + `--remote`) and `fx1 harness
