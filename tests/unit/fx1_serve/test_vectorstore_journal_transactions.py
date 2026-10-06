@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 
 from fx1.serve.journal import JobJournal
-from fx1.serve.vectorstores import VectorStoreStore
+from fx1.serve.vectorstores import VectorStoreError, VectorStoreStore
 
 
 class _BlockingReader:
@@ -89,6 +89,53 @@ def test_failed_capacity_create_preserves_victim_and_derived_state(
     assert restored.get(victim_id)["file_counts"]["completed"] == 1
 
 
+def test_rejected_capacity_create_with_member_preserves_victim(tmp_path: Path) -> None:
+    path = tmp_path / "vector_stores.jsonl"
+
+    def reader(file_id: str) -> tuple[bytes, str] | None:
+        if file_id == "missing":
+            return None
+        return b"alpha beta gamma", f"{file_id}.txt"
+
+    journal = JobJournal(path)
+    store = VectorStoreStore(1, journal=journal, file_reader=reader)
+    victim_id = str(store.create(name="victim")["id"])
+    before = journal.replay().payloads
+
+    with pytest.raises(VectorStoreError, match="not found"):
+        store.create(name="rejected", file_ids=["missing"])
+
+    assert _ids(store) == {victim_id}
+    assert journal.replay().payloads == before
+    assert _ids(VectorStoreStore(1, journal=JobJournal(path), file_reader=reader)) == {victim_id}
+
+
+def test_create_members_and_replay_record_commit_in_one_journal_line(tmp_path: Path) -> None:
+    path = tmp_path / "vector_stores.jsonl"
+
+    def reader(file_id: str) -> tuple[bytes, str]:
+        return b"alpha beta gamma", f"{file_id}.txt"
+
+    journal = JobJournal(path)
+    store = VectorStoreStore(2, journal=journal, file_reader=reader)
+    response = store.create(
+        name="atomic",
+        file_ids=["file-a", "file-b"],
+        idempotency_key="scoped-key",
+        body_fingerprint="body-fp",
+    )
+
+    payloads = journal.replay().payloads
+    assert len(payloads) == 1
+    assert set(payloads[0]) >= {"vs", "vs_files", "vs_touch", "vs_idem"}
+    assert [row["file_id"] for row in payloads[0]["vs_files"]] == ["file-a", "file-b"]
+    assert store.idempotency_get("scoped-key") == ("body-fp", response)
+
+    restored = VectorStoreStore(2, journal=JobJournal(path), file_reader=reader)
+    assert restored.get(str(response["id"])) == response
+    assert restored.idempotency_get("scoped-key") == ("body-fp", response)
+
+
 def test_failed_update_is_not_visible_and_does_not_revert_at_restart(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -141,11 +188,9 @@ def test_failed_delete_does_not_wake_capacity_waiter_or_exceed_replay_cap(
     store = VectorStoreStore(2, journal=journal, file_reader=reader)
 
     with ThreadPoolExecutor(max_workers=3) as pool:
-        pinned: Future[dict[str, Any]] = pool.submit(
-            store.create, name="pinned", file_ids=["file-a"]
-        )
+        pinned_id = str(store.create(name="pinned")["id"])
+        attaching: Future[dict[str, Any]] = pool.submit(store.attach, pinned_id, "file-a")
         assert reader.started.wait(timeout=2)
-        pinned_id = next(iter(_ids(store)))
         other_id = str(store.create(name="other")["id"])
         creator: Future[dict[str, Any]] = pool.submit(store.create, name="replacement")
         _wait_for_waiters(store, 1)
@@ -177,7 +222,7 @@ def test_failed_delete_does_not_wake_capacity_waiter_or_exceed_replay_cap(
         assert not creator.done()
 
         reader.release.set()
-        pinned.result(timeout=3)
+        attaching.result(timeout=3)
         replacement_id = str(creator.result(timeout=3)["id"])
 
     # Completing the attachment refreshes the pinned store's LRU position,

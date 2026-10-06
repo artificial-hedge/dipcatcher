@@ -6,6 +6,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
+
 from fx1.serve.vectorstores import VectorStoreStore
 
 
@@ -72,6 +73,9 @@ def test_capacity_eviction_cannot_split_create_with_files() -> None:
     with ThreadPoolExecutor(max_workers=2) as pool:
         first_future = pool.submit(store.create, name="first", file_ids=["file-a"])
         assert reader.started.wait(timeout=2)
+        # The slow create is staged privately: callers can never observe
+        # the store without its requested initial membership.
+        assert store.list_stores()["data"] == []
         second_future = pool.submit(create_second)
         second_finished_during_first = second_done.wait(timeout=0.25)
         reader.release.set()

@@ -121,6 +121,39 @@ def test_failed_batch_record_publishes_neither_members_nor_batch(
     assert restored._batches.get(vs_id, {}) == {}
 
 
+def test_failed_keyed_batch_preserves_preexisting_membership(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "vector-stores.jsonl"
+    journal = JobJournal(path)
+    store = VectorStoreStore(2, journal=journal, file_reader=_reader)
+    vs_id = str(store.create(name="batch")["id"])
+    store.attach(vs_id, "file-existing", attributes={"owner": "original"})
+    before = store._stores[vs_id].model_dump(mode="json")
+    original_append = journal.append
+
+    def fail_batch(payload: dict[str, Any]) -> None:
+        if "vs_batch" in payload:
+            raise OSError("synthetic keyed-batch journal failure")
+        original_append(payload)
+
+    monkeypatch.setattr(journal, "append", fail_batch)
+    with pytest.raises(OSError, match="synthetic keyed-batch journal failure"):
+        store.file_batch_create(
+            vs_id,
+            ["file-existing", "file-new"],
+            idempotency_key="scoped-key",
+            body_fingerprint="body-fp",
+        )
+
+    assert store._stores[vs_id].model_dump(mode="json") == before
+    assert _attached_ids(store, vs_id) == {"file-existing"}
+    assert store.idempotency_get("scoped-key") is None
+    restored = VectorStoreStore(2, journal=JobJournal(path), file_reader=_reader)
+    assert _attached_ids(restored, vs_id) == {"file-existing"}
+    assert restored.idempotency_get("scoped-key") is None
+
+
 def test_batch_commits_members_batch_and_touch_in_one_record(tmp_path: Path) -> None:
     path = tmp_path / "vector-stores.jsonl"
     journal = JobJournal(path)

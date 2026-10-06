@@ -31,12 +31,13 @@ import threading
 import time
 import uuid
 from collections import OrderedDict
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from fx1.serve.journal import JobJournal
+from fx1.serve.journal import JobJournal, _ClaimLocks
 
 # Bounds — every cap fails closed, never truncates silently.
 VS_MAX_FILES = 32  # attached files per store
@@ -507,10 +508,17 @@ class VectorStoreStore:
         file_reader: FileReader = None,
         *,
         journal: JobJournal | None = None,
+        idem_max: int = 1024,
     ) -> None:
         if max_stores < 1:
             raise ValueError("max_stores must be at least 1")
+        if idem_max < 1:
+            raise ValueError("idem_max must be at least 1")
         self._lock = threading.Lock()
+        # Preserve invocation order between creates while initial-file I/O is
+        # staged off-state. A later empty create must not overtake and then be
+        # immediately evicted by an earlier, slower create-with-files.
+        self._create_lock = threading.Lock()
         self._condition = threading.Condition(self._lock)
         # Compound create-with-files and file-batch operations temporarily
         # pin their store against deletion and capacity eviction. Unrelated
@@ -521,6 +529,8 @@ class VectorStoreStore:
         # without allowing a concurrent attach/detach to invalidate it.
         self._membership_busy: set[str] = set()
         self._max = max_stores
+        self._idem_max = idem_max
+        self._claims = _ClaimLocks(idem_max)
         self._max_files = max_files
         self._reader = file_reader
         self._stores: OrderedDict[str, VSMeta] = OrderedDict()
@@ -529,6 +539,10 @@ class VectorStoreStore:
         # per-store df + N for the idf table — recomputed lazily
         self._idf_dirty: set[str] = set()
         self._idf: dict[str, dict[int, float]] = {}
+        # Vector-store replay records share this journal with their mutation.
+        # That makes the object and its Idempotency-Key response one durability
+        # boundary instead of requiring a destructive cross-journal rollback.
+        self._idem: OrderedDict[str, tuple[str, dict[str, Any]]] = OrderedDict()
         self._journal = (
             journal
             if journal is not None
@@ -576,6 +590,13 @@ class VectorStoreStore:
                     self._restore_touch(payload["vs_touch"])
                 for touch in payload.get("vs_touches") or ():
                     self._restore_touch(touch)
+                for old_key in payload.get("vs_idem_evicted") or ():
+                    self._idem.pop(str(old_key), None)
+                idem = payload.get("vs_idem")
+                if idem is not None:
+                    key = str(idem["key"])
+                    self._idem[key] = (str(idem["fp"]), deepcopy(idem["resp"]))
+                    self._idem.move_to_end(key)
             self._compact_locked()
 
     @property
@@ -707,7 +728,65 @@ class VectorStoreStore:
                 live.append({"vs_file": rec.model_dump(mode="json")})
             for batch in self._batches.get(meta.vs_id, {}).values():
                 live.append({"vs_batch": batch.model_dump(mode="json")})
+        for key, (fingerprint, response) in self._idem.items():
+            live.append(
+                {
+                    "vs_idem": {
+                        "key": key,
+                        "fp": fingerprint,
+                        "resp": deepcopy(response),
+                    }
+                }
+            )
         self._journal.compact(live)
+
+    def idempotency_get(self, key: str) -> tuple[str, dict[str, Any]] | None:
+        """Return a defensive copy of one durable vector-store replay."""
+        with self._lock:
+            hit = self._idem.get(key)
+            if hit is None:
+                return None
+            self._idem.move_to_end(key)
+            fingerprint, response = hit
+            return fingerprint, deepcopy(response)
+
+    def async_claim_lock(self, key: str | None) -> Any:
+        """Serialize an idempotent vector mutation and all racing retries."""
+        return self._claims.ahold(key)
+
+    def _idem_transition_locked(
+        self,
+        key: str | None,
+        fingerprint: str | None,
+        response: dict[str, Any],
+    ) -> tuple[
+        dict[str, Any],
+        OrderedDict[str, tuple[str, dict[str, Any]]] | None,
+    ]:
+        """Build, but do not publish, the replay-ledger part of a mutation."""
+        if key is None:
+            return {}, None
+        if fingerprint is None:
+            raise ValueError("an idempotency key requires a request fingerprint")
+        if key in self._idem:
+            raise VectorStoreError(
+                409,
+                "Idempotency-Key was already committed",
+                "idempotency_conflict",
+            )
+        next_idem = self._idem.copy()
+        next_idem[key] = (fingerprint, deepcopy(response))
+        next_idem.move_to_end(key)
+        evicted: list[str] = []
+        while len(next_idem) > self._idem_max:
+            old_key, _ = next_idem.popitem(last=False)
+            evicted.append(old_key)
+        payload: dict[str, Any] = {
+            "vs_idem": {"key": key, "fp": fingerprint, "resp": deepcopy(response)}
+        }
+        if evicted:
+            payload["vs_idem_evicted"] = evicted
+        return payload, next_idem
 
     def _promote_locked(self, vs_id: str) -> None:
         """Wake capacity waiters when promotion changes their LRU victim."""
@@ -821,6 +900,28 @@ class VectorStoreStore:
         metadata: dict[str, Any] | None = None,
         file_ids: list[str] | tuple[str, ...] = (),
         expires_after: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        body_fingerprint: str | None = None,
+    ) -> dict[str, Any]:
+        with self._create_lock:
+            return self._create(
+                name=name,
+                metadata=metadata,
+                file_ids=file_ids,
+                expires_after=expires_after,
+                idempotency_key=idempotency_key,
+                body_fingerprint=body_fingerprint,
+            )
+
+    def _create(
+        self,
+        *,
+        name: str | None,
+        metadata: dict[str, Any] | None,
+        file_ids: list[str] | tuple[str, ...],
+        expires_after: dict[str, Any] | None,
+        idempotency_key: str | None,
+        body_fingerprint: str | None,
     ) -> dict[str, Any]:
         validate_metadata(metadata)
         policy = validate_expires_after(expires_after)
@@ -834,6 +935,25 @@ class VectorStoreStore:
             last_active_at=created,
             expires_at=created + policy["days"] * 86400 if policy else None,
         )
+        # Initial members are resolved and indexed against an unpublished
+        # private store. Any refusal is therefore inert: it cannot evict an
+        # existing LRU victim, leak a partial store, or require a tombstone.
+        pending: list[tuple[VSFileRec, list[_Chunk]]] = []
+        pending_ids: set[str] = set()
+        strategy = validate_chunking_strategy(None)
+        for file_id in file_ids:
+            got = self._reader(file_id) if self._reader is not None else None
+            rec, chunks = self._prepare_file_locked(
+                meta,
+                file_id,
+                got,
+                attributes={},
+                chunking_strategy=strategy,
+                pending_ids=pending_ids,
+                pending_count=len(pending),
+            )
+            pending.append((rec, chunks))
+            pending_ids.add(file_id)
         with self._condition:
             # Select only unpinned LRU victims, but do not publish either the
             # eviction or the replacement until their single journal record
@@ -846,29 +966,35 @@ class VectorStoreStore:
                     self._condition.wait()
                     continue
                 break
+            touch = self._touch_record(meta, now=created)
+            response_meta = meta.model_copy(deep=True)
+            for rec, _chunks in pending:
+                response_meta.files[rec.file_id] = rec.model_copy(deep=True)
+                response_meta.usage_bytes += rec.usage_bytes
+            response = vs_object(response_meta)
+            idem_payload, next_idem = self._idem_transition_locked(
+                idempotency_key, body_fingerprint, response
+            )
+            payload: dict[str, Any] = {
+                "vs": meta.model_dump(mode="json", exclude={"files", "usage_bytes"}),
+                "vs_files": [rec.model_dump(mode="json") for rec, _chunks in pending],
+                "vs_touch": touch,
+                **idem_payload,
+            }
+            if evicted:
+                payload["evicted"] = evicted
             if self._journal is not None:
-                payload: dict[str, Any] = {
-                    "vs": meta.model_dump(mode="json", exclude={"files", "usage_bytes"})
-                }
-                if evicted:
-                    payload["evicted"] = evicted
                 self._journal.append(payload)
             for vid in evicted:
                 self._drop(vid)
             self._stores[meta.vs_id] = meta
-            if file_ids:
-                self._pin_locked(meta.vs_id)
-        try:
-            for fid in file_ids:
-                # The create operation already owns a lifecycle pin for the
-                # whole initial-file sequence; avoid double-counting it while
-                # still using the per-store membership writer lane.
-                self.attach(meta.vs_id, fid, _pin_store=False)
+            for rec, chunks in pending:
+                self._publish_file_locked(meta, rec, chunks)
+            self._publish_touch_locked(meta, touch)
+            if next_idem is not None:
+                self._idem = next_idem
+            self._condition.notify_all()
             return vs_object(meta)
-        finally:
-            if file_ids:
-                with self._condition:
-                    self._unpin_locked(meta.vs_id)
 
     def get(self, vs_id: str) -> dict[str, Any]:
         with self._lock:
@@ -950,6 +1076,8 @@ class VectorStoreStore:
         attributes: dict[str, Any] | None = None,
         chunking_strategy: dict[str, Any] | None = None,
         _pin_store: bool = True,
+        idempotency_key: str | None = None,
+        body_fingerprint: str | None = None,
     ) -> dict[str, Any]:
         """Attach a ``/v1/files`` record — reads bytes through
         ``file_reader``, chunks + indexes synchronously, then commits
@@ -976,13 +1104,23 @@ class VectorStoreStore:
                     chunking_strategy=strategy,
                 )
                 touch = self._touch_record(meta)
+                response = vs_file_object(rec)
+                idem_payload, next_idem = self._idem_transition_locked(
+                    idempotency_key, body_fingerprint, response
+                )
                 if self._journal is not None:
                     self._journal.append(
-                        {"vs_file": rec.model_dump(mode="json"), "vs_touch": touch}
+                        {
+                            "vs_file": rec.model_dump(mode="json"),
+                            "vs_touch": touch,
+                            **idem_payload,
+                        }
                     )
                 self._publish_file_locked(meta, rec, chunks)
                 self._publish_touch_locked(meta, touch)
-                return vs_file_object(rec)
+                if next_idem is not None:
+                    self._idem = next_idem
+                return response
         finally:
             with self._condition:
                 self._end_membership_locked(vs_id, unpin_store=_pin_store)
@@ -1082,6 +1220,8 @@ class VectorStoreStore:
         *,
         attributes: dict[str, Any] | None = None,
         chunking_strategy: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        body_fingerprint: str | None = None,
     ) -> dict[str, Any]:
         """``POST .../file_batches`` — attach many ``file-*`` records in
         one call. Members go through ``attach`` one at a time; a file
@@ -1170,19 +1310,26 @@ class VectorStoreStore:
                     counts=counts,
                 )
                 touch = self._touch_record(meta)
+                response = vs_batch_object(batch)
+                idem_payload, next_idem = self._idem_transition_locked(
+                    idempotency_key, body_fingerprint, response
+                )
                 if self._journal is not None:
                     self._journal.append(
                         {
                             "vs_files": [rec.model_dump(mode="json") for rec, _chunks in pending],
                             "vs_batch": batch.model_dump(mode="json"),
                             "vs_touch": touch,
+                            **idem_payload,
                         }
                     )
                 for rec, chunks in pending:
                     self._publish_file_locked(meta, rec, chunks)
                 self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
                 self._publish_touch_locked(meta, touch)
-                return vs_batch_object(batch)
+                if next_idem is not None:
+                    self._idem = next_idem
+                return response
         finally:
             with self._condition:
                 self._end_membership_locked(vs_id)

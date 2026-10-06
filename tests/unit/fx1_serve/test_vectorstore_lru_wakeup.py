@@ -52,7 +52,7 @@ class TestVectorStoreLRUWakeup(unittest.TestCase):
         self,
         *,
         promotion: Literal["get", "update", "search"],
-        membership: Literal["create", "batch", "attach"],
+        membership: Literal["batch", "attach"],
         delete_waiter: bool = False,
     ) -> None:
         reader = _BlockingReader()
@@ -62,21 +62,12 @@ class TestVectorStoreLRUWakeup(unittest.TestCase):
             with ThreadPoolExecutor(max_workers=3) as pool:
                 try:
                     policy = {"anchor": "last_active_at", "days": 1}
-                    if membership != "create":
-                        pinned_id = store.create(name="pinned", expires_after=policy)["id"]
-                        if membership == "batch":
-                            pinned = pool.submit(store.file_batch_create, pinned_id, ["file-a"])
-                        else:
-                            pinned = pool.submit(store.attach, pinned_id, "file-a")
+                    pinned_id = store.create(name="pinned", expires_after=policy)["id"]
+                    if membership == "batch":
+                        pinned = pool.submit(store.file_batch_create, pinned_id, ["file-a"])
                     else:
-                        pinned = pool.submit(
-                            store.create,
-                            name="pinned",
-                            file_ids=["file-a"],
-                            expires_after=policy,
-                        )
+                        pinned = pool.submit(store.attach, pinned_id, "file-a")
                     self.assertTrue(reader.started.wait(timeout=3))
-                    pinned_id = store.list_stores()["data"][0]["id"]
                     if delete_waiter:
                         deleter = pool.submit(store.delete, pinned_id)
                         self._wait_for_waiters(store, 1)
@@ -130,26 +121,23 @@ class TestVectorStoreLRUWakeup(unittest.TestCase):
                 self.assertEqual(replay_meta.expires_at, replay_meta.last_active_at + 86400)
             self.assertEqual(restored.recover_warnings, [])
 
-    def test_get_wakes_creator_during_create_with_files(self) -> None:
-        self._check_promotion(promotion="get", membership="create")
+    def test_get_wakes_creator_during_attach(self) -> None:
+        self._check_promotion(promotion="get", membership="attach")
 
     def test_get_wakes_creator_during_file_batch(self) -> None:
         self._check_promotion(promotion="get", membership="batch")
 
-    def test_update_wakes_creator_during_create_with_files(self) -> None:
-        self._check_promotion(promotion="update", membership="create")
+    def test_update_wakes_creator_during_attach(self) -> None:
+        self._check_promotion(promotion="update", membership="attach")
 
     def test_update_wakes_creator_during_file_batch(self) -> None:
         self._check_promotion(promotion="update", membership="batch")
 
     def test_get_wakes_creator_behind_delete_waiter(self) -> None:
-        self._check_promotion(promotion="get", membership="create", delete_waiter=True)
+        self._check_promotion(promotion="get", membership="attach", delete_waiter=True)
 
     def test_update_wakes_creator_behind_delete_waiter(self) -> None:
-        self._check_promotion(promotion="update", membership="create", delete_waiter=True)
-
-    def test_search_wakes_creator_during_create_with_files(self) -> None:
-        self._check_promotion(promotion="search", membership="create")
+        self._check_promotion(promotion="update", membership="attach", delete_waiter=True)
 
     def test_search_wakes_creator_during_file_batch(self) -> None:
         self._check_promotion(promotion="search", membership="batch")
