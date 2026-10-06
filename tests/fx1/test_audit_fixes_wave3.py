@@ -474,8 +474,7 @@ def test_run_suite_rejects_duplicate_task_names():
 
 
 def test_hosted_backend_rejects_null_content(monkeypatch):
-    import urllib.request
-
+    import fx1.serve.backends as backends_module
     from fx1.serve.backends import HostedK3Backend
 
     class _Resp:
@@ -489,7 +488,7 @@ def test_hosted_backend_rejects_null_content(monkeypatch):
             return False
 
     monkeypatch.setenv("MOONSHOT_API_KEY", "k")
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: _Resp())
+    monkeypatch.setattr(backends_module, "_openai_urlopen", lambda *a, **k: _Resp())
     backend = HostedK3Backend()
     with pytest.raises(RuntimeError, match="malformed"):
         backend.complete([{"role": "user", "content": "hi"}])

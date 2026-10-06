@@ -773,8 +773,7 @@ def test_contamination_audit_cli_fails_closed_on_missing_corpus(tmp_path: Path):
 # backends.py — hosted eval calls pin deterministic sampling
 # ---------------------------------------------------------------------------
 def test_hosted_backend_pins_temperature(monkeypatch):
-    import urllib.request
-
+    import fx1.serve.backends as backends_module
     from fx1.serve.backends import HostedK3Backend
 
     captured = {}
@@ -789,12 +788,12 @@ def test_hosted_backend_pins_temperature(monkeypatch):
         def __exit__(self, *a):
             return False
 
-    def fake_urlopen(request, timeout=0):
+    def fake_urlopen(request, *, timeout_s=0):
         captured["body"] = json.loads(request.data.decode())
         return _Resp()
 
     monkeypatch.setenv("MOONSHOT_API_KEY", "k")
-    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(backends_module, "_openai_urlopen", fake_urlopen)
     backend = HostedK3Backend()
     assert backend.complete([{"role": "user", "content": "hi"}]) == "ok"
     assert captured["body"]["temperature"] == 0.0

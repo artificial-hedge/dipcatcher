@@ -229,14 +229,28 @@ class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Any:
-    """Open one credentialed request with redirects disabled.
+@contextlib.contextmanager
+def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Iterator[Any]:
+    """Open one credentialed request with redirects disabled and close it.
 
     Constructing the opener per call keeps mutable handler state scoped to
     that call when backend instances are shared by concurrent requests.
+    ``HTTPError`` is itself a response object; ``OpenerDirector.open`` raises
+    it before a caller can enter its response context, so close that error
+    response here as well.  Otherwise repeated provider refusals retain their
+    sockets until cyclic GC happens to collect the traceback.
     """
     opener = urllib.request.build_opener(_RefuseRedirects())
-    return opener.open(request, timeout=timeout_s)  # noqa: S310  # nosec B310
+    try:
+        response = opener.open(request, timeout=timeout_s)  # noqa: S310  # nosec B310
+    except urllib.error.HTTPError as exc:
+        with contextlib.suppress(Exception):
+            exc.close()
+        raise
+    try:
+        yield response
+    finally:
+        response.close()
 
 
 def _extract_usage(payload: Any) -> dict[str, int] | None:
@@ -1475,6 +1489,10 @@ class LocalFx1Backend(_UsageTracker):
             proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             proc.kill()
+            # ``kill`` only sends the signal.  Reap the child as well so a
+            # stubborn engine cannot remain as a zombie until this process
+            # exits (and so its OS handles are released on Windows).
+            proc.wait()
 
     def __enter__(self) -> LocalFx1Backend:
         return self

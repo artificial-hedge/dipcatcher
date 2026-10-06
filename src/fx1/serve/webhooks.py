@@ -14,6 +14,7 @@ Receivers authenticate a delivery with :func:`verify_webhook` over the
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import hmac
 import math
@@ -157,8 +158,11 @@ def deliver_signed(
         except urllib.error.HTTPError as exc:
             # urlopen raises on any >=400 — the status is still the verdict:
             # 4xx is a definitive rejection (never retried), 5xx is transient.
-            error = f"callback endpoint returned {exc.code}"
-            if 400 <= exc.code < 500:
+            status = exc.code
+            with contextlib.suppress(Exception):
+                exc.close()
+            error = f"callback endpoint returned {status}"
+            if 400 <= status < 500:
                 return False, error, attempt + 1
         except Exception as exc:  # noqa: BLE001 — delivery faults are data, never raised
             error = f"{type(exc).__name__}: {exc}"
