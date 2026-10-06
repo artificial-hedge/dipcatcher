@@ -205,7 +205,7 @@ def _probe_models() -> dict[str, bool]:
     out["output_nan_refused"] = _refuses(_Out, value=float("nan"))
     out["output_inf_refused"] = _refuses(_Out, value=float("inf"))
     out["output_extra_forbid"] = _refuses(_Out, value=1.0, bogus=2)
-    out["output_finite_ok"] = _Out(value=1.5).value == 1.5
+    out["output_finite_ok"] = math.isclose(_Out(value=1.5).value, 1.5)
     return out
 
 
