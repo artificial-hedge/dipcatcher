@@ -346,3 +346,22 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Operations framework audit (`base.py` + `registry.py`)
+
+`fx1.operations.opsframe_audit` pins the machinery every operation
+stands on: descriptor id/kind/namespace agreement, module-local
+input/output schemas, the `fx1.operation-result/v1` invoke envelope
+with input/output SHA-256 and honesty flags, `extra="forbid"` +
+`allow_inf_nan=False` on both model classes, the frozen abspath'd
+`OperationContext`, `resolve_file` spelling checks vs the
+`open_binary` descriptor-relative `O_NOFOLLOW` walk (internal symlinks
+resolve but refuse at open; escape symlinks refuse at resolve),
+`WorkspaceReader` bounded reads with EOF-gated `source_sha256`,
+canonical JSON (sorted, compact, raw UTF-8, NaN refused, byte budget
+enforced during encoding), `\\?\`/`\\?\UNC\` normalization, and the
+reviewed registry: exactly 40 implementations, every on-disk
+non-battery module registered, bounded discovery with kind/query
+filters, and schema-gated dispatch for the three literal function
+tools. ~80 literal-bool probes seal into an `opsframe_audit.v1`
+receipt.
