@@ -346,3 +346,43 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Rate-limit fairness maintenance (PR #2922)
+
+`src/fx1/serve/ratelimit_audit.py` — a 93-probe battery over the shape of
+the rate limiter: the global per-host token bucket versus the per-key rpm
+window, layered end to end. It pins bucket burst/refill/reset semantics,
+the `X-RateLimit-*` trio on every governed response (including refusals,
+ingress refusals, and bad-cred floods), `Retry-After` honesty, layering
+order (global bucket before auth; per-key window after), cross-host and
+per-key fairness, drain/`store:false`/idempotent-replay composition,
+process-local window occupancy versus journaled `uses` under
+`--state-dir`, `fx1_rate_limited_total` truthfulness, refusal envelopes
+on all three dialects, and `HarnessClient` retry semantics.
+
+Building the lane surfaced four real defects, fixed on the same PR:
+
+* `_RateLimiter._buckets` was LRU-evicted only on the refusal path — a
+  spray of distinct hosts that all got *admitted* grew the identity map
+  unbounded; the bound now runs on every admission path.
+* `X-RateLimit-Limit` emitted `int(rps)`, declaring `0` for sub-1 rps
+  limits while the capacity floor still admitted one request — it now
+  reports the real capacity.
+* Ingress refusals (400/413) consumed a global-bucket slot but carried
+  no `X-RateLimit-*` trio — the spent headers are now attached like
+  every governed refusal.
+* `fx1_rate_limited_total` counted terminal `quota_exceeded` refusals as
+  rate-limit denials — it now counts only real rate-limit refusals
+  (`by_status["429"]` keeps the whole 429 family).
+
+The battery also pins measured (pre-existing, non-defect) semantics: the
+per-key rpm window is fixed-window anchored at first consume and
+process-local (restart restores a full window while `uses` stay
+journaled); the global bucket is strictly in-memory; `OPTIONS`
+preflights and post-auth 422s consume window slots; `Idempotency-Key`
+replays consume; scope denials consume nothing; `quota_exceeded` is a
+terminal 429 without `Retry-After` while `rate_limited` is retryable.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
