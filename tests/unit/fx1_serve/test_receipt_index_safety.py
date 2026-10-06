@@ -162,6 +162,8 @@ def test_concurrent_readers_observe_the_complete_new_index(tmp_path: Path) -> No
 
 def test_unexpected_decoder_error_is_not_hidden(tmp_path: Path) -> None:
     _receipt(tmp_path, "a.json", "a" * 64)
-    with patch("fx1.serve.receipt_store.json.loads", side_effect=RuntimeError("SYNTHETIC bug")):
-        with pytest.raises(RuntimeError, match="SYNTHETIC bug"):
-            ReceiptIndex(tmp_path).items()
+    with (
+        patch("fx1.serve.receipt_store.json.loads", side_effect=RuntimeError("SYNTHETIC bug")),
+        pytest.raises(RuntimeError, match="SYNTHETIC bug"),
+    ):
+        ReceiptIndex(tmp_path).items()
