@@ -346,7 +346,7 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
-### Webhook delivery audit maintenance (PR pending)
+### Webhook delivery audit maintenance (PR #2907)
 
 The new `webhook_delivery_audit` battery runs the outbound webhook
 dispatcher (`sign_webhook`/`verify_webhook`/`deliver_signed`) over a
@@ -385,6 +385,21 @@ the battery's only corrections were its own measurement seams
 (server delay moved off `time.sleep` so a patched backoff clock
 cannot speed the server, hits-keyed timestamp capture so `time.time`
 stays safe for the server's Date header).
+
+Maintenance-review repairs (2026-10-06): the battery now pins the
+exact 111-probe key set (`_EXPECTED_PROBES` — a dropped or renamed
+probe fails `audit()` loudly, and `bench()` refuses to seal an
+all-True subset); `_audit_context` saves, clears, and restores
+`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` verbatim so a caller's ambient
+opt-in can no longer flip the refusal legs; the SSRF literal battery
+gained RFC-1918 172.16/12 edges, CGNAT 100.64/10, and IPv6 ULA
+fc00::/7–fd00::/8 literals plus resolution-level pins
+(`resolved_17216/cgnat/ula_refused`); the misnamed `mixed` answer
+list (duplicate publics) was split into a real
+`mixed_public_private_refused` fail-closed probe and a
+`resolved_17232_public_passes` boundary sanity; and the receipt was
+resealed at the integrated source commit with the committed-vs-fresh
+and revision-binds-source tests the ledger now requires.
 
 Not verified (documented in `coverage.not_verified`): real DNS
 resolution (the recorder is a literal loopback IP), HTTPS delivery

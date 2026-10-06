@@ -30,6 +30,126 @@ from unittest import mock
 
 __all__ = ["webhook_delivery_audit", "webhook_delivery_audit_bench"]
 
+
+# The exact battery contract: an audit that drops or renames a probe
+# fails loudly here, and ``bench`` refuses to seal an incomplete or
+# partial result set as a pass.
+_EXPECTED_PROBES: frozenset[str] = frozenset(
+    {
+        "all_addresses_fault_retries_outer",
+        "backoff_doubles",
+        "backoff_honors_custom_value",
+        "body_reaches_every_attempt",
+        "conn_refused_retries_then_errors",
+        "content_length_matches_body",
+        "content_type_json",
+        "definitive_4xx_no_retry",
+        "duplicates_deduped",
+        "each_attempt_verifies_on_raw_body",
+        "empty_body_roundtrip",
+        "empty_resolution_oserror",
+        "env_allows_loopback_literal",
+        "env_restored_after_leg",
+        "env_yes_counts",
+        "env_zero_does_not_count",
+        "fail_fail_ok_delivers_third",
+        "fault_walks_to_next_address",
+        "five_xx_short_circuits_walk",
+        "four_xx_ends_walk_definitively",
+        "fresh_at_tolerance_edge_future",
+        "fresh_at_tolerance_edge_past",
+        "fresh_ts_per_attempt",
+        "future_beyond_tolerance_refused",
+        "garbage_refused",
+        "hostname_not_validated_without_dns",
+        "http_connect_dials_validated_ip",
+        "http_connection_keeps_url_host",
+        "http_ok",
+        "https_connect_dials_validated_ip",
+        "https_sni_is_url_host",
+        "invalid_url_never_raises_0",
+        "invalid_url_never_raises_1",
+        "invalid_url_never_raises_2",
+        "invalid_url_never_raises_3",
+        "invalid_url_never_raises_4",
+        "literal_private_refused_0",
+        "literal_private_refused_1",
+        "literal_private_refused_10",
+        "literal_private_refused_11",
+        "literal_private_refused_12",
+        "literal_private_refused_13",
+        "literal_private_refused_14",
+        "literal_private_refused_15",
+        "literal_private_refused_2",
+        "literal_private_refused_3",
+        "literal_private_refused_4",
+        "literal_private_refused_5",
+        "literal_private_refused_6",
+        "literal_private_refused_7",
+        "literal_private_refused_8",
+        "literal_private_refused_9",
+        "max_attempts_one_single_call",
+        "max_attempts_zero_never_dials",
+        "mixed_public_private_refused",
+        "negative_tolerance_disables_freshness",
+        "new_second_new_signature",
+        "no_host_refused",
+        "non_tcp_skipped_then_oserror",
+        "none_passes_through",
+        "nonfinite_now_refused",
+        "nonfinite_tolerance_refused",
+        "nonfinite_ts_refused",
+        "path_and_query_reach_wire",
+        "persistent_5xx_exhausts",
+        "port_garbage_refused",
+        "port_zero_refused",
+        "private_allowed_under_env",
+        "private_resolution_refused",
+        "private_url_refused_zero_attempts",
+        "public_passthrough",
+        "public_v6_passthrough",
+        "redirect_is_retried_not_followed",
+        "resolution_fault_retries_and_errors",
+        "resolved_17216_refused",
+        "resolved_17232_public_passes",
+        "resolved_cgnat_refused",
+        "resolved_ula_refused",
+        "root_target_is_slash",
+        "same_second_same_signature",
+        "scheme_file_refused",
+        "scheme_ftp_refused",
+        "scheme_ws_refused",
+        "sign_format_sha256_hex",
+        "signed_every_attempt",
+        "signed_stale_still_refused",
+        "slow_endpoint_times_out_retries",
+        "stale_beyond_tolerance_refused",
+        "status_204_delivered",
+        "target_preserves_path_query",
+        "unicode_body_roundtrip",
+        "unsigned_sends_no_signature",
+        "userinfo_pass_refused",
+        "userinfo_refused",
+        "v4_mapped_private_refused",
+        "verify_never_raises_garbage",
+        "verify_rejects_bare_hex",
+        "verify_rejects_empty_secret",
+        "verify_rejects_empty_sig",
+        "verify_rejects_missing_sig",
+        "verify_rejects_missing_ts",
+        "verify_rejects_nonascii_sig",
+        "verify_rejects_nonascii_ts",
+        "verify_rejects_reserialized_body",
+        "verify_rejects_tampered_body",
+        "verify_rejects_tampered_ts",
+        "verify_rejects_wrong_prefix",
+        "verify_rejects_wrong_secret",
+        "verify_roundtrip",
+        "verify_uses_wallclock_default",
+        "walk_fault_error_names_exception",
+    }
+)
+
 _AUDIT_LOCK = threading.Lock()
 
 _SECRET = "k3y-material-webhook"  # placeholder only — never a real token
@@ -40,11 +160,27 @@ _ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
 
 @contextlib.contextmanager
 def _audit_context() -> Iterator[None]:
+    """Serialize the battery and normalize ambient webhook env.
+
+    A caller that legitimately exported
+    ``FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS`` must not leak into the
+    refusal probes — the value is saved, cleared for the run, and
+    restored verbatim afterwards (present -> value, absent -> absent),
+    even on fault paths.
+    """
     _AUDIT_LOCK.acquire()
+    prev = os.environ.get(_ENV)
+    os.environ.pop(_ENV, None)
     try:
         yield
     finally:
-        _AUDIT_LOCK.release()
+        try:
+            if prev is None:
+                os.environ.pop(_ENV, None)
+            else:
+                os.environ[_ENV] = prev
+        finally:
+            _AUDIT_LOCK.release()
 
 
 @contextlib.contextmanager
@@ -297,6 +433,12 @@ def _probe_callback_url() -> dict[str, bool]:
         "http://127.0.0.1/h",  # NOSONAR(S1313)
         "http://10.0.0.1/h",  # NOSONAR(S1313)
         "http://192.168.1.1/h",  # NOSONAR(S1313)
+        "http://172.16.0.1/h",  # NOSONAR(S1313) — RFC-1918 low edge
+        "http://172.31.255.255/h",  # NOSONAR(S1313) — RFC-1918 high edge
+        "http://100.64.0.1/h",  # NOSONAR(S1313) — CGNAT 100.64/10
+        "http://100.127.255.254/h",  # NOSONAR(S1313) — CGNAT high edge
+        "http://[fc00::1]/h",  # NOSONAR(S1313) — IPv6 ULA fc00::/7
+        "http://[fd00::1]/h",  # NOSONAR(S1313) — IPv6 ULA fd00::/8
         "http://169.254.169.254/h",  # NOSONAR(S1313) — link-local metadata
         "http://0.0.0.0/h",  # NOSONAR(S1313)
         "http://224.0.0.1/h",  # NOSONAR(S1313) — multicast
@@ -348,9 +490,42 @@ def _probe_resolved_addresses() -> dict[str, bool]:
     with mock.patch.object(socket, "getaddrinfo", fake_gai(pub)):
         out["public_passthrough"] = _resolved_addresses("h.example", 443) == ("93.184.216.34",)
 
-    mixed = pub + [(V4, TCP, 6, "", ("93.184.216.34", 443))]
-    with mock.patch.object(socket, "getaddrinfo", fake_gai(mixed)):
+    dup = pub + [(V4, TCP, 6, "", ("93.184.216.34", 443))]
+    with mock.patch.object(socket, "getaddrinfo", fake_gai(dup)):
         out["duplicates_deduped"] = _resolved_addresses("h.example", 443) == ("93.184.216.34",)
+
+    # a genuinely mixed answer fails closed on the private member —
+    # the public sibling does not rescue it
+    mixed = pub + [(V4, TCP, 6, "", ("10.1.2.3", 443))]
+    with mock.patch.object(socket, "getaddrinfo", fake_gai(mixed)):
+        try:
+            _resolved_addresses("h.example", 443)
+            out["mixed_public_private_refused"] = False
+        except ValueError:
+            out["mixed_public_private_refused"] = True
+
+    # the same special-use classes refused at resolution, not just as
+    # literals — DNS answers get no lighter treatment
+    for name, addr in (
+        ("17216", "172.16.0.1"),
+        ("cgnat", "100.64.0.1"),
+        ("ula", "fd00::1"),
+    ):
+        fam = V6 if ":" in addr else V4
+        sa = (addr, 443, 0, 0) if fam == V6 else (addr, 443)
+        with mock.patch.object(socket, "getaddrinfo", fake_gai([(fam, TCP, 6, "", sa)])):
+            try:
+                _resolved_addresses("h.example", 443)
+                out[f"resolved_{name}_refused"] = False
+            except ValueError:
+                out[f"resolved_{name}_refused"] = True
+
+    # boundary sanity: 172.32.x is outside RFC-1918 — public, admitted
+    edge = [(V4, TCP, 6, "", ("172.32.0.1", 443))]
+    with mock.patch.object(socket, "getaddrinfo", fake_gai(edge)):
+        out["resolved_17232_public_passes"] = _resolved_addresses("h.example", 443) == (
+            "172.32.0.1",
+        )
 
     priv = [(V4, TCP, 6, "", ("10.1.2.3", 443))]
     with mock.patch.object(socket, "getaddrinfo", fake_gai(priv)):
@@ -706,7 +881,14 @@ def webhook_delivery_audit() -> dict[str, bool]:
         results.update(_probe_deliver())
         results.update(_probe_deliver_address_walk())
         results.update(_probe_deliver_misc())
-        return results
+    missing = _EXPECTED_PROBES - results.keys()
+    extra = results.keys() - _EXPECTED_PROBES
+    if missing or extra:
+        raise AssertionError(
+            f"battery drifted from the pinned probe set — missing={sorted(missing)} "
+            f"extra={sorted(extra)}"
+        )
+    return results
 
 
 def webhook_delivery_audit_bench(results: dict[str, bool] | None = None) -> dict[str, Any]:
@@ -715,7 +897,7 @@ def webhook_delivery_audit_bench(results: dict[str, bool] | None = None) -> dict
     from quant_fund.utils.reproducibility import git_revision
 
     r = webhook_delivery_audit() if results is None else dict(results)
-    ok = bool(r) and all(v is True for v in r.values())
+    ok = set(r) == _EXPECTED_PROBES and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "webhook_delivery_audit",
         "schema": "webhook_delivery_audit.v1",
