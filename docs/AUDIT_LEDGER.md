@@ -162,3 +162,34 @@ OpenAPI golden was already stale on the parent and is regenerated.
 The incoming all-pass `fx1_models_audit.json` names the earlier merge base
 and is excluded; historical receipts remain unchanged. The serve census
 moves from 43 to 44 and remains `partial`.
+
+
+### Idem audit maintenance (PR #2816)
+
+The new `idem_audit` checks 98 selected idempotency contracts using SYNTHETIC
+stubs: `Idempotency-Key` coverage on every mutating route (chat, responses,
+messages, completions, batches, message-batches, fine-tuning jobs, runs,
+evals/runs, jobs, uploads create/parts/complete/cancel, files, and key
+mint/rotate/patch/revoke), byte-identical replay with no re-execution, the
+deterministic 409 `idempotency_conflict` in both error grammars, per-route and
+per-credential namespacing, key hygiene, LRU eviction without tombstone
+resurrection, replay-after-delete serving the stored snapshot, SSE replay, a
+`--state-dir` restart restoring the journal, and same-key concurrency (one
+execution, losers replay or 409).
+
+The battery found four live defects, fixed on the same PR: key-lifecycle and
+upload routes ignored the header entirely (a retried mint fabricated a second
+credential); the sync `_IdemStore` routes plus `_submit_eval` and fine-tuning
+ran lookup→execute→put without a claim lock, so parallel same-key submits could
+double-execute (a claim dep now holds `store.async_claim_lock` across the
+handler span); claims were credential-blind until `_idem_scope` bound them to
+the request's authenticated key id plus a per-(verb, target) namespace; and the
+409 code drifted by route until it was unified on `idempotency_conflict`. Key
+replay records stay in-memory only — the stored mint answer carries the raw
+secret, which never persists.
+
+These checks do not establish cross-store atomicity, distributed-lock
+durability across multi-process deployments, TTL expiry probes (only LRU
+eviction is exercised), or client-SDK retry behavior. The incoming all-pass
+`fx1_idem_audit.json` is excluded; historical receipts remain unchanged. The
+serve census moves from 44 to 45 and remains `partial`.
