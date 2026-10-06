@@ -16,7 +16,10 @@
       "status": "audited"
     },
     "extensions": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 95,
+      "reason": "extensions_audit pins machinery + seed ledger + 86-module conformance; deeper per-plugin adapter lanes remain",
+      "status": "partial"
     },
     "forecast": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -29,8 +32,8 @@
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
       "n_modules": 54,
-      "status": "partial",
-      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
+      "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only.",
+      "status": "partial"
     },
     "train": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -44,7 +47,8 @@
       "status": "waived"
     },
     "capabilities.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "cli.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -61,6 +65,9 @@
       "status": "audited"
     },
     "ext_bench_audit.py": {
+      "status": "audited"
+    },
+    "extensions_audit.py": {
       "status": "audited"
     },
     "harness.py": {

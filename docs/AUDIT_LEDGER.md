@@ -346,3 +346,23 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Extensions audit (`extensions/` machinery + `capabilities.py` seed ledger)
+
+`fx1.extensions.extensions_audit` pins the generated-card machinery:
+naming rules (owner regex, dash→underscore, kind dispatch failing
+closed), `ExtensionModule` post-init identity checks (declared module
+path must equal `module_path(kind, owner)`, nonempty references),
+bounded `records()` paging with foreign-record refusal, per-kind
+subclass invariants (skill→command, plugin→source adapter,
+feature→catalog metadata), the reviewed 45-entry feature catalog
+(`synthetic_only` iff family `synthetic_oracle`, every name backed by
+an on-disk module file), the capabilities seed ledger
+(`owner_references` progressions per owner, `resolve_seed_id`
+round-trip for every owner's first and last seed, total residue
+layout: skills ≡0, plugins ≡1, features ≡2 mod 3), and the registry's
+`list_extensions`/`get_extension`/`extension_manifest` across all 86
+generated modules — each of which must export a `MODULE` matching its
+registered (kind, owner, path) identity and verify its own seed
+references. ~90 literal-bool probes seal into an
+`extensions_audit.v1` receipt.
