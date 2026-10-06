@@ -165,15 +165,54 @@ Usage and introspection:
   accounting over the completion log; `since`/`until`/`backend`/`model`/
   `key_id` filters.
 
-### Rotation drill
+### Rotation
 
-Use the mint and revoke APIs for this rotation drill: mint a replacement,
-switch callers, then revoke the old key. Re-declare the intended scopes
-and budgets on the replacement. This procedure lets callers verify the
-new credential before the old one stops working:
+`POST /harness/keys/{id}/rotate` (`fx1 harness key-rotate`, admin scope)
+is the atomic path: it mints a successor under the predecessor's
+declared policy — name, scopes, admin, rpm, and budgets inherited
+verbatim — and, by default, tombstones the predecessor in the same
+store transaction. The response's key payload carries the new raw
+secret (shown once); `rotated_from` lineage lands on the journaled
+successor record.
 
 ```bash
-# 1. mint the replacement (same scopes/budgets — re-declare them)
+NEW=$(fx1 harness key-rotate --remote $URL --api-key "$FX1_API_KEY" <old-key-id> | jq -r .key.key)
+curl -sf $URL/harness/self -H "X-API-Key: $NEW" | jq .credential   # "managed"
+```
+
+- `--keep-old` (`"revoke_old": false`) leaves both secrets live until
+  the old key is revoked or expires — the overlap a verify-first
+  cutover needs; the response's `revoked_previous` reports which
+  happened.
+- `--ttl-s` mints a fresh lifetime; omitted, the successor inherits
+  the predecessor's absolute `expires_at` — rotation never extends a
+  credential's deadline.
+- Under `Idempotency-Key` a retry replays the recorded successor (same
+  id, same raw secret) instead of minting a third credential.
+- Rotating a revoked credential fails `409 key_revoked` (a dead secret
+  cannot mint a live one); a full store fails `409 keys_cap` before
+  the predecessor is touched; unknown ids answer `404 key_not_found`.
+
+### In-place policy patch
+
+`PATCH /harness/keys/{id}` (`fx1 harness key-patch`, admin scope)
+updates a live key's declared policy in place — no new secret, no
+store slot consumed, and the patched record journals like a revocation
+so a `--state-dir` restart replays it. An omitted field keeps the
+declared value; a JSON `null` (or `--clear FIELD` for `name`, `rpm`,
+`max_requests`, `max_tokens`, `expires_at`) reverts that bound to
+unbounded. `--admin` unions the admin scope onto the surviving list;
+`--no-admin` never strips a declared scope — the flag is purely
+additive. `enabled` and the live counters (`uses`, `tokens_used`) are
+not patchable — revocation is permanent and a patch never resurrects a
+tombstoned key (`409 key_revoked`).
+
+The manual mint → switch callers → revoke sequence still works when the
+successor should carry a *different* policy than the predecessor's
+(rotate inherits it):
+
+```bash
+# 1. mint the replacement with its own scopes/budgets
 NEW=$(fx1 harness key-create --remote $URL --api-key "$FX1_API_KEY" \
   --name deploy-v2 --rpm 60 --max-requests 100000 | jq -r .key)
 
