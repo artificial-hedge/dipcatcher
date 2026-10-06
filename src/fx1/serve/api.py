@@ -703,7 +703,9 @@ def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams
 class CompleteRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     messages: list[ChatMessage] = Field(min_length=1, max_length=512)
-    checkpoint_dir: str | None = None
+    checkpoint_dir: str | None = Field(
+        default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
+    )
     receipt_hashes: list[str] | None = None
     # Per-call credentials; only meaningful with backend="byok".
     byok: ByokOverride | None = None
@@ -741,11 +743,10 @@ class CompleteRequest(_Model):
     verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
-    # The registry alias that resolved — an ``ft:`` name when the ft
-    # registry routed the request at its checkpoint; ``None`` on every
-    # other link. The response and completion record name the alias the
-    # caller addressed, not the checkpoint's internal version stamp.
-    served_model: str | None = None
+    # Internal-only registry attribution.  A private attribute keeps this
+    # out of the public /harness/complete schema: callers must not be able
+    # to forge the model name sealed into the completion record.
+    _served_model: str | None = PrivateAttr(default=None)
     # Agent-loop tool context — the OpenAI tool-calling surface on the
     # harness route: function specs the model may call (verbatim
     # OpenAI-shaped dicts), the provider's call policy, and the
@@ -841,7 +842,9 @@ class CompleteResponse(_Model):
 class CompleteBatchRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     batch: list[list[ChatMessage]] = Field(min_length=1, max_length=64)
-    checkpoint_dir: str | None = None
+    checkpoint_dir: str | None = Field(
+        default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
+    )
     receipt_hashes: list[str] | None = None
     byok: ByokOverride | None = None
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
@@ -887,7 +890,9 @@ class EmbedRequest(_Model):
     fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
         default_factory=list, max_length=2
     )
-    checkpoint_dir: str | None = None
+    checkpoint_dir: str | None = Field(
+        default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
+    )
     byok: ByokOverride | None = None
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
     model: str = Field(min_length=1, max_length=256)
@@ -4753,7 +4758,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if breaker is not None:
                     breaker.report(cand_key, True)
                 usage_snap = _billable_usage(getattr(backend, "last_usage", None))
-                model_snap = getattr(body, "served_model", None) or getattr(backend, "_model", None)
+                model_snap = (
+                    body._served_model
+                    if body._served_model is not None and cand == body.backend
+                    else getattr(backend, "_model", None)
+                )
                 serving = cand
                 attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
                 break
@@ -4946,7 +4955,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     breaker.report(_breaker_key_name(serving, body.byok), True)
             finally:
                 usage_snap = _billable_usage(getattr(backend, "last_usage", None))
-                model_snap = getattr(body, "served_model", None) or getattr(backend, "_model", None)
+                model_snap = (
+                    body._served_model
+                    if body._served_model is not None and serving == body.backend
+                    else getattr(backend, "_model", None)
+                )
                 joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
                     serving,
@@ -5096,6 +5109,19 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     _openai_created = int(time.time())
 
+    def _complete_request_from_kwargs(kwargs: dict[str, Any]) -> CompleteRequest:
+        """Validate translated wire kwargs while binding registry attribution
+        privately.  ``_served_model`` is intentionally not a public request
+        field: only the registry translator may stamp an alias on evidence."""
+        translated = dict(kwargs)
+        served_model = translated.pop("_served_model", None)
+        try:
+            request = CompleteRequest(**translated)
+        except ValidationError as exc:
+            raise OpenAICompatError(str(exc), status=422) from exc
+        request._served_model = served_model
+        return request
+
     def _openai_chat_core(
         body: OpenAIChatRequest,
         headers: Mapping[str, str],
@@ -5105,12 +5131,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         one gated path, one envelope. Raises ``OpenAICompatError`` on
         translation or post-validation failures (callers map it to the
         wire shape)."""
-        try:
-            creq = CompleteRequest(
-                **openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
-            )
-        except ValidationError as exc:
-            raise OpenAICompatError(str(exc), status=422) from exc
+        creq = _complete_request_from_kwargs(
+            openai_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         # n>1 fans out into n gated calls — each completion gets its own
         # honesty-gate pass, format check, and completion-log record; usage
         # sums what was actually spent (n calls × provider-reported counts).
@@ -5315,12 +5338,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     }
                 )
         search_items, eff_body = _file_search_turn(body, eff_body)
-        try:
-            creq = CompleteRequest(
-                **response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
-            )
-        except ValidationError as exc:
-            raise OpenAICompatError(str(exc), status=422) from exc
+        creq = _complete_request_from_kwargs(
+            response_to_kwargs(eff_body, headers, ft_resolver=ft_store.checkpoint_for)
+        )
         out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
         # a tool-call turn carries no text — there is nothing to
         # post-validate against text.format on an empty content
@@ -8150,9 +8170,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     prompt_sha256 = hashlib.sha256(
                         json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
                     ).hexdigest()
-                    model_snap = getattr(body, "served_model", None) or getattr(
-                        backend, "_model", None
-                    )
+                    model_snap = getattr(backend, "_model", None)
 
                     def _log_item(
                         ok: bool, content: str | None, err: str | None, cls: str | None

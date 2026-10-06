@@ -1848,7 +1848,7 @@ class Fx1Harness:
         parallel_tool_calls: bool | None = None,
         logprobs: bool | None = None,
         top_logprobs: int | None = None,
-        served_model: str | None = None,
+        _served_model: str | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -1887,7 +1887,7 @@ class Fx1Harness:
         the assistant's text only — tool arguments are machine-bound
         JSON and logprobs are provider scores, not claims.
 
-        ``served_model`` is the registry alias that resolved the request
+        ``_served_model`` is the internal registry alias that resolved the request
         — an ``ft:`` name set by the OpenAI/Anthropic translators when
         the ft registry routed the call — so the result and the
         completion record name what the caller addressed rather than
@@ -2047,7 +2047,11 @@ class Fx1Harness:
                 if callable(closer):
                     closer()
                 raise
-            model_name = served_model or getattr(backend_obj, "_model", None)
+            model_name = (
+                _served_model
+                if _served_model is not None and cand == backend
+                else getattr(backend_obj, "_model", None)
+            )
             usage = getattr(backend_obj, "last_usage", None)
             attempts.append(
                 {

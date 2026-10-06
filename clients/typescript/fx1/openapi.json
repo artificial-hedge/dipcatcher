@@ -88,6 +88,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"
@@ -292,6 +293,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"
@@ -1861,6 +1863,9 @@
           "checkpoint_dir": {
             "anyOf": [
               {
+                "maxLength": 4096,
+                "minLength": 1,
+                "pattern": "^[^\\x00]+$",
                 "type": "string"
               },
               {
@@ -2240,6 +2245,9 @@
           "checkpoint_dir": {
             "anyOf": [
               {
+                "maxLength": 4096,
+                "minLength": 1,
+                "pattern": "^[^\\x00]+$",
                 "type": "string"
               },
               {
@@ -2429,17 +2437,6 @@
               }
             ],
             "title": "Seed"
-          },
-          "served_model": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Served Model"
           },
           "service_tier": {
             "anyOf": [
@@ -5944,6 +5941,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"
@@ -6388,6 +6386,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"
@@ -6732,6 +6731,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"
@@ -6894,6 +6894,9 @@
           "checkpoint_dir": {
             "anyOf": [
               {
+                "maxLength": 4096,
+                "minLength": 1,
+                "pattern": "^[^\\x00]+$",
                 "type": "string"
               },
               {
@@ -7143,6 +7146,7 @@
           },
           "model": {
             "default": "fx1",
+            "maxLength": 512,
             "minLength": 1,
             "title": "Model",
             "type": "string"

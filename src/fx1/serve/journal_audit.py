@@ -33,8 +33,9 @@ Pinned contract:
   feed, ``ft:`` idempotency keys, and the fine-tuned model registry —
   a card whose producing job was evicted never resolves post-restart.
 - ``_FileStore`` (``files.jsonl`` + ``files/*.bin`` blobs) restores
-  uploads byte-identical; a journaled record without its blob drops
-  with a warning, deletes/evictions tombstone, orphans GC on boot.
+  uploads byte-identical; a journaled record whose blob is missing
+  fails closed — boot refuses without rewriting the journal —
+  deletes/evictions tombstone, orphans GC on boot.
 - ``_IdemStore`` (``idem_*.jsonl``) journals the stored response itself
   so a retried submission replays the recorded answer after a restart.
 
@@ -448,13 +449,23 @@ def journal_audit() -> dict[str, Any]:
         raw = (root / "files.jsonl").read_bytes()
         r["file_content_not_in_journal"] = b'{"a":1}' not in raw and b"XX" not in raw
 
-        # journaled metadata without its blob drops with a warning
-        orphan = filestore2.put(filename="orphan.jsonl", purpose="batch", content=b"zz")
-        (root / "files" / f"{orphan.file_id}.bin").unlink()
-        filestore3 = _FileStore(8, 1 << 20, state_dir=root)
-        r["file_missing_blob_dropped"] = filestore3.get(orphan.file_id) is None and bool(
-            filestore3.recover_warnings
-        )
+        # a journaled record whose blob is missing fails closed — boot
+        # refuses rather than drop the record, leaving the journal
+        # byte-for-byte intact for operator repair
+        with tempfile.TemporaryDirectory() as td8b:
+            root8b = Path(td8b)
+            fstore8b = _FileStore(8, 1 << 20, state_dir=root8b)
+            orphan = fstore8b.put(filename="orphan.jsonl", purpose="batch", content=b"zz")
+            (root8b / "files" / f"{orphan.file_id}.bin").unlink()
+            journal_before = (root8b / "files.jsonl").read_bytes()
+            try:
+                _FileStore(8, 1 << 20, state_dir=root8b)
+                refused = False
+            except RuntimeError:
+                refused = True
+            r["file_missing_blob_fails_closed"] = (
+                refused and (root8b / "files.jsonl").read_bytes() == journal_before
+            )
 
         # orphan blob GC: a blob with no journaled record is unlinked
         stray = root / "files" / "file-stray.bin"
@@ -590,7 +601,9 @@ def journal_audit_bench() -> dict[str, Any]:
             "holds on evals, batches (in-flight recovers failed), "
             "fine-tune jobs (events, idem keys, and the model registry — "
             "a card dies with its producing job), files (blob bytes "
-            "round-trip, deletes tombstone, orphans GC), and the "
+            "round-trip, a journaled record whose blob is missing "
+            "refuses boot without rewriting the journal, deletes "
+            "tombstone, orphans GC), and the "
             "idempotency stores (the recorded response replays after a "
             "restart)."
             if ok

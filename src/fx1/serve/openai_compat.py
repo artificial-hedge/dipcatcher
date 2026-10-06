@@ -292,7 +292,9 @@ class OpenAIFx1(_Model):
         default_factory=list, max_length=2
     )
     byok: ByokOverride | None = None
-    checkpoint_dir: str | None = None
+    checkpoint_dir: str | None = Field(
+        default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
+    )
     receipt_hashes: list[str] | None = None
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
 
@@ -303,7 +305,7 @@ class OpenAIChatRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = Field(default="fx1", min_length=1)
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     messages: list[OpenAIChatMessage] = Field(min_length=1, max_length=512)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
@@ -488,7 +490,7 @@ class OpenAICompletionRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = Field(default="fx1", min_length=1)
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     prompt: str | list[str]
     max_tokens: int | None = Field(default=None, gt=0, le=262144)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
@@ -817,7 +819,7 @@ def openai_to_kwargs(
     return {
         "backend": backend,
         "messages": openai_messages(body.messages),
-        "served_model": served_model,
+        "_served_model": served_model,
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": _resolve_receipt_hashes(
             ext.receipt_hashes if ext is not None else None, hdrs
@@ -1299,7 +1301,7 @@ class OpenAIResponseRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = Field(default="fx1", min_length=1)
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     input: str | list[dict[str, Any]]
     instructions: str | None = Field(default=None, max_length=32768)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
@@ -1747,7 +1749,7 @@ def response_to_kwargs(
     return {
         "backend": backend,
         "messages": response_input_to_messages(body.input, body.instructions),
-        "served_model": served_model,
+        "_served_model": served_model,
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": _resolve_receipt_hashes(
             ext.receipt_hashes if ext is not None else None, hdrs
@@ -2591,7 +2593,7 @@ class OpenAIEmbeddingRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = Field(default="fx1", min_length=1)
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     input: str | list[str] | list[int] | list[list[int]]
     encoding_format: Literal["float", "base64"] | None = None
     dimensions: int | None = Field(default=None, ge=1)
