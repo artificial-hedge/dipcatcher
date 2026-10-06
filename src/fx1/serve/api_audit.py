@@ -8202,8 +8202,6 @@ def _probe_backend_probes(  # NOSONAR
         def log_message(self, *args: Any) -> None:
             pass
 
-    _bwh_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     # Loopback sink — opt into private-network callback delivery for the
     # batch webhook probes; restored after the sink shuts down.
     _bwh_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
