@@ -9811,7 +9811,7 @@ def _mount_key_lifecycle(
         )
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
-        _drain_refusal(metrics)
+        # Revocation removes authority and must remain available during drain.
         try:
             rec = key_store.revoke(key_id)
         except KeyStoreError as exc:
