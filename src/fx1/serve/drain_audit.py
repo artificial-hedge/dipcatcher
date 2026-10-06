@@ -4,7 +4,7 @@ Probe battery over the drain-shutdown contract: the latch itself
 (admin scope, honest body, one-way idempotent re-latch, ``wait_s``
 window semantics, ``/ready`` deregistration signal, metrics gauge),
 the refusal set (every mutating surface — model calls, job/eval/batch
-submits, stored-resource writes, the key lifecycle — answers
+submits and stored-resource writes — answers
 ``503 draining`` in its own error grammar), the read-through set
 (every stored resource's list/get plus cancels, deletes, pauses, and
 the documented advisory preflights stay open), in-flight honesty (a
@@ -13,7 +13,7 @@ terminal state), the submit-then-drain race boundary, recovery (no
 resume route; the latch is process-local — a ``--state-dir`` restart
 clears it and re-arms), drain-time webhooks (a pending callback still
 fires once, signed), key store behavior under drain (existing keys
-still authenticate reads; the lifecycle refuses), metering (a
+still authenticate reads and emergency revocation remains open), metering (a
 drain-refused call still bills ``uses`` — admission happens at
 authenticate, before the gate — while auth/scope refusals bill
 nothing), idempotency (a refused submit leaves no phantom claim; a
@@ -32,7 +32,7 @@ Found while building this lane (fixed in the same commit):
   the stored-completion metadata update, the eval spec
   create/update, ``/v1/fine_tuning/jobs/{id}/resume`` (which
   re-admits a paused job onto the executor), and the entire
-  ``/harness/keys`` mint/rotate/patch/revoke lifecycle all accepted
+  ``/harness/keys`` mint/rotate/patch lifecycle all accepted
   new work mid-drain — a pod could mint keys, files, and stores in
   the same window its orchestrator believed it was refusing work.
   Each handler now calls ``_drain_refusal(metrics)`` at the
@@ -49,6 +49,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import secrets
 import threading
 import time
 from collections.abc import Callable, Iterator
@@ -59,12 +60,12 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-from quant_fund.research.receipt_v2 import git_revision
+from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["drain_audit", "drain_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
-_ROOT = "k3y-material"
+_ROOT = secrets.token_urlsafe(32)
 _WAIT_S = 15.0
 _DRAIN = "/harness/drain"
 _JOBS = "/harness/jobs"
@@ -625,9 +626,8 @@ def _refusal_probes() -> dict[str, bool]:
     out["refuse_key_patch"] = _is_draining(
         client.patch(f"{_KEYS}/{seed['minted']['id']}", json={"name": "renamed"}, headers=_h())
     )
-    out["refuse_key_revoke"] = _is_draining(
-        client.delete(f"{_KEYS}/{seed['minted']['id']}", headers=_h())
-    )
+    revoked = client.delete(f"{_KEYS}/{seed['minted']['id']}", headers=_h())
+    out["revoke_key_open"] = revoked.status_code == 200 and revoked.json().get("enabled") is False
     return out
 
 
@@ -976,6 +976,8 @@ def _recovery_probes() -> dict[str, bool]:
 
 def _webhook_probes() -> dict[str, bool]:
     out: dict[str, bool] = {}
+    # Synthetic loopback receiver: opt in narrowly inside the swept audit context.
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     from fx1.serve.conv_audit import _RESOURCES  # noqa: PLC0415
     from fx1.serve.jobs_audit import _Runner  # noqa: PLC0415
     from fx1.serve.webhook_audit import _Sink  # noqa: PLC0415
@@ -1209,10 +1211,10 @@ def drain_audit() -> dict[str, Any]:
         return out
 
 
-def drain_audit_bench() -> dict[str, Any]:
-    """Sealed receipt: every probe True under drain_audit.v1."""
-    r = drain_audit()
-    ok = all(v is True for v in r.values())
+def drain_audit_bench(results: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Seal drain-audit results; run the battery when results are omitted."""
+    r = drain_audit() if results is None else dict(results)
+    ok = bool(r) and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "drain_audit",
         "schema": "drain_audit.v1",
@@ -1267,8 +1269,9 @@ def drain_audit_bench() -> dict[str, Any]:
             "every mutating surface — the slot-gated model calls, the "
             "jobs/evals/batches submits, the stored-resource writes "
             "(files, uploads, conversations, vector stores, eval specs, "
-            "stored-completion metadata, ft resume), and the whole key "
-            "lifecycle — refuses 503 draining in its own error grammar, "
+            "stored-completion metadata, ft resume), plus key mint/rotate/"
+            "patch — refuse 503 draining in their own error grammar; key "
+            "revocation remains open so compromised authority can be removed, "
             "every read plus cancels/deletes/pauses and the documented "
             "advisory preflights stay open, work admitted before the "
             "latch completes honestly (jobs, sync runs, model calls, "
