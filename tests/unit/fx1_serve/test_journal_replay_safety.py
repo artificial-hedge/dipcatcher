@@ -98,9 +98,11 @@ def test_explicit_compaction_restores_writes_after_corruption(tmp_path: Path) ->
 def test_failed_fsync_blocks_retry_until_replay(tmp_path: Path) -> None:
     path = tmp_path / "journal.jsonl"
     journal = JobJournal(path)
-    with patch("fx1.serve.journal.os.fsync", side_effect=OSError("synthetic fsync failure")):
-        with pytest.raises(OSError, match="synthetic fsync"):
-            journal.append({"id": "uncertain"})
+    with (
+        patch("fx1.serve.journal.os.fsync", side_effect=OSError("synthetic fsync failure")),
+        pytest.raises(OSError, match="synthetic fsync"),
+    ):
+        journal.append({"id": "uncertain"})
     after_failure = path.read_bytes()
     with pytest.raises(RuntimeError, match="replay|compact"):
         journal.append({"id": "must not reuse sequence zero"})
@@ -110,6 +112,36 @@ def test_failed_fsync_blocks_retry_until_replay(tmp_path: Path) -> None:
     result = JobJournal(path).replay()
     assert result.truncated_at is None
     assert result.payloads == [{"id": "uncertain"}, {"id": "second"}]
+
+
+def test_new_journal_fsyncs_parent_before_acknowledging_append(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    journal = JobJournal(path)
+    with (
+        patch(
+            "fx1.serve.journal._fsync_parent", side_effect=OSError("synthetic directory fsync")
+        ) as sync_parent,
+        pytest.raises(OSError, match="synthetic directory fsync"),
+    ):
+        journal.append({"id": "uncertain"})
+    sync_parent.assert_called_once_with(tmp_path)
+    with pytest.raises(RuntimeError, match="replay|compact"):
+        journal.append({"id": "must not reuse sequence zero"})
+    assert journal.replay().payloads == [{"id": "uncertain"}]
+    journal.append({"id": "second"})
+    assert JobJournal(path).replay().payloads == [
+        {"id": "uncertain"},
+        {"id": "second"},
+    ]
+
+
+def test_existing_journal_append_does_not_resync_parent(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    journal = JobJournal(path)
+    journal.append({"id": 0})
+    with patch("fx1.serve.journal._fsync_parent") as sync_parent:
+        journal.append({"id": 1})
+    sync_parent.assert_not_called()
 
 
 def test_replay_streams_instead_of_reading_the_whole_file(tmp_path: Path) -> None:
@@ -123,9 +155,11 @@ def test_replay_streams_instead_of_reading_the_whole_file(tmp_path: Path) -> Non
 def test_programming_errors_are_not_silenced_as_corruption(tmp_path: Path) -> None:
     journal = JobJournal(tmp_path / "journal.jsonl")
     journal.append({"id": 0})
-    with patch("fx1.serve.journal.json.loads", side_effect=RuntimeError("synthetic decoder bug")):
-        with pytest.raises(RuntimeError, match="synthetic decoder bug"):
-            journal.replay()
+    with (
+        patch("fx1.serve.journal.json.loads", side_effect=RuntimeError("synthetic decoder bug")),
+        pytest.raises(RuntimeError, match="synthetic decoder bug"),
+    ):
+        journal.replay()
     with pytest.raises(RuntimeError, match="replay|compact"):
         journal.append({"id": 1})
     assert journal.replay().payloads == [{"id": 0}]
@@ -186,9 +220,7 @@ def test_concurrent_appends_keep_a_single_verified_chain(tmp_path: Path) -> None
 
 
 @pytest.mark.parametrize("field,value", [("seq", 3), ("chain", "bad"), ("sha256", "bad")])
-def test_corrupt_metadata_stops_at_the_exact_record(
-    tmp_path: Path, field: str, value: Any
-) -> None:
+def test_corrupt_metadata_stops_at_the_exact_record(tmp_path: Path, field: str, value: Any) -> None:
     first = _record(0, {"id": 0})
     chain = hashlib.sha256(first).hexdigest()
     second = json.loads(_record(1, {"id": 1}, chain))
@@ -230,21 +262,47 @@ def test_compaction_failure_keeps_the_old_chain_and_payloads(tmp_path: Path) -> 
     journal = JobJournal(path)
     journal.append({"id": 0})
     original = path.read_bytes()
-    with patch("fx1.serve.journal.os.replace", side_effect=OSError("synthetic replace failure")):
-        with pytest.raises(OSError, match="synthetic replace"):
-            journal.compact([{"id": "uncommitted"}])
+    with (
+        patch("fx1.serve.journal.os.replace", side_effect=OSError("synthetic replace failure")),
+        pytest.raises(OSError, match="synthetic replace"),
+    ):
+        journal.compact([{"id": "uncommitted"}])
     assert path.read_bytes() == original
     journal.append({"id": 1})
     assert JobJournal(path).replay().payloads == [{"id": 0}, {"id": 1}]
+
+
+def test_compaction_fsyncs_parent_and_fails_closed_on_error(tmp_path: Path) -> None:
+    path = tmp_path / "journal.jsonl"
+    journal = JobJournal(path)
+    journal.append({"id": "old"})
+    with (
+        patch(
+            "fx1.serve.journal._fsync_parent", side_effect=OSError("synthetic directory fsync")
+        ) as sync_parent,
+        pytest.raises(OSError, match="synthetic directory fsync"),
+    ):
+        journal.compact([{"id": "replacement"}])
+    sync_parent.assert_called_once_with(tmp_path)
+    with pytest.raises(RuntimeError, match="replay|compact"):
+        journal.append({"id": "must replay replacement"})
+    assert journal.replay().payloads == [{"id": "replacement"}]
+    journal.append({"id": "after recovery"})
+    assert JobJournal(path).replay().payloads == [
+        {"id": "replacement"},
+        {"id": "after recovery"},
+    ]
 
 
 def test_read_failure_blocks_writes_until_successful_recovery(tmp_path: Path) -> None:
     path = tmp_path / "journal.jsonl"
     journal = JobJournal(path)
     journal.append({"id": 0})
-    with patch.object(Path, "open", side_effect=PermissionError("synthetic unreadable journal")):
-        with pytest.raises(PermissionError, match="synthetic unreadable"):
-            journal.replay()
+    with (
+        patch.object(Path, "open", side_effect=PermissionError("synthetic unreadable journal")),
+        pytest.raises(PermissionError, match="synthetic unreadable"),
+    ):
+        journal.replay()
     with pytest.raises(RuntimeError, match="replay|compact"):
         journal.append({"id": 1})
     assert journal.replay().payloads == [{"id": 0}]
