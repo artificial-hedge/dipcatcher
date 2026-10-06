@@ -504,7 +504,14 @@ class VectorStoreStore:
         *,
         journal: JobJournal | None = None,
     ) -> None:
+        if max_stores < 1:
+            raise ValueError("max_stores must be at least 1")
         self._lock = threading.Lock()
+        self._condition = threading.Condition(self._lock)
+        # Compound create-with-files and file-batch operations temporarily
+        # pin their store against deletion and capacity eviction. Unrelated
+        # stores remain usable while a file reader or index build is slow.
+        self._inflight: dict[str, int] = {}
         self._max = max_stores
         self._max_files = max_files
         self._reader = file_reader
@@ -578,6 +585,18 @@ class VectorStoreStore:
         self._batches.pop(vs_id, None)
         self._idf.pop(vs_id, None)
         self._idf_dirty.discard(vs_id)
+        self._inflight.pop(vs_id, None)
+
+    def _pin_locked(self, vs_id: str) -> None:
+        self._inflight[vs_id] = self._inflight.get(vs_id, 0) + 1
+
+    def _unpin_locked(self, vs_id: str) -> None:
+        remaining = self._inflight.get(vs_id, 0) - 1
+        if remaining > 0:
+            self._inflight[vs_id] = remaining
+        else:
+            self._inflight.pop(vs_id, None)
+            self._condition.notify_all()
 
     def _detach(self, vs_id: str, file_id: str) -> None:
         meta = self._stores.get(vs_id)
@@ -710,12 +729,20 @@ class VectorStoreStore:
             last_active_at=created,
             expires_at=created + policy["days"] * 86400 if policy else None,
         )
-        with self._lock:
-            self._stores[meta.vs_id] = meta
+        with self._condition:
+            # Select only unpinned LRU victims. A concurrent compound
+            # operation may be reading/indexing files outside the state lock;
+            # evicting its store would make that successful request fail 404
+            # halfway through.
             evicted: list[str] = []
-            while len(self._stores) > self._max:
-                old_id, _ = self._stores.popitem(last=False)
+            while len(self._stores) >= self._max:
+                old_id = next(iter(self._stores))
+                if self._inflight.get(old_id, 0):
+                    self._condition.wait()
+                    continue
+                self._stores.pop(old_id)
                 evicted.append(old_id)
+            self._stores[meta.vs_id] = meta
             if self._journal is not None:
                 payload: dict[str, Any] = {
                     "vs": meta.model_dump(mode="json", exclude={"files", "usage_bytes"})
@@ -723,11 +750,18 @@ class VectorStoreStore:
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
-        for vid in evicted:
-            self._drop(vid)
-        for fid in file_ids:
-            self.attach(meta.vs_id, fid)
-        return vs_object(meta)
+            for vid in evicted:
+                self._drop(vid)
+            if file_ids:
+                self._pin_locked(meta.vs_id)
+        try:
+            for fid in file_ids:
+                self.attach(meta.vs_id, fid)
+            return vs_object(meta)
+        finally:
+            if file_ids:
+                with self._condition:
+                    self._unpin_locked(meta.vs_id)
 
     def get(self, vs_id: str) -> dict[str, Any]:
         with self._lock:
@@ -771,8 +805,11 @@ class VectorStoreStore:
             return vs_object(meta)
 
     def delete(self, vs_id: str) -> dict[str, Any]:
-        with self._lock:
+        with self._condition:
             self._store(vs_id)
+            while self._inflight.get(vs_id, 0):
+                self._condition.wait()
+                self._store(vs_id)
             self._drop(vs_id)
             if self._journal is not None:
                 self._journal.append({"vs_delete": {"vs_id": vs_id}})
@@ -957,53 +994,65 @@ class VectorStoreStore:
             )
         attrs = validate_attributes(attributes)
         strategy = validate_chunking_strategy(chunking_strategy)
-        meta = self._store(vs_id)  # ghost store refuses the batch itself, 404
-        if self._expired(meta):
-            raise VectorStoreError(
-                410, f"vector store {vs_id!r} has expired", "vector_store_expired"
-            )
-        created = int(time.time())
-        rows: list[dict[str, Any]] = []
-        counts = {"in_progress": 0, "completed": 0, "failed": 0, "cancelled": 0, "total": 0}
-        for fid in file_ids:
-            counts["total"] += 1
-            try:
-                rec = self.attach(vs_id, fid, attributes=attrs, chunking_strategy=strategy)
-            except VectorStoreError as exc:
-                counts["failed"] += 1
-                rows.append(
-                    {
-                        "id": fid,
-                        "object": "vector_store.file",
-                        "vector_store_id": vs_id,
-                        "created_at": created,
-                        "status": "failed",
-                        "usage_bytes": 0,
-                        "last_error": {"code": exc.code, "message": str(exc)},
-                        "attributes": dict(attrs),
-                        "chunking_strategy": dict(strategy),
-                        "indexed_chunks": 0,
-                        "truncated": False,
-                    }
+        with self._condition:
+            meta = self._store(vs_id)  # ghost store refuses the batch itself, 404
+            if self._expired(meta):
+                raise VectorStoreError(
+                    410, f"vector store {vs_id!r} has expired", "vector_store_expired"
                 )
-            else:
-                counts[rec["status"]] += 1
-                rows.append(rec)
-        batch = VSBatchRec(
-            batch_id=f"vsfb_{uuid.uuid4().hex}",
-            vector_store_id=vs_id,
-            created_at=created,
-            status="completed" if counts["completed"] > 0 else "failed",
-            file_ids=list(file_ids),
-            files=rows,
-            counts=counts,
-        )
-        with self._lock:
-            self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
-            if self._journal is not None:
-                self._journal.append({"vs_batch": batch.model_dump(mode="json")})
-            self._touch_locked(meta)
-        return vs_batch_object(batch)
+            self._pin_locked(vs_id)
+        try:
+            created = int(time.time())
+            rows: list[dict[str, Any]] = []
+            counts = {
+                "in_progress": 0,
+                "completed": 0,
+                "failed": 0,
+                "cancelled": 0,
+                "total": 0,
+            }
+            for fid in file_ids:
+                counts["total"] += 1
+                try:
+                    rec = self.attach(vs_id, fid, attributes=attrs, chunking_strategy=strategy)
+                except VectorStoreError as exc:
+                    counts["failed"] += 1
+                    rows.append(
+                        {
+                            "id": fid,
+                            "object": "vector_store.file",
+                            "vector_store_id": vs_id,
+                            "created_at": created,
+                            "status": "failed",
+                            "usage_bytes": 0,
+                            "last_error": {"code": exc.code, "message": str(exc)},
+                            "attributes": dict(attrs),
+                            "chunking_strategy": dict(strategy),
+                            "indexed_chunks": 0,
+                            "truncated": False,
+                        }
+                    )
+                else:
+                    counts[rec["status"]] += 1
+                    rows.append(rec)
+            batch = VSBatchRec(
+                batch_id=f"vsfb_{uuid.uuid4().hex}",
+                vector_store_id=vs_id,
+                created_at=created,
+                status="completed" if counts["completed"] > 0 else "failed",
+                file_ids=list(file_ids),
+                files=rows,
+                counts=counts,
+            )
+            with self._lock:
+                self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
+                if self._journal is not None:
+                    self._journal.append({"vs_batch": batch.model_dump(mode="json")})
+                self._touch_locked(meta)
+            return vs_batch_object(batch)
+        finally:
+            with self._condition:
+                self._unpin_locked(vs_id)
 
     def _batch(self, vs_id: str, batch_id: str) -> VSBatchRec:
         self._store(vs_id)  # 404 ghost store
