@@ -629,7 +629,9 @@ class Fx1Harness:
         # No transport means no socket headers — but every quantity the
         # middleware stamps is owned here: a per-call trace id, the wire
         # contract, the call's own wall-clock, and the completion id.
-        self._last_response_headers = {
+        # Build locally and publish once so concurrent readers cannot observe
+        # a partially populated response-header dictionary.
+        headers = {
             "x-request-id": uuid.uuid4().hex,
             "x-fx1-api-version": API_VERSION,
             "openai-processing-ms": str(int(latency_ms)),
@@ -637,7 +639,8 @@ class Fx1Harness:
         if ok:
             # the wire's X-Fx1-Completion-Id appears on served responses;
             # a refused/failed call's error envelope carries none
-            self._last_response_headers["x-fx1-completion-id"] = cid
+            headers["x-fx1-completion-id"] = cid
+        self._last_response_headers = headers
         return cid
 
     @property

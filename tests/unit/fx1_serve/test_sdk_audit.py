@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import inspect
 import os
+import sys
+import threading
 
 from fx1.sdk import Fx1Harness
 from fx1.sdk_audit import sdk_audit, sdk_audit_bench
@@ -51,6 +54,69 @@ def test_complete_closes_backend() -> None:
     out = sdk.complete([{"role": "user", "content": "hi"}], backend="byok")
     assert out.content == "clean"
     assert backend.closed == 1
+
+
+def test_response_headers_are_published_atomically() -> None:
+    sdk = Fx1Harness()
+    vulnerable_line = next(
+        (
+            Fx1Harness._record_call.__code__.co_firstlineno + offset
+            for offset, line in enumerate(inspect.getsourcelines(Fx1Harness._record_call)[0])
+            if 'self._last_response_headers["x-fx1-completion-id"]' in line
+        ),
+        None,
+    )
+    parked = threading.Event()
+    release = threading.Event()
+
+    def trace(frame: object, event: str, arg: object) -> object:
+        del arg
+        if (
+            vulnerable_line is not None
+            and event == "line"
+            and getattr(frame, "f_code", None) == Fx1Harness._record_call.__code__
+            and getattr(frame, "f_lineno", None) == vulnerable_line
+        ):
+            parked.set()
+            release.wait(2)
+        return trace
+
+    def record() -> None:
+        sys.settrace(trace)
+        try:
+            sdk._record_call(
+                "byok",
+                "model",
+                True,
+                1.0,
+                None,
+                None,
+                None,
+                "a" * 64,
+                "b" * 64,
+            )
+        finally:
+            sys.settrace(None)
+
+    writer = threading.Thread(target=record)
+    writer.start()
+    try:
+        if vulnerable_line is not None:
+            assert parked.wait(2)
+        headers = sdk.last_response_headers
+        if vulnerable_line is not None:
+            assert "x-fx1-completion-id" in headers
+    finally:
+        release.set()
+        writer.join(2)
+
+    assert not writer.is_alive()
+    assert set(sdk.last_response_headers) == {
+        "x-request-id",
+        "x-fx1-api-version",
+        "openai-processing-ms",
+        "x-fx1-completion-id",
+    }
 
 
 def test_health_never_leaks_env_values() -> None:
