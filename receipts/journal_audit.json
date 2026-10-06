@@ -28,7 +28,7 @@
       "file_delete_journaled": true,
       "file_evict_journaled": true,
       "file_evicted_blob_gone": true,
-      "file_missing_blob_fails_closed": true,
+      "file_missing_blob_dropped": true,
       "file_orphan_blob_gcd": true,
       "ft_cancel_journaled": true,
       "ft_events_survive": true,
@@ -59,11 +59,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "fcb4e1108fe50dcfd40f53066fe94ec0145e6d40",
-  "interpretation": "the durable job journal holds: hash-chained replay returns records in order, torn tails and mid-file edits truncate honestly, and compaction rewrites only live state. Bound to the job store, terminal jobs come back as-was, in-flight jobs recover as failed with an honest restart error, idempotency keys still resolve, cancels and LRU evictions survive, and callback secrets never touch disk. The in-memory default is unchanged when no state dir is configured. The same binding holds on evals, batches (in-flight recovers failed), fine-tune jobs (events, idem keys, and the model registry \u2014 a card dies with its producing job), files (blob bytes round-trip, a journaled record whose blob is missing refuses boot without rewriting the journal, deletes tombstone, orphans GC), and the idempotency stores (the recorded response replays after a restart).",
+  "git_revision": "65a5c4e211f6980b0cf40340ad01d0c7734f282a",
+  "interpretation": "the durable job journal holds: hash-chained replay returns records in order, torn tails and mid-file edits truncate honestly, and compaction rewrites only live state. Bound to the job store, terminal jobs come back as-was, in-flight jobs recover as failed with an honest restart error, idempotency keys still resolve, cancels and LRU evictions survive, and callback secrets never touch disk. The in-memory default is unchanged when no state dir is configured. The same binding holds on evals, batches (in-flight recovers failed), fine-tune jobs (events, idem keys, and the model registry \u2014 a card dies with its producing job), files (blob bytes round-trip, deletes tombstone, orphans GC), and the idempotency stores (the recorded response replays after a restart).",
   "kind": "journal_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "01c8fbc122a40a7e231183514d359cd802d8eceed64f16626a043e043db60578",
+  "receipt_sha256": "394469d4068584af47a0b62ad71e6a21b961ea843b7312eebe124e4aba08ad5d",
   "research_only": true,
   "schema": "journal_audit.v1"
 }
