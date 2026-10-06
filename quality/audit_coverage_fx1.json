@@ -44,7 +44,8 @@
       "status": "waived"
     },
     "capabilities.py": {
-      "status": "pending"
+      "status": "audited",
+      "doc": "docs/AUDIT_LEDGER.md"
     },
     "cli.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -133,6 +134,9 @@
       "status": "pending"
     },
     "tail_audit.py": {
+      "status": "audited"
+    },
+    "capabilities_audit.py": {
       "status": "audited"
     }
   },

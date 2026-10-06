@@ -346,3 +346,22 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Capability seed ledger audit (`capabilities.py`)
+
+`fx1.capabilities_audit` proves the compact seed table *is* the
+declaration ledger: every shard under
+`scripts/generated_capability_declarations/{features,skills,plugins}/`
+is expanded line-by-line and its `_register(seed_id)` ids must
+reproduce the owner's `(first, stride, count)` progression exactly
+(hyphenated owners map to underscored shard/wrapper names); each
+shard's header must import a resolvable `fx1.extensions.<kind>.<owner>`
+`MODULE`. Resolution contract pinned: `owner_references` exact
+arithmetic per owner, `ValueError`/`KeyError` error split,
+`resolve_seed_id` bounds at `0..1_000_000`, the per-kind owner-field
+echo (`feature`/`command`/`source`), and the full partition — the
+three tables tile every in-range id exactly once with zero intra-kind
+collisions and zero cross-kind shadowing, so resolve is a total
+injective owner lookup. ~115 literal-bool probes seal into a
+`capabilities_audit.v1` receipt; `capabilities.py` moves to `audited`,
+completing the fx1 root-module surface.
