@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from fx1.serve.attestation_audit import attestation_audit, attestation_audit_bench
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
@@ -18,7 +20,7 @@ def test_attestation_contract() -> None:
     assert rel["tampered_artifact_fails"] is True
     assert rel["forged_signature_fails"] is True
     assert rel["missing_manifest_fails"] is True
-    assert rel["unlisted_extra_file_passes"] is True  # flagged coverage gap
+    assert rel["unlisted_extra_file_passes"] is False  # exact-inventory verification
     assert r["key_gate"]["unset_fails_closed"] == "raise:RuntimeError"
     assert r["zkml_manifest"]["claimed_coverage_without_proof"] == "raise:ValueError"
 
@@ -28,3 +30,12 @@ def test_bench_ok_and_verifies() -> None:
     assert receipt["claim"]["ok"] is True
     result = verify_receipt_payload(receipt, "attestation_audit_test.json")
     assert result["valid"], result.get("errors")
+
+
+def test_bench_fails_when_unlisted_artifact_verifies(monkeypatch: pytest.MonkeyPatch) -> None:
+    results = attestation_audit()
+    results["release"]["unlisted_extra_file_passes"] = True
+    monkeypatch.setitem(attestation_audit_bench.__globals__, "attestation_audit", lambda: results)
+    receipt = attestation_audit_bench()
+    assert receipt["claim"]["ok"] is False
+    assert receipt["claim"]["flags"]["unlisted_extra_verifies"] is True
