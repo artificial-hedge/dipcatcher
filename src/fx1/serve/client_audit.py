@@ -107,6 +107,7 @@ from __future__ import annotations
 import email.message
 import json
 import os
+import secrets
 import socket
 import threading
 import time
@@ -129,7 +130,7 @@ if TYPE_CHECKING:
 __all__ = ["client_audit", "client_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
-_ROOT = "k3y-material"  # low-entropy synthetic credential (gitleaks-safe)
+_ROOT = secrets.token_urlsafe(32)
 _SWEPT_ENVS = (
     _API_KEY_ENV,
     "MOONSHOT_API_KEY",
@@ -1465,10 +1466,10 @@ def client_audit() -> dict[str, Any]:
     return out
 
 
-def client_audit_bench() -> dict[str, Any]:
-    """Sealed receipt: every probe True under client_audit.v1."""
-    r = client_audit()
-    ok = all(v is True for v in r.values())
+def client_audit_bench(results: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Seal client-audit results; run the battery when results are omitted."""
+    r = client_audit() if results is None else dict(results)
+    ok = bool(r) and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "client_audit",
         "schema": "client_audit.v1",
