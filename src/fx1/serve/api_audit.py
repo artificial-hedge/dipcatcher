@@ -69,6 +69,22 @@ _LOCAL_ENVS = (
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
 )
+# Loopback webhook receivers need the explicit SSRF opt-out; production
+# callback delivery stays public-network-only.
+_ALLOW_PRIVATE_CB_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+
+
+def _env_sweep(name: str, value: str) -> str | None:
+    prev = os.environ.get(name)
+    os.environ[name] = value
+    return prev
+
+
+def _env_restore(name: str, prev: str | None) -> None:
+    if prev is None:
+        os.environ.pop(name, None)
+    else:
+        os.environ[name] = prev
 
 
 def _client(
@@ -345,7 +361,20 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
+            import contextlib as _cl2  # noqa: PLC0415
+
+            @_cl2.contextmanager
+            def _fake_openai_open(req: Any, *, timeout_s: float) -> Any:
+                yield fake_urlopen(req)
+
+            import fx1.serve.backends as _be_mod2  # noqa: PLC0415
+
+            # The engine-health probe dials urllib.request.urlopen; the chat
+            # call goes through _openai_urlopen — both seams need the fake.
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen),
+                patch.object(_be_mod2, "_openai_urlopen", _fake_openai_open),
+            ):
                 resp = client.post(
                     "/harness/complete",
                     json={
@@ -1070,6 +1099,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     _dead_sock.bind(("127.0.0.1", 0))
     _dead_port = _dead_sock.getsockname()[1]
     _dead_sock.close()
+    _cb_env_prev = _env_sweep(_ALLOW_PRIVATE_CB_ENV, "1")
     try:
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
@@ -1262,6 +1292,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         )
         out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
     finally:
+        _env_restore(_ALLOW_PRIVATE_CB_ENV, _cb_env_prev)
         cb_srv.shutdown()
         cb_srv.server_close()
 
@@ -2043,22 +2074,27 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["byok_override_idem_contract"] = (
         i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
     )
-    # limiter counts denials; a public-path request also draws a token
+    # limiter counts denials; a public-path request also draws a token.
+    # rps=5 keeps the burst small enough that even a stalled request
+    # loop cannot refill past the denial threshold, and the refill wait
+    # is sized so /metrics itself draws the next token deterministically.
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
-        rate_limit_rps=20.0,
+        rate_limit_rps=5.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
-    time.sleep(0.15)
+    statuses = [lc2.get("/harness/version").status_code for _ in range(15)]
+    time.sleep(0.25)
     m = lc2.get("/metrics")
     out["rate_limit_metrics_counts"] = (
         statuses.count(429) >= 2
         and m.status_code == 200
         and m.json()["rate_limited_total"] == statuses.count(429)
     )
-    os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
+    # env-configured limiter: rps=0.5 gives capacity 1 and a two-second
+    # refill, so requests 2-5 deny even under a multi-second scheduler stall
+    os.environ["FX1_API_RATE_LIMIT_RPS"] = "0.5"
     try:
         env_app = api_mod.create_app(
             harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
@@ -4035,6 +4071,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         def log_message(self, *args: Any) -> None:
             pass
 
+    _ft_env_prev = _env_sweep(_ALLOW_PRIVATE_CB_ENV, "1")
     _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
     _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
     _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
@@ -4115,6 +4152,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     )
     _ft_srv.shutdown()
     _ft_srv.server_close()
+    _env_restore(_ALLOW_PRIVATE_CB_ENV, _ft_env_prev)
 
 
 def _probe_backend_probes(  # NOSONAR
@@ -4362,11 +4400,17 @@ def _probe_backend_probes(  # NOSONAR
         b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
         b"data: [DONE]\n",
     ]
-    import urllib.request as _urlreq  # noqa: PLC0415
+    # The stream path opens through ``_openai_urlopen`` (redirects refused),
+    # so the fake has to patch that seam — patching ``urllib.request.urlopen``
+    # would dial ``wire.test`` for real.
+    import contextlib as _cl  # noqa: PLC0415
+    from unittest.mock import patch as _patch  # noqa: PLC0415
 
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
-    try:
+    @_cl.contextmanager
+    def _fake_openai_urlopen(req: Any, *, timeout_s: float) -> Any:
+        yield _FakeResp(wire_frames)
+
+    with _patch.object(_be_mod, "_openai_urlopen", _fake_openai_urlopen):
         box: list[dict[str, int]] = []
         toks = list(
             _be_mod._openai_chat_stream(
@@ -4379,8 +4423,6 @@ def _probe_backend_probes(  # NOSONAR
                 usage_out=box,
             )
         )
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4771,12 +4813,18 @@ def _probe_backend_probes(  # NOSONAR
         def __exit__(self, *a: Any) -> None:
             return None
 
-    def _wire_urlopen(req: Any, **kw: Any) -> Any:
+    def _wire_urlopen(req: Any, *, timeout_s: float) -> Any:
         captured_wire["body"] = _json.loads(req.data.decode())
-        return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
-    try:
+        @_cl.contextmanager
+        def _open() -> Any:
+            yield _WireResp()
+
+        return _open()
+
+    # ``_openai_urlopen`` is the seam — ``urllib.request.urlopen`` is never
+    # called on this path (redirects are refused through a private opener).
+    with _patch.object(_be_mod, "_openai_urlopen", _wire_urlopen):
         _be_mod._openai_chat_complete(
             "http://wire.test",
             model="m",
@@ -4796,8 +4844,6 @@ def _probe_backend_probes(  # NOSONAR
             label="t",
         )
         default_body = dict(captured_wire["body"])
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95
@@ -5292,6 +5338,7 @@ def _probe_backend_probes(  # NOSONAR
     _dsock.bind(("127.0.0.1", 0))
     _ev_dead_port = _dsock.getsockname()[1]
     _dsock.close()
+    _ev_env_prev = _env_sweep(_ALLOW_PRIVATE_CB_ENV, "1")
     try:
         sub_cb = eval_app.post(
             "/harness/evals",
@@ -5402,6 +5449,7 @@ def _probe_backend_probes(  # NOSONAR
             == 422
         )
     finally:
+        _env_restore(_ALLOW_PRIVATE_CB_ENV, _ev_env_prev)
         ev_srv.shutdown()
         ev_srv.server_close()
 
@@ -8163,6 +8211,7 @@ def _probe_backend_probes(  # NOSONAR
         def log_message(self, *args: Any) -> None:
             pass
 
+    _bwh_env_prev = _env_sweep(_ALLOW_PRIVATE_CB_ENV, "1")
     _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
     _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
@@ -8231,6 +8280,7 @@ def _probe_backend_probes(  # NOSONAR
     )
     _bwh_srv.shutdown()
     _bwh_srv.server_close()
+    _env_restore(_ALLOW_PRIVATE_CB_ENV, _bwh_env_prev)
     # Submit-time guards: a secret without a url is a 422, never a zombie.
     bad_cb = fb.post(
         "/v1/batches",

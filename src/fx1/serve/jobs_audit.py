@@ -757,6 +757,9 @@ def _webhook_probes() -> dict[str, bool]:
     )
 
     sink = _Sink()
+    # Loopback sink needs the explicit SSRF opt-out.
+    _cb_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         runner = _Runner()
         client = _client(runner)
@@ -870,6 +873,10 @@ def _webhook_probes() -> dict[str, bool]:
         _wait(client_q, jb)
     finally:
         sink.close()
+        if _cb_env is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _cb_env
     return out
 
 

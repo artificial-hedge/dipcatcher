@@ -380,8 +380,8 @@ def _messages(client: TestClient, headers: dict[str, str]) -> Any:
 
 
 def _dup_get(client: TestClient, path: str, header_pairs: list[tuple[str, str]]) -> Any:
-    """A request carrying duplicated header lines — first-wins vs
-    last-wins is a real semantic, measured not assumed."""
+    """A request carrying duplicated header lines — httpx keeps the raw
+    order, so both orderings can be exercised against the server."""
     return client.request("GET", path, headers=header_pairs)
 
 
@@ -524,45 +524,45 @@ def _header_parsing_probes() -> dict[
     out["env_key_bearer_v1_admits"] = env_resp.status_code == 200
     out["env_key_bearer_unmetered"] = _H_RL_LIMIT not in {k.lower() for k in env_resp.headers}
 
-    # precedence: X-API-Key wins outright — an empty value is no header,
-    # so it falls through to Bearer; a garbage value refuses without
-    # consulting Bearer (no fallback to a second credential)
-    out["x_api_key_empty_falls_through_to_bearer"] = (
-        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 200
+    # precedence: none — carrying both authentication headers is an
+    # ambiguous request and refuses 400 (fail-closed on proxy/app
+    # interpretation gaps); an empty header value still counts as present
+    out["mixed_auth_empty_key_and_bearer_refused"] = (
+        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_garbage_no_bearer_fallback"] = (
-        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 401
+    out["mixed_auth_garbage_key_and_bearer_refused"] = (
+        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_valid_ignores_bearer_garbage"] = (
-        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 200
+    out["mixed_auth_valid_key_and_bearer_refused"] = (
+        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 400
     )
-    out["env_x_api_key_beats_managed_bearer"] = (
-        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 200
+    out["mixed_auth_env_key_and_bearer_refused"] = (
+        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 400
     )
 
     # whitespace on the credential itself is part of the compared bytes
     out["x_api_key_leading_ws_refused"] = _models(client, {_H_KEY: f" {k_raw}"}).status_code == 401
     out["x_api_key_trailing_ws_refused"] = _models(client, {_H_KEY: f"{k_raw} "}).status_code == 401
 
-    # duplicated header lines — the first occurrence resolves, both
-    # channels alike
-    out["dup_x_api_key_first_wins_admit"] = (
+    # duplicated header lines — singleton headers refuse outright in
+    # either order, both channels alike
+    out["dup_x_api_key_refused_valid_first"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, k_raw), (_H_KEY_LOWER, "fx1k_bad")]
         ).status_code
-        == 200
+        == 400
     )
-    out["dup_x_api_key_first_wins_refuse"] = (
+    out["dup_x_api_key_refused_garbage_first"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, "fx1k_bad"), (_H_KEY_LOWER, k_raw)]
         ).status_code
-        == 401
+        == 400
     )
-    out["dup_authorization_first_wins"] = (
+    out["dup_authorization_refused"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_AUTH, f"Bearer {k_raw}"), (_H_AUTH, "Bearer fx1k_bad")]
         ).status_code
-        == 200
+        == 400
     )
     return out
 
@@ -1136,12 +1136,13 @@ def _anthropic_probes() -> dict[str, Any]:
     # on /v1/messages too
     ok2 = _messages(client, {_H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"})
     out["anthropic_bearer_admits"] = ok2.status_code == 200
-    # mixed channels under the anthropic grammar: X-API-Key still wins
+    # mixed channels under the anthropic grammar: carrying both auth
+    # headers refuses 400 there too — the ambiguity guard is path-agnostic
     mixed = _messages(
         client,
         {_H_KEY: "fx1k_garbage", _H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"},
     )
-    out["anthropic_mixed_x_api_key_wins"] = mixed.status_code == 401
+    out["anthropic_mixed_auth_refused"] = mixed.status_code == 400
 
     # anthropic grammar on refusals: {type: "error", error: {...}},
     # request-id echoed, x-should-retry absent (401/403 are not
@@ -1423,13 +1424,13 @@ def auth_audit_bench() -> dict[str, Any]:
             "The auth surface admits exactly its declared credentials "
             "through exactly two channels — X-API-Key on any path "
             "(header-name case-insensitive) and Authorization: Bearer on "
-            "the /v1* dialect prefix only — with X-API-Key taking "
-            "absolute precedence: an empty X-API-Key is no header and "
-            "falls through to Bearer, while a garbage one refuses "
-            "without consulting Bearer. The Bearer scheme match is "
+            "the /v1* dialect prefix only — carrying both "
+            "authentication headers refuses 400 outright (there is no "
+            "precedence to game; an empty header value still counts as "
+            "present). The Bearer scheme match is "
             "exact (lowercase, doubled spaces, tabs, missing space, "
             "non-Bearer schemes all refuse), duplicated header lines "
-            "resolve first-wins, and credential whitespace is part of "
+            "refuse 400 as ambiguous, and credential whitespace is part of "
             "the compared bytes. Every malformed, absent, revoked, or "
             "expired credential gets the same uniform 401 — byte-"
             "identical bodies, no oracle for which entries exist — "

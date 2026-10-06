@@ -2037,6 +2037,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         import time as _time  # noqa: PLC0415
 
         _wh, _wh_hits, _wh_srv = _start_hook_sink()
+        # Loopback sink needs the explicit SSRF opt-out.
+        _wh_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         try:
             sjob_wh = sdk_ft.create_finetune_job(
                 model="fx1",
@@ -2095,6 +2098,10 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         finally:
             _wh_srv.shutdown()
             _wh_srv.server_close()
+            if _wh_env is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _wh_env
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (
@@ -3091,6 +3098,9 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     import time as _time2  # noqa: PLC0415
 
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
+    # Loopback sink needs the explicit SSRF opt-out.
+    _bw_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3131,6 +3141,10 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     finally:
         _bw_srv.shutdown()
         _bw_srv.server_close()
+        if _bw_env is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_env
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])

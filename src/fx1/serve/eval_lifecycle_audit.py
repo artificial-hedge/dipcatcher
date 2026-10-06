@@ -1545,6 +1545,9 @@ def _callback_probes() -> dict[str, Any]:
     """Terminal webhook: payload is the record, secret signs but never echoes."""
     out: dict[str, Any] = {}
     sink = _Sink()
+    # Loopback sink needs the explicit SSRF opt-out.
+    _cb_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         client, _api = _client({"byok": lambda: _EvalBackend()})
         sub = _submit(
@@ -1623,6 +1626,10 @@ def _callback_probes() -> dict[str, Any]:
         )
     finally:
         sink.close()
+        if _cb_env is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _cb_env
     return out
 
 

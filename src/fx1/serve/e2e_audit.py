@@ -551,6 +551,9 @@ def e2e_audit() -> dict[str, bool]:
             def log_message(self, *args: Any) -> None:
                 pass
 
+        # Loopback hook needs the explicit SSRF opt-out in the serving process.
+        _cb_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         hook_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
         hook_thread = threading.Thread(target=hook_srv.serve_forever, daemon=True)
         hook_thread.start()
@@ -613,6 +616,10 @@ def e2e_audit() -> dict[str, bool]:
             hook_srv.shutdown()
             hook_srv.server_close()
             hook_thread.join(timeout=5)
+            if _cb_env is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _cb_env
     finally:
         if server is not None:
             server.should_exit = True

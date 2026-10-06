@@ -72,11 +72,35 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    errors = [_http_error()[0], _http_error()[0]]
-    bodies = [error.fp for error in errors]
-    opener = Mock()
-    opener.open.side_effect = errors
-    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: opener)
+    """Each 5xx attempt closes its response and connection before the next."""
+    closed: list[object] = []
+
+    class _RefusalResponse:
+        status = 503
+
+        def __enter__(self) -> _RefusalResponse:
+            return self
+
+        def __exit__(self, *_args: Any) -> None:
+            closed.append(self)
+
+    class _RefusalConnection:
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            pass
+
+        def request(self, *_args: Any, **_kwargs: Any) -> None:
+            pass
+
+        def getresponse(self) -> _RefusalResponse:
+            return _RefusalResponse()
+
+        def close(self) -> None:
+            closed.append(self)
+
+    # Delivery dials a validated numeric address through the pinned
+    # connection class — patch both, not urllib's opener (a dead seam).
+    monkeypatch.setattr(webhooks, "_resolved_addresses", lambda _host, _port: ("93.184.216.34",))
+    monkeypatch.setattr(webhooks, "_PinnedHTTPSConnection", _RefusalConnection)
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
     ok, message, attempts = webhooks.deliver_signed(
         "https://callback.invalid/hook",
@@ -87,10 +111,19 @@ def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyP
     )
 
     assert (ok, message, attempts) == (False, "callback endpoint returned 503", 2)
-    assert all(isinstance(body, _TrackedBody) and body.close_calls == 1 for body in bodies)
+    assert [type(o) for o in closed] == [
+        _RefusalResponse,
+        _RefusalConnection,
+        _RefusalResponse,
+        _RefusalConnection,
+    ]
 
 
-def test_webhook_refuses_cross_origin_redirect_without_leaking_signature() -> None:
+def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # the SSRF guard is satisfied: loopback sinks opt in via the env flag
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []
 

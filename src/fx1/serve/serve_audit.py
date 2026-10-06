@@ -25,9 +25,6 @@ Pinned contract:
 
 Flagged warts (documented, not fixed):
 
-- ``flag_unlisted_artifact_passes`` — ``verify_release`` only re-hashes
-  manifest-listed artifacts; a file *added* to the checkpoint dir after
-  signing verifies clean (manifest-scoped, not closed-world).
 - corrupt manifest fails closed via the signature check before parsing
   (``corrupt_manifest_fails``); a *validly signed* corrupt manifest would
   still raise out of ``model_validate_json`` — unreachable without the key.
@@ -88,6 +85,18 @@ def serve_audit() -> dict[str, Any]:
         except Exception as e:
             return type(e).__name__
 
+    def _as_cm(fn: Any) -> Any:
+        """Adapt a urlopen-style fake to the ``_openai_urlopen`` contextmanager
+        seam — the OpenAI-compat paths open through a private
+        redirect-refusing opener, not ``urllib.request.urlopen``."""
+        import contextlib as _cl
+
+        @_cl.contextmanager
+        def _open(req: Any, *, timeout_s: float) -> Any:
+            yield fn(req)
+
+        return _open
+
     # ---------------- HostedK3Backend -----------------------------
     saved = os.environ.pop("MOONSHOT_API_KEY", None)
     try:
@@ -113,7 +122,12 @@ def serve_audit() -> dict[str, Any]:
 
         import urllib.request  # noqa: PLC0415
 
-        with patch.object(urllib.request, "urlopen", fake_urlopen):
+        import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
+        with (
+            patch.object(urllib.request, "urlopen", fake_urlopen),
+            patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_urlopen)),
+        ):
             text = backend.complete([{"role": "user", "content": "hi"}])
         out["hosted_temperature_zero"] = (
             text == "answer"
@@ -214,7 +228,10 @@ def serve_audit() -> dict[str, Any]:
                 serve_url="http://127.0.0.1:8011/v1",
                 api_key="local-key",
             )
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_urlopen2)),
+            ):
                 text = attached.complete([{"role": "user", "content": "hi"}])
             out["local_attach_complete"] = text == "answer"
             out["local_temperature_zero"] = captured2["body"].get("temperature") == 0.0
@@ -225,7 +242,10 @@ def serve_audit() -> dict[str, Any]:
             )
             os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8012"
             env_be = LocalFx1Backend(root, require_signature=True)
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen2),
+                patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_urlopen2)),
+            ):
                 env_be.complete([{"role": "user", "content": "hi"}])
             out["local_env_url_honored"] = any("127.0.0.1:8012" in u for u in captured2["urls"])
 
@@ -257,7 +277,10 @@ def serve_audit() -> dict[str, Any]:
                     ]
                 )
 
-            with patch.object(urllib.request, "urlopen", fake_stream):
+            with (
+                patch.object(urllib.request, "urlopen", fake_stream),
+                patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_stream)),
+            ):
                 deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
             out["local_stream_deltas"] = deltas == ["hel", "lo"]
             out["local_stream_wire_flag"] = captured2["stream_body"].get("stream") is True
@@ -267,7 +290,10 @@ def serve_audit() -> dict[str, Any]:
             def fake_bad_stream(req: Any, **kw: Any) -> _StreamResp:
                 return _StreamResp([b"data: {not json\n\n"])
 
-            with patch.object(urllib.request, "urlopen", fake_bad_stream):
+            with (
+                patch.object(urllib.request, "urlopen", fake_bad_stream),
+                patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_bad_stream)),
+            ):
                 out["local_stream_malformed_fails"] = (
                     _raises(lambda: list(attached.stream([{"role": "u", "content": "x"}])))
                     == "RuntimeError"
@@ -290,7 +316,10 @@ def serve_audit() -> dict[str, Any]:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
-            with patch.object(urllib.request, "urlopen", fake_urlopen_cold):
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen_cold),
+                patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_urlopen_cold)),
+            ):
                 spawned.complete([{"role": "user", "content": "hi"}])
             out["local_spawn_template_ran"] = spawned._proc is not None
             spawned.close()
@@ -343,6 +372,7 @@ def serve_audit() -> dict[str, Any]:
                 with (
                     patch.object(subprocess, "Popen", counting_popen),
                     patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    patch.object(_be_mod, "_openai_urlopen", _as_cm(fake_urlopen_cold_locked)),
                     ThreadPoolExecutor(max_workers=4) as pool,
                 ):
                     list(
@@ -365,10 +395,11 @@ def serve_audit() -> dict[str, Any]:
         out["tamper_refuses"] = (
             _raises(lambda: LocalFx1Backend(root, require_signature=True)) == "RuntimeError"
         )
-        # unlisted artifact added post-sign verifies clean (manifest-scoped)
+        # unlisted artifact added post-sign refuses — the inventory is
+        # closed-world: enumerated paths must equal manifest keys exactly
         sign_release(root)
         (root / "extra.bin").write_bytes(b"rogue")
-        out["flag_unlisted_artifact_passes"] = verify_release(root)
+        out["unlisted_artifact_refused"] = not verify_release(root)
         (root / "extra.bin").unlink()
         # wrong key
         os.environ["FX1_SIGNING_KEY"] = "other-key"
