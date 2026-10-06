@@ -85,6 +85,25 @@ def _verified_payload(raw: bytes, seq: int, chain: str) -> dict[str, Any] | None
     return payload
 
 
+def _fsync_parent(path: Path) -> None:
+    """Persist a created/replaced directory entry where POSIX supports it.
+
+    ``fsync`` on the journal file only makes its contents durable.  A crash
+    may still lose a newly created name or a compaction rename until the
+    containing directory is synced.  Windows has no portable directory-fsync
+    equivalent through :mod:`os`; ``os.replace`` remains the strongest
+    portable primitive there.
+    """
+    if os.name != "posix":
+        return
+    flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+    fd = os.open(path, flags)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 @dataclass
 class ReplayResult:
     """What ``replay`` found: verified payloads in order, plus where the
@@ -123,6 +142,7 @@ class JobJournal:
                 raise RuntimeError(f"journal {self.path.name}: replay or compact before appending")
             line = _line_bytes(self._seq, self._chain, payload)
             self.path.parent.mkdir(parents=True, exist_ok=True)
+            creates_file = not self.path.exists()
             # An interrupted write/fsync may already have changed the file.
             # Do not reuse its sequence until recovery establishes the tail.
             self._append_blocked = True
@@ -130,6 +150,8 @@ class JobJournal:
                 fh.write(line)
                 fh.flush()
                 os.fsync(fh.fileno())
+            if creates_file:
+                _fsync_parent(self.path.parent)
             self._chain = hashlib.sha256(line).hexdigest()
             self._seq += 1
             self._append_blocked = False
@@ -182,9 +204,9 @@ class JobJournal:
         """Rewrite the journal holding only the live records.
 
         Called on boot after replay (drops dead history) and safe to call
-        any time. The replacement file is fsynced before atomic rename.
-        Parent-directory fsync and multi-process coordination are not
-        provided; this is not a power-loss durability guarantee."""
+        any time. The replacement file and, on POSIX, its parent directory
+        are fsynced around the atomic rename. Multi-process coordination is
+        not provided."""
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
         with self._lock:
             tmp.parent.mkdir(parents=True, exist_ok=True)
@@ -199,6 +221,11 @@ class JobJournal:
                 fh.flush()
                 os.fsync(fh.fileno())
             os.replace(tmp, self.path)
+            # The path now names the new journal.  If directory fsync fails,
+            # its crash durability is uncertain and the old sequence state no
+            # longer describes the file, so fail closed until replay.
+            self._append_blocked = True
+            _fsync_parent(self.path.parent)
             self._seq = seq
             self._chain = chain
             self._appends_since_compact = 0

@@ -32,16 +32,20 @@ def test_replay_cannot_rewind_concurrent_append(
     snapshot_read = threading.Event()
     release_snapshot = threading.Event()
     append_finished = threading.Event()
-    read_bytes = Path.read_bytes
+    verified_payload = journal_mod._verified_payload
 
-    def paused_read(path: Path) -> bytes:
-        data = read_bytes(path)
-        if path == journal.path and not snapshot_read.is_set():
+    def paused_verify(raw: bytes, seq: int, chain: str) -> dict[str, object] | None:
+        payload = verified_payload(raw, seq, chain)
+        if not snapshot_read.is_set():
             snapshot_read.set()
             assert release_snapshot.wait(2)
-        return data
+        return payload
 
-    monkeypatch.setattr(Path, "read_bytes", paused_read)
+    # Pause after replay has read and verified its first record while still
+    # holding the journal lock.  This exercises the same stale-counter race as
+    # the former read_bytes hook without coupling the regression to replay's
+    # old whole-file implementation.
+    monkeypatch.setattr(journal_mod, "_verified_payload", paused_verify)
 
     def append() -> None:
         journal.append({"id": "second"})
@@ -51,7 +55,7 @@ def test_replay_cannot_rewind_concurrent_append(
         replay_future = pool.submit(journal.replay)
         assert snapshot_read.wait(2)
         append_future = pool.submit(append)
-        append_finished.wait(0.2)
+        assert not append_finished.wait(0.2)
         release_snapshot.set()
         replay_future.result(timeout=2)
         append_future.result(timeout=2)

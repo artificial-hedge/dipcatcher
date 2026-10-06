@@ -91,7 +91,6 @@ def test_damaged_journal_refuses_startup_without_rewriting(tmp_path: Path, corru
 @pytest.mark.parametrize(
     "payload",
     [
-        [],
         {"op": "unknown"},
         {"op": "put", "envelope": {}},
         {"op": "put", "envelope": {"id": ""}},
@@ -114,6 +113,19 @@ def test_verified_but_malformed_record_refuses_startup_without_compaction(
     original = path.read_bytes()
     for _ in range(2):
         with pytest.raises(RuntimeError, match="invalid operation"):
+            OpenAIEnvelopeStore(journal=JobJournal(path))
+        assert path.read_bytes() == original
+
+
+def test_non_object_record_is_journal_damage_not_an_envelope_operation(tmp_path: Path) -> None:
+    path = tmp_path / "conversations.jsonl"
+    journal = JobJournal(path)
+    store = OpenAIEnvelopeStore(journal=journal)
+    store.put(_envelope(), items={"items": _items()})
+    journal.append([])  # type: ignore[arg-type]  # SYNTHETIC malformed record
+    original = path.read_bytes()
+    for _ in range(2):
+        with pytest.raises(RuntimeError, match="envelope journal is damaged"):
             OpenAIEnvelopeStore(journal=JobJournal(path))
         assert path.read_bytes() == original
 
