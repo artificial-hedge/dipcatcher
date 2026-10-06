@@ -106,6 +106,8 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
 class _PinnedHTTPConnection(http.client.HTTPConnection):
     """HTTP connection whose TCP destination is the validated numeric address."""
 
+    source_address: tuple[str, int] | None
+
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
         super().__init__(host, port=port, timeout=timeout)
         self._address = address
@@ -120,6 +122,9 @@ class _PinnedHTTPConnection(http.client.HTTPConnection):
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     """HTTPS connection pinned to an IP while authenticating the URL host."""
+
+    source_address: tuple[str, int] | None
+    _context: ssl.SSLContext
 
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
         super().__init__(
