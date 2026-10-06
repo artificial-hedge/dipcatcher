@@ -130,11 +130,13 @@ def test_committed_receipt_binds_head_source() -> None:
 
 
 def test_private_env_never_leaks() -> None:
-    """The SSRF opt-in must not survive the battery — every leg scopes
-    and restores it."""
+    """The SSRF opt-in must not survive the battery — the caller's env
+    (present or absent) is restored verbatim, never mutated."""
     import os
 
-    assert os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS") in (None, "", "0")
+    sentinel = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    audit.webhook_delivery_audit()
+    assert os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS") == sentinel
 
 
 @pytest.mark.parametrize("ambient", ["1", "yes", "0"])
