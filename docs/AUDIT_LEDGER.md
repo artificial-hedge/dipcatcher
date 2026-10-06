@@ -346,3 +346,36 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Serve audit-module coverage (lane 181 — `docs_audit`)
+
+The fx1 `serve/` table row predates most per-module audit batteries; each
+`*_audit.py` module now gets an honest row so the ledger can ratchet. Probe
+counts come from the committed receipts (`receipts/fx1_*_audit.json`); a `—`
+marks a module whose sealed receipt does not exist on `main` (battery output
+was verified by the lane's PR, not by a pinned receipt).
+
+| Module | Lane ref | Probes |
+|---|---|---|
+| `anthropic_sdk_audit` | `04bd9f1` — stock anthropic SDK vs drop-in surface | 71 |
+| `api_audit` | `b54bfe5` (#839) — harness consumption lanes | 855 |
+| `attestation_audit` | `6d6b08e` — attestation + substring nonce bind fix | — |
+| `auth_audit` | `67cfdbb` — auth surface deep audit + non-ASCII 500 fix | 182 |
+| `batch_audit` | `36839ec` — batches deep audit + expiry races | — |
+| `client_audit` | `df5fc31` — lane 169 client error paths | 152 |
+| `conv_audit` | `70d8ba6` — /v1/conversations lifecycle+item battery | — |
+| `docs_audit` | lane 181 — docs↔surface parity battery (this PR) | sealed in `receipts/fx1_docs_audit.json` |
+| `drain_audit` | `39312bf` — drain-shutdown audit + mutating-surface gates | 155 |
+| `eval_lifecycle_audit` | `a44bac6` — eval state machine | 132 |
+| `files_audit` | `5bfd9d8` — /v1/files lifecycle + consumer semantics | — |
+| `journal_audit` | `007e782` (#1373) — stacked harness lanes | — |
+| `oai_sdk_audit` | `007e782` (#1373) — stacked harness lanes | 82 |
+| `perf_audit` | `5f37a7d` — lane 163 boundedness/latency ceilings | 76 |
+| `quota_audit` | `2eaf59a` — lane 148 quota battery + restart persistence | — |
+| `quota2_audit` | `16442b7` (#2865) — quota introspection truthfulness | 107 |
+| `retrieval_audit` | `5b25959` (#2867) — retrieval paging + terminal event publication | 136 |
+| `spec_audit` | `a9321a1` — vendor-spec conformance over /v1 + anthropic | 53 |
+| `stream_audit` | `cd39b54` — 186-probe SSE wire battery + deleted-response fix | — |
+| `usage_audit` | `4a9fb65` — accounting-conservation battery | 50 |
+| `vs_audit` | `32a670c` (#2858) — vector-store failure-atomicity | 277 |
+| `webhook_audit` | `1216a4e` — signed-delivery contracts | 60 |

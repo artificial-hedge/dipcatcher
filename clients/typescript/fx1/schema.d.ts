@@ -517,6 +517,8 @@ export interface paths {
          * @description Mint a managed API key. The raw ``key`` is returned once here
          *     and never stored — the store keeps only its sha256. Requires the
          *     bootstrap credential (``FX1_API_KEY``) or loopback dev mode.
+         *     ``Idempotency-Key`` pins the mint: a keyed retry replays the
+         *     recorded credential verbatim instead of minting a duplicate.
          */
         post: operations["key_create"];
         delete?: never;
@@ -543,7 +545,8 @@ export interface paths {
          * Key Revoke
          * @description Tombstone a key — ``enabled=false`` + ``revoked_at``. The record
          *     stays so the audit trail of which keys existed survives; auth
-         *     with it fails closed immediately after.
+         *     with it fails closed immediately after. A keyed retry replays
+         *     the recorded tombstone instead of 409ing on the second revoke.
          */
         delete: operations["key_revoke"];
         options?: never;
@@ -559,7 +562,8 @@ export interface paths {
          *     Patching is in place — no new secret, no slot consumed — and
          *     the updated record journals so a ``--state-dir`` restart
          *     restores it. ``enabled``/live counters stay unpatchable:
-         *     revocation is permanent (rotate covers re-keying).
+         *     revocation is permanent (rotate covers re-keying). A keyed
+         *     retry replays the recorded patch outcome.
          */
         patch: operations["key_patch"];
         trace?: never;
@@ -581,7 +585,9 @@ export interface paths {
          *     raw secret is returned once; lineage (``rotated_from``) is
          *     journaled with the successor record. Without ``ttl_s`` the
          *     successor inherits the predecessor's absolute ``expires_at`` —
-         *     rotation never extends a credential's lifetime.
+         *     rotation never extends a credential's lifetime. A keyed retry
+         *     replays the recorded successor (same id, same raw secret)
+         *     instead of minting a third credential.
          */
         post: operations["key_rotate"];
         delete?: never;
@@ -1339,6 +1345,9 @@ export interface paths {
          *     Purpose is fail-closed — ``batch`` and ``fine-tune`` are the only
          *     purposes served; the file is validated into the store as-is
          *     (shape checks happen at batch submit / fine-tune submit).
+         *     ``Idempotency-Key`` pins the minted file: a retried multipart
+         *     upload replays the recorded object (same ``id``) instead of
+         *     storing a duplicate.
          */
         post: operations["openai_file_upload"];
         delete?: never;
@@ -1970,7 +1979,8 @@ export interface paths {
         /**
          * Openai Upload Create
          * @description Open an upload intent — parts land under ``.../parts`` until
-         *     ``complete`` assembles them into a file record.
+         *     ``complete`` assembles them into a file record.``Idempotency-Key``
+         *     pins the intent: a retried create replays the same ``upload_id``.
          */
         post: operations["openai_upload_create"];
         delete?: never;
@@ -1991,7 +2001,8 @@ export interface paths {
         /**
          * Openai Upload Cancel
          * @description Cancel a pending upload — replays 200 on an already-cancelled
-         *     record, 409 once completed.
+         *     record, 409 once completed; a keyed retry replays the recorded
+         *     cancel answer verbatim.
          */
         post: operations["openai_upload_cancel"];
         delete?: never;
@@ -2011,9 +2022,9 @@ export interface paths {
         put?: never;
         /**
          * Openai Upload Complete
-         * @description Assemble the declared parts into a ``file-`` record. The md5
-         *     check runs BEFORE the file mints so a checksum failure leaves no
-         *     orphan; the upload then transitions terminal.
+         * @description Validate and mint one file under the upload lifecycle lock. A
+         *     keyed retry replays the minted file object instead of failing on
+         *     the already-completed upload.
          */
         post: operations["openai_upload_complete"];
         delete?: never;
@@ -2034,7 +2045,8 @@ export interface paths {
         /**
          * Openai Upload Part
          * @description Add one part (multipart ``data`` field). Blob lands durable
-         *     before the journal names it.
+         *     before the journal names it. A keyed retry replays the recorded
+         *     part instead of appending the bytes twice.
          */
         post: operations["openai_upload_part"];
         delete?: never;
@@ -2061,7 +2073,9 @@ export interface paths {
          * Openai Vectorstore Create
          * @description Create a vector store — ``file_ids`` attach existing
          *     ``file-*`` records; an unresolvable id fails the whole create
-         *     fail-closed (no partial store).
+         *     fail-closed (no partial store). ``Idempotency-Key`` pins the
+         *     mint: a keyed retry replays the recorded object (same ``vs_``)
+         *     instead of minting a duplicate store.
          */
         post: operations["openai_vectorstore_create"];
         delete?: never;
@@ -2086,7 +2100,8 @@ export interface paths {
         /**
          * Openai Vectorstore Update
          * @description Update a vector store — ``name``/``metadata`` replace
-         *     wholesale when present.
+         *     wholesale when present. A mutation, so drain-gated like the
+         *     other writes; deletes/detaches stay open under drain.
          */
         post: operations["openai_vectorstore_update"];
         /**
@@ -2117,6 +2132,9 @@ export interface paths {
          *     synchronously; per-file refusals (missing, already attached,
          *     oversized, store full) count ``failed`` with ``last_error``,
          *     never abort the batch. Status is terminal at return.
+         *     ``Idempotency-Key`` pins the minted batch (per-store
+         *     namespace): a keyed retry replays the recorded verdicts
+         *     instead of turning every member ``file_already_attached``.
          */
         post: operations["openai_vectorstore_file_batch_create"];
         delete?: never;
@@ -2207,6 +2225,9 @@ export interface paths {
          * @description Attach a ``file-*`` record — the file is decoded, chunked,
          *     and indexed in-place; a file whose text is empty lands
          *     ``status: failed`` with ``last_error``, never silently.
+         *     ``Idempotency-Key`` pins the attachment (per-store namespace):
+         *     a keyed retry replays the recorded object instead of answering
+         *     ``file_already_attached``.
          */
         post: operations["openai_vectorstore_file_create"];
         delete?: never;
@@ -7076,7 +7097,9 @@ export interface operations {
     key_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -7212,7 +7235,9 @@ export interface operations {
     key_revoke: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 key_id: string;
             };
@@ -7279,7 +7304,9 @@ export interface operations {
     key_patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 key_id: string;
             };
@@ -7350,7 +7377,9 @@ export interface operations {
     key_rotate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 key_id: string;
             };
@@ -10379,7 +10408,9 @@ export interface operations {
     openai_file_upload: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -12526,7 +12557,9 @@ export interface operations {
     openai_upload_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -12595,7 +12628,9 @@ export interface operations {
     openai_upload_cancel: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -12662,7 +12697,9 @@ export interface operations {
     openai_upload_complete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -12733,7 +12770,9 @@ export interface operations {
     openai_upload_part: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 upload_id: string;
             };
@@ -12807,7 +12846,7 @@ export interface operations {
                 limit?: number;
                 after?: string | null;
                 before?: string | null;
-                order?: "asc" | "desc";
+                order?: string;
             };
             header?: never;
             path?: never;
@@ -12874,7 +12913,9 @@ export interface operations {
     openai_vectorstore_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -13148,7 +13189,9 @@ export interface operations {
     openai_vectorstore_file_batch_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 vector_store_id: string;
             };
@@ -13358,7 +13401,7 @@ export interface operations {
                 limit?: number;
                 after?: string | null;
                 before?: string | null;
-                order?: "asc" | "desc";
+                order?: string;
                 filter?: string | null;
             };
             header?: never;
@@ -13432,7 +13475,7 @@ export interface operations {
                 limit?: number;
                 after?: string | null;
                 before?: string | null;
-                order?: "asc" | "desc";
+                order?: string;
                 filter?: string | null;
             };
             header?: never;
@@ -13502,7 +13545,9 @@ export interface operations {
     openai_vectorstore_file_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path: {
                 vector_store_id: string;
             };

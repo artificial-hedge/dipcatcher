@@ -296,6 +296,7 @@ same digested shape the job record embeds.
 | `GET` / `POST` / `DELETE` `/v1/conversations/{id}` | fetch the conv object / replace its `metadata` wholesale / drop the container and its items (member responses stay retrievable on their own ids) |
 | `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
 | `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
+| `GET /v1/conversations/{id}/items/{item_id}` | fetch one item by id — `HarnessClient.conversation_item` / `client.conversationItem` / `fx1 harness conv-item` |
 | `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
 | `POST /v1/vector_stores` | mint a `vs_*` retrieval store (`name`, `file_ids` seed, `metadata`, `expires_after` anchor policy) — `Fx1Harness.vector_store_create` / `HarnessClient.vector_store_create` / `client.vectorStoreCreate` / `fx1 harness vs-create` |
 | `GET` / `POST` / `DELETE` `/v1/vector_stores/{id}` | fetch / rename+remetadata+`expires_after` re-anchor / delete the store (delete detaches member files; the `file-*` records survive) |

@@ -280,7 +280,7 @@ against staging, or size `--n` to what the deployment can absorb.
 
 | Status | `code` | Meaning | Retry contract |
 |---|---|---|---|
-| 401/403 | `invalid_api_key`, `insufficient_scope`, `admin_required` | Credential unknown, out of scope, or non-admin on `/harness/keys*`/`/harness/drain` | Never — fix the credential |
+| 401/403 | `unauthorized`, `insufficient_scope` | Credential unknown, or out of scope (`admin` scope required on `/harness/keys*`/`/harness/drain`) | Never — fix the credential |
 | 404 | — | Unknown job/eval/completion/key id | Never |
 | 422 | — | Malformed body, bad `backend`, `callback_url` not http(s), unknown eval suite | Never — fix the request |
 | 429 | `rate_limited` | Managed key's `rpm` window full | Yes — `Retry-After` + `X-RateLimit-{Limit,Remaining,Reset}-Requests` say when |
