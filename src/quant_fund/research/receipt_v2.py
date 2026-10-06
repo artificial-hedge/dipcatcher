@@ -962,17 +962,17 @@ def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
-def verify_receipt_file(path: Path | str) -> ReceiptVerification:
-    """Read a receipt JSON file and verify it. Fails closed on unreadable input.
+def verify_receipt_bytes(data: bytes, path: Path | str = Path("<memory>")) -> ReceiptVerification:
+    """Parse and verify one immutable receipt byte string.
 
     Duplicate object keys are rejected: ``{"k": 1, "k": 2}`` parses to ``2``
-    in Python but would let a file carry two readable claims while only one
-    is sealed — the bytes must determine a unique payload.
+    in Python but would let a byte string carry two readable claims while only
+    one is sealed — the bytes must determine a unique payload.
     """
-    file_path = Path(path)
+    receipt_path = Path(path)
     try:
         payload: object = json.loads(
-            file_path.read_text(),
+            data,
             parse_constant=_reject_json_constant,
             object_pairs_hook=_no_duplicate_keys,
         )
@@ -980,13 +980,23 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
         # ValueError covers JSONDecodeError, the >4300-digit integer limit,
         # and the duplicate_json_key marker raised by the pairs hook.
         if str(exc).startswith("duplicate_json_key:"):
-            return _result(file_path, {}, None, [str(exc)])
-        return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
-    except (OSError, UnicodeError, RecursionError) as exc:
+            return _result(receipt_path, {}, None, [str(exc)])
+        return _result(receipt_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
+    except (UnicodeError, RecursionError) as exc:
         # RecursionError covers pathological nesting depth. Corrupt input must
         # degrade to a verdict, never crash the gate.
+        return _result(receipt_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
+    return verify_receipt_payload(payload, receipt_path)
+
+
+def verify_receipt_file(path: Path | str) -> ReceiptVerification:
+    """Read a receipt JSON file once and verify it. Fails closed on unreadable input."""
+    file_path = Path(path)
+    try:
+        data = file_path.read_bytes()
+    except OSError as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
-    return verify_receipt_payload(payload, file_path)
+    return verify_receipt_bytes(data, file_path)
 
 
 def receipt_v2_json_schema() -> dict[str, Any]:
