@@ -298,3 +298,44 @@ sanitized transport errors; the older transport and validator variants are
 not reapplied. Historical receipts remain unchanged. The generated audit
 receipt is `SYNTHETIC`, `research_only`, and makes no live-PnL claim. The
 serve census moves from 46 to 47 and remains `partial`.
+
+### Store boundary maintenance (PR #2845)
+
+The new `store_audit` checks 112 persistence contracts — the `store=false`
+boundary measured byte-for-byte across chat completions, responses,
+`/v1/messages`, legacy completions, streaming, background, subresources,
+lists, idempotency, delete, restart durability, batch per-line semantics,
+eval records, error envelopes, and metering — over SYNTHETIC stub/gate
+backends and isolated state dirs, reusing the conversation lane's
+resource context and client plumbing.
+
+The measured contract is a strict skip: `store:false` returns a
+byte-identical body minus `id`/`created`/`store`, but no envelope or
+subresource item persists — GET, message list, and surface lists all
+miss, `?stream=true` replay 404s, `previous_response_id` chaining off an
+unstored parent refuses `400 previous_response_not_found`, and
+`background:true` refuses up front with `400 background_requires_store`
+because background implies stored. Anthropic and legacy surfaces force
+`store=False` at translation so a `store` extra is tolerated and inert.
+Idempotent replay under `store:false` returns the pinned response but
+does not re-pin it, and metering bills every authenticated call —
+including 404s — independent of persistence. Restart durability is
+pinned honestly: journaled envelopes survive a `--state-dir` restart
+while the response-object index is documented in-memory and recovers
+nothing.
+
+Four defect families were found and fixed: dead `urlopen` fakes left by
+the #2817 `_openai_urlopen` seam (api_audit, serve_audit, backend-usage
+and hosted-backend tests were red on main with live network calls);
+stale pre-#2819 auth precedence pins (auth_audit now measures the
+deliberate 400 ambiguous-header contract and its receipt was resealed);
+journal test seams left by the streaming-replay refactor (a non-dict
+payload is classified damaged, and the concurrency pause seam follows
+`Path.open`); and a strict-mypy drift (`BackendNotConfiguredError` is
+now exported by the client and two untyped lambda call sites are
+annotated). The suite's lint drift was swept with the same change.
+
+The incoming `fx1_store_audit.json` and the resealed
+`fx1_auth_audit.json` name the earlier merge base and are excluded;
+historical receipts remain unchanged. The serve census moves from 47 to
+48 and remains `partial`.
