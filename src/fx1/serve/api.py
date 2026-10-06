@@ -4366,6 +4366,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     _legacy_idem_claim = _idem_claim_dep(legacy_idem_store)
     _file_idem_claim = _idem_claim_dep(upload_idem_store)
     _upload_idem_claim = _idem_claim_dep(upload_idem_store)
+    _vs_idem_claim = _idem_claim_dep(vs_store)
     _ft_idem_claim = _idem_claim_dep(ft_store)
 
     def _breaker_admit(name: str) -> None:
@@ -7534,26 +7535,63 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def _vs_err(exc: VectorStoreError) -> ApiError:
         return ApiError(exc.status, str(exc), code=exc.code)
 
+    def _vs_idem_lookup(
+        idempotency_key: str | None,
+        body_fp: str,
+        *,
+        namespace: str,
+    ) -> tuple[str | None, dict[str, Any] | None]:
+        """Lookup the replay record co-journaled with a vector mutation."""
+        key = _idem_key(idempotency_key)
+        if key is None:
+            return None, None
+        scoped = _idem_scope(key, namespace=namespace)
+        assert scoped is not None  # noqa: S101 — key is not None here
+        hit = vs_store.idempotency_get(scoped)
+        if hit is None:
+            return scoped, None
+        fingerprint, response = hit
+        if fingerprint != body_fp:
+            raise ApiError(
+                409,
+                "Idempotency-Key reuse with a different request body",
+                code="idempotency_conflict",
+            )
+        return scoped, response
+
     @app.post(
         "/v1/vector_stores",
         response_model=None,
         tags=["openai"],
         operation_id="openai_vectorstore_create",
     )
-    def openai_vectorstore_create(body: OpenAIVectorStoreCreate) -> dict[str, Any]:
+    def openai_vectorstore_create(
+        body: OpenAIVectorStoreCreate,
+        _idem_claim_held: None = Depends(_vs_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> dict[str, Any] | JSONResponse:
         """Create a vector store — ``file_ids`` attach existing
         ``file-*`` records; an unresolvable id fails the whole create
-        fail-closed (no partial store)."""
+        fail-closed (no partial store). ``Idempotency-Key`` pins the
+        mint: a keyed retry replays the recorded object (same ``vs_``)
+        instead of minting a duplicate store."""
+        body_fp = _body_fp(body)
+        key, replay = _vs_idem_lookup(idempotency_key, body_fp, namespace="vs")
+        if replay is not None:
+            return JSONResponse(replay, headers={"X-Fx1-Idempotent-Replay": "true"})
         _drain_refusal(metrics)
         try:
-            return vs_store.create(
+            out = vs_store.create(
                 name=body.name,
                 metadata=body.metadata,
                 file_ids=tuple(body.file_ids or ()),
                 expires_after=body.expires_after,
+                idempotency_key=key,
+                body_fingerprint=body_fp,
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
+        return out
 
     @app.get(
         "/v1/vector_stores/{vector_store_id}",
@@ -7578,7 +7616,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         vector_store_id: str, body: OpenAIVectorStoreUpdate
     ) -> dict[str, Any]:
         """Update a vector store — ``name``/``metadata`` replace
-        wholesale when present."""
+        wholesale when present. A mutation, so drain-gated like the
+        other writes; deletes/detaches stay open under drain."""
         _drain_refusal(metrics)
         try:
             return vs_store.update(
@@ -7615,7 +7654,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         limit: int = Query(default=20, ge=1, le=100),
         after: str | None = Query(default=None),
         before: str | None = Query(default=None),
-        order: Literal["asc", "desc"] = Query(default="desc"),
+        order: str = Query(default="desc"),
     ) -> dict[str, Any]:
         """List vector stores — the same ``after``/``before``/``order``
         cursor contract as the other list surfaces."""
@@ -7631,21 +7670,38 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_vectorstore_file_create",
     )
     def openai_vectorstore_file_create(
-        vector_store_id: str, body: OpenAIVectorStoreFileCreate
-    ) -> dict[str, Any]:
+        vector_store_id: str,
+        body: OpenAIVectorStoreFileCreate,
+        _idem_claim_held: None = Depends(_vs_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> dict[str, Any] | JSONResponse:
         """Attach a ``file-*`` record — the file is decoded, chunked,
         and indexed in-place; a file whose text is empty lands
-        ``status: failed`` with ``last_error``, never silently."""
+        ``status: failed`` with ``last_error``, never silently.
+        ``Idempotency-Key`` pins the attachment (per-store namespace):
+        a keyed retry replays the recorded object instead of answering
+        ``file_already_attached``."""
+        body_fp = _body_fp(body)
+        key, replay = _vs_idem_lookup(
+            idempotency_key,
+            body_fp,
+            namespace=f"vsfile:{vector_store_id}",
+        )
+        if replay is not None:
+            return JSONResponse(replay, headers={"X-Fx1-Idempotent-Replay": "true"})
         _drain_refusal(metrics)
         try:
-            return vs_store.attach(
+            out = vs_store.attach(
                 vector_store_id,
                 body.file_id,
                 attributes=body.attributes,
                 chunking_strategy=body.chunking_strategy,
+                idempotency_key=key,
+                body_fingerprint=body_fp,
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
+        return out
 
     @app.get(
         "/v1/vector_stores/{vector_store_id}/files",
@@ -7658,7 +7714,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         limit: int = Query(default=20, ge=1, le=100),
         after: str | None = Query(default=None),
         before: str | None = Query(default=None),
-        order: Literal["asc", "desc"] = Query(default="asc"),
+        order: str = Query(default="asc"),
         filter: str | None = Query(default=None),
     ) -> dict[str, Any]:
         """List a store's attached files — ``filter`` takes an OpenAI
@@ -7767,23 +7823,40 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="openai_vectorstore_file_batch_create",
     )
     def openai_vectorstore_file_batch_create(
-        vector_store_id: str, body: OpenAIVectorStoreFileBatchCreate
-    ) -> dict[str, Any]:
+        vector_store_id: str,
+        body: OpenAIVectorStoreFileBatchCreate,
+        _idem_claim_held: None = Depends(_vs_idem_claim),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> dict[str, Any] | JSONResponse:
         """Attach many ``file-*`` records in one call — the OpenAI
         ``vector_store.files_batch`` surface. Members attach
         synchronously; per-file refusals (missing, already attached,
         oversized, store full) count ``failed`` with ``last_error``,
-        never abort the batch. Status is terminal at return."""
+        never abort the batch. Status is terminal at return.
+        ``Idempotency-Key`` pins the minted batch (per-store
+        namespace): a keyed retry replays the recorded verdicts
+        instead of turning every member ``file_already_attached``."""
+        body_fp = _body_fp(body)
+        key, replay = _vs_idem_lookup(
+            idempotency_key,
+            body_fp,
+            namespace=f"vsbatch:{vector_store_id}",
+        )
+        if replay is not None:
+            return JSONResponse(replay, headers={"X-Fx1-Idempotent-Replay": "true"})
         _drain_refusal(metrics)
         try:
-            return vs_store.file_batch_create(
+            out = vs_store.file_batch_create(
                 vector_store_id,
                 body.file_ids,
                 attributes=body.attributes,
                 chunking_strategy=body.chunking_strategy,
+                idempotency_key=key,
+                body_fingerprint=body_fp,
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
+        return out
 
     @app.get(
         "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}",
@@ -7827,7 +7900,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         limit: int = Query(default=20, ge=1, le=100),
         after: str | None = Query(default=None),
         before: str | None = Query(default=None),
-        order: Literal["asc", "desc"] = Query(default="asc"),
+        order: str = Query(default="asc"),
         filter: str | None = Query(default=None),
     ) -> dict[str, Any]:
         """List a batch's per-file verdicts — frozen at processing time,
@@ -10145,7 +10218,12 @@ def create_app(
             return None
         return bytes(rec.content), rec.filename
 
-    vs_store = VectorStoreStore(store_max, state_dir=state_path, file_reader=_vs_file_reader)
+    vs_store = VectorStoreStore(
+        store_max,
+        state_dir=state_path,
+        file_reader=_vs_file_reader,
+        idem_max=idem_max,
+    )
     # Cancel flags for background responses — a set event means the stored
     # envelope was flipped to ``cancelled`` and the worker must not
     # overwrite it with a terminal result.

@@ -57,9 +57,9 @@ class TestVectorStoreCapacityWakeup(unittest.TestCase):
                         pinned_id = store.create(name="pinned")["id"]
                         pinned = pool.submit(store.file_batch_create, pinned_id, ["file-a"])
                     else:
-                        pinned = pool.submit(store.create, name="pinned", file_ids=["file-a"])
+                        pinned_id = store.create(name="pinned")["id"]
+                        pinned = pool.submit(store.attach, pinned_id, "file-a")
                     self.assertTrue(reader.started.wait(timeout=3))
-                    pinned_id = store.list_stores()["data"][0]["id"]
                     # Created after the pin starts, so the pinned store is
                     # the oldest even though batch lookup refreshes its LRU.
                     other = store.create(name="other")
@@ -83,7 +83,7 @@ class TestVectorStoreCapacityWakeup(unittest.TestCase):
             self.assertEqual(restored.get(pinned_id)["file_counts"]["completed"], 1)
             self.assertEqual(restored.recover_warnings, [])
 
-    def test_delete_wakes_create_during_create_with_files(self) -> None:
+    def test_delete_wakes_create_during_attach(self) -> None:
         self._check_delete_during_read(batch=False)
 
     def test_delete_wakes_create_during_file_batch(self) -> None:
@@ -94,9 +94,9 @@ class TestVectorStoreCapacityWakeup(unittest.TestCase):
         store = VectorStoreStore(2, file_reader=reader)
         with ThreadPoolExecutor(max_workers=3) as pool:
             try:
-                pinned = pool.submit(store.create, name="pinned", file_ids=["file-a"])
+                pinned_id = store.create(name="pinned")["id"]
+                pinned = pool.submit(store.attach, pinned_id, "file-a")
                 self.assertTrue(reader.started.wait(timeout=3))
-                pinned_id = store.list_stores()["data"][0]["id"]
                 deleter = pool.submit(store.delete, pinned_id)
                 self._wait_for_waiters(store, 1)
                 other = store.create(name="other")
