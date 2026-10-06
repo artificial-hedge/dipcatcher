@@ -346,3 +346,31 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Scoring audit (proper-score primitives)
+
+The `score_*` operations are the harness's honesty-critical math — every
+sealed research claim bottoms out in pinball, interval, Brier/log-loss,
+or empirical-CRPS scoring, so a silent sign or denominator change turns
+every downstream receipt into a lie. `scoring_audit` pins 60+ contracts
+against hand-computed fixtures and an independent O(n²) CRPS reference:
+
+- *Descriptor contract* — `skills.*` ids, `kind="skill"`, module-local
+  schemas/handlers, host-facing `describe()` shape.
+- *score_quantiles* — exact level-weighted pinball orientation,
+  per-level means + unweighted cross-level mean, crossings rejected
+  (ties allowed), strictly increasing levels, shape/finite/`extra=forbid`
+  enforcement.
+- *score_intervals* — additive width + `2/(1-c)` miss penalties,
+  inclusive endpoint coverage, inverted/unequal/out-of-range refused.
+- *score_binary_forecasts* — `(p-y)²` Brier on raw probabilities,
+  nats log loss, impossible endpoints → `positive_infinity` + null
+  unless a declared clip rescues (Brier still uses the raw p).
+- *score_empirical_crps* — exact empirical-CDF CRPS: degenerate
+  perfect forecasts score 0, singletons `|s-y|`, sorted-gap integration
+  matches `E|X-y| − E|X−X'|/2` on sorted/unsorted/tied/unequal-ensemble
+  fixtures.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The operations census moves from `pending` to
+`partial` with 44 modules pinned.
