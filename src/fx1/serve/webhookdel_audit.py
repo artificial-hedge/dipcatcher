@@ -68,8 +68,23 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from fx1.harness import Harness
-from fx1.serve.finetune import FTJobOutcome
+from fx1.serve.webhook_audit import (
+    _JOB_TERMINAL,
+    _WAIT_S,
+    _abatch_create,
+    _app,
+    _batch_create,
+    _busy_executor,
+    _fast_runner,
+    _ft_create,
+    _submit_eval,
+    _submit_job,
+    _wait_abatch,
+    _wait_batch,
+    _wait_ft,
+    _wait_job,
+    _wait_verdict,
+)
 from fx1.serve.webhooks import (
     WEBHOOK_MAX_ATTEMPTS,
     WEBHOOK_SIGNATURE_HEADER,
@@ -88,8 +103,6 @@ __all__ = ["webhookdel_audit", "webhookdel_audit_bench"]
 _SECRET_A = "whsec-del-a"  # NOSONAR — loopback-only test key, not a real credential
 _SECRET_B = "whsec-del-b"  # NOSONAR — loopback-only test key, not a real credential
 _PRIV_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
-_JOB_TERMINAL = ("succeeded", "failed", "cancelled")
-_WAIT_S = 20.0
 
 _URL_NXHOST = "http://nonexistent.invalid./hook"  # NOSONAR — intentionally unresolvable
 _URL_BAD_FILE = "file:///etc/passwd"  # NOSONAR — intentionally insecure scheme
@@ -115,7 +128,6 @@ _ENV_KEYS = (
     _PRIV_ENV,
 )
 
-_FT_CORPUS = b'{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
 _JOB_POST = "/harness/jobs"
 
 
@@ -268,49 +280,9 @@ class _Ctx:
     app: FastAPI
 
 
-def _fast_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-    del argv, timeout_s
-    return 0, "ok", ""
-
-
 def _boom_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
     del argv, timeout_s
     raise RuntimeError("synthetic runner fault")
-
-
-class _StubBackend:
-    """A completions stub — every gated surface resolves to it."""
-
-    def complete(self, messages: list[dict[str, Any]], *, sampling: Any = None) -> str:
-        del sampling
-        return f"clean:{messages[-1]['content']}"
-
-    def close(self) -> None:
-        pass
-
-
-def _ft_runner(spec: Any, *, emit: Any, should_cancel: Any) -> FTJobOutcome:
-    emit("info", "bench runner")
-    return FTJobOutcome(fine_tuned_model=None)
-
-
-def _app(
-    workdir: Path,
-    *,
-    runner: Callable[[list[str], int], tuple[int, str, str]] = _fast_runner,
-    max_inflight: int = 4,
-    state_dir: Path | None = None,
-) -> FastAPI:
-    import fx1.serve.api as api_mod  # noqa: PLC0415
-
-    return api_mod.create_app(
-        harness=Harness(runner=runner),
-        backend_resolver=lambda *a, **k: _StubBackend(),
-        ft_runner=_ft_runner,
-        ft_dir=workdir / "ft",
-        state_dir=state_dir,
-        max_inflight=max_inflight,
-    )
 
 
 def _make_ctx(
@@ -326,18 +298,6 @@ def _make_ctx(
     return _Ctx(client=TestClient(app, raise_server_exceptions=False), app=app)
 
 
-def _wait_job(client: TestClient, job_id: str, timeout: float = _WAIT_S) -> dict[str, Any]:
-    """Poll the job record until terminal and the callback verdict set."""
-    end = time.monotonic() + timeout
-    st: dict[str, Any] = {}
-    while time.monotonic() < end:
-        st = client.get(f"/harness/jobs/{job_id}").json()
-        if st.get("status") in _JOB_TERMINAL and st.get("callback_status"):
-            return st
-        time.sleep(0.05)
-    return st
-
-
 def _wait_status(client: TestClient, job_id: str, timeout: float = _WAIT_S) -> dict[str, Any]:
     """Poll until terminal — regardless of the callback verdict's state."""
     end = time.monotonic() + timeout
@@ -350,166 +310,10 @@ def _wait_status(client: TestClient, job_id: str, timeout: float = _WAIT_S) -> d
     return st
 
 
-def _wait_verdict(client: TestClient, path: str, timeout: float = _WAIT_S) -> dict[str, Any]:
-    """Poll a record until its callback verdict is populated — the
-    terminal status lands before the delivery verdict does."""
-    end = time.monotonic() + timeout
-    st: dict[str, Any] = {}
-    while time.monotonic() < end:
-        st = client.get(path).json()
-        if st.get("callback_status"):
-            return st
-        time.sleep(0.05)
-    return st
-
-
 def _wait_hits(sink: _Sink, n: int, timeout: float = _WAIT_S) -> None:
     end = time.monotonic() + timeout
     while len(sink.hits) < n and time.monotonic() < end:
         time.sleep(0.05)
-
-
-def _busy_executor(app: FastAPI, slots: int, sleep_s: float = 3.0) -> None:
-    """Occupy every worker thread with a sleeper so a submitted record
-    stays 'queued' — the deterministic way to reach the queued paths."""
-    executor = app.state.jobs_executor
-    release = threading.Event()
-    for _ in range(slots):
-        executor.submit(lambda: release.wait(timeout=sleep_s))
-    time.sleep(0.15)
-
-
-def _submit_job(
-    client: TestClient,
-    callback_url: str | None = None,
-    *,
-    secret: str | None = None,
-    idem: str | None = None,
-) -> dict[str, Any]:
-    body: dict[str, Any] = {"command": "doctor"}
-    if callback_url is not None:
-        body["callback_url"] = callback_url
-    if secret is not None:
-        body["callback_secret"] = secret
-    headers = {"Idempotency-Key": idem} if idem else {}
-    r = client.post(_JOB_POST, json=body, headers=headers)
-    assert r.status_code == 202, f"job submit refused: {r.status_code} {r.text}"
-    return dict(r.json())
-
-
-def _submit_eval(client: TestClient, callback_url: str) -> dict[str, Any]:
-    """An eval resolving to the stub backend terminates quickly — the
-    deterministic way to reach the terminal-webhook path."""
-    r = client.post(
-        "/harness/evals",
-        json={"suite": "calibration", "backend": "hosted_k3", "callback_url": callback_url},
-    )
-    assert r.status_code == 202, f"eval submit refused: {r.status_code} {r.text}"
-    return dict(r.json())
-
-
-def _batch_create(
-    client: TestClient, callback_url: str | None, *, secret: str | None = None
-) -> dict[str, Any]:
-    line = {
-        "custom_id": "r1",
-        "method": "POST",
-        "url": "/v1/chat/completions",
-        "body": {"model": "fx1", "messages": [{"role": "user", "content": "hi"}]},
-    }
-    up = client.post(
-        "/v1/files",
-        files={"file": ("in.jsonl", (json.dumps(line) + "\n").encode(), "application/jsonl")},
-        data={"purpose": "batch"},
-    )
-    assert up.status_code == 200, up.text
-    body: dict[str, Any] = {
-        "input_file_id": up.json()["id"],
-        "endpoint": "/v1/chat/completions",
-    }
-    if callback_url is not None:
-        body["callback_url"] = callback_url
-    if secret is not None:
-        body["callback_secret"] = secret
-    r = client.post("/v1/batches", json=body)
-    assert r.status_code == 200, f"batch submit refused: {r.status_code} {r.text}"
-    return dict(r.json())
-
-
-def _abatch_create(
-    client: TestClient, callback_url: str | None, *, secret: str | None = None
-) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "requests": [
-            {
-                "custom_id": "a",
-                "params": {
-                    "model": "fx1",
-                    "max_tokens": 64,
-                    "messages": [{"role": "user", "content": "ping"}],
-                },
-            }
-        ]
-    }
-    if callback_url is not None:
-        body["callback_url"] = callback_url
-    if secret is not None:
-        body["callback_secret"] = secret
-    r = client.post("/v1/messages/batches", json=body)
-    assert r.status_code == 200, f"abatch submit refused: {r.status_code} {r.text}"
-    return dict(r.json())
-
-
-def _ft_create(
-    client: TestClient, callback_url: str | None, *, secret: str | None = None
-) -> dict[str, Any]:
-    up = client.post(
-        "/v1/files",
-        files={"file": ("c.jsonl", _FT_CORPUS, "application/jsonl")},
-        data={"purpose": "fine-tune"},
-    )
-    assert up.status_code == 200, up.text
-    body: dict[str, Any] = {"model": "fx1", "training_file": up.json()["id"]}
-    if callback_url is not None:
-        body["callback_url"] = callback_url
-    if secret is not None:
-        body["callback_secret"] = secret
-    r = client.post("/v1/fine_tuning/jobs", json=body)
-    assert r.status_code == 200, f"ft submit refused: {r.status_code} {r.text}"
-    return dict(r.json())
-
-
-def _wait_batch(client: TestClient, batch_id: str, timeout: float = _WAIT_S) -> dict[str, Any]:
-    end = time.monotonic() + timeout
-    b: dict[str, Any] = {}
-    while time.monotonic() < end:
-        b = client.get(f"/v1/batches/{batch_id}").json()
-        if b.get("status") in ("completed", "failed", "expired", "cancelled"):
-            return b
-        time.sleep(0.05)
-    return b
-
-
-def _wait_abatch(client: TestClient, batch_id: str, timeout: float = _WAIT_S) -> dict[str, Any]:
-    end = time.monotonic() + timeout
-    b: dict[str, Any] = {}
-    while time.monotonic() < end:
-        b = client.get(f"/v1/messages/batches/{batch_id}").json()
-        if b.get("processing_status") == "ended":
-            return b
-        time.sleep(0.05)
-    return b
-
-
-def _wait_ft(client: TestClient, job_id: str, timeout: float = _WAIT_S) -> dict[str, Any]:
-    end = time.monotonic() + timeout
-    j: dict[str, Any] = {}
-    while time.monotonic() < end:
-        j = client.get(f"/v1/fine_tuning/jobs/{job_id}").json()
-        if j.get("status") in _JOB_TERMINAL:
-            return j
-        time.sleep(0.05)
-    return j
 
 
 # ---------------------------------------------------------------------------
@@ -1016,7 +820,7 @@ def _probe_fire_once(ctx: _Ctx, sink: _Sink) -> dict[str, bool]:
     out["fire_job_gets_no_refire"] = sink.path_n.get("/fo-job") == 1
 
     # queued-cancel: occupy every worker so the delete lands pre-start
-    _busy_executor(ctx.app, 4)
+    _busy_executor(ctx.app, 4, sleep_s=3.0)
     qjob = _submit_job(client, sink.url("/fo-jc"))
     n0 = len(sink.hits)
     cxl = client.delete(f"/harness/jobs/{qjob['job_id']}")
