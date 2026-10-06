@@ -194,7 +194,7 @@ def test_only_committed_background_results_append_to_conversation(intervention: 
         _file_search_turn=lambda request, effective: ([], effective),
         response_to_kwargs=lambda *args, **kwargs: {},
         ft_store=types.SimpleNamespace(checkpoint_for=lambda _: None),
-        CompleteRequest=lambda **kwargs: object(),
+        _complete_request_from_kwargs=lambda kwargs: object(),
         complete=complete,
         Response=object,
         validate_response_format=lambda *args: None,

@@ -194,3 +194,45 @@ durability across multi-process deployments, TTL expiry probes (only LRU
 eviction is exercised), or client-SDK retry behavior. The incoming all-pass
 `fx1_idem_audit.json` is excluded; historical receipts remain unchanged. The
 serve census moves from 44 to 45 and remains `partial`.
+### BYOK surface maintenance (PR #2817)
+
+`byok_audit` grows from a 251-line backend-only battery into a whole-surface
+credential-isolation audit over the whole BYOK serve surface — the
+`fx1.byok` body block and `X-Fx1-Byok-*` headers on chat, responses,
+messages, legacy completions, embeddings, `/harness/*`, batches and the
+SDK twin. Every probe runs offline against a threaded localhost stub
+that records the real wire per hit: path, headers and body.
+
+The battery found and this change fixed five defect classes. A shared
+`byok_base_url_problem` rule now refuses userinfo, query, params,
+fragment and bad ports on the body, header, env and SDK paths without
+echoing the pasted URL. Malformed `X-Fx1-Byok-*` headers surface 422
+instead of a bare 500. `fx1.byok` off a `byok` link — including an
+`ft:` model that previously dropped the credential silently — refuses
+422 at link resolution, and residual request-model failures envelope
+as 422s at construction. Validation detail redacts `input`, `ctx` and
+`url` on credential locs (`byok`, `judge_byok`, `api_key`,
+`*_key`/`_secret`/`_token`/`_password`) while keeping the pinned echo
+for ordinary fields. Transport faults — `TimeoutError`, `OSError`,
+`http.client.HTTPException` — and non-JSON upstream bodies no longer
+escape the error envelope as bare 500s at any OpenAI-compatible call
+site (BYOK, `local_fx1` shared helpers, the hosted link); all map to
+enveloped 502s. Credentialed upstream calls refuse redirects before a
+second origin is contacted, and transport errors do not echo the configured
+URL or path into caller-visible details.
+
+Pinned semantics, exercised not assumed: the `fx1.byok` body block does
+not self-select the `byok` link (it needs `fx1.backend="byok"`,
+`model="byok"` or the header triple); response `model` is the requested
+`byok.model`; batch header credentials are `PrivateAttr` — in-memory
+only, never journaled; a read-scoped key and an over-budget key refuse
+before any upstream contact; `store:false` persists nothing while still
+streaming, and `store:true` persists the record, never the credential;
+idempotent replay never re-hits the upstream. A plain-`http` upstream
+remains accepted by design (local vLLM/Ollama shims).
+
+The sealed `fx1_byok_audit` names this pre-merge parent and is excluded
+from the diff per receipt convention; historical receipts remain
+unchanged. Probes are SYNTHETIC — labelled stubs, no market evidence.
+The serve census stays at 45 (the module was already counted) and
+remains `partial`.
