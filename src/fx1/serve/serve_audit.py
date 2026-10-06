@@ -25,9 +25,6 @@ Pinned contract:
 
 Flagged warts (documented, not fixed):
 
-- ``flag_unlisted_artifact_passes`` — ``verify_release`` only re-hashes
-  manifest-listed artifacts; a file *added* to the checkpoint dir after
-  signing verifies clean (manifest-scoped, not closed-world).
 - corrupt manifest fails closed via the signature check before parsing
   (``corrupt_manifest_fails``); a *validly signed* corrupt manifest would
   still raise out of ``model_validate_json`` — unreachable without the key.
@@ -100,6 +97,9 @@ def serve_audit() -> dict[str, Any]:
             def read(self) -> bytes:
                 return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
 
+            def close(self) -> None:
+                return None
+
             def __enter__(self) -> _Resp:
                 return self
 
@@ -112,8 +112,11 @@ def serve_audit() -> dict[str, Any]:
             return _Resp()
 
         import urllib.request  # noqa: PLC0415
+        from types import SimpleNamespace as _SN  # noqa: PLC0415
 
-        with patch.object(urllib.request, "urlopen", fake_urlopen):
+        # The wire seam is ``build_opener(...).open`` — stub the opener, not
+        # ``urlopen`` (a dead seam since the redirect-hardening refactor).
+        with patch.object(urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen)):
             text = backend.complete([{"role": "user", "content": "hi"}])
         out["hosted_temperature_zero"] = (
             text == "answer"
@@ -191,6 +194,9 @@ def serve_audit() -> dict[str, Any]:
                 def read(self) -> bytes:
                     return json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
 
+                def close(self) -> None:
+                    return None
+
                 def __enter__(self) -> _Resp2:
                     return self
 
@@ -214,7 +220,9 @@ def serve_audit() -> dict[str, Any]:
                 serve_url="http://127.0.0.1:8011/v1",
                 api_key="local-key",
             )
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with patch.object(
+                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen2)
+            ):
                 text = attached.complete([{"role": "user", "content": "hi"}])
             out["local_attach_complete"] = text == "answer"
             out["local_temperature_zero"] = captured2["body"].get("temperature") == 0.0
@@ -225,7 +233,9 @@ def serve_audit() -> dict[str, Any]:
             )
             os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8012"
             env_be = LocalFx1Backend(root, require_signature=True)
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with patch.object(
+                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen2)
+            ):
                 env_be.complete([{"role": "user", "content": "hi"}])
             out["local_env_url_honored"] = any("127.0.0.1:8012" in u for u in captured2["urls"])
 
@@ -236,6 +246,9 @@ def serve_audit() -> dict[str, Any]:
 
                 def __iter__(self) -> Any:
                     return iter(self._lines)
+
+                def close(self) -> None:
+                    return None
 
                 def __enter__(self) -> _StreamResp:
                     return self
@@ -257,7 +270,9 @@ def serve_audit() -> dict[str, Any]:
                     ]
                 )
 
-            with patch.object(urllib.request, "urlopen", fake_stream):
+            with patch.object(
+                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_stream)
+            ):
                 deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
             out["local_stream_deltas"] = deltas == ["hel", "lo"]
             out["local_stream_wire_flag"] = captured2["stream_body"].get("stream") is True
@@ -267,7 +282,9 @@ def serve_audit() -> dict[str, Any]:
             def fake_bad_stream(req: Any, **kw: Any) -> _StreamResp:
                 return _StreamResp([b"data: {not json\n\n"])
 
-            with patch.object(urllib.request, "urlopen", fake_bad_stream):
+            with patch.object(
+                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_bad_stream)
+            ):
                 out["local_stream_malformed_fails"] = (
                     _raises(lambda: list(attached.stream([{"role": "u", "content": "x"}])))
                     == "RuntimeError"
@@ -290,7 +307,14 @@ def serve_audit() -> dict[str, Any]:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
-            with patch.object(urllib.request, "urlopen", fake_urlopen_cold):
+            # Cold-start fakes patch both seams: ``urlopen`` covers the
+            # ``/v1/models`` readiness probe, ``build_opener`` the wire call.
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen_cold),
+                patch.object(
+                    urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen_cold)
+                ),
+            ):
                 spawned.complete([{"role": "user", "content": "hi"}])
             out["local_spawn_template_ran"] = spawned._proc is not None
             spawned.close()
@@ -343,6 +367,11 @@ def serve_audit() -> dict[str, Any]:
                 with (
                     patch.object(subprocess, "Popen", counting_popen),
                     patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    patch.object(
+                        urllib.request,
+                        "build_opener",
+                        lambda *a, **k: _SN(open=fake_urlopen_cold_locked),
+                    ),
                     ThreadPoolExecutor(max_workers=4) as pool,
                 ):
                     list(
@@ -365,10 +394,11 @@ def serve_audit() -> dict[str, Any]:
         out["tamper_refuses"] = (
             _raises(lambda: LocalFx1Backend(root, require_signature=True)) == "RuntimeError"
         )
-        # unlisted artifact added post-sign verifies clean (manifest-scoped)
+        # unlisted artifact added post-sign fails closed — verify_release
+        # requires exact inventory, not just manifest-listed hashes
         sign_release(root)
         (root / "extra.bin").write_bytes(b"rogue")
-        out["flag_unlisted_artifact_passes"] = verify_release(root)
+        out["unlisted_artifact_refused"] = not verify_release(root)
         (root / "extra.bin").unlink()
         # wrong key
         os.environ["FX1_SIGNING_KEY"] = "other-key"

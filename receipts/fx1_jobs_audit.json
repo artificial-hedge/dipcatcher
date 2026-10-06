@@ -226,11 +226,11 @@
     ]
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "9a2d6e2fdc20397d2ce7dbadba571734bfdf7655",
+  "git_revision": "2a68df282c2ca9fdb4bc3df2858a36bc542b74d9",
   "interpretation": "Every probe True means: on this checkout the /harness/jobs + /harness/runs surface submits, dedupes, gates, executes, cancels, webhooks, lists, meters, and durably replays exactly as the pinned contract states \u2014 transitions order queued\u2192running\u2192terminal with finished_at \u2265 created_at, a terminal record never flips, a cancelled job never runs (the store-level start() claim closes the dequeue race), every refusal arrives in the {detail, code} envelope, idempotency replays across restarts, webhooks fire once with verifiable HMAC and a capped retry policy that never resurrects the job, --state-dir restart fails in-flight jobs closed with an honest restart error, drain is a one-way latch that lets in-flight work complete, /harness/runs folds executor faults into the envelope rather than a bare 500, batch items fail independently with honest counts, and admission meters every authorized request while auth/scope refusals bill nothing. SYNTHETIC stub runners only \u2014 no research claim.",
   "kind": "jobs_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "ca7e99c4272ad79365be246d9e99546f7b41c5936ec03d8b12ebee28515ddc94",
+  "receipt_sha256": "072068eb83cede2be7c89dd60a5ab344b9073520ad2e6e177bebfa52b4a5bd9b",
   "research_only": true,
   "schema": "jobs_audit.v1"
 }

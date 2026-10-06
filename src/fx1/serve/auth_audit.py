@@ -524,45 +524,45 @@ def _header_parsing_probes() -> dict[
     out["env_key_bearer_v1_admits"] = env_resp.status_code == 200
     out["env_key_bearer_unmetered"] = _H_RL_LIMIT not in {k.lower() for k in env_resp.headers}
 
-    # precedence: X-API-Key wins outright — an empty value is no header,
-    # so it falls through to Bearer; a garbage value refuses without
-    # consulting Bearer (no fallback to a second credential)
-    out["x_api_key_empty_falls_through_to_bearer"] = (
-        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 200
+    # precedence is moot once the request is ambiguous: authorization +
+    # x-api-key on one request (even an empty value) is refused at ingress
+    # before any credential is compared — never a silent winner
+    out["empty_x_api_key_plus_bearer_refused_400"] = (
+        _models(client, {_H_KEY: "", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_garbage_no_bearer_fallback"] = (
-        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 401
+    out["garbage_x_api_key_plus_bearer_refused_400"] = (
+        _models(client, {_H_KEY: "fx1k_garbage", _H_AUTH: bearer}).status_code == 400
     )
-    out["x_api_key_valid_ignores_bearer_garbage"] = (
-        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 200
+    out["valid_x_api_key_plus_bearer_refused_400"] = (
+        _models(client, {_H_KEY: k_raw, _H_AUTH: "Bearer fx1k_garbage"}).status_code == 400
     )
-    out["env_x_api_key_beats_managed_bearer"] = (
-        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 200
+    out["env_x_api_key_plus_bearer_refused_400"] = (
+        _models(client, {_H_KEY: _ROOT, _H_AUTH: bearer}).status_code == 400
     )
 
     # whitespace on the credential itself is part of the compared bytes
     out["x_api_key_leading_ws_refused"] = _models(client, {_H_KEY: f" {k_raw}"}).status_code == 401
     out["x_api_key_trailing_ws_refused"] = _models(client, {_H_KEY: f"{k_raw} "}).status_code == 401
 
-    # duplicated header lines — the first occurrence resolves, both
-    # channels alike
-    out["dup_x_api_key_first_wins_admit"] = (
+    # duplicated singleton header lines are refused at ingress regardless
+    # of order or channel — no first-wins/last-wins interpretation gap
+    out["dup_x_api_key_good_then_bad_refused_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, k_raw), (_H_KEY_LOWER, "fx1k_bad")]
         ).status_code
-        == 200
+        == 400
     )
-    out["dup_x_api_key_first_wins_refuse"] = (
+    out["dup_x_api_key_bad_then_good_refused_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_KEY_LOWER, "fx1k_bad"), (_H_KEY_LOWER, k_raw)]
         ).status_code
-        == 401
+        == 400
     )
-    out["dup_authorization_first_wins"] = (
+    out["dup_authorization_refused_400"] = (
         _dup_get(
             client, _MODELS_PATH, [(_H_AUTH, f"Bearer {k_raw}"), (_H_AUTH, "Bearer fx1k_bad")]
         ).status_code
-        == 200
+        == 400
     )
     return out
 
@@ -1136,12 +1136,19 @@ def _anthropic_probes() -> dict[str, Any]:
     # on /v1/messages too
     ok2 = _messages(client, {_H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"})
     out["anthropic_bearer_admits"] = ok2.status_code == 200
-    # mixed channels under the anthropic grammar: X-API-Key still wins
+    # mixed channels under the anthropic grammar: ambiguous auth is
+    # refused at ingress with the dialect's own error envelope
     mixed = _messages(
         client,
         {_H_KEY: "fx1k_garbage", _H_AUTH: f"Bearer {k_raw}", _H_ANTH_VER: "2023-06-01"},
     )
-    out["anthropic_mixed_x_api_key_wins"] = mixed.status_code == 401
+    mixed_body = mixed.json()
+    out["anthropic_mixed_auth_refused_400"] = (
+        mixed.status_code == 400
+        and mixed_body.get("type") == "error"
+        and isinstance(mixed_body.get("error"), dict)
+        and mixed_body["error"].get("type") == "invalid_request_error"
+    )
 
     # anthropic grammar on refusals: {type: "error", error: {...}},
     # request-id echoed, x-should-retry absent (401/403 are not

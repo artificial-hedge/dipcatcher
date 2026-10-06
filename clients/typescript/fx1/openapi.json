@@ -1843,6 +1843,7 @@
               "items": {
                 "$ref": "#/components/schemas/ChatMessage"
               },
+              "minItems": 1,
               "type": "array"
             },
             "maxItems": 64,
@@ -26649,10 +26650,6 @@
             "required": false,
             "schema": {
               "default": "desc",
-              "enum": [
-                "asc",
-                "desc"
-              ],
               "title": "Order",
               "type": "string"
             }
@@ -26796,8 +26793,26 @@
         ]
       },
       "post": {
-        "description": "Create a vector store \u2014 ``file_ids`` attach existing\n``file-*`` records; an unresolvable id fails the whole create\nfail-closed (no partial store).",
+        "description": "Create a vector store \u2014 ``file_ids`` attach existing\n``file-*`` records; an unresolvable id fails the whole create\nfail-closed (no partial store). ``Idempotency-Key`` pins the\nmint: a keyed retry replays the recorded object (same ``vs_``)\ninstead of minting a duplicate store.",
         "operationId": "openai_vectorstore_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -27250,7 +27265,7 @@
         ]
       },
       "post": {
-        "description": "Update a vector store \u2014 ``name``/``metadata`` replace\nwholesale when present.",
+        "description": "Update a vector store \u2014 ``name``/``metadata`` replace\nwholesale when present. A mutation, so drain-gated like the\nother writes; deletes/detaches stay open under drain.",
         "operationId": "openai_vectorstore_update",
         "parameters": [
           {
@@ -27413,7 +27428,7 @@
     },
     "/v1/vector_stores/{vector_store_id}/file_batches": {
       "post": {
-        "description": "Attach many ``file-*`` records in one call \u2014 the OpenAI\n``vector_store.files_batch`` surface. Members attach\nsynchronously; per-file refusals (missing, already attached,\noversized, store full) count ``failed`` with ``last_error``,\nnever abort the batch. Status is terminal at return.",
+        "description": "Attach many ``file-*`` records in one call \u2014 the OpenAI\n``vector_store.files_batch`` surface. Members attach\nsynchronously; per-file refusals (missing, already attached,\noversized, store full) count ``failed`` with ``last_error``,\nnever abort the batch. Status is terminal at return.\n``Idempotency-Key`` pins the minted batch (per-store\nnamespace): a keyed retry replays the recorded verdicts\ninstead of turning every member ``file_already_attached``.",
         "operationId": "openai_vectorstore_file_batch_create",
         "parameters": [
           {
@@ -27423,6 +27438,22 @@
             "schema": {
               "title": "Vector Store Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -27971,10 +28002,6 @@
             "required": false,
             "schema": {
               "default": "asc",
-              "enum": [
-                "asc",
-                "desc"
-              ],
               "title": "Order",
               "type": "string"
             }
@@ -28198,10 +28225,6 @@
             "required": false,
             "schema": {
               "default": "asc",
-              "enum": [
-                "asc",
-                "desc"
-              ],
               "title": "Order",
               "type": "string"
             }
@@ -28361,7 +28384,7 @@
         ]
       },
       "post": {
-        "description": "Attach a ``file-*`` record \u2014 the file is decoded, chunked,\nand indexed in-place; a file whose text is empty lands\n``status: failed`` with ``last_error``, never silently.",
+        "description": "Attach a ``file-*`` record \u2014 the file is decoded, chunked,\nand indexed in-place; a file whose text is empty lands\n``status: failed`` with ``last_error``, never silently.\n``Idempotency-Key`` pins the attachment (per-store namespace):\na keyed retry replays the recorded object instead of answering\n``file_already_attached``.",
         "operationId": "openai_vectorstore_file_create",
         "parameters": [
           {
@@ -28371,6 +28394,22 @@
             "schema": {
               "title": "Vector Store Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],

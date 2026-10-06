@@ -396,10 +396,21 @@ def _tc_transport(client: TestClient) -> Any:
 def parity_audit() -> dict[str, bool]:  # NOSONAR
     out: dict[str, bool] = {}
     saved = {
-        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
+        k: os.environ.get(k)
+        for k in (
+            _API_KEY_ENV,
+            *_BYOK_ENVS,
+            *_LOCAL_ENVS,
+            "MOONSHOT_API_KEY",
+            "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
+        )
     }
     try:
         os.environ.pop(_API_KEY_ENV, None)
+        # Synthetic loopback receivers: opt in narrowly for this audit run —
+        # the webhook validator refuses private addresses without it
+        # (webhook_audit's convention); restored by the env umbrella in finally.
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
 
         sdk, client = _surfaces(_ParityBackend)
         msg = [{"role": "user", "content": "ping"}]
@@ -3091,6 +3102,11 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     import time as _time2  # noqa: PLC0415
 
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
+    # Synthetic loopback receiver: opt in narrowly for this probe — the
+    # webhook validator refuses private addresses without it
+    # (webhook_audit's convention); restored in finally.
+    saved_bw_hook = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3131,6 +3147,10 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     finally:
         _bw_srv.shutdown()
         _bw_srv.server_close()
+        if saved_bw_hook is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_bw_hook
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])

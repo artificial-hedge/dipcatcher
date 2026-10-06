@@ -331,6 +331,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             def read(self) -> bytes:
                 return _json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
 
+            def close(self) -> None:
+                return None
+
             def __enter__(self) -> _Resp:
                 return self
 
@@ -341,11 +344,14 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             return _Resp()
 
         import urllib.request  # noqa: PLC0415
+        from types import SimpleNamespace as _SN  # noqa: PLC0415
 
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
+            with patch.object(
+                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen)
+            ):
                 resp = client.post(
                     "/harness/complete",
                     json={
@@ -1056,6 +1062,11 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def log_message(self, *args: Any) -> None:
             pass
 
+    # Synthetic loopback receivers: opt in narrowly for this audit run — the
+    # webhook validator refuses private addresses without it (drain_audit's
+    # convention); restored at the end of this function.
+    saved_webhook_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     cb_app = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
         backend_resolver=lambda *a, **k: _CleanBackend(),
@@ -3508,6 +3519,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     _probe_backend_probes(client, uapp, dirty, api_mod, out)
     _probe_finetune(api_mod, out)
+    if saved_webhook_env is None:
+        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+    else:
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
     return out
 
 
@@ -4345,6 +4360,9 @@ def _probe_backend_probes(  # NOSONAR
         def __init__(self, lines: list[bytes]) -> None:
             self._lines = lines
 
+        def close(self) -> None:
+            return None
+
         def __enter__(self) -> Any:
             return self
 
@@ -4363,9 +4381,14 @@ def _probe_backend_probes(  # NOSONAR
         b"data: [DONE]\n",
     ]
     import urllib.request as _urlreq  # noqa: PLC0415
+    from types import SimpleNamespace as _SN  # noqa: PLC0415
 
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
+    # The wire seam is ``build_opener(...).open`` — stub the opener, not
+    # ``urlopen`` (a dead seam since the redirect-hardening refactor).
+    orig_build_opener = _urlreq.build_opener
+    _urlreq.build_opener = lambda *a, **k: _SN(  # type: ignore[assignment]
+        open=lambda req, timeout=None: _FakeResp(wire_frames)
+    )
     try:
         box: list[dict[str, int]] = []
         toks = list(
@@ -4380,7 +4403,7 @@ def _probe_backend_probes(  # NOSONAR
             )
         )
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _urlreq.build_opener = orig_build_opener
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4765,6 +4788,9 @@ def _probe_backend_probes(  # NOSONAR
         def read(self) -> bytes:
             return _json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
 
+        def close(self) -> None:
+            return None
+
         def __enter__(self) -> Any:
             return self
 
@@ -4775,7 +4801,7 @@ def _probe_backend_probes(  # NOSONAR
         captured_wire["body"] = _json.loads(req.data.decode())
         return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
+    _urlreq.build_opener = lambda *a, **k: _SN(open=_wire_urlopen)  # type: ignore[assignment]
     try:
         _be_mod._openai_chat_complete(
             "http://wire.test",
@@ -4797,7 +4823,7 @@ def _probe_backend_probes(  # NOSONAR
         )
         default_body = dict(captured_wire["body"])
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _urlreq.build_opener = orig_build_opener
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95

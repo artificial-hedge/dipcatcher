@@ -7,7 +7,6 @@ import subprocess
 import threading
 import time
 import urllib.error
-import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from unittest.mock import Mock, call
@@ -71,15 +70,43 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
     assert body.close_calls == 1
 
 
-def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    errors = [_http_error()[0], _http_error()[0]]
-    bodies = [error.fp for error in errors]
-    opener = Mock()
-    opener.open.side_effect = errors
-    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: opener)
+def test_webhook_closes_each_response_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Each attempt's response and pinned connection close before a 5xx retry."""
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
+    responses: list[Any] = []
+    connections: list[Any] = []
+
+    class _Resp:
+        status = 503
+        closed = False
+
+        def __enter__(self) -> _Resp:
+            return self
+
+        def __exit__(self, *args: Any) -> None:
+            self.closed = True
+
+    class _Conn:
+        closed = False
+
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            connections.append(self)
+
+        def request(self, *args: Any, **kwargs: Any) -> None:
+            return None
+
+        def getresponse(self) -> _Resp:
+            resp = _Resp()
+            responses.append(resp)
+            return resp
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setattr(webhooks, "_PinnedHTTPConnection", _Conn)
     ok, message, attempts = webhooks.deliver_signed(
-        "https://callback.invalid/hook",
+        "http://127.0.0.1:9/hook",
         None,
         b'{"kind":"SYNTHETIC"}',
         max_attempts=2,
@@ -87,10 +114,16 @@ def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyP
     )
 
     assert (ok, message, attempts) == (False, "callback endpoint returned 503", 2)
-    assert all(isinstance(body, _TrackedBody) and body.close_calls == 1 for body in bodies)
+    assert len(responses) == 2 and all(resp.closed for resp in responses)
+    assert len(connections) == 2 and all(conn.closed for conn in connections)
 
 
-def test_webhook_refuses_cross_origin_redirect_without_leaking_signature() -> None:
+def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Loopback receiver fixtures: opt in to private-network callbacks for
+    # this test only — the validator refuses them without it.
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []
 

@@ -1602,6 +1602,13 @@ def batch_audit() -> dict[str, Any]:
     prev = {k: os.environ.get(k) for k in _SWEPT_ENVS}
     for k in _SWEPT_ENVS:
         os.environ.pop(k, None)
+    # Synthetic loopback receivers: opt in narrowly for this audit run — the
+    # webhook validator refuses private addresses without it (webhook_audit's
+    # convention); restored by the env umbrella in finally.
+    prev["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = os.environ.get(
+        "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+    )
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     out: dict[str, Any] = {}
     try:
         with _audit_resources(), tempfile.TemporaryDirectory() as td:

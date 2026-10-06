@@ -757,6 +757,11 @@ def _webhook_probes() -> dict[str, bool]:
     )
 
     sink = _Sink()
+    # Synthetic loopback receiver: opt in narrowly for this probe — the
+    # webhook validator refuses private addresses without it
+    # (webhook_audit's convention); restored in finally.
+    saved_webhook_env = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         runner = _Runner()
         client = _client(runner)
@@ -870,6 +875,10 @@ def _webhook_probes() -> dict[str, bool]:
         _wait(client_q, jb)
     finally:
         sink.close()
+        if saved_webhook_env is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = saved_webhook_env
     return out
 
 

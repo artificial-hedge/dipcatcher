@@ -46,6 +46,7 @@ _E2E_ENV = (
     "FX1_BYOK_BASE_URL",
     "FX1_BYOK_API_KEY",
     "FX1_BYOK_MODEL",
+    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
     "MOONSHOT_API_KEY",
 )
 _API_KEY = "e2e-probe-key"  # a probe string, not a credential
@@ -179,6 +180,11 @@ def e2e_audit() -> dict[str, bool]:
                 "FX1_BYOK_BASE_URL": f"http://127.0.0.1:{stub_port}/v1",
                 "FX1_BYOK_API_KEY": "stub-engine-key",
                 "FX1_BYOK_MODEL": "stub-v0",
+                # Synthetic loopback receivers: opt in narrowly for this
+                # audit run — the webhook validator refuses private
+                # addresses without it (webhook_audit's convention);
+                # restored by the _E2E_ENV umbrella in finally.
+                "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
             }
         )
         os.environ.pop("MOONSHOT_API_KEY", None)
