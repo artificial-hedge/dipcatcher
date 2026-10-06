@@ -346,3 +346,39 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Client retry audit maintenance (PR pending)
+
+The new `client_retry_audit` battery pins the retry mechanics inside
+`HarnessClient._request` past the error-map surface `client_audit`
+already covered: exact attempt counts (max_retries=N means N retries
+past the initial call, only on retryable calls — unkeyed writes never
+retry, keyed writes and `retry_writes` do, every attempt hits the same
+path), the sleep schedule as arithmetic (the doubling backoff feeds
+transport-fault retries while a declared Retry-After — slept verbatim
+under the cap — feeds refusal retries, and the backoff still doubles
+across a status sleep for the next fault), Retry-After parsing edges
+(seconds-only `float()` with a `max(0, …)` floor: whitespace, signs,
+fractions and scientific forms parse; HTTP-date/junk/empty fall to
+not-retryable; `inf` breaks over budget; `nan` floors to 0.0 and
+retries immediately), the lifecycle of the shared slots
+(`_last_response_headers` clears only on transport-class escapes —
+a mapped 503/404 keeps its headers while a mapped 429/500 loses
+them — and `_last_api_version` survives faults untouched), the
+circuit breaker's error-class split (transport-class escapes trip,
+mapped refusals don't — an honestly-refusing 503 stays reachable),
+threshold-1 opening, half-open probe close/fault-reopen, strict-<
+`open_until` boundary, fail-fast with no sleep and no transport call,
+and consecutive-fault counting across a mid-window success; plus
+`timeout_s` and the Idempotency-Key (and API key) reaching every
+attempt verbatim, and parallel callers getting independent retry
+schedules over the shared circuit counter.
+
+No production-code changes were needed: the measured contract held
+throughout — including the dead-cover `min(wait, cap)` in the retry
+loop (a wait over budget always breaks before sleeping) and the
+`nan`/`inf` asymmetry in `_retry_after_s`, both pinned as semantics.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 55 to 56 and remains
+`partial`.
