@@ -2909,6 +2909,83 @@
         "title": "CompletionRecord",
         "type": "object"
       },
+      "DoctorCheck": {
+        "additionalProperties": false,
+        "description": "One probe's verdict.\n\n``severity`` is the failure's weight when ``ok`` is false: ``error``\nmarks the deployment broken, ``warn`` only degrades it. A check that\ndoes not apply (feature unconfigured) reports ``ok: true`` with a\n\"not configured\" detail rather than disappearing \u2014 the check list is\nstable so dashboards can diff deployments.",
+        "properties": {
+          "detail": {
+            "default": "",
+            "title": "Detail",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "severity": {
+            "default": "error",
+            "enum": [
+              "error",
+              "warn"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "ok"
+        ],
+        "title": "DoctorCheck",
+        "type": "object"
+      },
+      "DoctorReport": {
+        "additionalProperties": false,
+        "description": "The deployment's diagnosis. ``verdict`` is derived from the checks\nat validation time \u2014 revalidate after mutating ``checks``.",
+        "properties": {
+          "checked_at": {
+            "title": "Checked At",
+            "type": "number"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/DoctorCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "mode": {
+            "enum": [
+              "server",
+              "in_process",
+              "remote"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "healthy",
+              "degraded",
+              "broken"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "checked_at",
+          "verdict",
+          "checks"
+        ],
+        "title": "DoctorReport",
+        "type": "object"
+      },
       "DrainResponse": {
         "additionalProperties": false,
         "description": "Result of latching drain mode: state + live in-flight count.",
@@ -9989,6 +10066,161 @@
           }
         },
         "summary": "Completion Receipt",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/harness/doctor": {
+      "get": {
+        "operationId": "harness_doctor",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "probe",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Probe",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DoctorReport"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Openai-Processing-Ms": {
+                "description": "Server-side wall-clock milliseconds for the request \u2014 the OpenAI-convention tracing header, present on every response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit-Requests": {
+                "description": "Managed-key rpm window size \u2014 present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s).",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining-Requests": {
+                "description": "Requests left in the key's fixed 60 s window after this response.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset-Requests": {
+                "description": "Seconds until the key's rpm window reopens.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Harness Doctor",
         "tags": [
           "ops"
         ]

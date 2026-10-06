@@ -38,6 +38,8 @@ export type CompletionRecord = components["schemas"]["CompletionRecord"];
 export type CompletionListResponse =
   components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type DoctorCheck = components["schemas"]["DoctorCheck"];
+export type DoctorReport = components["schemas"]["DoctorReport"];
 export type UsageBucket = components["schemas"]["UsageBucket"];
 export type UsageReport = components["schemas"]["UsageReport"];
 export type ApiKeyMintResponse = components["schemas"]["ApiKeyMintResponse"];
@@ -594,6 +596,20 @@ export class HarnessApiClient {
   commands(role?: HarnessRole): Promise<HarnessCommandListResponse> {
     return this.get(
       role ? `/harness/commands?role=${role}` : "/harness/commands",
+    );
+  }
+
+  /**
+   * GET /harness/doctor — the deployment's structured diagnosis
+   * (admin-scoped): backend config + BYOK auth probe + checkpoint/engine
+   * liveness, state dir/journals, key inventory, capacity + drain, build
+   * version. `verdict` is `healthy` | `degraded` | `broken`. Read-only —
+   * the server never bills a provider for it. `probe: false` asks the
+   * server to skip its endpoint probes.
+   */
+  doctor(opts: { probe?: boolean } = {}): Promise<DoctorReport> {
+    return this.get(
+      opts.probe === false ? "/harness/doctor?probe=false" : "/harness/doctor",
     );
   }
 

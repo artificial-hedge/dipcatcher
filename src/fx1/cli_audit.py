@@ -229,6 +229,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "response-replay",
         "response-input-items",
         "score",
+        "doctor",
         "commands",
     } <= hnames
 

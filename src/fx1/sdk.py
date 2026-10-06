@@ -76,6 +76,7 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.contract import API_VERSION
+from fx1.serve.doctor import DoctorReport, build_doctor_report
 from fx1.serve.evals import (
     EvalDiff,
     EvalRecord,
@@ -163,6 +164,7 @@ __all__ = [
     "BackendNotConfiguredError",
     "CompletionRecord",
     "CompletionResult",
+    "DoctorReport",
     "GateCheckResult",
     "ProbeResult",
     "Fx1Harness",
@@ -516,6 +518,7 @@ class Fx1Harness:
         if state_path is None:
             env_dir = os.environ.get("FX1_SDK_STATE_DIR")
             state_path = Path(env_dir) if env_dir else None
+        self._state_path = state_path
         self._eval_store = EvalStore(
             256,
             journal=JobJournal(state_path / "evals.jsonl") if state_path is not None else None,
@@ -4466,4 +4469,27 @@ class Fx1Harness:
                     os.environ.get(LOCAL_SERVE_URL_ENV) or os.environ.get(LOCAL_SERVE_CMD_ENV)
                 ),
             },
+        )
+
+    def doctor(
+        self,
+        *,
+        probe_backends: bool = True,
+        timeout_s: float = 5.0,
+    ) -> DoctorReport:
+        """Deployment diagnosis — the in-process leg of ``GET /harness/doctor``.
+
+        Introspects (never exercises) this harness's own surface: backend
+        env configuration with a cheap BYOK ``/models`` auth probe
+        (``probe_backends=False`` skips network probes), the bound
+        ``state_dir``'s writability/disk/journal replay, the managed-key
+        inventory, and the build version. ``verdict`` maps onto the CLI's
+        pinned exits — ``0`` healthy, ``1`` broken, ``2`` degraded."""
+        return build_doctor_report(
+            mode="in_process",
+            key_store=self._key_store,
+            state_path=self._state_path,
+            registered_commands=len(self._harness.list_commands()),
+            probe_backends=probe_backends,
+            timeout_s=timeout_s,
         )

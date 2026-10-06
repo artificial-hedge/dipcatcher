@@ -129,6 +129,7 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.contract import API_VERSION
+from fx1.serve.doctor import DoctorReport, build_doctor_report
 from fx1.serve.evals import (
     EVAL_SAMPLING,
     EVAL_SUITES,
@@ -2792,6 +2793,41 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
                 "Cache-Control": "public, immutable",
                 "X-Fx1-Receipt-Valid": "true" if valid else "false",
             },
+        )
+
+
+def _mount_doctor_route(
+    app: FastAPI,
+    *,
+    lab: Harness,
+    key_store: ApiKeyStore,
+    metrics: _Metrics,
+    state_path: Path | None,
+) -> None:
+    """``GET /harness/doctor`` — the deployment diagnosis route, kept out
+    of ``create_app`` for the ruff complexity ceiling.
+
+    Admin-scoped like ``/harness/drain`` and the key routes: the verdict
+    discloses internals (state paths, key counts, drain state). Read-only
+    — the builder replays journals and probes the BYOK endpoint's models
+    route, never a completion. ``HarnessClient.doctor`` proxies this and
+    appends the wire-side checks only a client can see."""
+
+    @app.get(
+        "/harness/doctor",
+        response_model=DoctorReport,
+        tags=["ops"],
+        operation_id="harness_doctor",
+    )
+    def harness_doctor(request: Request, probe: bool = True) -> DoctorReport:
+        _require_admin(request)
+        return build_doctor_report(
+            mode="server",
+            key_store=key_store,
+            state_path=state_path,
+            metrics=metrics,
+            registered_commands=len(lab.list_commands()),
+            probe_backends=probe,
         )
 
 
@@ -9952,9 +9988,14 @@ def _mount_key_lifecycle(
 
 def _required_scope(method: str, path: str) -> str:
     """The scope a request needs: the control plane (key management,
-    drain) is ``admin`` on any method, safe methods are ``read``,
-    everything else is ``write``."""
-    if path == "/harness/keys" or path.startswith("/harness/keys/") or path == "/harness/drain":
+    drain, deployment diagnosis) is ``admin`` on any method, safe
+    methods are ``read``, everything else is ``write``."""
+    if (
+        path == "/harness/keys"
+        or path.startswith("/harness/keys/")
+        or path == "/harness/drain"
+        or path == "/harness/doctor"
+    ):
         return "admin"
     if method in ("GET", "HEAD", "OPTIONS"):
         return "read"
@@ -10902,6 +10943,13 @@ def create_app(
         key_store=key_store,
     )
 
+    _mount_doctor_route(
+        app,
+        lab=lab,
+        key_store=key_store,
+        metrics=metrics,
+        state_path=state_path,
+    )
     _mount_receipt_routes(app, receipt_index)
     _mount_v1_catch_all(app)
 

@@ -148,6 +148,22 @@
         ]
       }
     },
+    "/harness/doctor": {
+      "get": {
+        "params": [
+          {
+            "name": "probe",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/drain": {
       "post": {
         "params": [
@@ -2237,5 +2253,5 @@
       }
     }
   },
-  "schema_sha256": "ae82da119aebafc75b0da1391842f67d3578780c3efc1643e7898951f6519ea4"
+  "schema_sha256": "d692cb2522ac67e2c21db7b624d8c6ec297789e4d04f704e8b7efe83fc4df6ed"
 }

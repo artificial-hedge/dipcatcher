@@ -253,6 +253,7 @@ same digested shape the job record embeds.
 | `DELETE /harness/evals/{id}` | cooperative cancel of a queued eval (running/terminal → 409); `HarnessClient.cancel_eval` / `fx1 harness eval-cancel` |
 | `GET /harness/evals/{base}/diff/{cand}` | promotion-gate diff over two terminal records — per-task pass/fail transitions, gate move, `by_kind` deltas, exact sign-test `significance` on the discordant pairs, `verdict` (`comparable` needs same suite+seed and no bank-stamp mismatch; `404` unknown id, `409 eval_not_terminal`); `Fx1Harness.eval_diff` / `HarnessClient.diff_evals` / `client.diffEvals` / `fx1 harness eval-diff` |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
+| `GET /harness/doctor` | structured deployment diagnosis → `{mode, checked_at, verdict, checks:[{name, ok, detail, severity}]}` — *why* a deploy is `healthy`/`degraded`/`broken` rather than whether it runs (`selftest` is the functional gate). Admin scope: the verdict discloses internals (state paths, key counts, drain state). Checks: backend config presence, BYOK `?probe=` endpoint auth probe (`/models` GET — never a paid completion), local checkpoint + engine liveness, state-dir writability/disk, per-journal replay counts + torn-tail detection, managed-key inventory/quota/rpm saturation, pool capacity + drain latch, build version. `?probe=false` skips endpoint probes. `Fx1Harness.doctor` (in-process leg, same builder) / `HarnessClient.doctor` (proxies + appends `version_contract`/`openapi_spec` checks) / `HarnessApiClient.doctor` / `fx1 harness doctor` |
 | `GET /v1/models` | OpenAI `list` envelope: `fx1` + the backend names |
 | `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found`. Under an `anthropic-version` request header the same routes answer Anthropic's grammar instead: `models.list` → `{data:[{type:"model",id,display_name,created_at}], first_id, last_id, has_more}` with `limit≤1000` + `after_id`/`before_id` positional cursors (back-pagination returns the window tail); `models.retrieve` → one `{type:"model"}` card or `404 not_found_error`. `Fx1Harness.anthropic_models`/`anthropic_model` / `HarnessClient.anthropic_models`/`anthropic_model` / `client.anthropicModels`/`anthropicModel` / `fx1 harness models --anthropic` / `fx1 harness model --anthropic` |
 | `DELETE /v1/models/{id}` | `models.delete` — unregister an `ft:` name (`{id, object:"model", deleted:true}`); built-in link ids refuse `400`, unregistered names `404`, the tombstone journals so restarts never resurrect it |
@@ -1145,6 +1146,25 @@ the in-process SDK, `--remote URL` benches a live deployment;
 `dipcatcher verify-receipt` / `POST /receipts/verify`). Exits 0 only
 when every measured request succeeded, 1 on any error — a deploy gate
 beside `selftest`.
+
+`fx1 harness doctor` is the diagnosis companion to `selftest`: where
+selftest proves the golden path works, doctor reports *why* a running
+(or would-be) deployment is broken or degraded by introspecting it —
+backend env configuration with a cheap BYOK `/models` auth probe (never
+a paid completion; `--no-probe` skips endpoint touches), local
+checkpoint loadability + engine liveness, state-dir
+writability/disk-space/journal replay (per-store valid-line counts and
+torn-tail detection), managed-key inventory plus quota-exhausted and
+rpm-saturated credentials, pool capacity vs the inflight cap with the
+drain latch, and the build/api version. Local mode runs the same checks
+against the in-process `Fx1Harness` (`--state-dir` binds its stores);
+`--remote URL` proxies the admin-scoped `GET /harness/doctor` and
+appends the client-side `version_contract` and `openapi_spec` checks —
+the same `DoctorReport` verdict on every leg. Default output is the
+check table; `--json` prints the verdict object. Exit codes are pinned
+for deploy gates: **0** healthy, **1** broken (any error-severity check
+failed — or the remote verdict could not be fetched), **2** degraded
+(only warn-severity checks failed).
 
 ## Async jobs & webhooks
 

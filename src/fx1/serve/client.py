@@ -54,6 +54,7 @@ from fx1.sdk import (
 )
 from fx1.serve.backends import BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
+from fx1.serve.doctor import DoctorCheck, DoctorReport, doctor_verdict
 from fx1.serve.usage_report import UsageReport
 
 __all__ = [
@@ -3533,3 +3534,72 @@ class HarnessClient:
         latched — a deploy loop polls this before cutting traffic."""
         out = self._json("GET", "/ready", idempotent=True)
         return {"ready": bool(out["ready"]), "inflight": int(out["inflight"])}
+
+    def doctor(self, *, probe: bool = True) -> DoctorReport:
+        """Deployment diagnosis of the remote harness — proxies the
+        admin-scoped ``GET /harness/doctor`` verdict and appends the two
+        checks only a client can run: ``version_contract`` (the server's
+        ``api_version`` against ``EXPECTED_API_VERSION``) and
+        ``openapi_spec`` (the pinned spec route reachable + parseable).
+        ``verdict`` is recomputed over the union — a contract mismatch
+        marks the deployment broken for this client. ``probe=False``
+        asks the server to skip its endpoint probes (no BYOK/engine
+        network touches)."""
+        path = "/harness/doctor" if probe else "/harness/doctor?probe=false"
+        out = self._json("GET", path, idempotent=True)
+        report = DoctorReport.model_validate(out)
+        report.checks.append(self._doctor_version_check())
+        report.checks.append(self._doctor_openapi_check())
+        report.verdict = doctor_verdict(report.checks)
+        return report
+
+    def _doctor_version_check(self) -> DoctorCheck:
+        """Client-side contract check: this build's ``EXPECTED_API_VERSION``
+        against the server's — a mismatch means calls would misbehave
+        even while the server itself is healthy."""
+        try:
+            out = self.server_version()
+        except Exception as exc:  # noqa: BLE001 — a doctor check reports, never raises
+            return DoctorCheck(
+                name="version_contract",
+                ok=False,
+                detail=f"/harness/version unreachable: {exc}",
+                severity="warn",
+            )
+        raw = out.get("api_version")
+        remote = str(raw) if raw is not None else None
+        ok = remote == EXPECTED_API_VERSION
+        return DoctorCheck(
+            name="version_contract",
+            ok=ok,
+            detail=(
+                f"server api {remote!r} matches client {EXPECTED_API_VERSION!r}"
+                if ok
+                else f"server api {remote!r}, client expects "
+                f"{EXPECTED_API_VERSION!r} — upgrade the server or pin the client"
+            ),
+        )
+
+    def _doctor_openapi_check(self) -> DoctorCheck:
+        """The OpenAPI spec route must serve a parseable spec — codegen and
+        contract audits depend on it."""
+        try:
+            _, _, body = self._request("GET", "/openapi.json", idempotent=True)
+        except Exception as exc:  # noqa: BLE001 — report the fault, never raise
+            return DoctorCheck(
+                name="openapi_spec",
+                ok=False,
+                detail=f"spec route unreachable: {exc}",
+                severity="warn",
+            )
+        try:
+            spec = json.loads(body)
+        except json.JSONDecodeError:
+            spec = None
+        ok = isinstance(spec, dict) and isinstance(spec.get("paths"), dict)
+        return DoctorCheck(
+            name="openapi_spec",
+            ok=ok,
+            detail="spec served" if ok else "spec route returned a non-spec payload",
+            severity="warn",
+        )

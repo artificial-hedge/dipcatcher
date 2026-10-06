@@ -1149,6 +1149,76 @@ def harness_selftest(
         raise typer.Exit(code=2)
 
 
+@harness_app.command("doctor")
+def harness_doctor(
+    remote: str | None = typer.Option(
+        None,
+        "--remote",
+        help="Diagnose a live deployment via the admin-scoped "
+        "GET /harness/doctor (needs an admin credential); the client "
+        "appends its wire-side checks (api-version contract, OpenAPI "
+        "spec reachability).",
+    ),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    state_dir: str | None = typer.Option(
+        None,
+        "--state-dir",
+        help="Bind the in-process harness's stores to this dir for the "
+        "diagnosis (local mode only — a remote server reports its own).",
+    ),
+    probe: bool = typer.Option(
+        True,
+        "--probe/--no-probe",
+        help="Run the cheap endpoint probes (BYOK /models auth check, "
+        "local-engine /v1/models liveness). Never a paid completion.",
+    ),
+    json_out: bool = typer.Option(
+        False, "--json", help="Print the JSON verdict object instead of the check table."
+    ),
+) -> None:
+    """Deployment diagnosis — why is my harness broken or degraded?
+
+    Introspects the deployment rather than exercising it (``selftest``
+    is the functional gate): backend config + BYOK auth probe +
+    checkpoint/engine liveness, state dir writability/disk/journal
+    replay, managed-key inventory/quota/rpm saturation, pool capacity +
+    drain latch, build version. Read-only — never bills a provider,
+    never mutates state.
+
+    Exit codes (pinned): 0 healthy, 1 broken (any error-severity check
+    failed — or the remote verdict could not be fetched), 2 degraded
+    (only warn-severity checks failed)."""
+    from fx1.serve.doctor import DoctorReport, render_check_table
+
+    if remote is not None and state_dir is not None:
+        _bad_arg("--state-dir applies to local mode only")
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        try:
+            report: DoctorReport = client.doctor(probe=probe)
+        except Exception as exc:  # noqa: BLE001 — unreachable/refused deploys are broken
+            typer.echo(f"error: {type(exc).__name__}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    else:
+        from fx1.sdk import Fx1Harness
+
+        surface = Fx1Harness(state_dir=state_dir)
+        try:
+            report = surface.doctor(probe_backends=probe, timeout_s=min(timeout_s, 10.0))
+        except Exception as exc:  # noqa: BLE001 — a crashed diagnosis is a broken verdict
+            typer.echo(f"error: {type(exc).__name__}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    if json_out:
+        typer.echo(json.dumps(report.model_dump(mode="json"), indent=2))
+    else:
+        typer.echo(render_check_table(report))
+    if report.verdict == "broken":
+        raise typer.Exit(code=1)
+    if report.verdict == "degraded":
+        raise typer.Exit(code=2)
+
+
 @harness_app.command("bench")
 def harness_bench(
     remote: str | None = typer.Option(
