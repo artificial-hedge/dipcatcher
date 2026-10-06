@@ -1173,12 +1173,16 @@ def webhookdel_audit() -> dict[str, Any]:
             out.update(_probe_validation(_make_ctx(root / "val"), sink))
 
     finally:
-        sink.close()
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        try:
+            sink.close()
+        finally:
+            # Env restore must survive a close() failure — the opt-in is
+            # process-wide and must never leak past the battery.
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
     return out
 
 
@@ -1188,7 +1192,7 @@ def webhookdel_audit_bench() -> dict[str, Any]:
     from quant_fund.utils.reproducibility import git_revision
 
     r = webhookdel_audit()
-    ok = all(v is True for v in r.values())
+    ok = bool(r) and all(v is True for v in r.values())
     defects = sorted(k for k, v in r.items() if v is not True)
     out: dict[str, Any] = {
         "kind": "webhookdel_audit",
