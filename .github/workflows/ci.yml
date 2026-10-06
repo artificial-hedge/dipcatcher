@@ -23,11 +23,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege. Artifact upload uses the runner's artifact token.
+# Least privilege. Cache and artifact services use runner-scoped runtime
+# tokens; the workflow's GITHUB_TOKEN never needs Actions write access.
 permissions:
   contents: read
-  # setup-uv and actions/cache save dependency and synthetic-data caches.
-  actions: write
 
 jobs:
   lint:
