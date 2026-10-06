@@ -3989,8 +3989,13 @@ def _is_anthropic_path(path: str) -> bool:
 def _is_anthropic_surface(request: Request) -> bool:
     """Requests answered in Anthropic's dialect — the /v1/messages tree,
     plus any /v1/* path addressed with an ``anthropic-version`` header
-    (the dual-grammar routes, e.g. model listing)."""
-    return _is_anthropic_path(request.url.path) or "anthropic-version" in request.headers
+    (the dual-grammar routes, e.g. model listing). The header is only
+    meaningful on the OpenAI surface: an ``anthropic-version`` header on a
+    non-/v1 path (ops endpoints, harness control) must not upgrade the
+    answer to Anthropic's dialect."""
+    return _is_anthropic_path(request.url.path) or (
+        is_openai_path(request.url.path) and "anthropic-version" in request.headers
+    )
 
 
 # Statuses the stock anthropic SDK retries by default — x-should-retry
@@ -8911,8 +8916,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except ApiError as exc:
             # An unconfigured/unreachable backend is a verdict, not an
             # HTTP fault — report it as ok:false. Client-side arg errors
-            # (404/422) still propagate as request errors.
+            # (404/422) still propagate as request errors. The verdict
+            # still meters under probe:<name> — a resolver failure is a
+            # probe outcome, and a monitoring scrape that only watches the
+            # series must see it.
             if exc.status_code == 503:
+                metrics.record_complete(
+                    f"probe:{name}",
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    usage=None,
+                )
                 return _verdict(
                     BackendProbeResponse(
                         backend=name,
