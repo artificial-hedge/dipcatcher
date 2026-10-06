@@ -346,3 +346,59 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Lifecycle audit maintenance (PR pending)
+
+The new `lifecycle_audit` battery pins the `fx1 harness serve` process
+lifecycle end to end: cold-start boot ordering (journals replay and
+compact before uvicorn binds — a request racing boot is refused at
+TCP, never half-served), `/health` public liveness vs `/ready`
+credentialed readiness, CLI flag wiring and fail-closed bad values
+(non-loopback without `FX1_API_KEY`, unparseable `--port`, the absent
+`--api-key` flag, file-typed or unreadable `--state-dir`, malformed
+`--shutdown-grace-s`), real-signal shutdown (SIGTERM exits by the
+signal; SIGINT folds into a normal `asyncio.run` cancellation — rc 0),
+in-flight request draining through the shutdown window, bounded
+graceful-shutdown cancellation, SIGKILL torn-tail quarantine with
+restart verdicts, key/idempotency-claim survival, double-boot mutual
+exclusion, process-level drain latching, in-process lifespan-exit
+ordering (queued job `cancelled` once + one signed webhook; running
+work unflipped), and corrupt-journal quarantine (torn tail truncates
+honestly, mid-chain edits drop the posterior).
+
+Building the lane surfaced two real defects, fixed on the same PR:
+
+* Two `fx1 serve` processes pointed at one `--state-dir` had NO mutual
+  exclusion — each boot replayed and compacted the shared journals,
+  then appended under a private in-memory chain head; the interleaved
+  writes broke the hash chain and every record journaled after the
+  second boot was silently dropped on the next replay. `create_app`
+  now holds a nonblocking exclusive advisory lock
+  (`<state-dir>/.fx1-serve.lock`) for the process lifetime — released
+  on lifespan exit and by the OS on any death including SIGKILL — so
+  a second process fails closed at boot instead of forking journal
+  history. Same-process second apps share one refcounted lease.
+* `uvicorn.run` was called without `timeout_graceful_shutdown`, so a
+  graceful shutdown waited out in-flight connections indefinitely —
+  a stuck upstream could pin exit forever, and a second signal could
+  not break `wait_closed`. `--shutdown-grace-s` /
+  `FX1_API_SHUTDOWN_GRACE_S` (default 30 s, `0` disables) now wires
+  uvicorn's bound; work exceeding it is cancelled with a logged
+  overrun instead of pinning exit, and the client observes an honest
+  disconnect rather than a silent 200.
+
+The battery also pins measured (pre-existing, non-defect) semantics:
+`queued` is a transient hop inside an admitted submit, not a visible
+queue — a submit that cannot get an `inflight` slot is refused
+`503`/`over_capacity` (enveloped, `Retry-After` set); the keys journal
+is lazily materialized on first mutation while jobs.jsonl is
+compacted unconditionally at boot; SIGINT exits 0 because uvicorn
+re-raises onto the restored asyncio Runner handler; a second signal
+inside the drain window does not short-circuit `wait_closed`
+(upstream uvicorn semantics the bound makes survivable); a request
+racing SIGTERM terminates honestly — refused at TCP or a complete
+response, never a half-answer.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.

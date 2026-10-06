@@ -281,6 +281,10 @@ _BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
 _BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
 _STORE_MAX_ENV = "FX1_API_STORE_MAX"
 _STATE_DIR_ENV = "FX1_API_STATE_DIR"
+_SHUTDOWN_GRACE_ENV = "FX1_API_SHUTDOWN_GRACE_S"
+# Bounded drain window on SIGTERM/SIGINT: without it uvicorn waits out
+# in-flight connections forever and a stuck request pins shutdown.
+_DEFAULT_SHUTDOWN_GRACE_S = 30.0
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -2009,6 +2013,22 @@ def _env_float_floor(name: str, default: float, given: float | None) -> float:
     return v
 
 
+def _shutdown_grace_s(given: float | None = None) -> int | None:
+    """Seconds uvicorn waits out in-flight work on shutdown before
+    cancelling tasks — ``0`` disables the bound (legacy unbounded drain).
+    From arg or ``FX1_API_SHUTDOWN_GRACE_S``, default
+    ``_DEFAULT_SHUTDOWN_GRACE_S``; a fractional grace rounds up so it can
+    never silently disable the bound."""
+    v = (
+        float(os.environ.get(_SHUTDOWN_GRACE_ENV, str(_DEFAULT_SHUTDOWN_GRACE_S)))
+        if given is None
+        else given
+    )
+    if v < 0:
+        raise ValueError(f"{_SHUTDOWN_GRACE_ENV} must be >= 0, got {v}")
+    return math.ceil(v) if v > 0 else None
+
+
 _IDEM_SEMANTIC_HEADERS = (
     "x-fx1-backend",
     "x-fx1-fallbacks",
@@ -2640,12 +2660,107 @@ def _submit_job(
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
 
+_STATE_DIR_LOCK_NAME = ".fx1-serve.lock"
+
+
+def _state_dir_lock_try_acquire(state_dir: Path) -> int | None:
+    """Best-effort nonblocking exclusive advisory lock on the state dir.
+
+    Returns the held fd on success, ``None`` when another process already
+    holds it, and raises ``OSError`` for everything else (unreadable or
+    file-typed dir).  The lock lives only as long as the fd — the OS
+    releases it on ``close`` and on process death including SIGKILL, so a
+    killed server can always restart into the same dir.
+    """
+    fd = os.open(state_dir / _STATE_DIR_LOCK_NAME, os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        if os.name == "posix":
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        elif os.name == "nt":  # pragma: no cover - windows only
+            import importlib
+
+            msvcrt = importlib.import_module("msvcrt")
+            if os.lseek(fd, 0, os.SEEK_END) == 0:
+                os.write(fd, b"\0")
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+    except OSError:
+        os.close(fd)
+        return None
+    return fd
+
+
+def _state_dir_lock_release(fd: int | None) -> None:
+    if fd is None:
+        return
+    with suppress(OSError):
+        if os.name == "posix":
+            import fcntl
+
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        elif os.name == "nt":  # pragma: no cover - windows only
+            import importlib
+
+            msvcrt = importlib.import_module("msvcrt")
+            os.lseek(fd, 0, os.SEEK_SET)
+            msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+    os.close(fd)
+
+
+class _StateDirLease:
+    """Process-local lease on a state dir.
+
+    The OS-level lock belongs to the process, not the app instance — a
+    second ``create_app`` on the same dir inside one process must not
+    trip on its own lock (tests and the SDK do exactly that).  One lease
+    per resolved dir per process; released when the last app exits its
+    lifespan.
+    """
+
+    _lock = threading.Lock()
+    _held: dict[Path, _StateDirLease] = {}
+
+    def __init__(self, key: Path, fd: int) -> None:
+        self._key = key
+        self._fd: int | None = fd
+        self._refcount = 1
+
+    @classmethod
+    def acquire(cls, state_dir: Path) -> _StateDirLease:
+        key = state_dir.resolve()
+        with cls._lock:
+            existing = cls._held.get(key)
+            if existing is not None:
+                existing._refcount += 1
+                return existing
+            fd = _state_dir_lock_try_acquire(key)
+            if fd is None:
+                raise ValueError(
+                    f"state dir is already locked by another fx1 serve process: {state_dir}"
+                )
+            lease = cls(key, fd)
+            cls._held[key] = lease
+            return lease
+
+    def release(self) -> None:
+        with self._lock:
+            self._refcount -= 1
+            if self._refcount > 0:
+                return
+            self._held.pop(self._key, None)
+            _state_dir_lock_release(self._fd)
+            self._fd = None
+
+
 def _make_lifespan(
     metrics: _Metrics,
     job_store: _JobStore,
     eval_store: EvalStore,
     jobs_executor: ThreadPoolExecutor,
     ft_store: FTJobStore | None = None,
+    state_dir_lease: _StateDirLease | None = None,
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     """Graceful-exit contract: on shutdown the gate drains (new work gets
     503), every still-queued job flips to 'cancelled' and fires its
@@ -2655,16 +2770,23 @@ def _make_lifespan(
 
     @asynccontextmanager
     async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        yield
-        metrics.draining.set()
-        for pending in job_store.cancel_pending():
-            _deliver_callback(pending)
-        for pending_eval in eval_store.cancel_pending():
-            _deliver_callback(pending_eval)
-        if ft_store is not None:
-            for pending_ft in ft_store.cancel_pending():
-                _deliver_callback(pending_ft)
-        jobs_executor.shutdown(wait=False, cancel_futures=True)
+        try:
+            yield
+            metrics.draining.set()
+            for pending in job_store.cancel_pending():
+                _deliver_callback(pending)
+            for pending_eval in eval_store.cancel_pending():
+                _deliver_callback(pending_eval)
+            if ft_store is not None:
+                for pending_ft in ft_store.cancel_pending():
+                    _deliver_callback(pending_ft)
+            jobs_executor.shutdown(wait=False, cancel_futures=True)
+        finally:
+            # The lock is also released by the OS if the process dies
+            # (SIGKILL included); releasing here makes in-process exit
+            # honest too.
+            if state_dir_lease is not None:
+                state_dir_lease.release()
 
     return _lifespan
 
@@ -10133,6 +10255,17 @@ def create_app(
     probe_lock = threading.Lock()
     state_dir = state_dir or os.environ.get(_STATE_DIR_ENV) or None
     state_path = Path(state_dir) if state_dir is not None else None
+    # Boot-time mutual exclusion: two `fx1 serve` processes must never
+    # share one state dir — each would replay+compact the same journals
+    # and then append with a private in-memory chain head, forking the
+    # hash chain and silently dropping the peer's records on the next
+    # replay.  An exclusive advisory lock held for the process lifetime
+    # makes the second boot fail closed at startup instead.  The dir is
+    # materialized at boot (before any store lazily writes into it).
+    state_dir_lease: _StateDirLease | None = None
+    if state_path is not None:
+        state_path.mkdir(parents=True, exist_ok=True)
+        state_dir_lease = _StateDirLease.acquire(state_path)
 
     def _journal(name: str) -> JobJournal | None:
         return JobJournal(state_path / name) if state_path is not None else None
@@ -10273,7 +10406,9 @@ def create_app(
             "commands, sealed-receipt verification, and gated model "
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
-        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor, ft_store),
+        lifespan=_make_lifespan(
+            metrics, job_store, eval_store, jobs_executor, ft_store, state_dir_lease
+        ),
         openapi_tags=[
             {"name": "runs", "description": "Synchronous lab-command execution."},
             {"name": "jobs", "description": "Async run jobs: submit, poll, SSE, cancel, batch."},
@@ -10940,4 +11075,11 @@ if __name__ == "__main__":
         raise SystemExit(
             "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure"
         )
-    uvicorn.run(app, host=host, port=port, reload=False, server_header=False)
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        reload=False,
+        server_header=False,
+        timeout_graceful_shutdown=_shutdown_grace_s(),
+    )

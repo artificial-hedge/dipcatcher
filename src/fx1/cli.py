@@ -528,11 +528,16 @@ def harness_serve(
         help="Durable state dir — journals async-job transitions across restarts "
         "(env FX1_API_STATE_DIR; unset = in-memory only).",
     ),
+    shutdown_grace_s: float | None = typer.Option(
+        None,
+        help="Seconds to drain in-flight work on SIGTERM/SIGINT before "
+        "force-cancelling (env FX1_API_SHUTDOWN_GRACE_S, default 30; 0 = unbounded).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
 
-    from fx1.serve.api import create_app
+    from fx1.serve.api import _shutdown_grace_s, create_app
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
@@ -555,10 +560,18 @@ def harness_serve(
             store_max=store_max,
             state_dir=state_dir,
         )
+        grace_s = _shutdown_grace_s(shutdown_grace_s)
     except ValueError as exc:
         typer.echo(str(exc), err=True)
         raise typer.Exit(code=2) from exc
-    uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
+    uvicorn.run(
+        harness_api,
+        host=host,
+        port=port,
+        reload=False,
+        server_header=False,
+        timeout_graceful_shutdown=grace_s,
+    )
 
 
 _BACKEND_HELP = (
