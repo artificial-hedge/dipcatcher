@@ -395,3 +395,43 @@ lane's own battery.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 54 to 55 and remains
 `partial`.
+
+### Webhook delivery audit maintenance (PR #2905)
+
+The `webhookdel_audit` battery pins the HMAC-signed webhook *dispatcher*
+end to end (the `webhook_audit` lane covered the registration surface):
+the verdict table measured on a live loopback sink — 2xx delivers on
+attempt 1, every 4xx including 429-with-`Retry-After` is definitive in a
+single attempt, 5xx and 3xx retry to the `WEBHOOK_MAX_ATTEMPTS=3`
+ceiling, and redirects are never followed (the `Location` target never
+receives a request). The exponential backoff schedule is measured on the
+wire (0.5s then 1.0s gaps), each attempt opens a fresh connection,
+re-mints the signature pair, and re-resolves DNS; connection-refused,
+unresolvable DNS, read timeout, and TLS-mismatch faults each classify
+loudly into `callback_error` and stay bounded; a dead resolved address
+fails over to its sibling inside the same attempt.
+
+At the app surface: submit returns before the delivery verdict can
+exist, the terminal status is GETable while the verdict is mid-flight,
+a queued-cancel DELETE returns only after the `cancelled` delivery lands
+(delivery runs on the request thread), and a retrying delivery holds its
+inflight slot — a second submit is refused `503 over_capacity` until the
+verdict lands. A single-worker executor delivers FIFO; a pool dispatches
+concurrently; cancel-path deliveries run on request threads even with
+every pool worker asleep. Every terminal surface fires exactly once and
+never re-fires. Under `--state-dir` the post-verdict mark journals
+`callback_status`/`callback_attempts` atomically, the signing secret
+never touches disk, a restart restores the verdict without re-firing,
+a recovered queued job fails closed as `failed` with zero attempts
+(honest abandon — nothing can re-sign), and idempotency mappings
+survive. The drain latch refuses new work `503 draining` without
+freezing admitted work, and lifespan shutdown flips queued jobs to
+`cancelled` and fires the webhook exactly once. `callback_*` verdicts
+surface honestly on every record GET, and every refusal arrives in the
+path's own error grammar.
+
+No defects found — the contract held on all 75 probes.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 55 to 56 and remains
+`partial`.
