@@ -279,7 +279,11 @@ def crash_leverage(
             lev[i] = 0.0  # wealth ≤ 0 at the lookback anchor: book is ruined
             continue
         if base <= _EPS:
-            continue  # near-zero anchor makes the trailing ratio meaningless
+            # A positive but numerically degenerate anchor cannot support a
+            # meaningful trailing-return ratio.  Fail closed for this bar;
+            # later windows still evaluate against their own anchors.
+            lev[i] = 0.0
+            continue
         trail = last / base - 1.0
         if trail <= float(crash_return):
             lev[i] = 0.0
