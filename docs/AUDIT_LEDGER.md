@@ -376,7 +376,7 @@ it — fail closed either way). All fixtures are SYNTHETIC correctness
 checks; no live-PnL or capability claims. The extensions census is 94
 modules, operations 43 — both remain `partial`.
 
-### Capabilities/selftest audit maintenance (PR #NNNN)
+### Capabilities/selftest audit maintenance (PR #2913)
 
 `capabilities.py` and `selftest.py` move from `pending` to `audited`.
 
