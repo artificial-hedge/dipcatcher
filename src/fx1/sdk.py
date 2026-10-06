@@ -37,7 +37,6 @@ import os
 import tempfile
 import threading
 import time
-import urllib.parse
 import uuid
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Mapping
@@ -71,6 +70,7 @@ from fx1.serve.backends import (
     SamplingParams,
     StreamingBackend,
     TokenCountingBackend,
+    byok_base_url_problem,
     get_backend,
     truncate_chunks,
 )
@@ -4378,9 +4378,9 @@ class Fx1Harness:
             required = {"base_url", "api_key", "model"}
             if set(byok) != required:
                 raise ValueError(f"byok needs exactly {sorted(required)}, got {sorted(byok)}")
-            parsed = urllib.parse.urlparse(byok["base_url"])
-            if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise ValueError(f"byok.base_url must be an http(s) URL, got {byok['base_url']!r}")
+            problem = byok_base_url_problem(byok["base_url"])
+            if problem is not None:
+                raise ValueError(f"byok.base_url {problem}")
             kwargs.update(byok)
         if backend == "local_fx1":
             checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")

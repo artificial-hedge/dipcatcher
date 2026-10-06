@@ -30,15 +30,22 @@ import json
 import math
 import threading
 import time
-import urllib.parse
 import uuid
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal
 
 import jsonschema
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
+from fx1.serve.backends import byok_base_url_problem
 from fx1.serve.receipt_store import SHA256_HEX
 from fx1.serve.webhooks import check_callback_url
 
@@ -241,9 +248,11 @@ class ByokOverride(_Model):
     @field_validator("base_url")
     @classmethod
     def _http_url(cls, v: str) -> str:
-        parsed = urllib.parse.urlparse(v)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"byok.base_url must be an http(s) URL, got {v!r}")
+        # the shared wire rule — never echoes the URL back (it may
+        # carry userinfo secrets a caller pasted by mistake)
+        problem = byok_base_url_problem(v)
+        if problem is not None:
+            raise ValueError(f"byok.base_url {problem}")
         return v
 
 
@@ -704,6 +713,15 @@ def _resolve_openai_link(
         and not byok_headers
         and model.startswith("ft:")
     ):
+        if ext is not None and ext.byok is not None:
+            # an ft: name pins the local_fx1 lane — per-request BYOK
+            # credentials have no link to bind, so refusing beats
+            # silently dropping them (a dropped credential is a
+            # silently misrouted call).
+            raise OpenAICompatError(
+                "a byok override applies only to a 'byok' link in the chain",
+                status=422,
+            )
         checkpoint = ft_resolver(model) if ft_resolver is not None else None
         if checkpoint is None:
             raise OpenAICompatError(
@@ -752,7 +770,24 @@ def _resolve_openai_link(
             raise OpenAICompatError("X-Fx1-Byok-Base-Url requires X-Fx1-Byok-Api-Key")
         if not byok_model:
             raise OpenAICompatError("byok needs a model — set X-Fx1-Byok-Model or body.model")
-        byok = ByokOverride(base_url=byok_headers, api_key=api_key, model=byok_model)
+        try:
+            byok = ByokOverride(base_url=byok_headers, api_key=api_key, model=byok_model)
+        except ValidationError as exc:
+            # the body path reports these as request-validation 422s —
+            # the header path must land the same verdict, never a bare
+            # 500 when the exception escapes the translator.
+            raise OpenAICompatError(
+                "; ".join(str(e.get("msg", "invalid byok override")) for e in exc.errors()),
+                status=422,
+            ) from exc
+    if byok is not None and "byok" not in {backend, *fallbacks}:
+        raise OpenAICompatError(
+            "a byok override applies only to a 'byok' link in the chain", status=422
+        )
+    if checkpoint_dir is not None and "local_fx1" not in {backend, *fallbacks}:
+        raise OpenAICompatError(
+            "checkpoint_dir applies only to a 'local_fx1' link in the chain", status=422
+        )
     return backend, fallbacks, checkpoint_dir, byok, None
 
 

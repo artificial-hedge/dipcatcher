@@ -12,6 +12,7 @@ Credentials come from environment variables only — never hardcoded.
 from __future__ import annotations
 
 import contextlib
+import http.client
 import json
 import os
 import shlex
@@ -206,6 +207,38 @@ def _env_float(name: str, override: float | None, default: float) -> float:
     return val
 
 
+class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
+    """Fail closed instead of replaying a credentialed request elsewhere.
+
+    ``urllib`` follows redirects by default and preserves caller-supplied
+    headers such as ``Authorization`` even when the destination changes
+    origin.  Every OpenAI-compatible request carries a provider credential,
+    so no redirect response is safe to follow implicitly.
+    """
+
+    def redirect_request(
+        self,
+        req: urllib.request.Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> None:
+        del req, fp, code, msg, headers, newurl
+        return None
+
+
+def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Any:
+    """Open one credentialed request with redirects disabled.
+
+    Constructing the opener per call keeps mutable handler state scoped to
+    that call when backend instances are shared by concurrent requests.
+    """
+    opener = urllib.request.build_opener(_RefuseRedirects())
+    return opener.open(request, timeout=timeout_s)  # noqa: S310  # nosec B310
+
+
 def _extract_usage(payload: Any) -> dict[str, int] | None:
     """Pull the ``usage`` dict off an OpenAI-compatible response.
 
@@ -273,10 +306,22 @@ def _openai_chat_complete(
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        # OSError covers TimeoutError — urlopen does not wrap read-side
+        # stalls in URLError, so without this a slow upstream escapes the
+        # error envelope as a bare 500.
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError) as exc:
@@ -320,7 +365,7 @@ def _openai_tokenize_count(
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
     except urllib.error.HTTPError as exc:
         if exc.code in (400, 404, 405, 501):
@@ -329,7 +374,14 @@ def _openai_tokenize_count(
             ) from exc
         raise RuntimeError(f"{label} tokenize failed: HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} tokenize payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
     count = _extract_token_count(payload)
     if count is None:
         raise RuntimeError(
@@ -431,10 +483,19 @@ def _openai_chat_complete_tools(
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} completion payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
     try:
         choice = payload["choices"][0]
         message = choice["message"]
@@ -517,7 +578,7 @@ def _openai_chat_stream(
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
             for raw_line in response:
                 line = raw_line.decode("utf-8", "replace").strip()
                 if not line.startswith("data:"):
@@ -557,8 +618,15 @@ def _openai_chat_stream(
                         f"{type(content).__name__}, not str"
                     )
                 yield content
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
 
 
 def _embedding_item_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
@@ -620,10 +688,19 @@ def _openai_embeddings_complete(
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
     try:
-        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+        with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"{label} endpoint returned HTTP {exc.code}") from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+        reason = type(exc.reason).__name__
+        raise RuntimeError(f"{label} endpoint unreachable ({reason})") from exc
+    except (OSError, http.client.HTTPException) as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"malformed {label} embeddings payload: not JSON") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"{label} endpoint transport fault ({type(exc).__name__})") from exc
     data = payload.get("data")
     if not isinstance(data, list):
         raise RuntimeError(
@@ -832,8 +909,24 @@ class HostedK3Backend(_UsageTracker):
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=self._timeout_s) as response:  # noqa: S310 — pinned Moonshot API URL  # nosec B310
-            payload = json.loads(response.read().decode())
+        try:
+            with _openai_urlopen(request, timeout_s=self._timeout_s) as response:
+                payload = json.loads(response.read().decode())
+        except urllib.error.HTTPError as exc:
+            raise RuntimeError(f"hosted_k3 endpoint returned HTTP {exc.code}") from exc
+        except urllib.error.URLError as exc:
+            reason = type(exc.reason).__name__
+            raise RuntimeError(f"hosted_k3 endpoint unreachable ({reason})") from exc
+        except (OSError, http.client.HTTPException) as exc:
+            raise RuntimeError(
+                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
+            ) from exc
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError("malformed hosted_k3 completion payload: not JSON") from exc
+        except UnicodeError as exc:
+            raise RuntimeError(
+                f"hosted_k3 endpoint transport fault ({type(exc).__name__})"
+            ) from exc
         content = payload["choices"][0]["message"]["content"]
         if not isinstance(content, str):
             raise RuntimeError(
@@ -934,6 +1027,36 @@ class HostedK3Backend(_UsageTracker):
         )
 
 
+def byok_base_url_problem(url: str) -> str | None:
+    """Why a BYOK endpoint URL is unacceptable — ``None`` when it is.
+
+    A BYOK base names scheme+host+path only: no userinfo (credentials in
+    a URL are a leak surface — they ride every redirect and error), no
+    params/query/fragment (the harness owns the request shape), a real
+    host, a numeric port. Returns reason wording only — the URL itself is
+    never echoed into error text, since it may carry pasted secrets.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except ValueError:
+        return "must be a well-formed http(s) URL"
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return "must be an http(s) URL"
+    if parsed.username is not None or parsed.password is not None:
+        return "must not embed userinfo credentials"
+    if parsed.params or parsed.query or parsed.fragment:
+        return "must not carry params, query, or fragment"
+    try:
+        port = parsed.port
+    except ValueError:
+        return "port must be 1-65535"
+    if port is not None and not 0 < port < 65536:
+        return "port must be 1-65535"
+    if not parsed.hostname:
+        return "must name a host"
+    return None
+
+
 class OpenAICompatBackend(_UsageTracker):
     """BYOK — any OpenAI-compatible chat-completions endpoint.
 
@@ -976,9 +1099,9 @@ class OpenAICompatBackend(_UsageTracker):
                 + ", ".join(missing)
                 + " (fx-1 never hardcodes credentials)"
             )
-        parsed = urllib.parse.urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise RuntimeError(f"{BYOK_BASE_URL_ENV} must be an http(s) URL, got {url!r}")
+        problem = byok_base_url_problem(url)
+        if problem is not None:
+            raise RuntimeError(f"{BYOK_BASE_URL_ENV} {problem}")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
         super().__init__()

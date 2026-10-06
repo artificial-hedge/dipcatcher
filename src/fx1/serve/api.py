@@ -1888,10 +1888,45 @@ def _env_float_floor(name: str, default: float, given: float | None) -> float:
     return v
 
 
-def _body_fp(body: BaseModel, *, exclude: set[str] | None = None) -> str:
+_IDEM_SEMANTIC_HEADERS = (
+    "x-fx1-backend",
+    "x-fx1-fallbacks",
+    "x-fx1-checkpoint-dir",
+    "x-fx1-byok-base-url",
+    "x-fx1-byok-api-key",
+    "x-fx1-byok-model",
+    "x-fx1-timeout",
+    "x-fx1-receipt-hashes",
+)
+
+
+def _body_fp(
+    body: BaseModel,
+    *,
+    exclude: set[str] | None = None,
+    headers: Mapping[str, str] | None = None,
+) -> str:
     """Fingerprint for the idempotency contract — hashed so a stored
-    dedupe record can never carry a secret (per-request BYOK keys)."""
-    return hashlib.sha256(body.model_dump_json(exclude=exclude).encode()).hexdigest()
+    dedupe record can never carry a secret (per-request BYOK keys).
+
+    Backend-selection headers affect the executed request just as their
+    body-level ``fx1`` twins do. Bind their values into the digest so a
+    caller cannot change a BYOK destination or credential and silently
+    receive the first upstream's replay. The raw values are never stored.
+    Preserve the historical body-only digest when none are present.
+    """
+    serialized = body.model_dump_json(exclude=exclude).encode()
+    if headers is not None:
+        selected = {
+            name: value
+            for name in _IDEM_SEMANTIC_HEADERS
+            if (value := headers.get(name)) is not None
+        }
+        if selected:
+            serialized += (
+                b"\0" + json.dumps(selected, sort_keys=True, separators=(",", ":")).encode()
+            )
+    return hashlib.sha256(serialized).hexdigest()
 
 
 def _responses_sse(
@@ -2218,8 +2253,47 @@ def _deliver_callback(
     rec.callback_attempts = attempts
 
 
+_CREDENTIAL_LOC_SUFFIXES = ("_key", "_secret", "_token", "_password")
+
+
+def _redact_credential_inputs(errs: Sequence[Any]) -> None:
+    """Blank the echoed ``input`` on errors inside credential-bearing
+    fields. A rejection's ``loc``+``msg`` stay (the caller needs them to
+    fix the request); the rejected *value* of a ``byok``/``api_key``/
+    ``*_secret``-style field never round-trips into the wire body."""
+    credential_locs = {"byok", "judge_byok", "api_key"}
+    for err in errs:
+        loc = err.get("loc")
+        if not isinstance(loc, (tuple, list)):
+            continue
+        if any(
+            str(part) in credential_locs or str(part).endswith(_CREDENTIAL_LOC_SUFFIXES)
+            for part in loc
+        ):
+            if "input" in err:
+                err["input"] = "[redacted]"
+            err.pop("ctx", None)
+            err.pop("url", None)
+
+
+def _validation_msgs(exc: ValidationError) -> str:
+    return "; ".join(str(e.get("msg", "invalid request")) for e in exc.errors())
+
+
+def _request_or_422[ReqT: BaseModel](model_cls: type[ReqT], kwargs: dict[str, Any]) -> ReqT:
+    """Bind a translated request through the harness model — the
+    cross-field checks (chain membership, sampling shape) only exist
+    there, so a rejection must land the same 422 the body-level
+    validator would produce, never escape as a bare 500."""
+    try:
+        return model_cls(**kwargs)
+    except ValidationError as exc:
+        raise ApiError(422, _validation_msgs(exc), code="invalid_request") from exc
+
+
 def _validation_response(request: Request, exc: RequestValidationError) -> JSONResponse:
     errs = exc.errors()
+    _redact_credential_inputs(errs)
     if is_openai_path(request.url.path):
         msg = "; ".join(
             f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}" for e in errs[:4]
@@ -4594,18 +4668,21 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         backend, ckpt = _run_model_backend(body.model)
         if body.judge_byok is not None and schema.judge_backend != "byok":
             raise ApiError(422, "judge_byok applies only when judge_backend='byok'")
-        sub = EvalSubmitRequest(
-            suite=schema.suite,
-            backend=backend,
-            seed=schema.seed,
-            checkpoint_dir=ckpt or schema.checkpoint_dir,
-            byok=body.byok,
-            timeout_s=schema.timeout_s,
-            fallbacks=schema.fallbacks,
-            judge_backend=schema.judge_backend,
-            judge_byok=body.judge_byok,
-            callback_url=body.callback_url,
-            callback_secret=body.callback_secret,
+        sub = _request_or_422(
+            EvalSubmitRequest,
+            {
+                "suite": schema.suite,
+                "backend": backend,
+                "seed": schema.seed,
+                "checkpoint_dir": ckpt or schema.checkpoint_dir,
+                "byok": body.byok,
+                "timeout_s": schema.timeout_s,
+                "fallbacks": schema.fallbacks,
+                "judge_backend": schema.judge_backend,
+                "judge_byok": body.judge_byok,
+                "callback_url": body.callback_url,
+                "callback_secret": body.callback_secret,
+            },
         )
         # The run's dedupe namespace is scoped to the spec — the same
         # Idempotency-Key under a different eval is a different run.
@@ -5255,7 +5332,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         try:
             request = CompleteRequest(**translated)
         except ValidationError as exc:
-            raise OpenAICompatError(str(exc), status=422) from exc
+            raise OpenAICompatError(_validation_msgs(exc), status=422) from exc
         request._served_model = served_model
         return request
 
@@ -5558,12 +5635,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         digest binds the sent input and the verbatim ``data[]``).
 
         Returns ``(envelope, completion_id)``."""
-        try:
-            ereq = EmbedRequest(
-                **embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for)
-            )
-        except ValidationError as exc:
-            raise OpenAICompatError(str(exc), status=422) from exc
+        ereq = _request_or_422(
+            EmbedRequest,
+            embeddings_to_kwargs(body, headers, ft_resolver=ft_store.checkpoint_for),
+        )
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(
@@ -5859,7 +5934,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         # resume parsing first — a malformed Last-Event-ID fails before
         # any idempotency store work or model spend
         skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if skip and replay is None:
             raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
@@ -5965,7 +6040,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
         except ApiError as exc:
             return _refusal(exc.status_code, str(exc.detail))
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, anthropic_idem_store, body_fp)
         if skip and replay is None:
             return _refusal(409, _RESUME_MISS_MSG)
@@ -6224,7 +6299,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``callback_url``/``callback_secret`` are the fx1 webhook
         extension — the terminal ``message_batch`` envelope POSTs once,
         HMAC-signed when the secret is set."""
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, anthropic_idem_store, body_fp)
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
@@ -6494,7 +6569,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         # resume parsing first — a malformed Last-Event-ID fails before
         # any idempotency store work or model spend
         skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, legacy_idem_store, body_fp)
         if skip and replay is None:
             raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
@@ -6598,7 +6673,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         ``response.completed``, not ``[DONE]``).
         """
         skip = _resume_skip(last_event_id, stream=body.stream, idempotency_key=idempotency_key)
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if skip and replay is None:
             raise ApiError(409, _RESUME_MISS_MSG, code="resume_miss")
@@ -8210,7 +8285,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         on read) is POSTed to the URL once, HMAC-signed when the secret
         is set; ``callback_status``/``callback_attempts``/
         ``callback_error`` ride the projected record."""
-        body_fp = _body_fp(body)
+        body_fp = _body_fp(body, headers=request.headers)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if replay is not None:
             return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
