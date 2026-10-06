@@ -17,6 +17,7 @@ every defect. Probes are deterministic, offline, and order-independent.
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 from pydantic import ValidationError
@@ -92,7 +93,12 @@ from .openai_compat import (
 
 __all__ = ["compat_audit", "compat_audit_bench"]
 
-_MSGS = [{"role": "user", "content": "audit prompt"}]
+_AUDIT_PROMPT = "audit prompt"
+_CHAT_PATH = "/v1/chat/completions"
+_RESP_PATH = "/v1/responses"
+_CHAT_OBJECT = "chat.completion"
+_ANSWER = "the answer"
+_MSGS = [{"role": "user", "content": _AUDIT_PROMPT}]
 
 
 def _chat_body(**kw: Any) -> dict[str, Any]:
@@ -106,7 +112,7 @@ def _chat_req(**kw: Any) -> OpenAIChatRequest:
 
 
 def _resp_req(**kw: Any) -> OpenAIResponseRequest:
-    body: dict[str, Any] = {"model": "fx1", "input": "audit prompt"}
+    body: dict[str, Any] = {"model": "fx1", "input": _AUDIT_PROMPT}
     body.update(kw)
     return OpenAIResponseRequest.model_validate(body)
 
@@ -115,7 +121,7 @@ def _anth_req(**kw: Any) -> AnthropicMessagesRequest:
     body: dict[str, Any] = {
         "model": "fx1",
         "max_tokens": 64,
-        "messages": [{"role": "user", "content": "audit prompt"}],
+        "messages": [{"role": "user", "content": _AUDIT_PROMPT}],
     }
     body.update(kw)
     return AnthropicMessagesRequest.model_validate(body)
@@ -162,7 +168,7 @@ def _probe_errors_paths() -> dict[str, bool]:
         and abody.get("error", {}).get("message") == "boom"
         and isinstance(abody["error"].get("type"), str)
     )
-    hits = ["/v1/chat/completions", "/v1/responses", "/v1/models", "/v1/embeddings"]
+    hits = [_CHAT_PATH, _RESP_PATH, "/v1/models", "/v1/embeddings"]
     misses = ["/harness/complete", "", "/v2/chat/completions", "/healthz", "v1/x"]
     out["is_openai_path_hits"] = all(is_openai_path(p) for p in hits)
     out["is_openai_path_misses"] = not any(is_openai_path(p) for p in misses)
@@ -324,12 +330,12 @@ def _probe_openai_to_kwargs() -> dict[str, bool]:
         )
     )
     out["kwargs_sampling_passthrough"] = (
-        kw2["temperature"] == 0.5
-        and kw2["top_p"] == 0.8
+        math.isclose(kw2["temperature"], 0.5)
+        and math.isclose(kw2["top_p"], 0.8)
         and kw2["seed"] == 42
         and kw2["max_tokens"] == 22  # max_completion_tokens wins
         and kw2["stop"] == ["END"]  # str folds to list
-        and kw2["presence_penalty"] == 0.1
+        and math.isclose(kw2["presence_penalty"], 0.1)
         and kw2["logit_bias"] == {"7": 2}
         and kw2["user"] == "u"
         and kw2["reasoning_effort"] == "high"
@@ -369,7 +375,7 @@ def _probe_envelopes() -> dict[str, bool]:
     out: dict[str, bool] = {}
     env = _chat_env()
     out["env_shape"] = (
-        env["object"] == "chat.completion"
+        env["object"] == _CHAT_OBJECT
         and env["id"].startswith("chatcmpl-")
         and env["created"] == 1700000000
         and env["system_fingerprint"] == "stub"
@@ -429,7 +435,7 @@ def _probe_envelopes() -> dict[str, bool]:
         lchat.messages[0].role == "user"
         and lchat.messages[0].content == "hi"
         and lchat.max_tokens == 5
-        and lchat.temperature == 0.3
+        and math.isclose(lchat.temperature or 9.9, 0.3)
     )
     # completion_events: piece frames then a finish frame per choice
     events = list(completion_events(leg, include_usage=True))
@@ -769,25 +775,25 @@ def _probe_embeddings_batch_files() -> dict[str, bool]:
         env["object"] == "list" and env["data"][0]["index"] == 0 and env["model"] == "m"
     )
     # batch line validation: all refuse modes
-    ok_line = {"custom_id": "c1", "method": "POST", "url": "/v1/responses", "body": {}}
+    ok_line = {"custom_id": "c1", "method": "POST", "url": _RESP_PATH, "body": {}}
     out["batch_line_accepts"] = (
-        batch_line_shape(ok_line, endpoint="/v1/responses", lineno=1)["custom_id"] == "c1"
+        batch_line_shape(ok_line, endpoint=_RESP_PATH, lineno=1)["custom_id"] == "c1"
     )
     bad_cases = [
         ("non-dict", "x"),
-        ("no custom_id", {"method": "POST", "url": "/v1/responses", "body": {}}),
+        ("no custom_id", {"method": "POST", "url": _RESP_PATH, "body": {}}),
         ("long custom_id", {**ok_line, "custom_id": "x" * 65}),
         ("wrong method", {**ok_line, "method": "GET"}),
-        ("wrong url", {**ok_line, "url": "/v1/chat/completions"}),
+        ("wrong url", {**ok_line, "url": _CHAT_PATH}),
         ("non-dict body", {**ok_line, "body": "x"}),
     ]
     out["batch_line_refuses"] = all(
-        _refuse(batch_line_shape, line, endpoint="/v1/responses", lineno=i + 1)[0]
+        _refuse(batch_line_shape, line, endpoint=_RESP_PATH, lineno=i + 1)[0]
         for i, (_, line) in enumerate(bad_cases)
     )
-    parsed = batch_line_body({"body": {"model": "fx1", "input": "hi"}}, "/v1/responses")
+    parsed = batch_line_body({"body": {"model": "fx1", "input": "hi"}}, _RESP_PATH)
     out["batch_line_body_typed"] = isinstance(parsed, OpenAIResponseRequest)
-    refused5, _, _ = _refuse(batch_line_body, {"body": {"model": "fx1"}}, "/v1/responses")
+    refused5, _, _ = _refuse(batch_line_body, {"body": {"model": "fx1"}}, _RESP_PATH)
     out["batch_line_body_invalid_refuses"] = refused5
     fobj = file_object(
         {
@@ -807,7 +813,7 @@ def _probe_embeddings_batch_files() -> dict[str, bool]:
     bobj = batch_object(
         {
             "batch_id": "batch_1",
-            "endpoint": "/v1/responses",
+            "endpoint": _RESP_PATH,
             "input_file_id": "file_1",
             "completion_window": "24h",
             "status": "completed",
@@ -826,12 +832,12 @@ def _probe_embeddings_batch_files() -> dict[str, bool]:
         line_out["custom_id"] == "c1"
         and line_out["id"] == "batch_req_rid1"
         and line_out["response"]["status_code"] == 200
-        and line_out["response"]["body"]["object"] == "chat.completion"
+        and line_out["response"]["body"]["object"] == _CHAT_OBJECT
         and line_out["error"] is None
     )
     out["batch_endpoints_pinned"] = {
-        "/v1/chat/completions",
-        "/v1/responses",
+        _CHAT_PATH,
+        _RESP_PATH,
         "/v1/embeddings",
     } == OPENAI_BATCH_ENDPOINTS
     return out
@@ -851,7 +857,7 @@ def _probe_envelope_store() -> dict[str, bool]:
         {"role": "user", "content": "q1"}
     ]
     out["store_items_missing_none"] = store.get_items(env2["id"], "input") == []
-    out["store_list_by_object"] = [e["id"] for e in store.list_envelopes("chat.completion")] == [
+    out["store_list_by_object"] = [e["id"] for e in store.list_envelopes(_CHAT_OBJECT)] == [
         env1["id"],
         env2["id"],
     ]
@@ -977,14 +983,14 @@ def _probe_anthropic_contract() -> dict[str, bool]:
 
 def _probe_anthropic_envelope_events() -> dict[str, bool]:
     out: dict[str, bool] = {}
-    env = _chat_env("the answer")
+    env = _chat_env(_ANSWER)
     msg = anthropic_envelope(env, model="fx1")
     out["anth_env_shape"] = (
         msg["type"] == "message"
         and msg["role"] == "assistant"
         and msg["id"].startswith("msg_")
         and msg["id"].removeprefix("msg_") == env["id"].removeprefix("chatcmpl-")
-        and msg["content"][0] == {"type": "text", "text": "the answer"}
+        and msg["content"][0] == {"type": "text", "text": _ANSWER}
         and msg["stop_reason"] == "end_turn"
         and msg["usage"]["output_tokens"] == 4
     )
@@ -1042,7 +1048,7 @@ def _probe_anthropic_envelope_events() -> dict[str, bool]:
             if e["event"] == "content_block_delta"
             and e["data"].get("delta", {}).get("type") == "text_delta"
         )
-        == "the answer"
+        == _ANSWER
     )
     # sse: skip drops leading frames; emits event:+data: pairs
     full = list(anthropic_sse(env))
