@@ -346,3 +346,36 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Crypto/integrity audit (PR #2901)
+
+The new `crypto_audit` battery (161 probes) pins the fx1-serve
+cryptographic contract end to end: receipt sealing and verification
+(`quant_fund.research.receipt_v2` + `ops_receipt`, canonical-JSON
+`receipt_sha256`, duplicate-key/truncation/NaN/oversize/quorum
+refusals), the `X-Fx1-Signature` webhook HMAC (`{ts}.{body}` signed
+bytes, mutated-body/wrong-secret/replay/missing-header refusals at the
+verify sink, `hmac.compare_digest` source invariants, freshness
+tolerance), key-material lifecycle (mint-time-only secrets, sha
+fingerprints on every surface, sha256-indexed auth), journal hash-chain
+tamper detection (corrupt/torn/forged/reorder quarantine on boot),
+`X-Fx1-Receipt-*` headers bound to on-disk sealed receipts, idem-cache
+replay byte-integrity and hostile-mutation honesty, BYOK transport
+(Bearer reaches only the upstream Authorization — never journaled,
+echoed, or on the response, body and header forms), and the uniform
+refusal-envelope grammar.
+
+No defects surfaced — every measured surface holds. The battery
+instead pins six honest integrity boundaries so a silent move flips a
+probe: a cleanly deleted journal tail and a recomputed tail seal are
+outside the anchorless append-only chain's reach; a v1-style seal binds
+bytes not names; the receipts index is a metadata index whose
+corrupted bytes still serve while live verification reports them
+false; a negative webhook tolerance is the documented freshness
+opt-out; and key-mint idempotency replays stay process-local because
+the recorded answer carries the raw credential the journal contract
+refuses to persist.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
