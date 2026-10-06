@@ -1932,7 +1932,13 @@
         ]
       },
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -1987,6 +1993,11 @@
     "/v1/vector_stores/{vector_store_id}/file_batches": {
       "post": {
         "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
           {
             "name": "vector_store_id",
             "in": "path",
@@ -2131,6 +2142,11 @@
       "post": {
         "params": [
           {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
             "name": "vector_store_id",
             "in": "path",
             "required": true
@@ -2221,5 +2237,5 @@
       }
     }
   },
-  "schema_sha256": "81f8186d019f2eef2efc531e851bdfeca887cd660c677162327d2eb20c7f5dd0"
+  "schema_sha256": "ae82da119aebafc75b0da1391842f67d3578780c3efc1643e7898951f6519ea4"
 }
