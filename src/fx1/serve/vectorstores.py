@@ -811,6 +811,9 @@ class VectorStoreStore:
                 self._condition.wait()
                 self._store(vs_id)
             self._drop(vs_id)
+            # Capacity can become available while an unrelated LRU store
+            # remains pinned. Wake creators without waiting for its reader.
+            self._condition.notify_all()
             if self._journal is not None:
                 self._journal.append({"vs_delete": {"vs_id": vs_id}})
             return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
