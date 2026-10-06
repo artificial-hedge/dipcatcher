@@ -346,3 +346,25 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## I/O operations audit (`plugins.*` readers + `skills.*` bitemporal joins)
+
+`fx1.operations.ioops_audit` exercises the file-backed operation surface
+inside a real temp workspace plus the bitemporal selection machinery:
+`read_csv`/`read_jsonl`/`read_toml` (exact-string cells, strict JSON with
+duplicate-key and NaN/Infinity refusal, temporal classification,
+fingerprinted sources, honest paging), `inspect_numpy_array`/
+`inspect_parquet`/`inspect_zip` (header/footer/central-directory metadata
+without materializing payloads; object arrays and trailing bytes
+refused), `verify_file_hash` (byte-exact SHA-256 + optional size check),
+workspace containment probes (escape, wrong suffix, missing file,
+symlink, byte-cap all fail closed), `join_asof_observations`
+(activation at `max(event, available)`, latest-vintage winner with
+declared tie policy, same-clock payload conflicts refused at
+validation), `select_asof_revisions` (latest observable vintage,
+opt-in future-event exclusion), `select_universe_membership`
+(latest-availability revision, effective intervals, expired exclusions
+revealing inclusions, same-effective ambiguity), and
+`summarize_ingestion_latency` (signed lags keep clock anomalies
+visible). ~85 literal-bool probes seal into an `ioops_audit.v1`
+receipt.
