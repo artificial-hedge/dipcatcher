@@ -745,7 +745,7 @@ class VectorStoreStore:
     def _publish_touch_locked(self, meta: VSMeta, touch: dict[str, Any]) -> None:
         meta.last_active_at = int(touch["last_active_at"])
         meta.expires_at = touch.get("expires_at")
-        self._stores.move_to_end(meta.vs_id)
+        self._promote_locked(meta.vs_id)
 
     def _prepare_file_locked(
         self,
