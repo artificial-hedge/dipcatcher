@@ -24,8 +24,10 @@ from typing import Any
 
 LAB_LANES = ("python-1", "python-2", "python-3", "python-4")
 SEPARATE_LANES = {
-    "fx1": "tests/fx1", "examples": "tests/examples",
-    "performance": "tests/perf", "native": "tests/native",
+    "fx1": "tests/fx1",
+    "examples": "tests/examples",
+    "performance": "tests/perf",
+    "native": "tests/native",
 }
 LANES = (*LAB_LANES, *SEPARATE_LANES)
 SOURCE_ROOTS = ("src", "scripts", "examples")
@@ -51,9 +53,7 @@ def _project(root: Path) -> dict[str, Any]:
 
 
 def revision(root: Path) -> str:
-    value = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=root, text=True
-    ).strip()
+    value = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     if re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", value) is None:
         raise CoverageGateError("git did not return a complete commit object ID")
     return value
@@ -92,15 +92,29 @@ def test_arguments(root: Path, lane: str, config: Path, junit: Path) -> list[str
             raise CoverageGateError("pytest testpaths must be a nonempty list of paths")
         args += list(dict.fromkeys(roots))
         args += [
-            "-n", "auto", "--dist", "loadfile", "--splits", "4",
-            "--group", lane.rsplit("-", 1)[1], "--durations-path", ".test_durations",
-            "--splitting-algorithm", "least_duration",
+            "-n",
+            "auto",
+            "--dist",
+            "loadfile",
+            "--splits",
+            "4",
+            "--group",
+            lane.rsplit("-", 1)[1],
+            "--durations-path",
+            ".test_durations",
+            "--splitting-algorithm",
+            "least_duration",
         ]
     # Slow and perf_full tests are deliberately included. Network tests are
     # an explicit coverage gap, not permission to use hosted APIs/live trades.
     args += [
-        "-m", "not network", "--strict-markers", "--cov",
-        f"--cov-config={config}", "--cov-report=", "--cov-fail-under=0",
+        "-m",
+        "not network",
+        "--strict-markers",
+        "--cov",
+        f"--cov-config={config}",
+        "--cov-report=",
+        "--cov-fail-under=0",
         f"--junitxml={junit}",
     ]
     return args
@@ -150,10 +164,15 @@ def run_lane(root: Path, output: Path, lane: str) -> int:
     data = output / ".coverage"
     counts = junit_counts(junit) if junit.is_file() else None
     manifest = {
-        "schema": SCHEMA, "lane": lane, "revision": commit,
-        "configuration_sha256": _sha256(config), "python": sys.version,
-        "command": command, "pytest_exit_code": result.returncode,
-        "elapsed_seconds": time.monotonic() - started, "tests": counts,
+        "schema": SCHEMA,
+        "lane": lane,
+        "revision": commit,
+        "configuration_sha256": _sha256(config),
+        "python": sys.version,
+        "command": command,
+        "pytest_exit_code": result.returncode,
+        "elapsed_seconds": time.monotonic() - started,
+        "tests": counts,
         "coverage_sha256": _sha256(data) if data.is_file() else None,
         "network_marked_tests_included": False,
         "scope": "offline tests, including slow and perf_full; first-party Python roots",
@@ -178,7 +197,9 @@ def validate_parts(parts: Path, expected_revision: str, config_sha: str) -> list
         path = directory / ".coverage"
         manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
         expected = {
-            "schema": SCHEMA, "lane": lane, "revision": expected_revision,
+            "schema": SCHEMA,
+            "lane": lane,
+            "revision": expected_revision,
             "configuration_sha256": config_sha,
         }
         if not isinstance(manifest, dict) or any(manifest.get(k) != v for k, v in expected.items()):
@@ -218,15 +239,21 @@ def summarize(parts: Path, report: dict[str, Any], expected_sources: set[str]) -
         counts = junit_counts(parts / lane / "junit.xml")
         code = manifest.get("pytest_exit_code")
         passed = (
-            type(code) is int and code == 0 and counts["passed"] > 0
-            and counts["failed"] == 0 and counts["errors"] == 0
+            type(code) is int
+            and code == 0
+            and counts["passed"] > 0
+            and counts["failed"] == 0
+            and counts["errors"] == 0
         )
         lanes[lane] = {"passed": passed, "pytest_exit_code": code, "tests": counts}
     return {
-        "schema": SCHEMA, "all_lanes_present": True,
+        "schema": SCHEMA,
+        "all_lanes_present": True,
         "all_executed_tests_passed": all(lane["passed"] for lane in lanes.values()),
-        "unrepresented_source_files": missing, "tracked_source_files": len(expected_sources),
-        "coverage": report["totals"], "lanes": lanes,
+        "unrepresented_source_files": missing,
+        "tracked_source_files": len(expected_sources),
+        "coverage": report["totals"],
+        "lanes": lanes,
         "has_skipped_tests": any(lane["tests"]["skipped"] for lane in lanes.values()),
         "network_marked_tests_included": False,
         "security_audit_claim": False,
@@ -267,13 +294,22 @@ def combine(root: Path, parts: Path, output: Path) -> int:
         summary = summarize(parts, report, tracked_sources(root))
         # The CLI applies coverage.py's exact precision/100%-floor semantics.
         threshold = subprocess.run(
-            [sys.executable, "-m", "coverage", "report", f"--rcfile={config}",
-             f"--data-file={output / '.coverage'}"], cwd=root, check=False,
+            [
+                sys.executable,
+                "-m",
+                "coverage",
+                "report",
+                f"--rcfile={config}",
+                f"--data-file={output / '.coverage'}",
+            ],
+            cwd=root,
+            check=False,
         ).returncode
         summary["revision"] = commit
         summary["coverage_gate_passed"] = threshold == 0
         summary["passed"] = (
-            summary["all_executed_tests_passed"] and not summary["unrepresented_source_files"]
+            summary["all_executed_tests_passed"]
+            and not summary["unrepresented_source_files"]
             and threshold == 0
         )
         _write_json(summary_path, summary)

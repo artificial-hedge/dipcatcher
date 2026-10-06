@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 from coverage import Coverage, CoverageData
-
 from scripts import full_coverage as gate
 
 
@@ -25,13 +24,23 @@ def project(tmp_path: Path) -> Path:
     (tmp_path / "pyproject.toml").write_text(
         '[tool.pytest.ini_options]\ntestpaths = ["tests/unit", "tests/formal"]\n'
         '[tool.coverage.run]\nsource = ["src"]\nbranch = true\nomit = ["*/__main__.py"]\n'
-        '[tool.coverage.report]\nfail_under = 81\n'
+        "[tool.coverage.report]\nfail_under = 81\n"
     )
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
     subprocess.run(
-        ["git", "-c", "user.name=SYNTHETIC", "-c", "user.email=synthetic@example.invalid",
-         "commit", "-qm", "SYNTHETIC fixture"], cwd=tmp_path, check=True,
+        [
+            "git",
+            "-c",
+            "user.name=SYNTHETIC",
+            "-c",
+            "user.email=synthetic@example.invalid",
+            "commit",
+            "-qm",
+            "SYNTHETIC fixture",
+        ],
+        cwd=tmp_path,
+        check=True,
     )
     return tmp_path
 
@@ -65,11 +74,19 @@ def parts(project: Path) -> Path:
         data.write()
         data.close()
         _junit(directory / "junit.xml")
-        (directory / "manifest.json").write_text(json.dumps({
-            "schema": gate.SCHEMA, "lane": lane, "revision": gate.revision(project),
-            "configuration_sha256": gate._sha256(config), "pytest_exit_code": 0,
-            "coverage_sha256": gate._sha256(coverage), "tests": {"passed": 999999},
-        }))
+        (directory / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema": gate.SCHEMA,
+                    "lane": lane,
+                    "revision": gate.revision(project),
+                    "configuration_sha256": gate._sha256(config),
+                    "pytest_exit_code": 0,
+                    "coverage_sha256": gate._sha256(coverage),
+                    "tests": {"passed": 999999},
+                }
+            )
+        )
     return root
 
 
@@ -123,21 +140,33 @@ def test_exact_lane_set_is_required(project: Path, parts: Path) -> None:
         gate.validate_parts(parts, gate.revision(project), config_sha)
 
 
-@pytest.mark.parametrize("field,value", [
-    ("revision", "a" * 40), ("schema", "other"), ("lane", "python-99"),
-    ("configuration_sha256", "b" * 64), ("coverage_sha256", "c" * 64),
-])
-def test_mismatched_manifest_is_rejected(project: Path, parts: Path, field: str, value: str) -> None:
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("revision", "a" * 40),
+        ("schema", "other"),
+        ("lane", "python-99"),
+        ("configuration_sha256", "b" * 64),
+        ("coverage_sha256", "c" * 64),
+    ],
+)
+def test_mismatched_manifest_is_rejected(
+    project: Path, parts: Path, field: str, value: str
+) -> None:
     _manifest(parts / "python-1" / "manifest.json", **{field: value})
     config_sha = hashlib.sha256(gate.coverage_config(project).encode()).hexdigest()
     with pytest.raises(gate.CoverageGateError, match="mismatch"):
         gate.validate_parts(parts, gate.revision(project), config_sha)
 
 
-def test_worker_fragments_cannot_substitute_for_controller_result(project: Path, parts: Path) -> None:
+def test_worker_fragments_cannot_substitute_for_controller_result(
+    project: Path, parts: Path
+) -> None:
     (parts / "python-1" / ".coverage").rename(parts / "python-1" / ".coverage.worker")
     with pytest.raises(gate.CoverageGateError, match="controller"):
-        gate.validate_parts(parts, gate.revision(project), gate._sha256(parts / "native" / "coverage.ini"))
+        gate.validate_parts(
+            parts, gate.revision(project), gate._sha256(parts / "native" / "coverage.ini")
+        )
 
 
 def test_statement_only_data_is_not_branch_coverage(project: Path, parts: Path) -> None:
@@ -149,10 +178,14 @@ def test_statement_only_data_is_not_branch_coverage(project: Path, parts: Path) 
     data.close()
     _manifest(path.parent / "manifest.json", coverage_sha256=gate._sha256(path))
     with pytest.raises(gate.CoverageGateError, match="branch"):
-        gate.validate_parts(parts, gate.revision(project), gate._sha256(path.parent / "coverage.ini"))
+        gate.validate_parts(
+            parts, gate.revision(project), gate._sha256(path.parent / "coverage.ini")
+        )
 
 
-@pytest.mark.parametrize("status,code", [("failure", 1), ("error", 1), ("skipped", 0), ("passed", True)])
+@pytest.mark.parametrize(
+    "status,code", [("failure", 1), ("error", 1), ("skipped", 0), ("passed", True)]
+)
 def test_failed_all_skipped_and_boolean_exit_codes_do_not_pass(
     parts: Path, status: str, code: object
 ) -> None:
@@ -208,7 +241,9 @@ def test_combine_from_another_cwd_keeps_config_and_unexecuted_sources(
 
 def test_tracked_source_inventory_is_not_test_file_inventory(project: Path) -> None:
     assert gate.tracked_sources(project) == {
-        "src/sample.py", "src/never_imported.py", "src/__main__.py",
+        "src/sample.py",
+        "src/never_imported.py",
+        "src/__main__.py",
     }
 
 
@@ -237,11 +272,13 @@ def test_successful_complete_aggregate(project: Path, parts: Path) -> None:
         data_path = parts / lane / ".coverage"
         data_path.unlink()
         data = CoverageData(basename=str(data_path))
-        data.add_arcs({
-            "src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1), (2, 4), (4, -1)],
-            "src/never_imported.py": [(-1, 1), (1, -1), (-1, 2), (2, -1)],
-            "src/__main__.py": [(-1, 1), (1, -1)],
-        })
+        data.add_arcs(
+            {
+                "src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1), (2, 4), (4, -1)],
+                "src/never_imported.py": [(-1, 1), (1, -1), (-1, 2), (2, -1)],
+                "src/__main__.py": [(-1, 1), (1, -1)],
+            }
+        )
         data.write()
         data.close()
         _manifest(data_path.parent / "manifest.json", coverage_sha256=gate._sha256(data_path))
@@ -306,7 +343,9 @@ def test_workflow_preserves_independent_checks_and_evidence() -> None:
     import yaml
 
     root = Path(__file__).resolve().parents[2]
-    config = yaml.load((root / ".github/workflows/full-coverage.yml").read_text(), Loader=yaml.BaseLoader)
+    config = yaml.load(
+        (root / ".github/workflows/full-coverage.yml").read_text(), Loader=yaml.BaseLoader
+    )
     assert config["permissions"] == {"contents": "read"}
     jobs = config["jobs"]
     assert set(jobs["python"]["strategy"]["matrix"]["lane"]) == set(gate.LANES)
@@ -319,7 +358,11 @@ def test_workflow_preserves_independent_checks_and_evidence() -> None:
                 assert re.search(r"@[a-f0-9]{40}$", step["uses"])
             assert "continue-on-error" not in step
     assert "epoch-candidate" in jobs
-    uploads = [s for s in jobs["python"]["steps"] if s.get("uses", "").startswith("actions/upload-artifact")]
+    uploads = [
+        s
+        for s in jobs["python"]["steps"]
+        if s.get("uses", "").startswith("actions/upload-artifact")
+    ]
     assert uploads[0]["with"]["include-hidden-files"] == "true"
     assert uploads[0]["with"]["if-no-files-found"] == "error"
 
@@ -346,7 +389,9 @@ def test_invalid_lane_cannot_construct_a_pytest_command(project: Path) -> None:
 
 
 def test_empty_tracked_source_inventory_is_a_failure(project: Path) -> None:
-    subprocess.run(["git", "rm", "--cached", "-r", "src"], cwd=project, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "rm", "--cached", "-r", "src"], cwd=project, check=True, capture_output=True
+    )
     with pytest.raises(gate.CoverageGateError, match="no tracked Python"):
         gate.tracked_sources(project)
 
@@ -361,7 +406,9 @@ def test_cli_dispatch_preserves_failures_and_resolves_paths(
         calls.append(args)
         return 3
 
-    monkeypatch.setattr(gate, {"run": "run_lane", "all": "run_all", "combine": "combine"}[operation], record)
+    monkeypatch.setattr(
+        gate, {"run": "run_lane", "all": "run_all", "combine": "combine"}[operation], record
+    )
     arguments = ["--root", str(project), operation, "--output", str(project / "out")]
     if operation == "run":
         arguments += ["--lane", "fx1"]
@@ -377,8 +424,11 @@ def test_command_line_entrypoint_help() -> None:
 
     script = Path(gate.__file__).resolve()
     result = subprocess.run(
-        [sys.executable, str(script), "--help"], cwd=script.parent.parent,
-        capture_output=True, text=True, check=False,
+        [sys.executable, str(script), "--help"],
+        cwd=script.parent.parent,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     assert result.returncode == 0
     assert "combine" in result.stdout
