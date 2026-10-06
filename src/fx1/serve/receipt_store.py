@@ -17,7 +17,7 @@ from pathlib import Path
 
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 _FileStamp = tuple[int, int, int, int, int]
-_Snapshot = tuple[tuple[Path, _FileStamp], ...]
+_Snapshot = dict[Path, _FileStamp]
 
 
 def _receipt_sha(path: Path) -> str | None:
@@ -35,7 +35,8 @@ class ReceiptIndex:
 
     Scan file identities and nanosecond metadata to detect additions,
     removals, renames and ordinary replacements, even when count and maximum
-    mtime stay unchanged. Decode only new or changed files. A missing or
+    mtime stay unchanged. Decode only new or changed files and sort only
+    changed inventories. A missing or
     unreadable directory clears the cache instead of serving stale lookups.
     Symlinks and non-regular files are not receipt blobs. Duplicate digest
     declarations resolve to the lexicographically first filename.
@@ -58,7 +59,7 @@ class ReceiptIndex:
         return self._root
 
     def _snapshot(self) -> _Snapshot:
-        files: list[tuple[Path, _FileStamp]] = []
+        files: _Snapshot = {}
         # scandir propagates directory access errors; glob can suppress them.
         with os.scandir(self._root) as entries:
             for entry in entries:
@@ -74,8 +75,8 @@ class ReceiptIndex:
                     metadata.st_mtime_ns,
                     metadata.st_ctime_ns,
                 )
-                files.append((self._root / entry.name, stamp))
-        return tuple(sorted(files, key=lambda item: item[0].name))
+                files[self._root / entry.name] = stamp
+        return files
 
     def _scan(self) -> None:
         try:
@@ -91,13 +92,12 @@ class ReceiptIndex:
             return
         cache: dict[Path, tuple[_FileStamp, str | None]] = {}
         by_sha: dict[str, Path] = {}
-        for path, stamp in key:
+        for path, stamp in sorted(key.items(), key=lambda item: item[0].name):
             previous = self._cache.get(path)
-            sha = (
-                previous[1]
-                if previous is not None and previous[0] == stamp
-                else _receipt_sha(path)
-            )
+            if previous is not None and previous[0] == stamp:
+                sha = previous[1]
+            else:
+                sha = _receipt_sha(path)
             cache[path] = (stamp, sha)
             if sha is not None:
                 by_sha.setdefault(sha, path)
