@@ -1,14 +1,14 @@
 """attestation_audit — adversarial probes on the fx-1 attestation ladder.
 
-Two real edges surfaced; one fixed, one pinned:
+Two previously demonstrated edges now fail closed:
 
 1. ``verify_quote`` anti-replay was a bare *substring* check — ``nonce in
    report_data``. A 1-character nonce bound to any quote whose report_data
    happened to contain it; a nonce that was never echoed passed. Fixed:
    ``_MIN_NONCE_LEN = 8`` — short nonces fail closed.
-2. ``verify_release`` checks listed artifacts only — a checkpoint dir
-   carrying an extra unlisted file still verifies. Coverage gap pinned as
-   a flagged note (manifest scoping, not manifest forgery).
+2. ``verify_release`` checks the complete regular-file inventory. Adding
+   an unlisted checkpoint artifact invalidates the release; the audit
+   fails if manifest-scoped verification ever returns.
 
 Also pinned: ``_key()`` refuses an unset env (fail closed), a forged
 signature fails, a tampered artifact fails, ``OperatorProofManifest``
@@ -86,7 +86,7 @@ def _probe_release() -> dict[str, Any]:
             (root / "weights.bin").write_bytes(b"tampered")
             tampered = verify_release(root)
 
-            # fresh dir for the coverage gap probe
+            # fresh dir for the unsigned-addition regression
             root2 = Path(tmp) / "ckpt2"
             root2.mkdir()
             (root2 / "weights.bin").write_bytes(b"w")
@@ -174,7 +174,11 @@ def attestation_audit_bench() -> dict[str, Any]:
         "quote_substring_nonce": q["one_char_nonce_binds"],
         "unlisted_extra_verifies": rel["unlisted_extra_file_passes"],
     }
-    ok = ok and not flags["quote_substring_nonce"]
+    ok = (
+        ok
+        and flags["quote_substring_nonce"] is False
+        and flags["unlisted_extra_verifies"] is False
+    )
     payload: dict[str, Any] = {
         "kind": "attestation_audit",
         "schema": "attestation_audit.v1",
@@ -185,9 +189,9 @@ def attestation_audit_bench() -> dict[str, Any]:
         "claim": {"results": r, "flags": flags, "ok": ok},
         "interpretation": (
             "Attestation contract holds on structural edges; substring "
-            "nonce binding now fails closed below 8 chars. Remaining "
-            "weakness flagged honestly: unlisted extra checkpoint files "
-            "verify clean (manifest-scoped, not closed-world)."
+            "nonce binding fails closed below 8 chars, and releases "
+            "reject unlisted checkpoint artifacts. These SYNTHETIC "
+            "checks do not verify vendor signatures or prove TEE execution."
             if ok
             else f"ATTESTATION DEFECT: {r}"
         ),

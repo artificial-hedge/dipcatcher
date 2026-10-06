@@ -1,14 +1,13 @@
 """Release signing for fx-1 checkpoints (attestation ladder, tier 1).
 
-Signed release chain: every checkpoint directory carries ``release.sig`` — an
-HMAC signature over the manifest of artifact hashes (modelcard, weights,
-config). The signing key comes from the environment only
-(``FX1_SIGNING_KEY``); the interface is cosign/Sigstore-compatible in shape
-(detached signature over a digest manifest) so keyless OIDC signing can
-replace the HMAC backend without touching callers.
+A release signs the complete regular-file inventory beneath a checkpoint,
+except its two root-level signature metadata files. Artifacts are hashed
+incrementally, so verification does not allocate an entire weights file.
+The signing key comes from ``FX1_SIGNING_KEY`` only.
 
-Serving enforcement lives in ``LocalFx1Backend``: unsigned or
-signature-mismatched checkpoints refuse to serve.
+This is detached HMAC verification, not a Sigstore signature or a TEE
+attestation. The checkpoint must not be mutated concurrently with signing,
+verification, or loading; this module does not lock the deployment tree.
 """
 
 from __future__ import annotations
@@ -16,7 +15,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import stat
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+from typing import BinaryIO
 
 from pydantic import BaseModel, Field
 
@@ -24,26 +27,67 @@ SIGNING_KEY_ENV = "FX1_SIGNING_KEY"
 SIGNATURE_FILENAME = "release.sig"
 MANIFEST_FILENAME = "release.manifest.json"
 
+_METADATA_FILENAMES = frozenset({SIGNATURE_FILENAME, MANIFEST_FILENAME})
+_MAX_MANIFEST_BYTES = 16 * 1024 * 1024
+_MAX_SIGNATURE_BYTES = 4096
+
 
 class ReleaseManifest(BaseModel):
     """Digest manifest of everything a release consists of."""
 
     checkpoint_dir: str
-    artifacts: dict[str, str] = Field(description="relative path -> sha256")
+    artifacts: dict[str, str] = Field(min_length=1, description="relative path -> sha256")
+
+
+@contextmanager
+def _open_regular_file(path: Path) -> Iterator[BinaryIO]:
+    """Open a regular file without following a final-component symlink."""
+    if path.is_symlink():
+        raise ValueError(f"release files must not be symlinks: {path}")
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    fd = os.open(path, flags)
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise ValueError(f"release files must be regular files: {path}")
+        with os.fdopen(fd, "rb", closefd=False) as stream:
+            yield stream
+    finally:
+        os.close(fd)
 
 
 def _hash_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    with _open_regular_file(path) as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def _raise_walk_error(error: OSError) -> None:
+    raise error
+
+
+def _artifact_paths(root: Path) -> Iterator[Path]:
+    """Enumerate the same closed inventory for both signing and verification."""
+    for directory, directories, filenames in os.walk(root, onerror=_raise_walk_error):
+        parent = Path(directory)
+        for name in directories:
+            if (parent / name).is_symlink():
+                raise ValueError(f"release directories must not be symlinks: {parent / name}")
+        for name in filenames:
+            path = parent / name
+            if not stat.S_ISREG(path.lstat().st_mode):
+                raise ValueError(f"release files must be regular files: {path}")
+            if parent == root and name in _METADATA_FILENAMES:
+                continue
+            yield path
 
 
 def build_manifest(checkpoint_dir: str | Path) -> ReleaseManifest:
     root = Path(checkpoint_dir)
     if not root.is_dir():
         raise FileNotFoundError(f"checkpoint dir not found: {root}")
-    artifacts: dict[str, str] = {}
-    for path in sorted(root.rglob("*")):
-        if path.is_file() and path.name not in {SIGNATURE_FILENAME, MANIFEST_FILENAME}:
-            artifacts[str(path.relative_to(root))] = _hash_file(path)
+    artifacts = {
+        str(path.relative_to(root)): _hash_file(path) for path in sorted(_artifact_paths(root))
+    }
     if not artifacts:
         raise ValueError(f"checkpoint dir {root} contains no artifacts")
     return ReleaseManifest(checkpoint_dir=str(root), artifacts=artifacts)
@@ -56,33 +100,47 @@ def _key() -> bytes:
     return key.encode()
 
 
+def _read_metadata(path: Path, limit: int) -> bytes:
+    with _open_regular_file(path) as stream:
+        content = stream.read(limit + 1)
+    if len(content) > limit:
+        raise ValueError(f"release metadata exceeds its byte limit: {path}")
+    return content
+
+
 def sign_release(checkpoint_dir: str | Path) -> Path:
-    """Write manifest + detached HMAC signature into the checkpoint dir."""
+    """Write a manifest and detached HMAC; validate configuration before I/O."""
+    key = _key()
     root = Path(checkpoint_dir)
-    manifest = build_manifest(root)
-    manifest_path = root / MANIFEST_FILENAME
-    manifest_bytes = manifest.model_dump_json().encode()
-    manifest_path.write_bytes(manifest_bytes)
-    signature = hmac.new(_key(), manifest_bytes, hashlib.sha256).hexdigest()
+    manifest_bytes = build_manifest(root).model_dump_json().encode()
+    if len(manifest_bytes) > _MAX_MANIFEST_BYTES:
+        raise ValueError("release manifest exceeds its byte limit")
+    signature = hmac.new(key, manifest_bytes, hashlib.sha256).hexdigest()
+    (root / MANIFEST_FILENAME).write_bytes(manifest_bytes)
     sig_path = root / SIGNATURE_FILENAME
     sig_path.write_text(signature, encoding="utf-8")
     return sig_path
 
 
 def verify_release(checkpoint_dir: str | Path) -> bool:
-    """Fail-closed verification: manifest intact, signature valid, hashes match."""
+    """Verify the HMAC and exact inventory; malformed/unreadable releases fail closed.
+
+    Missing signing configuration still raises ``RuntimeError`` when release
+    metadata exists. Authentication precedes artifact hashing. Manifest paths
+    are never opened: they are compared with paths enumerated beneath root.
+    """
     root = Path(checkpoint_dir)
     manifest_path = root / MANIFEST_FILENAME
     sig_path = root / SIGNATURE_FILENAME
-    if not manifest_path.exists() or not sig_path.exists():
-        return False
-    manifest_bytes = manifest_path.read_bytes()
-    expected = hmac.new(_key(), manifest_bytes, hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(expected, sig_path.read_text().strip()):
-        return False
-    manifest = ReleaseManifest.model_validate_json(manifest_bytes.decode())
-    for rel, digest in manifest.artifacts.items():
-        path = root / rel
-        if not path.exists() or _hash_file(path) != digest:
+    try:
+        if not manifest_path.exists() or not sig_path.exists():
             return False
-    return True
+        manifest_bytes = _read_metadata(manifest_path, _MAX_MANIFEST_BYTES)
+        expected = hmac.new(_key(), manifest_bytes, hashlib.sha256).hexdigest().encode("ascii")
+        signature = _read_metadata(sig_path, _MAX_SIGNATURE_BYTES).strip()
+        if not hmac.compare_digest(expected, signature):
+            return False
+        manifest = ReleaseManifest.model_validate_json(manifest_bytes)
+        return build_manifest(root).artifacts == manifest.artifacts
+    except (OSError, ValueError):
+        return False
