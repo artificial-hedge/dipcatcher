@@ -348,7 +348,7 @@ no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
 
 
-### Ops-surface audit maintenance (PR #NNNN)
+### Ops-surface audit maintenance (PR #2868)
 
 The new `ops_audit` battery (141 probes) pins the operations surface a
 load balancer, orchestrator, and operator dashboard actually poll —
