@@ -691,9 +691,8 @@ class Fx1Harness:
         # No transport means no socket headers — but every quantity the
         # middleware stamps is owned here: a per-call trace id, the wire
         # contract, the call's own wall-clock, and the completion id.
-        # Built fully local, then one atomic publish: a concurrent reader
-        # always sees a coherent single call's set — never a partial dict
-        # mid-build, and never another call's id stamped into this one's.
+        # Build locally and publish once so concurrent readers cannot observe
+        # a partially populated response-header dictionary.
         headers = {
             "x-request-id": uuid.uuid4().hex,
             "x-fx1-api-version": API_VERSION,
