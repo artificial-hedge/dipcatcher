@@ -3693,17 +3693,21 @@ class _BatchStore:
 
     def put(self, batch: _BatchRecord) -> None:
         with self._lock:
-            self._batches[batch.batch_id] = batch
-            self._batches.move_to_end(batch.batch_id)
-            evicted: list[str] = []
-            while len(self._batches) > self._max:
-                old_id, _ = self._batches.popitem(last=False)
-                evicted.append(old_id)
+            future_ids = [batch_id for batch_id in self._batches if batch_id != batch.batch_id]
+            future_ids.append(batch.batch_id)
+            evicted = future_ids[: max(0, len(future_ids) - self._max)]
             if self._journal is not None:
                 payload = self._record(batch)
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
+            # Publish only after the journal accepts the complete transition.
+            # Otherwise an fsync failure can expose an unrecoverable batch or
+            # evict a healthy record that replay correctly retains.
+            self._batches[batch.batch_id] = batch
+            self._batches.move_to_end(batch.batch_id)
+            for old_id in evicted:
+                self._batches.pop(old_id, None)
 
     def get(self, batch_id: str) -> _BatchRecord | None:
         with self._lock:
@@ -3846,17 +3850,18 @@ class _AnthropicBatchStore:
 
     def put(self, batch: _AnthropicBatchRecord) -> None:
         with self._lock:
-            self._batches[batch.batch_id] = batch
-            self._batches.move_to_end(batch.batch_id)
-            evicted: list[str] = []
-            while len(self._batches) > self._max:
-                old_id, _ = self._batches.popitem(last=False)
-                evicted.append(old_id)
+            future_ids = [batch_id for batch_id in self._batches if batch_id != batch.batch_id]
+            future_ids.append(batch.batch_id)
+            evicted = future_ids[: max(0, len(future_ids) - self._max)]
             if self._journal is not None:
                 payload = self._record(batch)
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
+            self._batches[batch.batch_id] = batch
+            self._batches.move_to_end(batch.batch_id)
+            for old_id in evicted:
+                self._batches.pop(old_id, None)
 
     def get(self, batch_id: str) -> _AnthropicBatchRecord | None:
         with self._lock:
@@ -6386,6 +6391,45 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         with batch._row_lock:
             return anthropic_batch_object(batch.model_dump(mode="json"))
 
+    def _submit_after_persist(
+        *,
+        persist: Callable[[], None],
+        execute: Callable[[], None],
+    ) -> None:
+        """Queue a batch worker, but do not run it before durable publication.
+
+        ``ThreadPoolExecutor.submit`` can start the callable immediately. A
+        submit-then-persist sequence therefore lets provider work escape even
+        when the journal append fails and the create request returns an error.
+        The launch barrier keeps the executor's bounded admission semantics
+        while ensuring that work becomes observable and recoverable first.
+        """
+        published = threading.Event()
+        abandoned = threading.Event()
+
+        def run_when_published() -> None:
+            published.wait()
+            if not abandoned.is_set():
+                execute()
+
+        try:
+            jobs_executor.submit(run_when_published)
+        except RuntimeError as exc:
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        try:
+            persist()
+        except Exception:
+            # Wake the already-admitted wrapper, but forbid it from touching
+            # the provider or mutating an unjournaled record.
+            abandoned.set()
+            published.set()
+            metrics.release()
+            inflight.release()
+            raise
+        published.set()
+
     async def _anthropic_batch_idem_claim(
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> AsyncIterator[None]:
@@ -6457,13 +6501,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
         }
         batch._key_id = _REQUEST_KEY_ID.get()
-        try:
-            jobs_executor.submit(_exec_abatch, batch)
-        except RuntimeError as exc:
-            metrics.release()
-            inflight.release()
-            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        abatch_store.put(batch)
+        _submit_after_persist(
+            persist=lambda: abatch_store.put(batch),
+            execute=lambda: _exec_abatch(batch),
+        )
         env = _abatch_project(batch)
         if key is not None:
             anthropic_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
@@ -8483,13 +8524,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         # worker threads do not inherit request contextvars, so the key_id
         # rides the record and the worker re-installs it per line.
         batch._key_id = _REQUEST_KEY_ID.get()
-        try:
-            jobs_executor.submit(_exec_batch, batch)
-        except RuntimeError as exc:
-            metrics.release()
-            inflight.release()
-            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-        batch_store.put(batch)
+        _submit_after_persist(
+            persist=lambda: batch_store.put(batch),
+            execute=lambda: _exec_batch(batch),
+        )
         env = _batch_project(batch)
         if key is not None:
             openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
