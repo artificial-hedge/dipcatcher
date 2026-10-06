@@ -640,14 +640,20 @@ def test_fx1_eval_accepts_model_flag(
 # ---------------------------------------------------------------------------
 
 
-def test_bare_dipcatcher_runs_wizard(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_bare_dipcatcher_shows_help(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bare ``dipcatcher`` prints help and exits 0.
+
+    The fx-1 interactive front door is the ``fxi`` console script; the harness
+    CLI deliberately does not import fx1 (see ``src/quant_fund/cli/_app.py``).
+    """
     from quant_fund.cli.main import app as quant_app
 
     calls: list[bool] = []
     monkeypatch.setattr(wizard, "enter", lambda **kwargs: calls.append(True))
     result = CliRunner().invoke(quant_app, [])
     assert result.exit_code == 0
-    assert calls == [True]
+    assert "Dipcatcher" in result.output
+    assert not calls
 
 
 def test_dipcatcher_subcommand_skips_wizard(monkeypatch: pytest.MonkeyPatch) -> None:
