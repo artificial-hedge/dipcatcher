@@ -137,6 +137,7 @@ _SWEPT_ENVS = (
     "FX1_LOCAL_MODEL",
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
+    "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS",
 )
 # Deliberately-insecure literal: BYOK overrides accept http:// for local
 # stacks — this URL is never dialed (the injected resolver returns stubs).
@@ -1546,6 +1547,10 @@ def _callback_probes() -> dict[str, Any]:
     """Terminal webhook: payload is the record, secret signs but never echoes."""
     out: dict[str, Any] = {}
     sink = _Sink()
+    # Loopback webhook sink — opt into private-network delivery for these
+    # probes; production callbacks stay public-only unless opted in.
+    hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         client, _api = _client({"byok": lambda: _EvalBackend()})
         sub = _submit(
@@ -1624,6 +1629,10 @@ def _callback_probes() -> dict[str, Any]:
         )
     finally:
         sink.close()
+        if hook_prev is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = hook_prev
     return out
 
 
