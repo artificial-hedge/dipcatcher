@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-06T20:44:29.594278+00:00",
+ "generated_at": "2026-10-06T21:40:03.262252+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "01268826f737dc0fc1fc7e28555ce3aeb54760c7d759a29bf6ad7c8be3c59e64": "configs/corpus_epoch_3c319fb43ab0351e.json",
@@ -4358,7 +4358,7 @@
    "schema": "zone_ttl.v1"
   }
  ],
- "repo_revision": "5cef471d18c2fa31f8b73952e50a6809ff4fec4a",
+ "repo_revision": "6d7691a2efb94145397f7b3dd19e78dd49cf0954",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
