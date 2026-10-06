@@ -907,8 +907,8 @@ def _persistence_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     client_a, _ = _client(backends, api_key=_ROOT, state_dir=state_dir)
     p_raw, p_id = _mint(client_a, root_h, max_requests=5, max_tokens=20, rpm=2)
     p_h = {_H_KEY: p_raw}
-    assert _complete(client_a, p_h).status_code == 200
-    assert _complete(client_a, p_h).status_code == 200
+    for _ in range(2):
+        assert _complete(client_a, p_h).status_code == 200
     card_a = _usage_card(client_a, root_h, p_id)
     lua_a = card_a["last_used_at"]
 
