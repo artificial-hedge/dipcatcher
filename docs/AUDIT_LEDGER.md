@@ -346,3 +346,42 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Durable audit maintenance (PR #2878)
+
+The new `durable_audit` battery pins cross-journal recovery under
+`--state-dir` restart: a real app is killed and a fresh app boots on the
+same state dir, then every journaled store is re-read for honesty —
+jobs, evals, eval-specs, files (bytes + metadata + retrieval), uploads
+(record + parts), batches, anthropic batches, FT jobs (+ model card +
+checkpoints), conversations (item order + content), vector stores (+
+file batches), keys, the idem caches, and the quota counters
+(`uses`/`tokens_used` journaled honest). Cross-store references hold:
+response→file, batch→uploaded file, eval→spec→run. In-flight work at
+kill recovers to `failed` with a restart-honest error (job, eval,
+batch, anthropic batch, FT — running and queued alike) and a third
+boot sees the same recovered verdicts. Keyed retries replay across the
+restart where a route declares an idem channel, and mint fresh honestly
+where it does not. Torn-tail and mid-line journal damage pin the
+per-store contract: truncate-warn-heal for the generic stores,
+fail-closed for `files`/`conversations`, quarantine for `keys` (auth
+required, everything disabled, fresh mint still works); a journaled
+upload part without its blob drops so `complete` refuses
+`part_not_found` while the record survives. Missing/empty state dirs
+clean-start; unrelated files are untouched; the chain `seq` stays
+monotone across a real restart and reboots are idempotent. The webhook
+ledger never re-fires a delivered terminal callback and never resumes a
+pending one (`callback_secret` stays off disk); the drain latch and
+`/metrics` counters are process-local by contract.
+
+Building the lane surfaced one real defect, fixed on the same PR:
+
+* `CompleteBatchRequest.batch` in `api.py` carried a literal `\n`
+  inside the `Field(...)` call (introduced by #2876), leaving
+  `fx1.serve.api` unimportable at the prior HEAD. The field now uses
+  real newlines; the module parses and imports, and strict mypy passes
+  across all fx1 sources.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
