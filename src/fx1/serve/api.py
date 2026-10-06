@@ -90,6 +90,7 @@ from pydantic import (
 )
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Receive, Scope, Send
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
@@ -592,6 +593,31 @@ def _too_large_body(path: str) -> dict[str, Any]:
     if is_openai_path(path):
         return _v1_error_body(path, detail, 413, "too_large")
     return {"detail": detail, "code": "too_large"}
+
+
+def _unclassified_fault_body(path: str, message: str, status: int, code: str) -> dict[str, Any]:
+    """Error body for a fault no route classified, in the path's dialect."""
+    if is_openai_path(path):
+        return _v1_error_body(path, message, status, code)
+    return {"detail": message, "code": code}
+
+
+class _RaisingJSONResponse(JSONResponse):
+    """Enveloped fault response that re-raises after its body is sent.
+
+    Same contract as ``ServerErrorMiddleware``: the wire sees the contract
+    response, then the exception keeps propagating so in-process callers
+    (``ASGITransport(raise_server_exceptions=True)``) still observe the
+    real fault instead of a bare 500.
+    """
+
+    def __init__(self, *args: Any, fault: BaseException, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._fault = fault
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        await super().__call__(scope, receive, send)
+        raise self._fault
 
 
 async def _request_ingress_refusal(request: Request) -> JSONResponse | None:
@@ -10289,14 +10315,48 @@ def create_app(
             key_id, admin, _scopes = auth
             request.state.key_id = key_id
             request.state.admin = admin
-            if key_id is not None:
-                ctx_token = _REQUEST_KEY_ID.set(key_id)
-                try:
+            try:
+                if key_id is not None:
+                    ctx_token = _REQUEST_KEY_ID.set(key_id)
+                    try:
+                        response = await call_next(request)
+                    finally:
+                        _REQUEST_KEY_ID.reset(ctx_token)
+                else:
                     response = await call_next(request)
-                finally:
-                    _REQUEST_KEY_ID.reset(ctx_token)
-            else:
-                response = await call_next(request)
+            except RecursionError as fault:
+                # body-parse recursion is the request's own nesting —
+                # refuse it as a validation failure, not a server fault
+                # (backend-link recursion is pre-classified
+                # ``backend_unavailable`` and never reaches here).
+                response = _RaisingJSONResponse(
+                    status_code=422,
+                    content=_unclassified_fault_body(
+                        request.url.path,
+                        "request entity exceeds supported nesting depth",
+                        422,
+                        "validation",
+                    ),
+                    fault=fault,
+                )
+            except Exception as fault:
+                # last-resort envelope: a fault no route classified must
+                # still answer inside the contract — the request-id,
+                # security headers, metrics count, and access log all
+                # live in ``_finish``, which the outermost bare 500 the
+                # exception would otherwise become skips entirely.
+                logger.exception(
+                    "unhandled request fault method=%s path=%s",
+                    request.method,
+                    request.url.path,
+                )
+                response = _RaisingJSONResponse(
+                    status_code=500,
+                    content=_unclassified_fault_body(
+                        request.url.path, "internal error", 500, "internal"
+                    ),
+                    fault=fault,
+                )
             # a managed key with a declared rpm window reports its
             # standing budget on every answer (OpenAI header names) —
             # env-key and loopback auth declare no window and get none

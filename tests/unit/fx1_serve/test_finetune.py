@@ -383,8 +383,10 @@ class _HookHandler(BaseHTTPRequestHandler):
 
 
 @pytest.fixture()
-def hook_server() -> Any:
+def hook_server(monkeypatch: pytest.MonkeyPatch) -> Any:
     _CB_HITS.clear()
+    # loopback callbacks need the explicit SSRF opt-in (#2850)
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     srv = ThreadingHTTPServer(("127.0.0.1", 0), _HookHandler)
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()

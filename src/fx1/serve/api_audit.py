@@ -38,6 +38,7 @@ import os
 import threading
 import time
 from typing import TYPE_CHECKING, Any, ClassVar
+from unittest import mock as _mock
 
 _MESSAGES_PATH = "/v1/messages"
 _LEGACY_PATH = "/v1/completions"
@@ -337,15 +338,20 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             def __exit__(self, *a: Any) -> None:
                 return None
 
-        def fake_urlopen(req: Any, **kw: Any) -> _Resp:
-            return _Resp()
+            def close(self) -> None:
+                return None
+
+        class _LocalOpener:
+            # backends opens through build_opener(...).open, not urlopen (#9baeec1)
+            def open(self, req: Any, timeout: Any = None) -> _Resp:
+                return _Resp()
 
         import urllib.request  # noqa: PLC0415
 
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
+            with patch.object(urllib.request, "build_opener", lambda *a: _LocalOpener()):
                 resp = client.post(
                     "/harness/complete",
                     json={
@@ -1071,6 +1077,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     _dead_port = _dead_sock.getsockname()[1]
     _dead_sock.close()
     try:
+        # loopback callbacks need the explicit SSRF opt-in (#2850) — the
+        # whole block targets a private address by design
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
         deadline = time.monotonic() + 10.0
@@ -1262,6 +1271,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         )
         out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
     finally:
+        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
         cb_srv.shutdown()
         cb_srv.server_close()
 
@@ -4049,6 +4059,8 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             time.sleep(0.02)
         return j
 
+    # loopback callbacks need the explicit SSRF opt-in (#2850)
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     cb_fid = _upload(_CORPUS).json()["id"]
     cb_job = ft.post(
         _PATH_FT_JOBS,
@@ -4113,6 +4125,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         and bad_url.status_code == 422
         and sec_only.json().get("error", {}).get("code") == "validation"
     )
+    os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
     _ft_srv.shutdown()
     _ft_srv.server_close()
 
@@ -4354,6 +4367,9 @@ def _probe_backend_probes(  # NOSONAR
         def __iter__(self) -> Any:
             return iter(self._lines)
 
+        def close(self) -> None:
+            return None
+
     import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
     wire_frames = [
@@ -4364,9 +4380,13 @@ def _probe_backend_probes(  # NOSONAR
     ]
     import urllib.request as _urlreq  # noqa: PLC0415
 
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
-    try:
+    class _FakeOpener:
+        # backends resolves redirects through a per-call opener (#9baeec1):
+        # the wire frames are injected at opener.open, not urlopen
+        def open(self, req: Any, timeout: Any = None) -> _FakeResp:
+            return _FakeResp(wire_frames)
+
+    with _mock.patch.object(_urlreq, "build_opener", lambda *a: _FakeOpener()):
         box: list[dict[str, int]] = []
         toks = list(
             _be_mod._openai_chat_stream(
@@ -4379,8 +4399,6 @@ def _probe_backend_probes(  # NOSONAR
                 usage_out=box,
             )
         )
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4771,12 +4789,19 @@ def _probe_backend_probes(  # NOSONAR
         def __exit__(self, *a: Any) -> None:
             return None
 
-    def _wire_urlopen(req: Any, **kw: Any) -> Any:
+        def close(self) -> None:
+            return None
+
+    def _wire_open(req: Any, timeout: Any = None) -> Any:
         captured_wire["body"] = _json.loads(req.data.decode())
         return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
-    try:
+    class _WireOpener:
+        # backends opens through build_opener(...).open, not urlopen (#9baeec1)
+        def open(self, req: Any, timeout: Any = None) -> Any:
+            return _wire_open(req, timeout)
+
+    with _mock.patch.object(_urlreq, "build_opener", lambda *a: _WireOpener()):
         _be_mod._openai_chat_complete(
             "http://wire.test",
             model="m",
@@ -4796,8 +4821,6 @@ def _probe_backend_probes(  # NOSONAR
             label="t",
         )
         default_body = dict(captured_wire["body"])
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95
@@ -5293,6 +5316,8 @@ def _probe_backend_probes(  # NOSONAR
     _ev_dead_port = _dsock.getsockname()[1]
     _dsock.close()
     try:
+        # loopback callbacks need the explicit SSRF opt-in (#2850)
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         sub_cb = eval_app.post(
             "/harness/evals",
             json={
@@ -5402,6 +5427,7 @@ def _probe_backend_probes(  # NOSONAR
             == 422
         )
     finally:
+        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
         ev_srv.shutdown()
         ev_srv.server_close()
 
@@ -8166,6 +8192,8 @@ def _probe_backend_probes(  # NOSONAR
     _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
     _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
+    # loopback callbacks need the explicit SSRF opt-in (#2850)
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     bwh_fid = _upload(fb)["id"]
     bwh = fb.post(
         "/v1/batches",
@@ -8229,6 +8257,7 @@ def _probe_backend_probes(  # NOSONAR
         and r_expc.get("callback_status") == "delivered"
         and _bwh_path_n.get("/batch-expiry") == 1
     )
+    os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
     _bwh_srv.shutdown()
     _bwh_srv.server_close()
     # Submit-time guards: a secret without a url is a 422, never a zombie.

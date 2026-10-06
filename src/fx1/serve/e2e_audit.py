@@ -557,6 +557,8 @@ def e2e_audit() -> dict[str, bool]:
         hook_url = f"http://127.0.0.1:{hook_srv.server_address[1]}/hook"
         server7_app = api_mod.create_app(harness=Harness(runner=fake_runner))
         server7, server7_thread, port7 = _serve_uvicorn(server7_app)
+        # loopback webhook delivery needs the explicit SSRF opt-in (#2850)
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         try:
             hc = HarnessClient(f"http://127.0.0.1:{port7}", api_key=_API_KEY, timeout_s=15.0)
             jid = hc.submit_run("doctor", callback_url=hook_url, callback_secret="whsec-e2e")
@@ -608,6 +610,7 @@ def e2e_audit() -> dict[str, bool]:
                 "title"
             ].startswith("fx-1 harness API")
         finally:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
             server7.should_exit = True
             server7_thread.join(timeout=15)
             hook_srv.shutdown()

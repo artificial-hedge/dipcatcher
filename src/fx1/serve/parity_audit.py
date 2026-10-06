@@ -2037,6 +2037,8 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         import time as _time  # noqa: PLC0415
 
         _wh, _wh_hits, _wh_srv = _start_hook_sink()
+        # loopback webhook deliveries need the explicit SSRF opt-in (#2850)
+        os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         try:
             sjob_wh = sdk_ft.create_finetune_job(
                 model="fx1",
@@ -2093,6 +2095,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
                 == "ValueError"
             )
         finally:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
             _wh_srv.shutdown()
             _wh_srv.server_close()
         # error mapping: the wire's codes map back to the SDK's classes
@@ -3091,6 +3094,8 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
     import time as _time2  # noqa: PLC0415
 
     _bw, _bw_hits, _bw_srv = _start_hook_sink()
+    # loopback webhook deliveries need the explicit SSRF opt-in (#2850)
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
         bwsub = c_b.create_batch(
@@ -3129,6 +3134,7 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             == "ValueError"
         )
     finally:
+        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
         _bw_srv.shutdown()
         _bw_srv.server_close()
     out["client_batch_surface"] = (

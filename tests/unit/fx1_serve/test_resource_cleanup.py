@@ -72,11 +72,39 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    errors = [_http_error()[0], _http_error()[0]]
-    bodies = [error.fp for error in errors]
-    opener = Mock()
-    opener.open.side_effect = errors
-    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: opener)
+    # deliveries go through pinned ``http.client`` connections (#2850), not
+    # a urllib opener — stub the connection class so each attempt's response
+    # context and connection close are observable
+    class _StubResp:
+        status = 503
+        closed = False
+
+        def __enter__(self) -> Any:
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            self.closed = True
+
+    conns: list[_StubConn] = []
+
+    class _StubConn:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.response = _StubResp()
+            self.closed = False
+            conns.append(self)
+
+        def request(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def getresponse(self) -> _StubResp:
+            return self.response
+
+        def close(self) -> None:
+            self.closed = True
+
+    monkeypatch.setattr(webhooks, "check_callback_url", lambda url: url)
+    monkeypatch.setattr(webhooks, "_resolved_addresses", lambda host, port: ["10.9.9.9"])
+    monkeypatch.setattr(webhooks, "_PinnedHTTPSConnection", _StubConn)
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
     ok, message, attempts = webhooks.deliver_signed(
         "https://callback.invalid/hook",
@@ -87,10 +115,15 @@ def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyP
     )
 
     assert (ok, message, attempts) == (False, "callback endpoint returned 503", 2)
-    assert all(isinstance(body, _TrackedBody) and body.close_calls == 1 for body in bodies)
+    assert len(conns) == 2
+    assert all(conn.closed and conn.response.closed for conn in conns)
 
 
-def test_webhook_refuses_cross_origin_redirect_without_leaking_signature() -> None:
+def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # loopback source/target need the explicit SSRF opt-in (#2850)
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []
 

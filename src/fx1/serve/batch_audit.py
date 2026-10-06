@@ -1605,6 +1605,8 @@ def batch_audit() -> dict[str, Any]:
         with _audit_resources(), tempfile.TemporaryDirectory() as td:
             sink = _Sink()
             _resources().callback(sink.close)
+            # loopback webhook deliveries need the explicit SSRF opt-in (#2850)
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
             client, app = _client()
             out.update(_probe_lifecycle(client, app))
             out.update(_probe_output(client))
@@ -1620,6 +1622,7 @@ def batch_audit() -> dict[str, Any]:
             out.update(_probe_idempotency(client))
             out.update(_probe_usage_accounting())
     finally:
+        os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
         for k, v in prev.items():
             if v is None:
                 os.environ.pop(k, None)
