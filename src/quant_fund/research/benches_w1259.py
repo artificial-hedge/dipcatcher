@@ -54,5 +54,3 @@ def bench_virtual_screening_studies_family(seed: int = _SEED + 4):
 def bench_de_novo_design_studies_family(seed: int = _SEED + 5):
     """de_novo_design_studies: synthetic correctness bench."""
     return _finite_blob(de_novo_design_studies.bench_de_novo_design_studies(seed))
-
-

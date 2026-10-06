@@ -73,7 +73,7 @@ def test_public_names_and_discovery_are_preserved() -> None:
     assert set(serve._EXPORT_MODULES) == set(_PUBLIC_NAMES)
     assert set(_PUBLIC_NAMES).issubset(dir(serve))
     with pytest.raises(AttributeError, match="has no attribute 'not_an_export'"):
-        getattr(serve, "not_an_export")
+        serve.not_an_export
 
 
 def test_exports_are_cached() -> None:

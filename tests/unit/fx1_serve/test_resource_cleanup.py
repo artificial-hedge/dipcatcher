@@ -72,25 +72,63 @@ def test_client_closes_http_error_after_read(monkeypatch: pytest.MonkeyPatch) ->
 
 
 def test_webhook_closes_each_http_error_before_retry(monkeypatch: pytest.MonkeyPatch) -> None:
-    errors = [_http_error()[0], _http_error()[0]]
-    bodies = [error.fp for error in errors]
-    opener = Mock()
-    opener.open.side_effect = errors
-    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: opener)
+    """A transient 5xx closes its connection before the next attempt."""
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     monkeypatch.setattr(time, "sleep", lambda _delay: None)
-    ok, message, attempts = webhooks.deliver_signed(
-        "https://callback.invalid/hook",
-        None,
-        b'{"kind":"SYNTHETIC"}',
-        max_attempts=2,
-        backoff_s=0,
-    )
+
+    class RefuseHandler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — stdlib handler API
+            length = int(self.headers.get("Content-Length", "0"))
+            self.rfile.read(length)
+            self.send_response(503)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"error":"SYNTHETIC refusal"}')
+
+        def log_message(self, *_args: Any) -> None:
+            pass
+
+    created: list[webhooks._PinnedHTTPConnection] = []
+    real_init = webhooks._PinnedHTTPConnection.__init__
+    real_close = webhooks._PinnedHTTPConnection.close
+
+    def tracked_init(self: webhooks._PinnedHTTPConnection, *args: Any, **kwargs: Any) -> None:
+        real_init(self, *args, **kwargs)
+        self._close_calls = 0  # type: ignore[attr-defined]
+        created.append(self)
+
+    def counted_close(self: webhooks._PinnedHTTPConnection) -> None:
+        self._close_calls += 1  # type: ignore[attr-defined]
+        real_close(self)
+
+    monkeypatch.setattr(webhooks._PinnedHTTPConnection, "__init__", tracked_init)
+    monkeypatch.setattr(webhooks._PinnedHTTPConnection, "close", counted_close)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), RefuseHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        ok, message, attempts = webhooks.deliver_signed(
+            f"http://127.0.0.1:{server.server_address[1]}/hook",
+            None,
+            b'{"kind":"SYNTHETIC"}',
+            max_attempts=2,
+            backoff_s=0,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
     assert (ok, message, attempts) == (False, "callback endpoint returned 503", 2)
-    assert all(isinstance(body, _TrackedBody) and body.close_calls == 1 for body in bodies)
+    assert len(created) == 2
+    assert all(connection._close_calls >= 1 for connection in created)  # type: ignore[attr-defined]
 
 
-def test_webhook_refuses_cross_origin_redirect_without_leaking_signature() -> None:
+def test_webhook_refuses_cross_origin_redirect_without_leaking_signature(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", "1")
     target_hits: list[tuple[str, dict[str, str], bytes]] = []
     source_hits: list[tuple[str, dict[str, str], bytes]] = []
 

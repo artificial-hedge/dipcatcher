@@ -27,13 +27,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from quant_fund.leakage.ast_scan import _check_lh014, collect_py_files, scan_file
-from quant_fund.leakage.guard import GUARD_MODES, IOGuard, install_io_guard
-from quant_fund.leakage.watchdog import MAX_KNOWN_AT_PARAM, LeakageError, LeakageWatchdog
 from quant_fund.parity.checker import CAUSE_PRECEDENCE, attribute_pair, check_parity
 from quant_fund.parity.session import Bar, MarketSession, end_marks, session_fingerprint
-from quant_fund.proofcore.contracts import DataAccessRecord
-from quant_fund.proofcore.run_context import decision_window
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -103,6 +98,8 @@ class _Run:
 
 
 def _scan(tmp: Path, name: str, source: str, rules: set[str] | None = None) -> list[Any]:
+    from quant_fund.leakage.ast_scan import scan_file  # noqa: PLC0415
+
     target = tmp / name
     target.write_text(source, encoding="utf-8")
     return scan_file(target, rules=rules)
@@ -112,7 +109,9 @@ def _rules_of(findings: list[Any]) -> set[str]:
     return {f.rule_id for f in findings}
 
 
-def _record(params: dict[str, str] | None = None) -> DataAccessRecord:
+def _record(params: dict[str, str] | None = None) -> Any:
+    from quant_fund.proofcore.contracts import DataAccessRecord  # noqa: PLC0415
+
     return DataAccessRecord(
         dataset="silver/bars",
         asof_utc=_T.isoformat(),
@@ -124,6 +123,23 @@ def _record(params: dict[str, str] | None = None) -> DataAccessRecord:
 
 def parity_leak_audit() -> dict[str, bool]:
     """Run every probe; each key is True iff the pinned contract holds."""
+    from quant_fund.leakage.ast_scan import (  # noqa: PLC0415
+        _check_lh014,
+        collect_py_files,
+        scan_file,
+    )
+    from quant_fund.leakage.guard import (  # noqa: PLC0415
+        GUARD_MODES,
+        IOGuard,
+        install_io_guard,
+    )
+    from quant_fund.leakage.watchdog import (  # noqa: PLC0415
+        MAX_KNOWN_AT_PARAM,
+        LeakageError,
+        LeakageWatchdog,
+    )
+    from quant_fund.proofcore.run_context import decision_window  # noqa: PLC0415
+
     results: dict[str, bool] = {}
     dt = _T
 
