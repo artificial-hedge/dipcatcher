@@ -346,3 +346,30 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Ops-receipt audit (sealed-export battery)
+
+`ops_receipt` is the disclosure boundary every other audit leans on —
+it turns completion-log rows, job-ledger rows, and bench results into
+sealed documents (`receipt_sha256` over canonical JSON) verifiable by
+`verify_receipt_payload` / `POST /receipts/verify`. `opsreceipt_audit`
+pins 30+ contracts of the sealed-export shape in-process:
+
+- *Envelope* — every doc carries `kind`/`schema`/`git_revision`,
+  `data_label="OPS"`, `research_only`, `live_pnl_claim: False`; the seal
+  is 64-hex canonical-JSON, re-verifies, is deterministic per record,
+  leaves the input unmutated, and breaks on a one-byte tamper.
+- *bench_receipt* — `fx1_bench_result.v1`; record verbatim.
+- *completion_record_receipt* — `fx1_completion_record.v1`; verbatim
+  passthrough, idempotent re-export.
+- *run_result_receipt* — `fx1_run_result.v1`; only declared passthrough
+  keys survive, `stdout`/`stderr` ship as `*_sha256` digests, `ok`
+  derives from `exit_code == 0` only when unreported.
+- *job_record_receipt* — `fx1_job_record.v1`; ledger keys pass through,
+  `callback_url` becomes `callback_url_sha256`, `callback_secret` never
+  appears anywhere in the export, terminal `result` embeds
+  pre-digested.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
