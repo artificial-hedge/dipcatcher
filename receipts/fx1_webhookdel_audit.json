@@ -1,7 +1,7 @@
 {
  "kind": "webhookdel_audit",
  "schema": "webhookdel_audit.v1",
- "git_revision": "40ec1500c2caf0b47b26b67088dc6675d2750a59",
+ "git_revision": "182220c9ddda3f6af7f4bec46575b094823eeea0",
  "data_label": "SYNTHETIC",
  "research_only": true,
  "live_pnl_claim": false,
@@ -109,5 +109,5 @@
   ]
  },
  "interpretation": "Webhook delivery contract holds: the verdict table is exact \u2014 2xx delivers on attempt 1, 4xx (including 429 with Retry-After) is definitive in a single attempt, 5xx and 3xx retry to the WEBHOOK_MAX_ATTEMPTS ceiling and redirects are never followed; the backoff schedule doubles exponentially (0.5s then 1.0s measured), re-mints the signature pair, re-resolves DNS, and opens a fresh connection per attempt; DNS failure, connection refused, read timeout, and TLS mismatch all classify loudly and boundedly; private targets refuse (literal at validation, resolved at delivery), and a dead resolved address fails over within the attempt; delivery is synchronous in the caller \u2014 submit returns first, the terminal record is GETable before the verdict lands, a queued-cancel DELETE returns only after the cancelled delivery lands, and a failing delivery holds its inflight slot for the whole retry schedule; a single-worker executor delivers FIFO while a pool dispatches concurrently and cancel-path deliveries run on request threads; every terminal transition fires exactly once per surface and second transitions never re-fire; under --state-dir the terminal mark journals the verdict atomically, a restart restores it without re-firing, a recovered queued job fails closed as 'failed' with zero attempts (secrets never touch disk), and idempotency mappings survive; the drain latch refuses new work without freezing admitted work while shutdown cancels queued jobs and fires 'cancelled' once; callback verdicts surface honestly on every record's GET; every refusal is enveloped in the path's own grammar.",
- "receipt_sha256": "3ae82c5ec9ae5fe0c108f1cf5b083c684b261155fdcedc5ae7ba197bf3b5a6cc"
+ "receipt_sha256": "285199a6f39d11ae334596896ce68275faf98065a0ee90a517ed4892361f00a7"
 }
