@@ -107,6 +107,9 @@ def test_add_part_append_failure_does_not_publish_or_consume_capacity(tmp_path, 
     old_part = store.add_part(meta.upload_id, b"ab")["id"]
     inject_before_write(monkeypatch, store, lambda: store.add_part(meta.upload_id, b"cd"))
 
+    upload_dir = state / "uploads" / meta.upload_id
+    assert {blob.stem for blob in upload_dir.glob("*.bin")} == {old_part}
+
     issues = []
     observe_pending(issues, "live after failed add", store, meta.upload_id, old_part, b"ab")
     restored = restart_copy(state, tmp_path / "restarted")
@@ -127,6 +130,32 @@ def test_add_part_append_failure_does_not_publish_or_consume_capacity(tmp_path, 
             )
             observe(issues, f"{name} assembly", actual == b"abcd", actual)
     assert not issues, "\n".join(issues)
+
+
+def test_add_part_postwrite_failure_retains_recovery_blob(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    store = uploads.UploadStore(8, 100, state_dir=state, ttl_s=10)
+    meta = create(store)
+    old_part = store.add_part(meta.upload_id, b"ab")["id"]
+    journal = store._journal
+    append = journal.append
+
+    def fail_after_write(payload):
+        append(payload)
+        raise InjectedAppendFailure("injected after journal write")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(journal, "append", fail_after_write)
+        with pytest.raises(InjectedAppendFailure, match="after journal write"):
+            store.add_part(meta.upload_id, b"cd")
+
+    upload_dir = state / "uploads" / meta.upload_id
+    part_ids = {blob.stem for blob in upload_dir.glob("*.bin")}
+    assert len(part_ids) == 2
+    new_part = (part_ids - {old_part}).pop()
+
+    restored = restart_copy(state, tmp_path / "restarted")
+    assert restored.assemble(meta.upload_id, [old_part, new_part]) == b"abcd"
 
 
 @pytest.mark.parametrize("transition", ["complete", "cancel", "expiry"])
