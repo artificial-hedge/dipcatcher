@@ -34,6 +34,7 @@ Sealed ``api_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import contextlib
 import os
 import threading
 import time
@@ -69,6 +70,39 @@ _LOCAL_ENVS = (
     "FX1_LOCAL_API_KEY",
     "FX1_CHECKPOINT_DIR",
 )
+
+
+_PRIVATE_NET_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
+
+
+@contextlib.contextmanager
+def _callback_sink(handler: Any) -> Any:
+    """Loopback sink under the private-network webhook opt-in.
+
+    The SSRF opt-in is set before the sink is constructed and restored in the
+    outermost ``finally`` — constructor, probe, and shutdown/close failures all
+    leave ``os.environ`` exactly as the caller had it. Yields the bound server.
+    """
+    import threading as _th  # noqa: PLC0415
+    from http.server import ThreadingHTTPServer  # noqa: PLC0415
+
+    prev = os.environ.get(_PRIVATE_NET_ENV)
+    os.environ[_PRIVATE_NET_ENV] = "1"
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        try:
+            _th.Thread(target=srv.serve_forever, daemon=True).start()
+            yield srv
+        finally:
+            try:
+                srv.shutdown()
+            finally:
+                srv.server_close()
+    finally:
+        if prev is None:
+            os.environ.pop(_PRIVATE_NET_ENV, None)
+        else:
+            os.environ[_PRIVATE_NET_ENV] = prev
 
 
 def _client(
@@ -1036,8 +1070,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # never raised into the worker.
     import json as _json  # noqa: PLC0415
     import socket as _socket  # noqa: PLC0415
-    import threading as _threading  # noqa: PLC0415
-    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler  # noqa: PLC0415
 
     _cb_hits: list[dict[str, Any]] = []
     _cb_raw: list[bytes] = []
@@ -1071,19 +1104,15 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         max_inflight=2,
     )
     cbc = _TC2(cb_app)
-    cb_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
-    cb_thread = _threading.Thread(target=cb_srv.serve_forever, daemon=True)
-    cb_thread.start()
-    cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
     _dead_sock = _socket.socket()
     _dead_sock.bind(("127.0.0.1", 0))
     _dead_port = _dead_sock.getsockname()[1]
     _dead_sock.close()
     # Loopback sink — opt into private-network callback delivery for these
-    # probes; production callbacks stay public-only unless opted in.
-    _cb_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
-    try:
+    # probes; production callbacks stay public-only unless opted in. The env
+    # is restored even when the sink or a probe raises.
+    with _callback_sink(_JobHook) as cb_srv:
+        cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
         deadline = time.monotonic() + 10.0
@@ -1274,16 +1303,6 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             json={"command": "doctor", "callback_secret": "whsec-test"},
         )
         out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
-    finally:
-        try:
-            cb_srv.shutdown()
-            cb_srv.server_close()
-        finally:
-            # Restore the SSRF opt-in even when sink cleanup raises.
-            if _cb_hook_prev is None:
-                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-            else:
-                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _cb_hook_prev
 
     # --- rate limiting: per-client-host token bucket ----------------------------
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
@@ -4040,8 +4059,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     # HMAC-signed X-Fx1-Webhook-* headers when callback_secret is set,
     # and the delivery verdict (status/attempts/error) rides the record.
     import json as _json4  # noqa: PLC0415
-    import threading as _threading  # noqa: PLC0415
-    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler  # noqa: PLC0415
 
     _ft_hits: list[tuple[dict[str, str], bytes]] = []
 
@@ -4056,95 +4074,85 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
             pass
 
     # Loopback sink — opt into private-network callback delivery for the
-    # ft webhook probes; restored after the sink shuts down.
-    _ft_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
-    _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
-    _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
-    _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
+    # ft webhook probes; env restored even when the sink/probe raises.
+    with _callback_sink(_FTHook) as _ft_srv:
+        _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
 
-    def _wait_cb(job_id: str) -> dict[str, Any]:
-        deadline = time.monotonic() + 10.0
-        j: dict[str, Any] = {}
-        while time.monotonic() < deadline:
-            j = _wait_ft(job_id)
-            if j.get("callback_status") is not None:
-                return j
-            time.sleep(0.02)
-        return j
+        def _wait_cb(job_id: str) -> dict[str, Any]:
+            deadline = time.monotonic() + 10.0
+            j: dict[str, Any] = {}
+            while time.monotonic() < deadline:
+                j = _wait_ft(job_id)
+                if j.get("callback_status") is not None:
+                    return j
+                time.sleep(0.02)
+            return j
 
-    cb_fid = _upload(_CORPUS).json()["id"]
-    cb_job = ft.post(
-        _PATH_FT_JOBS,
-        json={
-            "model": "fx1",
-            "training_file": cb_fid,
-            "callback_url": _ft_cb,
-            "callback_secret": "whsec-audit",
-        },
-    ).json()
-    cb_fin = _wait_cb(cb_job["id"])
-    signed_ok = False
-    if _ft_hits:
-        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+        cb_fid = _upload(_CORPUS).json()["id"]
+        cb_job = ft.post(
+            _PATH_FT_JOBS,
+            json={
+                "model": "fx1",
+                "training_file": cb_fid,
+                "callback_url": _ft_cb,
+                "callback_secret": "whsec-audit",
+            },
+        ).json()
+        cb_fin = _wait_cb(cb_job["id"])
+        signed_ok = False
+        if _ft_hits:
+            from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
 
-        _h, _b = _ft_hits[0]
-        signed_ok = verify_webhook(
-            "whsec-audit",
-            _h.get("X-Fx1-Webhook-Timestamp"),
-            _h.get("X-Fx1-Webhook-Signature"),
-            _b,
+            _h, _b = _ft_hits[0]
+            signed_ok = verify_webhook(
+                "whsec-audit",
+                _h.get("X-Fx1-Webhook-Timestamp"),
+                _h.get("X-Fx1-Webhook-Signature"),
+                _b,
+            )
+        out["ft_webhook_fires_signed"] = (
+            len(_ft_hits) == 1
+            and cb_fin.get("callback_status") == "delivered"
+            and cb_fin.get("callback_attempts") == 1
+            and _json4.loads(_ft_hits[0][1])["status"] == "succeeded"
+            and signed_ok
         )
-    out["ft_webhook_fires_signed"] = (
-        len(_ft_hits) == 1
-        and cb_fin.get("callback_status") == "delivered"
-        and cb_fin.get("callback_attempts") == 1
-        and _json4.loads(_ft_hits[0][1])["status"] == "succeeded"
-        and signed_ok
-    )
-    out["ft_webhook_secret_never_serializes"] = (
-        "callback_secret" not in cb_fin and "callback_secret" not in _json4.loads(_ft_hits[0][1])
-    )
-    # 4xx is definitive — one attempt, no retry storm.
-    rj_fid = _upload(_CORPUS).json()["id"]
-    rj_job = ft.post(
-        _PATH_FT_JOBS,
-        json={
-            "model": "fx1",
-            "training_file": rj_fid,
-            "callback_url": _ft_cb.replace("/ft", "/reject"),
-        },
-    ).json()
-    rj_fin = _wait_cb(rj_job["id"])
-    out["ft_webhook_4xx_never_retried"] = (
-        rj_fin.get("callback_status") == "failed"
-        and rj_fin.get("callback_attempts") == 1
-        and len(_ft_hits) == 2
-        and "404" in (rj_fin.get("callback_error") or "")
-    )
-    # Submit-time guards: secret requires url; url must be http(s) with a
-    # host — both as the /v1 envelope's 422, never a queued zombie.
-    sec_only = ft.post(
-        _PATH_FT_JOBS,
-        json={"model": "fx1", "training_file": cb_fid, "callback_secret": "x"},
-    )
-    bad_url = ft.post(
-        _PATH_FT_JOBS,
-        json={"model": "fx1", "training_file": cb_fid, "callback_url": "ftp://x"},
-    )
-    out["ft_webhook_guards_422"] = (
-        sec_only.status_code == 422
-        and bad_url.status_code == 422
-        and sec_only.json().get("error", {}).get("code") == "validation"
-    )
-    try:
-        _ft_srv.shutdown()
-        _ft_srv.server_close()
-    finally:
-        if _ft_hook_prev is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-        else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _ft_hook_prev
+        out["ft_webhook_secret_never_serializes"] = (
+            "callback_secret" not in cb_fin
+            and "callback_secret" not in _json4.loads(_ft_hits[0][1])
+        )
+        # 4xx is definitive — one attempt, no retry storm.
+        rj_fid = _upload(_CORPUS).json()["id"]
+        rj_job = ft.post(
+            _PATH_FT_JOBS,
+            json={
+                "model": "fx1",
+                "training_file": rj_fid,
+                "callback_url": _ft_cb.replace("/ft", "/reject"),
+            },
+        ).json()
+        rj_fin = _wait_cb(rj_job["id"])
+        out["ft_webhook_4xx_never_retried"] = (
+            rj_fin.get("callback_status") == "failed"
+            and rj_fin.get("callback_attempts") == 1
+            and len(_ft_hits) == 2
+            and "404" in (rj_fin.get("callback_error") or "")
+        )
+        # Submit-time guards: secret requires url; url must be http(s) with a
+        # host — both as the /v1 envelope's 422, never a queued zombie.
+        sec_only = ft.post(
+            _PATH_FT_JOBS,
+            json={"model": "fx1", "training_file": cb_fid, "callback_secret": "x"},
+        )
+        bad_url = ft.post(
+            _PATH_FT_JOBS,
+            json={"model": "fx1", "training_file": cb_fid, "callback_url": "ftp://x"},
+        )
+        out["ft_webhook_guards_422"] = (
+            sec_only.status_code == 422
+            and bad_url.status_code == 422
+            and sec_only.json().get("error", {}).get("code") == "validation"
+        )
 
 
 def _probe_backend_probes(  # NOSONAR
@@ -5292,7 +5300,7 @@ def _probe_backend_probes(  # NOSONAR
     # --- eval callbacks: the job webhook contract on the eval surface -----
     # A terminal eval POSTs its record to callback_url (HMAC-signed when a
     # secret is given); delivery is best-effort and lands on the record.
-    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler  # noqa: PLC0415
 
     _ev_hits: list[dict[str, Any]] = []
     _ev_raw: list[bytes] = []
@@ -5311,10 +5319,6 @@ def _probe_backend_probes(  # NOSONAR
         def log_message(self, *args: Any) -> None:
             pass
 
-    ev_srv = ThreadingHTTPServer(("127.0.0.1", 0), _EvalHook)
-    ev_thread = _threading.Thread(target=ev_srv.serve_forever, daemon=True)
-    ev_thread.start()
-    ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
     import socket as _socket2  # noqa: PLC0415
 
     _dsock = _socket2.socket()
@@ -5322,10 +5326,10 @@ def _probe_backend_probes(  # NOSONAR
     _ev_dead_port = _dsock.getsockname()[1]
     _dsock.close()
     # Loopback sink — opt into private-network callback delivery for these
-    # probes; production callbacks stay public-only unless opted in.
-    _ev_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
-    try:
+    # probes; production callbacks stay public-only unless opted in. The env
+    # is restored even when the sink or a probe raises.
+    with _callback_sink(_EvalHook) as ev_srv:
+        ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
         sub_cb = eval_app.post(
             "/harness/evals",
             json={
@@ -5434,15 +5438,6 @@ def _probe_backend_probes(  # NOSONAR
             ).status_code
             == 422
         )
-    finally:
-        try:
-            ev_srv.shutdown()
-            ev_srv.server_close()
-        finally:
-            if _ev_hook_prev is None:
-                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-            else:
-                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _ev_hook_prev
 
     # --- OpenAI-compatible ingress ------------------------------------------
     # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
@@ -8203,83 +8198,72 @@ def _probe_backend_probes(  # NOSONAR
             pass
 
     # Loopback sink — opt into private-network callback delivery for the
-    # batch webhook probes; restored after the sink shuts down.
-    _bwh_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
-    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
-    _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
-    _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
-    _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
-    bwh_fid = _upload(fb)["id"]
-    bwh = fb.post(
-        "/v1/batches",
-        json={
-            "input_file_id": bwh_fid,
-            "endpoint": "/v1/chat/completions",
-            "callback_url": f"{_bwh_url}/batch-hook",
-            "callback_secret": "whsec-batch",
-        },
-    )
-    bwh_id = bwh.json()["id"]
-    bwh_fin = _wait_batch(fb, bwh_id)
-    deadline = time.monotonic() + 10.0
-    while bwh_fin.get("callback_status") is None and time.monotonic() < deadline:
-        time.sleep(0.02)
-        bwh_fin = fb.get(f"/v1/batches/{bwh_id}").json()
-    _bh = _bwh_hits[-1] if _bwh_hits else {}
-    _bh_ok = False
-    if _bwh_path_n.get("/batch-hook") == 1:
-        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
-
-        _bh_ok = verify_webhook(
-            "whsec-batch",
-            _bwh_hdrs[-1].get("X-Fx1-Webhook-Timestamp"),
-            _bwh_hdrs[-1].get("X-Fx1-Webhook-Signature"),
-            _bwh_raw[-1],
+    # batch webhook probes; env restored even when the sink/probe raises.
+    with _callback_sink(_BatchHook) as _bwh_srv:
+        _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
+        bwh_fid = _upload(fb)["id"]
+        bwh = fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": bwh_fid,
+                "endpoint": "/v1/chat/completions",
+                "callback_url": f"{_bwh_url}/batch-hook",
+                "callback_secret": "whsec-batch",
+            },
         )
-    out["batch_webhook_fires_signed"] = (
-        bwh_fin["status"] == "completed"
-        and bwh_fin.get("callback_status") == "delivered"
-        and bwh_fin.get("callback_attempts") == 1
-        and _bwh_path_n.get("/batch-hook") == 1
-        and _bh.get("id") == bwh_id
-        and _bh.get("status") == "completed"
-        and _bh_ok
-    )
-    out["batch_webhook_secret_never_serializes"] = "callback_secret" not in _bh
-    # Lazy expiry also fires — exactly once across reads.
-    exp_cb_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
-    past_cb = api_mod._BatchRecord(  # noqa: SLF001
-        batch_id="batch_past_cb",
-        input_file_id="file-x",
-        endpoint="/v1/chat/completions",
-        completion_window="24h",
-        status="in_progress",
-        created_at=1,
-        expires_at=2,
-        callback_url=f"{_bwh_url}/batch-expiry",
-    )
-    exp_cb_app.state.batch_store.put(past_cb)
-    exp_cbc = _TC2(exp_cb_app)
-    r_expc = exp_cbc.get("/v1/batches/batch_past_cb").json()
-    deadline = time.monotonic() + 10.0
-    while _bwh_path_n.get("/batch-expiry", 0) < 1 and time.monotonic() < deadline:
-        time.sleep(0.02)
-    exp_cbc.get("/v1/batches/batch_past_cb")
-    exp_cbc.get("/v1/batches/batch_past_cb")
-    time.sleep(0.1)
-    out["batch_webhook_expiry_fires_once"] = (
-        r_expc["status"] == "expired"
-        and r_expc.get("callback_status") == "delivered"
-        and _bwh_path_n.get("/batch-expiry") == 1
-    )
-    try:
-        _bwh_srv.shutdown()
-        _bwh_srv.server_close()
-    finally:
-        if _bwh_hook_prev is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-        else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bwh_hook_prev
+        bwh_id = bwh.json()["id"]
+        bwh_fin = _wait_batch(fb, bwh_id)
+        deadline = time.monotonic() + 10.0
+        while bwh_fin.get("callback_status") is None and time.monotonic() < deadline:
+            time.sleep(0.02)
+            bwh_fin = fb.get(f"/v1/batches/{bwh_id}").json()
+        _bh = _bwh_hits[-1] if _bwh_hits else {}
+        _bh_ok = False
+        if _bwh_path_n.get("/batch-hook") == 1:
+            from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+            _bh_ok = verify_webhook(
+                "whsec-batch",
+                _bwh_hdrs[-1].get("X-Fx1-Webhook-Timestamp"),
+                _bwh_hdrs[-1].get("X-Fx1-Webhook-Signature"),
+                _bwh_raw[-1],
+            )
+        out["batch_webhook_fires_signed"] = (
+            bwh_fin["status"] == "completed"
+            and bwh_fin.get("callback_status") == "delivered"
+            and bwh_fin.get("callback_attempts") == 1
+            and _bwh_path_n.get("/batch-hook") == 1
+            and _bh.get("id") == bwh_id
+            and _bh.get("status") == "completed"
+            and _bh_ok
+        )
+        out["batch_webhook_secret_never_serializes"] = "callback_secret" not in _bh
+        # Lazy expiry also fires — exactly once across reads.
+        exp_cb_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+        past_cb = api_mod._BatchRecord(  # noqa: SLF001
+            batch_id="batch_past_cb",
+            input_file_id="file-x",
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+            status="in_progress",
+            created_at=1,
+            expires_at=2,
+            callback_url=f"{_bwh_url}/batch-expiry",
+        )
+        exp_cb_app.state.batch_store.put(past_cb)
+        exp_cbc = _TC2(exp_cb_app)
+        r_expc = exp_cbc.get("/v1/batches/batch_past_cb").json()
+        deadline = time.monotonic() + 10.0
+        while _bwh_path_n.get("/batch-expiry", 0) < 1 and time.monotonic() < deadline:
+            time.sleep(0.02)
+        exp_cbc.get("/v1/batches/batch_past_cb")
+        exp_cbc.get("/v1/batches/batch_past_cb")
+        time.sleep(0.1)
+        out["batch_webhook_expiry_fires_once"] = (
+            r_expc["status"] == "expired"
+            and r_expc.get("callback_status") == "delivered"
+            and _bwh_path_n.get("/batch-expiry") == 1
+        )
     # Submit-time guards: a secret without a url is a 422, never a zombie.
     bad_cb = fb.post(
         "/v1/batches",

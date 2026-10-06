@@ -69,3 +69,90 @@ def test_verify_receipt_route() -> None:
     resp = _client().post("/receipts/verify", json={"receipt": blob})
     assert resp.status_code == 200
     assert resp.json()["valid"] is True
+
+
+class _SinkHook:  # minimal handler for _callback_sink tests
+    pass
+
+
+class _BoomSink:
+    """Fake sink whose cleanup raises — mirrors a wedged shutdown()."""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        self.server_address = ("127.0.0.1", 0)
+
+    def serve_forever(self) -> None:
+        pass
+
+    def shutdown(self) -> None:
+        raise RuntimeError("wedged sink")
+
+    def server_close(self) -> None:
+        pass
+
+
+def _boom_ctor(*args: object, **kwargs: object) -> object:
+    raise RuntimeError("ctor boom")
+
+
+def test_callback_sink_restores_env_happy_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Absent and sentinel caller values both survive a clean sink lifecycle."""
+    import os
+
+    from fx1.serve.api_audit import _PRIVATE_NET_ENV, _callback_sink
+
+    monkeypatch.delenv(_PRIVATE_NET_ENV, raising=False)
+    with _callback_sink(_SinkHook):
+        assert os.environ[_PRIVATE_NET_ENV] == "1"
+    assert _PRIVATE_NET_ENV not in os.environ
+
+    monkeypatch.setenv(_PRIVATE_NET_ENV, "sentinel")
+    with _callback_sink(_SinkHook):
+        assert os.environ[_PRIVATE_NET_ENV] == "1"
+    assert os.environ[_PRIVATE_NET_ENV] == "sentinel"
+
+
+def test_callback_sink_restores_env_on_ctor_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failing sink constructor must not leak the SSRF opt-in."""
+    import http.server
+    import os
+
+    from fx1.serve.api_audit import _PRIVATE_NET_ENV, _callback_sink
+
+    monkeypatch.delenv(_PRIVATE_NET_ENV, raising=False)
+    monkeypatch.setattr(http.server, "ThreadingHTTPServer", _boom_ctor)
+    with pytest.raises(RuntimeError), _callback_sink(_SinkHook):
+        pass
+    assert _PRIVATE_NET_ENV not in os.environ
+
+
+def test_callback_sink_restores_env_on_probe_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failing probe inside the sink window must not leak the opt-in."""
+    import os
+
+    from fx1.serve.api_audit import _PRIVATE_NET_ENV, _callback_sink
+
+    monkeypatch.setenv(_PRIVATE_NET_ENV, "keep-me")
+    with pytest.raises(ValueError), _callback_sink(_SinkHook):
+        raise ValueError("probe boom")
+    assert os.environ[_PRIVATE_NET_ENV] == "keep-me"
+
+
+def test_callback_sink_restores_env_on_cleanup_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A raising shutdown() must not skip env restoration."""
+    import http.server
+    import os
+
+    from fx1.serve.api_audit import _PRIVATE_NET_ENV, _callback_sink
+
+    monkeypatch.setattr(http.server, "ThreadingHTTPServer", _BoomSink)
+    monkeypatch.delenv(_PRIVATE_NET_ENV, raising=False)
+    with pytest.raises(RuntimeError), _callback_sink(_SinkHook):
+        pass
+    assert _PRIVATE_NET_ENV not in os.environ
