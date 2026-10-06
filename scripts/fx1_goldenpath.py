@@ -11,8 +11,11 @@ product story through it and seals the run as ``goldenpath.v1``:
   pointed at the same booted server (the SDK twin answers without a socket);
 * the three consumption modes, honestly: ``byok`` end-to-end against a real
   OpenAI-compatible stub engine, ``local_fx1`` end-to-end over the wire
-  against a card-only checkpoint dir, and ``weights_direct_ran`` pinned
-  ``false`` — no fx-1 weight artifact exists anywhere in this repository;
+  against the committed ``artifacts/fx1_tiny_lm`` checkpoint (a real
+  safetensors weight file the in-repo ``fx1.serve.local_engine`` loads and
+  runs inference through), and ``weights_direct_ran`` measuring the same
+  artifact loaded in-process — the wire completion is pinned byte-for-byte
+  equal to the direct generation;
 * an eval suite submitted over ``/harness/evals``, polled to terminal, its
   sealed receipt fetched and verified, and two runs diffed through the
   promotion-gate diff route;
@@ -44,6 +47,7 @@ import argparse
 import contextlib
 import json
 import os
+import socket
 import subprocess
 import sys
 import tempfile
@@ -185,25 +189,18 @@ def _all_weight_hits() -> list[str]:
     )
 
 
-def _make_checkpoint(ckpt: Path) -> None:
-    """Write a real, ship-gate-passing model card — the checkpoint dir is real,
-    the weight tensors it would point at do not exist (recorded honestly)."""
-    from fx1.modelcard import EvalDelta, ModelCard
+def _committed_checkpoint() -> Path | None:
+    """The committed fx-1 fixture checkpoint: card + manifest + real weights.
 
-    ckpt.mkdir(parents=True, exist_ok=True)
-    ModelCard(
-        version="fx-1.v0.1",
-        corpus_sha256="a" * 64,
-        corpus_receipt_range="b5942241..f0e1d2c3",
-        training_manifest_sha256="b" * 64,
-        eval_delta=EvalDelta(
-            domain_pass_rate_base=0.5,
-            domain_pass_rate_candidate=0.7,
-            general_pass_rate_base=0.9,
-            general_pass_rate_candidate=0.9,
-            honesty_gate_candidate=True,
-        ),
-    ).save(ckpt / "modelcard.json")
+    ``artifacts/fx1_tiny_lm`` is produced by ``scripts/fx1_tiny_lm_train.py``
+    (a few seconds of real CPU training) and pinned by sha256 in its
+    manifest. Absent or incomplete members land as an honest gap, not a
+    synthesized stand-in."""
+    ckpt = _REPO_ROOT / "artifacts" / "fx1_tiny_lm"
+    members = ("modelcard.json", "weights.manifest.json", "weights.safetensors")
+    if all((ckpt / m).is_file() for m in members):
+        return ckpt
+    return None
 
 
 def _openai_legs(legs: _Legs, base: str, api_key: str) -> None:
@@ -365,19 +362,42 @@ def run_goldenpath(
     receipts_dir.mkdir(exist_ok=True)
     out_path = Path(out) if out is not None else _REPO_ROOT / "receipts" / "fx1_goldenpath.json"
 
-    # --- real checkpoint dir (card only — no weight tensors exist in-repo) ---
+    # --- weights-direct leg: load the committed artifact in-process ------
+    ckpt_dir = _committed_checkpoint()
     weight_hits = _all_weight_hits()
-    _make_checkpoint(ckpt_dir)
-    legs.record(
-        "weights_direct_ran",
-        False,
-        False,
-        "no loadable fx-1 checkpoint exists in this checkout "
-        f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
-        f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}) — "
-        "the local_fx1 wire path still ran end-to-end against a real "
-        "card-only checkpoint dir",
-    )
+    weights_engine: Any = None
+    weights_prompt = [{"role": "user", "content": "weights-direct-ping"}]
+    if ckpt_dir is None:
+        legs.record(
+            "weights_direct_ran",
+            False,
+            False,
+            "no loadable fx-1 checkpoint exists in this checkout "
+            f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
+            f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}; "
+            "artifacts/fx1_tiny_lm needs modelcard.json + weights.manifest.json "
+            "+ weights.safetensors — regenerate via scripts/fx1_tiny_lm_train.py)",
+        )
+    else:
+        try:
+            from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
+
+            weights_engine = LocalWeightsEngine(ckpt_dir)
+            first = weights_engine.complete_messages(weights_prompt)
+            second = weights_engine.complete_messages(weights_prompt)
+            legs.record(
+                "weights_direct_ran",
+                True,
+                first.text == second.text and bool(first.text.strip()),
+                f"in-process load of {ckpt_dir.relative_to(_REPO_ROOT)} "
+                f"(weights_sha256={weights_engine.weights_sha256[:16]}… "
+                f"n_params={weights_engine.model.n_params} "
+                f"model={weights_engine.served_model}); deterministic "
+                f"greedy completion ran twice: {first.text[:64]!r}",
+            )
+        except Exception as exc:  # noqa: BLE001
+            legs.record("weights_direct_ran", True, False, f"{type(exc).__name__}: {exc}")
+            weights_engine = None
 
     # --- real stub engine (the closest-to-real in-repo OpenAI-compatible) ----
     from fx1.serve.e2e_audit import _StubChat  # noqa: PLC0415 — audit stub reuse
@@ -404,10 +424,26 @@ def run_goldenpath(
             "FX1_BYOK_MODEL": "stub-v0",
             "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
             "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS": "1",
-            "FX1_CHECKPOINT_DIR": str(ckpt_dir),
-            "FX1_LOCAL_SERVE_URL": stub_url,
         }
     )
+    engine_sock: socket.socket | None = None
+    if ckpt_dir is not None:
+        # The harness's own spawn path: LocalFx1Backend launches the in-repo
+        # weights engine on this port and attaches to the declared URL — the
+        # child loads weights.safetensors out of the verified checkpoint dir.
+        # Hold the port bound until serve is healthy: a free-but-advertised
+        # port can be re-dealt to serve's own bind, which would make
+        # FX1_LOCAL_SERVE_URL point the backend at the harness itself.
+        engine_sock = socket.socket()
+        engine_sock.bind(("127.0.0.1", 0))
+        engine_sock.listen(1)
+        engine_port = int(engine_sock.getsockname()[1])
+        server_env["FX1_CHECKPOINT_DIR"] = str(ckpt_dir)
+        server_env["FX1_LOCAL_SERVE_URL"] = f"http://127.0.0.1:{engine_port}/v1"
+        server_env["FX1_LOCAL_SERVE_CMD"] = (
+            "$python -m fx1.serve.local_engine "
+            f"--checkpoint-dir $checkpoint_dir --port {engine_port}"
+        )
 
     saved_local = {k: os.environ.get(k) for k in _ENV_KEYS}
     proc: subprocess.Popen[bytes] | None = None
@@ -442,29 +478,59 @@ def run_goldenpath(
         _openai_legs(legs, base, _PROBE_KEY)
         _anthropic_legs(legs, base, _PROBE_KEY)
 
-        # weights-direct wire path (card-only checkpoint; honest gap above) ---
+        # weights-direct wire path: the backend spawns fx1.serve.local_engine
+        # on the declared URL and serves the committed checkpoint's real
+        # weights. The pin is byte-equality: wire output must equal the same
+        # checkpoint loaded in-process — no stub could produce it.
         try:
             import openai as _openai_mod
         except ImportError:
             _openai_mod = None
         if _openai_mod is None:
             legs.record("local_fx1_link_ran", False, False, "openai package not installed")
+        elif weights_engine is None:
+            legs.record(
+                "local_fx1_link_ran",
+                False,
+                False,
+                "no committed weight checkpoint to serve",
+            )
         else:
             try:
-                oai = _openai_mod.OpenAI(base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=30.0)
+                # Hold the advertised engine port until the moment the first
+                # local_fx1 request fires the spawn — between serve boot and
+                # now, other legs' outbound sockets could have been dealt it.
+                if engine_sock is not None:
+                    engine_sock.close()
+                    engine_sock = None
+                oai = _openai_mod.OpenAI(
+                    base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=leg_timeout_s
+                )
                 loc = oai.chat.completions.create(
                     model="local_fx1", messages=[{"role": "user", "content": "local-ping"}]
                 )
                 loc_done = client.complete(
                     [{"role": "user", "content": "local-hc"}], backend="local_fx1"
                 )
+                wire_text = loc.choices[0].message.content or ""
+                direct_text = weights_engine.complete_messages(
+                    [{"role": "user", "content": "local-ping"}]
+                ).text
+                # The served engine is spawned per request and terminated on
+                # teardown — no probe can outlive its request — so the pin is
+                # byte-equality: wire output must equal the same checkpoint
+                # completed in-process. Only identical weights can produce
+                # identical bytes under greedy decode.
                 legs.record(
                     "local_fx1_link_ran",
                     True,
-                    "local-ping" in (loc.choices[0].message.content or "")
+                    wire_text == direct_text
+                    and bool(wire_text.strip())
+                    and loc.model == weights_engine.served_model
                     and loc_done.backend == "local_fx1",
                     f"oai_model={loc.model} hc_model={loc_done.model} "
-                    f"content={(loc.choices[0].message.content or '')[:48]!r}",
+                    f"wire==in-process-direct={wire_text == direct_text} "
+                    f"served_model={loc.model} content={wire_text[:48]!r}",
                 )
             except Exception as exc:  # noqa: BLE001
                 legs.record("local_fx1_link_ran", True, False, f"{type(exc).__name__}: {exc}")
@@ -714,6 +780,8 @@ def run_goldenpath(
         except Exception as exc:  # noqa: BLE001
             legs.record("wire_receipts_verify", True, False, f"{type(exc).__name__}: {exc}")
     finally:
+        if engine_sock is not None:
+            engine_sock.close()
         for p in (proc, proc2):
             if p is not None and p.poll() is None:
                 p.kill()
@@ -753,8 +821,11 @@ def run_goldenpath(
                 "completed; a fine-tune job reached its honest terminal state; a "
                 "signed webhook delivered to loopback; SIGKILL + same-state-dir "
                 "restart recovered every journaled record. weights_direct_ran is "
-                "false — no fx-1 weight artifact exists in this checkout, so the "
-                "card-only local_fx1 link carried the wire path instead."
+                "true — the committed artifacts/fx1_tiny_lm checkpoint (a real "
+                "safetensors fixture trained by scripts/fx1_tiny_lm_train.py) "
+                "loaded in-process and served over the wire through "
+                "fx1.serve.local_engine, with the wire completion byte-identical "
+                "to direct-weights generation."
                 if runnable_ok
                 else f"GOLDENPATH DEFECT: {results}"
             ),
