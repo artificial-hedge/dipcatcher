@@ -176,25 +176,47 @@ _NONNUMERIC_TEXT = st.text(min_size=1).filter(_unparseable_float_text)
 _NONFINITE_TEXT = st.sampled_from(["nan", "-nan", "inf", "-inf", "Infinity", "1e999"])
 
 
-# Bytes only qualify as a "not numeric" fault when float() cannot parse them;
-# parseable bytes such as b"0" coerce successfully and hit a different
-# rejection branch (positivity), which is not what this test pins.
-_UNPARSEABLE_BYTES = st.binary(min_size=1).filter(_unparseable_float_text)
+# Binary vendor fields are outside the numeric contract even when the payload
+# happens to contain ASCII digits that Python's ``float`` would accept.
+_BINARY_VALUES = st.binary(min_size=1)
 
 
 @settings(max_examples=60, deadline=None)
 @given(
     batch=valid_batch(),
     field=st.sampled_from((*PRICE_FIELDS, "volume")),
-    bad=st.one_of(_NONNUMERIC_TEXT, st.none(), _UNPARSEABLE_BYTES),
+    bad=st.one_of(_NONNUMERIC_TEXT, st.none(), _BINARY_VALUES),
 )
 def test_non_numeric_fields_fail_closed(
     batch: list[dict[str, object]], field: str, bad: object
 ) -> None:
-    """Unparseable vendor values (garbage strings, None, bytes) raise SourceError."""
+    """Invalid vendor values and all binary fields raise ``SourceError``."""
     batch[0][field] = bad
     with pytest.raises(SourceError, match="not numeric"):
         normalize_ohlcv(batch, source="fault")
+
+
+@pytest.mark.parametrize("field", [*PRICE_FIELDS, "volume"])
+@pytest.mark.parametrize(
+    "bad",
+    [b"10.5", bytearray(b"10.5"), memoryview(b"10.5")],
+    ids=["bytes", "bytearray", "memoryview"],
+)
+def test_parseable_binary_numeric_fields_fail_closed(field: str, bad: object) -> None:
+    """Binary ASCII digits must not be laundered into trusted prices or volume."""
+    row: dict[str, object] = {
+        "security_id": "AAA",
+        "event_time": BASE_TIME,
+        "open": 10.0,
+        "high": 11.0,
+        "low": 9.0,
+        "close": 10.5,
+        "volume": 100.0,
+    }
+    row[field] = bad
+
+    with pytest.raises(SourceError, match=rf"^{field} is not numeric$"):
+        normalize_ohlcv([row], source="fault")
 
 
 @settings(max_examples=40, deadline=None)

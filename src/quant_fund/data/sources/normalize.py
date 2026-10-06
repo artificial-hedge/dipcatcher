@@ -14,6 +14,11 @@ from quant_fund.data.sources.base import SourceError, parse_time, pit_frame
 
 
 def _number(value: Any, field: str) -> float:
+    # ``float`` accepts ASCII digits stored in bytes-like containers. Vendor
+    # binary payloads are not part of the numeric input contract, even when
+    # their bytes happen to spell a number, so reject them before coercion.
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        raise SourceError(f"{field} is not numeric")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
