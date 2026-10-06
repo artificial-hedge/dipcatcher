@@ -1211,9 +1211,9 @@ def drain_audit() -> dict[str, Any]:
         return out
 
 
-def drain_audit_bench() -> dict[str, Any]:
-    """Sealed receipt: every probe True under drain_audit.v1."""
-    r = drain_audit()
+def drain_audit_bench(results: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Seal drain-audit results; run the battery when results are omitted."""
+    r = drain_audit() if results is None else dict(results)
     ok = bool(r) and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "drain_audit",
