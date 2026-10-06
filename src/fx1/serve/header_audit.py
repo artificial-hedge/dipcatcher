@@ -107,6 +107,7 @@ import re
 import socket
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -1090,11 +1091,12 @@ def _emitted_header_probes() -> dict[str, bool]:
     results: dict[str, bool] = {}
     client, _api = _client()
 
-    for name, fn in (
+    receipt_calls: list[tuple[str, Callable[[], Any]]] = [
         ("receipt_sha_on_complete", lambda: _complete(client)),
         ("receipt_sha_on_chat", lambda: _chat(client)),
         ("receipt_sha_on_messages", lambda: _messages(client)),
-    ):
+    ]
+    for name, fn in receipt_calls:
         r = fn()
         cid = r.headers.get("x-fx1-completion-id")
         rsha = r.headers.get("x-fx1-receipt-sha256")

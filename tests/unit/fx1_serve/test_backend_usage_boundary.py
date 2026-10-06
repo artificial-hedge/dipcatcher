@@ -44,7 +44,7 @@ def test_malformed_usage_does_not_discard_a_completed_response(
     def response(*args: Any, **kwargs: Any) -> io.BytesIO:
         return io.BytesIO(json.dumps(payload).encode())
 
-    monkeypatch.setattr(backends.urllib.request, "urlopen", response)
+    monkeypatch.setattr(backends, "_openai_urlopen", response)
     content, usage = backends._openai_chat_complete(
         "https://provider.example/v1/chat/completions",
         model="synthetic-model",
@@ -80,7 +80,7 @@ def test_usage_only_stream_frame_does_not_require_billable_counters(
     def response(*args: Any, **kwargs: Any) -> io.BytesIO:
         return io.BytesIO(body.encode())
 
-    monkeypatch.setattr(backends.urllib.request, "urlopen", response)
+    monkeypatch.setattr(backends, "_openai_urlopen", response)
     usage_out: list[dict[str, int]] = []
     chunks = list(
         backends._openai_chat_stream(
@@ -104,7 +104,7 @@ def test_non_usage_stream_frame_without_choices_still_fails_closed(
     def response(*args: Any, **kwargs: Any) -> io.BytesIO:
         return io.BytesIO(f"data: {json.dumps(frame)}\n\ndata: [DONE]\n\n".encode())
 
-    monkeypatch.setattr(backends.urllib.request, "urlopen", response)
+    monkeypatch.setattr(backends, "_openai_urlopen", response)
     with pytest.raises(RuntimeError, match="missing choices"):
         list(
             backends._openai_chat_stream(

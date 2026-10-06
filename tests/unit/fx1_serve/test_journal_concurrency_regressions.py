@@ -6,6 +6,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -32,16 +33,16 @@ def test_replay_cannot_rewind_concurrent_append(
     snapshot_read = threading.Event()
     release_snapshot = threading.Event()
     append_finished = threading.Event()
-    read_bytes = Path.read_bytes
+    real_open = Path.open
 
-    def paused_read(path: Path) -> bytes:
-        data = read_bytes(path)
+    def paused_open(path: Path, *args: Any, **kwargs: Any) -> Any:
+        fh = real_open(path, *args, **kwargs)
         if path == journal.path and not snapshot_read.is_set():
             snapshot_read.set()
             assert release_snapshot.wait(2)
-        return data
+        return fh
 
-    monkeypatch.setattr(Path, "read_bytes", paused_read)
+    monkeypatch.setattr(Path, "open", paused_open)
 
     def append() -> None:
         journal.append({"id": "second"})

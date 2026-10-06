@@ -88,10 +88,22 @@ def test_damaged_journal_refuses_startup_without_rewriting(tmp_path: Path, corru
         assert path.read_bytes() == damaged
 
 
+@pytest.mark.parametrize("payload", [[]])
+def test_non_object_record_refuses_startup_as_damaged_journal(tmp_path: Path, payload: Any) -> None:
+    path = tmp_path / "conversations.jsonl"
+    journal = JobJournal(path)
+    store = OpenAIEnvelopeStore(journal=journal)
+    store.put(_envelope(), items={"items": _items()})
+    journal.append(payload)
+    original = path.read_bytes()
+    with pytest.raises(RuntimeError, match="envelope journal is damaged"):
+        OpenAIEnvelopeStore(journal=JobJournal(path))
+    assert path.read_bytes() == original
+
+
 @pytest.mark.parametrize(
     "payload",
     [
-        [],
         {"op": "unknown"},
         {"op": "put", "envelope": {}},
         {"op": "put", "envelope": {"id": ""}},

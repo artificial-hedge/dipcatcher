@@ -340,12 +340,12 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def fake_urlopen(req: Any, **kw: Any) -> _Resp:
             return _Resp()
 
-        import urllib.request  # noqa: PLC0415
+        import fx1.serve.backends as _be_mod  # noqa: PLC0415
 
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
+            with patch.object(_be_mod, "_openai_urlopen", fake_urlopen):
                 resp = client.post(
                     "/harness/complete",
                     json={
@@ -4362,10 +4362,8 @@ def _probe_backend_probes(  # NOSONAR
         b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
         b"data: [DONE]\n",
     ]
-    import urllib.request as _urlreq  # noqa: PLC0415
-
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
+    orig_urlopen = _be_mod._openai_urlopen
+    _be_mod._openai_urlopen = lambda req, *, timeout_s: _FakeResp(wire_frames)  # type: ignore[assignment]
     try:
         box: list[dict[str, int]] = []
         toks = list(
@@ -4380,7 +4378,7 @@ def _probe_backend_probes(  # NOSONAR
             )
         )
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _be_mod._openai_urlopen = orig_urlopen
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4775,7 +4773,7 @@ def _probe_backend_probes(  # NOSONAR
         captured_wire["body"] = _json.loads(req.data.decode())
         return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
+    _be_mod._openai_urlopen = _wire_urlopen  # type: ignore[assignment]
     try:
         _be_mod._openai_chat_complete(
             "http://wire.test",
@@ -4797,7 +4795,7 @@ def _probe_backend_probes(  # NOSONAR
         )
         default_body = dict(captured_wire["body"])
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _be_mod._openai_urlopen = orig_urlopen
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95

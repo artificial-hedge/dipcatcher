@@ -842,7 +842,7 @@ def _surface_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     # the seventh refuses on whichever surface it lands on
     u_raw, u_id = _mint(client, root_h, rpm=6)
     u_h = {_H_KEY: u_raw}
-    surface_calls = [
+    surface_calls: list[Callable[[], Any]] = [
         lambda: _complete(client, u_h),
         lambda: _chat(client, u_h),
         lambda: _responses(client, u_h),

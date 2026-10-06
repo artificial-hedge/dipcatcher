@@ -62,6 +62,7 @@ def serve_audit() -> dict[str, Any]:
     from pathlib import Path
     from unittest.mock import patch
 
+    import fx1.serve.backends as _be
     from fx1.modelcard import EvalDelta, ModelCard
     from fx1.serve.backends import (
         HostedK3Backend,
@@ -111,9 +112,7 @@ def serve_audit() -> dict[str, Any]:
             captured["auth"] = req.headers.get("Authorization")
             return _Resp()
 
-        import urllib.request  # noqa: PLC0415
-
-        with patch.object(urllib.request, "urlopen", fake_urlopen):
+        with patch.object(_be, "_openai_urlopen", fake_urlopen):
             text = backend.complete([{"role": "user", "content": "hi"}])
         out["hosted_temperature_zero"] = (
             text == "answer"
@@ -214,7 +213,7 @@ def serve_audit() -> dict[str, Any]:
                 serve_url="http://127.0.0.1:8011/v1",
                 api_key="local-key",
             )
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with patch.object(_be, "_openai_urlopen", fake_urlopen2):
                 text = attached.complete([{"role": "user", "content": "hi"}])
             out["local_attach_complete"] = text == "answer"
             out["local_temperature_zero"] = captured2["body"].get("temperature") == 0.0
@@ -225,7 +224,7 @@ def serve_audit() -> dict[str, Any]:
             )
             os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8012"
             env_be = LocalFx1Backend(root, require_signature=True)
-            with patch.object(urllib.request, "urlopen", fake_urlopen2):
+            with patch.object(_be, "_openai_urlopen", fake_urlopen2):
                 env_be.complete([{"role": "user", "content": "hi"}])
             out["local_env_url_honored"] = any("127.0.0.1:8012" in u for u in captured2["urls"])
 
@@ -257,7 +256,7 @@ def serve_audit() -> dict[str, Any]:
                     ]
                 )
 
-            with patch.object(urllib.request, "urlopen", fake_stream):
+            with patch.object(_be, "_openai_urlopen", fake_stream):
                 deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
             out["local_stream_deltas"] = deltas == ["hel", "lo"]
             out["local_stream_wire_flag"] = captured2["stream_body"].get("stream") is True
@@ -267,7 +266,7 @@ def serve_audit() -> dict[str, Any]:
             def fake_bad_stream(req: Any, **kw: Any) -> _StreamResp:
                 return _StreamResp([b"data: {not json\n\n"])
 
-            with patch.object(urllib.request, "urlopen", fake_bad_stream):
+            with patch.object(_be, "_openai_urlopen", fake_bad_stream):
                 out["local_stream_malformed_fails"] = (
                     _raises(lambda: list(attached.stream([{"role": "u", "content": "x"}])))
                     == "RuntimeError"
@@ -290,7 +289,13 @@ def serve_audit() -> dict[str, Any]:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
-            with patch.object(urllib.request, "urlopen", fake_urlopen_cold):
+            # Both wire seams need the fake: the readiness probe calls
+            # urllib.request.urlopen directly while completions go through
+            # _openai_urlopen (redirect-refusing opener since #2817).
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen_cold),
+                patch.object(_be, "_openai_urlopen", fake_urlopen_cold),
+            ):
                 spawned.complete([{"role": "user", "content": "hi"}])
             out["local_spawn_template_ran"] = spawned._proc is not None
             spawned.close()
@@ -343,6 +348,7 @@ def serve_audit() -> dict[str, Any]:
                 with (
                     patch.object(subprocess, "Popen", counting_popen),
                     patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    patch.object(_be, "_openai_urlopen", fake_urlopen_cold_locked),
                     ThreadPoolExecutor(max_workers=4) as pool,
                 ):
                     list(

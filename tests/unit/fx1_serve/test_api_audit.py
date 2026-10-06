@@ -32,7 +32,8 @@ def test_all_probes_hold() -> None:
 
 def test_receipt_verifies() -> None:
     blob = api_audit_bench()
-    assert blob["claim"]["ok"] is True
+    falses = [name for name, ok in blob["claim"]["results"].items() if ok is not True]
+    assert blob["claim"]["ok"] is True, f"probes failed: {falses}"
     verdict = verify_receipt_payload(blob)
     assert verdict["valid"] is True
 

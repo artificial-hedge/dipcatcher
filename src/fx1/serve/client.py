@@ -56,6 +56,7 @@ from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 from fx1.serve.usage_report import UsageReport
 
 __all__ = [
+    "BackendNotConfiguredError",
     "EXPECTED_API_VERSION",
     "HarnessAuthError",
     "HarnessClient",
