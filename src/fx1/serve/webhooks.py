@@ -156,9 +156,10 @@ def _post_once(
     target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
     try:
         connection.request("POST", target, body=body, headers=headers)
-        response = connection.getresponse()
-        response.read()
-        return response.status
+        # Delivery depends only on status; an untrusted response body may be
+        # unbounded. This connection is never reused, so close without draining.
+        with connection.getresponse() as response:
+            return response.status
     finally:
         connection.close()
 

@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import http.client
+import io
 import os
 import socket
 import unittest
+import urllib.parse
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from fx1.serve.webhooks import (
+    _post_once,
     check_callback_url,
     deliver_signed,
     sign_webhook,
@@ -273,6 +277,102 @@ class TestWebhooks(unittest.TestCase):
         self.assertEqual(attempts, 2)
         self.assertEqual(resolve.call_count, 2)
         post.assert_called_once()
+
+    def test_post_once_closes_real_responses_without_reading_the_body(self) -> None:
+        for scheme, port, connection_name in (
+            ("http", 80, "_PinnedHTTPConnection"),
+            ("https", 443, "_PinnedHTTPSConnection"),
+        ):
+            for status in (200, 204, 302, 400, 503):
+                for framing in (
+                    "Content-Length: 1000000000",
+                    "Transfer-Encoding: chunked",
+                    "Connection: close",
+                ):
+                    with self.subTest(scheme=scheme, status=status, framing=framing):
+                        stream = io.BytesIO(
+                            f"HTTP/1.1 {status} Synthetic\r\n{framing}\r\n\r\n".encode()
+                        )
+                        sock = Mock()
+                        sock.makefile.return_value = stream
+                        response = http.client.HTTPResponse(sock)
+                        response.begin()
+                        headers = {"Content-Type": "application/json"}
+                        with (
+                            patch(f"fx1.serve.webhooks.{connection_name}") as connection_cls,
+                            patch.object(
+                                response,
+                                "read",
+                                side_effect=AssertionError("body must not be read"),
+                            ) as read,
+                            patch.object(response, "close", wraps=response.close) as close,
+                        ):
+                            connection = connection_cls.return_value
+                            connection.getresponse.return_value = response
+                            self.assertEqual(
+                                _post_once(
+                                    urllib.parse.urlparse(f"{scheme}://example.com/hook?x=1"),
+                                    "93.184.216.34",
+                                    self.body,
+                                    headers,
+                                    10.0,
+                                ),
+                                status,
+                            )
+                            connection_cls.assert_called_once_with(
+                                "example.com", port, "93.184.216.34", 10.0
+                            )
+                            connection.request.assert_called_once_with(
+                                "POST", "/hook?x=1", body=self.body, headers=headers
+                            )
+                            read.assert_not_called()
+                            close.assert_called_once_with()
+                            connection.close.assert_called_once_with()
+                        self.assertTrue(response.isclosed())
+                        self.assertTrue(stream.closed)
+
+    def test_post_once_closes_connection_on_request_or_response_failure(self) -> None:
+        for operation in ("request", "getresponse"):
+            with (
+                self.subTest(operation=operation),
+                patch("fx1.serve.webhooks._PinnedHTTPConnection") as connection_cls,
+            ):
+                connection = connection_cls.return_value
+                getattr(connection, operation).side_effect = OSError("synthetic failure")
+                with self.assertRaisesRegex(OSError, "synthetic failure"):
+                    _post_once(
+                        urllib.parse.urlparse("http://example.com/hook"),
+                        "93.184.216.34",
+                        self.body,
+                        {},
+                        10.0,
+                    )
+                connection.close.assert_called_once_with()
+
+    def test_post_once_closes_connection_when_response_close_fails(self) -> None:
+        sock = Mock()
+        sock.makefile.return_value = io.BytesIO(b"HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\n")
+        response = http.client.HTTPResponse(sock)
+        response.begin()
+        try:
+            with (
+                patch("fx1.serve.webhooks._PinnedHTTPConnection") as connection_cls,
+                patch.object(response, "close", side_effect=OSError("synthetic close failure")),
+                patch.object(response, "read", side_effect=AssertionError("body must not be read")),
+            ):
+                connection = connection_cls.return_value
+                connection.getresponse.return_value = response
+                with self.assertRaisesRegex(OSError, "synthetic close failure"):
+                    _post_once(
+                        urllib.parse.urlparse("http://example.com/hook"),
+                        "93.184.216.34",
+                        self.body,
+                        {},
+                        10.0,
+                    )
+                connection.close.assert_called_once_with()
+        finally:
+            response.close()
 
 
 if __name__ == "__main__":
