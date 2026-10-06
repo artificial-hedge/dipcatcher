@@ -26,6 +26,7 @@ tests route it at a ``fastapi.testclient.TestClient``.
 
 from __future__ import annotations
 
+import contextlib
 import http.client
 import json
 import time
@@ -130,8 +131,14 @@ def _urllib_transport(
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 — URL is validated at construction  # nosec B310
             return resp.status, dict(resp.headers), resp.read()
     except urllib.error.HTTPError as exc:
-        body = exc.read() if exc.fp is not None else b""
-        return exc.code, dict(exc.headers or {}), body
+        # HTTPError owns the rejected response/socket.  The normal ``with``
+        # path cannot close it because urlopen raises before it is entered.
+        try:
+            body = exc.read() if exc.fp is not None else b""
+            return exc.code, dict(exc.headers or {}), body
+        finally:
+            with contextlib.suppress(Exception):
+                exc.close()
     except urllib.error.URLError as exc:
         raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
     except (http.client.HTTPException, OSError) as exc:
