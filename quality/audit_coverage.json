@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "compute": {
@@ -177,7 +177,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 1857,
+      "n_modules": 1859,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },

@@ -98,6 +98,20 @@ python -m quant_fund.research.prospective_sota settle run/ label.json
 python -m quant_fund.research.prospective_sota verify run/
 ```
 
+Every stage is also a `dipcatcher prospective-sota` subcommand of the same name
+(`commitment`, `prepare`, `forecast`, `settle`, `interrupt`, `verify`), calling
+the identical library functions. The console form adds typed `--help`, an
+`--output` option for each stage, and a non-zero exit from `verify` when the
+journal chain does not verify:
+
+```bash
+dipcatcher prospective-sota commitment protocol.json
+dipcatcher prospective-sota prepare run/ protocol.json anchor.json
+dipcatcher prospective-sota forecast run/ forecast.json
+dipcatcher prospective-sota settle run/ label.json
+dipcatcher prospective-sota verify run/          # exit 1 if the chain is broken
+```
+
 `prepare` creates a new run directory before the fixed first origin. Forecast
 packets have `origin_time` and a sorted `assets` list. Each asset has
 `asset_id`, `bars` (751 consecutive completed daily closes, oldest first), and
