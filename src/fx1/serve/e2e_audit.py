@@ -620,22 +620,26 @@ def e2e_audit() -> dict[str, bool]:
             hook_srv.server_close()
             hook_thread.join(timeout=5)
     finally:
-        if server is not None:
-            server.should_exit = True
-        if server_thread is not None:
-            server_thread.join(timeout=15)
-        if server2 is not None:
-            server2.should_exit = True
-        if server2_thread is not None:
-            server2_thread.join(timeout=15)
-        stub.shutdown()
-        stub.server_close()
-        stub_thread.join(timeout=5)
-        for k, v in saved.items():
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
+        try:
+            if server is not None:
+                server.should_exit = True
+            if server_thread is not None:
+                server_thread.join(timeout=15)
+            if server2 is not None:
+                server2.should_exit = True
+            if server2_thread is not None:
+                server2_thread.join(timeout=15)
+            stub.shutdown()
+            stub.server_close()
+            stub_thread.join(timeout=5)
+        finally:
+            # Restore security-sensitive process state even when a server or
+            # thread cleanup operation raises.
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
     return out
 
 

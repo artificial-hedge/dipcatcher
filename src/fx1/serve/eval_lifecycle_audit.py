@@ -1628,11 +1628,15 @@ def _callback_probes() -> dict[str, Any]:
             got is not None and json.loads(got.body).get("status") == "cancelled"
         )
     finally:
-        sink.close()
-        if hook_prev is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-        else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = hook_prev
+        try:
+            sink.close()
+        finally:
+            # Never leak the private-network callback opt-in if sink cleanup
+            # raises while unwinding the probe.
+            if hook_prev is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = hook_prev
     return out
 
 

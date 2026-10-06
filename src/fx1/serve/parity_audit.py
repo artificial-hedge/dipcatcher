@@ -3143,12 +3143,16 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
             == "ValueError"
         )
     finally:
-        _bw_srv.shutdown()
-        _bw_srv.server_close()
-        if _bw_hook_prev is None:
-            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
-        else:
-            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_hook_prev
+        try:
+            _bw_srv.shutdown()
+            _bw_srv.server_close()
+        finally:
+            # Never leak the private-network callback opt-in if server
+            # cleanup raises while unwinding the probe.
+            if _bw_hook_prev is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bw_hook_prev
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])
