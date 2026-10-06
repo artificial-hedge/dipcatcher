@@ -190,9 +190,12 @@ def validate_parts(parts: Path, expected_revision: str, config_sha: str) -> list
         if manifest.get("coverage_sha256") != _sha256(path):
             raise CoverageGateError(f"{lane}: coverage data digest mismatch")
         data = CoverageData(basename=str(path))
-        data.read()
-        if not data.has_arcs() or not data.measured_files():
-            raise CoverageGateError(f"{lane}: no branch-coverage measurements")
+        try:
+            data.read()
+            if not data.has_arcs() or not data.measured_files():
+                raise CoverageGateError(f"{lane}: no branch-coverage measurements")
+        finally:
+            data.close()
         inputs.append(path)
     return inputs
 
@@ -244,6 +247,7 @@ def combine(root: Path, parts: Path, output: Path) -> int:
         # Configuration discovery must not depend on cd'ing into an artifact
         # directory, and all relative source names must resolve from the checkout.
         previous = Path.cwd()
+        cov = None
         try:
             os.chdir(root)
             cov = Coverage(config_file=str(config), data_file=str(output / ".coverage"))
@@ -257,6 +261,8 @@ def combine(root: Path, parts: Path, output: Path) -> int:
             cov.html_report(directory=str(output / "html"))
             report = json.loads((output / "coverage.json").read_text(encoding="utf-8"))
         finally:
+            if cov is not None:
+                cov.get_data().close()
             os.chdir(previous)
         summary = summarize(parts, report, tracked_sources(root))
         # The CLI applies coverage.py's exact precision/100%-floor semantics.

@@ -63,6 +63,7 @@ def parts(project: Path) -> Path:
         data = CoverageData(basename=str(coverage))
         data.add_arcs({"src/sample.py": [(-1, 1), (1, -1), (-1, 2), (2, 3), (3, -1)]})
         data.write()
+        data.close()
         _junit(directory / "junit.xml")
         (directory / "manifest.json").write_text(json.dumps({
             "schema": gate.SCHEMA, "lane": lane, "revision": gate.revision(project),
@@ -145,6 +146,7 @@ def test_statement_only_data_is_not_branch_coverage(project: Path, parts: Path) 
     data = CoverageData(basename=str(path))
     data.add_lines({"src/sample.py": [1]})
     data.write()
+    data.close()
     _manifest(path.parent / "manifest.json", coverage_sha256=gate._sha256(path))
     with pytest.raises(gate.CoverageGateError, match="branch"):
         gate.validate_parts(parts, gate.revision(project), gate._sha256(path.parent / "coverage.ini"))
@@ -241,6 +243,7 @@ def test_successful_complete_aggregate(project: Path, parts: Path) -> None:
             "src/__main__.py": [(-1, 1), (1, -1)],
         })
         data.write()
+        data.close()
         _manifest(data_path.parent / "manifest.json", coverage_sha256=gate._sha256(data_path))
     output = project / "output"
     assert gate.combine(project, parts, output) == 0
@@ -319,3 +322,80 @@ def test_workflow_preserves_independent_checks_and_evidence() -> None:
     uploads = [s for s in jobs["python"]["steps"] if s.get("uses", "").startswith("actions/upload-artifact")]
     assert uploads[0]["with"]["include-hidden-files"] == "true"
     assert uploads[0]["with"]["if-no-files-found"] == "error"
+
+
+def test_git_revision_must_be_a_complete_object_id(
+    project: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(gate.subprocess, "check_output", lambda *args, **kwargs: "not-a-sha\n")
+    with pytest.raises(gate.CoverageGateError, match="complete commit"):
+        gate.revision(project)
+
+
+@pytest.mark.parametrize("value", ["[]", "[7]", '"tests/unit"'])
+def test_bad_test_root_configuration_is_not_silently_accepted(project: Path, value: str) -> None:
+    path = project / "pyproject.toml"
+    path.write_text(path.read_text().replace('["tests/unit", "tests/formal"]', value))
+    with pytest.raises(gate.CoverageGateError, match="testpaths"):
+        gate.test_arguments(project, "python-1", project / "c.ini", project / "j.xml")
+
+
+def test_invalid_lane_cannot_construct_a_pytest_command(project: Path) -> None:
+    with pytest.raises(gate.CoverageGateError, match="unknown coverage lane"):
+        gate.test_arguments(project, "missing", project / "c.ini", project / "j.xml")
+
+
+def test_empty_tracked_source_inventory_is_a_failure(project: Path) -> None:
+    subprocess.run(["git", "rm", "--cached", "-r", "src"], cwd=project, check=True, capture_output=True)
+    with pytest.raises(gate.CoverageGateError, match="no tracked Python"):
+        gate.tracked_sources(project)
+
+
+@pytest.mark.parametrize("operation", ["run", "all", "combine"])
+def test_cli_dispatch_preserves_failures_and_resolves_paths(
+    project: Path, monkeypatch: pytest.MonkeyPatch, operation: str
+) -> None:
+    calls = []
+
+    def record(*args: object) -> int:
+        calls.append(args)
+        return 3
+
+    monkeypatch.setattr(gate, {"run": "run_lane", "all": "run_all", "combine": "combine"}[operation], record)
+    arguments = ["--root", str(project), operation, "--output", str(project / "out")]
+    if operation == "run":
+        arguments += ["--lane", "fx1"]
+    elif operation == "combine":
+        arguments += ["--parts", str(project / "parts")]
+    assert gate.main(arguments) == 3
+    assert len(calls) == 1
+    assert calls[0][0] == project.resolve()
+
+
+def test_command_line_entrypoint_help() -> None:
+    import sys
+
+    script = Path(gate.__file__).resolve()
+    result = subprocess.run(
+        [sys.executable, str(script), "--help"], cwd=script.parent.parent,
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0
+    assert "combine" in result.stdout
+
+
+def test_reporter_initialization_failure_restores_cwd(
+    project: Path, parts: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import coverage
+
+    def failed_constructor(*args: object, **kwargs: object) -> object:
+        raise OSError("SYNTHETIC unavailable reporter configuration")
+
+    before = Path.cwd()
+    monkeypatch.setattr(coverage, "Coverage", failed_constructor)
+    output = project / "out"
+    with pytest.raises(OSError, match="unavailable reporter"):
+        gate.combine(project, parts, output)
+    assert Path.cwd() == before
+    assert json.loads((output / "summary.json").read_text())["passed"] is False
