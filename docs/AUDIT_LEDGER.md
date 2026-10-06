@@ -346,3 +346,39 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Stats audit (feature-math battery)
+
+The `features.*` operations are the descriptive transform layer —
+every z-score, EWMA forecast, trend slope, and entropy figure a skill or
+eval consumes is produced here under causal trailing-window semantics.
+`stats_audit` pins ~110 contracts against hand-computed fixtures:
+
+- *simple_returns / drawdown_path* — lagged fractional changes with
+  null warmups; running high-water marks, nonpositive drawdowns,
+  durations resetting on reattained peaks; nonpositive prices refused.
+- *ewma_variance* — strictly pre-observation forecasts under the
+  declared zero-mean recursion; `next_variance` continues the chain.
+- *rolling_zscore / rolling_mad / rolling_rank* — population z-scores,
+  median + raw MAD + unscaled robust scores (`warmup`/`zero_mad`/
+  `numeric_overflow` statuses), average-rank ties, unique-max = 1.
+- *rolling_autocorrelation* — separately centered Pearson lagged pairs,
+  `window − lag ≥ minimum_pairs` admission, clamped to [-1, 1].
+- *rolling_linear_trend* — OLS on the centered index: slope, midpoint
+  intercept, `sqrt(RSS/(w−2))` scale, R² null on constant windows.
+- *bipower_variation* — `RV = Σr²`, `BV = (π/2)·factor·Σ|rᵢ₋₁||rᵢ|`,
+  `n/(n−1)` correction named; single return → `insufficient_pairs`.
+- *permutation_entropy* — delayed ordinal patterns, stable/drop/reject
+  tie policies, `H/log(m!)` normalization, full status ladder, bounded
+  pattern reporting.
+- *spectral_summary* — boxcar periodogram with interior doubling,
+  DC-excluded peak/entropy, constant input zeroing positive power,
+  Parseval invariant verified against direct time-domain energy.
+- *time_weighted_mean* — left-continuous latest-observable-event
+  integration; activation gated on event AND availability clocks; stale
+  revisions hold zero duration; missing initial coverage fails closed;
+  naive/unix clocks and duplicate event times refused.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The operations census moves from `pending` to
+`partial` with 44 modules pinned.

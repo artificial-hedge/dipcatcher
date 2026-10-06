@@ -24,7 +24,10 @@
       "status": "audited"
     },
     "operations": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 44,
+      "status": "partial",
+      "reason": "Feature-math transforms audited line-level; remaining ops (readers, inspectors, audit_* data-quality) pending dedicated batteries."
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
