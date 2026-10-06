@@ -210,6 +210,77 @@ class TestWebhooks(unittest.TestCase):
         self.assertIn("invalid port", error or "")
         self.assertEqual(attempts, 0)
 
+    def test_zero_port_is_rejected_before_dns_or_delivery(self) -> None:
+        for scheme in ("http", "https"):
+            for host in ("example.com", "8.8.8.8", "[2606:4700:4700::1111]"):
+                for port in ("0", "00"):
+                    url = f"{scheme}://{host}:{port}/hook"
+                    with (
+                        self.subTest(url=url),
+                        patch("fx1.serve.webhooks.socket.getaddrinfo") as resolve,
+                        patch("fx1.serve.webhooks._post_once") as post,
+                    ):
+                        delivered, error, attempts = deliver_signed(
+                            url, None, self.body, backoff_s=0
+                        )
+                        self.assertFalse(delivered)
+                        self.assertIn("invalid port", error or "")
+                        self.assertEqual(attempts, 0)
+                        resolve.assert_not_called()
+                        post.assert_not_called()
+                        with self.assertRaisesRegex(ValueError, "invalid port"):
+                            check_callback_url(url)
+
+    def test_delivery_preserves_explicit_ports_and_defaults_only_when_absent(self) -> None:
+        for scheme, default_port, connection_name in (
+            ("http", 80, "_PinnedHTTPConnection"),
+            ("https", 443, "_PinnedHTTPSConnection"),
+        ):
+            for suffix, port in (
+                ("", default_port),
+                (":", default_port),
+                (":1", 1),
+                (f":{default_port}", default_port),
+                (":8080", 8080),
+                (":65535", 65535),
+            ):
+                url = f"{scheme}://example.com{suffix}/hook"
+                with (
+                    self.subTest(url=url),
+                    patch(
+                        "fx1.serve.webhooks._resolved_addresses",
+                        return_value=("93.184.216.34",),
+                    ) as resolve,
+                    patch(f"fx1.serve.webhooks.{connection_name}") as connection_cls,
+                ):
+                    response = connection_cls.return_value.getresponse.return_value
+                    response.__enter__.return_value.status = 204
+                    self.assertEqual(deliver_signed(url, None, self.body), (True, None, 1))
+                    resolve.assert_called_once_with("example.com", port)
+                    connection_cls.assert_called_once_with(
+                        "example.com", port, "93.184.216.34", 10.0
+                    )
+
+    def test_post_once_never_replaces_an_explicit_zero_port(self) -> None:
+        for scheme, connection_name in (
+            ("http", "_PinnedHTTPConnection"),
+            ("https", "_PinnedHTTPSConnection"),
+        ):
+            with (
+                self.subTest(scheme=scheme),
+                patch(f"fx1.serve.webhooks.{connection_name}") as connection_cls,
+            ):
+                response = connection_cls.return_value.getresponse.return_value
+                response.__enter__.return_value.status = 204
+                _post_once(
+                    urllib.parse.urlparse(f"{scheme}://example.com:0/hook"),
+                    "93.184.216.34",
+                    self.body,
+                    {},
+                    10.0,
+                )
+                connection_cls.assert_called_once_with("example.com", 0, "93.184.216.34", 10.0)
+
     def test_dns_answers_are_validated_before_connecting(self) -> None:
         answers = [
             (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),

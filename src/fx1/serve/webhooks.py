@@ -155,7 +155,9 @@ def _post_once(
     host = parsed.hostname
     if host is None:  # defensive; check_callback_url rejects this first
         raise ValueError("callback_url has no host")
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    port = parsed.port
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
     connection_cls = _PinnedHTTPSConnection if parsed.scheme == "https" else _PinnedHTTPConnection
     connection = connection_cls(host, port, address, timeout_s)
     target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
@@ -241,7 +243,8 @@ def check_callback_url(url: str | None) -> str | None:
             f"userinfo credentials, got {url!r}"
         )
     try:
-        _ = parsed.port
+        if parsed.port == 0:
+            raise ValueError("port zero is not a callback destination")
     except ValueError as exc:
         raise ValueError(f"callback_url has an invalid port, got {url!r}") from exc
     _validate_literal_host(parsed.hostname)
@@ -273,7 +276,9 @@ def deliver_signed(
         host = parsed.hostname
         if host is None:
             raise ValueError("callback_url has no host")
-        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        port = parsed.port
+        if port is None:
+            port = 443 if parsed.scheme == "https" else 80
     except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
         return False, f"{type(exc).__name__}: {exc}", 0
 
