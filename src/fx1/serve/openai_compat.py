@@ -3157,6 +3157,18 @@ class OpenAIEnvelopeStore:
         with self._lock:
             live = self._items.get(eid)
             selected = live if live is not None else envelope
+            if (
+                live is None
+                and selected.get("object") == "response"
+                and selected.get("status") not in OPENAI_RESPONSE_TERMINAL
+            ):
+                # A rehydrated non-terminal response is a zombie by
+                # construction: no worker is bound to the revived record
+                # (an absent entry refuses every late write), so a
+                # "queued"/"in_progress" envelope would sit frozen
+                # forever. Serve the recorded replay answer; never
+                # resurrect the retrieval entry.
+                return deepcopy(selected)
             self._put_locked(selected)
             return deepcopy(selected)
 

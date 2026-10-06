@@ -7022,33 +7022,51 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             bg_key_id = _REQUEST_KEY_ID.get()
 
             def _bg_run() -> None:
+                def _sync_idem_verdict(
+                    *,
+                    env: dict[str, Any] | None = None,
+                    completion_id: str | None = None,
+                    usage: dict[str, int] | None = None,
+                ) -> None:
+                    """Pin the keyed replay's cached envelope to the live
+                    verdict. A cancel that already committed ``cancelled``
+                    (or whose record was deleted after the cancel landed)
+                    must survive an ``Idempotency-Key`` replay — ``repin``
+                    rehydrates the cache verbatim, so a stale ``queued``
+                    or a computed-but-rejected ``completed`` would
+                    resurrect the response under a false status."""
+                    if key is None:
+                        return
+                    pinned = envelope_store.get(rid) or env
+                    if pinned is None:
+                        if not cancel_ev.is_set():
+                            return
+                        pinned = queued
+                    pinned = dict(pinned)
+                    if cancel_ev.is_set():
+                        pinned["status"] = "cancelled"
+                    pinned["_fx1_completion_id"] = completion_id
+                    pinned["_fx1_usage"] = usage
+                    openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=pinned))
+
                 inflight.acquire()
                 key_token = _REQUEST_KEY_ID.set(bg_key_id)
                 try:
                     if cancel_ev.is_set():
+                        _sync_idem_verdict()
                         return
                     # A cancellation or deletion after the event check
                     # must prevent the queued backend call from starting.
                     if not envelope_store.transition_status(
                         rid, expect={"queued"}, status="in_progress"
                     ):
+                        _sync_idem_verdict()
                         return
                     try:
                         env_done, cid_done, usage_done = _openai_response_core(
                             body, request.headers, rid=rid, created=int(queued["created_at"])
                         )
-                        if key is not None:
-                            openai_idem_store.put(
-                                key,
-                                body_fp,
-                                _OpenAIIdemRecord(
-                                    envelope={
-                                        **env_done,
-                                        "_fx1_completion_id": cid_done,
-                                        "_fx1_usage": usage_done,
-                                    }
-                                ),
-                            )
+                        _sync_idem_verdict(env=env_done, completion_id=cid_done, usage=usage_done)
                     except OpenAICompatError as exc:
                         _bg_fail(
                             rid,
