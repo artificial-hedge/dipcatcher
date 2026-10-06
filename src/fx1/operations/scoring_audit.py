@@ -126,7 +126,7 @@ def _probe_quantiles() -> dict[str, bool]:
         mod.Input(outcomes=[3.0], levels=[0.1, 0.5, 0.9], quantiles=[[3.0, 3.0, 3.0]]),
         ctx,
     )
-    out["q_perfect_zero"] = perfect.mean_pinball == 0.0
+    out["q_perfect_zero"] = math.isclose(perfect.mean_pinball, 0.0)
     off = mod.execute(
         mod.Input(outcomes=[3.0], levels=[0.1, 0.5, 0.9], quantiles=[[3.1, 3.1, 3.1]]),
         ctx,
@@ -264,7 +264,7 @@ def _probe_binary() -> dict[str, bool]:
     r = mod.execute(mod.Input(outcomes=[1, 0], probabilities=[0.7, 0.7]), ctx)
     out["b_brier_formula"] = math.isclose(r.brier_score, (0.09 + 0.49) / 2)
     perfect = mod.execute(mod.Input(outcomes=[1, 0], probabilities=[1.0, 0.0]), ctx)
-    out["b_brier_perfect_zero"] = perfect.brier_score == 0.0
+    out["b_brier_perfect_zero"] = math.isclose(perfect.brier_score, 0.0)
     # y=1, p=1/e → -log(p) = 1 nat
     ln = mod.execute(mod.Input(outcomes=[1], probabilities=[math.exp(-1)]), ctx)
     out["b_logloss_nats"] = math.isclose(ln.mean_log_loss or 0.0, 1.0, rel_tol=1e-12)
@@ -324,7 +324,7 @@ def _probe_crps() -> dict[str, bool]:
     single = mod.execute(mod.Input(outcomes=[2.0], samples=[[5.0]]), ctx)
     out["c_singleton_abs_error"] = math.isclose(single.crps_by_observation[0], 3.0)
     degen = mod.execute(mod.Input(outcomes=[4.0], samples=[[4.0, 4.0, 4.0]]), ctx)
-    out["c_degenerate_zero"] = degen.crps_by_observation[0] == 0.0
+    out["c_degenerate_zero"] = math.isclose(degen.crps_by_observation[0], 0.0)
     two = mod.execute(mod.Input(outcomes=[0.5], samples=[[0.0, 1.0]]), ctx)
     out["c_two_point_handcheck"] = math.isclose(two.crps_by_observation[0], 0.25)
 
