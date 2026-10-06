@@ -62,7 +62,7 @@ from contextlib import (
     suppress,
 )
 from pathlib import Path
-from typing import Any, Literal, Protocol, cast
+from typing import Annotated, Any, Literal, Protocol, cast
 
 from fastapi import (
     Depends,
@@ -961,7 +961,9 @@ class CompleteResponse(_Model):
 
 class CompleteBatchRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
-    batch: list[list[ChatMessage]] = Field(min_length=1, max_length=64)
+    batch: list[Annotated[list[ChatMessage], Field(min_length=1)]] = Field(
+        min_length=1, max_length=64
+    )
     checkpoint_dir: str | None = Field(
         default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
     )

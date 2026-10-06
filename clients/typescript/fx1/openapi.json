@@ -1843,6 +1843,7 @@
               "items": {
                 "$ref": "#/components/schemas/ChatMessage"
               },
+              "minItems": 1,
               "type": "array"
             },
             "maxItems": 64,

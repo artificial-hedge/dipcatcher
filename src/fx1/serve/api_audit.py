@@ -342,10 +342,18 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
         import urllib.request  # noqa: PLC0415
 
+        import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
+            # Both call sites: the liveness probe still uses
+            # urllib.request.urlopen; the completion path goes through
+            # _openai_urlopen's per-call opener.
+            with (
+                patch.object(urllib.request, "urlopen", fake_urlopen),
+                patch.object(_be_mod, "_openai_urlopen", fake_urlopen),
+            ):
                 resp = client.post(
                     "/harness/complete",
                     json={
@@ -4121,6 +4129,7 @@ def _probe_backend_probes(  # NOSONAR
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415
+    from unittest.mock import patch  # noqa: PLC0415
 
     from fastapi.testclient import TestClient as _TC2  # noqa: PLC0415
 
@@ -4362,11 +4371,13 @@ def _probe_backend_probes(  # NOSONAR
         b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
         b"data: [DONE]\n",
     ]
-    import urllib.request as _urlreq  # noqa: PLC0415
-
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
-    try:
+    # Patch the call site, not urllib.request.urlopen — _openai_urlopen
+    # reaches the wire through its own per-call opener.
+    with patch.object(
+        _be_mod,
+        "_openai_urlopen",
+        lambda req, *, timeout_s: _FakeResp(wire_frames),
+    ):
         box: list[dict[str, int]] = []
         toks = list(
             _be_mod._openai_chat_stream(
@@ -4379,8 +4390,6 @@ def _probe_backend_probes(  # NOSONAR
                 usage_out=box,
             )
         )
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4771,12 +4780,11 @@ def _probe_backend_probes(  # NOSONAR
         def __exit__(self, *a: Any) -> None:
             return None
 
-    def _wire_urlopen(req: Any, **kw: Any) -> Any:
+    def _wire_urlopen(req: Any, *, timeout_s: float) -> Any:
         captured_wire["body"] = _json.loads(req.data.decode())
         return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
-    try:
+    with patch.object(_be_mod, "_openai_urlopen", _wire_urlopen):
         _be_mod._openai_chat_complete(
             "http://wire.test",
             model="m",
@@ -4796,8 +4804,6 @@ def _probe_backend_probes(  # NOSONAR
             label="t",
         )
         default_body = dict(captured_wire["body"])
-    finally:
-        _urlreq.urlopen = orig_urlopen
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95
