@@ -346,3 +346,33 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Finetune audit (job-store state machine)
+
+The new `finetune_audit` pins 112 contracts over `serve.finetune` —
+the `/v1/fine_tuning/jobs` surface. In-process only: tmpdir journals,
+no trainers, no network.
+
+Coverage: `validate_chat_jsonl` admission (utf-8, per-line JSON,
+`{"messages": [...]}` shape, role whitelist, non-empty string
+content, lineno in the error, all-blank files refused); the request
+shapes (`model`/`training_file` bounds, `suffix` charset, `seed>=0`,
+`method="supervised"` only, metadata cap, `extra=forbid` on every
+envelope, `FTHyperparameters` ranges); the `FTJobStore` state machine —
+newest-first listing with exclusive `after` cursors, `get`/`lookup_idem`
+MRU refresh, bounded eviction dropping job+key+cards, the `ft:` model
+registry (sorted listing, register-only-while-alive, unregister
+tombstones, `checkpoint_for`, checkpoints oldest-first with derived
+`ftckpt-` ids), the event feed (oldest-first, 256 cap pops oldest),
+cancel verdicts (queued/paused flip terminal now, running flag-only),
+pause verdicts + `paused_from` bookkeeping + idempotent re-pause,
+resume restoring the captured status, `cancel_pending` drain
+semantics (queued→cancelled, running→flagged), per-key async claim
+locks, and journaled replay (terminal jobs return as-was, in-flight
+recover as failed with a restart-explaining error, `ft:` keys
+resolve, model cards rebuild minus evicted-producer refs,
+`callback_secret` never touches disk).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
