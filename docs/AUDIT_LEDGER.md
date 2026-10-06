@@ -298,3 +298,51 @@ sanitized transport errors; the older transport and validator variants are
 not reapplied. Historical receipts remain unchanged. The generated audit
 receipt is `SYNTHETIC`, `research_only`, and makes no live-PnL claim. The
 serve census moves from 46 to 47 and remains `partial`.
+
+### Jobs audit maintenance (PR #2822)
+
+The new `jobs_audit` battery pins the async job orchestration surface
+end to end: `POST /harness/jobs` (+ `/harness/jobs/batch`), record GETs,
+list/filter/paging, `DELETE` cancel, SSE events, `/harness/jobs/{id}/receipt`
+and the `/harness/runs` synchronous twin. It exercises the
+`queued→running→terminal` lifecycle, the submission validator's refusal
+envelopes, the executor contract, `Idempotency-Key` dedup under
+sequential and parallel submits, the drain/`max_inflight` gate ordering
+against auth and scope, HMAC-signed terminal webhooks (fire-once,
+retry cap, 4xx definitiveness, no resurrection), `--state-dir`
+journaled restart durability, per-item batch isolation, per-key
+metering, and the `HarnessClient` wire legs over the in-process
+transport.
+
+Building the lane surfaced three real defects, fixed on the same PR:
+
+* `_JobStore` had no atomic start claim — the worker's lock-free
+  `status == "cancelled"` check-then-set let a cancel landing in the
+  gap resurrect to `running→succeeded` (and journal the lie). The
+  store now owns `start(job_id)` under its lock; `_exec` claims the
+  transition through it. The store also gained `delete(job_id)`
+  tombstoning for refused submissions.
+* `job_store.put` ran *after* `jobs_executor.submit` — the worker's
+  first `mark` could journal a transition ahead of the record itself
+  (a submitted job briefly 404'd; a refused `submit` left a ghost
+  journal entry). The record now registers before hand-off and a
+  refused submit journals a `{"deleted": job_id}` tombstone.
+* `/harness/runs` let a runner fault escape as a bare plain-text 500
+  while the jobs twin captured the same fault honestly into
+  `job.error` — the route now folds unhandled executor faults into the
+  `{detail, code}` envelope.
+
+The battery also pins measured (pre-existing, non-defect) semantics:
+a nonzero `exit_code` completes `succeeded` with `result.ok=False`
+(`status` tracks execution, `ok` the command's verdict); `?wait_s` on
+the job GET is inert (SSE and drain's `wait_s` are the wait channels);
+idempotency replays mark `replayed` in the body with no replay header;
+unsigned webhooks send no signature or timestamp headers;
+`callback_*` bookkeeping lands after the terminal flip; the
+`fx1_job_record.v1` receipt projects the record with digested
+stdout/stderr; `uses` bills every authorized call including
+gate-refused ones, and the rpm refusal code is `rate_limited`.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 47 to 48 and remains
+`partial`.

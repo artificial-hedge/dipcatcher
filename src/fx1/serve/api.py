@@ -2549,12 +2549,13 @@ def _submit_job(
     job._callback_secret = body.callback_secret
 
     def _exec() -> None:
-        if job.status == "cancelled":
+        # The queued→running hop goes through the store's atomic claim:
+        # a cancel that landed (or lands) while this future sat pending
+        # wins under the lock — a cancelled job is never resurrected.
+        if job_store.start(job.job_id) is None:
             metrics.release()
             inflight.release()
             return
-        job.status = "running"
-        job_store.mark(job)
         try:
             result = lab.run(
                 body.command,
@@ -2587,13 +2588,18 @@ def _submit_job(
         metrics.release()
         inflight.release()
 
+    # The record registers with the store *before* hand-off: the worker
+    # claims by id through start(), so a transition can never journal
+    # ahead of the job existing. A refused hand-off leaves a tombstone
+    # rather than a ghost record.
+    job_store.put(job, skey, body_fp)
     try:
         jobs_executor.submit(_exec)
     except RuntimeError as exc:  # executor gone (shutdown race)
+        job_store.delete(job.job_id)
         metrics.release()
         inflight.release()
         raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
-    job_store.put(job, skey, body_fp)
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
 
@@ -3169,6 +3175,10 @@ class _JobStore:
             for payload in res.payloads:
                 for evict in payload.get("evicted") or ():
                     self._drop(str(evict))
+                deleted = payload.get("deleted")
+                if deleted is not None:
+                    self._drop(str(deleted))
+                    continue
                 if "job" not in payload:
                     continue
                 job = JobStatusResponse.model_validate(payload["job"])
@@ -3217,6 +3227,34 @@ class _JobStore:
         if self._journal is not None:
             with self._lock:
                 self._journal.append(self._record(job))
+
+    def start(self, job_id: str) -> JobStatusResponse | None:
+        """Atomically claim a queued job for running — the dequeue half
+        of the cancel contract. Under the store lock a racing ``cancel``
+        either flips the record first (start loses, the cancelled job
+        never runs) or reports 'running' (cancel 409s) — there is no
+        check-then-set window for a cancelled job to resurrect through.
+        The transition is journaled inside the lock so crash replay can
+        never resurrect either."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None or job.status != "queued":
+                return None
+            job.status = "running"
+            if self._journal is not None:
+                self._journal.append(self._record(job))
+            return job
+
+    def delete(self, job_id: str) -> None:
+        """Drop a record + a durable tombstone — the submit path's
+        compensation when executor hand-off fails after ``put``: the
+        refused submission leaves no ghost job behind."""
+        with self._lock:
+            if job_id not in self._jobs:
+                return
+            if self._journal is not None:
+                self._journal.append({"deleted": job_id})
+            self._drop(job_id)
 
     def get(self, job_id: str) -> JobStatusResponse | None:
         with self._lock:
@@ -10574,6 +10612,8 @@ def create_app(
                     raise ApiError(404, str(exc)) from exc
                 except ValueError as exc:
                     raise ApiError(422, str(exc)) from exc
+                except Exception as exc:  # noqa: BLE001 — executor faults envelope like the jobs twin
+                    raise ApiError(500, f"{type(exc).__name__}: {exc}") from exc
                 command = lab.get(body.command)
                 resp = HarnessRunResponse(
                     command=result.command,
