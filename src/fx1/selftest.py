@@ -31,6 +31,10 @@ from typing import Any
 
 __all__ = ["SelftestReport", "run_selftest"]
 
+#: Local runs route the stub engine + app wiring through process env, so
+#: concurrent in-process runs must not interleave their mutations.
+_LOCAL_RUN_LOCK = threading.Lock()
+
 
 @dataclass
 class _Check:
@@ -139,6 +143,17 @@ def run_selftest(
         _remote_checks(report, client, remote, api_key or "")
         return report
 
+    with _LOCAL_RUN_LOCK:
+        return _run_local(report, state_dir=state_dir, timeout_s=timeout_s)
+
+
+def _run_local(
+    report: SelftestReport, *, state_dir: str | None, timeout_s: float
+) -> SelftestReport:
+    """Local golden path. Serialized by ``_LOCAL_RUN_LOCK``: the stub
+    engine's coordinates and the app's API key travel through
+    ``os.environ``, and the restore in ``finally`` must stay atomic with
+    the mutations it undoes."""
     from fx1.harness import Harness
     from fx1.sdk import Fx1Harness
     from fx1.serve import api as api_mod
@@ -154,7 +169,13 @@ def run_selftest(
 
     saved = {
         k: os.environ.get(k)
-        for k in ("FX1_API_KEY", "FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+        for k in (
+            "FX1_API_KEY",
+            "FX1_BYOK_BASE_URL",
+            "FX1_BYOK_API_KEY",
+            "FX1_BYOK_MODEL",
+            "MOONSHOT_API_KEY",
+        )
     }
     os.environ.update(
         {
@@ -332,6 +353,7 @@ def run_selftest(
             if srv is not None:
                 srv.should_exit = True
         stub.shutdown()
+        stub.server_close()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

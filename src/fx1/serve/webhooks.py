@@ -106,6 +106,9 @@ def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
 class _PinnedHTTPConnection(http.client.HTTPConnection):
     """HTTP connection whose TCP destination is the validated numeric address."""
 
+    # typeshed sets these in HTTPConnection.__init__ without declaring them
+    source_address: tuple[str, int] | None
+
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
         super().__init__(host, port=port, timeout=timeout)
         self._address = address
@@ -120,6 +123,10 @@ class _PinnedHTTPConnection(http.client.HTTPConnection):
 
 class _PinnedHTTPSConnection(http.client.HTTPSConnection):
     """HTTPS connection pinned to an IP while authenticating the URL host."""
+
+    # typeshed sets these in HTTPSConnection.__init__ without declaring them
+    source_address: tuple[str, int] | None
+    _context: ssl.SSLContext
 
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
         super().__init__(
@@ -156,9 +163,10 @@ def _post_once(
     target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
     try:
         connection.request("POST", target, body=body, headers=headers)
-        response = connection.getresponse()
-        response.read()
-        return response.status
+        # Delivery depends only on status; an untrusted response body may be
+        # unbounded. This connection is never reused, so close without draining.
+        with connection.getresponse() as response:
+            return response.status
     finally:
         connection.close()
 

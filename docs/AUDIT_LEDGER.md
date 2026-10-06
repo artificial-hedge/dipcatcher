@@ -346,3 +346,44 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+
+### Selftest audit maintenance (PR #NNNN)
+
+The new `selftest_audit` battery pins the deploy-gate surfaces end to
+end — `fx1 harness selftest` (local + `--remote`) and `fx1 harness
+bench` plus the doctor commands — proving the gate itself is honest:
+the report object can't pass empty or mask a crashed check; a clean
+deployment exits 0 with the pinned 16-check set (+1 restart check
+under `--state-dir`, whose writes stay confined to the dir and leave
+no verdict artifact); remote mode is provably read-only (GETs +
+advisory POSTs + one pinned 401 refusal) and leaves the target's
+journals byte-identical; dead and 500-storm targets fail bounded with
+named checks; a missing key on a keyed deployment and a key on an
+unauth-gated deployment are both caught; ambient env is restored; the
+BYOK check binds its own loopback stub even with a dead ambient URL;
+and concurrent local runs can't corrupt shared env. The bench records
+measured latencies and honest per-class error histograms, refuses bad
+params before spending, embeds the prompt as sha256 only, exits 1 on
+measured errors, and seals a verifiable `fx1_bench_result.v1` under
+`--receipt`; doctor emits presence flags that never carry secret
+values, and `fx1 harness doctor` does not exist.
+
+Building the lane surfaced two real defects, fixed on the same PR:
+
+* `run_selftest` popped `MOONSHOT_API_KEY` and never restored it —
+  the saved-env dict covered only the four FX1_* keys, so a local
+  selftest permanently deleted the caller's hosted-eval key from the
+  process. The key is now saved and restored like the rest.
+* Concurrent local `run_selftest` calls raced on shared `os.environ`:
+  run A's `finally` restore could blank BYOK coordinates mid-run under
+  run B, failing five of B's checks (health_byok, auth gate, complete,
+  stream, parity) with `BackendNotConfiguredError`. The local path
+  now holds `_LOCAL_RUN_LOCK` across env mutation, the check window,
+  and the restore (extracted as `_run_local`); the stub socket is
+  also explicitly `server_close()`d. Remote mode needs no lock — it
+  never touches env.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census re-pins to 50 (the manifest had
+drifted one behind the true 49) and remains `partial`.

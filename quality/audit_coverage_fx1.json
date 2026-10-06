@@ -28,7 +28,7 @@
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 48,
+      "n_modules": 50,
       "status": "partial",
       "reason": "Current module census; the expanded directory has not completed a line-level audit. Existing audit documents cover earlier reviewed scope only."
     },
@@ -130,7 +130,8 @@
       "status": "audited"
     },
     "selftest.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "tail_audit.py": {
       "status": "audited"
