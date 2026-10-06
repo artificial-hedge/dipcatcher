@@ -346,3 +346,52 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+### Middleware audit maintenance (PR #2869)
+
+The new `middleware_audit` battery (104 probes) pins the middleware
+chain end to end through a real `TestClient` plus a raw-ASGI transport
+probe: registered layer order, auth-before-routing (unauthed bogus
+path → 401, authed bogus → 404 enveloped), request-id mint / echo /
+distinctness / presence on every error class / propagation into the
+access-log `rid=` field, the correlation headers (`request-id` twin,
+`openai-version` on /v1 only, `Openai-Processing-Ms`), drain-vs-auth
+and gate-vs-auth precedence, error-envelope uniformity across the
+three dialects, 405 + `Allow`, HEAD/OPTIONS, trailing-slash policy,
+Content-Type / Accept / Accept-Encoding negotiation, path-traversal
+and encoded-slash refusals, unknown / empty / repeated query params,
+the >1 MiB body 413 and ambiguous-header 400 ingress refusals, and the
+gzip round-trip.
+
+Building the lane surfaced one real defect, fixed on the same PR:
+
+* An unclassified handler exception escaped `harness_api_auth` into
+  `ServerErrorMiddleware`'s bare plain-text 500 — skipping the
+  request-id, security headers, metrics count, and access log that all
+  live in `_finish`. A catch-all `Exception` handler cannot be
+  registered inside the middleware tail via any public FastAPI API
+  (non-500 handler keys all map to the inner `ExceptionMiddleware`;
+  only `500`/`Exception` reach `ServerErrorMiddleware`'s bare
+  handler), so `harness_api_auth` now catches the fault and answers
+  through `_RaisingJSONResponse` — a `JSONResponse` that sends the
+  enveloped body then re-raises, the same send-then-propagate contract
+  `ServerErrorMiddleware` itself implements, so
+  `raise_server_exceptions` callers still observe the real exception.
+  `RecursionError` from request-body nesting refuses 422; backend-link
+  recursion stays pre-classified `backend_unavailable` upstream.
+
+The same PR repairs sibling rot verified against the `origin/main`
+baseline: the SSRF callback pinning (#2850) opt-in
+(`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS`) applied to loopback sinks in
+`api_audit`, `batch_audit`, `e2e_audit`, `eval_lifecycle_audit`,
+`jobs_audit`, `parity_audit`, and the `test_finetune` hook fixture;
+the `build_opener` refactor (#2857) repointing of three dead `urlopen`
+monkeypatches in `api_audit`; and `test_resource_cleanup` rewritten
+against the pinned `http.client` connection layer. Deep-`x` JSON on
+`/v1/chat/completions` now answers an enveloped, counted 500
+(`PydanticSerializationError`) rather than the `wire_deep_json_fails_closed`
+pin's 422 — that immutable historical receipt keeps its named
+divergence sealed False.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 48 to 50 and remains
+`partial`.
