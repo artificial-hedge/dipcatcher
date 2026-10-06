@@ -346,3 +346,58 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Extensions/operations audit maintenance (PRs #2908, #2909)
+
+Both directories move from `pending` to `partial`: the binding and
+containment chokepoints are now probed adversarially, while the per-owner
+and per-operation leaf modules remain covered by behavior tests only.
+
+* `tests/fx1/test_operations_workspace_containment.py` (37 probes) pins the
+  `operations/base.py` containment contract end to end: traversal spellings
+  and symlink leaf/dir-component refusal through `_open_posix_data_file`
+  (descriptor-relative `O_NOFOLLOW` walk, `O_NONBLOCK` FIFO refusal),
+  `resolve_file` escapes, `open_binary` budget/directory/non-integer
+  refusals, `WorkspaceReader` digest-before-EOF and read-after-close,
+  `canonical_json` byte budgets + ordering + non-finite refusal, the
+  `Operation` id/kind/module co-location contract, and the
+  `fx1.operation-result/v1` envelope digests.
+* `tests/fx1/test_extensions_binding_adversarial.py` (24 probes) pins the
+  load path: `module_basename` spelling gates (uppercase, dot, slash,
+  `..`, leading digit refused; hyphen maps to underscore), `(kind, owner)`
+  binding to exactly one module spelling, `ExtensionModule` wrong-module /
+  kind-owner-mismatch / empty-reference refusals, `records` bounds
+  (`offset>=0`, `1<=limit<=100`), and `get_extension` unknown-owner,
+  kind-confusion, and hyphen-spelling failures plus a real `ret_1` bind.
+
+Both probes confirmed owners are underscore-native end to end
+(`module_basename` accepts `ret-1` syntactically but the whitelist refuses
+it — fail closed either way). All fixtures are SYNTHETIC correctness
+checks; no live-PnL or capability claims. The extensions census is 94
+modules, operations 43 — both remain `partial`.
+
+### Capabilities/selftest audit maintenance (PR #NNNN)
+
+`capabilities.py` and `selftest.py` move from `pending` to `audited`.
+
+* `tests/fx1/test_capabilities_seed_layout.py` (8 probes) audits the compact
+  seed layout: the three progressions partition `[0, 1_000_000]` exactly —
+  every in-range id resolves and no two owners claim the same id, so
+  `resolve_seed_id`'s first-match scan cannot mis-attribute. Probes pin the
+  layout boundary (`0` resolves to skill `doctor`; `-1`/`1_000_001` refuse),
+  the `{kind, seed_id, owner, <owner-field>}` record shape
+  (`feature`→`feature`, `skill`→`command`, `plugin`→`source`), progression
+  shape and first/past-end round-trips for all 86 owners, unknown
+  kind/owner refusals, and live-shard parity for every table owner.
+* `selftest.py` env hygiene defects found and fixed: the local run set
+  `FX1_BYOK_ALLOW_PRIVATE_NETWORKS=1` and popped `MOONSHOT_API_KEY` without
+  saving either, so `run_selftest` permanently rewrote the caller's
+  environment — the BYOK private-network opt-in leaked past the run and a
+  caller's hosted-engine key was silently dropped. Both keys are now in the
+  save/restore set, and the loopback stub HTTPServer is `server_close()`d
+  after `shutdown()` so the listening fd is released. New probes in
+  `tests/fx1/test_selftest.py` pin byte-identical `os.environ` after both a
+  successful run and a crashed-boot failure path.
+
+All fixtures are SYNTHETIC correctness checks; no live-PnL or capability
+claims. Module-level status only — no directory census moved.

@@ -154,7 +154,14 @@ def run_selftest(
 
     saved = {
         k: os.environ.get(k)
-        for k in ("FX1_API_KEY", "FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+        for k in (
+            "FX1_API_KEY",
+            "FX1_BYOK_BASE_URL",
+            "FX1_BYOK_API_KEY",
+            "FX1_BYOK_MODEL",
+            "FX1_BYOK_ALLOW_PRIVATE_NETWORKS",
+            "MOONSHOT_API_KEY",
+        )
     }
     os.environ.update(
         {
@@ -333,6 +340,7 @@ def run_selftest(
             if srv is not None:
                 srv.should_exit = True
         stub.shutdown()
+        stub.server_close()
         for k, v in saved.items():
             if v is None:
                 os.environ.pop(k, None)

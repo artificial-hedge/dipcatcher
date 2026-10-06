@@ -16,7 +16,10 @@
       "status": "audited"
     },
     "extensions": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 94,
+      "status": "partial",
+      "reason": "Chokepoint audit complete: owner whitelist, naming gates, module-path binding, and records bounds probed adversarially (PR #2909). Per-owner generated wrappers and leaf modules are covered by behavior tests only; no line-level audit yet."
     },
     "forecast": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -24,7 +27,10 @@
       "status": "audited"
     },
     "operations": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 43,
+      "status": "partial",
+      "reason": "Chokepoint audit complete: workspace containment primitives (traversal, symlink refusal, read budgets, canonical_json) probed adversarially (PR #2908). Leaf operation modules are covered by behavior tests only; no line-level audit yet."
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -44,7 +50,8 @@
       "status": "waived"
     },
     "capabilities.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "cli.py": {
       "doc": "docs/AUDIT_LEDGER.md",
@@ -130,7 +137,8 @@
       "status": "audited"
     },
     "selftest.py": {
-      "status": "pending"
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
     },
     "tail_audit.py": {
       "status": "audited"
