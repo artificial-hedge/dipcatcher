@@ -346,3 +346,34 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### Compat audit (dialect-translation battery)
+
+The new `compat_audit` pins 126 translation invariants over
+`openai_compat` and `anthropic_compat` — the dialect boundary every
+request and every answer crosses. Probes are pure-function calls: no
+transport, no server, deterministic by construction.
+
+Coverage: request-model accept/refuse pairs (bounds, `max_tokens` vs
+`max_completion_tokens` disagreement, `tool_choice` requiring
+`tools`); `openai_to_kwargs` / `response_to_kwargs` /
+`embeddings_to_kwargs` link resolution in the documented order
+(`fx1.backend` > header > model > byok-headers > `hosted_k3`) with
+fail-closed 404s on unregistered models and refused half-formed BYOK
+credentials; envelope builders (`chatcmpl-`/`cmpl-`/`resp_`/`msg_`
+derivations, n-fanout, null-content tool-call turns, legacy echo and
+usage sums); stream chunk grammar (role-first deltas, ~64-char
+whitespace pieces, per-index grouped `n`, terminal usage frames);
+Responses input folding (`function_call` → `tool_calls`,
+`function_call_output` → tool turns, loud refusals on empty
+`call_id`/unknown item types); cursor pagination that fails closed;
+the `OpenAIEnvelopeStore` put/get/list/evict/delete contract with
+re-put refresh and journaled ops; Anthropic field translation
+(system→system, tool_use↔tool_calls, tool_result→tool, `store=False`
+forced), the `finish_reason`→`stop_reason` map, bad tool args held
+in-band as `_raw`, the typed SSE lifecycle, and the batch/file/model
+request shapes with `results_url` gated on `ended`.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
