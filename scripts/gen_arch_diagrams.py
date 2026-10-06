@@ -705,6 +705,11 @@ def fx1_to_quant_fund_edges(module_edges: set[tuple[str, str]]) -> set[tuple[str
 QUANT_FUND_TO_FX1_EDGES: frozenset[tuple[str, str]] = frozenset({("quant_fund", "fx1")})
 FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
     {
+        # audit lanes seal receipts through the harness hashing/reproducibility
+        # utils — leaf foundation modules, inside the fx1-harness-surface
+        # allow_only (configs/arch_boundaries.toml).
+        ("fx1.bench.dip_audit", "quant_fund.utils.hashing"),
+        ("fx1.bench.dip_audit", "quant_fund.utils.reproducibility"),
         ("fx1.eval.calibration_eval", "quant_fund.metrics.calibration_tests"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.iv_approx"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.options"),
@@ -728,6 +733,8 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.forecast.runner", "quant_fund.schemas.errors"),
         ("fx1.forecast.runner", "quant_fund.utils.hashing"),
         ("fx1.forecast.schema", "quant_fund.schemas.errors"),
+        ("fx1.train.run_audit", "quant_fund.utils.hashing"),
+        ("fx1.train.run_audit", "quant_fund.utils.reproducibility"),
     }
 )
 

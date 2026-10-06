@@ -13,8 +13,12 @@ Two silent-erosion classes on the evidence corpus:
    ``git merge-base --is-ancestor``.
 
 Receipts missing a schema/kind tag are flagged ``missing_schema_tag``.
-Verdict ``ok`` iff zero drifts and zero phantom revisions. Sealed
-``schema_drift.v1``.
+Verdict ``ok`` iff zero drifts and zero phantom revisions — after the
+pinned exceptions in ``quality/schema_drift_known.json``, which keep
+already-committed anomalies visible (sealed receipts whose git provenance
+is unattributable, or frozen tag collisions) without failing the audit.
+A pin that no longer matches is itself flagged as ``stale_pins`` so the
+manifest cannot quietly rot. Sealed ``schema_drift.v1``.
 """
 
 from __future__ import annotations
@@ -31,6 +35,23 @@ from quant_fund.utils.reproducibility import git_revision
 __all__ = ["schema_drift", "schema_drift_bench"]
 
 _HEX = frozenset("0123456789abcdef")
+
+_KNOWN_PATH = "quality/schema_drift_known.json"
+
+
+def _load_known(repo: Path) -> dict[str, Any]:
+    path = repo / _KNOWN_PATH
+    if not path.is_file():
+        return {"phantom_revisions": {}, "drifted": {}}
+    try:
+        doc = json.loads(path.read_text())
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return {"phantom_revisions": {}, "drifted": {}}
+    if not isinstance(doc, dict):
+        return {"phantom_revisions": {}, "drifted": {}}
+    phantom = doc.get("phantom_revisions") if isinstance(doc.get("phantom_revisions"), dict) else {}
+    drifted = doc.get("drifted") if isinstance(doc.get("drifted"), dict) else {}
+    return {"phantom_revisions": phantom, "drifted": drifted}
 
 
 def _claim_keys(payload: dict[str, Any]) -> tuple[str, ...]:
@@ -66,7 +87,9 @@ def schema_drift(receipts_dir: Path | str = "receipts", repo: Path | str = ".") 
     groups: dict[str, list[tuple[str, tuple[str, ...]]]] = {}
     untagged: list[str] = []
     phantom: list[dict[str, str]] = []
+    scanned: set[str] = set()
     for path in sorted(receipts_dir.glob("*.json")):
+        scanned.add(path.name)
         try:
             payload = json.loads(path.read_text())
         except (json.JSONDecodeError, UnicodeDecodeError):
@@ -109,17 +132,54 @@ def schema_drift(receipts_dir: Path | str = "receipts", repo: Path | str = ".") 
                     missing = sorted(set(modal) - set(keys))
                     extra = sorted(set(keys) - set(modal))
                     drifted.append({"file": fname, "tag": tag, "missing": missing, "extra": extra})
-    hard_phantom = [p for p in phantom if p["why"] == "not_a_commit"]
+    known = _load_known(repo)
+    known_phantom_map = known["phantom_revisions"]
+    known_drift_map = known["drifted"]
+    known_phantom: list[dict[str, str]] = []
+    hard_phantom: list[dict[str, str]] = []
+    for p in phantom:
+        if p["why"] != "not_a_commit":
+            continue
+        pin = known_phantom_map.get(p["file"])
+        if isinstance(pin, dict) and pin.get("rev") == p["rev"]:
+            known_phantom.append(p)
+        else:
+            hard_phantom.append(p)
+    known_drifted: list[dict[str, Any]] = []
+    open_drifted: list[dict[str, Any]] = []
+    for d in drifted:
+        pin = known_drift_map.get(d["file"])
+        if (
+            isinstance(pin, dict)
+            and pin.get("tag") == d["tag"]
+            and sorted(pin.get("missing") or []) == sorted(d["missing"])
+            and sorted(pin.get("extra") or []) == sorted(d["extra"])
+        ):
+            known_drifted.append(d)
+        else:
+            open_drifted.append(d)
+    matched_phantom = {p["file"] for p in known_phantom}
+    matched_drifted = {d["file"] for d in known_drifted}
+    # A pin goes stale when its file is present but no longer matches the
+    # pinned signature, or — only when scanning the repo's own corpus — the
+    # file was removed without cleaning the manifest. Foreign dirs (unit
+    # fixtures) never render pins stale.
+    canonical_corpus = receipts_dir.resolve() == (repo / "receipts").resolve()
+    unpinned = set(known_phantom_map) - matched_phantom | set(known_drift_map) - matched_drifted
+    stale_pins = sorted(name for name in unpinned if canonical_corpus or name in scanned)
     return {
         "n_receipts": sum(g["n"] for g in group_stats.values()),
         "n_groups": len(group_stats),
         "groups_with_drift": sum(1 for g in group_stats.values() if g["n_keysets"] > 1),
         "group_stats": group_stats,
-        "drifted": drifted,
+        "drifted": open_drifted,
         "phantom_revisions": phantom,
         "untagged": untagged,
-        "n_flagged": len(drifted) + len(hard_phantom),
-        "n_notes": len(phantom) - len(hard_phantom) + len(untagged),
+        "known_phantom": known_phantom,
+        "known_drifted": known_drifted,
+        "stale_pins": stale_pins,
+        "n_flagged": len(open_drifted) + len(hard_phantom) + len(stale_pins),
+        "n_notes": (len(phantom) - len(hard_phantom) - len(known_phantom) + len(untagged)),
     }
 
 
@@ -148,6 +208,9 @@ def schema_drift_bench(
                 1 for p in audit["phantom_revisions"] if p["why"] == "not_ancestor"
             ),
             "n_untagged": len(audit["untagged"]),
+            "n_known_phantom": len(audit["known_phantom"]),
+            "n_known_drifted": len(audit["known_drifted"]),
+            "n_stale_pins": len(audit["stale_pins"]),
             "drifted": audit["drifted"][:20],
             "phantom_revisions": audit["phantom_revisions"][:20],
             "untagged": audit["untagged"][:20],

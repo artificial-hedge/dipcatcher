@@ -83,7 +83,7 @@ def dominance_stream(
     a = np.asarray(pnl_baseline, dtype=float)
     b = np.asarray(pnl_challenger, dtype=float)
     if a.shape != b.shape or a.ndim != 1:
-        raise ValueError("pnl streams must be 1-D arrays of equal length")
+        raise ValueError("pnl streams must be one-dimensional arrays of equal length")
     if a.size == 0:
         raise ValueError("pnl streams must be non-empty")
     if not (np.all(np.isfinite(a)) and np.all(np.isfinite(b))):

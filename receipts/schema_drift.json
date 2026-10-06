@@ -1,53 +1,136 @@
 {
- "claim": {
-  "drifted": [],
-  "groups_with_drift": 0,
-  "invariant": "same-tag receipts share one claim schema; git_revision is a real ancestor",
-  "n_drifted": 0,
-  "n_groups": 104,
-  "n_not_ancestor": 4,
-  "n_phantom_not_commit": 0,
-  "n_receipts": 129,
-  "n_untagged": 7,
-  "ok": true,
-  "phantom_revisions": [
-   {
-    "file": "coherence_2dd641ab766a536a.json",
-    "rev": "7219a9de1414cea701fa1a3471e4ca8534583f84",
-    "why": "not_ancestor"
-   },
-   {
-    "file": "evidence_audit_3464d8f8197bf737.json",
-    "rev": "b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6",
-    "why": "not_ancestor"
-   },
-   {
-    "file": "evidence_audit_d449e1ca0cc119a6.json",
-    "rev": "35a8ef1b63b31595488141e287ca67cbff5e2727",
-    "why": "not_ancestor"
-   },
-   {
-    "file": "multih_fleet_eval_5db1cab214e291d7.json",
-    "rev": "ecb77bdd2f96530c6ab4c31fe4c92b93db36382f",
-    "why": "not_ancestor"
-   }
-  ],
-  "untagged": [
-   "fast_replay_p42_conformance_20260928.json",
-   "fifo_priority_amzn.json",
-   "real_benchmark_us_wide_manifest.json",
-   "real_benchmark_us_wide_test.json",
-   "real_benchmark_us_wide_validation.json",
-   "seed_sweep_demo_amzn.json",
-   "sweep_width_amzn.json"
-  ]
- },
- "data_label": "SYNTHETIC",
- "git_revision": "8866c3f21b89e128898db55eba1cf0f6ade1b0bd",
- "interpretation": "129 receipts in 104 schema groups: 0 drifted, 4 phantom revisions, 7 untagged.",
- "kind": "schema_drift",
- "live_pnl_claim": false,
- "receipt_sha256": "09aa3b408de388a1b937fca22c0b5c456e8782e5274052e1b1d79c93d8625ec9",
- "research_only": true,
- "schema": "schema_drift.v1"
+  "claim": {
+    "drifted": [],
+    "groups_with_drift": 1,
+    "invariant": "same-tag receipts share one claim schema; git_revision is a real ancestor",
+    "n_drifted": 0,
+    "n_groups": 274,
+    "n_known_drifted": 1,
+    "n_known_phantom": 4,
+    "n_not_ancestor": 16,
+    "n_phantom_not_commit": 4,
+    "n_receipts": 376,
+    "n_stale_pins": 0,
+    "n_untagged": 7,
+    "ok": true,
+    "phantom_revisions": [
+      {
+        "file": "api_audit.json",
+        "rev": "15a78d4a17e0566726f582e8f8dd1000ced32a34",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "byok_audit.json",
+        "rev": "21cc52844f2ef4aa2c924709dcee66beeb7a8a67",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "cli_audit.json",
+        "rev": "15a78d4a17e0566726f582e8f8dd1000ced32a34",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "coherence_2dd641ab766a536a.json",
+        "rev": "7219a9de1414cea701fa1a3471e4ca8534583f84",
+        "why": "not_a_commit"
+      },
+      {
+        "file": "contract_audit.json",
+        "rev": "15a78d4a17e0566726f582e8f8dd1000ced32a34",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "evidence_audit_3464d8f8197bf737.json",
+        "rev": "b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6",
+        "why": "not_a_commit"
+      },
+      {
+        "file": "evidence_audit_d449e1ca0cc119a6.json",
+        "rev": "35a8ef1b63b31595488141e287ca67cbff5e2727",
+        "why": "not_a_commit"
+      },
+      {
+        "file": "fx1_e2e_audit.json",
+        "rev": "fa5e5a44e86c9bf38204acf16a1ccc916cdff8fa",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "fx1_quota2_audit.json",
+        "rev": "825aadf8f7c8ea81f518842f9526ba1e3137ecfc",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "fx1_retrieval_audit.json",
+        "rev": "b58a48a0869f9c8e04435129170432df0dce919d",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "fx1_vs_audit.json",
+        "rev": "63fe80ab1642974733eda7950a0cd7be4cd98d62",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "journal_audit.json",
+        "rev": "65a5c4e211f6980b0cf40340ad01d0c7734f282a",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "mortal_repost.json",
+        "rev": "9d7aa3abf46f43a9504601a64f40167120833944",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "multih_fleet_eval_5db1cab214e291d7.json",
+        "rev": "ecb77bdd2f96530c6ab4c31fe4c92b93db36382f",
+        "why": "not_a_commit"
+      },
+      {
+        "file": "parity_audit.json",
+        "rev": "15a78d4a17e0566726f582e8f8dd1000ced32a34",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "replay_coverage_5e5e7ff56ee42196.json",
+        "rev": "dbf7d35edafdbef91df069905a927544f7f85905",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "replay_coverage_e72b56ffaf7abe4b.json",
+        "rev": "c1fcf1f558969b99e4151955556f1afba70c9c3e",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "replay_proof_6d266ef51218e3e7.json",
+        "rev": "dbf7d35edafdbef91df069905a927544f7f85905",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "replay_proof_e1fa8dd41197ef11.json",
+        "rev": "caabee7568a4627e967e6663d4bc53a25e1e9980",
+        "why": "not_ancestor"
+      },
+      {
+        "file": "serve_audit.json",
+        "rev": "1f1ccec1b29ab66bb4e3b4ed527cf9867000be93",
+        "why": "not_ancestor"
+      }
+    ],
+    "untagged": [
+      "fast_replay_p42_conformance_20260928.json",
+      "fifo_priority_amzn.json",
+      "real_benchmark_us_wide_manifest.json",
+      "real_benchmark_us_wide_test.json",
+      "real_benchmark_us_wide_validation.json",
+      "seed_sweep_demo_amzn.json",
+      "sweep_width_amzn.json"
+    ]
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "ebeca8e58d07aa32cc0bea83436254caf5e62680",
+  "interpretation": "376 receipts in 274 schema groups: 0 drifted, 20 phantom revisions, 7 untagged.",
+  "kind": "schema_drift",
+  "live_pnl_claim": false,
+  "receipt_sha256": "48f80c944cc2bb9c647807d92b869bcabd26dac9e857cad93ffd5d7ec4e763b1",
+  "research_only": true,
+  "schema": "schema_drift.v1"
 }

@@ -1380,11 +1380,14 @@ class KitPathGenerator:
     ) -> KitPathGenerator:
         """Train on an (n, 5) candle stream (SYNTHETIC or research data).
 
-        ``cond_ids``: optional (B, K) per-window integer identity codes
-        matching ``config.cond_cardinalities`` (B = number of windows).
-        ``calendar``: optional (n, calendar_dim) per-bar features, windowed
-        alongside the states. Validation precedes torch, so contract errors
-        raise ``ValueError`` even without the ``nn`` extra.
+        ``candles`` is the complete training corpus: the state scaler's
+        statistics are corpus-level by contract (callers must not pass
+        held-out data). ``cond_ids``: optional (B, K) per-window integer
+        identity codes matching ``config.cond_cardinalities`` (B = number
+        of windows). ``calendar``: optional (n, calendar_dim) per-bar
+        features, windowed alongside the states. Validation precedes torch,
+        so contract errors raise ``ValueError`` even without the ``nn``
+        extra.
         """
         arr = _check_candles(candles)
         if arr.ndim != 2:

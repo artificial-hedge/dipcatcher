@@ -1,0 +1,33 @@
+{
+  "schema": "schema_drift_known.v1",
+  "note": "Committed evidence with provenance/schema anomalies the audit keeps visible instead of failing: each entry is pinned by filename + signature so a changed artifact or a fixed one turns the pin stale and fails the audit until the manifest is updated.",
+  "phantom_revisions": {
+    "coherence_2dd641ab766a536a.json": {
+      "rev": "7219a9de1414cea701fa1a3471e4ca8534583f84",
+      "note": "sealed at a checkout rev that was never committed upstream (fleet/branch-local seal); payload is sealed and verifies — only the git ancestry claim is unattributable"
+    },
+    "evidence_audit_3464d8f8197bf737.json": {
+      "rev": "b3b489d52ee8f9e0a6e817bcb320e8a4b3f2b1c6",
+      "note": "sealed at a checkout rev that was never committed upstream; payload is sealed and verifies — only the git ancestry claim is unattributable"
+    },
+    "evidence_audit_d449e1ca0cc119a6.json": {
+      "rev": "35a8ef1b63b31595488141e287ca67cbff5e2727",
+      "note": "sealed at a checkout rev that was never committed upstream; payload is sealed and verifies — only the git ancestry claim is unattributable"
+    },
+    "multih_fleet_eval_5db1cab214e291d7.json": {
+      "rev": "ecb77bdd2f96530c6ab4c31fe4c92b93db36382f",
+      "note": "fleet eval sealed on the remote host at its local HEAD, a rev never pushed upstream; payload is sealed and verifies — only the git ancestry claim is unattributable"
+    }
+  },
+  "drifted": {
+    "calibration_audit.json": {
+      "tag": "calibration_audit.v1",
+      "missing": [],
+      "extra": [
+        "ok",
+        "results"
+      ],
+      "note": "older calibration_audit writer emits {ok, results} under the same v1 tag the newer bench uses with an empty claim — a real tag collision frozen in an immutable receipt"
+    }
+  }
+}

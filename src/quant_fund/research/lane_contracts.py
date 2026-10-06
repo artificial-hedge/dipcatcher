@@ -242,6 +242,7 @@ _MEASURE_SCHEMAS = frozenset(
         "round_lot.v1",
         "sign_autocorr_real.v1",
         "sign_predict.v1",
+        "sigkernel_mmd.v1",
         "sim_real_ledger.v1",
         "split_flow.v1",
         "spread_dynamics.v1",
@@ -414,4 +415,6 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.replay_sweep import replay_coverage_contract_errors
 
         return replay_coverage_contract_errors(payload)
+    if schema in _MEASURE_SCHEMAS:
+        return _measurement_claim_contract_errors(payload)
     return []

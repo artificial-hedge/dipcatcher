@@ -40,7 +40,9 @@ EVALUE_FAMILY_KINDS = frozenset(
         "monitor_run",
         "suite_health",
         "mcs_seq",
+        "mcs_seq.v1",
         "serial_watch",
+        "serial_watch.v1",
         # drill receipts emit bare kinds (schema carries the .v1 tag)
         "coverage_cs",
         "coverage_audit",

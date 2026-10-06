@@ -201,6 +201,11 @@ LH003_ALLOWLIST: frozenset[str] = frozenset(
         # own training input — the caller slices folds, same model-self-fit
         # idiom as ranking.py / asset_pricing.py above.
         "src/quant_fund/models/regime.py",
+        # KitStateScaler.fit consumes the complete encoded training stream:
+        # fit_ohlcv's caller supplies the train corpus and kit_windows only
+        # ever windows that same stream (the bootstrap bench likewise pools
+        # only normed[:n_tr]). Same corpus-level self-fit idiom.
+        "src/quant_fund/models/kit_paths.py",
     }
 )
 
@@ -295,6 +300,21 @@ LH008_LITERAL_ALLOWLIST: dict[str, frozenset[str]] = {
             "9191a0aa6d5e9d44401e4ead4855ebea13aefe24547c986a37d700e3d727c26c",
             "94fda2dd11e56e7fb460c49397ed208064e4435cec034ca1f5608665e9ac4fc3",
             "0d6b8449f8d0745b25880e3a6cb9618ba33181adc11ba8b25aafd531c29e4973",
+        }
+    ),
+    # parity_leak_audit's own self-drill snippets: the audit feeds these
+    # literals THROUGH the scanner to pin detection behavior, so the file
+    # necessarily embeds forbidden-metric strings as fixture data — they are
+    # scan inputs, not headlines.
+    "src/quant_fund/parity_leak_audit.py": frozenset(
+        {
+            "965649c38bb6c4740e1a3fb14c9204aa2b6838481d27134664f7f8e890ebf121",
+            "8793cf9737b657b34ede8437b3459ba9c77b8920991487d775d7017cb4b59f5c",
+            "4ee52816c7079cce1a82f5030570df6d716fdb9c3a836483418d9e6fa83c7299",
+            "db3293fc24a72a39a096494fa85b0a375c1d35841e79e31077d85763a96e4dbf",
+            "537b151e6a40c4dc1f5fd9c0fd828a57b0119a4a83db028ddd2092c670253505",
+            "5464f85d0ca6adc8995d8328c4006e2f0de72dc84c07f8168f230dd8e07c7554",
+            "e722ad9fdbe5e5a3f216748b393d756807099f5c185b57c73c900dd8c6958ef3",
         }
     ),
 }

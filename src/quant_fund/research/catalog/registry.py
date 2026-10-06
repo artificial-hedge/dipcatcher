@@ -13162,6 +13162,19 @@ def _iter_mapping_keys(obj: object) -> list[str]:
     return keys
 
 
+def _iter_mapping_items(obj: object) -> list[tuple[str, object]]:
+    """Collect nested mapping (key, value) pairs (dicts; list elements walked)."""
+    pairs: list[tuple[str, object]] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            pairs.append((str(k), v))
+            pairs.extend(_iter_mapping_items(v))
+    elif isinstance(obj, (list, tuple)):
+        for item in obj:
+            pairs.extend(_iter_mapping_items(item))
+    return pairs
+
+
 def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     """Return True iff *payload* has no forbidden research-headline metric keys.
 
@@ -13172,12 +13185,15 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
 
-    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
-    not a metric — receipts that embed other receipts carry it nested (e.g. a
-    tournament manifest quoting its benchmark manifest).
+    ``live_pnl_claim`` is exempt from the token scan but is itself fail-closed:
+    only the literal value ``False`` is legal, at any depth — a blob carrying
+    ``live_pnl_claim: True`` (including one nested inside an outer ``False``)
+    is a live-P&L claim, not a flagged exemption.
     """
-    for key in _iter_mapping_keys(payload):
+    for key, value in _iter_mapping_items(payload):
         if key == "live_pnl_claim":
+            if value is not False:
+                return False
             continue
         parts = str(key).lower().replace("-", "_").split("_")
         if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):

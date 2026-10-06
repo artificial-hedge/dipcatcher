@@ -240,6 +240,27 @@ def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
     return _LaneResult(excluded, t_alarm, width, _stream_digest(stream))
 
 
+def _run_mean_eprocess(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """Bounded-mean lane: x_t ~ Uniform(0,1) shifted by 0.2*defect, so
+    E[x] = 0.5 under the null and drifts up with the defect. Alarm = the
+    CS's lower bound clears the dominance threshold 0.5 — calibrated at
+    alpha by construction, powered by the mean gap."""
+    from quant_fund.research.mean_eprocess import MeanEProcess
+
+    rng = np.random.default_rng(seed)
+    proc = MeanEProcess(alpha=alpha)
+    t_alarm = float("nan")
+    alarmed = False
+    stream = np.clip(rng.uniform(0.0, 1.0, n) + 0.2 * defect, 1e-9, 1.0 - 1e-9)
+    for i, x in enumerate(stream):
+        proc.update(float(x))
+        if proc.lower_bound() > 0.5:
+            alarmed = True
+            if not np.isfinite(t_alarm):
+                t_alarm = float(i)
+    return _LaneResult(alarmed, t_alarm, float(proc.lower_bound()), _stream_digest(stream))
+
+
 def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     """SerialWatch over a PIT stream with injected AR(1) probit-scale
     dependence: z_t = defect * z_{t-1} + sqrt(1-defect^2) * eps_t,
@@ -280,6 +301,7 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "conformal_monitor": _run_conformal,
     "coverage_cs": _run_coverage_cs,
     "serial_watch": _run_serial,
+    "mean_eprocess": _run_mean_eprocess,
 }
 
 # lane key → the module its runner lazy-imports (test ratchet scans the
@@ -379,6 +401,10 @@ def lane_power_bench(
         "schema": LANE_POWER_SCHEMA,
         "kind": "lane_power",
         "level": "research",
+        # Synthetic stream corpus — stamped so the tape-binding check exempts
+        # the dataset_sha256 stream fingerprint (it binds generated cells,
+        # not a committed tape manifest).
+        "data_label": "SYNTHETIC",
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         # Corpus-level fingerprint: digest over the exact update streams fed
         # to each lane process per (lane, defect, seed) cell — runs over

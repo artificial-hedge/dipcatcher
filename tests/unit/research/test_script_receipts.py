@@ -254,14 +254,19 @@ def test_every_committed_receipt_schema_is_contract_covered() -> None:
     dispatch to a deep check somewhere in the verifier."""
     uncovered: list[str] = []
     for path in sorted(RECEIPTS.glob("*.json")):
-        schema = json.loads(path.read_text()).get("schema")
+        body = json.loads(path.read_text())
+        schema = body.get("schema")
         if schema in ("receipt.v2", None):
             continue  # v2 inners dispatch by kind fingerprint
-        if (
+        # Coverage is by dispatch tag: the schema tag for tagged receipts, the
+        # kind tag for drill receipts whose schema field is a version int (the
+        # verifier falls back to kind in script_receipt_contract_errors).
+        covered = (
             schema in SCRIPT_RECEIPT_CONTRACTS
             or schema in _LANE_COVERED_SCHEMAS
             or schema in _KIND_DISPATCHED_SCHEMAS
-        ):
-            continue
-        uncovered.append(f"{path.name}:{schema}")
+            or (not isinstance(schema, str) and body.get("kind") in SCRIPT_RECEIPT_CONTRACTS)
+        )
+        if not covered:
+            uncovered.append(f"{path.name}:{schema}")
     assert uncovered == []

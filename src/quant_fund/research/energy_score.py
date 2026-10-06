@@ -82,8 +82,13 @@ def gaussian_copula_samples(
     out = np.empty((m, d))
     for j, x in enumerate(marginals):
         xs = np.sort(x)
-        idx = np.clip((u[:, j] * m).astype(int), 0, m - 1)
-        out[:, j] = xs[idx]
+        # Rank-preserving inverse CDF: the i-th smallest copula draw takes the
+        # i-th smallest marginal value — each output column is an exact
+        # permutation of its marginal while the Gaussian rank order carries
+        # the dependence. Quantile indexing (u*m) duplicates values and drops
+        # others, so the emitted marginal drifts from the input's.
+        order = np.argsort(u[:, j])
+        out[order, j] = xs
     return out
 
 

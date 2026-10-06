@@ -41,6 +41,21 @@ def _candidate_body(doc: Mapping[str, Any]) -> Mapping[str, Any]:
     return inner if isinstance(inner, Mapping) else doc
 
 
+# Seal failures that quarantine rather than reject: the defect is a missing
+# stamp or unregistered provenance — repairable by re-stamping the receipt or
+# registering its tape manifest — not evidence of tampered bytes or a broken
+# honesty contract. Shared by the verdict computation and the stored-receipt
+# coherence re-derivation in ``admission_contract_errors``.
+_SEAL_QUARANTINE_ERRORS = frozenset(
+    {
+        "tape_manifest_unknown",
+        "research_only_not_true",
+        "data_label_missing",
+        "missing_params",
+    }
+)
+
+
 def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
     """(reject_errors, quarantine_errors) over the sealed honesty stamps."""
     reject: list[str] = []
@@ -130,11 +145,23 @@ def admission_check(
 
     verdict_result = verify_receipt_file(candidate)
     seal_ok = bool(verdict_result["valid"])
+    seal_errors = list(verdict_result["errors"])
+    # Quarantine-class seal defects (missing stamps, unregistered provenance)
+    # are repairable — the candidate can be re-stamped or its tape manifest
+    # registered — so they quarantine rather than reject. Everything else a
+    # seal failure can mean (tampered bytes, honesty violations, malformed
+    # payloads) stays reject-class.
+    seal_reject = [e for e in seal_errors if e not in _SEAL_QUARANTINE_ERRORS]
+    seal_quarantine = [e for e in seal_errors if e in _SEAL_QUARANTINE_ERRORS]
+    if not seal_ok and not seal_errors:
+        seal_reject = ["verify_failed"]
     checks.append(
         {
             "name": "seal",
             "ok": seal_ok,
-            "errors": list(verdict_result["errors"]),
+            "errors": seal_errors,
+            "reject_errors": seal_reject,
+            "quarantine_errors": seal_quarantine,
         }
     )
 
@@ -149,6 +176,7 @@ def admission_check(
         doc = {}
         seal_ok = False
         checks.append({"name": "parse", "ok": False, "errors": [str(exc)]})
+        seal_reject.append("parse_failed")
 
     # -- 2. honesty stamps ------------------------------------------------------
     reject_errors: list[str] = []
@@ -292,9 +320,15 @@ def admission_check(
             }
         )
 
-    if not seal_ok or reject_errors or retract_reject:
+    if seal_reject or reject_errors or retract_reject:
         verdict = "reject"
-    elif quarantine_errors or new_inconsistent or hard_chain_errors or retract_findings:
+    elif (
+        seal_quarantine
+        or quarantine_errors
+        or new_inconsistent
+        or hard_chain_errors
+        or retract_findings
+    ):
         verdict = "quarantine"
     else:
         verdict = "admit"
@@ -433,13 +467,25 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         )
         tombstone: Mapping[str, Any] = next((c for c in checks if c.get("name") == "tombstone"), {})
         verdict = payload["verdict"]
+        # Seal-error classification is re-derived from the stored `errors`
+        # list (or the emitted reject/quarantine buckets) so receipts written
+        # before the split still verify: a seal failure is rejectable unless
+        # every recorded error is quarantine-class.
+        seal_errs = list(seal_check.get("errors") or [])
+        seal_rejectable = (
+            any(e not in _SEAL_QUARANTINE_ERRORS for e in seal_errs)
+            or (not seal_check.get("ok", True) and not seal_errs)
+            or bool(seal_check.get("reject_errors"))
+        )
         rejectable = (
-            not seal_check.get("ok", True)
+            seal_rejectable
             or bool(honesty.get("reject_errors"))
             or bool(tombstone.get("reject_errors"))
         )
         quarantinable = (
-            bool(honesty.get("quarantine_errors"))
+            any(e in _SEAL_QUARANTINE_ERRORS for e in seal_errs)
+            or bool(seal_check.get("quarantine_errors"))
+            or bool(honesty.get("quarantine_errors"))
             or not lattice.get("ok", True)
             or not epoch_chain.get("ok", True)
             or bool(tombstone.get("findings"))

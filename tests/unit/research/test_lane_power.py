@@ -89,6 +89,8 @@ _EXCLUDED_LANE_MODULES = {
     "verdict_run": "stream producer for honest_verdict",
     "honest_verdict": "composite claim over lanes — measured via components",
     "evalue_contracts": "verifier contracts, not a monitor lane",
+    "policy_eprocess": "paired-episode dominance lane — measured by its own "
+    "policy_eprocess_bench, not the single-stream power bench",
     "corpus_inference": "operates on the receipt corpus, not a stream",
     "online_fdr": "operates on the receipt corpus, not a stream",
     "winner_curse": "batch correction, not sequential",
