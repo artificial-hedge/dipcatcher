@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import contextlib
 import http.client
+import ipaddress
 import json
 import os
 import shlex
+import socket
+import ssl
 import string
 import subprocess
 import sys
@@ -36,6 +39,7 @@ MOONSHOT_API_URL = "https://api.moonshot.ai/v1/chat/completions"
 BYOK_BASE_URL_ENV = "FX1_BYOK_BASE_URL"
 BYOK_API_KEY_ENV = "FX1_BYOK_API_KEY"
 BYOK_MODEL_ENV = "FX1_BYOK_MODEL"
+BYOK_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_BYOK_ALLOW_PRIVATE_NETWORKS"
 
 LOCAL_SERVE_URL_ENV = "FX1_LOCAL_SERVE_URL"
 LOCAL_SERVE_CMD_ENV = "FX1_LOCAL_SERVE_CMD"
@@ -229,6 +233,151 @@ class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
         return None
 
 
+_BYOK_PRIVATE_V4 = tuple(
+    ipaddress.ip_network(cidr)
+    for cidr in ("10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")
+)
+_BYOK_PRIVATE_V6 = tuple(ipaddress.ip_network(cidr) for cidr in ("::1/128", "fc00::/7"))
+
+
+def _byok_private_networks_allowed() -> bool:
+    """Whether an operator explicitly enabled private BYOK providers."""
+    return os.environ.get(BYOK_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def _apply_byok_destination_policy(request: urllib.request.Request) -> None:
+    """Snapshot the process policy onto a request for the transport seam."""
+    allow_private = _byok_private_networks_allowed()
+    request._fx1_byok_public_only = not allow_private  # type: ignore[attr-defined]
+    request._fx1_byok_allow_private = allow_private  # type: ignore[attr-defined]
+
+
+def _normalized_address(raw: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address:
+    address = ipaddress.ip_address(raw.split("%", 1)[0])
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        return address.ipv4_mapped
+    return address
+
+
+def _byok_address_allowed(
+    address: ipaddress.IPv4Address | ipaddress.IPv6Address, *, allow_private: bool
+) -> bool:
+    """Conservative BYOK destination policy.
+
+    The opt-in admits ordinary loopback/RFC1918/ULA model servers, but never
+    link-local metadata addresses, multicast, unspecified, reserved,
+    documentation, benchmarking, or carrier-grade NAT space.
+    """
+    if address.is_global and not (
+        address.is_private
+        or address.is_loopback
+        or address.is_link_local
+        or address.is_multicast
+        or address.is_reserved
+        or address.is_unspecified
+    ):
+        return True
+    if not allow_private:
+        return False
+    networks = _BYOK_PRIVATE_V4 if isinstance(address, ipaddress.IPv4Address) else _BYOK_PRIVATE_V6
+    return any(address in network for network in networks)
+
+
+def _byok_resolved_addresses(host: str, port: int, *, allow_private: bool) -> tuple[str, ...]:
+    """Resolve once, reject a mixed-policy answer set, and return numeric IPs."""
+    addresses: list[str] = []
+    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
+        host, port, type=socket.SOCK_STREAM
+    ):
+        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
+            continue
+        address = _normalized_address(str(sockaddr[0]))
+        if not _byok_address_allowed(address, allow_private=allow_private):
+            raise ValueError("BYOK endpoint resolved to a prohibited network address")
+        normalized = str(address)
+        if normalized not in addresses:
+            addresses.append(normalized)
+    if not addresses:
+        raise OSError(f"BYOK endpoint host {host!r} did not resolve")
+    return tuple(addresses)
+
+
+class _ByokPinnedHTTPConnection(http.client.HTTPConnection):
+    """HTTP connection pinned to a previously validated numeric address."""
+
+    source_address: tuple[str, int] | None
+
+    def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+        super().__init__(host, port=port, timeout=timeout)
+        self._address = address
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection(
+            (self._address, self.port), self.timeout, self.source_address
+        )
+
+
+class _ByokPinnedHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS pinned to a numeric address while authenticating the URL host."""
+
+    source_address: tuple[str, int] | None
+    _context: ssl.SSLContext
+
+    def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+        super().__init__(host, port=port, timeout=timeout, context=ssl.create_default_context())
+        self._address = address
+
+    def connect(self) -> None:
+        raw_sock = socket.create_connection(
+            (self._address, self.port), self.timeout, self.source_address
+        )
+        try:
+            self.sock = self._context.wrap_socket(raw_sock, server_hostname=self.host)
+        except BaseException:
+            raw_sock.close()
+            raise
+
+
+def _open_byok_pinned(
+    request: urllib.request.Request, *, timeout_s: float, allow_private: bool
+) -> tuple[http.client.HTTPResponse, http.client.HTTPConnection]:
+    """Open a direct, DNS-pinned BYOK request; never use proxies or redirects."""
+    parsed = urllib.parse.urlparse(request.full_url)
+    host = parsed.hostname
+    if host is None:  # construction validation should make this unreachable
+        raise urllib.error.URLError(ValueError("BYOK endpoint has no host"))
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    try:
+        addresses = _byok_resolved_addresses(host, port, allow_private=allow_private)
+    except (OSError, ValueError) as exc:
+        raise urllib.error.URLError(exc) from exc
+    target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
+    # urllib's Request normalizes names such as ``Content-Type`` to
+    # ``Content-type`` internally. Restore conventional wire casing so this
+    # transport remains behavior-compatible with the prior urllib path.
+    headers = {
+        "-".join(part.capitalize() for part in name.split("-")): value
+        for name, value in request.header_items()
+    }
+    connection_cls = (
+        _ByokPinnedHTTPSConnection if parsed.scheme == "https" else _ByokPinnedHTTPConnection
+    )
+    # A credentialed POST is never replayed across DNS answers: a provider
+    # may have accepted a body before a read-side transport failure. Resolve
+    # and validate the whole answer set, then make exactly one attempt.
+    connection = connection_cls(host, port, addresses[0], timeout_s)
+    try:
+        connection.request(request.get_method(), target, body=request.data, headers=headers)
+        return connection.getresponse(), connection
+    except (OSError, http.client.HTTPException) as exc:
+        connection.close()
+        raise urllib.error.URLError(exc) from exc
+
+
 @contextlib.contextmanager
 def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Iterator[Any]:
     """Open one credentialed request with redirects disabled and close it.
@@ -240,6 +389,29 @@ def _openai_urlopen(request: urllib.request.Request, *, timeout_s: float) -> Ite
     response here as well.  Otherwise repeated provider refusals retain their
     sockets until cyclic GC happens to collect the traceback.
     """
+    public_only = bool(getattr(request, "_fx1_byok_public_only", False))
+    allow_private = bool(getattr(request, "_fx1_byok_allow_private", False))
+    if public_only or allow_private:
+        response, connection = _open_byok_pinned(
+            request, timeout_s=timeout_s, allow_private=allow_private
+        )
+        if not 200 <= response.status < 300:
+            error = urllib.error.HTTPError(
+                request.full_url,
+                response.status,
+                response.reason,
+                response.headers,
+                response,
+            )
+            response.close()
+            connection.close()
+            raise error
+        try:
+            yield response
+        finally:
+            response.close()
+            connection.close()
+        return
     opener = urllib.request.build_opener(_RefuseRedirects())
     try:
         response = opener.open(request, timeout=timeout_s)  # noqa: S310  # nosec B310
@@ -299,6 +471,7 @@ def _openai_chat_complete(
     api_key: str | None,
     label: str,
     sampling: SamplingParams | None = None,
+    byok: bool = False,
 ) -> tuple[str, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion; map errors to RuntimeError.
 
@@ -319,6 +492,8 @@ def _openai_chat_complete(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    if byok:
+        _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
@@ -357,6 +532,7 @@ def _openai_tokenize_count(
     timeout_s: float,
     api_key: str | None,
     label: str,
+    byok: bool = False,
 ) -> int:
     """POST one chat-shaped tokenize call; the provider's own count.
 
@@ -378,6 +554,8 @@ def _openai_tokenize_count(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    if byok:
+        _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
@@ -460,6 +638,7 @@ def _openai_chat_complete_tools(
     sampling: SamplingParams | None = None,
     logprobs: bool | None = None,
     top_logprobs: int | None = None,
+    byok: bool = False,
 ) -> tuple[ToolCompletion, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion carrying ``tools``.
 
@@ -496,6 +675,8 @@ def _openai_chat_complete_tools(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    if byok:
+        _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
@@ -564,6 +745,7 @@ def _openai_chat_stream(
     label: str,
     usage_out: list[dict[str, int]] | None = None,
     sampling: SamplingParams | None = None,
+    byok: bool = False,
 ) -> Iterator[str]:
     """POST one streaming OpenAI-compatible chat completion.
 
@@ -591,6 +773,8 @@ def _openai_chat_stream(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    if byok:
+        _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
             for raw_line in response:
@@ -677,6 +861,7 @@ def _openai_embeddings_complete(
     timeout_s: float,
     api_key: str | None,
     label: str,
+    byok: bool = False,
 ) -> EmbeddingResult:
     """POST one OpenAI-compatible embeddings call; errors → RuntimeError.
 
@@ -701,6 +886,8 @@ def _openai_embeddings_complete(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    if byok:
+        _apply_byok_destination_policy(request)
     try:
         with _openai_urlopen(request, timeout_s=timeout_s) as response:
             payload = json.loads(response.read().decode())
@@ -1138,6 +1325,7 @@ class OpenAICompatBackend(_UsageTracker):
             api_key=self._api_key,
             label="BYOK",
             sampling=sampling,
+            byok=True,
         )
         self._record_usage(usage)
         return content
@@ -1171,6 +1359,7 @@ class OpenAICompatBackend(_UsageTracker):
             sampling=sampling,
             logprobs=logprobs,
             top_logprobs=top_logprobs,
+            byok=True,
         )
         self._record_usage(usage)
         return result
@@ -1192,6 +1381,7 @@ class OpenAICompatBackend(_UsageTracker):
             label="BYOK",
             usage_out=box,
             sampling=sampling,
+            byok=True,
         ):
             yield tok
         if box:
@@ -1220,6 +1410,7 @@ class OpenAICompatBackend(_UsageTracker):
             timeout_s=self._timeout_s,
             api_key=self._api_key,
             label="BYOK",
+            byok=True,
         )
         self._record_usage(result.usage)
         return result
@@ -1236,6 +1427,7 @@ class OpenAICompatBackend(_UsageTracker):
             timeout_s=float(self._timeout_s),
             api_key=self._api_key,
             label="BYOK",
+            byok=True,
         )
 
 

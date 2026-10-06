@@ -1522,6 +1522,9 @@ def byok_audit() -> dict[str, Any]:
     """Every measured BYOK probe — flat name → True map."""
     out = _backend_probes()
     with _audit_context():
+        # This synthetic audit intentionally owns its loopback provider.
+        # Production BYOK remains public-network-only by default.
+        os.environ["FX1_BYOK_ALLOW_PRIVATE_NETWORKS"] = "1"
         out.update(_probe_wire())
         out.update(_probe_hygiene())
         out.update(_probe_validation())

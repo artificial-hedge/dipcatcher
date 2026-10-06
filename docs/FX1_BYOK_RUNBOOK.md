@@ -28,6 +28,26 @@ supplies the link. A partially configured link fails closed at resolve —
 `BackendNotConfiguredError` → `503 backend_unavailable` — never a guessed
 endpoint.
 
+## Outbound network boundary
+
+BYOK destinations are public global-unicast only by default. Immediately
+before every provider request, the harness resolves the hostname, rejects
+the entire answer set if any address is private or special-use, and pins the
+TCP connection to the first validated numeric address. HTTPS still verifies
+the certificate and sends SNI for the original hostname. The BYOK transport
+does not follow redirects, use ambient `HTTP_PROXY`/`HTTPS_PROXY` settings,
+or retry a credentialed POST across multiple DNS answers.
+
+An operator running an owned local vLLM, SGLang, Ollama, or similar server
+can set `FX1_BYOK_ALLOW_PRIVATE_NETWORKS=1`. This narrowly permits IPv4
+loopback, RFC 1918, IPv6 loopback, and IPv6 ULA destinations. It does not
+permit link-local or cloud-metadata addresses, carrier-grade NAT, multicast,
+unspecified, reserved, documentation, or benchmark ranges. This is a
+server-side deployment control; callers cannot enable it in a request.
+
+For a managed local fx-1 checkpoint, prefer the `local_fx1` lane instead of
+enabling private BYOK access.
+
 ## Request shape on each leg
 
 **`/harness/*` body field** — `byok` is a validated `ByokOverride` on

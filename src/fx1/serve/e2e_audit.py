@@ -177,6 +177,7 @@ def e2e_audit() -> dict[str, bool]:
             {
                 "FX1_API_KEY": _API_KEY,
                 "FX1_BYOK_BASE_URL": f"http://127.0.0.1:{stub_port}/v1",
+                "FX1_BYOK_ALLOW_PRIVATE_NETWORKS": "1",
                 "FX1_BYOK_API_KEY": "stub-engine-key",
                 "FX1_BYOK_MODEL": "stub-v0",
             }
