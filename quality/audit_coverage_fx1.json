@@ -130,9 +130,13 @@
       "status": "audited"
     },
     "selftest.py": {
-      "status": "pending"
+      "status": "audited",
+      "doc": "docs/AUDIT_LEDGER.md"
     },
     "tail_audit.py": {
+      "status": "audited"
+    },
+    "selftest_audit.py": {
       "status": "audited"
     }
   },

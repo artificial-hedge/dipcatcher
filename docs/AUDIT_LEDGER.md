@@ -346,3 +346,26 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Selftest audit (`selftest.py`)
+
+`fx1.selftest_audit` pins the deploy-gate machinery beneath the golden
+walk: `SelftestReport.ok` requires a nonempty all-true check set and
+`as_dict` preserves name/ok/detail; `_run` never escapes (expect-match
+vs truthiness, exceptions captured as `{Type}: {msg}` details);
+`_wait_job` returns terminal statuses immediately and reports
+`{"status": "timeout"}` past the deadline instead of hanging;
+`_server_down` distinguishes a live listener from a closed port. The
+battery runs remote mode twice — against an unreachable target (every
+check recorded with an honest failure detail, never raised) and
+against a real in-process app (health, version parity, commands,
+score advisory, gate preflight, and the missing-key auth-gate check
+all green) — plus the full local golden path, once bare and once with
+a `state_dir` so the `restart_recovers_job` leg runs. The environment
+contract is pinned end-to-end: every env var the selftest touches
+(`FX1_API_KEY`, `FX1_BYOK_*`, `MOONSHOT_API_KEY`,
+`FX1_BYOK_ALLOW_PRIVATE_NETWORKS`) and the `fx1.serve.api` logger
+level are restored after the run — the audit's sentinel probes caught
+two restore gaps (`FX1_BYOK_ALLOW_PRIVATE_NETWORKS` and
+`MOONSHOT_API_KEY`) which the lane fixes. ~45 literal-bool probes seal
+into a `selftest_audit.v1` receipt; `selftest.py` moves to `audited`.
