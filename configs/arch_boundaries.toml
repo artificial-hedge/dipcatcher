@@ -85,6 +85,7 @@ packages = [
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
+    "parity_leak_audit",  # parity leak audit over parity+leakage (lazy edges)
 ]
 
 [[layers]]
@@ -199,6 +200,11 @@ allowed = [
     # cli/api/paper coupling may enter through them.
     "quant_fund.models.iv_approx",
     "quant_fund.models.options",
+    # Receipt-envelope seam: fx1 serve/sdk verify eval and release receipts
+    # sealed by the harness (verify_receipt_file / verify_receipt_payload) —
+    # same intentional-seam reasoning as the oracle pins above. Exact module
+    # only: no other quant_fund.research coupling may enter through it.
+    "quant_fund.research.receipt_v2",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 

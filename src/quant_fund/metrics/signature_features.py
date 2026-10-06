@@ -114,13 +114,6 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from quant_fund.models.path_signatures import (
-    lead_lag_transform,
-    logsignature,
-    signature,
-    signature_kernel,
-)
-
 Array = NDArray[np.float64]
 
 __all__ = [
@@ -270,6 +263,10 @@ def augment_path(
     (T+1, d) path becoming (2T+1, 2(d+1)). An empty tuple returns the
     validated path unchanged; an unknown name fails closed.
     """
+    # Lazy: path_signatures lives in the analytics layer above metrics —
+    # the sanctioned way to break that upward edge.
+    from quant_fund.models.path_signatures import lead_lag_transform  # noqa: PLC0415
+
     arr = _as_path(path)
     for aug in augmentations:
         if aug == "time":
@@ -312,6 +309,13 @@ def signature_feature_vector(
     the *order of events*, not the sampling clock (unless the time channel
     is augmented in).
     """
+    # Lazy: path_signatures lives in the analytics layer above metrics —
+    # the sanctioned way to break that upward edge.
+    from quant_fund.models.path_signatures import (  # noqa: PLC0415
+        logsignature,
+        signature,
+    )
+
     basis_resolved, m = _resolve_basis_order(basis, order)
     arr = augment_path(path, augmentations=augmentations)
     if basis_resolved == "signature":
@@ -481,6 +485,10 @@ def signature_kernel_pde_diagnostics(
     must shrink geometrically; a non-shrinking gap is surfaced honestly in
     ``monotone_shrinking_gaps`` rather than hidden.
     """
+    # Lazy: path_signatures lives in the analytics layer above metrics —
+    # the sanctioned way to break that upward edge.
+    from quant_fund.models.path_signatures import signature_kernel  # noqa: PLC0415
+
     _as_path(path_a, "path_a")
     _as_path(path_b, "path_b")
     cap = _check_int(max_dyadic_level, "max_dyadic_level", 0, _MAX_DYADIC_LEVEL)
@@ -516,6 +524,10 @@ def _kernel_eval(
     sigma: float,
     scheme: str,
 ) -> float:
+    # Lazy: path_signatures lives in the analytics layer above metrics —
+    # the sanctioned way to break that upward edge.
+    from quant_fund.models.path_signatures import signature_kernel  # noqa: PLC0415
+
     if kernel == "pde":
         return signature_kernel_pde(
             arr_a, arr_b, dyadic_level=dyadic_level, sigma=sigma, scheme=scheme
@@ -545,6 +557,10 @@ def _gram_truncated(
     sigma: float,
 ) -> Array:
     """Batched order-m truncated Gram: signatures once per path, then matmul."""
+    # Lazy: path_signatures lives in the analytics layer above metrics —
+    # the sanctioned way to break that upward edge.
+    from quant_fund.models.path_signatures import signature  # noqa: PLC0415
+
     feats_a = np.stack([signature(p, order) for p in members_a], axis=0)
     w = _level_column_weights(int(members_a[0].shape[1]), order, sigma)
     if members_b is None:

@@ -45,14 +45,6 @@ from quant_fund.microstructure.zi_lob_simulator import (
     ZILobConfig,
     ZILobSimulator,
 )
-from quant_fund.models.sigkernel import (
-    gram_is_psd,
-    mmd2,
-    mmd2_permutation,
-    pde_vs_series_gap,
-    sigkernel_gram,
-    sigkernel_pde,
-)
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -133,6 +125,17 @@ def sigkernel_mmd_bench(
     known-distinct sim populations, and (c) — with a tape — the
     distribution-level ordering of flow mechanisms vs the real stream.
     """
+    # Lazy: models/ sits above microstructure in the layer stack — this is
+    # the codebase's sanctioned mechanism for that upward edge.
+    from quant_fund.models.sigkernel import (  # noqa: PLC0415
+        gram_is_psd,
+        mmd2,
+        mmd2_permutation,
+        pde_vs_series_gap,
+        sigkernel_gram,
+        sigkernel_pde,
+    )
+
     results: dict[str, bool] = {}
     claim: dict[str, Any] = {}
 

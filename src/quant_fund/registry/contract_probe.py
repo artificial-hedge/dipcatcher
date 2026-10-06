@@ -32,7 +32,6 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -141,6 +140,13 @@ def probe_receipt(payload: Mapping[str, Any], path: Path) -> dict[str, Any]:
     Returns the per-receipt row: identity, which probes ran, which escaped,
     and the ``contracted``/``envelope_only`` classification.
     """
+    # Lazy: the receipt seal/verify machinery lives in the research layer
+    # above registry — the sanctioned way to break that upward edge.
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        seal_receipt,
+        verify_receipt_payload,
+    )
+
     leaves = _walk_leaves(payload, ())
     probes: dict[str, dict[str, Any]] = {}
 

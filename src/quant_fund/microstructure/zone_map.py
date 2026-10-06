@@ -18,7 +18,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -35,6 +34,10 @@ _LANES: tuple[tuple[str, str], ...] = (
 
 def zone_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     """Compose the zone-lane receipts into the standing-spread verdict."""
+    # Lazy: receipt verification lives in the research layer above
+    # microstructure — the sanctioned way to break that upward edge.
+    from quant_fund.research.receipt_v2 import verify_receipt_file  # noqa: PLC0415
+
     receipts_dir = Path(receipts_dir)
     lanes: list[dict[str, Any]] = []
     all_sealed = True
