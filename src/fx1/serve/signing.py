@@ -19,7 +19,7 @@ import stat
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO, cast
 
 from pydantic import BaseModel, Field
 
@@ -58,7 +58,9 @@ def _open_regular_file(path: Path) -> Iterator[BinaryIO]:
 
 def _hash_file(path: Path) -> str:
     with _open_regular_file(path) as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        # ``os.fdopen(..., "rb")`` supplies ``readinto`` at runtime, but the
+        # broad BinaryIO protocol in typeshed does not expose that member.
+        return hashlib.file_digest(cast(Any, stream), "sha256").hexdigest()
 
 
 def _raise_walk_error(error: OSError) -> None:
@@ -141,6 +143,11 @@ def verify_release(checkpoint_dir: str | Path) -> bool:
         if not hmac.compare_digest(expected, signature):
             return False
         manifest = ReleaseManifest.model_validate_json(manifest_bytes)
-        return build_manifest(root).artifacts == manifest.artifacts
+        paths = {str(path.relative_to(root)): path for path in _artifact_paths(root)}
+        if paths.keys() != manifest.artifacts.keys():
+            return False
+        # Reject cheap inventory mismatches before reading potentially huge weights.
+        # Hash every matching artifact afresh; metadata is not a digest cache.
+        return all(_hash_file(path) == manifest.artifacts[name] for name, path in paths.items())
     except (OSError, ValueError):
         return False

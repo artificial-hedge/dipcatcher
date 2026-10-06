@@ -53,8 +53,9 @@ def test_replacing_an_old_receipt_is_not_hidden_by_newer_mtime(tmp_path: Path) -
     os.utime(newest, ns=(9_000_000_000, 9_000_000_000))
     index = ReceiptIndex(tmp_path)
     assert index.lookup("a" * 64) == old
-    _receipt(tmp_path, "old.json", "c" * 64)
-    os.utime(old, ns=(1_000_000_000, 1_000_000_000))
+    replacement = _receipt(tmp_path, "replacement.tmp", "c" * 64)
+    os.utime(replacement, ns=(1_000_000_000, 1_000_000_000))
+    os.replace(replacement, old)
     assert index.lookup("a" * 64) is None
     assert index.lookup("c" * 64) == old
 
@@ -121,7 +122,10 @@ def test_symlinked_json_is_not_read_or_indexed(tmp_path: Path) -> None:
     root = tmp_path / "receipts"
     root.mkdir()
     outside = _receipt(tmp_path, "outside.json", "a" * 64)
-    (root / "linked.json").symlink_to(outside)
+    try:
+        (root / "linked.json").symlink_to(outside)
+    except (NotImplementedError, OSError) as error:
+        pytest.skip(f"symlink creation unavailable: {error}")
     with patch.object(Path, "read_bytes", side_effect=AssertionError("symlink followed")):
         assert ReceiptIndex(root).items() == []
 
@@ -158,6 +162,8 @@ def test_concurrent_readers_observe_the_complete_new_index(tmp_path: Path) -> No
 
 def test_unexpected_decoder_error_is_not_hidden(tmp_path: Path) -> None:
     _receipt(tmp_path, "a.json", "a" * 64)
-    with patch("fx1.serve.receipt_store.json.loads", side_effect=RuntimeError("SYNTHETIC bug")):
-        with pytest.raises(RuntimeError, match="SYNTHETIC bug"):
-            ReceiptIndex(tmp_path).items()
+    with (
+        patch("fx1.serve.receipt_store.json.loads", side_effect=RuntimeError("SYNTHETIC bug")),
+        pytest.raises(RuntimeError, match="SYNTHETIC bug"),
+    ):
+        ReceiptIndex(tmp_path).items()
