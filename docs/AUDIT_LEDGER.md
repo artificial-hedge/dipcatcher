@@ -346,3 +346,40 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### SDK concurrency audit maintenance (PR #2910)
+
+The new `sdkconc_audit` battery pins the two caller-facing SDK surfaces
+under concurrent load: the in-process `Fx1Harness` twin (thread-safety
+across every method family over the shared stores — completion log,
+credential registry, eval, conversation, file and upload stores,
+background-response registry — plus ContextVar hygiene and per-key
+billing at the auth boundary) and the `HarnessClient` wire twin
+(per-call retry budgets keyed by request marker, circuit-breaker
+fail-fast and half-open recovery, timeout isolation, concurrent SSE
+readers with mapped error frames, Idempotency-Key replay, URL
+normalization, typed refusals, BYOK override end to end). Wire-side
+store contention on the app itself remains the sibling
+`concurrency_audit` lane's surface.
+
+One defect found and fixed in this lane: `Fx1Harness._record_call`
+published `last_response_headers` by assign-then-mutate, so a racing
+reader could observe a torn header set mid-build and a slower lane
+could stamp its completion id into another call's already-published
+dict. The header set is now built local and published in one atomic
+assignment — concurrent readers always see a coherent single-call
+set, last-writer-wins.
+
+The battery also pins measured (pre-existing, non-defect) semantics:
+the `max_inflight` gate claims its slot before body validation, so an
+over-capacity burst surfaces `503 over_capacity` even for malformed
+bodies; two `Fx1Harness` instances on one `state_dir` replay boot-time
+journals one-directionally and quarantine all recovered credentials on
+interleave; `complete(timeout_s=...)` is a request-side budget that
+rides the payload while the transport keeps the client timeout;
+denied-scope calls bill nothing; and the auth ContextVar never leaks
+into worker threads.
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
