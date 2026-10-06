@@ -38,6 +38,7 @@ import contextvars
 import hashlib
 import hmac
 import inspect
+import io
 import json
 import logging
 import math
@@ -564,16 +565,26 @@ def _request_header_error_body(path: str, message: str) -> dict[str, Any]:
 
 
 async def _buffer_request_body(request: Request) -> tuple[int, bytes]:
-    """Read and count the ASGI entity once, retaining at most the body cap."""
+    """Read the ASGI entity once without buffering beyond the body cap.
+
+    ``Request.stream()`` can yield arbitrarily small chunks.  Keeping each
+    chunk in a list therefore lets a one-megabyte request consume tens of
+    megabytes of Python object overhead.  A bounded in-memory stream keeps the
+    allocation proportional to the advertised cap, and an over-cap entity
+    is refused as soon as the first excess bytes arrive instead of draining
+    an attacker-controlled stream before answering.
+    """
     size = 0
-    chunks: list[bytes] = []
+    body = io.BytesIO()
     async for chunk in request.stream():
         size += len(chunk)
-        if size <= _MAX_BODY_BYTES:
-            chunks.append(chunk)
-    body = b"".join(chunks) if size <= _MAX_BODY_BYTES else b""
-    request._body = body  # noqa: SLF001 — preserve the entity for downstream parsing
-    return size, body
+        if size > _MAX_BODY_BYTES:
+            request._body = b""  # noqa: SLF001 — no downstream consumer on refusal
+            return size, b""
+        body.write(chunk)
+    buffered = body.getvalue()
+    request._body = buffered  # noqa: SLF001 — preserve entity for downstream parsing
+    return size, buffered
 
 
 def _too_large_body(path: str) -> dict[str, Any]:
