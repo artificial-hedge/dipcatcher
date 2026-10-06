@@ -7,9 +7,9 @@ ratchet:
 
 - every module must resolve to a status (module override wins, else its
   top-level directory entry);
-- ``audited`` directories pin ``n_modules``: adding or removing a file under
-  an audited directory fails until the manifest is updated — a new file can
-  never silently inherit an audit it never received;
+- every declared ``n_modules`` value is enforced; ``audited`` directories must
+  declare one. Adding or removing a file cannot silently leave a stale census,
+  and a new file can never silently inherit an audit it never received;
 - ``waived`` entries require a non-empty ``reason``;
 - ``doc`` references must point at real files;
 - stale manifest keys (renamed/deleted modules or directories) fail;
@@ -122,8 +122,8 @@ def test_every_module_has_a_status() -> None:
         )
 
 
-def test_audited_dirs_pin_file_count() -> None:
-    """A file landing in an audited dir can't silently inherit 'audited'."""
+def test_declared_dirs_pin_file_count() -> None:
+    """Every declared census is exact; audited directories must declare one."""
     for root in ROOTS:
         manifest = _manifest(root.manifest_path)
         directories = _entries(manifest, "directories")
@@ -131,10 +131,12 @@ def test_audited_dirs_pin_file_count() -> None:
         src_modules = _src_modules(root.src)
         drift = []
         for top, entry in directories.items():
-            if entry["status"] != "audited":
-                continue
             pinned = entry.get("n_modules")
-            assert isinstance(pinned, int), f"{top}: audited dir must pin n_modules"
+            if entry["status"] == "audited":
+                assert isinstance(pinned, int), f"{top}: audited dir must pin n_modules"
+            if pinned is None:
+                continue
+            assert isinstance(pinned, int), f"{top}: n_modules must be an integer"
             actual = sum(
                 1
                 for m in src_modules
@@ -144,10 +146,10 @@ def test_audited_dirs_pin_file_count() -> None:
             if actual != pinned:
                 drift.append((top, pinned, actual))
         assert not drift, (
-            f"{root.manifest_path.name}: audited directories gained/lost modules "
+            f"{root.manifest_path.name}: directories gained/lost modules "
             "without a manifest update: "
             + ", ".join(f"{d} pinned={p} actual={a}" for d, p, a in drift)
-            + " — audit the new module or downgrade the directory status"
+            + " — update the census and audit status"
         )
 
 
