@@ -15,6 +15,7 @@ from typing import Any
 import pytest
 
 from fx1.serve import openai_compat
+from fx1.serve.api import _REQUEST_KEY_ID
 from fx1.serve.openai_compat import OpenAIEnvelopeStore
 
 
@@ -112,6 +113,8 @@ def test_inactive_before_start_does_not_call_backend(intervention: str) -> None:
         request=types.SimpleNamespace(headers={}),
         key=None,
         _openai_response_core=core,
+        bg_key_id=None,
+        _REQUEST_KEY_ID=_REQUEST_KEY_ID,
     )
     _handler("_bg_run", bindings)()
     assert not calls

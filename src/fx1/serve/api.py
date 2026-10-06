@@ -6789,9 +6789,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
             cancel_ev = threading.Event()
             bg_cancel[rid] = cancel_ev
+            # Key attribution must be captured here — worker threads in the
+            # pool do not inherit this request's contextvars.
+            bg_key_id = _REQUEST_KEY_ID.get()
 
             def _bg_run() -> None:
                 inflight.acquire()
+                key_token = _REQUEST_KEY_ID.set(bg_key_id)
                 try:
                     if cancel_ev.is_set():
                         return
@@ -6836,6 +6840,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             },
                         )
                 finally:
+                    _REQUEST_KEY_ID.reset(key_token)
                     inflight.release()
                     bg_cancel.pop(rid, None)
 
