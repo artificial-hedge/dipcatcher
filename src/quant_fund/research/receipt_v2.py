@@ -998,6 +998,7 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_bytes(data, file_path)
 
+
 def receipt_v2_json_schema() -> dict[str, Any]:
     """Load the published JSON-schema contract shipped beside this module."""
     from importlib.resources import files
