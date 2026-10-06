@@ -21,6 +21,8 @@ Composition: pure numpy; deterministic; no new dependencies.
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -30,7 +32,7 @@ IntArray = NDArray[np.int64]
 
 def _clean(r: FloatArray) -> FloatArray:
     out = np.asarray(r, dtype=np.float64)
-    out = out[np.isfinite(out)]
+    out = cast(FloatArray, out[np.isfinite(out)])
     if len(out) < 3:
         raise ValueError("need at least 3 finite returns")
     return out
@@ -112,7 +114,9 @@ def bars_per_period(ids: IntArray, period_length: int) -> IntArray:
     return out
 
 
-def compare_bar_returns(r_time: FloatArray, r_alt: FloatArray) -> dict[str, dict[str, float]]:
+def compare_bar_returns(
+    r_time: FloatArray, r_alt: FloatArray
+) -> dict[str, dict[str, float] | float]:
     """Side-by-side stats for two bar constructions (e.g. time vs dollar).
 
     ``reduction_*`` entries report (stat_time − stat_alt) / |stat_time| for

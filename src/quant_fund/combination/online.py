@@ -49,7 +49,7 @@ def exponentiated_gradient(
     if eta <= 0:
         raise ValueError("eta must be positive")
     t_total, k = ell.shape
-    w = np.full(k, 1.0 / k)
+    w: FloatArray = np.full(k, 1.0 / k)
     weight_path = np.empty((t_total, k), dtype=np.float64)
     combined = np.empty(t_total, dtype=np.float64)
     for t in range(t_total):
@@ -73,7 +73,7 @@ def fixed_share(
     if not 0.0 <= alpha <= 1.0:
         raise ValueError("alpha must be in [0, 1]")
     t_total, k = ell.shape
-    w = np.full(k, 1.0 / k)
+    w: FloatArray = np.full(k, 1.0 / k)
     weight_path = np.empty((t_total, k), dtype=np.float64)
     combined = np.empty(t_total, dtype=np.float64)
     for t in range(t_total):

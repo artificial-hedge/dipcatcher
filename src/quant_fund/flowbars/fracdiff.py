@@ -105,9 +105,8 @@ def min_stationary_d(
     decide.
     """
     x = np.asarray(x, dtype=np.float64)
-    if d_grid is None:
-        d_grid = np.linspace(0.0, 1.0, 21)
-    grid = np.asarray(d_grid, dtype=np.float64)
+    grid_in = np.linspace(0.0, 1.0, 21) if d_grid is None else d_grid
+    grid = np.asarray(grid_in, dtype=np.float64)
     if grid.ndim != 1 or len(grid) == 0:
         raise ValueError("d_grid must be a non-empty one-dimensional array")
     for d in grid:

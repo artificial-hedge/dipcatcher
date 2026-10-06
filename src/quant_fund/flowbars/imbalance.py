@@ -44,7 +44,7 @@ def tick_rule_signs(prices: FloatArray) -> IntArray:
         raise ValueError("prices must be one-dimensional")
     delta = np.diff(prices, prepend=prices[0])
     signs = np.sign(delta).astype(np.int64)
-    out = np.empty_like(signs)
+    out = np.empty(len(signs), dtype=np.int64)
     last = 1
     for i in range(len(signs)):
         s = int(signs[i])

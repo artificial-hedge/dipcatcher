@@ -19,6 +19,8 @@ Composition: numpy + scipy.stats.rankdata (locked); deterministic.
 
 from __future__ import annotations
 
+from typing import cast
+
 import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import rankdata
@@ -34,7 +36,7 @@ def _row_corr(a: FloatArray, b: FloatArray) -> FloatArray:
     den = np.sqrt((a_dm * a_dm).sum(axis=1) * (b_dm * b_dm).sum(axis=1))
     with np.errstate(divide="ignore", invalid="ignore"):
         out = np.where(den > 0, num / den, np.nan)
-    return np.asarray(out, dtype=np.float64)
+    return cast(FloatArray, np.asarray(out, dtype=np.float64))
 
 
 def pearson_ic(pred: FloatArray, actual: FloatArray) -> FloatArray:
@@ -52,14 +54,14 @@ def spearman_ic(pred: FloatArray, actual: FloatArray) -> FloatArray:
     actual = np.asarray(actual, dtype=np.float64)
     if pred.shape != actual.shape or pred.ndim != 2:
         raise ValueError("pred and actual must be (T, N) matrices of equal shape")
-    r_pred = rankdata(pred, axis=1)
-    r_actual = rankdata(actual, axis=1)
-    return _row_corr(np.asarray(r_pred, dtype=np.float64), np.asarray(r_actual, dtype=np.float64))
+    r_pred = np.asarray(cast(FloatArray, rankdata(pred, axis=1)), dtype=np.float64)
+    r_actual = np.asarray(cast(FloatArray, rankdata(actual, axis=1)), dtype=np.float64)
+    return _row_corr(r_pred, r_actual)
 
 
 def _valid(ic: FloatArray) -> FloatArray:
     out = np.asarray(ic, dtype=np.float64)
-    return out[np.isfinite(out)]
+    return cast(FloatArray, out[np.isfinite(out)])
 
 
 def ic_summary(ic: FloatArray) -> dict[str, float]:

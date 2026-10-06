@@ -59,7 +59,7 @@ def granger_ramanathan(
     design = np.column_stack([np.ones(t), preds])
     gram = design.T @ design
     reg = gram + ridge * np.eye(k + 1)
-    coef = np.linalg.solve(reg, design.T @ y)
+    coef = np.asarray(np.linalg.solve(reg, design.T @ y), dtype=np.float64)
     intercept = float(coef[0])
     w = coef[1:]
     if constrain:
