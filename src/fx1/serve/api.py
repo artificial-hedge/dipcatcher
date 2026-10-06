@@ -247,7 +247,7 @@ from fx1.serve.vectorstores import (
     VectorStoreStore,
 )
 from fx1.serve.webhooks import check_callback_url, deliver_signed
-from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
+from quant_fund.research.receipt_v2 import verify_receipt_bytes, verify_receipt_payload
 
 _OBJ_CHAT_COMPLETION = "chat.completion"
 _EV_JOB_CANCELLED = "job cancelled"
@@ -2773,24 +2773,44 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         path = receipt_index.lookup(sha256)
         if path is None:
             raise ApiError(404, "receipt not found", code="receipt_not_found")
-        inm = request.headers.get("if-none-match", "")
-        if inm.strip() == "*" or f'"{sha256}"' in inm:
-            return Response(
-                status_code=304,
-                headers={"ETag": f'"{sha256}"', "Cache-Control": "public, immutable"},
-            )
         try:
             body = path.read_bytes()
         except OSError as exc:
             raise ApiError(503, "receipts store read failed", code="receipts_unavailable") from exc
-        valid = bool(verify_receipt_file(path)["valid"])
+        verdict = verify_receipt_bytes(body, path)
+        if not verdict["valid"]:
+            raise ApiError(
+                409,
+                "stored receipt failed integrity verification",
+                code="receipt_integrity_failed",
+            )
+        try:
+            stored_sha = json.loads(body).get("receipt_sha256")
+        except (AttributeError, TypeError, ValueError):
+            stored_sha = None
+        if not isinstance(stored_sha, str) or not hmac.compare_digest(stored_sha, sha256):
+            raise ApiError(
+                409,
+                "stored receipt does not match requested digest",
+                code="receipt_integrity_failed",
+            )
+        inm = request.headers.get("if-none-match", "")
+        if inm.strip() == "*" or f'"{sha256}"' in inm:
+            return Response(
+                status_code=304,
+                headers={
+                    "ETag": f'"{sha256}"',
+                    "Cache-Control": "public, immutable",
+                    "X-Fx1-Receipt-Valid": "true",
+                },
+            )
         return Response(
             content=body,
             media_type="application/json",
             headers={
                 "ETag": f'"{sha256}"',
                 "Cache-Control": "public, immutable",
-                "X-Fx1-Receipt-Valid": "true" if valid else "false",
+                "X-Fx1-Receipt-Valid": "true",
             },
         )
 
