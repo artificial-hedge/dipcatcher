@@ -2552,7 +2552,13 @@ def _submit_job(
         # The queued→running hop goes through the store's atomic claim:
         # a cancel that landed (or lands) while this future sat pending
         # wins under the lock — a cancelled job is never resurrected.
-        if job_store.start(job.job_id) is None:
+        try:
+            started = job_store.start(job.job_id)
+        except Exception:
+            metrics.release()
+            inflight.release()
+            raise
+        if started is None:
             metrics.release()
             inflight.release()
             return
@@ -2584,21 +2590,30 @@ def _submit_job(
             # record is the final record, never a pre-terminal snapshot
             job.finished_at = time.time()
             _deliver_callback(job)
-        job_store.mark(job)
-        metrics.release()
-        inflight.release()
+        try:
+            job_store.mark(job)
+        finally:
+            metrics.release()
+            inflight.release()
 
     # The record registers with the store *before* hand-off: the worker
     # claims by id through start(), so a transition can never journal
     # ahead of the job existing. A refused hand-off leaves a tombstone
     # rather than a ghost record.
-    job_store.put(job, skey, body_fp)
+    try:
+        job_store.put(job, skey, body_fp)
+    except Exception:
+        metrics.release()
+        inflight.release()
+        raise
     try:
         jobs_executor.submit(_exec)
     except RuntimeError as exc:  # executor gone (shutdown race)
-        job_store.delete(job.job_id)
-        metrics.release()
-        inflight.release()
+        try:
+            job_store.delete(job.job_id)
+        finally:
+            metrics.release()
+            inflight.release()
         raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
@@ -3240,9 +3255,11 @@ class _JobStore:
             job = self._jobs.get(job_id)
             if job is None or job.status != "queued":
                 return None
-            job.status = "running"
+            running = job.model_copy()
+            running.status = "running"
             if self._journal is not None:
-                self._journal.append(self._record(job))
+                self._journal.append(self._record(running))
+            job.status = "running"
             return job
 
     def delete(self, job_id: str) -> None:
@@ -3278,10 +3295,13 @@ class _JobStore:
             if job is None:
                 return None, "missing"
             if job.status == "queued":
-                job.status = "cancelled"
-                job.finished_at = time.time()
+                cancelled = job.model_copy()
+                cancelled.status = "cancelled"
+                cancelled.finished_at = time.time()
                 if self._journal is not None:
-                    self._journal.append(self._record(job))
+                    self._journal.append(self._record(cancelled))
+                job.status = cancelled.status
+                job.finished_at = cancelled.finished_at
                 return job, "cancelled"
             return job, job.status
 
@@ -3293,10 +3313,13 @@ class _JobStore:
         with self._lock:
             out = [j for j in self._jobs.values() if j.status == "queued"]
             for job in out:
-                job.status = "cancelled"
-                job.finished_at = time.time()
+                cancelled = job.model_copy()
+                cancelled.status = "cancelled"
+                cancelled.finished_at = time.time()
                 if self._journal is not None:
-                    self._journal.append(self._record(job))
+                    self._journal.append(self._record(cancelled))
+                job.status = cancelled.status
+                job.finished_at = cancelled.finished_at
             return out
 
     def get_key(self, key: str) -> tuple[str, str] | None:
@@ -3313,6 +3336,20 @@ class _JobStore:
         fingerprint: str | None,
     ) -> None:
         with self._lock:
+            future_ids = [job_id for job_id in self._jobs if job_id != job.job_id]
+            future_ids.append(job.job_id)
+            evicted = future_ids[: max(0, len(future_ids) - self._max)]
+            if self._journal is not None:
+                payload: dict[str, Any] = {
+                    "job": job.model_dump(mode="json"),
+                    "key": key,
+                    "fp": fingerprint,
+                }
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
+
+            self._drop(job.job_id)
             self._jobs[job.job_id] = job
             self._jobs.move_to_end(job.job_id)
             if key is not None and fingerprint is not None:
@@ -3320,19 +3357,8 @@ class _JobStore:
                 self._keys.move_to_end(key)
                 self._job_key[job.job_id] = key
                 self._job_fp[job.job_id] = fingerprint
-            evicted: list[str] = []
-            while len(self._jobs) > self._max:
-                old_id, _ = self._jobs.popitem(last=False)
-                old_key = self._job_key.pop(old_id, None)
-                self._job_fp.pop(old_id, None)
-                if old_key is not None:
-                    self._keys.pop(old_key, None)
-                evicted.append(old_id)
-            if self._journal is not None:
-                payload = self._record(job)
-                if evicted:
-                    payload["evicted"] = evicted
-                self._journal.append(payload)
+            for old_id in evicted:
+                self._drop(old_id)
 
 
 class _FileRecord(_Model):

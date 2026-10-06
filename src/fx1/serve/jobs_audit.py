@@ -636,6 +636,9 @@ def _idempotency_probes() -> dict[str, bool]:
 
     ds = asyncio.run(fan_distinct())
     djids = {r.json().get("job_id") for r in ds if r.status_code == 202}
+    deadline = time.monotonic() + _WAIT_S
+    while len(prunner2.calls) < 6 and time.monotonic() < deadline:
+        time.sleep(0.01)
     out["parallel_submit_distinct_ids"] = len(ds) == 6 and len(djids) == 6
     out["parallel_all_ran"] = len(prunner2.calls) == 6
     return out
@@ -1079,6 +1082,8 @@ def _batch_probes() -> dict[str, bool]:
         },
     )
     b4, b5 = r4.json(), r5.json()
+    if b5["jobs"][1].get("job_id"):
+        _wait(client, b5["jobs"][1]["job_id"])
     out["batch_idem_replay_per_item"] = (
         b5["jobs"][0].get("replayed") is True
         and b5["jobs"][0].get("job_id") == b4["jobs"][0].get("job_id")
