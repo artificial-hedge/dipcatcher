@@ -37,7 +37,10 @@ from __future__ import annotations
 import os
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, ClassVar
+from unittest.mock import patch
 
 _MESSAGES_PATH = "/v1/messages"
 _LEGACY_PATH = "/v1/completions"
@@ -101,6 +104,16 @@ def _client(
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+
+@contextmanager
+def _frozen_clock() -> Iterator[None]:
+    """Freeze ``time.monotonic`` so a rate-limit flood measures the token
+    bucket's arithmetic, never the scheduler's speed through the flood —
+    refill at ``rps`` can legitimately cover a slow flood and flake the
+    probe under parallel-suite load."""
+    with patch.object(time, "monotonic", lambda: 1234.5):
+        yield
 
 
 def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
@@ -1289,9 +1302,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         rate_limit_rps=5.0,
     )
     lc = _TC2(limited)
-    hits = [lc.get("/harness/version").status_code for _ in range(7)]
-    denied = lc.get("/harness/version")
-    out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
+    with _frozen_clock():
+        hits = [lc.get("/harness/version").status_code for _ in range(7)]
+        denied = lc.get("/harness/version")
+    out["rate_limit_429"] = hits == [200] * 5 + [429] * 2 and denied.status_code == 429
     out["rate_limit_envelope"] = (
         denied.status_code == 429
         and denied.json()["code"] == "too_many_requests"
@@ -1307,9 +1321,13 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         rate_limit_rps=10.0,
     )
     lc3 = _TC2(limited3)
-    spec_limited = lc3.get("/openapi.json").json()
-    first = lc3.get("/harness/version")
-    second = lc3.get("/harness/version")
+    with _frozen_clock():
+        spec_limited = lc3.get("/openapi.json").json()
+        first = lc3.get("/harness/version")
+        second = lc3.get("/harness/version")
+        while lc3.get("/harness/version").status_code == 200:
+            pass
+        denied3 = lc3.get("/harness/version")
     out["rate_limit_headers_on_success"] = (
         first.status_code == 200
         and first.headers.get("x-ratelimit-limit") == "10"
@@ -1317,9 +1335,6 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and int(first.headers["x-ratelimit-reset"]) >= 0
         and int(second.headers["x-ratelimit-remaining"]) == 7
     )
-    while lc3.get("/harness/version").status_code == 200:
-        pass
-    denied3 = lc3.get("/harness/version")
     out["rate_limit_headers_on_429"] = (
         denied3.status_code == 429
         and denied3.headers.get("x-ratelimit-limit") == "10"
@@ -1338,9 +1353,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         rate_limit_rps=1.0,
     )
     lp = _TC2(lim_pub)
-    lp.get("/harness/version")
-    h_exempt = lp.get("/health")
-    v_after = lp.get("/harness/version")
+    with _frozen_clock():
+        lp.get("/harness/version")
+        h_exempt = lp.get("/health")
+        v_after = lp.get("/harness/version")
     out["rate_limit_public_path_exempt"] = (
         h_exempt.status_code == 200
         and "x-ratelimit-limit" not in h_exempt.headers
@@ -2061,13 +2077,12 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         rate_limit_rps=20.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
+    with _frozen_clock():
+        statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
     time.sleep(0.15)
     m = lc2.get("/metrics")
     out["rate_limit_metrics_counts"] = (
-        statuses.count(429) >= 2
-        and m.status_code == 200
-        and m.json()["rate_limited_total"] == statuses.count(429)
+        statuses.count(429) == 3 and m.status_code == 200 and m.json()["rate_limited_total"] == 3
     )
     os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
     try:
@@ -2076,9 +2091,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             backend_resolver=lambda *a, **k: _CleanBackend(),
         )
         ec = _TC2(env_app)
-        out["rate_limit_env_config"] = [
-            ec.get("/harness/version").status_code for _ in range(5)
-        ].count(429) >= 1
+        with _frozen_clock():
+            out["rate_limit_env_config"] = [
+                ec.get("/harness/version").status_code for _ in range(5)
+            ].count(429) == 2
     finally:
         os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
 
