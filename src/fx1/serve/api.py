@@ -507,8 +507,116 @@ def _v1_error_body(path: str, message: str, status: int, code: str) -> dict[str,
     return openai_error_body(message, status, code)
 
 
+def _bad_content_length_body(path: str) -> dict[str, Any]:
+    """The unparseable ``Content-Length`` refusal body in the path's own
+    grammar — ``{error}`` under ``/v1``, flat ``{detail, code}`` on the
+    ``/harness`` dialect."""
+    if is_openai_path(path):
+        return _v1_error_body(path, "invalid content-length", 400, "bad_request")
+    return {"detail": "invalid content-length", "code": "bad_request"}
+
+
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
+_SINGLETON_REQUEST_HEADERS = frozenset(
+    {
+        b"authorization",
+        b"content-length",
+        b"content-type",
+        b"host",
+        b"idempotency-key",
+        b"last-event-id",
+        b"transfer-encoding",
+        b"x-api-key",
+        b"x-request-id",
+        b"anthropic-version",
+    }
+)
+
+
+def _ambiguous_request_headers(request: Request) -> str | None:
+    """Reject security-sensitive duplicates before any API collapses them.
+
+    Starlette's ``Headers.get`` selects the first duplicate while the
+    OpenAI translator's dict comprehension selects the last.  Accepting
+    both creates a proxy/application interpretation gap.  These headers
+    are singletons in this API; list-valued standard headers remain
+    untouched.
+    """
+    seen: set[bytes] = set()
+    for raw_name, _raw_value in request.scope.get("headers", []):
+        name = bytes(raw_name).lower()
+        singleton = name in _SINGLETON_REQUEST_HEADERS or name.startswith(b"x-fx1-")
+        if singleton and name in seen:
+            return f"duplicate {name.decode('latin-1')} header"
+        seen.add(name)
+    if b"content-length" in seen and b"transfer-encoding" in seen:
+        return "content-length and transfer-encoding must not be combined"
+    if b"authorization" in seen and b"x-api-key" in seen:
+        return "send exactly one authentication header"
+    return None
+
+
+def _request_header_error_body(path: str, message: str) -> dict[str, Any]:
+    if is_openai_path(path):
+        return _v1_error_body(path, message, 400, "bad_request")
+    return {"detail": message, "code": "bad_request"}
+
+
+async def _buffer_request_body(request: Request) -> tuple[int, bytes]:
+    """Read and count the ASGI entity once, retaining at most the body cap."""
+    size = 0
+    chunks: list[bytes] = []
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size <= _MAX_BODY_BYTES:
+            chunks.append(chunk)
+    body = b"".join(chunks) if size <= _MAX_BODY_BYTES else b""
+    request._body = body  # noqa: SLF001 — preserve the entity for downstream parsing
+    return size, body
+
+
+def _too_large_body(path: str) -> dict[str, Any]:
+    detail = f"body exceeds {_MAX_BODY_BYTES}-byte cap"
+    if is_openai_path(path):
+        return _v1_error_body(path, detail, 413, "too_large")
+    return {"detail": detail, "code": "too_large"}
+
+
+async def _request_ingress_refusal(request: Request) -> JSONResponse | None:
+    """Validate singleton/framing headers and cap the actual ASGI entity."""
+    ambiguous = _ambiguous_request_headers(request)
+    if ambiguous is not None:
+        return JSONResponse(
+            status_code=400,
+            content=_request_header_error_body(request.url.path, ambiguous),
+        )
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return None
+    declared = request.headers.get("content-length")
+    length: int | None = None
+    if declared is not None:
+        if re.fullmatch(r"[0-9]+", declared) is None:
+            return JSONResponse(
+                status_code=400,
+                content=_bad_content_length_body(request.url.path),
+            )
+        length = int(declared)
+        if length > _MAX_BODY_BYTES:
+            return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
+    actual_length, _body = await _buffer_request_body(request)
+    if actual_length > _MAX_BODY_BYTES:
+        return JSONResponse(status_code=413, content=_too_large_body(request.url.path))
+    if length is not None and actual_length != length:
+        return JSONResponse(
+            status_code=400,
+            content=_request_header_error_body(
+                request.url.path, "content-length does not match request body"
+            ),
+        )
+    return None
+
+
 # Async job results persist in the store until eviction — stdout/stderr
 # are capped per field so one chatty command can't pin unbounded memory.
 _JOB_RESULT_MAX_BYTES = 1 << 20
@@ -2322,6 +2430,8 @@ def _idem_key(key: str | None) -> str | None:
     key = (key or "").strip() or None
     if key is not None and len(key) > _IDEM_KEY_MAX:
         raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+    if key is not None and any(ord(char) < 0x20 or ord(char) == 0x7F for char in key):
+        raise ApiError(400, "Idempotency-Key must not contain control characters")
     return key
 
 
@@ -6531,6 +6641,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             n = backend.count_tokens(anthropic_count_messages(body))
         except TokenCountUnavailableError as exc:
             raise ApiError(501, str(exc), code="not_implemented") from exc
+        except RuntimeError as exc:
+            raise ApiError(502, str(exc), code="backend_failure") from exc
         return JSONResponse({"input_tokens": n})
 
     @app.post(
@@ -10034,28 +10146,9 @@ def create_app(
                     headers={"Retry-After": str(max(1, math.ceil(wait))), **rl_headers},
                 )
                 return _finish(request, request_id, response, started)
-        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
-            declared = request.headers.get("content-length")
-            if declared is not None:
-                try:
-                    length = int(declared)
-                except ValueError:
-                    response = JSONResponse(
-                        status_code=400,
-                        content={"detail": "invalid content-length", "code": "bad_request"},
-                    )
-                    return _finish(request, request_id, response, started)
-                if length > _MAX_BODY_BYTES:
-                    big_content: dict[str, Any] = {
-                        "detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap",
-                        "code": "too_large",
-                    }
-                    if is_openai_path(request.url.path):
-                        big_content = _v1_error_body(
-                            request.url.path, str(big_content["detail"]), 413, "too_large"
-                        )
-                    response = JSONResponse(status_code=413, content=big_content)
-                    return _finish(request, request_id, response, started)
+        ingress_refusal = await _request_ingress_refusal(request)
+        if ingress_refusal is not None:
+            return _finish(request, request_id, ingress_refusal, started)
         # Auth surface: ``FX1_API_KEY`` is the root credential (admin);
         # managed keys from ``key_store`` additionally authenticate.
         # ``request.state.admin`` gates the key-management routes — env
@@ -10071,12 +10164,12 @@ def create_app(
             # rate limiting
             if exc.code != "insufficient_scope":
                 metrics.record_rate_limited()
-            return _finish(
-                request,
-                request_id,
-                _key_refusal_response(exc, request, key_store),
-                started,
-            )
+            refused = _key_refusal_response(exc, request, key_store)
+            if rl_headers is not None:
+                # the refusal consumed a global-bucket slot — report it;
+                # the key's own *-Requests family is set by the refusal
+                refused.headers.update(rl_headers)
+            return _finish(request, request_id, refused, started)
         if isinstance(auth, JSONResponse):
             response = auth
         else:

@@ -16,10 +16,11 @@ across the declared boundary.
 
 Coverage map:
 
-- *Credential resolution* — ``X-API-Key`` wins over
-  ``Authorization: Bearer``; Bearer is a ``/v1``-only fallback that is
-  never read off ``/v1``; a forged ``X-API-Key`` is not rescued by a
-  valid Bearer (no downgrade channel); loopback still requires a key.
+- *Credential resolution* — mixed ``X-API-Key`` and
+  ``Authorization: Bearer`` credentials fail closed; Bearer is a
+  ``/v1``-only fallback that is never read off ``/v1``; a forged
+  ``X-API-Key`` is not rescued by a valid Bearer (no downgrade channel);
+  loopback still requires a key.
 - *Scope partition* — ``read`` covers safe methods, ``write`` the
   mutations, ``admin`` the control plane; scopes are literal
   (``write`` does not imply ``read``), non-admin keys are refused
@@ -414,25 +415,22 @@ def _conv(client: TestClient, auth: str, **body: Any) -> dict[str, Any]:
 
 
 def _probe_credentials(results: dict[str, bool]) -> None:
-    """Header precedence and the forge channels: ``X-API-Key`` is the
-    credential everywhere; ``Authorization: Bearer`` is a ``/v1``-only
-    fallback that loses to a present ``X-API-Key`` — even a forged one."""
+    """Credential ambiguity and forge channels: mixed authentication
+    mechanisms fail closed; Bearer alone is a ``/v1``-only fallback."""
     client, _api = _client()
-    key_a, id_a = _mint(client, name="alice", scopes=["read", "write"])
+    key_a, _id_a = _mint(client, name="alice", scopes=["read", "write"])
     key_b, _id_b = _mint(client, name="bob", scopes=["read", "write"])
 
     forged = client.get(
         "/v1/models",
         headers={"X-API-Key": key_a, "Authorization": f"Bearer {key_b}"},
     )
-    results["x_api_key_precedes_bearer_status"] = forged.status_code == 200
+    results["mixed_auth_refused_on_v1_400"] = forged.status_code == 400
     who = client.get(
         "/harness/self",
         headers={"X-API-Key": key_a, "Authorization": f"Bearer {key_b}"},
     )
-    results["x_api_key_precedes_bearer_identity"] = (
-        who.status_code == 200 and who.json().get("key", {}).get("id") == id_a
-    )
+    results["mixed_auth_refused_off_v1_400"] = who.status_code == 400
     bearer_only = client.get("/v1/models", headers=_bearer(key_a))
     results["bearer_authenticates_on_v1"] = bearer_only.status_code == 200
     bearer_off_v1 = client.get("/harness/self", headers=_bearer(key_a))
@@ -441,7 +439,7 @@ def _probe_credentials(results: dict[str, bool]) -> None:
         "/v1/models",
         headers={"X-API-Key": _FORGED, "Authorization": f"Bearer {key_a}"},
     )
-    results["forged_x_api_key_not_rescued_by_bearer"] = downgraded.status_code == 401
+    results["forged_x_api_key_with_bearer_refused_400"] = downgraded.status_code == 400
     results["garbage_x_api_key_401"] = (
         client.get("/v1/models", headers=_h(_DEAD)).status_code == 401
     )
@@ -1228,8 +1226,8 @@ def tenancy_audit_bench() -> dict[str, Any]:
             "state, mutable by any key holding the verb's scope. Isolation is "
             "real where it is claimed: per-key uses/tokens/rpm/budgets bill "
             "the actor alone, /harness/self shows only the caller, key "
-            "material never leaves its mint response, X-API-Key wins over "
-            "Bearer with no downgrade path, admin scopes guard the control "
+            "material never leaves its mint response, mixed authentication "
+            "headers fail closed with no downgrade path, admin scopes guard the control "
             "plane, drain latches globally, tombstones hold across restarts, "
             "and revocation never orphans or merges a peer's work. The "
             "rate_limit_rps valve is per-client-host, credential-blind by "
