@@ -48,9 +48,7 @@ def test_inventory_mismatch_does_not_hash_artifacts(
 def test_nonlocal_manifest_path_is_rejected_before_hashing(
     checkpoint: Path, monkeypatch: pytest.MonkeyPatch, name: str
 ) -> None:
-    raw = json.dumps(
-        {"checkpoint_dir": str(checkpoint), "artifacts": {name: "a" * 64}}
-    ).encode()
+    raw = json.dumps({"checkpoint_dir": str(checkpoint), "artifacts": {name: "a" * 64}}).encode()
     (checkpoint / signing.MANIFEST_FILENAME).write_bytes(raw)
     (checkpoint / signing.SIGNATURE_FILENAME).write_text(
         hmac.new(_TEST_KEY.encode(), raw, hashlib.sha256).hexdigest(), encoding="ascii"
