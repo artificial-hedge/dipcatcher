@@ -59059,6 +59059,10 @@
       "src": "quant_fund.research.lane_power"
     },
     {
+      "dst": "quant_fund.research.mean_eprocess",
+      "src": "quant_fund.research.lane_power"
+    },
+    {
       "dst": "quant_fund.research.receipt_v2",
       "src": "quant_fund.research.lane_power"
     },
@@ -75969,7 +75973,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 606,
+      "imports": 607,
       "src": "quant_fund.research"
     },
     {
