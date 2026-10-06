@@ -167,7 +167,8 @@ moves from 43 to 44 and remains `partial`.
 ### Idem audit maintenance (PR #2816)
 
 The new `idem_audit` checks 98 selected idempotency contracts using SYNTHETIC
-stubs: `Idempotency-Key` coverage on every mutating route (chat, responses,
+stubs: `Idempotency-Key` coverage on the selected idempotency-enabled mutating
+routes (chat, responses,
 messages, completions, batches, message-batches, fine-tuning jobs, runs,
 evals/runs, jobs, uploads create/parts/complete/cancel, files, and key
 mint/rotate/patch/revoke), byte-identical replay with no re-execution, the

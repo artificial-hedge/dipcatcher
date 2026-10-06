@@ -1246,12 +1246,13 @@ def idem_audit_bench() -> dict[str, Any]:
                 "real network transport behavior",
                 "external process restart (in-process app recreation over the same journal)",
                 "wall-clock key expiry (the store bounds by count, not TTL)",
+                "mutating routes outside the selected idempotency-enabled route set",
             ],
         },
         "interpretation": (
             "The Idempotency-Key contract holds end to end across the "
-            "whole stateful surface: every mutating route honors the "
-            "header, a keyed retry replays the byte-identical stored "
+            "selected idempotency-enabled mutating routes: a keyed retry "
+            "replays the byte-identical stored "
             "answer without re-executing, a key reused with a different "
             "body fails closed 409 idempotency_conflict in either error "
             "grammar, claims serialize racing twins down to exactly one "

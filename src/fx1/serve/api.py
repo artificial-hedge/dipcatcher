@@ -55,6 +55,7 @@ from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import (
     AbstractAsyncContextManager,
+    AbstractContextManager,
     asynccontextmanager,
     contextmanager,
     suppress,
@@ -2103,14 +2104,17 @@ def _idem_scope(key: str | None, *, namespace: str | None = None) -> str | None:
     secret, a private job, a queue slot). The env root credential is
     ``env``, managed keys namespace under their ``key_id`` fingerprint,
     and loopback dev sessions (no credential at all) share one
-    ``loopback`` scope. ``namespace`` further partitions a key per
+    ``loopback`` scope. The caller-provided key is represented only by
+    its SHA-256 digest so journals never persist the raw header value.
+    ``namespace`` further partitions a key per
     target/verb (``{scope}:{key}:{namespace}``) so one key can pin the
     same logical request against different path objects — rotate vs
     patch vs complete on different ``{id}`` path params never collide."""
     if key is None:
         return None
     key_id = _REQUEST_KEY_ID.get()
-    scoped = f"{key_id if key_id is not None else 'loopback'}:{key}"
+    key_digest = hashlib.sha256(key.encode()).hexdigest()
+    scoped = f"{key_id if key_id is not None else 'loopback'}:{key_digest}"
     return f"{scoped}:{namespace}" if namespace is not None else scoped
 
 
@@ -2835,19 +2839,54 @@ class _IdemStore[IdemT: BaseModel]:
 
     def put(self, key: str, fingerprint: str, resp: IdemT) -> None:
         with self._lock:
-            self._map[key] = (fingerprint, resp)
-            self._map.move_to_end(key)
+            # Build the next state without publishing it.  The replay
+            # journal is the durability boundary: if its fsync fails, the
+            # process-visible map must remain identical to what a restart
+            # will recover, including every entry that would have been
+            # evicted by this insertion.
+            stored = resp.model_copy(deep=True)
+            next_map = self._map.copy()
+            next_map[key] = (fingerprint, stored)
+            next_map.move_to_end(key)
             evicted: list[str] = []
-            while len(self._map) > self._max:
-                old_key, _ = self._map.popitem(last=False)
+            while len(next_map) > self._max:
+                old_key, _ = next_map.popitem(last=False)
                 evicted.append(old_key)
             if self._journal is not None:
                 payload: dict[str, Any] = {
-                    "idem": {"key": key, "fp": fingerprint, "resp": resp.model_dump(mode="json")}
+                    "idem": {
+                        "key": key,
+                        "fp": fingerprint,
+                        "resp": stored.model_dump(mode="json"),
+                    }
                 }
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
+            self._map = next_map
+
+
+def _has_stored_replay(request: Request, stores: Mapping[str, _IdemStore[Any]]) -> bool:
+    """Whether this keyed completion route can answer without work."""
+    store = stores.get(request.url.path)
+    if store is None:
+        return False
+    key = _idem_key(request.headers.get("Idempotency-Key"))
+    skey = _idem_scope(key)
+    return skey is not None and store.get(skey) is not None
+
+
+def _replay_aware_slot(
+    request: Request,
+    stores: Mapping[str, _IdemStore[Any]],
+    work_gate: Callable[[], AbstractContextManager[None]],
+) -> Iterator[None]:
+    """Skip admission only when the claimed key already has a record."""
+    if _has_stored_replay(request, stores):
+        yield
+        return
+    with work_gate():
+        yield
 
 
 class _OpenAIIdemRecord(_Model):
@@ -4003,7 +4042,7 @@ def _close_backend(backend: Any) -> None:
 def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/job surface
     app: FastAPI,
     *,
-    slot: Callable[[], Iterator[None]],
+    slot: Callable[..., Iterator[None]],
     resolve_backend: Callable[[str, str | None, dict[str, str] | None, float | None], Any],
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
@@ -7886,7 +7925,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         rec = file_store.put(filename=filename, purpose=purpose, content=data)
         out = file_object(rec.model_dump())
         if key is not None:
-            upload_idem_store.put(key, body_fp.hexdigest(), _JsonIdemRecord(envelope=out))
+            try:
+                upload_idem_store.put(key, body_fp.hexdigest(), _JsonIdemRecord(envelope=out))
+            except Exception:
+                # The file store committed before its minted id was known.
+                # If replay-record publication fails, remove that exact new
+                # file so a client retry cannot create a second durable copy.
+                # This is an in-process rollback; a crash between the two
+                # journals still needs a unified transaction to close.
+                with suppress(Exception):
+                    file_store.delete(rec.file_id)
+                raise
         return JSONResponse(out)
 
     @app.get(
@@ -9788,9 +9837,21 @@ def create_app(
             metrics.release()
             inflight.release()
 
-    def _slot() -> Iterator[None]:
-        with _work_gate():
-            yield
+    def _slot(request: Request) -> Iterator[None]:
+        # A stored replay/conflict performs no work and must stay readable
+        # while draining or saturated.  The route's claim dependency runs
+        # first, so an entry found here cannot disappear before the handler
+        # validates its fingerprint.  A conflicting body also bypasses the
+        # work gate only to fail closed 409 in the handler.
+        replay_stores: dict[str, _IdemStore[Any]] = {
+            "/harness/complete": complete_idem_store,
+            "/harness/complete/batch": complete_batch_idem_store,
+            "/v1/chat/completions": openai_idem_store,
+            "/v1/responses": openai_idem_store,
+            "/v1/messages": anthropic_idem_store,
+            "/v1/completions": legacy_idem_store,
+        }
+        yield from _replay_aware_slot(request, replay_stores, _work_gate)
 
     app = FastAPI(
         title="fx-1 harness API",
