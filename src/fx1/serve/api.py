@@ -1352,6 +1352,7 @@ class EvalRunObject(_Model):
     suite: str
     seed: int
     backend: str
+    metadata: dict[str, str] = {}
     result_counts: EvalRunCounts | None = None
     per_testing_criteria_results: list[dict[str, Any]] = []
     error: EvalRunError | None = None
@@ -4473,15 +4474,24 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         *,
         eval_spec: str | None = None,
         eval_model: str | None = None,
+        eval_metadata: dict[str, str] | None = None,
     ) -> EvalSubmitResponse:
         """Serialize lookup -> create -> record insert under the key's
         claim (the job contract's claim_lock, applied to the eval
         suites): a retried submit can never slide between an in-flight
-        twin's lookup and its replay record."""
+        twin's lookup and its replay record. ``eval_spec`` also supplies
+        the dedupe namespace so one Idempotency-Key can pin one run per
+        spec without inflating the key past its bound."""
         key = _idem_key(idempotency_key)
-        skey = _idem_scope(key)
+        skey = _idem_scope(key, namespace=eval_spec)
         with eval_store.claim_lock(skey):
-            return _submit_eval_claimed(body, skey, eval_spec=eval_spec, eval_model=eval_model)
+            return _submit_eval_claimed(
+                body,
+                skey,
+                eval_spec=eval_spec,
+                eval_model=eval_model,
+                eval_metadata=eval_metadata,
+            )
 
     def _submit_eval_claimed(
         body: EvalSubmitRequest,
@@ -4489,6 +4499,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         *,
         eval_spec: str | None = None,
         eval_model: str | None = None,
+        eval_metadata: dict[str, str] | None = None,
     ) -> EvalSubmitResponse:
         """Eval submission core — the job contract (idempotency lookup ->
         drain check -> slot admission -> background execution) applied to
@@ -4535,6 +4546,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             callback_url=body.callback_url,
             eval_spec=eval_spec,
             eval_model=eval_model,
+            eval_metadata=eval_metadata,
         )
         record._callback_secret = body.callback_secret
 
@@ -4875,9 +4887,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             },
         )
         # The run's dedupe namespace is scoped to the spec — the same
-        # Idempotency-Key under a different eval is a different run.
-        scoped_key = f"{idempotency_key}:{spec.spec_id}" if idempotency_key else None
-        submitted = _submit_eval(sub, scoped_key, eval_spec=spec.spec_id, eval_model=body.model)
+        # Idempotency-Key under a different eval is a different run. The
+        # spec id rides the _idem_scope namespace slot so the raw header
+        # keeps its 256-char bound (concatenating it into the key let the
+        # scoped string overflow the bound and refuse legal keys).
+        submitted = _submit_eval(
+            sub,
+            idempotency_key,
+            eval_spec=spec.spec_id,
+            eval_model=body.model,
+            eval_metadata=body.metadata,
+        )
         rec = eval_store.get(submitted.eval_id)
         if rec is None:
             raise ApiError(404, f"run '{submitted.eval_id}' evicted")

@@ -1384,11 +1384,13 @@ class Fx1Harness:
         byok: dict[str, str] | None = None,
         judge_byok: dict[str, str] | None = None,
         data_source_overrides: dict[str, Any] | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         """The ``POST /v1/evals/{id}/runs`` twin — synchronous in process
         (returns the terminal run object). ``model`` maps to the backend
         chain head: a link name, ``fx1``, or a registered ``ft:`` name;
-        ``model_fn`` is the weights-direct leg."""
+        ``model_fn`` is the weights-direct leg; ``metadata`` rides the
+        record the way the wire body does."""
         from fx1.serve.evals import EvalSpecItemSchema, run_wire  # noqa: PLC0415
 
         spec = self._eval_spec_store.get(spec_id)
@@ -1414,6 +1416,7 @@ class Fx1Harness:
         )
         record.eval_spec = spec.spec_id
         record.eval_model = model
+        record.eval_metadata = metadata
         self._eval_store.mark(record)
         return run_wire(record)
 

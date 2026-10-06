@@ -251,6 +251,9 @@ class EvalRecord(BaseModel):
     # absent on direct ``/harness/evals`` submissions.
     eval_spec: str | None = None
     eval_model: str | None = None
+    # The ``metadata`` map the run submit carried — journaled like the
+    # binding so receipts replay the exact submitted run.
+    eval_metadata: dict[str, str] | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
     _callback_fired: bool = PrivateAttr(default=False)
     _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
@@ -767,7 +770,10 @@ def run_wire(record: EvalRecord) -> dict[str, Any]:
         "suite": record.suite,
         "seed": record.seed,
         "backend": record.backend,
+        "metadata": dict(record.eval_metadata or {}),
+        "result_counts": None,
         "per_testing_criteria_results": [],
+        "error": None,
         # the run's sealed evidence twin — the /harness/evals receipt
         "receipt_url": f"/harness/evals/{record.eval_id}/receipt",
     }
