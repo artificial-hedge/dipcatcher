@@ -346,3 +346,41 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+### SDK concurrency audit maintenance (PR pending)
+
+The new `sdk_concurrency_audit` battery pins the shared-state seams of
+the in-process `Fx1Harness` SDK under threaded contention: the
+`_CompletionLog` record store (bounded capacity, `dropped` accounting),
+the `_last_response_headers` publication, the `_bg_cancel` background
+response registry, and the `_files` upload map — plus a mixed storm of
+completers, uploaders, background submitters and readers running
+together.
+
+The battery pins 69 measured contracts: parallel writes never lose a
+record or tear a `CompletionRecord`; the bounded log evicts oldest and
+counts `dropped` honestly; readers see coherent snapshots mid-flood;
+each `last_response_headers` read returns a fresh dict isolated from
+caller mutation; cid/rid pairing stays consecutive under serial and
+flood scheduling (proven by tagged-uuid minting); background responses
+always reach a terminal state with unique rids and a drained registry;
+cancel lands once regardless of how many threads race it, and persists
+when the response later completes; the files map caps at 256 with
+oldest-evicted under a parallel burst.
+
+Deterministic scheduling via per-thread line tracing parks a writer
+inside `_record_call` at the exact line that used to mutate the
+published header dict, exposing the store-then-mutate tear window —
+a real defect fixed on this PR: `sdk.py` now builds the headers dict
+completely (including `x-fx1-completion-id`) and publishes it in a
+single store, so no reader can observe a header set missing its
+completion id.
+
+Not verified (documented in `coverage.not_verified`): cross-process
+contention (the seams are in-process by design), real wire-level
+ordering (transports are spy backends), and journal-replay recovery
+(the log's `--state-dir` persistence lane).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 55 and remains
+`partial`.
