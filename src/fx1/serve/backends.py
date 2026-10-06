@@ -328,7 +328,10 @@ class _ByokPinnedHTTPSConnection(http.client.HTTPSConnection):
     _context: ssl.SSLContext
 
     def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
-        super().__init__(host, port=port, timeout=timeout, context=ssl.create_default_context())
+        context = ssl.create_default_context()
+        # HTTPSConnection only sets HTTP/1.1 ALPN when no context is supplied.
+        context.set_alpn_protocols(["http/1.1"])
+        super().__init__(host, port=port, timeout=timeout, context=context)
         self._address = address
 
     def connect(self) -> None:
