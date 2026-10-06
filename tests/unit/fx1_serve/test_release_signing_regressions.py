@@ -181,7 +181,9 @@ def test_missing_key_does_not_replace_existing_metadata(
         signing.verify_release(checkpoint)
 
 
-def test_missing_key_does_not_create_metadata(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_missing_key_does_not_create_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (tmp_path / "weights.bin").write_bytes(b"SYNTHETIC")
     monkeypatch.delenv(signing.SIGNING_KEY_ENV, raising=False)
     with pytest.raises(RuntimeError, match="is not set"):
@@ -196,7 +198,9 @@ def test_missing_metadata_is_false_even_without_key(
     assert signing.verify_release(tmp_path) is False
 
 
-def test_hashing_does_not_read_whole_artifact(checkpoint: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hashing_does_not_read_whole_artifact(
+    checkpoint: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     payload = b"SYNTHETIC block" * 100_000
     weights = checkpoint / "weights.bin"
     weights.write_bytes(payload)
@@ -208,7 +212,9 @@ def test_hashing_does_not_read_whole_artifact(checkpoint: Path, monkeypatch: pyt
     assert signing._hash_file(weights) == hashlib.sha256(payload).hexdigest()
 
 
-def test_bad_hmac_does_not_hash_artifacts(checkpoint: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_bad_hmac_does_not_hash_artifacts(
+    checkpoint: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     (checkpoint / signing.SIGNATURE_FILENAME).write_bytes(b"invalid")
 
     def forbid_hash(path: Path) -> str:
@@ -257,7 +263,9 @@ def test_metadata_reads_are_bounded(
     assert signing.verify_release(checkpoint) is False
 
 
-def test_oversized_manifest_is_not_published(checkpoint: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_oversized_manifest_is_not_published(
+    checkpoint: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = checkpoint / signing.MANIFEST_FILENAME
     before = path.read_bytes()
     monkeypatch.setattr(signing, "_MAX_MANIFEST_BYTES", 8)
