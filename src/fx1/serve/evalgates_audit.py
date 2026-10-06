@@ -198,7 +198,7 @@ class _ExplodingBackend:
         self,
         messages: list[dict[str, str]],
         *,
-        sampling: SamplingParams | None = None,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172) — backend protocol signature
     ) -> str:
         raise AssertionError("advisory surfaces must not resolve a backend")
 
@@ -225,7 +225,7 @@ class _TooluseBackend:
         self,
         messages: list[dict[str, str]],
         *,
-        sampling: SamplingParams | None = None,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172) — backend protocol signature
     ) -> str:
         self.calls += 1
         match = _TASK_ID_RE.search(messages[0]["content"])
@@ -271,7 +271,7 @@ class _OracleBackend:
         self,
         messages: list[dict[str, str]],
         *,
-        sampling: SamplingParams | None = None,
+        sampling: SamplingParams | None = None,  # NOSONAR(S1172) — backend protocol signature
     ) -> str:
         self.calls += 1
         ident = ""

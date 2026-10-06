@@ -112,7 +112,7 @@ def _frozen_clock() -> Iterator[None]:
     bucket's arithmetic, never the scheduler's speed through the flood —
     refill at ``rps`` can legitimately cover a slow flood and flake the
     probe under parallel-suite load."""
-    with patch.object(time, "monotonic", lambda: 1234.5):
+    with patch.object(time, "monotonic", return_value=1234.5):
         yield
 
 
@@ -362,9 +362,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(
-                urllib.request, "build_opener", lambda *a, **k: _SN(open=fake_urlopen)
-            ):
+            with patch.object(urllib.request, "build_opener", return_value=_SN(open=fake_urlopen)):
                 resp = client.post(
                     "/harness/complete",
                     json={
