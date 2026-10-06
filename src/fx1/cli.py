@@ -438,7 +438,9 @@ def harness_list(
         return
     from fx1.harness import Harness, HarnessRole
 
-    role_filter = HarnessRole(role) if role else None
+    # a bogus --role is an arg fault on the same clean line the remote leg
+    # gets from _or_exit — never a raw traceback.
+    role_filter = _or_exit(lambda: HarnessRole(role)) if role else None
     for cmd in Harness().list_commands(role=role_filter):
         typer.echo(f"{cmd.name:<18} [{cmd.role}] {cmd.description}")
 
@@ -468,7 +470,9 @@ def harness_run(
     else:
         from fx1.harness import Harness
 
-        result = Harness().run(name)
+        # same refusal shape as the remote leg: registry misses print one
+        # clean error line + exit 2, never a traceback exit 1.
+        result = _or_exit(lambda: Harness().run(name))
     typer.echo(result.stdout)
     if result.stderr:
         typer.echo(result.stderr, err=True)
