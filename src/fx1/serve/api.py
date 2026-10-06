@@ -2390,6 +2390,23 @@ def _grace_await(pipe: queue.Queue[tuple[str, Any]], keepalive_s: float) -> tupl
         return None
 
 
+def _grace_stage(
+    generate: Callable[[], Any], *, stream: bool, keepalive_s: float
+) -> tuple[tuple[str, Any] | None, queue.Queue[tuple[str, Any]] | None]:
+    """Run ``generate`` through the grace-window pipe when ``stream`` and
+    ``keepalive_s`` are on; resolve inline otherwise. Returns the outcome
+    (``None`` once the window lapsed — the caller then commits to the
+    keepalived stream) and the pipe for that leg to drain."""
+    pipe: queue.Queue[tuple[str, Any]] | None = None
+    outcome: tuple[str, Any] | None = None
+    if stream and keepalive_s > 0:
+        pipe = _grace_pipe(generate)
+        outcome = _grace_await(pipe, keepalive_s)
+    if outcome is None and (not stream or keepalive_s <= 0):
+        outcome = ("ok", generate())
+    return outcome, pipe
+
+
 def _deliver_callback(
     rec: JobStatusResponse | EvalRecord | FTJob | _BatchRecord | _AnthropicBatchRecord,
     *,
@@ -6254,13 +6271,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
-        outcome: tuple[str, Any] | None = None
-        pipe: queue.Queue[tuple[str, Any]] | None = None
-        if body.stream and keepalive_s > 0:
-            pipe = _grace_pipe(_generate)
-            outcome = _grace_await(pipe, keepalive_s)
-        if outcome is None and (not body.stream or keepalive_s <= 0):
-            outcome = ("ok", _generate())
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
         if outcome is not None:
             tag, payload = outcome
             if tag == "error":
@@ -6408,16 +6419,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return env, cid
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
-        outcome: tuple[str, Any] | None = None
-        pipe: queue.Queue[tuple[str, Any]] | None = None
-        if body.stream and keepalive_s > 0:
-            pipe = _grace_pipe(_generate)
-            outcome = _grace_await(pipe, keepalive_s)
-        if outcome is None and (not body.stream or keepalive_s <= 0):
-            try:
-                outcome = ("ok", _generate())
-            except ApiError as exc:
-                return _refusal(exc.status_code, str(exc.detail))
+        try:
+            outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
+        except ApiError as exc:
+            return _refusal(exc.status_code, str(exc.detail))
         if outcome is not None:
             tag, payload = outcome
             if tag == "error":
@@ -7041,13 +7046,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return env_legacy, cid
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
-        outcome: tuple[str, Any] | None = None
-        pipe: queue.Queue[tuple[str, Any]] | None = None
-        if body.stream and keepalive_s > 0:
-            pipe = _grace_pipe(_generate)
-            outcome = _grace_await(pipe, keepalive_s)
-        if outcome is None and (not body.stream or keepalive_s <= 0):
-            outcome = ("ok", _generate())
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
         if outcome is not None:
             tag, payload = outcome
             if tag == "error":
@@ -7414,13 +7413,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
 
         keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
-        outcome: tuple[str, Any] | None = None
-        pipe: queue.Queue[tuple[str, Any]] | None = None
-        if body.stream and keepalive_s > 0:
-            pipe = _grace_pipe(_generate)
-            outcome = _grace_await(pipe, keepalive_s)
-        if outcome is None and (not body.stream or keepalive_s <= 0):
-            outcome = ("ok", _generate())
+        outcome, pipe = _grace_stage(_generate, stream=body.stream, keepalive_s=keepalive_s)
         if outcome is not None:
             tag, payload = outcome
             if tag == "error":
