@@ -475,6 +475,7 @@ def _probe_store_claims() -> dict[str, bool]:
         async with s.async_claim_lock("k"):
             try:
                 async with asyncio.timeout(0.5):
+                    await asyncio.sleep(0)  # cancellation checkpoint
                     async with s.async_claim_lock("k"):
                         return True, False  # re-entrant double claim — should not be
             except TimeoutError:
@@ -482,6 +483,7 @@ def _probe_store_claims() -> dict[str, bool]:
 
         # second claim free after release
         async with asyncio.timeout(2.0):
+            await asyncio.sleep(0)  # cancellation checkpoint
             async with s.async_claim_lock("k"):
                 return False, True
 
