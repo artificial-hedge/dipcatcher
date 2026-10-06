@@ -368,17 +368,35 @@ reader could observe a torn header set mid-build and a slower lane
 could stamp its completion id into another call's already-published
 dict. The header set is now built local and published in one atomic
 assignment — concurrent readers always see a coherent single-call
-set, last-writer-wins.
+set, last-writer-wins. (Landed upstream identically in #2912 during
+maintenance review; this lane's production diff is the single-writer
+enforcement below.)
 
 The battery also pins measured (pre-existing, non-defect) semantics:
 the `max_inflight` gate claims its slot before body validation, so an
 over-capacity burst surfaces `503 over_capacity` even for malformed
-bodies; two `Fx1Harness` instances on one `state_dir` replay boot-time
-journals one-directionally and quarantine all recovered credentials on
-interleave; `complete(timeout_s=...)` is a request-side budget that
+bodies; `complete(timeout_s=...)` is a request-side budget that
 rides the payload while the transport keeps the client timeout;
 denied-scope calls bill nothing; and the auth ContextVar never leaks
 into worker threads.
+
+Maintenance-review repairs (2026-10-06): the two-live-writers journal
+probe — which interleaved the hash chains, quarantined every recovered
+credential on next boot, and recorded that data loss as four *passing*
+booleans — is replaced by enforcement plus refusal pins: `Fx1Harness`
+now claims each durable `state_dir` in a per-process weakref registry
+and refuses a second live bind at construction (`close()`/GC releases;
+boot-replay legs across conv/journal/sdk audits close first to model
+process restart). Cross-process interleave stays the crash-torn class
+journals detect and quarantine (`coverage.not_verified` says so). The
+`_parallel` storm helper fails closed on unfinished lanes
+(`is_alive()` → `TimeoutError`, never silent `(None, None)`), the exact
+104-probe key set is pinned via `_EXPECTED_PROBES` (`audit()` raises on
+drift, `bench()` refuses an all-True subset), `_sdkconc_context` pins
+`FX1_SDK_STATE_DIR` absent so an ambient export cannot bind every
+harness to one dir and trip the refusal, and the receipt is resealed
+at the integrated source commit with committed-vs-fresh and
+revision-binds-source tests.
 
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 54 to 55 and remains
