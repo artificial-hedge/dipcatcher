@@ -342,18 +342,27 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
         import urllib.request  # noqa: PLC0415
 
+        import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
         os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
         os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
         try:
-            with patch.object(urllib.request, "urlopen", fake_urlopen):
-                resp = client.post(
-                    "/harness/complete",
-                    json={
-                        "backend": "local_fx1",
-                        "messages": [{"role": "user", "content": "ping"}],
-                        "checkpoint_dir": str(ckpt),
-                    },
-                )
+            # _engine_up probes raw urllib.request.urlopen; chat calls go
+            # through _openai_urlopen — both seams must be faked.
+            _orig_openai = _be_mod._openai_urlopen
+            _be_mod._openai_urlopen = lambda req, timeout_s=None: _Resp()  # type: ignore[assignment,misc]
+            try:
+                with patch.object(urllib.request, "urlopen", fake_urlopen):
+                    resp = client.post(
+                        "/harness/complete",
+                        json={
+                            "backend": "local_fx1",
+                            "messages": [{"role": "user", "content": "ping"}],
+                            "checkpoint_dir": str(ckpt),
+                        },
+                    )
+            finally:
+                _be_mod._openai_urlopen = _orig_openai
             body = resp.json()
             out["local_attach_complete_200"] = (
                 resp.status_code == 200
@@ -1070,6 +1079,10 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     _dead_sock.bind(("127.0.0.1", 0))
     _dead_port = _dead_sock.getsockname()[1]
     _dead_sock.close()
+    # Loopback sink — opt into private-network callback delivery for these
+    # probes; production callbacks stay public-only unless opted in.
+    _cb_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
         jid_cb = ok_job.json()["job_id"]
@@ -1262,8 +1275,15 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         )
         out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
     finally:
-        cb_srv.shutdown()
-        cb_srv.server_close()
+        try:
+            cb_srv.shutdown()
+            cb_srv.server_close()
+        finally:
+            # Restore the SSRF opt-in even when sink cleanup raises.
+            if _cb_hook_prev is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _cb_hook_prev
 
     # --- rate limiting: per-client-host token bucket ----------------------------
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
@@ -4035,6 +4055,10 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         def log_message(self, *args: Any) -> None:
             pass
 
+    # Loopback sink — opt into private-network callback delivery for the
+    # ft webhook probes; restored after the sink shuts down.
+    _ft_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
     _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
     _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
@@ -4113,8 +4137,14 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         and bad_url.status_code == 422
         and sec_only.json().get("error", {}).get("code") == "validation"
     )
-    _ft_srv.shutdown()
-    _ft_srv.server_close()
+    try:
+        _ft_srv.shutdown()
+        _ft_srv.server_close()
+    finally:
+        if _ft_hook_prev is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _ft_hook_prev
 
 
 def _probe_backend_probes(  # NOSONAR
@@ -4362,10 +4392,8 @@ def _probe_backend_probes(  # NOSONAR
         b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
         b"data: [DONE]\n",
     ]
-    import urllib.request as _urlreq  # noqa: PLC0415
-
-    orig_urlopen = _urlreq.urlopen
-    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
+    orig_urlopen = _be_mod._openai_urlopen
+    _be_mod._openai_urlopen = lambda req, timeout_s=None: _FakeResp(wire_frames)  # type: ignore[assignment,misc]
     try:
         box: list[dict[str, int]] = []
         toks = list(
@@ -4380,7 +4408,7 @@ def _probe_backend_probes(  # NOSONAR
             )
         )
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _be_mod._openai_urlopen = orig_urlopen
     out["stream_usage_parser"] = toks == ["he"] and box == [
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
@@ -4775,7 +4803,8 @@ def _probe_backend_probes(  # NOSONAR
         captured_wire["body"] = _json.loads(req.data.decode())
         return _WireResp()
 
-    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
+    _orig_wire_open = _be_mod._openai_urlopen
+    _be_mod._openai_urlopen = _wire_urlopen  # type: ignore[assignment]
     try:
         _be_mod._openai_chat_complete(
             "http://wire.test",
@@ -4797,7 +4826,7 @@ def _probe_backend_probes(  # NOSONAR
         )
         default_body = dict(captured_wire["body"])
     finally:
-        _urlreq.urlopen = orig_urlopen
+        _be_mod._openai_urlopen = _orig_wire_open
     out["sampling_wire_declared"] = (
         full_body.get("temperature") == 0.5
         and full_body.get("top_p") == 0.95
@@ -5292,6 +5321,10 @@ def _probe_backend_probes(  # NOSONAR
     _dsock.bind(("127.0.0.1", 0))
     _ev_dead_port = _dsock.getsockname()[1]
     _dsock.close()
+    # Loopback sink — opt into private-network callback delivery for these
+    # probes; production callbacks stay public-only unless opted in.
+    _ev_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     try:
         sub_cb = eval_app.post(
             "/harness/evals",
@@ -5402,8 +5435,14 @@ def _probe_backend_probes(  # NOSONAR
             == 422
         )
     finally:
-        ev_srv.shutdown()
-        ev_srv.server_close()
+        try:
+            ev_srv.shutdown()
+            ev_srv.server_close()
+        finally:
+            if _ev_hook_prev is None:
+                os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+            else:
+                os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _ev_hook_prev
 
     # --- OpenAI-compatible ingress ------------------------------------------
     # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
@@ -8163,6 +8202,12 @@ def _probe_backend_probes(  # NOSONAR
         def log_message(self, *args: Any) -> None:
             pass
 
+    _bwh_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
+    # Loopback sink — opt into private-network callback delivery for the
+    # batch webhook probes; restored after the sink shuts down.
+    _bwh_hook_prev = os.environ.get("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS")
+    os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = "1"
     _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
     _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
     _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
@@ -8229,8 +8274,14 @@ def _probe_backend_probes(  # NOSONAR
         and r_expc.get("callback_status") == "delivered"
         and _bwh_path_n.get("/batch-expiry") == 1
     )
-    _bwh_srv.shutdown()
-    _bwh_srv.server_close()
+    try:
+        _bwh_srv.shutdown()
+        _bwh_srv.server_close()
+    finally:
+        if _bwh_hook_prev is None:
+            os.environ.pop("FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS", None)
+        else:
+            os.environ["FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"] = _bwh_hook_prev
     # Submit-time guards: a secret without a url is a 422, never a zombie.
     bad_cb = fb.post(
         "/v1/batches",
