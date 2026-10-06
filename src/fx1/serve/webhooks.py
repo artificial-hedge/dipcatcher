@@ -57,7 +57,7 @@ def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -
     """Classify an address conservatively for an outbound callback."""
     if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
         address = address.ipv4_mapped
-    return not (
+    return address.is_global and not (
         address.is_private
         or address.is_loopback
         or address.is_link_local
