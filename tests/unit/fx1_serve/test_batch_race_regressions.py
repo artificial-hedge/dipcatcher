@@ -10,6 +10,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
+import pytest
+
+from fx1.serve import api
 from fx1.serve.batch_audit import (
     _abatch_create,
     _abatch_item,
@@ -25,6 +28,7 @@ from fx1.serve.batch_audit import (
     _upload,
     _wait_abatch,
 )
+from fx1.serve.journal import JobJournal
 
 
 def _endpoint(app: Any, path: str, method: str) -> Callable[..., Any]:
@@ -180,6 +184,113 @@ def test_anthropic_concurrent_first_use_executes_once() -> None:
             sum(response.headers.get("X-Fx1-Idempotent-Replay") == "true" for response in responses)
             == 1
         )
+
+
+@pytest.mark.parametrize("dialect", ["openai", "anthropic"])
+def test_batch_journal_failure_never_starts_provider_work(dialect: str, tmp_path: Path) -> None:
+    """A failed durable publication must not leave an untracked worker."""
+    with _clients():
+        backend = _StubBackend()
+        client, app = _client(
+            backend_map={"hosted_k3": lambda: backend},
+            max_inflight=1,
+            state_dir=str(tmp_path / dialect),
+        )
+        if dialect == "openai":
+            path = "/v1/batches"
+            headers = _root_h()
+            fid = _upload(client, [_line("unpublished", _chat_body("unpublished"))])
+            body = {"input_file_id": fid, "endpoint": "/v1/chat/completions"}
+            store_name = "batch_store"
+        else:
+            path = "/v1/messages/batches"
+            headers = {**_root_h(), "anthropic-version": "2023-06-01"}
+            body = {"requests": [_abatch_item("unpublished")]}
+            store_name = "abatch_store"
+
+        create = _endpoint(app, path, "POST")
+        store = _nonlocal(create, store_name)
+        submitted: list[Callable[[], None]] = []
+
+        def capture_submit(fn: Callable[..., None], *args: Any) -> object:
+            submitted.append(lambda: fn(*args))
+            return object()
+
+        app.state.jobs_executor.submit = capture_submit
+        assert store._journal is not None
+
+        def failed_journal_append(_payload: dict[str, Any]) -> None:
+            raise OSError("synthetic journal write failure")
+
+        store._journal.append = failed_journal_append
+        response = client.post(path, json=body, headers=headers)
+        assert response.status_code == 500
+
+        assert len(submitted) == 1
+        submitted[0]()
+        # The assertion is about effects, not merely response shape: even a
+        # queued callable that runs after the failed request must not reach
+        # the provider or mutate an unjournaled record.
+        assert backend.calls == 0
+        assert store.list() == []
+
+
+@pytest.mark.parametrize("dialect", ["openai", "anthropic"])
+def test_batch_journal_failure_preserves_existing_capacity_entry(
+    dialect: str, tmp_path: Path
+) -> None:
+    """A rejected replacement must neither publish nor evict live state."""
+    journal_path = tmp_path / f"{dialect}.jsonl"
+    journal = JobJournal(journal_path)
+    if dialect == "openai":
+        store: Any = api._BatchStore(1, journal=journal)
+        old: Any = api._BatchRecord(
+            batch_id="batch_old",
+            input_file_id="file_old",
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+            status="completed",
+            created_at=1,
+            expires_at=2,
+        )
+        new: Any = api._BatchRecord(
+            batch_id="batch_new",
+            input_file_id="file_new",
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+            status="completed",
+            created_at=1,
+            expires_at=2,
+        )
+    else:
+        store = api._AnthropicBatchStore(1, journal=journal)
+        old = api._AnthropicBatchRecord(
+            batch_id="msgbatch_old",
+            status="ended",
+            created_at=1,
+            expires_at=2,
+            ended_at=2,
+        )
+        new = api._AnthropicBatchRecord(
+            batch_id="msgbatch_new",
+            status="ended",
+            created_at=1,
+            expires_at=2,
+            ended_at=2,
+        )
+
+    store.put(old)
+
+    def failed_journal_append(_payload: dict[str, Any]) -> None:
+        raise OSError("synthetic journal write failure")
+
+    journal.append = failed_journal_append
+    with pytest.raises(OSError, match="synthetic journal write failure"):
+        store.put(new)
+
+    assert [record.batch_id for record in store.list()] == [old.batch_id]
+    recovered = type(store)(1, journal=JobJournal(journal_path))
+    assert [record.batch_id for record in recovered.list()] == [old.batch_id]
 
 
 class _SecondCallGate(_StubBackend):
