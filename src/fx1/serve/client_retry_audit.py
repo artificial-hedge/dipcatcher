@@ -29,6 +29,85 @@ from typing import Any
 
 __all__ = ["client_retry_audit", "client_retry_audit_bench"]
 
+
+# The exact battery contract: an audit that drops or renames a probe
+# fails loudly here, and ``bench`` refuses to seal an incomplete or
+# partial result set as a pass.
+_EXPECTED_PROBES: frozenset[str] = frozenset(
+    {
+        "api_key_header_every_attempt",
+        "backoff_doubles_pure_faults",
+        "backoff_grows_across_status_sleep",
+        "closed_circuit_passes",
+        "counter_needs_consecutive_faults",
+        "ctor_accepts_boundary_combo",
+        "ctor_rejects_backoff_negative",
+        "ctor_rejects_backoff_zero",
+        "ctor_rejects_max_retries_negative",
+        "ctor_rejects_max_wait_negative",
+        "ctor_rejects_max_wait_zero",
+        "ctor_rejects_timeout_negative",
+        "ctor_rejects_timeout_zero",
+        "fault_clears_headers",
+        "fault_keeps_api_version",
+        "fault_sleeps_capped_at_max_wait",
+        "fault_sleeps_deterministic",
+        "fault_two_retries_three_calls",
+        "final_attempt_long_wait_maps_normally",
+        "foreign_exc_propagates_unretried",
+        "half_open_fault_reopens",
+        "half_open_probe_success_closes",
+        "half_open_single_probe_under_contention",
+        "idempotency_key_on_every_attempt",
+        "keyed_write_fault_retries",
+        "long_wait_break_message",
+        "mapped_404_is_keyerror",
+        "mapped_404_keeps_headers",
+        "mapped_429_clears_headers",
+        "mapped_429_is_transport",
+        "mapped_500_clears_headers",
+        "mapped_500_is_transport_error",
+        "mapped_503_exhaustion_skips_circuit",
+        "mapped_503_keeps_headers",
+        "mapped_503_not_transport",
+        "mixed_stops_on_first_success",
+        "no_retries_means_one_call",
+        "open_circuit_never_sleeps",
+        "open_until_boundary_is_exclusive",
+        "parallel_faults_eventually_open_circuit",
+        "parallel_retries_all_succeed",
+        "parallel_sleep_count_matches",
+        "ra_at_cap_retries",
+        "ra_empty_not_retryable",
+        "ra_fractional",
+        "ra_header_case_retry_after",
+        "ra_http_date_not_retryable",
+        "ra_infinite_not_retryable",
+        "ra_junk_not_retryable",
+        "ra_nan_not_retryable",
+        "ra_negative_not_retryable",
+        "ra_over_cap_breaks_no_sleep",
+        "ra_overrides_grown_backoff",
+        "ra_scientific_over_cap_breaks",
+        "ra_signed_positive",
+        "ra_under_cap_sleeps_verbatim",
+        "ra_whitespace_parses",
+        "ra_zero_sleeps_zero",
+        "retries_hit_same_path",
+        "retry_writes_keyed_retries",
+        "retry_writes_unkeyed_never_retries",
+        "sleep_count_equals_retries",
+        "sleep_precedes_retry",
+        "success_headers_lowercased",
+        "success_tracks_api_version",
+        "threshold_one_opens_on_first_fault",
+        "timeout_verbatim_each_attempt",
+        "two_retries_means_three_calls",
+        "unkeyed_write_sends_no_key",
+        "write_not_retried_by_default",
+    }
+)
+
 _AUDIT_LOCK = threading.Lock()
 
 _BASE = "https://harness.invalid"  # NOSONAR(S1313) — scripted transport, never dialed
@@ -188,11 +267,19 @@ def _probe_attempt_counts() -> dict[str, bool]:
 
     c, calls, _ = _scripted(fault)
     cli = _mk(c, max_retries=3, retry_writes=True, sleep=lambda s: None)
-    # retry_writes retries transport faults on POST — all 4 attempts
+    # retry_writes never retries an UNKEYED write: an ambiguous fault
+    # could already have landed — replaying would duplicate the effect.
     exc = _exc(lambda: cli.complete(_MSGS))
-    out["retry_writes_fault_retries_post"] = (
-        type(exc).__name__ == "HarnessTransportError" and len(calls) == 4
+    out["retry_writes_unkeyed_never_retries"] = (
+        type(exc).__name__ == "HarnessTransportError" and len(calls) == 1
     )
+
+    # keyed writes already mark themselves idempotent, so retry_writes
+    # only ever widens keyed traffic — safe by construction.
+    c, calls, _ = _scripted(fault, fault, _COMP_OK)
+    cli = _mk(c, max_retries=3, retry_writes=True, sleep=lambda s: None)
+    res = cli.complete(_MSGS, idempotency_key="k-0")
+    out["retry_writes_keyed_retries"] = res.content == "ok" and len(calls) == 3
 
     c, calls, _ = _scripted(fault, _COMP_OK)
     cli = _mk(c, max_retries=3, sleep=lambda s: None)
@@ -242,6 +329,18 @@ def _probe_sleep_arithmetic() -> dict[str, bool]:
 
     sleeps, _, _ = runs(fault, fault, fault, ok, max_retries=3, retry_backoff_s=0.1)
     out["backoff_doubles_pure_faults"] = sleeps == [0.1, 0.2, 0.4]
+
+    # the fault path honors the same ``max_retry_wait_s`` cap the status
+    # path applies — unreachable-host waits never grow unboundedly.
+    sleeps, _, _ = runs(
+        fault, fault, fault, fault, ok, max_retries=4, retry_backoff_s=2.0, max_retry_wait_s=1.0
+    )
+    out["fault_sleeps_capped_at_max_wait"] = sleeps == [1.0, 1.0, 1.0, 1.0]
+
+    # deterministic by design — no jitter; a caller wanting spread
+    # injects a jittering ``sleep=`` hook.
+    sleeps, _, _ = runs(fault, fault, ok, max_retries=2, retry_backoff_s=1.0, max_retry_wait_s=10.0)
+    out["fault_sleeps_deterministic"] = sleeps == [1.0, 2.0]
 
     # RA overrides the grown backoff: fault doubled backoff to 0.2 but
     # the 503's declared wait wins the sleep slot.
@@ -303,7 +402,7 @@ def _probe_retry_after_parsing() -> dict[str, bool]:
     s, n = sleeps_and_calls("+2")
     out["ra_signed_positive"] = s == [2.0] and n == 2
     s, n = sleeps_and_calls("-5")
-    out["ra_negative_clamps_zero"] = s == [0.0] and n == 2
+    out["ra_negative_not_retryable"] = s == [] and n == 1
     s, n = sleeps_and_calls("1e1", max_retry_wait_s=5.0)
     out["ra_scientific_over_cap_breaks"] = s == [] and n == 1
     s, n = sleeps_and_calls("Wed, 21 Oct 2015 07:28:00 GMT")
@@ -312,12 +411,12 @@ def _probe_retry_after_parsing() -> dict[str, bool]:
     out["ra_junk_not_retryable"] = s == [] and n == 1
     s, n = sleeps_and_calls("")
     out["ra_empty_not_retryable"] = s == [] and n == 1
+    # non-finite hints are malformed, never "retry immediately" (nan) or
+    # "wait forever" (inf) — the untrusted header cannot defeat backoff.
     s, n = sleeps_and_calls("inf")
-    out["ra_infinite_breaks_over_cap"] = s == [] and n == 1
-    # ``max(0.0, nan)`` returns 0.0 (``nan > 0`` is False) — a nan wait
-    # is treated as "retry immediately", the opposite edge of inf
+    out["ra_infinite_not_retryable"] = s == [] and n == 1
     s, n = sleeps_and_calls("nan")
-    out["ra_nan_clamps_zero_retries"] = s == [0.0] and n == 2
+    out["ra_nan_not_retryable"] = s == [] and n == 1
 
     # case-insensitive header name — transports differ in casing
     for name in ("RETRY-AFTER", "retry-after", "Retry-After"):
@@ -503,6 +602,54 @@ def _probe_circuit_interplay() -> dict[str, bool]:
     _exc(cli.commands)
     out["open_circuit_never_sleeps"] = sleeps == []
 
+    # half-open is single-probe under contention: with the window lapsed,
+    # eight threads released together admit exactly ONE transport probe;
+    # the rest fail fast without dialing.
+    tr, calls, _ = _scripted(fault)
+    clock_t[0] += 30.0
+    probe_gate = threading.Event()
+    dialed: list[tuple[str, str]] = []
+
+    def probe_transport(method: str, url: str, payload: Any, headers: Any, timeout_s: float) -> Any:
+        dialed.append((method, urllib.parse.urlparse(url).path))
+        probe_gate.wait(10.0)  # hold the probe until every loser raced admit
+        return 200, {}, _ITEMS_BODY
+
+    cli = _mk(
+        probe_transport,
+        max_retries=0,
+        sleep=lambda s: None,
+        circuit_breaker_threshold=1,
+        circuit_reset_s=30.0,
+        clock=lambda: clock_t[0],
+    )
+    cli._transport = tr  # noqa: SLF001 — trip the circuit first
+    _exc(cli.commands)
+    cli._transport = probe_transport  # noqa: SLF001
+    clock_t[0] += 31.0  # window lapsed — the next call is the half-open probe
+    barrier = threading.Barrier(8)
+    outcomes: list[str] = []
+
+    def racer() -> None:
+        barrier.wait()
+        try:
+            cli.commands()
+            outcomes.append("ok")
+        except Exception as exc:  # noqa: BLE001 — audit records classes
+            outcomes.append("circuit" if "circuit open" in str(exc) else type(exc).__name__)
+        finally:
+            if len(outcomes) == 7:
+                probe_gate.set()  # all seven losers answered — release the probe
+
+    threads = [threading.Thread(target=racer) for _ in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    out["half_open_single_probe_under_contention"] = (
+        outcomes.count("ok") == 1 and outcomes.count("circuit") == 7 and len(dialed) == 1
+    )
+
     # consecutive counting: a success between faults holds the gate open
     tr, calls, _ = _scripted(fault, ok, fault, fault)
     cli = _mk(
@@ -671,7 +818,14 @@ def client_retry_audit() -> dict[str, bool]:
         results.update(_probe_circuit_interplay())
         results.update(_probe_timeout_and_key_on_wire())
         results.update(_probe_retry_under_parallelism())
-        return results
+    missing = _EXPECTED_PROBES - results.keys()
+    extra = results.keys() - _EXPECTED_PROBES
+    if missing or extra:
+        raise AssertionError(
+            f"battery drifted from the pinned probe set — missing={sorted(missing)} "
+            f"extra={sorted(extra)}"
+        )
+    return results
 
 
 def client_retry_audit_bench(results: dict[str, bool] | None = None) -> dict[str, Any]:
@@ -680,7 +834,7 @@ def client_retry_audit_bench(results: dict[str, bool] | None = None) -> dict[str
     from quant_fund.utils.reproducibility import git_revision
 
     r = client_retry_audit() if results is None else dict(results)
-    ok = bool(r) and all(v is True for v in r.values())
+    ok = set(r) == _EXPECTED_PROBES and all(v is True for v in r.values())
     out: dict[str, Any] = {
         "kind": "client_retry_audit",
         "schema": "client_retry_audit.v1",

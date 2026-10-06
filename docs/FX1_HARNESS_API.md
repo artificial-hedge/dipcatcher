@@ -1091,8 +1091,10 @@ on every deduped route:
   can't be replayed.
 - `HarnessClient.run(...)` auto-mints a uuid4 key; `complete`/
   `complete_many`/`submit_run`/`submit_batch` take
-  `idempotency_key=` explicitly. With `retry_writes=True` the client
-  also retries write verbs — safe because the server dedupes.
+  `idempotency_key=` explicitly. Writes retry only when keyed:
+  `retry_writes=True` widens retry coverage to keyed writes — safe
+  because the server dedupes — and never retries an unkeyed write,
+  since an ambiguous fault could replay a landed mutation.
 
 ## Version negotiation
 

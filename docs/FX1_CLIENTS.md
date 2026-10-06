@@ -289,5 +289,6 @@ Retry rules worth copying into your own client: `429 rate_limited` and
 `Retry-After` — honor it. `429 quota_exceeded` deliberately carries no
 `Retry-After` — the budget is terminal; don't retry. Both Python and TS
 clients implement exactly this (idempotent calls retried by default under
-`max_retries`/`maxRetries`; unkeyed writes only when `retry_writes` /
-`retryWrites` is set).
+`max_retries`/`maxRetries`; writes only ever retry when they carry an
+`Idempotency-Key` — `retry_writes`/`retryWrites` widens keyed writes,
+never unkeyed ones).

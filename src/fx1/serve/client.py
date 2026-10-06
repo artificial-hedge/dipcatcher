@@ -29,6 +29,8 @@ from __future__ import annotations
 import contextlib
 import http.client
 import json
+import math
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -150,13 +152,22 @@ def _urllib_transport(
 
 
 def _retry_after_s(headers: Mapping[str, str]) -> float | None:
-    """Parse a Retry-After seconds hint; absent/malformed -> None."""
+    """Parse a Retry-After seconds hint; absent/malformed -> None.
+
+    The header is server-controlled input: non-finite (``nan``/``inf``) or
+    negative values are treated as malformed rather than floored, so an
+    untrusted hint can neither crash the sleeper nor collapse a declared
+    backoff into an immediate retry.
+    """
     for key, value in headers.items():
         if key.lower() == "retry-after":
             try:
-                return max(0.0, float(value))
+                parsed = float(value)
             except ValueError:
                 return None
+            if not math.isfinite(parsed) or parsed < 0:
+                return None
+            return parsed
     return None
 
 
@@ -325,6 +336,11 @@ class HarnessClient:
         self._last_response_headers: dict[str, str] = {}
         self._cb_failures = 0
         self._cb_open_until = 0.0
+        # Half-open admits exactly one probe: the first caller past an
+        # expired window owns it; everyone else keeps failing fast until
+        # the probe answers (close) or faults (re-open).
+        self._cb_half_open_probe = False
+        self._cb_lock = threading.Lock()
 
     # ---- transport ----------------------------------------------------
 
@@ -337,12 +353,23 @@ class HarnessClient:
         idempotent: bool = False,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[int, Mapping[str, str], bytes]:
-        if self._cb_threshold and self._clock() < self._cb_open_until:
-            raise HarnessTransportError(
-                f"circuit open for {self._base} — fail fast until "
-                f"{self._cb_open_until:.1f} (monotonic)"
-            )
-        retries = self._max_retries if (idempotent or self._retry_writes) else 0
+        probe = False
+        if self._cb_threshold:
+            with self._cb_lock:
+                if self._clock() < self._cb_open_until or self._cb_half_open_probe:
+                    raise HarnessTransportError(
+                        f"circuit open for {self._base} — fail fast until "
+                        f"{self._cb_open_until:.1f} (monotonic)"
+                    )
+                if self._cb_open_until > 0.0:
+                    self._cb_half_open_probe = True
+                    probe = True
+        # Writes retry only when the request carries an Idempotency-Key —
+        # keyed writes mark themselves idempotent at every call site, so
+        # ``retry_writes`` only ever widens keyed writes; an unkeyed write
+        # whose first attempt may have landed must never be replayed.
+        keyed = any(k.lower() == "idempotency-key" for k in (extra_headers or {}))
+        retries = self._max_retries if (idempotent or (self._retry_writes and keyed)) else 0
         backoff = self._retry_backoff_s
         try:
             for attempt in range(retries + 1):
@@ -363,7 +390,11 @@ class HarnessClient:
                 except HarnessTransportError:
                     if attempt >= retries:
                         raise
-                    self._sleep(backoff)
+                    # Same ``max_retry_wait_s`` cap the status path applies —
+                    # an unreachable host must not double sleeps unboundedly.
+                    # No jitter by design: the schedule is deterministic so a
+                    # caller that wants spread injects a jittering ``sleep=``.
+                    self._sleep(min(backoff, self._max_retry_wait_s))
                     backoff *= 2
                     continue
                 if self._retryable_status(status, headers) and attempt < retries:
@@ -373,6 +404,12 @@ class HarnessClient:
                     self._sleep(min(wait if wait is not None else backoff, self._max_retry_wait_s))
                     backoff *= 2
                     continue
+                if probe:
+                    # The service answered — release the half-open slot even
+                    # when the response maps to a non-transport error.
+                    with self._cb_lock:
+                        self._cb_half_open_probe = False
+                        probe = False
                 if status < 200 or status >= 300:
                     raise self._map_error(status, body)
                 self._cb_reset()
@@ -380,23 +417,32 @@ class HarnessClient:
             raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
         except HarnessTransportError:
             self._last_response_headers = {}
-            self._cb_trip()
+            self._cb_trip(reopen=probe)
             raise
 
     def _cb_reset(self) -> None:
-        self._cb_failures = 0
-        self._cb_open_until = 0.0
+        with self._cb_lock:
+            self._cb_failures = 0
+            self._cb_open_until = 0.0
+            self._cb_half_open_probe = False
 
-    def _cb_trip(self) -> None:
+    def _cb_trip(self, *, reopen: bool = False) -> None:
         """Count a transport fault; past the threshold the circuit opens for
-        ``circuit_reset_s`` (the first call after that is the half-open probe —
-        a success closes it, a fault re-opens the window)."""
+        ``circuit_reset_s``. The first call after that is the single
+        half-open probe — a fault re-opens the window immediately
+        (``reopen``), a success closes it via ``_cb_reset``."""
         if not self._cb_threshold:
             return
-        self._cb_failures += 1
-        if self._cb_failures >= self._cb_threshold:
-            self._cb_open_until = self._clock() + self._cb_reset_s
-            self._cb_failures = 0
+        with self._cb_lock:
+            if reopen:
+                self._cb_half_open_probe = False
+                self._cb_open_until = self._clock() + self._cb_reset_s
+                self._cb_failures = 0
+                return
+            self._cb_failures += 1
+            if self._cb_failures >= self._cb_threshold:
+                self._cb_open_until = self._clock() + self._cb_reset_s
+                self._cb_failures = 0
 
     @staticmethod
     def _map_error(status: int, body: bytes) -> Exception:

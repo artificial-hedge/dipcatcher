@@ -374,11 +374,26 @@ and consecutive-fault counting across a mid-window success; plus
 attempt verbatim, and parallel callers getting independent retry
 schedules over the shared circuit counter.
 
-No production-code changes were needed: the measured contract held
-throughout — including the dead-cover `min(wait, cap)` in the retry
-loop (a wait over budget always breaks before sleeping) and the
-`nan`/`inf` asymmetry in `_retry_after_s`, both pinned as semantics.
+Maintenance review found four production defects the first pass
+pinned as semantics; all repaired and re-pinned:
+
+- `Retry-After` non-finite (`nan`/`inf`) or negative values were floored
+  to `0.0` — an untrusted header could collapse backoff into an
+  immediate retry or wedge the sleeper. `_retry_after_s` now treats
+  them as malformed: the status is not retryable and maps normally.
+- Transport-fault sleeps ignored `max_retry_wait_s`, doubling without
+  bound. They now share the cap (`min(backoff, max_retry_wait_s)`);
+  sleeps stay deterministic by design — callers wanting spread inject
+  a jittering `sleep=` hook.
+- The half-open window admitted every caller: a `_cb_lock`-guarded
+  single-probe flag now lets exactly one racer dial while the rest
+  fail fast; the probe releases on any completed response, re-opens
+  on a transport fault, closes via `_cb_reset` on success.
+- `retry_writes=True` retried unkeyed POSTs — an ambiguous fault could
+  replay a landed write. Writes now retry only when keyed
+  (`Idempotency-Key`); keyed calls already mark idempotent, so the
+  flag only ever widens keyed traffic.
 
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
-no live-PnL claim. The serve census moves from 55 to 56 and remains
+no live-PnL claim. The serve census moves from 54 to 55 and remains
 `partial`.
