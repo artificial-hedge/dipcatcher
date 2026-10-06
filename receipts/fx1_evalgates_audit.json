@@ -167,11 +167,11 @@
     "transport": "in-process buffered TestClient; stub backends; store-injected terminal records"
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "fc9f35089c792e4baa52774f412a632d2636bb19",
+  "git_revision": "af349fd790f01f6555da642b2abc253cf0387853",
   "interpretation": "The eval-gate surfaces tell the truth on every leg. /harness/score is deterministic to the byte: identical input scores identically, components are attributed only when their evidence is present (honesty_clean 4.0 baseline, the declared weights for citation/verification/vocabulary/hedging), and adversarial text is scored -10 with the violation named rather than refused \u2014 revealing the gate's verdict without pretending the text was clean. /harness/gate/check answers {ok, error} at 200 as a verdict surface: every forbidden headline token with a digit-adjacent claim refuses (including homoglyph, spaced-letter, and fullwidth evasions), while bare-token discussion, spelled-out numbers, and labeled SYNTHETIC text pass \u2014 the documented boundary held. /harness/evals/{a}/diff/{b} is the honest promotion primitive: comparability requires same suite+seed, bank-stamp mismatches are flagged (both-stamped-different \u2192 comparable:false; one-stamped \u2192 comparable with same_bank:false), task transitions report across all three report shapes, the honesty-gate move is surfaced explicitly (opened/closed/unknown), by_kind deltas compare numeric leaves only, the sign test is exact, any regression forces 'regressed', and non-comparable diffs are served with verdict 'unknown' and emptied transition lists \u2014 claiming nothing. Unknown ids 404 in lookup order, queued/running/terminal-no-report records 409 'eval_not_terminal', drain keeps the reads and advisory legs open while refusing new submissions 503, scopes split POST/write vs GET/read, and every refusal lands enveloped. The wire twins (HarnessClient, Fx1Harness) report the identical truth, and the verdict survives a --state-dir restart.",
   "kind": "evalgates_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "521864c7d68e2a277fe3c320f04717b3879361e022a6da8f009303e6ce6b7f31",
+  "receipt_sha256": "9940658628a5b8e9024ff9c0274f1f8d515736f97c590a82ea82abb2639689ab",
   "research_only": true,
   "schema": "evalgates_audit.v1"
 }

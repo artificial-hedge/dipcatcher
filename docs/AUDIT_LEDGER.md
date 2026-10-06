@@ -346,3 +346,39 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+### Eval-gates audit maintenance (PR #2880)
+
+The `evalgates_audit` battery (152 probes) runs the promotion-gate
+surface end to end over a scripted-backend `TestClient`:
+`POST /harness/score` deterministic byte-identical scoring with pinned
+component weights, empty/unicode/adversarial inputs, item-cap
+refusals, and violation-scored-not-refused (`total: -10`);
+`POST /harness/gate/check` advisory refusals including
+homoglyph/spaced/fullwidth evasions; `GET /harness/evals/{a}/diff/{b}`
+comparability (same suite+seed+bank), fixed/regressed/unchanged
+across the three report shapes, `honesty_gate_passed` gate moves,
+exact two-sided McNemar significance, `409 eval_not_terminal`,
+`same_bank:false` honesty on unstamped records; drain ordering
+(reads open, mutations `draining`-refused); `HarnessClient`/SDK twin
+legs and the 401/403/404/409/422 error map; and restart determinism
+against a fresh app on the same `state_dir`.
+
+Four defects fixed on the same PR: the `CompleteBatchRequest` literal
+`\n` `SyntaxError` that broke `fx1.serve.api` on main; `api_audit`'s
+callback probes posting loopback URLs without the
+`FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS` opt-in; `api_audit`'s dead
+`urllib.request.urlopen` stubs re-pointed at `build_opener` with
+`close()`; and `api_audit`'s clock-sensitive rate-limit floods frozen
+under a pinned `time.monotonic`.
+
+The lane also introduces `serve/_audit_support.py` — the canonical
+audit scaffold (serialized env-isolating `audit_scope`, scoped
+resources/tmpdirs, isolated `TestClient` factory, `HarnessClient`
+transport adapter) replacing the per-module vendored copies; the
+historical modules keep theirs for receipt provenance. SonarCloud
+hardening: float pins route through `_is()` (exact-equality is the
+scoring contract, annotated `NOSONAR(S1244)` once).
+
+The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
+no live-PnL claim. The serve census moves from 54 to 56
+(`evalgates_audit` plus `_audit_support`) and remains `partial`.

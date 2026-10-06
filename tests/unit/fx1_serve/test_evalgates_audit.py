@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+from fx1.serve import _audit_support as support
 from fx1.serve import evalgates_audit as audit
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
@@ -258,9 +259,9 @@ def test_audit_context_restores_environment_and_removes_temp_state_on_error(
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     temporary: Path | None = None
-    with pytest.raises(RuntimeError, match="deliberate failure"), audit._audit_context():
+    with pytest.raises(RuntimeError, match="deliberate failure"), support.audit_scope():
         assert all(name not in os.environ for name in env)
-        temporary = audit._temporary_directory()
+        temporary = support.scoped_tmpdir()
         (temporary / "test.txt").write_text("synthetic")
         os.environ["FX1_TEMPORARY_AUDIT_VALUE"] = "temporary"
         raise RuntimeError("deliberate failure")
@@ -281,8 +282,8 @@ def test_client_uses_private_state_and_closes_executor(
     monkeypatch.setenv("FX1_FT_DIR", str(operator))
     monkeypatch.setenv("FX1_API_RECEIPTS_DIR", str(operator))
     monkeypatch.setenv("FX1_API_STORE_MAX", "invalid ambient bound")
-    with audit._audit_context():
-        client, _ = audit._client({"byok": lambda: audit._TooluseBackend({})})
+    with support.audit_scope():
+        client, _ = support.test_client({"byok": lambda: audit._TooluseBackend({})})
         assert client.get("/health").status_code == 200
         executor = client.app.state.jobs_executor
         assert executor.submit(lambda: 3).result(timeout=1) == 3

@@ -107,25 +107,23 @@ crash-durability, or live-provider evidence. Sealed
 from __future__ import annotations
 
 import json
-import os
 import re
-import tempfile
 import threading
 import time
-import urllib.parse
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack, contextmanager
-from contextvars import ContextVar
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from fx1.serve._audit_support import (
+    audit_scope,
+    scoped_tmpdir,
+    tc_transport,
+    test_client,
+)
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 if TYPE_CHECKING:
-    from types import ModuleType
-
     from fastapi.testclient import TestClient
 
     from fx1.serve.backends import SamplingParams
@@ -133,46 +131,7 @@ if TYPE_CHECKING:
 
 __all__ = ["evalgates_audit", "evalgates_audit_bench"]
 
-_API_KEY_ENV = "FX1_API_KEY"
 _ROOT = "k3y-material"
-_AUDIT_LOCK = threading.Lock()
-_RESOURCES: ContextVar[ExitStack] = ContextVar("evalgates_audit_resources")
-
-
-@contextmanager
-def _audit_context() -> Iterator[None]:
-    """Restore ambient configuration and close all synthetic resources.
-
-    Run this diagnostic in a dedicated process: its environment and
-    rate-window overrides are process-wide, not application configuration.
-    The lock serializes calls made through this module.
-    """
-    with _AUDIT_LOCK:
-        saved = {
-            name: value
-            for name, value in os.environ.items()
-            if name.startswith("FX1_") or name == "MOONSHOT_API_KEY"
-        }
-        for name in saved:
-            os.environ.pop(name, None)
-        try:
-            with ExitStack() as resources:
-                token = _RESOURCES.set(resources)
-                try:
-                    yield
-                finally:
-                    _RESOURCES.reset(token)
-        finally:
-            for name in list(os.environ):
-                if name.startswith("FX1_") or name == "MOONSHOT_API_KEY":
-                    os.environ.pop(name, None)
-            os.environ.update(saved)
-
-
-def _temporary_directory() -> Path:
-    return Path(
-        _RESOURCES.get().enter_context(tempfile.TemporaryDirectory(prefix="evalgates_audit_"))
-    )
 
 
 _EVALS_PATH = "/harness/evals"
@@ -353,55 +312,6 @@ class _QueueResolver:
         return next_backend
 
 
-def _client(
-    backend_map: dict[str, Any],
-    api_key: str | None = None,
-    *,
-    state_dir: Path | None = None,
-    rate_limit_rps: float = 0.0,
-    max_inflight: int = 16,
-) -> tuple[TestClient, ModuleType]:
-    """(TestClient, api_module) — isolated env per construction; backends
-    resolve from ``backend_map[name]`` zero-arg factories."""
-    from fastapi.testclient import TestClient
-
-    import fx1.serve.api as api_mod
-    from fx1.harness import Harness
-
-    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
-        return 0, "ok", ""
-
-    resources = _RESOURCES.get()
-    isolated = _temporary_directory()
-    receipts = isolated / "receipts"
-    receipts.mkdir()
-    saved_key = os.environ.get(_API_KEY_ENV)
-    try:
-        if api_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = api_key
-        app = api_mod.create_app(
-            harness=Harness(runner=fake_runner),
-            backend_resolver=lambda name, *a, **k: backend_map[name](),
-            state_dir=state_dir if state_dir is not None else isolated / "state",
-            receipts_dir=receipts,
-            ft_dir=isolated / "fine_tuning",
-            rate_limit_rps=rate_limit_rps,
-            max_inflight=max_inflight,
-        )
-        resources.callback(app.state.jobs_executor.shutdown, wait=True, cancel_futures=True)
-        client = TestClient(app, raise_server_exceptions=False)
-        resources.callback(client.close)
-        resources.enter_context(client)
-        return client, api_mod
-    finally:
-        if saved_key is None:
-            os.environ.pop(_API_KEY_ENV, None)
-        else:
-            os.environ[_API_KEY_ENV] = saved_key
-
-
 def _mint(client: TestClient, root_h: dict[str, str], **policy: Any) -> tuple[str, str]:
     """Mint a managed key → (raw, key_id)."""
     r = client.post(_KEYS_PATH, json=policy, headers=root_h)
@@ -517,29 +427,10 @@ def _raises(fn: Callable[[], Any]) -> str:
     return ""
 
 
-def _tc_transport(client: TestClient) -> Any:
-    """Adapt HarnessClient's transport contract to a TestClient."""
-
-    def send(
-        method: str,
-        url: str,
-        payload: dict[str, Any] | bytes | None,
-        headers: dict[str, str],
-        timeout_s: float,
-    ) -> tuple[int, Any, bytes]:
-        p = urllib.parse.urlparse(url)
-        path = p.path + (f"?{p.query}" if p.query else "")
-        if method == "GET":
-            resp = client.get(path, headers=headers)
-        elif method == "DELETE":
-            resp = client.delete(path, headers=headers)
-        elif isinstance(payload, bytes):
-            resp = client.post(path, content=payload, headers=headers)
-        else:
-            resp = client.post(path, json=payload, headers=headers)
-        return resp.status_code, dict(resp.headers), resp.content
-
-    return send
+def _is(val: Any, exact: float) -> bool:
+    """Exact-value pin: scoring/diff contracts are deterministic constants,
+    so float equality is the intended assertion, not a tolerance."""
+    return bool(val == exact)  # NOSONAR(S1244) — exact-value pin is the probe contract
 
 
 def _tooluse_pair(
@@ -554,7 +445,7 @@ def _tooluse_pair(
     queue = _QueueResolver(
         [_TooluseBackend(base_script, seed=seed), _TooluseBackend(cand_script, seed=seed)]
     )
-    client, _ = _client({"byok": queue.factory("byok")}, api_key=api_key, max_inflight=2)
+    client, _ = test_client({"byok": queue.factory("byok")}, api_key=api_key, max_inflight=2)
     headers = {_H_KEY: api_key} if api_key is not None else None
     base_id = _submit(client, "tooluse", seed, headers)
     cand_id = _submit(client, "tooluse", seed, headers)
@@ -576,7 +467,7 @@ def _ts_pair(
     queue = _QueueResolver(
         [_OracleBackend(oracle, base_overrides), _OracleBackend(oracle, cand_overrides)]
     )
-    client, _ = _client({"byok": queue.factory("byok")}, max_inflight=2)
+    client, _ = test_client({"byok": queue.factory("byok")}, max_inflight=2)
     base_id = _submit(client, "ts_reasoning", seed)
     cand_id = _submit(client, "ts_reasoning", seed)
     _wait(client, base_id)
@@ -597,7 +488,7 @@ def _retrieval_pair(
     queue = _QueueResolver(
         [_OracleBackend(oracle, base_overrides), _OracleBackend(oracle, cand_overrides)]
     )
-    client, _ = _client({"byok": queue.factory("byok")}, max_inflight=2)
+    client, _ = test_client({"byok": queue.factory("byok")}, max_inflight=2)
     base_id = _submit(client, "retrieval", seed)
     cand_id = _submit(client, "retrieval", seed)
     _wait(client, base_id)
@@ -613,7 +504,7 @@ def _retrieval_pair(
 def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fans out per edge
     out: dict[str, Any] = {}
     exploding = {"byok": lambda: _ExplodingBackend()}
-    client, _ = _client(exploding)
+    client, _ = test_client(exploding)
 
     def score(payload: Any) -> Any:
         return client.post(_SCORE_PATH, json=payload)
@@ -637,16 +528,16 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
     )
     first = item(r1)
     out["score_minimal_honesty_weight"] = (
-        first["total"] == 4.0
+        _is(first["total"], 4.0)
         and first["components"] == {"honesty_clean": 4.0}
         and first["violations"] == []
     )
 
     # --- empty inputs score an honest zero — not an error, not a gift
-    out["score_empty_total_zero"] = item(score({"input": ""}))["total"] == 0.0
+    out["score_empty_total_zero"] = _is(item(score({"input": ""}))["total"], 0.0)
     blank = item(score({"input": "   \n\t  "}))
     out["score_blank_total_zero"] = (
-        blank["total"] == 0.0 and blank["components"] == {} and blank["violations"] == []
+        _is(blank["total"], 0.0) and blank["components"] == {} and blank["violations"] == []
     )
 
     # --- component attribution is exact: each declared weight appears
@@ -660,16 +551,17 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
         "proper_score_vocabulary": 1.0,
         "hedged_uncertainty": 0.5,
     }
-    out["score_full_total"] = full["total"] == 10.0
+    out["score_full_total"] = _is(full["total"], 10.0)
     vocab = item(score({"input": _TEXT_VOCAB_ONLY}))
-    out["score_partial_attribution"] = vocab["total"] == 5.0 and set(vocab["components"]) == {
+    out["score_partial_attribution"] = _is(vocab["total"], 5.0) and set(vocab["components"]) == {
         "honesty_clean",
         "proper_score_vocabulary",
     }
     near = item(score({"input": _TEXT_RECEIPT_NEAR}))
     far = item(score({"input": _TEXT_RECEIPT_FAR}))
     out["score_receipt_window_bound"] = (
-        near["components"].get("cites_receipt") == 2.0 and "cites_receipt" not in far["components"]
+        _is(near["components"].get("cites_receipt"), 2.0)
+        and "cites_receipt" not in far["components"]
     )
 
     # --- adversarial text is scored, not refused: the violation is
@@ -677,30 +569,30 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
     adv = score({"input": _TEXT_SHARPE})
     adv_item = item(adv)
     out["score_violation_200_not_refused"] = adv.status_code == 200
-    out["score_violation_caps_negative"] = adv_item["total"] == -10.0
+    out["score_violation_caps_negative"] = _is(adv_item["total"], -10.0)
     out["score_violation_named"] = any(
         "sharpe" in str(v).lower() or "forbidden" in str(v).lower() for v in adv_item["violations"]
     )
     out["score_violation_no_partial_credit"] = adv_item["components"] == {}
     loaded_adv = item(score({"input": _TEXT_FULL + " " + _TEXT_SHARPE}))
     out["score_violation_drops_loaded_credit"] = (
-        loaded_adv["total"] == -10.0 and loaded_adv["components"] == {}
+        _is(loaded_adv["total"], -10.0) and loaded_adv["components"] == {}
     )
-    out["score_live_claim_negative"] = item(score({"input": _TEXT_LIVE_CLAIM}))["total"] == -10.0
-    out["score_unlabeled_synthetic_negative"] = (
-        item(score({"input": _TEXT_UNLABELED}))["total"] == -10.0
+    out["score_live_claim_negative"] = _is(item(score({"input": _TEXT_LIVE_CLAIM}))["total"], -10.0)
+    out["score_unlabeled_synthetic_negative"] = _is(
+        item(score({"input": _TEXT_UNLABELED}))["total"], -10.0
     )
     labeled = item(score({"input": _TEXT_LABELED}))
-    out["score_labeled_synthetic_clean"] = (
-        labeled["total"] > 0 and labeled["components"].get("honesty_clean") == 4.0
+    out["score_labeled_synthetic_clean"] = labeled["total"] > 0 and _is(
+        labeled["components"].get("honesty_clean"), 4.0
     )
     bare = item(score({"input": _TEXT_BARE_TOKEN}))
-    out["score_bare_token_discussion_clean"] = bare["components"].get("honesty_clean") == 4.0
+    out["score_bare_token_discussion_clean"] = _is(bare["components"].get("honesty_clean"), 4.0)
     spelled = item(score({"input": _TEXT_SPELLED}))
-    out["score_spelled_number_boundary"] = spelled["components"].get("honesty_clean") == 4.0
-    out["score_homoglyph_negative"] = item(score({"input": _TEXT_HOMOGLYPH}))["total"] == -10.0
-    out["score_spaced_letters_negative"] = item(score({"input": _TEXT_SPACED}))["total"] == -10.0
-    out["score_fullwidth_negative"] = item(score({"input": _TEXT_FULLWIDTH}))["total"] == -10.0
+    out["score_spelled_number_boundary"] = _is(spelled["components"].get("honesty_clean"), 4.0)
+    out["score_homoglyph_negative"] = _is(item(score({"input": _TEXT_HOMOGLYPH}))["total"], -10.0)
+    out["score_spaced_letters_negative"] = _is(item(score({"input": _TEXT_SPACED}))["total"], -10.0)
+    out["score_fullwidth_negative"] = _is(item(score({"input": _TEXT_FULLWIDTH}))["total"], -10.0)
 
     # --- batch legs: each item scored independently, identical to its
     # singleton twin; limits enforced honestly
@@ -709,9 +601,9 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
     out["score_list_independent_items"] = (
         mixed.status_code == 200
         and [it["index"] for it in mixed_items] == [0, 1, 2]
-        and mixed_items[0]["total"] == -10.0
-        and mixed_items[1]["total"] == 4.0
-        and mixed_items[2]["total"] == 10.0
+        and _is(mixed_items[0]["total"], -10.0)
+        and _is(mixed_items[1]["total"], 4.0)
+        and _is(mixed_items[2]["total"], 10.0)
     )
     singles = [item(score({"input": t})) for t in (_TEXT_SHARPE, _TEXT_MINIMAL, _TEXT_FULL)]
     out["score_list_matches_singletons"] = [
@@ -740,7 +632,7 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
 
     # --- score never resolves a model backend: identical bytes with
     # configured maps and with a resolver that must not be consulted
-    cfg_client, _ = _client(
+    cfg_client, _ = test_client(
         {"byok": lambda: _ExplodingBackend(), "local_fx1": lambda: _ExplodingBackend()}
     )
     cfg = cfg_client.post(_SCORE_PATH, json={"input": _TEXT_FULL})
@@ -757,7 +649,7 @@ def _score_probes() -> dict[str, Any]:  # NOSONAR(S3776) — scripted traffic fa
 
 def _gate_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     out: dict[str, Any] = {}
-    client, _ = _client({"byok": lambda: _ExplodingBackend()})
+    client, _ = test_client({"byok": lambda: _ExplodingBackend()})
 
     def check(text: str, **extra: Any) -> Any:
         return client.post(_GATE_PATH, json={"text": text, **extra})
@@ -823,7 +715,9 @@ def _gate_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     gate_adv = check(_TEXT_SHARPE).json()
     score_adv = client.post(_SCORE_PATH, json={"input": _TEXT_SHARPE}).json()["data"][0]
     out["gate_score_coherent_on_violation"] = (
-        gate_adv["ok"] is False and score_adv["total"] == -10.0 and len(score_adv["violations"]) > 0
+        gate_adv["ok"] is False
+        and _is(score_adv["total"], -10.0)
+        and len(score_adv["violations"]) > 0
     )
     gate_clean = check(_TEXT_FULL).json()
     score_clean = client.post(_SCORE_PATH, json={"input": _TEXT_FULL}).json()["data"][0]
@@ -912,7 +806,7 @@ def _diff_live_probes() -> dict[str, Any]:  # NOSONAR(S3776)
         ds["verdict"] == "improved"
         and ds["significance"]["n_fixed"] == _SIGNIFICANCE_N
         and ds["significance"]["n_regressed"] == 0
-        and ds["significance"]["p_value"] == 0.03125
+        and _is(ds["significance"]["p_value"], 0.03125)
         and ds["significance"]["significant_p05"] is True
     )
 
@@ -926,7 +820,7 @@ def _diff_live_probes() -> dict[str, Any]:  # NOSONAR(S3776)
         and di["comparable"] is True
     )
     out["diff_identical_sig_p1"] = (
-        di["significance"]["p_value"] == 1.0 and di["significance"]["significant_p05"] is False
+        _is(di["significance"]["p_value"], 1.0) and di["significance"]["significant_p05"] is False
     )
     self_d = _diff(client_i, ibase, ibase).json()
     out["diff_self_all_empty"] = (
@@ -1001,7 +895,7 @@ def _diff_notcomparable_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     # --- cross-seed: same suite, different bank draws → honestly
     # incomparable; the diff is served but claims nothing
     queue = _QueueResolver([_TooluseBackend({}, seed=0), _TooluseBackend({}, seed=1)])
-    client, _ = _client({"byok": queue.factory("byok")}, max_inflight=2)
+    client, _ = test_client({"byok": queue.factory("byok")}, max_inflight=2)
     s0 = _submit(client, "tooluse", 0)
     s1 = _submit(client, "tooluse", 1)
     _wait(client, s0)
@@ -1027,7 +921,7 @@ def _diff_notcomparable_probes() -> dict[str, Any]:  # NOSONAR(S3776)
 
     rbank = build_retrieval_bank(seed=0)
     queue2 = _QueueResolver([_TooluseBackend({}), _OracleBackend(make_golden_model(rbank), {})])
-    client2, _ = _client({"byok": queue2.factory("byok")}, max_inflight=2)
+    client2, _ = test_client({"byok": queue2.factory("byok")}, max_inflight=2)
     tu = _submit(client2, "tooluse", 0)
     rt = _submit(client2, "retrieval", 0)
     _wait(client2, tu)
@@ -1039,7 +933,7 @@ def _diff_notcomparable_probes() -> dict[str, Any]:  # NOSONAR(S3776)
 
     # --- stamped-bank truth table (no live suite emits eval_bank_sha256 —
     # store injection reaches the stamped branches honestly)
-    client3, _ = _client({"byok": lambda: _ExplodingBackend()})
+    client3, _ = test_client({"byok": lambda: _ExplodingBackend()})
     store = _eval_store(client3)
     stamp_a = {"eval_bank_sha256": "aa" * 32, "results": [{"task": "t1", "passed": True}]}
     stamp_b = {"eval_bank_sha256": "bb" * 32, "results": [{"task": "t1", "passed": False}]}
@@ -1076,7 +970,7 @@ def _diff_injected_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     deltas, tasks_only lists, gate closed, verdict precedence, exact
     sign-test values, and diffable non-succeeded terminals."""
     out: dict[str, Any] = {}
-    client, _ = _client({"byok": lambda: _ExplodingBackend()})
+    client, _ = test_client({"byok": lambda: _ExplodingBackend()})
     store = _eval_store(client)
 
     def report(
@@ -1212,12 +1106,12 @@ def _diff_injected_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     store.put(_mk_record("inj-n5b", report=report(five_pass)), None, None)
     sig5 = _diff(client, "inj-n5a", "inj-n5b").json()["significance"]
     out["inj_sig_n5_insufficient"] = (
-        sig5["n_fixed"] == 5 and sig5["p_value"] == 0.0625 and sig5["significant_p05"] is False
+        sig5["n_fixed"] == 5 and _is(sig5["p_value"], 0.0625) and sig5["significant_p05"] is False
     )
     store.put(_mk_record("inj-n1a", report=report([{"task": "x", "passed": False}])), None, None)
     store.put(_mk_record("inj-n1b", report=report([{"task": "x", "passed": True}])), None, None)
     sig1 = _diff(client, "inj-n1a", "inj-n1b").json()["significance"]
-    out["inj_sig_n1_p1"] = sig1["p_value"] == 1.0
+    out["inj_sig_n1_p1"] = _is(sig1["p_value"], 1.0)
 
     # --- terminal non-succeeded records with reports stay diffable:
     # the gate is terminal+report, not "succeeded"
@@ -1277,7 +1171,7 @@ def _diff_state_probes() -> dict[str, Any]:  # NOSONAR(S3776)
             pass
 
     queue = _QueueResolver([_TooluseBackend({}), _HoldingBackend(), _FailBackend()])
-    client, _ = _client({"byok": queue.factory("byok")}, max_inflight=1)
+    client, _ = test_client({"byok": queue.factory("byok")}, max_inflight=1)
 
     # --- unknown ids: base resolved first, both legs enveloped
     miss_b = _diff(client, "no-such-base", "no-such-cand")
@@ -1348,11 +1242,11 @@ def _drain_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     out["drain_latched"] = d.status_code == 200 and d.json().get("draining") is True
 
     sc = client.post(_SCORE_PATH, json={"input": _TEXT_MINIMAL}, headers=root_h)
-    out["drain_score_open"] = sc.status_code == 200 and sc.json()["data"][0]["total"] == 4.0
+    out["drain_score_open"] = sc.status_code == 200 and _is(sc.json()["data"][0]["total"], 4.0)
     gt = client.post(_GATE_PATH, json={"text": _TEXT_MINIMAL}, headers=root_h)
     out["drain_gate_open"] = gt.status_code == 200 and gt.json()["ok"] is True
     adv = client.post(_SCORE_PATH, json={"input": _TEXT_SHARPE}, headers=root_h)
-    out["drain_score_violation_still_scored"] = adv.json()["data"][0]["total"] == -10.0
+    out["drain_score_violation_still_scored"] = _is(adv.json()["data"][0]["total"], -10.0)
     dd = _diff(client, base_id, cand_id, root_h)
     out["drain_diff_open"] = dd.status_code == 200 and dd.json()["verdict"] == "unchanged"
     rec = client.get(f"{_EVALS_PATH}/{base_id}", headers=root_h)
@@ -1424,7 +1318,7 @@ def _client_leg_probes() -> dict[str, Any]:  # NOSONAR(S3776)
 
     from fx1.serve.client import HarnessClient
 
-    hc = HarnessClient("http://testserver", api_key=_ROOT, transport=_tc_transport(client))
+    hc = HarnessClient("http://testserver", api_key=_ROOT, transport=tc_transport(client))
 
     # check_text twins the gate leg
     g_clean = hc.check_text(_TEXT_MINIMAL)
@@ -1473,7 +1367,7 @@ def _client_leg_probes() -> dict[str, Any]:  # NOSONAR(S3776)
     out["client_score_422_valueerror"] = (
         _raises(lambda: hc.score(["ok"] * (_MAX_SCORE_ITEMS + 1))) == "ValueError"
     )
-    noauth = HarnessClient("http://testserver", api_key=None, transport=_tc_transport(client))
+    noauth = HarnessClient("http://testserver", api_key=None, transport=tc_transport(client))
     out["client_score_401_autherror"] = _raises(lambda: noauth.score("ok")) == "HarnessAuthError"
 
     # SDK in-process twins agree
@@ -1508,7 +1402,7 @@ def _sdk(backend_map: dict[str, Any], **kw: Any) -> Any:
 
 def _envelope_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
-    client, _ = _client({"byok": lambda: _ExplodingBackend()}, api_key=_ROOT)
+    client, _ = test_client({"byok": lambda: _ExplodingBackend()}, api_key=_ROOT)
     root_h = {_H_KEY: _ROOT}
 
     def is_json(resp: Any) -> bool:
@@ -1544,9 +1438,9 @@ def _envelope_probes() -> dict[str, Any]:
 
 def _restart_probes() -> dict[str, Any]:
     out: dict[str, Any] = {}
-    state = _temporary_directory() / "state"
+    state = scoped_tmpdir(prefix="evalgates_audit_") / "state"
     queue = _QueueResolver([_TooluseBackend({"tooluse-tearsheet": "garbage"}), _TooluseBackend({})])
-    client1, _ = _client({"byok": queue.factory("byok")}, state_dir=state, max_inflight=2)
+    client1, _ = test_client({"byok": queue.factory("byok")}, state_dir=state, max_inflight=2)
     base_id = _submit(client1, "tooluse", 0)
     cand_id = _submit(client1, "tooluse", 0)
     _wait(client1, base_id)
@@ -1555,7 +1449,7 @@ def _restart_probes() -> dict[str, Any]:
 
     # an independently constructed app on the same --state-dir replays
     # the records; the diff must reach the identical verdict
-    client2, _ = _client({"byok": lambda: _ExplodingBackend()}, state_dir=state)
+    client2, _ = test_client({"byok": lambda: _ExplodingBackend()}, state_dir=state)
     r2 = _record(client2, base_id)
     out["restart_records_replayed"] = r2.status_code == 200 and r2.json()["status"] == "succeeded"
     d2 = _diff(client2, base_id, cand_id)
@@ -1577,7 +1471,7 @@ def _restart_probes() -> dict[str, Any]:
 
 def evalgates_audit() -> dict[str, Any]:
     """Run the eval-gates battery; returns literal bools."""
-    with _audit_context():
+    with audit_scope():
         out: dict[str, Any] = {}
         out.update(_score_probes())
         out.update(_gate_probes())
