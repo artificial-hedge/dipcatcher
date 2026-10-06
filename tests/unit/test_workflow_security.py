@@ -1,0 +1,32 @@
+"""Regression guards for fail-closed, least-privilege GitHub workflows."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+WORKFLOWS = REPO_ROOT / ".github" / "workflows"
+
+
+def _workflow(name: str) -> str:
+    return (WORKFLOWS / name).read_text(encoding="utf-8")
+
+
+def test_ci_does_not_grant_workflow_wide_actions_write() -> None:
+    """Caches and artifacts must not widen the GITHUB_TOKEN permission set."""
+
+    workflow = _workflow("ci.yml")
+
+    top_level = workflow.split("\njobs:\n", maxsplit=1)[0]
+    assert "actions: write" not in top_level
+
+
+def test_dependency_review_fails_closed() -> None:
+    """Unavailable dependency metadata must not produce a green review."""
+
+    workflow = _workflow("dependency-review.yml")
+
+    assert "actions/dependency-review-action@" in workflow
+    assert "continue-on-error:" not in workflow
+    assert "steps.review.outcome" not in workflow
+    assert 'if [ "$code" = "404" ]' not in workflow
