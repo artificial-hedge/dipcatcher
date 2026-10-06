@@ -14,13 +14,15 @@ Receivers authenticate a delivery with :func:`verify_webhook` over the
 
 from __future__ import annotations
 
-import contextlib
 import hashlib
 import hmac
+import http.client
+import ipaddress
 import math
-import urllib.error
-import urllib.request
-from typing import Any
+import os
+import socket
+import ssl
+import urllib.parse
 
 __all__ = [
     "WEBHOOK_BACKOFF_S",
@@ -39,30 +41,126 @@ WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_BACKOFF_S = 0.5
 
 _DEFAULT_TOLERANCE_S = 300.0  # 5 min — rejects replayed stale deliveries
+_ALLOW_PRIVATE_NETWORKS_ENV = "FX1_WEBHOOK_ALLOW_PRIVATE_NETWORKS"
 
 
-class _RefuseRedirects(urllib.request.HTTPRedirectHandler):
-    """Never replay a webhook request to a server-selected destination.
+def _private_networks_allowed() -> bool:
+    """Return whether this process explicitly permits private callbacks."""
+    return os.environ.get(_ALLOW_PRIVATE_NETWORKS_ENV, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
 
-    ``urllib`` follows 301/302/303 redirects by changing the signed POST
-    into a GET while retaining caller-supplied signature headers.  Besides
-    leaking those authentication headers across origins, that behavior can
-    report a delivery as successful even though the callback body never
-    reached the declared endpoint.  Every redirect is therefore a delivery
-    failure; callers may register the final URL explicitly instead.
-    """
 
-    def redirect_request(
-        self,
-        req: urllib.request.Request,
-        fp: Any,
-        code: int,
-        msg: str,
-        headers: Any,
-        newurl: str,
-    ) -> None:
-        del req, fp, code, msg, headers, newurl
-        return None
+def _is_public_unicast(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """Classify an address conservatively for an outbound callback."""
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        address = address.ipv4_mapped
+    return not (
+        address.is_private
+        or address.is_loopback
+        or address.is_link_local
+        or address.is_multicast
+        or address.is_reserved
+        or address.is_unspecified
+    )
+
+
+def _validate_literal_host(host: str) -> None:
+    """Reject a special-use IP literal without performing DNS at submit time."""
+    candidate = host.split("%", 1)[0]
+    try:
+        address = ipaddress.ip_address(candidate)
+    except ValueError:
+        return
+    if not _private_networks_allowed() and not _is_public_unicast(address):
+        raise ValueError("callback_url must not target a private or special-use address")
+
+
+def _resolved_addresses(host: str, port: int) -> tuple[str, ...]:
+    """Resolve a host and return only validated, distinct numeric addresses."""
+    addresses: list[str] = []
+    for family, socktype, _proto, _canonname, sockaddr in socket.getaddrinfo(
+        host,
+        port,
+        type=socket.SOCK_STREAM,
+    ):
+        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
+            continue
+        raw = str(sockaddr[0])
+        candidate = raw.split("%", 1)[0]
+        address = ipaddress.ip_address(candidate)
+        if not _private_networks_allowed() and not _is_public_unicast(address):
+            raise ValueError(
+                f"callback_url resolved to a private or special-use address: {address}"
+            )
+        normalized = str(address)
+        if normalized not in addresses:
+            addresses.append(normalized)
+    if not addresses:
+        raise OSError(f"callback_url host {host!r} did not resolve to an IP address")
+    return tuple(addresses)
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    """HTTP connection whose TCP destination is the validated numeric address."""
+
+    def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+        super().__init__(host, port=port, timeout=timeout)
+        self._address = address
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection(
+            (self._address, self.port),
+            self.timeout,
+            self.source_address,
+        )
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPS connection pinned to an IP while authenticating the URL host."""
+
+    def __init__(self, host: str, port: int, address: str, timeout: float) -> None:
+        super().__init__(
+            host,
+            port=port,
+            timeout=timeout,
+            context=ssl.create_default_context(),
+        )
+        self._address = address
+
+    def connect(self) -> None:
+        raw_sock = socket.create_connection(
+            (self._address, self.port),
+            self.timeout,
+            self.source_address,
+        )
+        self.sock = self._context.wrap_socket(raw_sock, server_hostname=self.host)
+
+
+def _post_once(
+    parsed: urllib.parse.ParseResult,
+    address: str,
+    body: bytes,
+    headers: dict[str, str],
+    timeout_s: float,
+) -> int:
+    """POST once to a previously validated address; never follow redirects."""
+    host = parsed.hostname
+    if host is None:  # defensive; check_callback_url rejects this first
+        raise ValueError("callback_url has no host")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    connection_cls = _PinnedHTTPSConnection if parsed.scheme == "https" else _PinnedHTTPConnection
+    connection = connection_cls(host, port, address, timeout_s)
+    target = urllib.parse.urlunparse(("", "", parsed.path or "/", parsed.params, parsed.query, ""))
+    try:
+        connection.request("POST", target, body=body, headers=headers)
+        response = connection.getresponse()
+        response.read()
+        return response.status
+    finally:
+        connection.close()
 
 
 def _signed_payload(timestamp: str, body: bytes) -> bytes:
@@ -124,12 +222,11 @@ def check_callback_url(url: str | None) -> str | None:
     ``ValueError`` on anything else."""
     if url is None:
         return url
-    import urllib.parse  # noqa: PLC0415 — local import keeps the module leaf
-
     parsed = urllib.parse.urlparse(url)
     if (
         parsed.scheme not in ("http", "https")
         or not parsed.netloc
+        or parsed.hostname is None
         or parsed.username is not None
         or parsed.password is not None
     ):
@@ -137,6 +234,11 @@ def check_callback_url(url: str | None) -> str | None:
             f"callback_url must be an http(s) URL with a host and no "
             f"userinfo credentials, got {url!r}"
         )
+    try:
+        _ = parsed.port
+    except ValueError as exc:
+        raise ValueError(f"callback_url has an invalid port, got {url!r}") from exc
+    _validate_literal_host(parsed.hostname)
     return url
 
 
@@ -159,7 +261,16 @@ def deliver_signed(
     import time  # noqa: PLC0415 — local import keeps the module leaf
 
     error: str | None = None
-    opener = urllib.request.build_opener(_RefuseRedirects)
+    try:
+        check_callback_url(url)
+        parsed = urllib.parse.urlparse(url)
+        host = parsed.hostname
+        if host is None:
+            raise ValueError("callback_url has no host")
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    except Exception as exc:  # noqa: BLE001 — invalid targets are delivery data
+        return False, f"{type(exc).__name__}: {exc}", 0
+
     for attempt in range(max_attempts):
         if attempt:
             time.sleep(backoff_s * (1 << (attempt - 1)))
@@ -169,27 +280,23 @@ def deliver_signed(
                 ts = str(int(time.time()))
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
                 headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(secret, ts, body)
-            req = urllib.request.Request(
-                url,
-                data=body,
-                headers=headers,
-                method="POST",
-            )
-            with opener.open(req, timeout=timeout_s) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
-                if resp.status < 400:
+            addresses = _resolved_addresses(host, port)
+            last_exception: Exception | None = None
+            for address in addresses:
+                try:
+                    status = _post_once(parsed, address, body, headers, timeout_s)
+                except Exception as exc:  # noqa: BLE001 — try another validated address
+                    last_exception = exc
+                    continue
+                if status < 300:
                     return True, None, attempt + 1
-                error = f"callback endpoint returned {resp.status}"
-                if 400 <= resp.status < 500:
+                error = f"callback endpoint returned {status}"
+                if 400 <= status < 500:
                     return False, error, attempt + 1
-        except urllib.error.HTTPError as exc:
-            # urlopen raises on any >=400 — the status is still the verdict:
-            # 4xx is a definitive rejection (never retried), 5xx is transient.
-            status = exc.code
-            with contextlib.suppress(Exception):
-                exc.close()
-            error = f"callback endpoint returned {status}"
-            if 400 <= status < 500:
-                return False, error, attempt + 1
+                break
+            else:
+                if last_exception is not None:
+                    raise last_exception
         except Exception as exc:  # noqa: BLE001 — delivery faults are data, never raised
             error = f"{type(exc).__name__}: {exc}"
     return False, error, max_attempts
