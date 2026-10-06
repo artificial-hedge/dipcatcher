@@ -56,6 +56,14 @@ from quant_fund.utils.reproducibility import git_revision
 
 __all__ = ["opsframe_audit", "opsframe_audit_bench"]
 
+_PROBE_ID = "features.opsframe_probe"
+_DEEP = "sub/deep.csv"
+_DEEP_NAME = "deep.csv"
+_LINK = "link.csv"
+_DATA = "data.csv"
+_WIN_PATH = "C:\\ws\\a.csv"
+_SR = "features.simple_returns"
+
 
 class _In(InputModel):
     """Local input schema for descriptor probes."""
@@ -80,7 +88,7 @@ def _bad_handler(request: _In, context: OperationContext) -> Any:
 
 def _op(**overrides: Any) -> Operation[_In, _Out]:
     kwargs: dict[str, Any] = {
-        "id": "features.opsframe_probe",
+        "id": _PROBE_ID,
         "kind": "feature",
         "description": "probe fixture",
         "input_model": _In,
@@ -122,7 +130,7 @@ def _refuses(fn: Any, *args: Any, **kwargs: Any) -> bool:
 def _probe_descriptors() -> dict[str, bool]:
     out: dict[str, bool] = {}
     op = _op()
-    out["op_id_valid"] = op.id == "features.opsframe_probe"
+    out["op_id_valid"] = op.id == _PROBE_ID
     out["op_version_default"] = op.version == "1.0.0"
     out["op_version_pinned"] = _op(version="2.3.4").version == "2.3.4"
     out["op_id_missing_ns"] = _refuses(_op, id="nons.x")
@@ -141,7 +149,7 @@ def _probe_descriptors() -> dict[str, bool]:
     out["op_output_foreign_module"] = _refuses(_op, output_model=read_csv.Output)
     d = op.describe()
     out["describe_envelope"] = (
-        d["id"] == "features.opsframe_probe"
+        d["id"] == _PROBE_ID
         and d["kind"] == "feature"
         and d["module"] == "fx1.operations.opsframe_audit"
         and d["implementation"] == "independent"
@@ -156,10 +164,10 @@ def _probe_invoke(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     op = _op()
     r = op.invoke({"x": 2, "y": 3}, ws.ctx)
-    out["invoke_result"] = r["result"] == {"value": 5.0}
+    out["invoke_result"] = math.isclose(r["result"]["value"], 5.0, rel_tol=0.0, abs_tol=1e-15)
     out["invoke_envelope"] = (
         r["schema"] == "fx1.operation-result/v1"
-        and r["operation_id"] == "features.opsframe_probe"
+        and r["operation_id"] == _PROBE_ID
         and r["kind"] == "feature"
         and r["research_only"] is True
         and r["live_pnl_claim"] is False
@@ -219,31 +227,29 @@ def _probe_canonical_json() -> dict[str, bool]:
 def _probe_resolve_file(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     ctx = ws.ctx
-    ws.write("sub/deep.csv", "a,b\n1,2\n")
+    ws.write(_DEEP, "a,b\n1,2\n")
     ws.write("UPPER.CSV", "a\n1\n")
-    ok = ctx.resolve_file("sub/deep.csv", suffixes=(".csv",))
-    out["rf_nested_ok"] = ok.is_file() and ok.name == "deep.csv"
+    ok = ctx.resolve_file(_DEEP, suffixes=(".csv",))
+    out["rf_nested_ok"] = ok.is_file() and ok.name == _DEEP_NAME
     out["rf_case_insensitive_suffix"] = ctx.resolve_file("UPPER.CSV", suffixes=(".csv",)).is_file()
     out["rf_dotdot"] = _refuses(ctx.resolve_file, "../x.csv", suffixes=(".csv",))
-    out["rf_absolute"] = _refuses(
-        ctx.resolve_file, str(ws.root / "sub" / "deep.csv"), suffixes=(".csv",)
-    )
+    out["rf_absolute"] = _refuses(ctx.resolve_file, str(ws.root / _DEEP), suffixes=(".csv",))
     out["rf_empty"] = _refuses(ctx.resolve_file, "", suffixes=(".csv",))
     out["rf_blank"] = _refuses(ctx.resolve_file, "   ", suffixes=(".csv",))
-    out["rf_wrong_suffix"] = _refuses(ctx.resolve_file, "sub/deep.csv", suffixes=(".txt",))
+    out["rf_wrong_suffix"] = _refuses(ctx.resolve_file, _DEEP, suffixes=(".txt",))
     out["rf_missing"] = _refuses(ctx.resolve_file, "sub/absent.csv", suffixes=(".csv",))
     out["rf_directory"] = _refuses(ctx.resolve_file, "sub", suffixes=("",))
     # internal symlink resolves to an inside path: resolve_file (spelling
     # only) accepts it, while the open_binary descriptor walk refuses.
-    link = ws.root / "link.csv"
+    link = ws.root / _LINK
     with contextlib.suppress(OSError):
-        link.symlink_to(ws.root / "sub" / "deep.csv")
+        link.symlink_to(ws.root / _DEEP)
     if link.is_symlink():
-        resolved = ctx.resolve_file("link.csv", suffixes=(".csv",))
+        resolved = ctx.resolve_file(_LINK, suffixes=(".csv",))
         out["rf_internal_symlink_resolves"] = (
-            resolved.name == "deep.csv" and resolved.is_relative_to(ws.root)
+            resolved.name == _DEEP_NAME and resolved.is_relative_to(ws.root)
         )
-        out["ob_symlink_refused"] = _refuses(ctx.read_bytes, "link.csv", suffixes=(".csv",))
+        out["ob_symlink_refused"] = _refuses(ctx.read_bytes, _LINK, suffixes=(".csv",))
     else:
         out["rf_internal_symlink_resolves"] = True
         out["ob_symlink_refused"] = True
@@ -265,8 +271,8 @@ def _probe_open_binary(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     ctx = ws.ctx
     payload = b"cell-a,cell-b\n1,2\n"
-    ws.write("data.csv", payload)
-    with ctx.open_binary("data.csv", suffixes=(".csv",)) as reader:
+    ws.write(_DATA, payload)
+    with ctx.open_binary(_DATA, suffixes=(".csv",)) as reader:
         body = reader.read()
         out["ob_read_bytes"] = body == payload
         out["ob_bytes_read"] = reader.bytes_read == len(payload)
@@ -276,19 +282,15 @@ def _probe_open_binary(ws: _Ws) -> dict[str, bool]:
     out["ob_read_after_close"] = _refuses(reader.read)
     out["ob_missing"] = _refuses(ctx.read_bytes, "absent.csv", suffixes=(".csv",))
     out["ob_dir_refused"] = _refuses(ctx.read_bytes, "sub", suffixes=("",))
-    out["ob_max_bytes_zero"] = _refuses(ctx.read_bytes, "data.csv", suffixes=(".csv",), max_bytes=0)
-    out["ob_max_bytes_bool"] = _refuses(
-        ctx.read_bytes, "data.csv", suffixes=(".csv",), max_bytes=True
-    )
-    out["ob_max_bytes_str"] = _refuses(
-        ctx.read_bytes, "data.csv", suffixes=(".csv",), max_bytes="9"
-    )
-    out["ob_max_bytes_neg"] = _refuses(ctx.read_bytes, "data.csv", suffixes=(".csv",), max_bytes=-1)
+    out["ob_max_bytes_zero"] = _refuses(ctx.read_bytes, _DATA, suffixes=(".csv",), max_bytes=0)
+    out["ob_max_bytes_bool"] = _refuses(ctx.read_bytes, _DATA, suffixes=(".csv",), max_bytes=True)
+    out["ob_max_bytes_str"] = _refuses(ctx.read_bytes, _DATA, suffixes=(".csv",), max_bytes="9")
+    out["ob_max_bytes_neg"] = _refuses(ctx.read_bytes, _DATA, suffixes=(".csv",), max_bytes=-1)
     exact = ctx.read_bytes("data.csv", suffixes=(".csv",), max_bytes=len(payload))
     out["ob_max_bytes_exact_ok"] = exact == payload
     out["ob_max_bytes_over"] = _refuses(
         ctx.read_bytes,
-        "data.csv",
+        _DATA,
         suffixes=(".csv",),
         max_bytes=len(payload) - 1,
     )
@@ -330,9 +332,9 @@ def _probe_workspace_reader(ws: _Ws) -> dict[str, bool]:
 
 def _probe_windows_paths() -> dict[str, bool]:
     out: dict[str, bool] = {}
-    out["wp_extended"] = str(_windows_path("\\\\?\\C:\\ws\\a.csv")) == "C:\\ws\\a.csv"
+    out["wp_extended"] = str(_windows_path("\\\\?\\" + _WIN_PATH)) == _WIN_PATH
     out["wp_unc"] = str(_windows_path("\\\\?\\UNC\\srv\\share\\a.csv")) == "\\\\srv\\share\\a.csv"
-    out["wp_plain"] = str(_windows_path("C:\\ws\\a.csv")) == "C:\\ws\\a.csv"
+    out["wp_plain"] = str(_windows_path(_WIN_PATH)) == _WIN_PATH
     return out
 
 
@@ -345,9 +347,7 @@ def _probe_registry() -> dict[str, bool]:
         registry.get_operation(oid).handler.__module__ == f"fx1.operations.{name}"
         for oid, name in impls.items()
     )
-    out["reg_cached_identity"] = registry.get_operation(
-        "features.simple_returns"
-    ) is registry.get_operation("features.simple_returns")
+    out["reg_cached_identity"] = registry.get_operation(_SR) is registry.get_operation(_SR)
     out["reg_unregistered"] = _refuses(registry.get_operation, "skills.bogus_probe")
     out["reg_wrong_ns"] = _refuses(registry.get_operation, "features.read_csv")
     # completeness: every non-battery ops module file must be registered
@@ -361,7 +361,7 @@ def _probe_registry() -> dict[str, bool]:
     return out
 
 
-def _probe_list(ws: _Ws) -> dict[str, bool]:
+def _probe_list() -> dict[str, bool]:
     out: dict[str, bool] = {}
     page1 = registry.list_operations()
     out["list_schema"] = page1["schema"] == "fx1.operation-list/v1"
@@ -405,7 +405,7 @@ def _probe_list(ws: _Ws) -> dict[str, bool]:
 def _probe_execute_tools(ws: _Ws) -> dict[str, bool]:
     out: dict[str, bool] = {}
     r = registry.execute_operation(
-        "features.simple_returns",
+        _SR,
         {"prices": [100.0, 101.0, 103.02]},
         workspace_root=ws.root,
     )
@@ -424,13 +424,13 @@ def _probe_execute_tools(ws: _Ws) -> dict[str, bool]:
     )
     out["exec_bad_args"] = _refuses(
         registry.execute_operation,
-        "features.simple_returns",
+        _SR,
         {"prices": [-1.0]},
         workspace_root=ws.root,
     )
     out["exec_strict_lag_bool"] = _refuses(
         registry.execute_operation,
-        "features.simple_returns",
+        _SR,
         {"prices": [1.0, 2.0], "lag": True},
         workspace_root=ws.root,
     )
@@ -446,7 +446,7 @@ def _probe_execute_tools(ws: _Ws) -> dict[str, bool]:
     )
     via = registry.invoke_operation_tool(
         "describe_operation",
-        {"operation_id": "features.simple_returns"},
+        {"operation_id": _SR},
     )
     out["tool_describe"] = (
         via["implementation"] == "independent" and via["market_evidence"] is False
@@ -456,7 +456,7 @@ def _probe_execute_tools(ws: _Ws) -> dict[str, bool]:
     via_exec = registry.invoke_operation_tool(
         "execute_operation",
         {
-            "operation_id": "features.simple_returns",
+            "operation_id": _SR,
             "arguments": {"prices": [2.0, 4.0]},
         },
         workspace_root=ws.root,
@@ -489,7 +489,7 @@ def opsframe_audit() -> dict[str, bool]:
         out.update(_probe_workspace_reader(ws))
         out.update(_probe_windows_paths())
         out.update(_probe_registry())
-        out.update(_probe_list(ws))
+        out.update(_probe_list())
         out.update(_probe_execute_tools(ws))
     finally:
         ws._tmp.cleanup()  # noqa: SLF001
