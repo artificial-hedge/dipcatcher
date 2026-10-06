@@ -39,9 +39,11 @@ _LANES: tuple[tuple[str, str], ...] = (
 
 def grammar_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     """Compose the grammar-campaign receipts into the final map."""
-    # Lazy: receipt verification lives in the research layer above
-    # microstructure — the sanctioned way to break that upward edge.
-    from quant_fund.research.receipt_v2 import verify_receipt_file  # noqa: PLC0415
+    # Lazy: the verifier lives in the research layer above microstructure;
+    # importing under a private alias is the sanctioned way to break that edge.
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        verify_receipt_file as _verify_receipt_file,
+    )
 
     receipts_dir = Path(receipts_dir)
     lanes: list[dict[str, Any]] = []
@@ -54,7 +56,7 @@ def grammar_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
             entry["claims"] = None
             all_sealed = False
         else:
-            entry["sealed"] = bool(verify_receipt_file(path)["valid"])
+            entry["sealed"] = bool(_verify_receipt_file(path)["valid"])
             all_sealed = all_sealed and entry["sealed"]
             entry["claims"] = json.loads(path.read_text()).get("claims", {})
         lanes.append(entry)

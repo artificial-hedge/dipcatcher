@@ -34,9 +34,9 @@ _LANES: tuple[tuple[str, str], ...] = (
 
 def zone_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
     """Compose the zone-lane receipts into the standing-spread verdict."""
-    # Lazy: receipt verification lives in the research layer above
-    # microstructure — the sanctioned way to break that upward edge.
-    from quant_fund.research.receipt_v2 import verify_receipt_file  # noqa: PLC0415
+    # Lazy: the receipt verifier is a research-layer module; importing it
+    # inside the call is the sanctioned way to break the upward edge.
+    import quant_fund.research.receipt_v2 as _receipt_v2  # noqa: PLC0415
 
     receipts_dir = Path(receipts_dir)
     lanes: list[dict[str, Any]] = []
@@ -49,7 +49,7 @@ def zone_map(receipts_dir: Path | str = "receipts") -> dict[str, Any]:
             entry["claims"] = None
             all_sealed = False
         else:
-            entry["sealed"] = bool(verify_receipt_file(path)["valid"])
+            entry["sealed"] = bool(_receipt_v2.verify_receipt_file(path)["valid"])
             all_sealed = all_sealed and entry["sealed"]
             entry["claims"] = json.loads(path.read_text()).get("claims", {})
         lanes.append(entry)
