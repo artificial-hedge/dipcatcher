@@ -659,7 +659,7 @@ class VectorStoreStore:
                 live.append({"vs_batch": batch.model_dump(mode="json")})
         self._journal.compact(live)
 
-    def _store(self, vs_id: str) -> VSMeta:
+    def _store(self, vs_id: str, *, touch_lru: bool = True) -> VSMeta:
         if not vs_id or len(vs_id) > VS_MAX_STORES_ID:
             raise VectorStoreError(
                 404, f"vector store {vs_id!r} not found", "vector_store_not_found"
@@ -669,7 +669,8 @@ class VectorStoreStore:
             raise VectorStoreError(
                 404, f"vector store {vs_id!r} not found", "vector_store_not_found"
             )
-        self._stores.move_to_end(vs_id)
+        if touch_lru:
+            self._stores.move_to_end(vs_id)
         return meta
 
     def _expired(self, meta: VSMeta) -> bool:
@@ -730,19 +731,17 @@ class VectorStoreStore:
             expires_at=created + policy["days"] * 86400 if policy else None,
         )
         with self._condition:
-            # Select only unpinned LRU victims. A concurrent compound
-            # operation may be reading/indexing files outside the state lock;
-            # evicting its store would make that successful request fail 404
-            # halfway through.
-            evicted: list[str] = []
-            while len(self._stores) >= self._max:
-                old_id = next(iter(self._stores))
-                if self._inflight.get(old_id, 0):
+            # Select only unpinned LRU victims, but do not publish either the
+            # eviction or the replacement until their single journal record
+            # is durable. A failed append must leave the live state exactly
+            # as it was before this request.
+            while True:
+                need = max(0, len(self._stores) - self._max + 1)
+                evicted = list(self._stores)[:need]
+                if any(self._inflight.get(old_id, 0) for old_id in evicted):
                     self._condition.wait()
                     continue
-                self._stores.pop(old_id)
-                evicted.append(old_id)
-            self._stores[meta.vs_id] = meta
+                break
             if self._journal is not None:
                 payload: dict[str, Any] = {
                     "vs": meta.model_dump(mode="json", exclude={"files", "usage_bytes"})
@@ -752,6 +751,7 @@ class VectorStoreStore:
                 self._journal.append(payload)
             for vid in evicted:
                 self._drop(vid)
+            self._stores[meta.vs_id] = meta
             if file_ids:
                 self._pin_locked(meta.vs_id)
         try:
@@ -778,44 +778,47 @@ class VectorStoreStore:
         validate_metadata(metadata)
         policy = validate_expires_after(expires_after)
         with self._lock:
-            meta = self._store(vs_id)
-            if name is not None:
-                meta.name = name
-            if metadata is not None:
-                meta.metadata = dict(metadata)
+            meta = self._store(vs_id, touch_lru=False)
+            next_name = name if name is not None else meta.name
+            next_metadata = dict(metadata) if metadata is not None else dict(meta.metadata)
+            next_policy = dict(policy) if policy is not None else meta.expires_after
+            next_expires_at = meta.expires_at
             if policy is not None:
                 # re-anchor from recorded last activity — an expired
                 # store revives honestly here; status recomputes
-                meta.expires_after = policy
-                meta.expires_at = meta.last_active_at + policy["days"] * 86400
+                next_expires_at = meta.last_active_at + policy["days"] * 86400
             if self._journal is not None:
                 self._journal.append(
                     {
                         "vs_update": {
                             "vs_id": vs_id,
-                            "name": meta.name,
-                            "metadata": dict(meta.metadata),
-                            "expires_after": (
-                                dict(meta.expires_after) if meta.expires_after else None
-                            ),
-                            "expires_at": meta.expires_at,
+                            "name": next_name,
+                            "metadata": dict(next_metadata),
+                            "expires_after": dict(next_policy) if next_policy else None,
+                            "expires_at": next_expires_at,
                         }
                     }
                 )
+            self._stores.move_to_end(vs_id)
+            meta.name = next_name
+            meta.metadata = next_metadata
+            meta.expires_after = next_policy
+            meta.expires_at = next_expires_at
             return vs_object(meta)
 
     def delete(self, vs_id: str) -> dict[str, Any]:
         with self._condition:
-            self._store(vs_id)
+            self._store(vs_id, touch_lru=False)
             while self._inflight.get(vs_id, 0):
                 self._condition.wait()
-                self._store(vs_id)
-            self._drop(vs_id)
-            # Capacity can become available while an unrelated LRU store
-            # remains pinned. Wake creators without waiting for its reader.
-            self._condition.notify_all()
+                self._store(vs_id, touch_lru=False)
             if self._journal is not None:
                 self._journal.append({"vs_delete": {"vs_id": vs_id}})
+            self._drop(vs_id)
+            # Capacity can become available while an unrelated LRU store
+            # remains pinned. Notify only after the deletion is durable and
+            # published, so failed tombstones never release phantom capacity.
+            self._condition.notify_all()
             return {"id": vs_id, "object": "vector_store.deleted", "deleted": True}
 
     def list_stores(
