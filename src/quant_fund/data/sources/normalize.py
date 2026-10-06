@@ -14,6 +14,12 @@ from quant_fund.data.sources.base import SourceError, parse_time, pit_frame
 
 
 def _number(value: Any, field: str) -> float:
+    # float() accepts bytes/bytearray/memoryview whose bytes parse as ASCII
+    # digits, so a binary vendor payload can silently become a price instead of
+    # failing. Reject bytes-like input explicitly: this path is fail-closed by
+    # contract (chaos-tested in tests/unit/data/test_ingest_fault_injection.py).
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        raise SourceError(f"{field} is not numeric")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:

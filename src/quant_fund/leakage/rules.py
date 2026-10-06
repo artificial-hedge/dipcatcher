@@ -361,7 +361,11 @@ LH011_LAZY_WHITELIST: dict[str, frozenset[str]] = {
     # research.catalog.FORBIDDEN_RESEARCH_METRIC_KEYS (no copy); lazy-only so
     # no import-time edge into the SCC.
     "leakage": _LH011_LAYER0_LAZY | {"pit", "research"},
-    "reality": _LH011_LAYER0_LAZY,
+    # reality/cli lazily drives research.reality_sweep and
+    # research.reality_survivorship; those lazily import reality.cscv and
+    # reality.report back. Mutual lazy edges only — no import-time edge into the
+    # SCC, the same reasoning as the leakage entry above.
+    "reality": _LH011_LAYER0_LAZY | {"research"},
     "proofcore": frozenset(),
 }
 LH011_PACKAGES: frozenset[str] = frozenset({"pit", "proof", "leakage", "reality", "proofcore"})

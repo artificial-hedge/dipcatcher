@@ -13,8 +13,10 @@ from quant_fund.cli.main import app
 from quant_fund.metrics.scoring import pinball_loss
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.expert_mixture import (
+    EXPERT_MIXTURE_KIND,
     _loss_tensor,
     ewa_weights,
+    expert_mixture_consistency_errors,
     fixed_share_weights,
     run_expert_mixture_eval,
     uniform_weights,
@@ -181,3 +183,69 @@ def test_validation() -> None:
 def test_cli_requires_dev() -> None:
     result = CliRunner().invoke(app, ["expert-mixture"])
     assert result.exit_code != 0
+
+
+# --------------------------------------------------------------------------- #
+# Lane consistency contract — the deep check receipt_v2 dispatches for
+# kind=expert_mixture_eval. Regret identities are fully determined by the
+# sealed expert bounds, so a forged regret cannot survive re-derivation.
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture(scope="module")
+def sealed_body(tmp_path_factory) -> dict:
+    _, receipt = _run(n_eval=64)
+    path = write_expert_mixture_receipt(receipt, tmp_path_factory.mktemp("em"))
+    return json.loads(path.read_text())
+
+
+def test_consistency_clean_on_a_real_receipt(sealed_body) -> None:
+    assert expert_mixture_consistency_errors(sealed_body) == []
+
+
+def test_consistency_catches_forged_regret(sealed_body) -> None:
+    body = json.loads(json.dumps(sealed_body))
+    mixers = body["payload"]["shards"][0]["mixers"]
+    name = next(iter(mixers))
+    mixers[name]["regret_vs_best_expert"] = -0.5
+    errors = expert_mixture_consistency_errors(body)
+    assert any(e.startswith("regret_vs_best_expert_mismatch:") for e in errors), errors
+
+
+def test_consistency_catches_forged_excess(sealed_body) -> None:
+    body = json.loads(json.dumps(sealed_body))
+    mixers = body["payload"]["shards"][0]["mixers"]
+    name = next(iter(mixers))
+    mixers[name]["excess_over_worst_expert"] = 12.0
+    errors = expert_mixture_consistency_errors(body)
+    assert any(e.startswith("excess_over_worst_expert_mismatch:") for e in errors), errors
+
+
+def test_consistency_catches_forged_expert_bound(sealed_body) -> None:
+    body = json.loads(json.dumps(sealed_body))
+    body["payload"]["shards"][0]["best_expert_crps"] = 99.0
+    errors = expert_mixture_consistency_errors(body)
+    assert any("expert_bounds_inverted:" in e for e in errors), errors
+
+
+def test_consistency_catches_unknown_mixer(sealed_body) -> None:
+    body = json.loads(json.dumps(sealed_body))
+    body["payload"]["shards"][0]["mixers"]["not_a_mixer"] = {"crps": 0.1}
+    errors = expert_mixture_consistency_errors(body)
+    assert "unknown_mixer" in " ".join(errors), errors
+
+
+def test_consistency_is_quiet_on_a_foreign_body() -> None:
+    """A body from another lane has no shards to re-derive — say nothing."""
+    assert expert_mixture_consistency_errors({"payload": {}}) == []
+    assert expert_mixture_consistency_errors({}) == []
+
+
+def test_lane_is_registered_with_the_receipt_verifier() -> None:
+    """The kind must dispatch, or the deep check silently never runs."""
+    from quant_fund.research.receipt_v2 import _LANE_CONSISTENCY_OUTER_KIND
+
+    assert EXPERT_MIXTURE_KIND in _LANE_CONSISTENCY_OUTER_KIND
+    module, func, _label = _LANE_CONSISTENCY_OUTER_KIND[EXPERT_MIXTURE_KIND]
+    assert module == "quant_fund.research.expert_mixture"
+    assert func == "expert_mixture_consistency_errors"

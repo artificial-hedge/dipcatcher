@@ -177,3 +177,98 @@ def ledger_gate(
     typer.echo(f"verdict={report.verdict} n_trials={report.n_trials} sha256={report.report_sha256}")
     if report.verdict != "pass":
         raise typer.Exit(code=1)
+
+
+# --------------------------------------------------------------------------- #
+# Reality lanes (research.reality_sweep / research.reality_survivorship)
+#
+# Both were reachable only as zero-arg ``python -m`` mains, so their path
+# overrides were unusable from the shell. These commands expose the same
+# functions with their overrides as options. Both fetch from Yahoo and fail
+# closed rather than substituting synthetic data — an unfetchable panel is a
+# distinct exit, never a silent pass.
+# --------------------------------------------------------------------------- #
+
+#: The lane refused to fetch and will not substitute synthetic data. Distinct
+#: from ledger-gate's fail-closed 2 and from the empty-ledger skip 3.
+FETCH_UNAVAILABLE_EXIT = 4
+
+
+@reality_app.command("sweep")
+def reality_sweep_cmd(
+    spec: Path | None = typer.Option(
+        None, exists=True, dir_okay=False, help="Preregistration JSON (default: research/reality)."
+    ),
+    db: Path | None = typer.Option(None, help="Provenance DB path."),
+    ledger: Path | None = typer.Option(None, help="Trial ledger JSONL export path."),
+    csv: Path | None = typer.Option(None, help="Trial ledger CSV export path."),
+    receipt: Path | None = typer.Option(None, help="Receipt output path."),
+    returns: Path | None = typer.Option(None, help="Validation returns cache path."),
+    audit_dir: Path | None = typer.Option(None, help="Proof bundle audit directory."),
+    results: Path | None = typer.Option(None, help="Results markdown path."),
+    cache_dir: Path | None = typer.Option(None, help="Bar cache directory."),
+    bundle_dir: Path | None = typer.Option(None, help="Proof bundle directory."),
+) -> None:
+    """Score every preregistered cell, record every trial, export the ledger.
+
+    Every cell is inserted — including the losers — so the trial count behind
+    the reality filter is the real one. Fetches bar data from Yahoo; on a fetch
+    failure it stops rather than substituting synthetic data.
+    """
+    from quant_fund.research.reality_sweep import run_sweep
+
+    try:
+        summary = run_sweep(
+            spec_path=spec,
+            db_path=db,
+            ledger_path=ledger,
+            csv_path=csv,
+            receipt_path=receipt,
+            returns_path=returns,
+            audit_dir=audit_dir,
+            results_path=results,
+            cache_dir=cache_dir,
+            bundle_dir=bundle_dir,
+        )
+    except RuntimeError as exc:
+        typer.echo(f"REALITY_SWEEP_FETCH_UNAVAILABLE: {exc}")
+        raise typer.Exit(code=FETCH_UNAVAILABLE_EXIT) from None
+    except (OSError, ValueError, KeyError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _emit(json.dumps(summary, indent=2, default=str))
+
+
+@reality_app.command("survivorship")
+def reality_survivorship_cmd(
+    spec: Path | None = typer.Option(
+        None, exists=True, dir_okay=False, help="Survivorship preregistration JSON."
+    ),
+    membership: Path | None = typer.Option(
+        None, exists=True, dir_okay=False, help="Point-in-time index membership JSON."
+    ),
+    ledger: Path | None = typer.Option(None, help="Trial ledger JSONL export path."),
+    csv: Path | None = typer.Option(None, help="Trial ledger CSV export path."),
+    cache_dir: Path | None = typer.Option(None, help="Bar cache directory."),
+) -> None:
+    """Score the survivorship-bias study over point-in-time index membership.
+
+    Membership is resolved as-of each formation date, so a name that was later
+    added or delisted cannot leak into a cell it did not belong to. Fetches bar
+    data from Yahoo and fails closed when it cannot.
+    """
+    from quant_fund.research.reality_survivorship import run_study
+
+    try:
+        summary = run_study(
+            spec_path=spec,
+            membership_path=membership,
+            ledger_path=ledger,
+            csv_path=csv,
+            cache_dir=cache_dir,
+        )
+    except RuntimeError as exc:
+        typer.echo(f"REALITY_SURVIVORSHIP_FETCH_UNAVAILABLE: {exc}")
+        raise typer.Exit(code=FETCH_UNAVAILABLE_EXIT) from None
+    except (OSError, ValueError, KeyError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    _emit(json.dumps(summary, indent=2, default=str))

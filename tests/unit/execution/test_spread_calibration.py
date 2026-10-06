@@ -225,11 +225,27 @@ def test_cost_calibration_trials_and_report(tmp_path: Path) -> None:
     assert "Trial results" in text
 
 
-def test_cli_cost_calibration_dev_gate() -> None:
+def test_cli_cost_calibration_dev_gate(tmp_path: Path) -> None:
     from quant_fund.cli.main import app
 
     denied = runner.invoke(app, ["cost-calibration"])
     assert denied.exit_code != 0
-    ok = runner.invoke(app, ["cost-calibration", "--dev", "--n-dates", "20", "--n-names", "3"])
+    # ``receipts/`` is the committed evidence store and the command's default
+    # --out-dir; a test run must not add to it.
+    out_dir = tmp_path / "receipts"
+    ok = runner.invoke(
+        app,
+        [
+            "cost-calibration",
+            "--dev",
+            "--n-dates",
+            "20",
+            "--n-names",
+            "3",
+            "--out-dir",
+            str(out_dir),
+        ],
+    )
     assert ok.exit_code == 0, ok.output
     assert "corwin_schultz" in ok.output
+    assert list(out_dir.glob("cost_calibration_eval_*.json")), "expected a sealed receipt"

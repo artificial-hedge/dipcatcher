@@ -107,16 +107,15 @@ small Alpaca account. It is research and simulated paper trading only — there
 is no live broker connectivity anywhere in this tree, and nothing in this
 document authorizes, promises, or implies otherwise.
 
-The dip question, in `fx1.bench.dip` and
-`receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
-drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
-an in-sample climatology baseline on 11 historical crypto series. Disclaimer
-from the file:
-The distribution name on PyPI-style metadata is `fx-1`; the two console
-entry points installed by this project are `dipcatcher` (the research
-harness, formerly and internally called "dipcatcher") and `fx1` (the
-model-facing corpus/eval/training-manifest tooling). Both live in one
-checkout, at version `0.4.0` (`fx1.__version__`), and both are governed by
+The distribution name on PyPI-style metadata is `fx-1`; the console entry
+points installed by this project are `dipcatcher` (the research harness,
+formerly and internally called "dipcatcher" — invoked bare it runs the fx-1
+onboarding wizard, then the interactive harness shell), `fx1` (the
+model-facing corpus/eval/training-manifest tooling), and `fxi` — the
+interactive front door that stores fx1/fx1-lite model endpoints (API key +
+base URL) and injects them into the harness. `fxi` installs separately via
+curl or Homebrew; see [`docs/FXI.md`](docs/FXI.md). All live in one
+checkout, at version `0.4.0` (`fx1.__version__`), and all are governed by
 the same receipt-and-verification discipline described throughout this
 document.
 
@@ -210,35 +209,6 @@ failure modes at once, using three linked ideas:
    quietly rerun until something looks better. See
    [Evidence and sealed receipts](#evidence-and-sealed-receipts).
 
-- **Sealed receipts.** Phase-1 benchmark and tournament files carry
-  `receipt_sha256`, the SHA-256 of the other fields.
-  `dipcatcher verify-research` recomputes it and exits nonzero on a mismatch
-  (`docs/RECEIPT_VERIFICATION.md`). Paper promotion receipts use the same
-  seal. Files under `receipts/` record the input and script hashes the result
-  claims (`inputs_sha256`, `script_sha256`, `bar_files_sha256`, and related
-  fields).
-- **Fail-closed verification.** An invalid notebook, a missing metric, or a
-  non-finite metric does not promote. SYNTHETIC evidence marked as live fails
-  the gate in `quant_fund.validation.gates`. `dipcatcher doctor` exits nonzero
-  until a data manifest and a valid research receipt are both present.
-- **Published negative results.**
-  `receipts/legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json` records
-  `selected_band: null` and `eligible: false` on every candidate.
-  `receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json` records
-  `development_eligible: false`. A sealed blocked tournament stays a
-  reviewable failure (`valid: true`, `state: "blocked"`) with no test receipt
-  and no selected candidate (`docs/RECEIPT_VERIFICATION.md`).
-- **qlib parity receipt.** `receipts/legacy-unsealed/incumbent_bench_qlib.json` is one matched
-  workload against qlib 0.9.7 on Binance daily bars (`BTCUSDT`, `ETHUSDT`,
-  `SOLUSDT`), with `research_only: true` and `live_pnl_claim: false`. Copied
-  from that file, `nav_max_rel_diff` is `1.0290734772388363e-07`. Disclaimer,
-  copied verbatim: "Single matched workload vs qlib 0.9.x on real Binance
-  daily bars. Correctness is NAV parity; latency is single-process wall time.
-  Not a claim of superiority across all product dimensions."
-- **Synthetic stays labeled.** Default research and paper configs set
-  `data.source: synthetic`. The CLI prints `DATA_LABEL=SYNTHETIC` and the
-  word `SYNTHETIC`. The CI smoke fails if that notebook's `data_source` is
-  anything else.
 `fx-1` (the model line, [described below](#fx-1)) exists because the same
 discipline that makes the research harness auditable also makes it a
 uniquely well-labeled training corpus: every receipt that passes the ship
@@ -862,7 +832,7 @@ C4Context
   System_Ext(moonshot, "Moonshot hosted Kimi K3", "optional hosted eval; needs MOONSHOT_API_KEY")
   System_Ext(tapes, "Public exchange tapes", "opt-in collection only, e.g. Binance bars")
   System_Ext(broker, "Alpaca account", "referenced target venue -- NOT connected")
-  Rel(researcher, harness, "Makefile targets, dipcatcher CLI")
+  Rel(researcher, harness, "make targets, dipcatcher CLI")
   Rel(researcher, fx1, "fx1 CLI")
   Rel(harness, fx1, "gate-passed receipts become corpus lines")
   Rel(fx1, moonshot, "hosted base-model eval (opt-in)")
@@ -1394,7 +1364,7 @@ dipcatcher/
 ├── data/            # 30 tracked files; generated data/* subtrees are gitignored
 ├── artifacts/       # 30 committed artifacts (equity parquets, champion JSON)
 ├── verifier/        # 24 files -- acceptance-history ledger (v1..v8)
-├── replay/          # 20 files -- deterministic replay + visualization tooling
+├── replay/          # 20 files -- deterministic replay/visualization tooling
 ├── research/        # 18 files -- reality-filter trial ledgers
 ├── rust/            # 10 files -- optional quant_core native extension (maturin)
 ├── quality/         # 7 files -- mypy/audit ratchet baselines
@@ -1406,7 +1376,7 @@ dipcatcher/
 ├── reports/         # generated markdown reports (e.g. cost calibration)
 ├── LICENSE          # proprietary, all-rights-reserved
 ├── README.md        # this file
-├── Makefile         # every gate and workflow below is a Makefile entry
+├── Makefile         # every gate and workflow below is a make target
 ├── pyproject.toml   # package + tool config; version from fx1.__version__
 └── CITATION.cff     # citation metadata
 ```
@@ -2039,7 +2009,7 @@ flowchart TD
   S --> C["run an event-driven backtest"] --> CR["configs/backtest.yaml — next-open fills"]
   S --> D["run fully offline"] --> DR["make demo-data, then configs/demo.yaml"]
   S --> E["check environment readiness"] --> ER["dipcatcher doctor --config <cfg>"]
-  S --> F["freeze a scoring protocol"] --> FR["configs/sota_protocol.yaml — never edit after cited"]
+  S --> F["freeze a scoring protocol"] --> FR["configs/sota_protocol*.yaml — never edit after cited"]
   S --> G["go live"] --> GR["refused: allow_live raises; see the five conditions"]
 ```
 
@@ -2484,7 +2454,7 @@ schedule and on `workflow_dispatch`.
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
 | `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `.github/workflows/fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+| `fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
@@ -2945,7 +2915,7 @@ into the second as training data.
 | LoRA / QLoRA | parameter-efficient fine-tuning; v0.x never full-fine-tunes |
 | ZeRO-3 | sharded multi-node training configs, generated never hand-edited |
 | distillation | FINAL_K3 teacher into a smaller servable fx-1 student |
-| verifier ledger | `verifier/vN` acceptance history of the harness itself |
+| verifier ledger | `verifier/v1..v8` acceptance history of the harness itself |
 
 ### Environment variables
 

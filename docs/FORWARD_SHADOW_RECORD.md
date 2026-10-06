@@ -29,6 +29,15 @@ PYTHONPATH=src python -m quant_fund.research.forward_shadow freeze \
   --run data/metadata/forward/shadow.sqlite
 ```
 
+Every stage below is also a `dipcatcher forward-shadow` subcommand taking the
+same flags — `freeze`, `decide`, `miss`, `settle`, `reconcile` — plus `dump`
+(read-only journal audit view) and `plan` (the Bartlett-HAC session-count
+planner from `research.forward_evidence`). Both forms call the same functions;
+the console script needs no `PYTHONPATH`, exposes typed `--help`, and exits
+non-zero when `reconcile` finds a broken chain or a head that does not match
+`--expected-head`. As below, no code, runtime or clock override is exposed by
+either surface.
+
 The database path is reserved exclusively. An existing run is never overwritten.
 A failed initialization may leave an unusable reserved file; investigate it and
 choose a new path, rather than reusing an ambiguous experiment identity.

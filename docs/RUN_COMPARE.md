@@ -41,9 +41,15 @@ under `receipts/`) or result directories containing `*.json` files.
 
 ## CLI
 
+The same lane is reachable as `dipcatcher compare`; both surfaces call
+`compare_runs` / `build_compare_receipt`, so they cannot drift. Use whichever
+fits — the console script has typed `--help`, the module form is what the
+subprocess contract tests pin.
+
 ```bash
 # Markdown report to stdout
 python -m quant_fund.research.compare receipts/<run_a>.json receipts/<run_b>.json
+dipcatcher compare receipts/<run_a>.json receipts/<run_b>.json
 
 # JSON report to a file, plus a run_compare.v1 receipt blob
 python -m quant_fund.research.compare a/ b/ \

@@ -225,7 +225,6 @@ def membership_coverage_cmd(
         merge_bar_panels,
     )
     from quant_fund.proofcore.contracts import sha256_hex_bytes
-    from quant_fund.utils.hashing import canonical_json_bytes
 
     if not membership.is_file():
         raise typer.BadParameter(f"membership file not found: {membership}")
@@ -263,9 +262,81 @@ def membership_coverage_cmd(
     typer.echo(f"mean_coverage={float(report['mean_coverage']):.6f}")
     if out is not None:
         out.parent.mkdir(parents=True, exist_ok=True)
-        report["report_sha256"] = sha256_hex_bytes(canonical_json_bytes(report))
         out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         typer.echo(f"wrote {out}")
+
+
+@app.command("total-return")
+def total_return_cmd(
+    bars: Path = typer.Option(
+        ..., exists=True, dir_okay=False, help="Research bar panel parquet (quote basis)."
+    ),
+    chart: Path = typer.Option(
+        ..., exists=True, dir_okay=False, help="Yahoo chart payload JSON carrying events."
+    ),
+    security_id: str = typer.Option(..., "--security-id", help="Security id for the action rows."),
+    yahoo_symbol: str = typer.Option(
+        ..., "--yahoo-symbol", help="Yahoo symbol the payload came from."
+    ),
+    out: Path = typer.Option(..., help="Total-return bar panel parquet to write."),
+    raw_prices: bool = typer.Option(
+        False,
+        "--raw-prices",
+        help="Bars are raw prints, not split-adjusted: apply the split factors too.",
+    ),
+) -> None:
+    """Reinvest cash dividends to put a bar panel on a total-return basis.
+
+    Corporate actions come from a Yahoo chart payload's ``events`` block, with
+    ex-dates resolved to the same session close as the bars, so an action can
+    never be applied before it was knowable. Fails closed on an ex-date that
+    falls strictly inside the sample but does not match a bar.
+
+    Price-basis plumbing for research panels — not a performance claim.
+    """
+    import json
+
+    import polars as pl
+
+    from quant_fund.research.total_return import (
+        apply_research_total_return,
+        parse_yahoo_corporate_actions,
+    )
+    from quant_fund.schemas.errors import PointInTimeError
+
+    from .support import format_data_label
+
+    if not security_id.strip():
+        raise typer.BadParameter("--security-id must be non-blank")
+    if not yahoo_symbol.strip():
+        raise typer.BadParameter("--yahoo-symbol must be non-blank")
+    try:
+        payload = json.loads(chart.read_text())
+        actions = parse_yahoo_corporate_actions(
+            payload, security_id=security_id, yahoo_symbol=yahoo_symbol
+        )
+        quote_basis = pl.read_parquet(bars)
+        adjusted = apply_research_total_return(
+            quote_basis, actions, prices_already_split_adjusted=not raw_prices
+        )
+    except (PointInTimeError, ValueError, TypeError, OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    adjusted.write_parquet(out)
+    typer.echo(format_data_label(synthetic=False, data_source=bars.name))
+    kinds = "none"
+    if "action_type" in actions.columns and actions.height:
+        tallies = actions["action_type"].value_counts().sort("action_type")
+        kinds = " ".join(
+            f"{row['action_type']}={row['count']}" for row in tallies.iter_rows(named=True)
+        )
+    typer.echo(
+        f"bars_in={quote_basis.height} bars_out={adjusted.height} "
+        f"corporate_actions={actions.height} ({kinds})"
+    )
+    typer.echo(f"prices_already_split_adjusted={str(not raw_prices).lower()}")
+    typer.echo(f"wrote {out}")
 
 
 __all__ = [
@@ -275,4 +346,5 @@ __all__ = [
     "doctor",
     "ingest",
     "membership_coverage_cmd",
+    "total_return_cmd",
 ]

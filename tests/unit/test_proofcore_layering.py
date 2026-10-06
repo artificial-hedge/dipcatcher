@@ -50,7 +50,13 @@ LAZY_WHITELIST: dict[str, frozenset[str]] = {
     "leakage": frozenset({"pit", "cli", "config", "utils", "research"}),
     # Adjudicated lazy edge (this durability sweep): reality/cli writes its
     # outputs via utils.atomicio — same layer-0 reasoning as proofcore.
-    "reality": frozenset({"cli", "utils"}),
+    # reality/cli also lazily drives research.reality_sweep and
+    # research.reality_survivorship (the `dipcatcher reality` commands). Those
+    # two modules lazily import reality.cscv / reality.report back, so the pair
+    # is a mutual *lazy* dependency: neither edge exists at import time, which is
+    # this codebase's documented cycle-breaking mechanism
+    # (configs/arch_boundaries.toml). Mirrors LH011_LAZY_WHITELIST below.
+    "reality": frozenset({"cli", "utils", "research"}),
 }
 
 # Third-party roots each package may use (stdlib is always allowed).
@@ -62,19 +68,6 @@ THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
     # interposing their readers is the IO guard's purpose (W8).
     "leakage": frozenset({"pandas", "polars", "pydantic", "typer"}),
     "reality": frozenset({"numpy", "scipy", "pydantic", "polars", "typer"}),
-}
-
-# Third-party roots allowed ONLY inside function bodies — same lazy-edge
-# reasoning as LAZY_WHITELIST. Adjudicated: leakage/guard.py monkey-patches
-# pandas/polars readers at runtime, so it must import them lazily to avoid
-# paying the import cost (and hard dep) for callers that never install the
-# IO guard.
-LAZY_THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
-    "proofcore": frozenset(),
-    "pit": frozenset(),
-    "proof": frozenset(),
-    "leakage": frozenset({"pandas", "polars"}),
-    "reality": frozenset(),
 }
 
 
@@ -115,11 +108,7 @@ def _violations(pkg: str) -> list[str]:
             if root == "fx1":
                 problems.append(f"{rel}:{line}: PROOFCORE packages never import fx1")
                 continue
-            if (
-                root not in sys.stdlib_module_names
-                and root not in THIRD_PARTY_WHITELIST[pkg]
-                and not (not top_level and root in LAZY_THIRD_PARTY_WHITELIST.get(pkg, frozenset()))
-            ):
+            if root not in sys.stdlib_module_names and root not in THIRD_PARTY_WHITELIST[pkg]:
                 problems.append(f"{rel}:{line}: third-party import {root!r} not whitelisted")
     return problems
 
