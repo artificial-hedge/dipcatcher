@@ -659,6 +659,12 @@ class VectorStoreStore:
                 live.append({"vs_batch": batch.model_dump(mode="json")})
         self._journal.compact(live)
 
+    def _promote_locked(self, vs_id: str) -> None:
+        """Wake capacity waiters when promotion changes their LRU victim."""
+        if next(reversed(self._stores)) != vs_id:
+            self._stores.move_to_end(vs_id)
+            self._condition.notify_all()
+
     def _store(self, vs_id: str, *, touch_lru: bool = True) -> VSMeta:
         if not vs_id or len(vs_id) > VS_MAX_STORES_ID:
             raise VectorStoreError(
@@ -670,7 +676,7 @@ class VectorStoreStore:
                 404, f"vector store {vs_id!r} not found", "vector_store_not_found"
             )
         if touch_lru:
-            self._stores.move_to_end(vs_id)
+            self._promote_locked(vs_id)
         return meta
 
     def _expired(self, meta: VSMeta) -> bool:
@@ -799,7 +805,7 @@ class VectorStoreStore:
                         }
                     }
                 )
-            self._stores.move_to_end(vs_id)
+            self._promote_locked(vs_id)
             meta.name = next_name
             meta.metadata = next_metadata
             meta.expires_after = next_policy
