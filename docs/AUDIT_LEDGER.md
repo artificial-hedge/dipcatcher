@@ -133,3 +133,32 @@ fine-tuning corpus/training quality. The error-envelope handler was already fixe
 in #2805. The incoming all-pass `fx1_uploads_audit.json` names the earlier parent
 `a0cb7c9` and is excluded; historical receipts remain unchanged. The serve census
 moves from 39 to 40 and remains `partial`.
+
+
+### Model registry maintenance (PR #2812)
+
+The new `models_audit` checks 157 selected registry contracts — list/retrieve
+envelopes in both dialects, cursor paging in both directions, `ft:` mint →
+resolve → tombstone lifecycle, checkpoint gating, delete idempotency,
+job↔registry sync, `model` parameter validation, state-dir restart
+durability, concurrent mints, and enveloped refusals for malformed,
+traversal and oversized ids — over SYNTHETIC stub backends, a gate backend
+for mid-flight reads, in-process ASGI clients and a spy resolver. The audit
+reuses the conversation lane's resource context and gate backend rather than
+re-shipping that scaffolding.
+
+Five registry defects were found and fixed: `ft:` model cards stamped
+`created` at application boot instead of the registration instant (cards now
+carry the registry stamp in both dialects); an unknown non-`ft:` model fell
+through to the `hosted_k3` default link (completion surfaces now refuse with
+`model_not_found` 404 — embeddings keep free-form upstream names); the
+response `model` reported the checkpoint backend's version rather than the
+served `ft:` alias (a `served_model` attribution is plumbed end to end); an
+empty `model` string passed validation (`min_length=1` → 422); and a
+header-carried `X-Fx1-Checkpoint-Dir` on a non-`local_fx1` link escaped the
+request validator as a 500 (now enveloped 422). The committed TypeScript
+OpenAPI golden was already stale on the parent and is regenerated.
+
+The incoming all-pass `fx1_models_audit.json` names the earlier merge base
+and is excluded; historical receipts remain unchanged. The serve census
+moves from 43 to 44 and remains `partial`.

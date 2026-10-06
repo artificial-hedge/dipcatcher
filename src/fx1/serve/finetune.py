@@ -381,29 +381,31 @@ class FTJobStore:
         mutates ``entry.job`` in place; this makes each hop durable)."""
         if self._journal is not None:
             with self._lock:
-                self._journal.append(self._record(entry))
+                # A bounded-store eviction wins over a late worker mark.
+                # Journaling an entry no longer present would resurrect the
+                # job (and potentially its model card) after restart.
+                if self._entries.get(entry.job.id) is entry:
+                    self._journal.append(self._record(entry))
 
     def put(self, job: FTJob, idem_key: str | None, body_fp: str) -> FTJobEntry:
         entry = FTJobEntry(job, idem_key, body_fp)
         with self._lock:
-            self._entries[job.id] = entry
-            self._entries.move_to_end(job.id)
-            if idem_key is not None:
-                self._keys[f"ft:{idem_key}"] = job.id
-            evicted: list[str] = []
-            while len(self._entries) > self._max:
-                old_id, _old = self._entries.popitem(last=False)
-                if _old.idem_key is not None:
-                    self._keys.pop(f"ft:{_old.idem_key}", None)
-                for mname, mref in list(self._models.items()):
-                    if mref["job_id"] == old_id:
-                        del self._models[mname]
-                evicted.append(old_id)
+            # Determine the bounded-store transition without publishing it.
+            # The journal must acknowledge the put+evictions first; a failed
+            # append leaves the live store and its existing registry intact.
+            order = [job_id for job_id in self._entries if job_id != job.id]
+            evicted = order[: max(0, len(order) + 1 - self._max)]
             if self._journal is not None:
                 payload = self._record(entry)
                 if evicted:
                     payload["evicted"] = evicted
                 self._journal.append(payload)
+            for old_id in evicted:
+                self._drop(old_id)
+            self._entries[job.id] = entry
+            self._entries.move_to_end(job.id)
+            if idem_key is not None:
+                self._keys[f"ft:{idem_key}"] = job.id
         return entry
 
     def register_model(self, name: str, *, job_id: str, checkpoint: str, created: int) -> None:
@@ -411,14 +413,19 @@ class FTJobStore:
         Only called on succeeded jobs with a real checkpoint — a card is
         never minted for a model the harness cannot serve."""
         with self._lock:
-            self._models[name] = {
+            # A worker finishing after its job was evicted must not publish a
+            # provenance-free model.  The eviction is the terminal verdict.
+            if job_id not in self._entries:
+                return
+            ref = {
                 "id": name,
                 "job_id": job_id,
                 "checkpoint": checkpoint,
                 "created": created,
             }
             if self._journal is not None:
-                self._journal.append({"ft_model": dict(self._models[name])})
+                self._journal.append({"ft_model": dict(ref)})
+            self._models[name] = ref
 
     def get_model(self, name: str) -> dict[str, Any] | None:
         with self._lock:
@@ -430,10 +437,10 @@ class FTJobStore:
         the name was never registered; the deletion journals so a restart
         never resurrects a deleted model."""
         with self._lock:
-            ref = self._models.pop(name, None)
+            ref = self._models.get(name)
             if ref is not None and self._journal is not None:
                 self._journal.append({"ft_model_delete": name})
-            return ref
+            return self._models.pop(name, None)
 
     def models(self) -> list[dict[str, Any]]:
         """All registered ft models, sorted by id (stable list order)."""

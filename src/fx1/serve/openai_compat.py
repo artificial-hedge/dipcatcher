@@ -292,7 +292,9 @@ class OpenAIFx1(_Model):
         default_factory=list, max_length=2
     )
     byok: ByokOverride | None = None
-    checkpoint_dir: str | None = None
+    checkpoint_dir: str | None = Field(
+        default=None, min_length=1, max_length=4096, pattern=r"^[^\x00]+$"
+    )
     receipt_hashes: list[str] | None = None
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
 
@@ -303,7 +305,7 @@ class OpenAIChatRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     messages: list[OpenAIChatMessage] = Field(min_length=1, max_length=512)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
@@ -488,7 +490,7 @@ class OpenAICompletionRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     prompt: str | list[str]
     max_tokens: int | None = Field(default=None, gt=0, le=262144)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
@@ -545,13 +547,24 @@ class OpenAICompletionRequest(_Model):
         return self
 
 
-def openai_models(*, created: int | None = None, extra_ids: Iterable[str] = ()) -> OpenAIModelList:
+def openai_models(
+    *,
+    created: int | None = None,
+    extra_ids: Iterable[str] = (),
+    created_by_id: Mapping[str, int] | None = None,
+) -> OpenAIModelList:
     """The model inventory — `fx1` plus the backend names `model` may
-    carry. ``created`` defaults to call time."""
+    carry. ``created`` defaults to call time for the built-ins;
+    ``created_by_id`` stamps each extra (registry) card with the id's own
+    recorded creation time."""
     ts = int(time.time()) if created is None else created
+    stamps = created_by_id or {}
     extra = [m for m in dict.fromkeys(extra_ids) if m not in OPENAI_MODEL_IDS]
     return OpenAIModelList(
-        data=[OpenAIModel(id=m, created=ts) for m in (*OPENAI_MODEL_IDS, *sorted(extra))]
+        data=[
+            OpenAIModel(id=m, created=int(stamps.get(m, ts)) if m in stamps else ts)
+            for m in (*OPENAI_MODEL_IDS, *sorted(extra))
+        ]
     )
 
 
@@ -560,18 +573,24 @@ def openai_model(
     *,
     created: int | None = None,
     extra_ids: Iterable[str] = (),
+    created_by_id: Mapping[str, int] | None = None,
 ) -> OpenAIModel:
     """One model card — ``GET /v1/models/{id}`` retrieve semantics.
 
     Unknown ids fail closed 404 (OpenAI's ``invalid_request_error`` /
     ``model_not_found``) — an SDK's ``models.retrieve`` never gets a
-    fabricated card. ``extra_ids`` admits registered ``ft:`` models.
+    fabricated card. ``extra_ids`` admits registered ``ft:`` models;
+    ``created_by_id`` stamps an extra card with its own recorded
+    creation time instead of the serve boot stamp.
     """
     if model_id not in OPENAI_MODEL_IDS and model_id not in frozenset(extra_ids):
         raise OpenAICompatError(
             f"The model '{model_id}' does not exist", status=404, code="model_not_found"
         )
+    stamps = created_by_id or {}
     ts = int(time.time()) if created is None else created
+    if model_id in stamps:
+        ts = int(stamps[model_id])
     return OpenAIModel(id=model_id, created=ts)
 
 
@@ -656,17 +675,27 @@ def _resolve_openai_link(
     hdrs: dict[str, str],
     *,
     ft_resolver: Callable[[str], str | None] | None = None,
-) -> tuple[str, list[str], str | None, ByokOverride | None]:
+    require_known_model: bool = False,
+) -> tuple[str, list[str], str | None, ByokOverride | None, str | None]:
     """Backend resolution shared by the chat and responses translators —
     ``fx1.backend`` > ``X-Fx1-Backend`` > a ``model`` naming a backend >
     ``byok`` when BYOK headers are present > ``hosted_k3``. Returns
-    ``(backend, fallbacks, checkpoint_dir, byok)``.
+    ``(backend, fallbacks, checkpoint_dir, byok, served_model)`` where
+    ``served_model`` is the ``ft:`` name the registry resolved — the name
+    the caller addressed — or ``None`` on every other path.
 
     A ``model`` of the form ``ft:*`` names a registered fine-tuned model:
     when no explicit backend was chosen (no ext/backend header and no
     BYOK headers), it resolves to the ``local_fx1`` lane pinned at the
     producing job's checkpoint. An unregistered ``ft:`` name is a
-    fail-closed 404 ``model_not_found`` — never a silent default link."""
+    fail-closed 404 ``model_not_found`` — never a silent default link.
+
+    ``require_known_model`` arms the same refusal for every other
+    unregistered name: the completion surfaces (chat, responses,
+    messages, count_tokens) pass it, so a typo'd ``model`` answers 404
+    ``model_not_found`` instead of silently running the default link.
+    The embeddings surface leaves it off — there ``model`` is the
+    upstream deployment name passed verbatim to the link."""
     byok_headers = hdrs.get("x-fx1-byok-base-url")
     explicit = (ext.backend if ext is not None else None) or hdrs.get("x-fx1-backend")
     if (
@@ -685,7 +714,19 @@ def _resolve_openai_link(
         fallbacks_ft: list[str] = list(ext.fallbacks) if ext is not None else []
         if not fallbacks_ft and hdrs.get("x-fx1-fallbacks"):
             fallbacks_ft = [f.strip() for f in hdrs["x-fx1-fallbacks"].split(",") if f.strip()]
-        return "local_fx1", fallbacks_ft, checkpoint, None
+        return "local_fx1", fallbacks_ft, checkpoint, None, model
+    if (
+        require_known_model
+        and explicit is None
+        and model not in OPENAI_MODEL_IDS
+        and not byok_headers
+        and (ext is None or ext.byok is None)
+    ):
+        raise OpenAICompatError(
+            f"The model '{model}' does not exist",
+            status=404,
+            code="model_not_found",
+        )
     backend = (
         explicit
         or (model if model in OPENAI_BACKENDS else None)
@@ -712,7 +753,7 @@ def _resolve_openai_link(
         if not byok_model:
             raise OpenAICompatError("byok needs a model — set X-Fx1-Byok-Model or body.model")
         byok = ByokOverride(base_url=byok_headers, api_key=api_key, model=byok_model)
-    return backend, fallbacks, checkpoint_dir, byok
+    return backend, fallbacks, checkpoint_dir, byok, None
 
 
 def _resolve_timeout(ext_timeout: float | None, hdrs: dict[str, str]) -> float | None:
@@ -772,12 +813,13 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
     )
     return {
         "backend": backend,
         "messages": openai_messages(body.messages),
+        "_served_model": served_model,
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": _resolve_receipt_hashes(
             ext.receipt_hashes if ext is not None else None, hdrs
@@ -1259,7 +1301,7 @@ class OpenAIResponseRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     input: str | list[dict[str, Any]]
     instructions: str | None = Field(default=None, max_length=32768)
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
@@ -1700,13 +1742,14 @@ def response_to_kwargs(
     ``user`` or ``safety_identifier``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
-        body.model, ext, hdrs, ft_resolver=ft_resolver
+    backend, fallbacks, checkpoint_dir, byok, served_model = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver, require_known_model=True
     )
     effort = (body.reasoning or {}).get("effort")
     return {
         "backend": backend,
         "messages": response_input_to_messages(body.input, body.instructions),
+        "_served_model": served_model,
         "checkpoint_dir": checkpoint_dir,
         "receipt_hashes": _resolve_receipt_hashes(
             ext.receipt_hashes if ext is not None else None, hdrs
@@ -2550,7 +2593,7 @@ class OpenAIEmbeddingRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
 
-    model: str = "fx1"
+    model: str = Field(default="fx1", min_length=1, max_length=512)
     input: str | list[str] | list[int] | list[list[int]]
     encoding_format: Literal["float", "base64"] | None = None
     dimensions: int | None = Field(default=None, ge=1)
@@ -2631,7 +2674,9 @@ def embeddings_to_kwargs(
     ``encoding_format``, ``dimensions``, ``user``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+    # ``model`` here is the upstream embedding deployment name — free-form
+    # and passed verbatim, so the strict known-model gate stays off.
+    backend, fallbacks, checkpoint_dir, byok, _served = _resolve_openai_link(
         body.model, ext, hdrs, ft_resolver=ft_resolver
     )
     return {

@@ -8795,6 +8795,10 @@ def _probe_backend_probes(  # NOSONAR
             "/v1/chat/completions",
             json={
                 "model": "fx1-listprobe",
+                # an arbitrary model name now refuses without a stated link —
+                # pin the byok lane explicitly so the list filter keeps a
+                # distinct model stamp.
+                "fx1": {"backend": "byok"},
                 "messages": [{"role": "user", "content": f"lp{i}"}],
                 "metadata": {"lane": "list-probe", "kind": f"k{i % 2}"},
             },
