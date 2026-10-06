@@ -369,31 +369,62 @@ class UploadStore:
                     "cumulative part bytes exceed the declared upload bytes",
                     "part_exceeds_declared_bytes",
                 )
-            if self._dir is not None:
-                # Blob first, fsync'd — the journal may only name durable parts.
-                udir = self._dir / meta.upload_id
-                udir.mkdir(parents=True, exist_ok=True)
-                blob = self._blob(meta.upload_id, part_id)
-                tmp = udir / f".{part_id}.tmp"
-                with tmp.open("wb") as fh:
-                    fh.write(data)
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                os.replace(tmp, blob)
-            created_at = int(time.time())
+            blob: Path | None = None
+            tmp: Path | None = None
+            journal_size: int | None = None
             if self._journal is not None:
-                self._journal.append(
-                    {
-                        "upload_part": {
-                            "upload_id": meta.upload_id,
-                            "part_id": part_id,
-                            "bytes": len(data),
+                try:
+                    journal_size = self._journal.path.stat().st_size
+                except FileNotFoundError:
+                    journal_size = 0
+                except OSError:
+                    # If the pre-write size cannot be observed, cleanup cannot
+                    # prove that a failed append left the chain unchanged.
+                    journal_size = None
+            try:
+                if self._dir is not None:
+                    # Blob first, fsync'd — the journal may only name durable parts.
+                    udir = self._dir / meta.upload_id
+                    udir.mkdir(parents=True, exist_ok=True)
+                    blob = self._blob(meta.upload_id, part_id)
+                    tmp = udir / f".{part_id}.tmp"
+                    with tmp.open("wb") as fh:
+                        fh.write(data)
+                        fh.flush()
+                        os.fsync(fh.fileno())
+                    os.replace(tmp, blob)
+                created_at = int(time.time())
+                if self._journal is not None:
+                    self._journal.append(
+                        {
+                            "upload_part": {
+                                "upload_id": meta.upload_id,
+                                "part_id": part_id,
+                                "bytes": len(data),
+                            }
                         }
-                    }
-                )
-            if self._dir is None:
-                self._inmem[meta.upload_id][part_id] = bytes(data)
-            meta.parts[part_id] = len(data)
+                    )
+                if self._dir is None:
+                    self._inmem[meta.upload_id][part_id] = bytes(data)
+                meta.parts[part_id] = len(data)
+            except Exception:
+                if tmp is not None:
+                    with suppress(OSError):
+                        tmp.unlink(missing_ok=True)
+                # A definitely pre-write failure leaves an unreferenced blob;
+                # remove it immediately rather than leaking disk until restart.
+                # If the journal grew (including a torn append), retain the
+                # blob as recovery evidence because a durable record may name it.
+                unchanged = self._journal is None
+                if self._journal is not None and journal_size is not None:
+                    try:
+                        unchanged = self._journal.path.stat().st_size == journal_size
+                    except OSError:
+                        unchanged = False
+                if blob is not None and unchanged:
+                    with suppress(OSError):
+                        blob.unlink(missing_ok=True)
+                raise
         return upload_part_object(part_id, upload_id, created_at)
 
     def _assemble_locked(self, meta: UploadMeta, part_ids: list[str]) -> bytes:
