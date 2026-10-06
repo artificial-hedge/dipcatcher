@@ -407,7 +407,13 @@
         ]
       },
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "201",
@@ -418,6 +424,11 @@
     "/harness/keys/{key_id}": {
       "delete": {
         "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
           {
             "name": "key_id",
             "in": "path",
@@ -447,6 +458,11 @@
       "patch": {
         "params": [
           {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
             "name": "key_id",
             "in": "path",
             "required": true
@@ -462,6 +478,11 @@
     "/harness/keys/{key_id}/rotate": {
       "post": {
         "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
           {
             "name": "key_id",
             "in": "path",
@@ -1273,7 +1294,13 @@
         ]
       },
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": false,
         "responses": [
           "200",
@@ -1797,7 +1824,13 @@
     },
     "/v1/uploads": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -1808,6 +1841,11 @@
     "/v1/uploads/{upload_id}/cancel": {
       "post": {
         "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
           {
             "name": "upload_id",
             "in": "path",
@@ -1825,6 +1863,11 @@
       "post": {
         "params": [
           {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
             "name": "upload_id",
             "in": "path",
             "required": true
@@ -1840,6 +1883,11 @@
     "/v1/uploads/{upload_id}/parts": {
       "post": {
         "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
           {
             "name": "upload_id",
             "in": "path",
@@ -2173,5 +2221,5 @@
       }
     }
   },
-  "schema_sha256": "de9e984ff5afde57b7867509599246c3f8bc5df11e43ef8648daedd71dc98c2e"
+  "schema_sha256": "81f8186d019f2eef2efc531e851bdfeca887cd660c677162327d2eb20c7f5dd0"
 }

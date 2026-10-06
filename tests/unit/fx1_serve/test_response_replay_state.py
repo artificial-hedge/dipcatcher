@@ -47,6 +47,7 @@ def _invoke_replay(
         _resume_skip=lambda *args, **kwargs: 0,
         _body_fp=lambda body: "synthetic fingerprint",
         _idem_lookup=lambda *args: ("synthetic key", types.SimpleNamespace(envelope=cached)),
+        _openai_idem_claim=lambda: None,
         openai_idem_store=object(),
         envelope_store=store,
         _completion_receipt_sha=lambda completion_id: "a" * 64,

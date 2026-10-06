@@ -12538,8 +12538,26 @@
         ]
       },
       "post": {
-        "description": "Mint a managed API key. The raw ``key`` is returned once here\nand never stored \u2014 the store keeps only its sha256. Requires the\nbootstrap credential (``FX1_API_KEY``) or loopback dev mode.",
+        "description": "Mint a managed API key. The raw ``key`` is returned once here\nand never stored \u2014 the store keeps only its sha256. Requires the\nbootstrap credential (``FX1_API_KEY``) or loopback dev mode.\n``Idempotency-Key`` pins the mint: a keyed retry replays the\nrecorded credential verbatim instead of minting a duplicate.",
         "operationId": "key_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -12692,7 +12710,7 @@
     },
     "/harness/keys/{key_id}": {
       "delete": {
-        "description": "Tombstone a key \u2014 ``enabled=false`` + ``revoked_at``. The record\nstays so the audit trail of which keys existed survives; auth\nwith it fails closed immediately after.",
+        "description": "Tombstone a key \u2014 ``enabled=false`` + ``revoked_at``. The record\nstays so the audit trail of which keys existed survives; auth\nwith it fails closed immediately after. A keyed retry replays\nthe recorded tombstone instead of 409ing on the second revoke.",
         "operationId": "key_revoke",
         "parameters": [
           {
@@ -12702,6 +12720,22 @@
             "schema": {
               "title": "Key Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -12998,7 +13032,7 @@
         ]
       },
       "patch": {
-        "description": "Mutable policy update on a live managed key \u2014 the patched\nrecord returns, shaped like ``key_get``. Omitted fields keep\nthe declared policy; explicit ``null`` clears a nullable\nbound (``name``/``rpm``/``max_requests``/``max_tokens``/\n``expires_at``); ``admin:true`` unions the admin scope the\nmint way while ``admin:false`` never strips a declared scope.\nPatching is in place \u2014 no new secret, no slot consumed \u2014 and\nthe updated record journals so a ``--state-dir`` restart\nrestores it. ``enabled``/live counters stay unpatchable:\nrevocation is permanent (rotate covers re-keying).",
+        "description": "Mutable policy update on a live managed key \u2014 the patched\nrecord returns, shaped like ``key_get``. Omitted fields keep\nthe declared policy; explicit ``null`` clears a nullable\nbound (``name``/``rpm``/``max_requests``/``max_tokens``/\n``expires_at``); ``admin:true`` unions the admin scope the\nmint way while ``admin:false`` never strips a declared scope.\nPatching is in place \u2014 no new secret, no slot consumed \u2014 and\nthe updated record journals so a ``--state-dir`` restart\nrestores it. ``enabled``/live counters stay unpatchable:\nrevocation is permanent (rotate covers re-keying). A keyed\nretry replays the recorded patch outcome.",
         "operationId": "key_patch",
         "parameters": [
           {
@@ -13008,6 +13042,22 @@
             "schema": {
               "title": "Key Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -13163,7 +13213,7 @@
     },
     "/harness/keys/{key_id}/rotate": {
       "post": {
-        "description": "Atomic rotation: mint a successor inheriting the predecessor's\ndeclared policy (name/scopes/admin/rpm/budgets) and, by default,\ntombstone the predecessor in the same store transaction. The new\nraw secret is returned once; lineage (``rotated_from``) is\njournaled with the successor record. Without ``ttl_s`` the\nsuccessor inherits the predecessor's absolute ``expires_at`` \u2014\nrotation never extends a credential's lifetime.",
+        "description": "Atomic rotation: mint a successor inheriting the predecessor's\ndeclared policy (name/scopes/admin/rpm/budgets) and, by default,\ntombstone the predecessor in the same store transaction. The new\nraw secret is returned once; lineage (``rotated_from``) is\njournaled with the successor record. Without ``ttl_s`` the\nsuccessor inherits the predecessor's absolute ``expires_at`` \u2014\nrotation never extends a credential's lifetime. A keyed retry\nreplays the recorded successor (same id, same raw secret)\ninstead of minting a third credential.",
         "operationId": "key_rotate",
         "parameters": [
           {
@@ -13173,6 +13223,22 @@
             "schema": {
               "title": "Key Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -20471,8 +20537,26 @@
         ]
       },
       "post": {
-        "description": "Upload a batch-input or fine-tuning JSONL (multipart/form-data).\nPurpose is fail-closed \u2014 ``batch`` and ``fine-tune`` are the only\npurposes served; the file is validated into the store as-is\n(shape checks happen at batch submit / fine-tune submit).",
+        "description": "Upload a batch-input or fine-tuning JSONL (multipart/form-data).\nPurpose is fail-closed \u2014 ``batch`` and ``fine-tune`` are the only\npurposes served; the file is validated into the store as-is\n(shape checks happen at batch submit / fine-tune submit).\n``Idempotency-Key`` pins the minted file: a retried multipart\nupload replays the recorded object (same ``id``) instead of\nstoring a duplicate.",
         "operationId": "openai_file_upload",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -25816,8 +25900,26 @@
     },
     "/v1/uploads": {
       "post": {
-        "description": "Open an upload intent \u2014 parts land under ``.../parts`` until\n``complete`` assembles them into a file record.",
+        "description": "Open an upload intent \u2014 parts land under ``.../parts`` until\n``complete`` assembles them into a file record.``Idempotency-Key``\npins the intent: a retried create replays the same ``upload_id``.",
         "operationId": "openai_upload_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -25968,7 +26070,7 @@
     },
     "/v1/uploads/{upload_id}/cancel": {
       "post": {
-        "description": "Cancel a pending upload \u2014 replays 200 on an already-cancelled\nrecord, 409 once completed.",
+        "description": "Cancel a pending upload \u2014 replays 200 on an already-cancelled\nrecord, 409 once completed; a keyed retry replays the recorded\ncancel answer verbatim.",
         "operationId": "openai_upload_cancel",
         "parameters": [
           {
@@ -25978,6 +26080,22 @@
             "schema": {
               "title": "Upload Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -26121,7 +26239,7 @@
     },
     "/v1/uploads/{upload_id}/complete": {
       "post": {
-        "description": "Validate and mint one file under the upload lifecycle lock.",
+        "description": "Validate and mint one file under the upload lifecycle lock. A\nkeyed retry replays the minted file object instead of failing on\nthe already-completed upload.",
         "operationId": "openai_upload_complete",
         "parameters": [
           {
@@ -26131,6 +26249,22 @@
             "schema": {
               "title": "Upload Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
@@ -26284,7 +26418,7 @@
     },
     "/v1/uploads/{upload_id}/parts": {
       "post": {
-        "description": "Add one part (multipart ``data`` field). Blob lands durable\nbefore the journal names it.",
+        "description": "Add one part (multipart ``data`` field). Blob lands durable\nbefore the journal names it. A keyed retry replays the recorded\npart instead of appending the bytes twice.",
         "operationId": "openai_upload_part",
         "parameters": [
           {
@@ -26294,6 +26428,22 @@
             "schema": {
               "title": "Upload Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
             }
           }
         ],
