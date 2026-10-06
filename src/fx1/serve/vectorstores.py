@@ -512,6 +512,10 @@ class VectorStoreStore:
         # pin their store against deletion and capacity eviction. Unrelated
         # stores remain usable while a file reader or index build is slow.
         self._inflight: dict[str, int] = {}
+        # Membership writers are serialized per store while file I/O happens
+        # outside the global state lock. This keeps batch preparation bounded
+        # without allowing a concurrent attach/detach to invalidate it.
+        self._membership_busy: set[str] = set()
         self._max = max_stores
         self._max_files = max_files
         self._reader = file_reader
@@ -538,7 +542,7 @@ class VectorStoreStore:
                     meta.files = {}
                     meta.usage_bytes = 0
                     self._stores[meta.vs_id] = meta
-                elif "vs_update" in payload:
+                if "vs_update" in payload:
                     upd = payload["vs_update"]
                     prev = self._stores.get(str(upd["vs_id"]))
                     if prev is not None:
@@ -547,24 +551,27 @@ class VectorStoreStore:
                         if "expires_after" in upd:
                             prev.expires_after = upd["expires_after"]
                             prev.expires_at = upd.get("expires_at")
-                elif "vs_delete" in payload:
+                        self._stores.move_to_end(prev.vs_id)
+                if "vs_delete" in payload:
                     self._drop(str(payload["vs_delete"]["vs_id"]))
-                elif "vs_touch" in payload:
-                    upd = payload["vs_touch"]
-                    prev = self._stores.get(str(upd["vs_id"]))
-                    if prev is not None:
-                        prev.last_active_at = int(upd.get("last_active_at") or 0)
-                        prev.expires_at = upd.get("expires_at")
-                elif "vs_file" in payload:
+                if "vs_file" in payload:
                     rec = VSFileRec.model_validate(payload["vs_file"])
                     self._restore_file(rec)
-                elif "vs_file_delete" in payload:
+                for raw in payload.get("vs_files") or ():
+                    self._restore_file(VSFileRec.model_validate(raw))
+                if "vs_file_delete" in payload:
                     d = payload["vs_file_delete"]
                     self._detach(str(d["vs_id"]), str(d["file_id"]))
-                elif "vs_batch" in payload:
+                    if str(d["vs_id"]) in self._stores:
+                        self._stores.move_to_end(str(d["vs_id"]))
+                if "vs_batch" in payload:
                     brec = VSBatchRec.model_validate(payload["vs_batch"])
                     if brec.vector_store_id in self._stores:
                         self._batches.setdefault(brec.vector_store_id, {})[brec.batch_id] = brec
+                if "vs_touch" in payload:
+                    self._restore_touch(payload["vs_touch"])
+                for touch in payload.get("vs_touches") or ():
+                    self._restore_touch(touch)
             self._compact_locked()
 
     @property
@@ -586,6 +593,16 @@ class VectorStoreStore:
         self._idf.pop(vs_id, None)
         self._idf_dirty.discard(vs_id)
         self._inflight.pop(vs_id, None)
+        self._membership_busy.discard(vs_id)
+
+    def _restore_touch(self, raw: dict[str, Any]) -> None:
+        vs_id = str(raw["vs_id"])
+        meta = self._stores.get(vs_id)
+        if meta is None:
+            return
+        meta.last_active_at = int(raw.get("last_active_at") or 0)
+        meta.expires_at = raw.get("expires_at")
+        self._stores.move_to_end(vs_id)
 
     def _pin_locked(self, vs_id: str) -> None:
         self._inflight[vs_id] = self._inflight.get(vs_id, 0) + 1
@@ -597,6 +614,22 @@ class VectorStoreStore:
         else:
             self._inflight.pop(vs_id, None)
             self._condition.notify_all()
+
+    def _begin_membership_locked(self, vs_id: str, *, pin_store: bool = True) -> VSMeta:
+        while vs_id in self._membership_busy:
+            self._condition.wait()
+            self._store(vs_id, touch_lru=False)
+        meta = self._store(vs_id, touch_lru=False)
+        self._membership_busy.add(vs_id)
+        if pin_store:
+            self._pin_locked(vs_id)
+        return meta
+
+    def _end_membership_locked(self, vs_id: str, *, unpin_store: bool = True) -> None:
+        self._membership_busy.discard(vs_id)
+        if unpin_store:
+            self._unpin_locked(vs_id)
+        self._condition.notify_all()
 
     def _detach(self, vs_id: str, file_id: str) -> None:
         meta = self._stores.get(vs_id)
@@ -630,21 +663,34 @@ class VectorStoreStore:
         content, _filename = got
         self._index_file(meta, rec, content)
 
-    def _index_file(self, meta: VSMeta, rec: VSFileRec, content: bytes) -> None:
-        """(Re)build the derived chunk index for one attached file."""
+    def _build_index(self, rec: VSFileRec, content: bytes) -> list[_Chunk]:
+        """Build one derived index without publishing it to live state."""
         text = content.decode("utf-8", errors="replace")
         texts, truncated = _chunk_texts(text, rec.chunking_strategy)
         if not texts:
             rec.status = "failed"
             rec.last_error = {"code": "empty_file", "message": "file decoded to no text"}
-            return
+            return []
         rec.indexed_chunks = len(texts)
         rec.truncated = truncated
         rec.text_sha256 = hashlib.sha256(content).hexdigest()
-        self._chunks.setdefault(meta.vs_id, {})[rec.file_id] = [
+        return [
             _Chunk(file_id=rec.file_id, i=i, text=t, vec=_vec(_tokens(t)))
             for i, t in enumerate(texts)
         ]
+
+    def _publish_file_locked(self, meta: VSMeta, rec: VSFileRec, chunks: list[_Chunk]) -> None:
+        meta.files[rec.file_id] = rec
+        meta.usage_bytes += rec.usage_bytes
+        if chunks:
+            self._chunks.setdefault(meta.vs_id, {})[rec.file_id] = chunks
+        self._idf_dirty.add(meta.vs_id)
+
+    def _index_file(self, meta: VSMeta, rec: VSFileRec, content: bytes) -> None:
+        """(Re)build and publish the derived chunk index for replay."""
+        chunks = self._build_index(rec, content)
+        if chunks:
+            self._chunks.setdefault(meta.vs_id, {})[rec.file_id] = chunks
         self._idf_dirty.add(meta.vs_id)
 
     def _compact_locked(self) -> None:
@@ -684,22 +730,70 @@ class VectorStoreStore:
         read-only for writes/search; reads still resolve."""
         return meta.expires_at is not None and int(time.time()) >= meta.expires_at
 
-    def _touch_locked(self, meta: VSMeta) -> None:
-        """Activity bump — attaches, batch creates, and searches count
-        as use; re-anchors ``expires_at`` when a policy is set."""
-        meta.last_active_at = int(time.time())
+    def _touch_record(self, meta: VSMeta, *, now: int | None = None) -> dict[str, Any]:
+        """Return the next durable activity record without mutating state."""
+        last_active_at = int(time.time()) if now is None else now
+        expires_at = meta.expires_at
         if meta.expires_after is not None:
-            meta.expires_at = meta.last_active_at + int(meta.expires_after["days"]) * 86400
-        if self._journal is not None:
-            self._journal.append(
-                {
-                    "vs_touch": {
-                        "vs_id": meta.vs_id,
-                        "last_active_at": meta.last_active_at,
-                        "expires_at": meta.expires_at,
-                    }
-                }
+            expires_at = last_active_at + int(meta.expires_after["days"]) * 86400
+        return {
+            "vs_id": meta.vs_id,
+            "last_active_at": last_active_at,
+            "expires_at": expires_at,
+        }
+
+    def _publish_touch_locked(self, meta: VSMeta, touch: dict[str, Any]) -> None:
+        meta.last_active_at = int(touch["last_active_at"])
+        meta.expires_at = touch.get("expires_at")
+        self._stores.move_to_end(meta.vs_id)
+
+    def _prepare_file_locked(
+        self,
+        meta: VSMeta,
+        file_id: str,
+        got: tuple[bytes, str] | None,
+        *,
+        attributes: dict[str, Any],
+        chunking_strategy: dict[str, Any],
+        pending_ids: set[str] | None = None,
+        pending_count: int = 0,
+    ) -> tuple[VSFileRec, list[_Chunk]]:
+        """Validate and build an attachment candidate without publishing it."""
+        pending_ids = pending_ids or set()
+        if self._expired(meta):
+            raise VectorStoreError(
+                410, f"vector store {meta.vs_id!r} has expired", "vector_store_expired"
             )
+        if file_id in meta.files or file_id in pending_ids:
+            raise VectorStoreError(
+                409, f"file {file_id!r} is already attached", "file_already_attached"
+            )
+        if len(meta.files) + pending_count >= self._max_files:
+            raise VectorStoreError(
+                409,
+                f"vector store {meta.vs_id!r} holds the {self._max_files}-file cap",
+                "vector_store_full",
+            )
+        if got is None:
+            raise VectorStoreError(404, f"file {file_id!r} not found", "file_not_found")
+        content, filename = got
+        if len(content) > VS_MAX_TEXT_BYTES:
+            raise VectorStoreError(
+                413,
+                f"file exceeds the {VS_MAX_TEXT_BYTES}-byte indexable cap",
+                "file_too_large",
+            )
+        rec = VSFileRec(
+            file_id=file_id,
+            vector_store_id=meta.vs_id,
+            created_at=int(time.time()),
+            status="completed",
+            usage_bytes=len(content),
+            filename=filename,
+            attributes=attributes,
+            chunking_strategy=chunking_strategy,
+        )
+        return rec, self._build_index(rec, content)
 
     def _idf_table(self, vs_id: str) -> dict[int, float]:
         if vs_id in self._idf_dirty or vs_id not in self._idf:
@@ -762,7 +856,10 @@ class VectorStoreStore:
                 self._pin_locked(meta.vs_id)
         try:
             for fid in file_ids:
-                self.attach(meta.vs_id, fid)
+                # The create operation already owns a lifecycle pin for the
+                # whole initial-file sequence; avoid double-counting it while
+                # still using the per-store membership writer lane.
+                self.attach(meta.vs_id, fid, _pin_store=False)
             return vs_object(meta)
         finally:
             if file_ids:
@@ -848,56 +945,43 @@ class VectorStoreStore:
         *,
         attributes: dict[str, Any] | None = None,
         chunking_strategy: dict[str, Any] | None = None,
+        _pin_store: bool = True,
     ) -> dict[str, Any]:
         """Attach a ``/v1/files`` record — reads bytes through
-        ``file_reader``, chunks + indexes synchronously, then journals
-        the membership line. A file that doesn't decode to text lands
+        ``file_reader``, chunks + indexes synchronously, then commits
+        membership and activity in one journal line. A file that doesn't decode to text lands
         ``status: failed`` honestly instead of refusing."""
         attrs = validate_attributes(attributes)
         strategy = validate_chunking_strategy(chunking_strategy)
-        got = self._reader(file_id) if self._reader is not None else None
-        with self._lock:
-            meta = self._store(vs_id)
+        with self._condition:
+            meta = self._begin_membership_locked(vs_id, pin_store=_pin_store)
             if self._expired(meta):
+                self._end_membership_locked(vs_id, unpin_store=_pin_store)
                 raise VectorStoreError(
                     410, f"vector store {vs_id!r} has expired", "vector_store_expired"
                 )
-            if file_id in meta.files:
-                raise VectorStoreError(
-                    409, f"file {file_id!r} is already attached", "file_already_attached"
+        try:
+            got = self._reader(file_id) if self._reader is not None else None
+            with self._lock:
+                meta = self._store(vs_id, touch_lru=False)
+                rec, chunks = self._prepare_file_locked(
+                    meta,
+                    file_id,
+                    got,
+                    attributes=attrs,
+                    chunking_strategy=strategy,
                 )
-            if len(meta.files) >= self._max_files:
-                raise VectorStoreError(
-                    409,
-                    f"vector store {vs_id!r} holds the {self._max_files}-file cap",
-                    "vector_store_full",
-                )
-            if got is None:
-                raise VectorStoreError(404, f"file {file_id!r} not found", "file_not_found")
-            content, filename = got
-            if len(content) > VS_MAX_TEXT_BYTES:
-                raise VectorStoreError(
-                    413,
-                    f"file exceeds the {VS_MAX_TEXT_BYTES}-byte indexable cap",
-                    "file_too_large",
-                )
-            rec = VSFileRec(
-                file_id=file_id,
-                vector_store_id=vs_id,
-                created_at=int(time.time()),
-                status="completed",
-                usage_bytes=len(content),
-                filename=filename,
-                attributes=attrs,
-                chunking_strategy=strategy,
-            )
-            meta.files[file_id] = rec
-            meta.usage_bytes += len(content)
-            self._index_file(meta, rec, content)
-            if self._journal is not None:
-                self._journal.append({"vs_file": rec.model_dump(mode="json")})
-            self._touch_locked(meta)
-            return vs_file_object(rec)
+                touch = self._touch_record(meta)
+                if self._journal is not None:
+                    self._journal.append(
+                        {"vs_file": rec.model_dump(mode="json"), "vs_touch": touch}
+                    )
+                self._publish_file_locked(meta, rec, chunks)
+                self._publish_touch_locked(meta, touch)
+                return vs_file_object(rec)
+        finally:
+            with self._condition:
+                self._end_membership_locked(vs_id, unpin_store=_pin_store)
 
     def list_files(
         self,
@@ -942,22 +1026,30 @@ class VectorStoreStore:
             return vs_file_object(rec)
 
     def detach(self, vs_id: str, file_id: str) -> dict[str, Any]:
-        with self._lock:
-            meta = self._store(vs_id)
-            rec = meta.files.get(file_id)
-            if rec is None:
-                raise VectorStoreError(
-                    404,
-                    f"file {file_id!r} is not attached to {vs_id!r}",
-                    "file_not_found",
-                )
-            meta.files.pop(file_id)
-            meta.usage_bytes = max(0, meta.usage_bytes - rec.usage_bytes)
-            self._chunks.get(vs_id, {}).pop(file_id, None)
-            self._idf_dirty.add(vs_id)
-            if self._journal is not None:
-                self._journal.append({"vs_file_delete": {"vs_id": vs_id, "file_id": file_id}})
-            return {"id": file_id, "object": "vector_store.file.deleted", "deleted": True}
+        with self._condition:
+            self._begin_membership_locked(vs_id)
+        try:
+            with self._lock:
+                meta = self._store(vs_id, touch_lru=False)
+                rec = meta.files.get(file_id)
+                if rec is None:
+                    raise VectorStoreError(
+                        404,
+                        f"file {file_id!r} is not attached to {vs_id!r}",
+                        "file_not_found",
+                    )
+                if self._journal is not None:
+                    self._journal.append({"vs_file_delete": {"vs_id": vs_id, "file_id": file_id}})
+                self._detach(vs_id, file_id)
+                self._stores.move_to_end(vs_id)
+                return {
+                    "id": file_id,
+                    "object": "vector_store.file.deleted",
+                    "deleted": True,
+                }
+        finally:
+            with self._condition:
+                self._end_membership_locked(vs_id)
 
     def file_content(self, vs_id: str, file_id: str) -> dict[str, Any]:
         """``GET .../content`` — the indexed text of one file, chunk by
@@ -1007,12 +1099,12 @@ class VectorStoreStore:
         attrs = validate_attributes(attributes)
         strategy = validate_chunking_strategy(chunking_strategy)
         with self._condition:
-            meta = self._store(vs_id)  # ghost store refuses the batch itself, 404
+            meta = self._begin_membership_locked(vs_id)  # ghost store refuses batch, 404
             if self._expired(meta):
+                self._end_membership_locked(vs_id)
                 raise VectorStoreError(
                     410, f"vector store {vs_id!r} has expired", "vector_store_expired"
                 )
-            self._pin_locked(vs_id)
         try:
             created = int(time.time())
             rows: list[dict[str, Any]] = []
@@ -1023,48 +1115,73 @@ class VectorStoreStore:
                 "cancelled": 0,
                 "total": 0,
             }
+            pending: list[tuple[VSFileRec, list[_Chunk]]] = []
+            pending_ids: set[str] = set()
             for fid in file_ids:
-                counts["total"] += 1
-                try:
-                    rec = self.attach(vs_id, fid, attributes=attrs, chunking_strategy=strategy)
-                except VectorStoreError as exc:
-                    counts["failed"] += 1
-                    rows.append(
+                got = self._reader(fid) if self._reader is not None else None
+                with self._lock:
+                    meta = self._store(vs_id, touch_lru=False)
+                    counts["total"] += 1
+                    try:
+                        rec, chunks = self._prepare_file_locked(
+                            meta,
+                            fid,
+                            got,
+                            attributes=attrs,
+                            chunking_strategy=strategy,
+                            pending_ids=pending_ids,
+                            pending_count=len(pending),
+                        )
+                    except VectorStoreError as exc:
+                        counts["failed"] += 1
+                        rows.append(
+                            {
+                                "id": fid,
+                                "object": "vector_store.file",
+                                "vector_store_id": vs_id,
+                                "created_at": created,
+                                "status": "failed",
+                                "usage_bytes": 0,
+                                "last_error": {"code": exc.code, "message": str(exc)},
+                                "attributes": dict(attrs),
+                                "chunking_strategy": dict(strategy),
+                                "indexed_chunks": 0,
+                                "truncated": False,
+                            }
+                        )
+                    else:
+                        pending.append((rec, chunks))
+                        pending_ids.add(fid)
+                        counts[rec.status] += 1
+                        rows.append(vs_file_object(rec))
+            with self._lock:
+                meta = self._store(vs_id, touch_lru=False)
+                batch = VSBatchRec(
+                    batch_id=f"vsfb_{uuid.uuid4().hex}",
+                    vector_store_id=vs_id,
+                    created_at=created,
+                    status="completed" if counts["completed"] > 0 else "failed",
+                    file_ids=list(file_ids),
+                    files=rows,
+                    counts=counts,
+                )
+                touch = self._touch_record(meta)
+                if self._journal is not None:
+                    self._journal.append(
                         {
-                            "id": fid,
-                            "object": "vector_store.file",
-                            "vector_store_id": vs_id,
-                            "created_at": created,
-                            "status": "failed",
-                            "usage_bytes": 0,
-                            "last_error": {"code": exc.code, "message": str(exc)},
-                            "attributes": dict(attrs),
-                            "chunking_strategy": dict(strategy),
-                            "indexed_chunks": 0,
-                            "truncated": False,
+                            "vs_files": [rec.model_dump(mode="json") for rec, _chunks in pending],
+                            "vs_batch": batch.model_dump(mode="json"),
+                            "vs_touch": touch,
                         }
                     )
-                else:
-                    counts[rec["status"]] += 1
-                    rows.append(rec)
-            batch = VSBatchRec(
-                batch_id=f"vsfb_{uuid.uuid4().hex}",
-                vector_store_id=vs_id,
-                created_at=created,
-                status="completed" if counts["completed"] > 0 else "failed",
-                file_ids=list(file_ids),
-                files=rows,
-                counts=counts,
-            )
-            with self._lock:
+                for rec, chunks in pending:
+                    self._publish_file_locked(meta, rec, chunks)
                 self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
-                if self._journal is not None:
-                    self._journal.append({"vs_batch": batch.model_dump(mode="json")})
-                self._touch_locked(meta)
-            return vs_batch_object(batch)
+                self._publish_touch_locked(meta, touch)
+                return vs_batch_object(batch)
         finally:
             with self._condition:
-                self._unpin_locked(vs_id)
+                self._end_membership_locked(vs_id)
 
     def _batch(self, vs_id: str, batch_id: str) -> VSBatchRec:
         self._store(vs_id)  # 404 ghost store
@@ -1159,7 +1276,7 @@ class VectorStoreStore:
             raise VectorStoreError(400, "vector_store_ids is empty", "invalid_request")
         qvec_raw = _vec(_tokens(query))
         with self._lock:
-            metas = [self._store(s) for s in dict.fromkeys(ids)]
+            metas = [self._store(s, touch_lru=False) for s in dict.fromkeys(ids)]
             for meta in metas:
                 if self._expired(meta):
                     raise VectorStoreError(
@@ -1169,7 +1286,6 @@ class VectorStoreStore:
                     )
             hits: list[dict[str, Any]] = []
             for meta in metas:
-                self._touch_locked(meta)
                 idf = self._idf_table(meta.vs_id)
                 # query vector gets the store's idf applied symmetrically
                 qvec = {h: v * idf.get(h, 0.0) for h, v in qvec_raw.items()}
@@ -1196,6 +1312,12 @@ class VectorStoreStore:
                                 "attributes": dict(rec.attributes),
                             }
                         )
+            now = int(time.time())
+            touches = [self._touch_record(meta, now=now) for meta in metas]
+            if self._journal is not None:
+                self._journal.append({"vs_touches": touches})
+            for meta, touch in zip(metas, touches, strict=True):
+                self._publish_touch_locked(meta, touch)
             # score desc, then stable ids — deterministic ordering
             hits.sort(key=lambda h: (-float(h["score"]), str(h["file_id"])))
             return hits[:max_results]
