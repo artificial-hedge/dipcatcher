@@ -142,7 +142,7 @@ def _train(repo_root: Path) -> tuple[torch.nn.Module, float, str]:
     corpus_sha = hashlib.sha256(text.encode()).hexdigest()
     ids = torch.tensor([BOS_ID, *text.encode("utf-8")], dtype=torch.long)
     model = _build_torch_model(VOCAB_SIZE, _DIM, _CTX, _N_HEADS)
-    opt = torch.optim.AdamW(model.parameters(), lr=_LR)
+    opt = torch.optim.AdamW(model.parameters(), lr=_LR, weight_decay=0.01)
     gen = torch.Generator().manual_seed(_SEED)
     n_positions = ids.numel() - _CTX - 1
     final_loss = float("nan")
@@ -173,7 +173,14 @@ def _write_checkpoint(
 
     from fx1.modelcard import EvalDelta, ModelCard
 
-    out_dir.mkdir(parents=True, exist_ok=True)
+    root = _REPO_ROOT.resolve()
+    resolved = out_dir.resolve()
+    if not resolved.is_relative_to(root):
+        raise RuntimeError(
+            f"refusing to write a checkpoint outside the repo: {resolved} (repo root is {root})"
+        )
+    resolved.mkdir(parents=True, exist_ok=True)
+    out_dir = resolved
     weights_path = out_dir / "weights.safetensors"
     tensors = {
         name: param.detach().cpu().numpy().astype(np.float32)

@@ -49,6 +49,10 @@ WEIGHTS_FILENAME = "weights.safetensors"
 MANIFEST_FILENAME = "weights.manifest.json"
 CARD_FILENAME = "modelcard.json"
 
+_TOK_EMB = "tok_emb.weight"
+_POS_EMB = "pos_emb.weight"
+_LM_HEAD = "lm_head.weight"
+
 VOCAB_SIZE = 259  # 256 byte-value tokens + BOS + EOS + PAD
 BOS_ID = 256
 EOS_ID = 257
@@ -113,15 +117,15 @@ class _TinyLM:
 
     @classmethod
     def from_tensors(cls, tensors: dict[str, _F32], *, n_heads: int = 4) -> _TinyLM:
-        required = ("tok_emb.weight", "pos_emb.weight", "ln_f.weight", "ln_f.bias")
+        required = (_TOK_EMB, _POS_EMB, "ln_f.weight", "ln_f.bias")
         for key in required:
             if key not in tensors:
                 raise RuntimeError(f"weights file is missing tensor {key!r}")
-        tok = tensors["tok_emb.weight"]
-        pos = tensors["pos_emb.weight"]
+        tok = tensors[_TOK_EMB]
+        pos = tensors[_POS_EMB]
         if tok.ndim != 2 or pos.ndim != 2 or pos.shape[1] != tok.shape[1]:
             raise RuntimeError("weights file has malformed embedding tensors")
-        if "lm_head.weight" in tensors and tensors["lm_head.weight"].shape[0] != tok.shape[0]:
+        if _LM_HEAD in tensors and tensors[_LM_HEAD].shape[0] != tok.shape[0]:
             raise RuntimeError("lm_head vocab does not match tok_emb vocab")
         n_layers = len({k.split(".")[1] for k in tensors if k.startswith("blocks.")})
         if n_layers < 1:
@@ -153,7 +157,7 @@ class _TinyLM:
         """One real forward pass: returns logits ``(len(ids), vocab)``."""
         w = self.tensors
         idx = np.asarray(ids[-self.ctx :], dtype=np.int64)
-        x = w["tok_emb.weight"][idx] + w["pos_emb.weight"][: len(idx)]
+        x = w[_TOK_EMB][idx] + w[_POS_EMB][: len(idx)]
         n = len(idx)
         dh = self.dim // self.n_heads
         causal = np.triu(np.ones((n, n), dtype=bool), k=1)
@@ -173,7 +177,7 @@ class _TinyLM:
             hidden = _gelu_tanh(m @ w[p + "mlp.fc1.weight"].T + w[p + "mlp.fc1.bias"])
             x = x + (hidden @ w[p + "mlp.fc2.weight"].T + w[p + "mlp.fc2.bias"])
         x = _layernorm(x, w["ln_f.weight"], w["ln_f.bias"])
-        head = w["lm_head.weight"] if "lm_head.weight" in w else w["tok_emb.weight"]
+        head = w[_LM_HEAD] if _LM_HEAD in w else w[_TOK_EMB]
         return cast(_F32, x @ head.T)
 
     def generate(
@@ -529,7 +533,7 @@ def serve(engine: LocalWeightsEngine, host: str, port: int, *, watch_orphan: boo
     if watch_orphan:
         threading.Thread(target=_watch_orphan, args=(os.getppid(),), daemon=True).start()
     try:
-        srv.serve_forever()
+        srv.serve_forever()  # NOSONAR — loopback fixture engine; harness-local, no TLS needed
     except KeyboardInterrupt:
         pass
     finally:

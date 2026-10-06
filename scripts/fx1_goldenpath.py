@@ -334,6 +334,101 @@ def _leg_detail(obj: Any, limit: int = 180) -> str:
         return str(obj)[:limit]
 
 
+def _weights_direct_leg(legs: _Legs, ckpt_dir: Path | None, weight_hits: list[str]) -> Any:
+    """In-process load of the committed checkpoint → ``weights_direct_ran``.
+
+    Returns the loaded engine (for the wire-equality pin in
+    ``_local_link_leg``) or ``None`` when the checkpoint cannot serve."""
+    if ckpt_dir is None:
+        legs.record(
+            "weights_direct_ran",
+            False,
+            False,
+            "no loadable fx-1 checkpoint exists in this checkout "
+            f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
+            f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}; "
+            "artifacts/fx1_tiny_lm needs modelcard.json + weights.manifest.json "
+            "+ weights.safetensors — regenerate via scripts/fx1_tiny_lm_train.py)",
+        )
+        return None
+    try:
+        from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
+
+        engine = LocalWeightsEngine(ckpt_dir)
+        prompt = [{"role": "user", "content": "weights-direct-ping"}]
+        first = engine.complete_messages(prompt)
+        second = engine.complete_messages(prompt)
+        legs.record(
+            "weights_direct_ran",
+            True,
+            first.text == second.text and bool(first.text.strip()),
+            f"in-process load of {ckpt_dir.relative_to(_REPO_ROOT)} "
+            f"(weights_sha256={engine.weights_sha256[:16]}… "
+            f"n_params={engine.model.n_params} "
+            f"model={engine.served_model}); deterministic "
+            f"greedy completion ran twice: {first.text[:64]!r}",
+        )
+        return engine
+    except Exception as exc:  # noqa: BLE001
+        legs.record("weights_direct_ran", True, False, f"{type(exc).__name__}: {exc}")
+        return None
+
+
+def _local_link_leg(
+    legs: _Legs,
+    base: str,
+    client: Any,
+    weights_engine: Any,
+    leg_timeout_s: float,
+    engine_sock: socket.socket | None,
+) -> None:
+    """``local_fx1`` wire path: backend spawns the engine; pin is byte-equality
+    between wire output and the same checkpoint completed in-process."""
+    # Release the held engine port at leg start — only the live-request path
+    # needs it held (until the spawn fires); on every other branch it just
+    # frees the reservation.
+    if engine_sock is not None:
+        engine_sock.close()
+    try:
+        import openai as _openai_mod
+    except ImportError:
+        _openai_mod = None
+    if _openai_mod is None:
+        legs.record("local_fx1_link_ran", False, False, "openai package not installed")
+        return
+    if weights_engine is None:
+        legs.record("local_fx1_link_ran", False, False, "no committed weight checkpoint to serve")
+        return
+    try:
+        oai = _openai_mod.OpenAI(base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=leg_timeout_s)
+        loc = oai.chat.completions.create(
+            model="local_fx1", messages=[{"role": "user", "content": "local-ping"}]
+        )
+        loc_done = client.complete([{"role": "user", "content": "local-hc"}], backend="local_fx1")
+        wire_text = loc.choices[0].message.content or ""
+        direct_text = weights_engine.complete_messages(
+            [{"role": "user", "content": "local-ping"}]
+        ).text
+        # The served engine is spawned per request and terminated on
+        # teardown — no probe can outlive its request — so the pin is
+        # byte-equality: wire output must equal the same checkpoint
+        # completed in-process. Only identical weights can produce
+        # identical bytes under greedy decode.
+        legs.record(
+            "local_fx1_link_ran",
+            True,
+            wire_text == direct_text
+            and bool(wire_text.strip())
+            and loc.model == weights_engine.served_model
+            and loc_done.backend == "local_fx1",
+            f"oai_model={loc.model} hc_model={loc_done.model} "
+            f"wire==in-process-direct={wire_text == direct_text} "
+            f"served_model={loc.model} content={wire_text[:48]!r}",
+        )
+    except Exception as exc:  # noqa: BLE001
+        legs.record("local_fx1_link_ran", True, False, f"{type(exc).__name__}: {exc}")
+
+
 def run_goldenpath(
     *,
     work_dir: Path | None = None,
@@ -364,40 +459,7 @@ def run_goldenpath(
 
     # --- weights-direct leg: load the committed artifact in-process ------
     ckpt_dir = _committed_checkpoint()
-    weight_hits = _all_weight_hits()
-    weights_engine: Any = None
-    weights_prompt = [{"role": "user", "content": "weights-direct-ping"}]
-    if ckpt_dir is None:
-        legs.record(
-            "weights_direct_ran",
-            False,
-            False,
-            "no loadable fx-1 checkpoint exists in this checkout "
-            f"(weight-artifact suffix search over {sorted(_WEIGHT_SUFFIXES)} "
-            f"found {len(weight_hits)} candidate(s): {weight_hits[:3] or 'none'}; "
-            "artifacts/fx1_tiny_lm needs modelcard.json + weights.manifest.json "
-            "+ weights.safetensors — regenerate via scripts/fx1_tiny_lm_train.py)",
-        )
-    else:
-        try:
-            from fx1.serve.local_engine import LocalWeightsEngine  # noqa: PLC0415
-
-            weights_engine = LocalWeightsEngine(ckpt_dir)
-            first = weights_engine.complete_messages(weights_prompt)
-            second = weights_engine.complete_messages(weights_prompt)
-            legs.record(
-                "weights_direct_ran",
-                True,
-                first.text == second.text and bool(first.text.strip()),
-                f"in-process load of {ckpt_dir.relative_to(_REPO_ROOT)} "
-                f"(weights_sha256={weights_engine.weights_sha256[:16]}… "
-                f"n_params={weights_engine.model.n_params} "
-                f"model={weights_engine.served_model}); deterministic "
-                f"greedy completion ran twice: {first.text[:64]!r}",
-            )
-        except Exception as exc:  # noqa: BLE001
-            legs.record("weights_direct_ran", True, False, f"{type(exc).__name__}: {exc}")
-            weights_engine = None
+    weights_engine = _weights_direct_leg(legs, ckpt_dir, _all_weight_hits())
 
     # --- real stub engine (the closest-to-real in-repo OpenAI-compatible) ----
     from fx1.serve.e2e_audit import _StubChat  # noqa: PLC0415 — audit stub reuse
@@ -482,58 +544,8 @@ def run_goldenpath(
         # on the declared URL and serves the committed checkpoint's real
         # weights. The pin is byte-equality: wire output must equal the same
         # checkpoint loaded in-process — no stub could produce it.
-        try:
-            import openai as _openai_mod
-        except ImportError:
-            _openai_mod = None
-        if _openai_mod is None:
-            legs.record("local_fx1_link_ran", False, False, "openai package not installed")
-        elif weights_engine is None:
-            legs.record(
-                "local_fx1_link_ran",
-                False,
-                False,
-                "no committed weight checkpoint to serve",
-            )
-        else:
-            try:
-                # Hold the advertised engine port until the moment the first
-                # local_fx1 request fires the spawn — between serve boot and
-                # now, other legs' outbound sockets could have been dealt it.
-                if engine_sock is not None:
-                    engine_sock.close()
-                    engine_sock = None
-                oai = _openai_mod.OpenAI(
-                    base_url=f"{base}/v1", api_key=_PROBE_KEY, timeout=leg_timeout_s
-                )
-                loc = oai.chat.completions.create(
-                    model="local_fx1", messages=[{"role": "user", "content": "local-ping"}]
-                )
-                loc_done = client.complete(
-                    [{"role": "user", "content": "local-hc"}], backend="local_fx1"
-                )
-                wire_text = loc.choices[0].message.content or ""
-                direct_text = weights_engine.complete_messages(
-                    [{"role": "user", "content": "local-ping"}]
-                ).text
-                # The served engine is spawned per request and terminated on
-                # teardown — no probe can outlive its request — so the pin is
-                # byte-equality: wire output must equal the same checkpoint
-                # completed in-process. Only identical weights can produce
-                # identical bytes under greedy decode.
-                legs.record(
-                    "local_fx1_link_ran",
-                    True,
-                    wire_text == direct_text
-                    and bool(wire_text.strip())
-                    and loc.model == weights_engine.served_model
-                    and loc_done.backend == "local_fx1",
-                    f"oai_model={loc.model} hc_model={loc_done.model} "
-                    f"wire==in-process-direct={wire_text == direct_text} "
-                    f"served_model={loc.model} content={wire_text[:48]!r}",
-                )
-            except Exception as exc:  # noqa: BLE001
-                legs.record("local_fx1_link_ran", True, False, f"{type(exc).__name__}: {exc}")
+        _local_link_leg(legs, base, client, weights_engine, leg_timeout_s, engine_sock)
+        engine_sock = None  # closed inside _local_link_leg (or already None)
 
         # in-process SDK twin (no socket — parity surface) --------------------
         try:

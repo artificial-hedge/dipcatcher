@@ -102,8 +102,10 @@ def test_weights_direct_checkpoint_loads_and_serves(tmp_path: Path) -> None:
     msgs = [{"role": "user", "content": "weights-direct-ping"}]
     a = engine.complete_messages(msgs)
     b = engine.complete_messages(msgs)
-    assert a.text and a.text == b.text
-    assert a.prompt_tokens > 0 and a.completion_tokens > 0
+    assert a.text
+    assert a.text == b.text
+    assert a.prompt_tokens > 0
+    assert a.completion_tokens > 0
     validate_fx1_output(a.text)  # what the wire ships must clear the gate
 
     manifest = json.loads((_CKPT / "weights.manifest.json").read_text())
@@ -137,6 +139,7 @@ def test_weights_direct_checkpoint_loads_and_serves(tmp_path: Path) -> None:
             done = json.loads(r.read().decode())
         assert done["choices"][0]["message"]["content"] == a.text
         assert done["usage"]["total_tokens"] == a.prompt_tokens + a.completion_tokens
+        assert done["usage"]["prompt_tokens"] == a.prompt_tokens
     finally:
         srv.shutdown()
         srv.server_close()
