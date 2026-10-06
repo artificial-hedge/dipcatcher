@@ -85,6 +85,7 @@ packages = [
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
+    "parity_leak_audit",  # adversarial contract audit over parity+leakage (research-layer tool)
 ]
 
 [[layers]]
@@ -199,6 +200,10 @@ allowed = [
     # cli/api/paper coupling may enter through them.
     "quant_fund.models.iv_approx",
     "quant_fund.models.options",
+    # receipt.v2 envelope — data structure module (pydantic models) that fx1
+    # legitimately needs for sealed evidence handling. Not a pipeline/research
+    # orchestration coupling; same category as schemas.
+    "quant_fund.research.receipt_v2",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 
@@ -281,3 +286,65 @@ file = "src/quant_fund/validation/gates.py"
 module = "quant_fund.research.verify"
 rule = "layer-order"
 note = "validation gates reach up into research.verify"
+
+# ---------------------------------------------------------------------------
+# 2026-10-06 gate-remediation sweep (kimi lane). Nine layer-order edges that
+# pre-date this sweep, itemized per the baseline contract above. The dominant
+# pattern (5 of 9) is market_data/foundation readers importing the receipt.v2
+# envelope: the structural fix is relocating receipt_v2 (+ its schema) down to
+# schemas/ — tracked as one cleanup, delete all five entries when it lands.
+# ---------------------------------------------------------------------------
+
+[[baseline]]
+file = "src/quant_fund/registry/contract_probe.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "foundation->research: contract probe validates receipt.v2 envelopes; fix = relocate receipt_v2 to schemas/"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/grammar_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/wave23_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/wave24_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/zone_map.py"
+module = "quant_fund.research.receipt_v2"
+rule = "layer-order"
+note = "market_data->research: map module seals receipt.v2 evidence; fix = relocate receipt_v2 to schemas/"
+
+[[baseline]]
+file = "src/quant_fund/fusion/stack_watch.py"
+module = "quant_fund.research.evalues"
+rule = "layer-order"
+note = "market_data->research: stack watch reads e-value contracts for anytime-valid monitoring; fix = expose the contract via schemas/ or move stack_watch up"
+
+[[baseline]]
+file = "src/quant_fund/metrics/signature_features.py"
+module = "quant_fund.models.path_signatures"
+rule = "layer-order"
+note = "metrics->models: signature feature builder reuses the path-signature transform; fix = move the shared transform down to metrics/ or a leaf math module"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/event_time_flow.py"
+module = "quant_fund.models.changepoint"
+rule = "layer-order"
+note = "microstructure->models: event-time flow uses the changepoint detector; fix = move changepoint math to a leaf module both layers can import"
+
+[[baseline]]
+file = "src/quant_fund/microstructure/sigkernel_mmd.py"
+module = "quant_fund.models.sigkernel"
+rule = "layer-order"
+note = "microstructure->models: MMD two-sample test reuses the sigkernel feature map; fix = move sigkernel math to a leaf module"
