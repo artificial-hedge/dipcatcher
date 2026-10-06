@@ -236,3 +236,36 @@ from the diff per receipt convention; historical receipts remain
 unchanged. Probes are SYNTHETIC — labelled stubs, no market evidence.
 The serve census stays at 45 (the module was already counted) and
 remains `partial`.
+### Cross-key tenancy (PR #2818)
+
+The new `tenancy_audit` checks 141 tenancy contracts — the ownership
+matrix over every stateful family (responses, conversations, files,
+uploads, batches, evals/specs, ft jobs, the `ft:` registry, vector
+stores, stored completions, harness jobs), secrets-leak channels,
+header precedence, per-key metering, idempotency namespacing, quota
+independence, BYOK isolation, revocation boundaries, drain, and
+restart durability — over SYNTHETIC stub/gate backends and isolated
+state dirs. The battery reuses the conversation lane's resource
+context, gate backend, and client plumbing.
+
+The measured contract is scope-based shared workspace, not per-principal
+tenancy: every cross-key matrix cell holds — any key holding the verb's
+scope reads, mutates, and deletes any peer's resource; isolation is
+claimed (and proven) only for metering, admin surfaces, header
+precedence, key material, budgets, and tombstones. `rate_limit_rps` is
+a per-client-host valve; eval runs expose no mid-flight cancel (409 for
+minter and peer alike); the max_tokens budget admits the call that
+crosses the cap and refuses the next.
+
+One defect was found and fixed: `_REQUEST_KEY_ID` did not propagate
+into `jobs_executor` workers, so `background=true` responses ran
+unattributed (`key_id: null` in the completions ledger) and unmetered
+(`tokens_used: 0`); the principal is now captured at submit and
+restored inside `_bg_run`, mirroring the batch worker's
+`batch._key_id` handling. The two cross-credential idempotency probes
+also pass on the integrated tree because #2816 scopes replay claims by
+the authenticated key id and stores only digested client keys.
+
+The incoming `fx1_tenancy_audit.json` names the earlier merge base and
+is excluded; historical receipts remain unchanged. The serve census
+moves from 45 to 46 and remains `partial`.
