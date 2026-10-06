@@ -1,0 +1,54 @@
+{
+  "claim": {
+    "cross_iid_regime": {
+      "mmd2": 0.209912,
+      "null_mean": 0.11423,
+      "null_std": 0.083193,
+      "p_value": 0.125
+    },
+    "cross_iid_split": {
+      "mmd2": 9218.18566,
+      "null_mean": 1443.634001,
+      "null_std": 1355.538659,
+      "p_value": 0.005
+    },
+    "n_execs_iid": 3319,
+    "n_execs_regime": 3684,
+    "n_execs_split": 4310,
+    "n_passed": 9,
+    "n_probes": 9,
+    "null_same_source": {
+      "mmd2": 0.408767,
+      "null_mean": 0.297418,
+      "null_std": 0.214576,
+      "p_value": 0.22
+    },
+    "ok": true,
+    "pde_series_gap": {
+      "0.125": 0.00121295,
+      "0.25": 0.02080109,
+      "1.0": 16.48561804
+    },
+    "results": {
+      "gram_psd": true,
+      "kernel_self_positive": true,
+      "kernel_symmetric": true,
+      "mmd_self_zero": true,
+      "null_calibrated": true,
+      "pde_matches_series": true,
+      "regime_gap_reported": true,
+      "regime_windows_built": true,
+      "separates_flow_classes": true
+    },
+    "tape": "absent"
+  },
+  "data_label": "SYNTHETIC",
+  "estimator": "signature kernel via the Goursat PDE (Salvi et al. 2021) on (t, cumsum-sign) path windows; biased V-statistic MMD^2; add-one permutation p-value over a single pooled Gram",
+  "git_revision": "6e3b88b5885ded6fd71b67f9bfdb83f25278412b",
+  "interpretation": "A characteristic-kernel two-sample test on order flow: MMD=0 iff the path laws agree, so separation means the whole path distribution differs \u2014 memory, clustering and run structure at once. Same-source halves calibrate the null; distinct flow classes must separate under permutation.",
+  "kind": "sigkernel_mmd",
+  "live_pnl_claim": false,
+  "receipt_sha256": "b94abdc5d250d7fe49a7c9799d7ef51a468b66c50984d61be8ab4dc364e4c218",
+  "research_only": true,
+  "schema": "sigkernel_mmd.v1"
+}

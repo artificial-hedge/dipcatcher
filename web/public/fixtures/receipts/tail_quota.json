@@ -1,0 +1,36 @@
+{
+  "kind": "tail_quota",
+  "schema": "tail_quota.v1",
+  "git_revision": "3bc3cb44c2e3b30fec61b6e8e60e150fb0ab0233",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "e-process alarms iff the breach rate at level c exceeds alpha",
+    "verdict": "ok"
+  },
+  "interpretation": {
+    "honest": {
+      "n": 800,
+      "c": -0.02,
+      "alpha": 0.05,
+      "breach_rate": 0.045,
+      "e_final": 0.02286070189799543,
+      "e_max": 1.0,
+      "alarm_t": null,
+      "alarmed": false
+    },
+    "fat_tail": {
+      "n": 800,
+      "c": -0.02,
+      "alpha": 0.05,
+      "breach_rate": 0.085,
+      "e_final": 134.91097555632754,
+      "e_max": 925.1440496387669,
+      "alarm_t": 480,
+      "alarmed": true
+    },
+    "note": "beta-posterior-mean alternative keeps the LR product an e-process under H0"
+  },
+  "receipt_sha256": "0be911ee4f1af451e065e3325ede1c58d43c07180d8df5e4070ab4872898d16e"
+}

@@ -1,0 +1,29 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "binds_corpus": true,
+   "binds_eval": true,
+   "corpus_stats": true,
+   "domain_violation_fails": true,
+   "empty_refuses": true,
+   "failing_honesty_fails": true,
+   "flag_alone_fails": true,
+   "gate_ok": true,
+   "honesty_hardcoded": true,
+   "missing_corpus_fails": true,
+   "missing_eval_fails": true,
+   "no_flag_fails": true,
+   "no_provenance_refuses": true,
+   "written_matches": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "123110308ce2925e864f752f7482e1bbbfcb2a40",
+ "interpretation": "Manifest-builder contract holds: corpus provenance + non-empty are enforced, the honesty gate is re-derived (flag alone, no honesty results, failing honesty, and domain-task violations all refuse), and the manifest binds corpus+eval by sha256 with hardcoded honesty fields.",
+ "kind": "run_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "35e29958d71ea55d2712720e8489f326cd3a4e147a1f9b7d1d8f96b36cdf7fb8",
+ "research_only": true,
+ "schema": "run_audit.v1"
+}

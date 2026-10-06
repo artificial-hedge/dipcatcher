@@ -1,0 +1,157 @@
+{
+  "code_files": {
+    "replay_sweep.py": "6ce506e0067976c500a1212193009c4558756e79774a20c899b5eafe0264389c"
+  },
+  "code_sha256": "d2ebadf72b8434d65076b2997ec0adc7552a1aaaa802480b1b117589742e2394",
+  "data_label": "CORPUS",
+  "dataset_hash": "22da01de24c090909c4210258939cac44c0b4d318e7f723ffcf6256a6ac33b53",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T13:57:17.658434+00:00",
+  "git_revision": "dbf7d35edafdbef91df069905a927544f7f85905",
+  "kind": "replay_coverage",
+  "live_pnl_claim": false,
+  "params_hash": "2e8354e803f2fa36b3b51299fc99b6ae52c469a58c0d166ab5961a417126b34e",
+  "payload": {
+    "carriers_dir": "data/manifests/replay",
+    "claims_byte_equal_frac": 0.47368421052631576,
+    "coverage": 1.0,
+    "data_label": "CORPUS",
+    "kind": "replay_coverage",
+    "live_pnl_claim": false,
+    "n_carriers": 16,
+    "n_claims_byte_equal": 9,
+    "n_claims_total": 19,
+    "n_fail": 0,
+    "n_pass": 16,
+    "n_skipped": 0,
+    "research_only": true,
+    "rows": [
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/calib.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/conformal.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/corpus.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/coverage.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/coverage_cs.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/cp.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/drift.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/loss_cs.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/mcs.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/mcs_vol.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/monitor.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/panel_audit.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/race.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/serial.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/tail.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
+        "carrier": "data/manifests/replay/verdict.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      }
+    ],
+    "schema": "replay_coverage.v1",
+    "timeout_s": 600.0,
+    "verdict": "pass"
+  },
+  "receipt_sha256": "5e5e7ff56ee4219648c7cbc99c4943e9547528d855993c773fc9fee4dda0cf29",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

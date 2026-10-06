@@ -1,0 +1,515 @@
+{
+  "kind": "warmup_spec",
+  "schema": "warmup_spec.v1",
+  "git_revision": "dd2c9469ba9631d344f622e4bfb68d943440a2f1",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "claim": {
+    "invariant": "chunked replay at seam is safe iff warmup clears the residual curve",
+    "n": 512,
+    "seam": 256,
+    "floor_tol": 1e-08
+  },
+  "interpretation": {
+    "ops": {
+      "rolling_mean_5": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 4,
+        "residual_first": null,
+        "residual_last": 2.9132252166164108e-12,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": 2.8990143619012088e-12
+          },
+          {
+            "warmup": 8,
+            "residual": 2.8990143619012088e-12
+          },
+          {
+            "warmup": 16,
+            "residual": 2.8990143619012088e-12
+          },
+          {
+            "warmup": 32,
+            "residual": 2.8990143619012088e-12
+          },
+          {
+            "warmup": 64,
+            "residual": 2.9132252166164108e-12
+          },
+          {
+            "warmup": 128,
+            "residual": 2.9132252166164108e-12
+          }
+        ]
+      },
+      "rolling_mean_20": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 19,
+        "residual_first": null,
+        "residual_last": 1.4637180356658064e-12,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": null
+          },
+          {
+            "warmup": 32,
+            "residual": 1.2789769243681803e-12
+          },
+          {
+            "warmup": 64,
+            "residual": 1.6342482922482304e-12
+          },
+          {
+            "warmup": 128,
+            "residual": 1.4637180356658064e-12
+          }
+        ]
+      },
+      "rolling_std_5": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 4,
+        "residual_first": null,
+        "residual_last": 1.1930864907139238e-09,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": 1.6380280742911424e-09
+          },
+          {
+            "warmup": 8,
+            "residual": 1.6380280742911424e-09
+          },
+          {
+            "warmup": 16,
+            "residual": 1.6380280742911424e-09
+          },
+          {
+            "warmup": 32,
+            "residual": 1.6380280742911424e-09
+          },
+          {
+            "warmup": 64,
+            "residual": 1.6380280742911424e-09
+          },
+          {
+            "warmup": 128,
+            "residual": 1.1930864907139238e-09
+          }
+        ]
+      },
+      "rolling_std_20": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 19,
+        "residual_first": null,
+        "residual_last": 2.4845836499309826e-10,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": null
+          },
+          {
+            "warmup": 32,
+            "residual": 3.6823860627421823e-10
+          },
+          {
+            "warmup": 64,
+            "residual": 4.002593256835496e-10
+          },
+          {
+            "warmup": 128,
+            "residual": 2.4845836499309826e-10
+          }
+        ]
+      },
+      "ema_12": {
+        "status": "exact",
+        "exact_warmup": 184,
+        "warmup_at_floor": 102,
+        "residual_first": null,
+        "residual_last": 1.0526690630285884e-09,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": 0.14130568876414884
+          },
+          {
+            "warmup": 32,
+            "residual": 0.003965607177605079
+          },
+          {
+            "warmup": 64,
+            "residual": 1.3000224655002057e-05
+          },
+          {
+            "warmup": 128,
+            "residual": 1.0526690630285884e-09
+          }
+        ]
+      },
+      "ema_26": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 185,
+        "residual_first": null,
+        "residual_last": 3.618822519513287e-05,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": null
+          },
+          {
+            "warmup": 32,
+            "residual": 0.1449664448563368
+          },
+          {
+            "warmup": 64,
+            "residual": 0.00856901607899374
+          },
+          {
+            "warmup": 128,
+            "residual": 3.618822519513287e-05
+          }
+        ]
+      },
+      "rsi_14": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 255,
+        "residual_first": null,
+        "residual_last": 0.0007440769180107054,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": 13.942930508834003
+          },
+          {
+            "warmup": 32,
+            "residual": 0.18157947925536888
+          },
+          {
+            "warmup": 64,
+            "residual": 0.012810510338916004
+          },
+          {
+            "warmup": 128,
+            "residual": 0.0007440769180107054
+          }
+        ]
+      },
+      "bollinger_20_mid": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 19,
+        "residual_first": null,
+        "residual_last": 1.4637180356658064e-12,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": null
+          },
+          {
+            "warmup": 32,
+            "residual": 1.2789769243681803e-12
+          },
+          {
+            "warmup": 64,
+            "residual": 1.6342482922482304e-12
+          },
+          {
+            "warmup": 128,
+            "residual": 1.4637180356658064e-12
+          }
+        ]
+      },
+      "bollinger_20_bandwidth": {
+        "status": "floored",
+        "exact_warmup": null,
+        "warmup_at_floor": 19,
+        "residual_first": null,
+        "residual_last": 5.967448757360216e-16,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": null
+          },
+          {
+            "warmup": 1,
+            "residual": null
+          },
+          {
+            "warmup": 2,
+            "residual": null
+          },
+          {
+            "warmup": 4,
+            "residual": null
+          },
+          {
+            "warmup": 8,
+            "residual": null
+          },
+          {
+            "warmup": 16,
+            "residual": null
+          },
+          {
+            "warmup": 32,
+            "residual": 5.204170427930421e-16
+          },
+          {
+            "warmup": 64,
+            "residual": 6.661338147750939e-16
+          },
+          {
+            "warmup": 128,
+            "residual": 5.967448757360216e-16
+          }
+        ]
+      },
+      "simple_returns": {
+        "status": "exact",
+        "exact_warmup": 1,
+        "warmup_at_floor": 1,
+        "residual_first": 0.0026655803219359786,
+        "residual_last": 0.0,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": 0.0026655803219359786
+          },
+          {
+            "warmup": 1,
+            "residual": 0.0
+          },
+          {
+            "warmup": 2,
+            "residual": 0.0
+          },
+          {
+            "warmup": 4,
+            "residual": 0.0
+          },
+          {
+            "warmup": 8,
+            "residual": 0.0
+          },
+          {
+            "warmup": 16,
+            "residual": 0.0
+          },
+          {
+            "warmup": 32,
+            "residual": 0.0
+          },
+          {
+            "warmup": 64,
+            "residual": 0.0
+          },
+          {
+            "warmup": 128,
+            "residual": 0.0
+          }
+        ]
+      },
+      "wealth_index": {
+        "status": "nonlocal",
+        "exact_warmup": null,
+        "warmup_at_floor": null,
+        "residual_first": 0.0012422321155745042,
+        "residual_last": 0.028372980716820262,
+        "residual_curve": [
+          {
+            "warmup": 0,
+            "residual": 0.0012422321155745042
+          },
+          {
+            "warmup": 1,
+            "residual": 0.0014412558834964173
+          },
+          {
+            "warmup": 2,
+            "residual": 0.0019885483728177
+          },
+          {
+            "warmup": 4,
+            "residual": 0.0015169159027823564
+          },
+          {
+            "warmup": 8,
+            "residual": 0.0015498834521585625
+          },
+          {
+            "warmup": 16,
+            "residual": 0.017216503861263943
+          },
+          {
+            "warmup": 32,
+            "residual": 0.010169592209087863
+          },
+          {
+            "warmup": 64,
+            "residual": 0.013374470347670253
+          },
+          {
+            "warmup": 128,
+            "residual": 0.028372980716820262
+          }
+        ]
+      }
+    },
+    "note": "nonlocal ops carry absolute state \u2014 shard only with a state handoff",
+    "residual_null_means": "non-finite (inf/nan) divergence at that warmup"
+  },
+  "receipt_sha256": "6453004cc556f66fd913cc45e16eb61a7776508e9435119067aa64ad62286d89"
+}

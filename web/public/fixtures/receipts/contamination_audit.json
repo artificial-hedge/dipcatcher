@@ -1,0 +1,40 @@
+{
+ "claim": {
+  "notes": [
+   "paired-gap inputs are both-or-none: one-sided input silently skips the rephrased_gap probe (visible in the probe list)"
+  ],
+  "ok": true,
+  "results": {
+   "benign_clean": true,
+   "clean_report_unflagged": true,
+   "digest_len": true,
+   "digest_newline_safe": true,
+   "digest_order_free": true,
+   "empty_doc_skipped": true,
+   "empty_eval_skipped": true,
+   "gap_clean": true,
+   "gap_empty_raises": "raise:ValueError",
+   "gap_flags": true,
+   "gap_mismatch_raises": "raise:ValueError",
+   "half_input_skips_gap": true,
+   "hit_eval_index": [
+    0
+   ],
+   "mink_inert": true,
+   "mink_lowest_k": true,
+   "mink_nan": true,
+   "pooled_does_not_overflag": true,
+   "report_binds": true,
+   "report_flagged": true,
+   "verbatim_flags": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "1750b85749b01ec2cf28a700858cc9336c71687c",
+ "interpretation": "Contamination contract holds: verbatim embedding flags at ~1.0 containment, pooled eval sets don't over-flag, digests are order-free/newline-safe, inert probes report inert.",
+ "kind": "contamination_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "ed9b470835da571aa8776dede38db15617306475a78f434f768a88bd4277a4e6",
+ "research_only": true,
+ "schema": "contamination_audit.v1"
+}

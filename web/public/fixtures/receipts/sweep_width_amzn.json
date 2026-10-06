@@ -1,0 +1,85 @@
+{
+  "claim": "aggressor_sweep_width_real_vs_sim",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_widthge2_0.000_vs_0.045",
+    "regime_widthge2_0.000_vs_0.045",
+    "split_widthge2_0.000_vs_0.045",
+    "iid_inexpressible_maxwidth_1_vs_8",
+    "regime_inexpressible_maxwidth_1_vs_8",
+    "split_inexpressible_maxwidth_1_vs_8"
+  ],
+  "git_revision": "b988629becb5cbaf0eb9429138d98137073105c4",
+  "interpretation": "One aggressor impulse = same-timestamp, same-side cluster of visible EXECUTION rows (LOBSTER prints one row per resting order filled by a single MO). width = distinct prices printed; walk_ticks = price excursion of the cluster. Real tape sweeps walk ladders (width>=2 share, max width); every sim arm is pinned at width 1 because aggressor qty is unit-size \u2014 multi-level consumption is inexpressible in the current flow classes.",
+  "kind": "sweep_width.v1",
+  "real": {
+    "max_width": 8,
+    "mean_shares": 93.04324078288575,
+    "mean_walk_ticks": 0.08572295554544075,
+    "n_clusters": 6591,
+    "n_fills_mean": 1.3615536337429828,
+    "ok": true,
+    "width_ge2_share": 0.045061447428311335,
+    "width_ge4_share": 0.0030344409042633897,
+    "width_hist": {
+      "1": 6294,
+      "2": 231,
+      "3": 46,
+      "4": 14,
+      "5": 3,
+      "6": 1,
+      "7": 1,
+      "8": 1
+    }
+  },
+  "receipt_sha256": "a52e2a7415bdbdda9ce1f81bc4976478e758a845db7ccc440fd9792a6ae65fb9",
+  "research_only": true,
+  "schema": 1,
+  "sim_arms": {
+    "iid": {
+      "max_width": 1,
+      "mean_shares": 1.0,
+      "mean_walk_ticks": 0.0,
+      "n_clusters": 5147,
+      "n_fills_mean": 1.0,
+      "ok": true,
+      "width_ge2_share": 0.0,
+      "width_ge4_share": 0.0,
+      "width_hist": {
+        "1": 5147
+      }
+    },
+    "regime": {
+      "max_width": 1,
+      "mean_shares": 1.0,
+      "mean_walk_ticks": 0.0,
+      "n_clusters": 5748,
+      "n_fills_mean": 1.0,
+      "ok": true,
+      "width_ge2_share": 0.0,
+      "width_ge4_share": 0.0,
+      "width_hist": {
+        "1": 5748
+      }
+    },
+    "split": {
+      "max_width": 1,
+      "mean_shares": 1.0,
+      "mean_walk_ticks": 0.0,
+      "n_clusters": 5139,
+      "n_fills_mean": 1.0,
+      "ok": true,
+      "width_ge2_share": 0.0,
+      "width_ge4_share": 0.0,
+      "width_hist": {
+        "1": 5139
+      }
+    }
+  },
+  "tape": {
+    "date": "2012-06-21",
+    "msg": "AMZN_2012-06-21_34200000_57600000_message_10.csv",
+    "ob": "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv",
+    "symbol": "AMZN"
+  }
+}

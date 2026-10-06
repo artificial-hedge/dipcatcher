@@ -1,0 +1,44 @@
+{
+  "schema": "improve_flow.v1",
+  "kind": "improve_flow",
+  "horizon": 1500.0,
+  "seed": 13,
+  "arms": {
+    "deep_only": {
+      "n_lo_arrivals": 6180,
+      "n_fills": 1970,
+      "inside_spread_share": 0.23656957928802588,
+      "touch_join_share": 0.04983818770226537
+    },
+    "improve_10": {
+      "n_lo_arrivals": 6158,
+      "n_fills": 1890,
+      "inside_spread_share": 0.2143553101656382,
+      "touch_join_share": 0.037674569665475804
+    },
+    "improve_25": {
+      "n_lo_arrivals": 6202,
+      "n_fills": 1840,
+      "inside_spread_share": 0.20702999032570138,
+      "touch_join_share": 0.09545307965172525
+    }
+  },
+  "real_tape_targets": {
+    "inside_spread_share": 0.1031
+  },
+  "divergences": [
+    "deep_only_inside=+1.295",
+    "improve_10_inside=+1.079",
+    "improve_25_inside=+1.008"
+  ],
+  "claims": {
+    "deep_anchor_emits_inside_flow": true,
+    "improve_flow_raises_join_share": true,
+    "inside_share_order_of_magnitude": true
+  },
+  "interpretation": "With the floored spread (lo_offset=12), even the pure deep-anchor kernel emits inside-spread flow whenever the spread transiently opens past off+dist \u2014 the improve arm adds a uniform-in-spread component that lifts the join share toward the tape's ~14%. Residual: sim inside-share overshoots the 10.31% target on every arm \u2014 the floored spread admits too much improvement traffic; the honest fix is a two-sided anchor (deep + improve rates balanced to the occupancy), logged not force-fit.",
+  "git_revision": "4adc4607addb6bdf9e667ab71e9fcb845f8ca89f",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "faa9cec944d5eee37f77c76247130f6fd9885023104c54ed651f026bef80403a"
+}

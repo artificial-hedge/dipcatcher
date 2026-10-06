@@ -1,0 +1,90 @@
+{
+  "claim": "event_rate_matrix_measured",
+  "data_label": "MIXED",
+  "divergences": [],
+  "git_revision": "5c8e89933d8b0938fc808ebb41022cd6f1d9bc5c",
+  "interpretation": "The full arrival-rate card is the calibration surface: submissions, cancels, deletes, execs per side per second. Matching only exec intensity leaves the other 95% of the tape's activity unmodeled.",
+  "kind": "event_matrix",
+  "real": {
+    "events_per_s": {
+      "cxl_part": 0.1247,
+      "cxl_part|buy": 0.0553,
+      "cxl_part|sell": 0.0694,
+      "delete": 5.276,
+      "delete|buy": 2.5697,
+      "delete|sell": 2.7062,
+      "exec": 0.3835,
+      "exec_hidden": 0.1045,
+      "exec_hidden|buy": 0.0576,
+      "exec_hidden|sell": 0.0468,
+      "exec|buy": 0.178,
+      "exec|sell": 0.2055,
+      "sub": 5.6391,
+      "sub|buy": 2.7095,
+      "sub|sell": 2.9295
+    },
+    "mix_share": {
+      "cxl_part": 0.0108,
+      "delete": 0.4577,
+      "exec": 0.0333,
+      "exec_hidden": 0.0091,
+      "sub": 0.4892
+    },
+    "n_events": 269748,
+    "span_s": 23399.9
+  },
+  "receipt_sha256": "6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588",
+  "research_only": true,
+  "schema": "event_matrix.v1",
+  "sim_arms": {
+    "iid": {
+      "config_intensity": {
+        "lambda_lo": null,
+        "lambda_mo": null,
+        "theta_cxl": 0.02
+      },
+      "events_per_s": {
+        "exec": 0.1988,
+        "exec_buy": 0.0968,
+        "exec_sell": 0.102
+      },
+      "mix_share": {},
+      "n_events": 20000,
+      "span_s": 16698.6,
+      "steps_per_s": 1.198
+    },
+    "regime": {
+      "config_intensity": {
+        "lambda_lo": null,
+        "lambda_mo": null,
+        "theta_cxl": 0.02
+      },
+      "events_per_s": {
+        "exec": 0.2246,
+        "exec_buy": 0.1142,
+        "exec_sell": 0.1104
+      },
+      "mix_share": {},
+      "n_events": 20000,
+      "span_s": 16573.7,
+      "steps_per_s": 1.207
+    },
+    "split": {
+      "config_intensity": {
+        "lambda_lo": null,
+        "lambda_mo": null,
+        "theta_cxl": 0.02
+      },
+      "events_per_s": {
+        "exec": 0.2792,
+        "exec_buy": 0.1467,
+        "exec_sell": 0.1325
+      },
+      "mix_share": {},
+      "n_events": 20000,
+      "span_s": 15201.5,
+      "steps_per_s": 1.316
+    }
+  },
+  "ticker": "AMZN"
+}

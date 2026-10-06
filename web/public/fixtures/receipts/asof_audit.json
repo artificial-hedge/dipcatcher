@@ -1,0 +1,24 @@
+{
+  "kind": "asof_audit",
+  "schema": "asof_audit.v1",
+  "git_revision": "5d8103489768fbe0b3ab99eb9c6b68286b958fdc",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "asof(t) returns only rows knowable at t; restatements never leak backward",
+    "verdict": "ok"
+  },
+  "interpretation": {
+    "probes": 30,
+    "n_restatements": 6,
+    "violations": {
+      "watermark": 0,
+      "strict_monotone": 0,
+      "future_leak": 0,
+      "latest_supersedes": 0
+    },
+    "total_violations": 0
+  },
+  "receipt_sha256": "51ac6b43dab2991e02219e549715c465e7830e02d53220a71a5e8418e63b2399"
+}

@@ -1,0 +1,23 @@
+{
+  "kind": "error_shape",
+  "schema": "error_shape.v1",
+  "git_revision": "e7c664a431788d6e8e9faeb3e97e01d2cc69831a",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "every route answers probes with an allowed status and a uniform error envelope; no internals leak",
+    "verdict": "ok",
+    "n_routes": 19,
+    "n_probes": 210,
+    "n_violations": 0
+  },
+  "interpretation": {
+    "n_routes": 19,
+    "n_probes": 210,
+    "n_violations": 0,
+    "verdict": "ok",
+    "violations": []
+  },
+  "receipt_sha256": "fc2d1dc4ebed2885287b3ebf338fb23fab26a37d21905f9994662ae68f3d2a43"
+}

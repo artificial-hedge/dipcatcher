@@ -1,0 +1,222 @@
+{
+  "data_label": "LOBSTER-AMZN-2012-06-21-sample",
+  "engine_valid_on_emitted": true,
+  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "interpretation": "Replays the official LOBSTER sample through our book engine and compares the top-10 book to LOBSTER's own snapshot after every event. The orderbook reflects the full ITCH feed including event types the message file omits, so resync_rate bounds the silent-update fraction; match_rate is exact agreement on emitted events",
+  "kind": "lobster_replay",
+  "measurements": {
+    "imbalance_move_r2": 0.0016990977336128108,
+    "mean_depth_ask_l1_5": [
+      138.69846153846154,
+      106.25435897435898,
+      102.17128205128205,
+      111.08102564102565,
+      137.45589743589744
+    ],
+    "mean_depth_bid_l1_5": [
+      219.08358974358976,
+      136.78871794871796,
+      124.23333333333333,
+      162.3574358974359,
+      173.67076923076922
+    ],
+    "mid_move_std": 73.467320171697,
+    "n_book_events": 267303,
+    "n_executions": 8974,
+    "sign_lag1_autocorr": 0.7213059950969467,
+    "spread_ticks_median": 1300.0,
+    "spread_ticks_p95": 2200.0
+  },
+  "receipt_sha256": "755836c9221f7ed53da3a0cdf49a8ce0ddbeb96f4d9e899713f2c912bdb12b34",
+  "reconstruction": {
+    "first_mismatch": {
+      "actual_ask": [
+        [
+          2239600,
+          306
+        ],
+        [
+          2239900,
+          100
+        ],
+        [
+          2240000,
+          1451
+        ],
+        [
+          2242400,
+          20
+        ],
+        [
+          2242500,
+          100
+        ],
+        [
+          2243000,
+          500
+        ],
+        [
+          2244000,
+          447
+        ],
+        [
+          2244900,
+          100
+        ],
+        [
+          2245000,
+          5
+        ],
+        [
+          2245400,
+          100
+        ]
+      ],
+      "actual_bid": [
+        [
+          2237500,
+          74
+        ],
+        [
+          2236500,
+          2
+        ],
+        [
+          2236000,
+          15
+        ],
+        [
+          2235000,
+          100
+        ],
+        [
+          2234900,
+          50
+        ],
+        [
+          2230700,
+          200
+        ],
+        [
+          2230000,
+          10
+        ],
+        [
+          2226200,
+          100
+        ],
+        [
+          2213000,
+          4000
+        ],
+        [
+          2204000,
+          100
+        ]
+      ],
+      "event_index": 45,
+      "expected_ask": [
+        [
+          2239600,
+          306
+        ],
+        [
+          2239900,
+          100
+        ],
+        [
+          2240000,
+          1451
+        ],
+        [
+          2242400,
+          20
+        ],
+        [
+          2242500,
+          100
+        ],
+        [
+          2243000,
+          500
+        ],
+        [
+          2244000,
+          447
+        ],
+        [
+          2244900,
+          100
+        ],
+        [
+          2245000,
+          5
+        ],
+        [
+          2248900,
+          100
+        ]
+      ],
+      "expected_bid": [
+        [
+          2237500,
+          74
+        ],
+        [
+          2236500,
+          2
+        ],
+        [
+          2236000,
+          15
+        ],
+        [
+          2235000,
+          100
+        ],
+        [
+          2234900,
+          50
+        ],
+        [
+          2230700,
+          200
+        ],
+        [
+          2230000,
+          10
+        ],
+        [
+          2226200,
+          100
+        ],
+        [
+          2213000,
+          4000
+        ],
+        [
+          2204000,
+          100
+        ]
+      ]
+    },
+    "match_rate": 0.9603034758307988,
+    "max_divergence_len": 3,
+    "n_compared": 267303,
+    "n_divergence_runs": 10009,
+    "n_events": 269748,
+    "n_match": 256692,
+    "n_resync_events": 10611,
+    "n_size_only_resyncs": 5514,
+    "n_structural_resyncs": 5097,
+    "resync_rate": 0.03969652416920124
+  },
+  "research_only": true,
+  "schema": "lobster_replay.v1",
+  "tape_files": [
+    "AMZN_2012-06-21_34200000_57600000_message_10.csv",
+    "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv"
+  ],
+  "tape_sha256": "c85a75b51f3616a683f825c2e03f984535e9329a8be5ab12325130d32223a2c5",
+  "ticker": "AMZN"
+}

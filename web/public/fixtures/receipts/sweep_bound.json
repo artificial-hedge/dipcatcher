@@ -1,0 +1,74 @@
+{
+  "kind": "sweep_bound",
+  "schema": "sweep_bound.v1",
+  "git_revision": "d086e55eb7130f86ba0d9d7d01ac2595486ae817",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "visible book is a deterministic upper bound on instantaneous sweep cost",
+    "verdict": "ok"
+  },
+  "interpretation": {
+    "buy": [
+      {
+        "q": 10.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 25.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 50.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 100.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 250.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 500.0,
+        "bound_ticks": null
+      }
+    ],
+    "sell": [
+      {
+        "q": 10.0,
+        "bound_ticks": -0.0379999999999967
+      },
+      {
+        "q": 25.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 50.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 100.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 250.0,
+        "bound_ticks": null
+      },
+      {
+        "q": 500.0,
+        "bound_ticks": null
+      }
+    ],
+    "mid": 100.695,
+    "visible_ask_depth": 2,
+    "visible_bid_depth": 10,
+    "bounded_share": {
+      "buy": 0.0,
+      "sell": 0.16666666666666666
+    }
+  },
+  "receipt_sha256": "e1a06135ead54bd7f453712872269b6db6cd1c7e996030de11fbecdbb64a25c6"
+}

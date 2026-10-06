@@ -1,0 +1,77 @@
+{
+  "claim": "matching_engine_invariants_checked_real_and_sim",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_shadow_book_0.0000_vs_0.0338",
+    "regime_shadow_book_0.0000_vs_0.0338",
+    "split_shadow_book_0.0000_vs_0.0338"
+  ],
+  "git_revision": "c917b1c42288fc7cb5cd012c123ba2be801b6184",
+  "interpretation": "Executable spec I1-I8 applied to identical event semantics on both engines. Real-side state checks (I7 exec-at-best, I8 submit-crossed, I2 uncrossed-at-rest) read the OFFICIAL orderbook rows as the state oracle; event bookkeeping checks (I3 conservation, I4 id validity, I5 exec price, I6 monotonic time) run on the message stream itself. replay_diag measures how crossed a bare event-replay book is without band resync \u2014 the drift the lobster replay module's resync absorbs. On the sim the replayed book is the truth, so ANY structural violation (I1/I3/I4/I5) is an engine bug, not a measurement gap.",
+  "kind": "lob_invariants",
+  "real": {
+    "csv": {
+      "crossed_rows": 0,
+      "n_rows": 269748
+    },
+    "examples": {
+      "I4_cancel_unknown_id": "event 66259: oid=92672549",
+      "I4_delete_unknown_id": "event 34: oid=15836786",
+      "I4_exec_unknown_id": "event 44: oid=14585251",
+      "I4_hidden_exec_unknown_id": "event 0: oid=0"
+    },
+    "n_events": 269748,
+    "n_open_orders": 8310,
+    "n_violations": 9127,
+    "ok": true,
+    "replay_diag": {
+      "n_events": 269748,
+      "replay_crossed_events": 259142
+    },
+    "violation_counts": {
+      "I4_cancel_unknown_id": 174,
+      "I4_delete_unknown_id": 5951,
+      "I4_exec_unknown_id": 557,
+      "I4_hidden_exec_unknown_id": 2445
+    },
+    "violation_rates": {
+      "I4_cancel_unknown_id": 0.0006450464878330886,
+      "I4_delete_unknown_id": 0.02206133131663627,
+      "I4_exec_unknown_id": 0.0020648901938105195,
+      "I4_hidden_exec_unknown_id": 0.009064015303171849
+    }
+  },
+  "receipt_sha256": "b763847ae8f8c4ed768f406b1b36f756c64c60a32d93ad0a8320b8fdc86d19dc",
+  "research_only": true,
+  "schema": "lob_invariants.v1",
+  "sim_arms": {
+    "iid": {
+      "examples": {},
+      "n_events": 20020,
+      "n_open_orders": 30,
+      "n_violations": 0,
+      "ok": true,
+      "violation_counts": {},
+      "violation_rates": {}
+    },
+    "regime": {
+      "examples": {},
+      "n_events": 19923,
+      "n_open_orders": 17,
+      "n_violations": 0,
+      "ok": true,
+      "violation_counts": {},
+      "violation_rates": {}
+    },
+    "split": {
+      "examples": {},
+      "n_events": 18232,
+      "n_open_orders": 16,
+      "n_violations": 0,
+      "ok": true,
+      "violation_counts": {},
+      "violation_rates": {}
+    }
+  },
+  "ticker": "AMZN"
+}

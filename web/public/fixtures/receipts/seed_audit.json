@@ -1,0 +1,39 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "avalanche": {
+    "mean_flip_bits_per_index_bit": 16.1,
+    "ok": true,
+    "window": [
+     9.0,
+     22.0
+    ]
+   },
+   "base_sensitivity": {
+    "ok": true
+   },
+   "collision_free": {
+    "n_indices": 50000,
+    "ok": true
+   },
+   "order_independence": {
+    "n_items": 64,
+    "ok": true,
+    "schedules": [
+     "serial",
+     "pool-default",
+     "pool-2"
+    ]
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "c771949420a2401c67586291ea2e2ab4857790a4",
+ "interpretation": "derive_seed is injective over 50k indices, avalanche-healthy (~31/63 bits flip per index-bit), and order-independent across serial/pool schedules.",
+ "kind": "seed_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "5b2722ddee0cc81f80289613c5517211ab5dbe2a5a65c7bd08b790c6b83a619c",
+ "research_only": true,
+ "schema": "seed_audit.v1"
+}

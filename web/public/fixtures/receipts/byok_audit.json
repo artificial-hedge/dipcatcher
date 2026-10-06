@@ -1,0 +1,40 @@
+{
+  "claim": {
+    "ok": true,
+    "results": {
+      "bad_scheme_raises": true,
+      "bad_timeout_raises": true,
+      "bearer_auth": true,
+      "complete_roundtrip": true,
+      "empty_base_raises": true,
+      "error_names_env": true,
+      "factory_resolves_byok": true,
+      "factory_unknown_closed": true,
+      "flag_http_allowed": true,
+      "flag_no_retry": true,
+      "flag_streaming_absent": true,
+      "hostless_raises": true,
+      "json_content_type": true,
+      "kwargs_beat_env": true,
+      "missing_all_raises": true,
+      "missing_content_raises": true,
+      "missing_key_raises": true,
+      "missing_model_raises": true,
+      "model_in_body": true,
+      "nonstr_content_raises": true,
+      "temperature_zero": true,
+      "timeout_wired": true,
+      "transport_error_raises": true,
+      "url_normalization": true,
+      "url_normalized": true
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "21cc52844f2ef4aa2c924709dcee66beeb7a8a67",
+  "interpretation": "BYOK backend holds: construction refuses missing credentials/URLs/models, kwargs beat env, the request pins temperature=0 + Bearer auth + normalized chat/completions URL, and malformed payloads or transport errors fail closed. Flags: http bases allowed for local stacks, no retries, unary only.",
+  "kind": "byok_audit",
+  "live_pnl_claim": false,
+  "receipt_sha256": "8689e03d307018ab3de20da5a3359a4a3353cb2d81520e915ef73baf7bcdd4d4",
+  "research_only": true,
+  "schema": "byok_audit.v1"
+}

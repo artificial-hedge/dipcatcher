@@ -1,0 +1,42 @@
+{
+ "claim": {
+  "invariant": "tearsheet markdown deterministic + literal-clean + summary reconciles",
+  "ok": true,
+  "per_seed": [
+   {
+    "bad_literals": [],
+    "compound_gap": 0.027204217027529953,
+    "deterministic": true,
+    "seed": 0,
+    "self_consistent": true
+   },
+   {
+    "bad_literals": [],
+    "compound_gap": 0.016187693258133184,
+    "deterministic": true,
+    "seed": 1,
+    "self_consistent": true
+   },
+   {
+    "bad_literals": [],
+    "compound_gap": 0.0032124665890420623,
+    "deterministic": true,
+    "seed": 2,
+    "self_consistent": true
+   }
+  ],
+  "seeds": [
+   0,
+   1,
+   2
+  ]
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "c46803be19ad9191a7968ae664f3b86d9365ce45",
+ "interpretation": "3 seeds: determinism True, literal leaks none, max compound gap 2.72e-02",
+ "kind": "report_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "abd605e47f2b6171c1211707be523901cc387ed4cdabae32089ed7d4bbde63eb",
+ "research_only": true,
+ "schema": "report_audit.v1"
+}

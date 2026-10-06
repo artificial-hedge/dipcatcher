@@ -1,0 +1,238 @@
+{
+  "claim": "sign_continuation_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_p5_0.5062_vs_0.8933",
+    "regime_p5_0.4786_vs_0.8933"
+  ],
+  "git_revision": "42e2bf09d57d91a18dff4a0a0cf819987be2f9c2",
+  "interpretation": "p_continue(k)=0.5 at all k under iid flow; the real curve's height and k-profile trace metaorder slicing depth.",
+  "k_max": 15,
+  "kind": "sign_predict",
+  "real": {
+    "continuation": {
+      "1": {
+        "n": 11418,
+        "p_continue": 0.8593
+      },
+      "10": {
+        "n": 3986,
+        "p_continue": 0.9102
+      },
+      "11": {
+        "n": 3628,
+        "p_continue": 0.9123
+      },
+      "12": {
+        "n": 3310,
+        "p_continue": 0.9157
+      },
+      "13": {
+        "n": 3031,
+        "p_continue": 0.9192
+      },
+      "14": {
+        "n": 2786,
+        "p_continue": 0.9218
+      },
+      "15": {
+        "n": 2568,
+        "p_continue": 0.9241
+      },
+      "2": {
+        "n": 9810,
+        "p_continue": 0.8769
+      },
+      "3": {
+        "n": 8601,
+        "p_continue": 0.882
+      },
+      "4": {
+        "n": 7586,
+        "p_continue": 0.8883
+      },
+      "5": {
+        "n": 6739,
+        "p_continue": 0.8933
+      },
+      "6": {
+        "n": 6020,
+        "p_continue": 0.8967
+      },
+      "7": {
+        "n": 5398,
+        "p_continue": 0.9003
+      },
+      "8": {
+        "n": 4860,
+        "p_continue": 0.9039
+      },
+      "9": {
+        "n": 4393,
+        "p_continue": 0.9074
+      }
+    },
+    "n_signs": 11419
+  },
+  "receipt_sha256": "c679c7e3a66d122e8dfb422f6dc21f682e00d96e0ee34c06fb9ff73629de1930",
+  "research_only": true,
+  "schema": "sign_predict.v1",
+  "sim_arms": {
+    "iid": {
+      "continuation": {
+        "1": {
+          "n": 5044,
+          "p_continue": 0.5028
+        },
+        "10": {
+          "n": 19,
+          "p_continue": 0.6842
+        },
+        "11": {
+          "n": 13,
+          "p_continue": 0.6923
+        },
+        "2": {
+          "n": 2536,
+          "p_continue": 0.4957
+        },
+        "3": {
+          "n": 1257,
+          "p_continue": 0.5052
+        },
+        "4": {
+          "n": 635,
+          "p_continue": 0.5071
+        },
+        "5": {
+          "n": 322,
+          "p_continue": 0.5062
+        },
+        "6": {
+          "n": 163,
+          "p_continue": 0.5583
+        },
+        "7": {
+          "n": 91,
+          "p_continue": 0.5824
+        },
+        "8": {
+          "n": 53,
+          "p_continue": 0.566
+        },
+        "9": {
+          "n": 30,
+          "p_continue": 0.6333
+        }
+      },
+      "n_signs": 5045
+    },
+    "regime": {
+      "continuation": {
+        "1": {
+          "n": 5691,
+          "p_continue": 0.5003
+        },
+        "2": {
+          "n": 2847,
+          "p_continue": 0.5072
+        },
+        "3": {
+          "n": 1444,
+          "p_continue": 0.4938
+        },
+        "4": {
+          "n": 713,
+          "p_continue": 0.4923
+        },
+        "5": {
+          "n": 351,
+          "p_continue": 0.4786
+        },
+        "6": {
+          "n": 168,
+          "p_continue": 0.4286
+        },
+        "7": {
+          "n": 72,
+          "p_continue": 0.4167
+        },
+        "8": {
+          "n": 30,
+          "p_continue": 0.4
+        },
+        "9": {
+          "n": 12,
+          "p_continue": 0.25
+        }
+      },
+      "n_signs": 5692
+    },
+    "split": {
+      "continuation": {
+        "1": {
+          "n": 6414,
+          "p_continue": 0.8195
+        },
+        "10": {
+          "n": 3033,
+          "p_continue": 0.9453
+        },
+        "11": {
+          "n": 2867,
+          "p_continue": 0.9466
+        },
+        "12": {
+          "n": 2714,
+          "p_continue": 0.9455
+        },
+        "13": {
+          "n": 2566,
+          "p_continue": 0.9478
+        },
+        "14": {
+          "n": 2432,
+          "p_continue": 0.9527
+        },
+        "15": {
+          "n": 2317,
+          "p_continue": 0.9555
+        },
+        "2": {
+          "n": 5255,
+          "p_continue": 0.8782
+        },
+        "3": {
+          "n": 4614,
+          "p_continue": 0.92
+        },
+        "4": {
+          "n": 4244,
+          "p_continue": 0.9376
+        },
+        "5": {
+          "n": 3979,
+          "p_continue": 0.9452
+        },
+        "6": {
+          "n": 3761,
+          "p_continue": 0.9495
+        },
+        "7": {
+          "n": 3571,
+          "p_continue": 0.9479
+        },
+        "8": {
+          "n": 3385,
+          "p_continue": 0.9471
+        },
+        "9": {
+          "n": 3206,
+          "p_continue": 0.946
+        }
+      },
+      "n_signs": 6415
+    }
+  },
+  "ticker": "AMZN"
+}

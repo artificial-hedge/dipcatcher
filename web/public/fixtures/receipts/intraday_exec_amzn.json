@@ -1,0 +1,441 @@
+{
+  "kind": "intraday_exec",
+  "schema": "intraday_exec.v1",
+  "git_revision": "65eca7779ad9ed1cd7178454fadd73c8c2ce507e",
+  "data_label": "MIXED",
+  "research_only": true,
+  "claim": {
+    "tape": "AMZN 2012-06-21",
+    "markout_s": 5.0,
+    "n_bins": 10,
+    "real": {
+      "n_execs": 8974,
+      "t_open": 34200.017459617,
+      "t_close": 57599.95935965,
+      "buckets": [
+        {
+          "bin": 0,
+          "frac_lo": 0.0,
+          "n": 1011,
+          "effective_mean": 15.09792284866469,
+          "realized_mean": -0.34421364985163205,
+          "buy_share": 0.5934718100890207,
+          "mean_size": 74.37685459940653
+        },
+        {
+          "bin": 1,
+          "frac_lo": 0.1,
+          "n": 784,
+          "effective_mean": 7.713010204081633,
+          "realized_mean": 1.9209183673469388,
+          "buy_share": 0.5854591836734694,
+          "mean_size": 81.73979591836735
+        },
+        {
+          "bin": 2,
+          "frac_lo": 0.2,
+          "n": 1152,
+          "effective_mean": 9.39670138888889,
+          "realized_mean": -2.4887152777777777,
+          "buy_share": 0.609375,
+          "mean_size": 76.796875
+        },
+        {
+          "bin": 3,
+          "frac_lo": 0.3,
+          "n": 454,
+          "effective_mean": 12.533039647577093,
+          "realized_mean": 2.182819383259912,
+          "buy_share": 0.44713656387665196,
+          "mean_size": 64.10572687224669
+        },
+        {
+          "bin": 4,
+          "frac_lo": 0.4,
+          "n": 703,
+          "effective_mean": 13.80796586059744,
+          "realized_mean": -3.8421052631578947,
+          "buy_share": 0.4694167852062589,
+          "mean_size": 61.13940256045519
+        },
+        {
+          "bin": 5,
+          "frac_lo": 0.5,
+          "n": 528,
+          "effective_mean": 9.467803030303031,
+          "realized_mean": 1.7272727272727273,
+          "buy_share": 0.5321969696969697,
+          "mean_size": 65.83333333333333
+        },
+        {
+          "bin": 6,
+          "frac_lo": 0.6,
+          "n": 523,
+          "effective_mean": 11.453154875717017,
+          "realized_mean": 0.9388145315487572,
+          "buy_share": 0.5162523900573613,
+          "mean_size": 71.61567877629064
+        },
+        {
+          "bin": 7,
+          "frac_lo": 0.7,
+          "n": 707,
+          "effective_mean": 11.558698727015559,
+          "realized_mean": 2.1824611032531824,
+          "buy_share": 0.6251768033946252,
+          "mean_size": 61.937765205091935
+        },
+        {
+          "bin": 8,
+          "frac_lo": 0.8,
+          "n": 894,
+          "effective_mean": 12.501118568232663,
+          "realized_mean": -3.379194630872483,
+          "buy_share": 0.569351230425056,
+          "mean_size": 56.09955257270693
+        },
+        {
+          "bin": 9,
+          "frac_lo": 0.9,
+          "n": 2187,
+          "effective_mean": 7.536351165980796,
+          "realized_mean": 0.5948788294467307,
+          "buy_share": 0.45176040237768633,
+          "mean_size": 66.20667581161409
+        }
+      ]
+    },
+    "sim_arms": {
+      "zi_iid": {
+        "n_execs": 6880,
+        "sim_t": 33652.61907045361,
+        "buckets": [
+          {
+            "bin": 0,
+            "frac_lo": 0.0,
+            "n": 696,
+            "effective_mean": 1.882183908045977,
+            "realized_mean": 1.2629310344827587,
+            "buy_share": 0.492816091954023,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 1,
+            "frac_lo": 0.1,
+            "n": 707,
+            "effective_mean": 1.917963224893918,
+            "realized_mean": 1.2517680339462518,
+            "buy_share": 0.512022630834512,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 2,
+            "frac_lo": 0.2,
+            "n": 668,
+            "effective_mean": 1.9401197604790419,
+            "realized_mean": 1.2649700598802396,
+            "buy_share": 0.47005988023952094,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 3,
+            "frac_lo": 0.3,
+            "n": 639,
+            "effective_mean": 1.8607198748043818,
+            "realized_mean": 1.2597809076682316,
+            "buy_share": 0.514866979655712,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 4,
+            "frac_lo": 0.4,
+            "n": 668,
+            "effective_mean": 1.7934131736526946,
+            "realized_mean": 1.2380239520958083,
+            "buy_share": 0.5374251497005988,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 5,
+            "frac_lo": 0.5,
+            "n": 679,
+            "effective_mean": 1.7687776141384388,
+            "realized_mean": 1.2341678939617085,
+            "buy_share": 0.47569955817378495,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 6,
+            "frac_lo": 0.6,
+            "n": 696,
+            "effective_mean": 1.8563218390804597,
+            "realized_mean": 1.3994252873563218,
+            "buy_share": 0.5172413793103449,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 7,
+            "frac_lo": 0.7,
+            "n": 705,
+            "effective_mean": 1.7602836879432624,
+            "realized_mean": 1.177304964539007,
+            "buy_share": 0.5148936170212766,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 8,
+            "frac_lo": 0.8,
+            "n": 689,
+            "effective_mean": 1.9013062409288823,
+            "realized_mean": 1.239477503628447,
+            "buy_share": 0.5384615384615384,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 9,
+            "frac_lo": 0.9,
+            "n": 674,
+            "effective_mean": 1.857566765578635,
+            "realized_mean": 1.4332344213649852,
+            "buy_share": 0.49851632047477745,
+            "mean_size": 1.0
+          }
+        ],
+        "note": "sim time rescaled to tape-seconds via median event rate"
+      },
+      "zi_regime": {
+        "n_execs": 7620,
+        "sim_t": 32988.29349069192,
+        "buckets": [
+          {
+            "bin": 0,
+            "frac_lo": 0.0,
+            "n": 712,
+            "effective_mean": 2.057584269662921,
+            "realized_mean": 1.4058988764044944,
+            "buy_share": 0.49859550561797755,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 1,
+            "frac_lo": 0.1,
+            "n": 668,
+            "effective_mean": 1.841317365269461,
+            "realized_mean": 1.188622754491018,
+            "buy_share": 0.49850299401197606,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 2,
+            "frac_lo": 0.2,
+            "n": 631,
+            "effective_mean": 1.820919175911252,
+            "realized_mean": 1.1489698890649762,
+            "buy_share": 0.49920760697305866,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 3,
+            "frac_lo": 0.3,
+            "n": 713,
+            "effective_mean": 2.1697054698457223,
+            "realized_mean": 1.5049088359046283,
+            "buy_share": 0.511921458625526,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 4,
+            "frac_lo": 0.4,
+            "n": 731,
+            "effective_mean": 2.0889192886456907,
+            "realized_mean": 1.5567715458276334,
+            "buy_share": 0.5047879616963065,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 5,
+            "frac_lo": 0.5,
+            "n": 677,
+            "effective_mean": 1.9098966026587887,
+            "realized_mean": 1.2806499261447564,
+            "buy_share": 0.5125553914327917,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 6,
+            "frac_lo": 0.6,
+            "n": 678,
+            "effective_mean": 1.9498525073746313,
+            "realized_mean": 1.3259587020648969,
+            "buy_share": 0.5250737463126843,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 7,
+            "frac_lo": 0.7,
+            "n": 659,
+            "effective_mean": 1.9393019726858878,
+            "realized_mean": 1.315629742033384,
+            "buy_share": 0.5250379362670713,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 8,
+            "frac_lo": 0.8,
+            "n": 715,
+            "effective_mean": 2.0195804195804197,
+            "realized_mean": 1.3118881118881118,
+            "buy_share": 0.5356643356643357,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 9,
+            "frac_lo": 0.9,
+            "n": 715,
+            "effective_mean": 2.1804195804195805,
+            "realized_mean": 1.6111888111888113,
+            "buy_share": 0.5188811188811189,
+            "mean_size": 1.0
+          }
+        ],
+        "note": "sim time rescaled to tape-seconds via median event rate"
+      },
+      "zi_split": {
+        "n_execs": 6459,
+        "sim_t": 33331.84171294285,
+        "buckets": [
+          {
+            "bin": 0,
+            "frac_lo": 0.0,
+            "n": 652,
+            "effective_mean": 1.705521472392638,
+            "realized_mean": 1.1257668711656441,
+            "buy_share": 0.49693251533742333,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 1,
+            "frac_lo": 0.1,
+            "n": 669,
+            "effective_mean": 1.789237668161435,
+            "realized_mean": 1.1584454409566518,
+            "buy_share": 0.47384155455904337,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 2,
+            "frac_lo": 0.2,
+            "n": 649,
+            "effective_mean": 1.7226502311248073,
+            "realized_mean": 1.0677966101694916,
+            "buy_share": 0.48382126348228044,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 3,
+            "frac_lo": 0.3,
+            "n": 647,
+            "effective_mean": 1.757341576506955,
+            "realized_mean": 1.1638330757341577,
+            "buy_share": 0.49613601236476046,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 4,
+            "frac_lo": 0.4,
+            "n": 641,
+            "effective_mean": 1.7893915756630265,
+            "realized_mean": 1.2308892355694228,
+            "buy_share": 0.47269890795631825,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 5,
+            "frac_lo": 0.5,
+            "n": 613,
+            "effective_mean": 1.864600326264274,
+            "realized_mean": 1.2593800978792822,
+            "buy_share": 0.49755301794453505,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 6,
+            "frac_lo": 0.6,
+            "n": 615,
+            "effective_mean": 1.824390243902439,
+            "realized_mean": 1.2536585365853659,
+            "buy_share": 0.4926829268292683,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 7,
+            "frac_lo": 0.7,
+            "n": 647,
+            "effective_mean": 1.8346213292117466,
+            "realized_mean": 1.1313755795981453,
+            "buy_share": 0.6275115919629057,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 8,
+            "frac_lo": 0.8,
+            "n": 617,
+            "effective_mean": 1.8346839546191247,
+            "realized_mean": 1.2171799027552674,
+            "buy_share": 0.5024311183144247,
+            "mean_size": 1.0
+          },
+          {
+            "bin": 9,
+            "frac_lo": 0.9,
+            "n": 647,
+            "effective_mean": 1.7712519319938176,
+            "realized_mean": 1.170015455950541,
+            "buy_share": 0.482225656877898,
+            "mean_size": 1.0
+          }
+        ],
+        "note": "sim time rescaled to tape-seconds via median event rate"
+      }
+    },
+    "open_minus_close_effective": 7.561571682683893,
+    "divergences": [
+      "bin0:zi_iid: effective 15.10 vs sim 1.88",
+      "bin0:zi_regime: effective 15.10 vs sim 2.06",
+      "bin0:zi_split: effective 15.10 vs sim 1.71",
+      "bin1:zi_iid: effective 7.71 vs sim 1.92",
+      "bin1:zi_regime: effective 7.71 vs sim 1.84",
+      "bin1:zi_split: effective 7.71 vs sim 1.79",
+      "bin2:zi_iid: effective 9.40 vs sim 1.94",
+      "bin2:zi_regime: effective 9.40 vs sim 1.82",
+      "bin2:zi_split: effective 9.40 vs sim 1.72",
+      "bin3:zi_iid: effective 12.53 vs sim 1.86",
+      "bin3:zi_regime: effective 12.53 vs sim 2.17",
+      "bin3:zi_split: effective 12.53 vs sim 1.76",
+      "bin4:zi_iid: effective 13.81 vs sim 1.79",
+      "bin4:zi_regime: effective 13.81 vs sim 2.09",
+      "bin4:zi_split: effective 13.81 vs sim 1.79",
+      "bin5:zi_iid: effective 9.47 vs sim 1.77",
+      "bin5:zi_regime: effective 9.47 vs sim 1.91",
+      "bin5:zi_split: effective 9.47 vs sim 1.86",
+      "bin6:zi_iid: effective 11.45 vs sim 1.86",
+      "bin6:zi_regime: effective 11.45 vs sim 1.95",
+      "bin6:zi_split: effective 11.45 vs sim 1.82",
+      "bin7:zi_iid: effective 11.56 vs sim 1.76",
+      "bin7:zi_regime: effective 11.56 vs sim 1.94",
+      "bin7:zi_split: effective 11.56 vs sim 1.83",
+      "bin8:zi_iid: effective 12.50 vs sim 1.90",
+      "bin8:zi_regime: effective 12.50 vs sim 2.02",
+      "bin8:zi_split: effective 12.50 vs sim 1.83",
+      "bin9:zi_iid: effective 7.54 vs sim 1.86",
+      "bin9:zi_regime: effective 7.54 vs sim 2.18",
+      "bin9:zi_split: effective 7.54 vs sim 1.77"
+    ]
+  },
+  "interpretation": {
+    "real": "per-bucket effective spread + 5s markout + buy share on the tape",
+    "sim": "identical binning on three flow classes (sim time rescaled to seconds)",
+    "divergence": "|real - sim| effective spread > 0.5 ticks in a bucket"
+  },
+  "receipt_sha256": "24f419587bf3b4f8e3bf4f0c794393c9d4adbe4f8ae50c9fa966ec7e96985810"
+}

@@ -1,0 +1,27 @@
+{
+  "kind": "receipts_audit",
+  "schema": "receipts_audit.v1",
+  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "results": {
+      "all_parseable_loaded": true,
+      "fails_closed_default": true,
+      "claim_contract_eligible": true,
+      "explicit_live_wins": true,
+      "coercion_closed": true,
+      "synthetic_class": true,
+      "nested_scanned": true,
+      "digest_binds_bytes": true,
+      "multi_dir": true
+    },
+    "flags": {
+      "truthiness_coercion_eligible": false
+    },
+    "ok": true
+  },
+  "interpretation": "Receipt eligibility contract holds: absent markers fail closed, explicit live claim always wins, claim contract resolves, digests bind bytes, unparseable skipped. Flag closed: {'research_only': 'yes', 'live_pnl_claim': null} is ineligible \u2014 research_only requires the literal true, and truthy non-booleans no longer qualify.",
+  "receipt_sha256": "4696e3ba82715941b93a03ab67dac2233b342cb43409c86d5a9b5dd7277bb264"
+}

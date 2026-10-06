@@ -1,0 +1,107 @@
+{
+  "code_files": {
+    "epoch_delta.py": "d1558c4ab0e2f099a85604804de3e2d3794c0b9232e6d5347919af710d9f6bad"
+  },
+  "code_sha256": "44f004b63c67880a0650f3d2be572bd3ced61846b395b25d1cef4013fb3a56ce",
+  "data_label": "CORPUS",
+  "dataset_hash": "c230fe21316baf4bfb96a6d08ed4de2e17917d5b04c0ff20ef6cc2886705dc99",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T11:45:29.791828+00:00",
+  "git_revision": "db56294e58d01e1310e9b4b4c97815453b445cdb",
+  "kind": "epoch_delta.v1",
+  "live_pnl_claim": false,
+  "params_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "payload": {
+    "corpus_key": "receipts/*.json",
+    "data_label": "CORPUS",
+    "kind": "epoch_delta.v1",
+    "live_pnl_claim": false,
+    "next_epoch": {
+      "epoch_root_sha256": "4783655af4ebd31e206f9661ddfbff4f59f9ee03cf3ff11e6612a3166710a4de",
+      "member_map_sha256": "4783655af4ebd31e206f9661ddfbff4f59f9ee03cf3ff11e6612a3166710a4de",
+      "merkle_root": "30ae38f99f009984a918ce4bcb22b929d1956597eb17d6ff5af058756c292c5c",
+      "n_members": 106,
+      "receipt": "corpus_epoch_cb415a040387f7b0.json"
+    },
+    "prev_epoch": {
+      "epoch_root_sha256": "67c09d7b980ef01db9b659934c040b7b78cc304eea67b964773f4abe687b5f17",
+      "member_map_sha256": "67c09d7b980ef01db9b659934c040b7b78cc304eea67b964773f4abe687b5f17",
+      "merkle_root": "d19eacedf3c7b1ce0f81438ac5304e4132605ae606d896c52ec307e96aa49a93",
+      "n_members": 105,
+      "receipt": "corpus_epoch_ac2e4ae4bcae4dd8.json"
+    },
+    "research_only": true,
+    "schema": "epoch_delta.v1",
+    "simulated_only": false,
+    "transitions": {
+      "added": [
+        {
+          "leaf_index": 39,
+          "n_members": 106,
+          "name": "corpus_epoch_ac2e4ae4bcae4dd8.json",
+          "path": [
+            {
+              "sha256": "851702ffc4cc50abf618492fa3086c7009973ff63fc3bd86066f540b4e23cca4",
+              "side": "left"
+            },
+            {
+              "sha256": "4cfadc989de0f28460f8dbc3dea4f88f1b6d900dcfc1beceb52c85cf73ae8867",
+              "side": "left"
+            },
+            {
+              "sha256": "18e3d8324f9a3a705087cd40cce1255034f6009c4112f7c5e512fd4f0df2b31f",
+              "side": "left"
+            },
+            {
+              "sha256": "ce7de85ac867e131e14f4e36a1126bc3e5830e36322520438de403f23c7dbf81",
+              "side": "right"
+            },
+            {
+              "sha256": "eeefea1b7d538d466970565fb0a000995a1fe8238511024097678bb0bcad22b1",
+              "side": "right"
+            },
+            {
+              "sha256": "c497ae1aad15d3dc36449a4ecf6f1e42dc78805ccc5ae354b463fb1330e6ed19",
+              "side": "left"
+            },
+            {
+              "sha256": "7a953b89d751495ba39dafaae178ce1e83a82d876f6a99d4a850d63a4028cc5a",
+              "side": "right"
+            }
+          ],
+          "sha256": "4e97881c7c558ad93674533f102ea582de60bd109c178a1c7489b30f027f8a93"
+        }
+      ],
+      "changed": [],
+      "removed": [],
+      "unchanged_count": 105
+    }
+  },
+  "receipt_sha256": "44955f35150079713068753cd4ed65a558da2c8f6e3a8a3bf0f0738283724add",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

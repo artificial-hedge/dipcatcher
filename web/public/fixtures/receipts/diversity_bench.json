@@ -1,0 +1,56 @@
+{
+  "kind": "diversity",
+  "schema": "diversity.v1",
+  "git_revision": "5aadd8cffa8eff98fa92d87b9f04bddb9e4911c9",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "ENB \u2248 1 for cloned members, \u2248 M for orthogonal members",
+    "verdict": "ok",
+    "enbs": {
+      "identical_members": 1.0000000000000002,
+      "orthogonal_members": 4.962416179632377,
+      "realistic_mix": 1.8187286709004236
+    }
+  },
+  "interpretation": {
+    "identical_members": {
+      "n_members": 5,
+      "eigenvalues": [
+        0.0,
+        2.6599997458262705e-34,
+        3.2440345011365263e-17,
+        4.478678796561254e-16,
+        5.000000000000001
+      ],
+      "effective_bets": 1.0000000000000002,
+      "concentration": 0.9999999999999998
+    },
+    "orthogonal_members": {
+      "n_members": 5,
+      "eigenvalues": [
+        0.8716197443550426,
+        0.9762114624281703,
+        1.0005077044789104,
+        1.007565313573625,
+        1.1440957751642513
+      ],
+      "effective_bets": 4.962416179632377,
+      "concentration": 0.22881915503285027
+    },
+    "realistic_mix": {
+      "n_members": 5,
+      "eigenvalues": [
+        0.2934604690505288,
+        0.3277235188408202,
+        0.3482133027706039,
+        0.3861585871975672,
+        3.644444122140478
+      ],
+      "effective_bets": 1.8187286709004236,
+      "concentration": 0.7288888244280959
+    }
+  },
+  "receipt_sha256": "e9af24f389bc5c0c885f56f78cdaa4082de9bd201029488b89cce862bde636af"
+}

@@ -1,0 +1,72 @@
+{
+  "kind": "duration_check",
+  "schema": "duration_check.v1",
+  "git_revision": "408bde317591284de781f9550d6574c945e14278",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "geometric dwell stays geometric (gap small); fixed-duration states flag non-geometric (gap large)",
+    "verdict": "ok",
+    "max_gap_true_markov": 0.07561626097087387,
+    "max_gap_decoded": 0.3017469233575082,
+    "max_gap_semimarkov": 0.6111521445911295
+  },
+  "interpretation": {
+    "true_path": {
+      "state_0": {
+        "n_dwells": 102,
+        "a_ii": 0.94,
+        "implied_mean_dwell": 16.666666666666654,
+        "empirical_mean_dwell": 17.362745098039216,
+        "max_ecdf_gap": 0.04945690624739485,
+        "status": "ok"
+      },
+      "state_1": {
+        "n_dwells": 103,
+        "a_ii": 0.92,
+        "implied_mean_dwell": 12.500000000000007,
+        "empirical_mean_dwell": 11.932038834951456,
+        "max_ecdf_gap": 0.07561626097087387,
+        "status": "ok"
+      }
+    },
+    "decoded_path": {
+      "state_0": {
+        "n_dwells": 26,
+        "a_ii": 0.94,
+        "implied_mean_dwell": 16.666666666666654,
+        "empirical_mean_dwell": 96.03846153846153,
+        "max_ecdf_gap": 0.23613779042274488,
+        "status": "ok"
+      },
+      "state_1": {
+        "n_dwells": 25,
+        "a_ii": 0.92,
+        "implied_mean_dwell": 12.500000000000007,
+        "empirical_mean_dwell": 20.12,
+        "max_ecdf_gap": 0.3017469233575082,
+        "status": "ok"
+      }
+    },
+    "planted_semimarkov": {
+      "state_0": {
+        "n_dwells": 87,
+        "a_ii": 0.95,
+        "implied_mean_dwell": 19.999999999999982,
+        "empirical_mean_dwell": 19.850574712643677,
+        "max_ecdf_gap": 0.6111521445911295,
+        "status": "ok"
+      },
+      "state_1": {
+        "n_dwells": 86,
+        "a_ii": 0.95,
+        "implied_mean_dwell": 19.999999999999982,
+        "empirical_mean_dwell": 14.80232558139535,
+        "max_ecdf_gap": 0.19130709090740028,
+        "status": "ok"
+      }
+    }
+  },
+  "receipt_sha256": "8ff0780fc0662a74ad0fdf9d934c441054c3f699f9df5e6616693c51724cde8f"
+}

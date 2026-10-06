@@ -1,0 +1,166 @@
+{
+  "claim": "mcse_verdicts_on_wave22b_divergences",
+  "data_label": "MIXED",
+  "git_revision": "694eaa80d494be7c6edb05f3ff77d660c862f2a8",
+  "interpretation": "The single-seed divergences reported by cancel_lead and queue_fate are re-verdicted under an 8-seed sweep of each sim arm. significant_divergence = |z|>=3 against the arm's own MC standard error; inexpressible = SE 0 and the arm cannot reach the real value by construction; within_mc_noise = the headline gap is not statistically distinguishable under this seed budget.",
+  "kind": "seed_sweep_demo.v1",
+  "lanes": {
+    "cancel_lead.drift_1s": {
+      "arms": {
+        "iid": {
+          "sweep": {
+            "drift_1s": {
+              "mean": 0.012895161003430286,
+              "n_valid": 8,
+              "se": 0.0029648647703070905,
+              "std": 0.008385903937540958
+            }
+          },
+          "verdicts": {
+            "drift_1s": {
+              "gap": -0.1643315629381233,
+              "mean": 0.012895161003430286,
+              "n_valid": 8,
+              "real": 0.1772267239415536,
+              "se": 0.0029648647703070905,
+              "verdict": "significant_divergence",
+              "z": -55.42632655084043
+            }
+          }
+        },
+        "regime": {
+          "sweep": {
+            "drift_1s": {
+              "mean": 0.01043220131954703,
+              "n_valid": 8,
+              "se": 0.00268441373277603,
+              "std": 0.007592668615824895
+            }
+          },
+          "verdicts": {
+            "drift_1s": {
+              "gap": -0.16679452262200656,
+              "mean": 0.01043220131954703,
+              "n_valid": 8,
+              "real": 0.1772267239415536,
+              "se": 0.00268441373277603,
+              "verdict": "significant_divergence",
+              "z": -62.13443203090736
+            }
+          }
+        },
+        "split": {
+          "sweep": {
+            "drift_1s": {
+              "mean": 0.012783798824541049,
+              "n_valid": 8,
+              "se": 0.003796417269321702,
+              "std": 0.010737889581404364
+            }
+          },
+          "verdicts": {
+            "drift_1s": {
+              "gap": -0.16444292511701253,
+              "mean": 0.012783798824541049,
+              "n_valid": 8,
+              "real": 0.1772267239415536,
+              "se": 0.003796417269321702,
+              "verdict": "significant_divergence",
+              "z": -43.315292669710466
+            }
+          }
+        }
+      },
+      "n_seeds": 8,
+      "summary": {
+        "significant_share": 1.0,
+        "verdict_counts": {
+          "significant_divergence": 3
+        }
+      }
+    },
+    "queue_fate.join_fill": {
+      "arms": {
+        "iid": {
+          "sweep": {
+            "join_fill_rate": {
+              "mean": 0.5037084950812201,
+              "n_valid": 8,
+              "se": 0.00603671827862373,
+              "std": 0.01707441772371049
+            }
+          },
+          "verdicts": {
+            "join_fill_rate": {
+              "gap": 0.366709688817615,
+              "mean": 0.5037084950812201,
+              "n_valid": 8,
+              "real": 0.13699880626360508,
+              "se": 0.00603671827862373,
+              "verdict": "significant_divergence",
+              "z": 60.74653013312701
+            }
+          }
+        },
+        "regime": {
+          "sweep": {
+            "join_fill_rate": {
+              "mean": 0.5219015361300064,
+              "n_valid": 8,
+              "se": 0.008820114177060268,
+              "std": 0.024947050181755685
+            }
+          },
+          "verdicts": {
+            "join_fill_rate": {
+              "gap": 0.3849027298664014,
+              "mean": 0.5219015361300064,
+              "n_valid": 8,
+              "real": 0.13699880626360508,
+              "se": 0.008820114177060268,
+              "verdict": "significant_divergence",
+              "z": 43.63920037083794
+            }
+          }
+        },
+        "split": {
+          "sweep": {
+            "join_fill_rate": {
+              "mean": 0.5008385598313511,
+              "n_valid": 8,
+              "se": 0.004661439756877585,
+              "std": 0.013184542648722848
+            }
+          },
+          "verdicts": {
+            "join_fill_rate": {
+              "gap": 0.363839753567746,
+              "mean": 0.5008385598313511,
+              "n_valid": 8,
+              "real": 0.13699880626360508,
+              "se": 0.004661439756877585,
+              "verdict": "significant_divergence",
+              "z": 78.05308500038626
+            }
+          }
+        }
+      },
+      "n_seeds": 8,
+      "summary": {
+        "significant_share": 1.0,
+        "verdict_counts": {
+          "significant_divergence": 3
+        }
+      }
+    }
+  },
+  "receipt_sha256": "9eda6f54e96b06421aa86a4d7ba9f113a27f61ba4c368e86d87fb6a430e844d8",
+  "research_only": true,
+  "schema": 1,
+  "tape": {
+    "date": "2012-06-21",
+    "msg": "AMZN_2012-06-21_34200000_57600000_message_10.csv",
+    "ob": "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv",
+    "symbol": "AMZN"
+  }
+}

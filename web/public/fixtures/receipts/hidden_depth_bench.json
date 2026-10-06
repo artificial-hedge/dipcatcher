@@ -1,0 +1,46 @@
+{
+  "schema": "hidden_depth_bench.v1",
+  "kind": "hidden_depth_bench",
+  "seed": 13,
+  "arms": {
+    "reload_0": {
+      "iceberg_reload": 0.0,
+      "n_fills": 1970,
+      "n_hidden_fills": 0,
+      "hidden_fill_share": 0.0
+    },
+    "reload_20": {
+      "iceberg_reload": 0.2,
+      "n_fills": 2440,
+      "n_hidden_fills": 282,
+      "hidden_fill_share": 0.115574
+    },
+    "reload_40": {
+      "iceberg_reload": 0.4,
+      "n_fills": 2494,
+      "n_hidden_fills": 538,
+      "hidden_fill_share": 0.215718
+    },
+    "reload_60": {
+      "iceberg_reload": 0.6,
+      "n_fills": 2856,
+      "n_hidden_fills": 979,
+      "hidden_fill_share": 0.342787
+    }
+  },
+  "best_arm": "reload_40",
+  "real_tape_targets": {
+    "hidden_fill_share": 0.2141
+  },
+  "divergences": [],
+  "claims": {
+    "no_hidden_without_reload": true,
+    "monotone_in_reload": true,
+    "real_share_reachable": true
+  },
+  "interpretation": "Hidden fill share rises monotonically with iceberg_reload; reload ~0.4 lands the measured share within ~0.02 of the tape's 0.2141 \u2014 the synthetic-iceberg mechanism is the right model class for this lane. Residual gap: real icebergs refill with random visible sizes and only the reload shows; ours re-adds the same size deterministically.",
+  "git_revision": "7e21adb72a8bdc04b357e006c16855757b6d441d",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "b8515082a6ec64607f5845202bd07d2005314eee0d700271211b35c91f83c745"
+}

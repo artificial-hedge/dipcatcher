@@ -1,0 +1,223 @@
+{
+  "claim": {
+    "arms": {
+      "iid": {
+        "n_execs": 6880,
+        "note": "horizons scaled by median event rate (s -> sim steps)",
+        "per_horizon": {
+          "0.5s": {
+            "effective_mean": 1.85480093676815,
+            "impact_mean": 0.6359777517564403,
+            "impact_share": 0.3428819444444445,
+            "n": 6832,
+            "realized_mean": 1.2188231850117095,
+            "realized_positive_share": 0.6987704918032787
+          },
+          "1.0s": {
+            "effective_mean": 1.8537763466042154,
+            "impact_mean": 0.6157786885245902,
+            "impact_share": 0.3321752862218713,
+            "n": 6832,
+            "realized_mean": 1.2379976580796253,
+            "realized_positive_share": 0.6970140515222483
+          },
+          "10.0s": {
+            "effective_mean": 1.854462846255313,
+            "impact_mean": 0.5260149494357321,
+            "impact_share": 0.28364814668458077,
+            "n": 6823,
+            "realized_mean": 1.3284478968195808,
+            "realized_positive_share": 0.6431188626703795
+          },
+          "5.0s": {
+            "effective_mean": 1.8553846153846154,
+            "impact_mean": 0.5504761904761905,
+            "impact_share": 0.2966911474374161,
+            "n": 6825,
+            "realized_mean": 1.3049084249084248,
+            "realized_positive_share": 0.6671062271062271
+          }
+        }
+      },
+      "regime": {
+        "n_execs": 7800,
+        "note": "horizons scaled by median event rate (s -> sim steps)",
+        "per_horizon": {
+          "0.5s": {
+            "effective_mean": 2.0082872928176796,
+            "impact_mean": 0.712292817679558,
+            "impact_share": 0.3546767537826685,
+            "n": 7240,
+            "realized_mean": 1.2959944751381216,
+            "realized_positive_share": 0.6970994475138121
+          },
+          "1.0s": {
+            "effective_mean": 2.004846302963168,
+            "impact_mean": 0.6794516754361672,
+            "impact_share": 0.3389046204848401,
+            "n": 7222,
+            "realized_mean": 1.3253946275270008,
+            "realized_positive_share": 0.692605926336195
+          },
+          "10.0s": {
+            "effective_mean": 2.003647075326133,
+            "impact_mean": 0.518586056950484,
+            "impact_share": 0.25882105852702325,
+            "n": 7129,
+            "realized_mean": 1.4850610183756487,
+            "realized_positive_share": 0.6451115163417029
+          },
+          "5.0s": {
+            "effective_mean": 2.000975066165204,
+            "impact_mean": 0.5881041927845104,
+            "impact_share": 0.29390880612600073,
+            "n": 7179,
+            "realized_mean": 1.4128708733806936,
+            "realized_positive_share": 0.6629056971723081
+          }
+        }
+      },
+      "split": {
+        "n_execs": 6876,
+        "note": "horizons scaled by median event rate (s -> sim steps)",
+        "per_horizon": {
+          "0.5s": {
+            "effective_mean": 1.841935009557418,
+            "impact_mean": 0.643140714600794,
+            "impact_share": 0.3491658018679652,
+            "n": 6801,
+            "realized_mean": 1.198794294956624,
+            "realized_positive_share": 0.6979855903543597
+          },
+          "1.0s": {
+            "effective_mean": 1.841935009557418,
+            "impact_mean": 0.6315247757682694,
+            "impact_share": 0.34285942364492694,
+            "n": 6801,
+            "realized_mean": 1.2104102337891487,
+            "realized_positive_share": 0.691368916335833
+          },
+          "10.0s": {
+            "effective_mean": 1.84394341290893,
+            "impact_mean": 0.6102269378131447,
+            "impact_share": 0.33093582674019023,
+            "n": 6786,
+            "realized_mean": 1.2337164750957854,
+            "realized_positive_share": 0.6286472148541115
+          },
+          "5.0s": {
+            "effective_mean": 1.844477172312224,
+            "impact_mean": 0.6134020618556701,
+            "impact_share": 0.3325614819546471,
+            "n": 6790,
+            "realized_mean": 1.2310751104565538,
+            "realized_positive_share": 0.65139911634757
+          }
+        }
+      }
+    },
+    "date": "2012-06-21",
+    "divergences": [
+      "iid:0.5:effective_mean",
+      "iid:0.5:realized_mean",
+      "iid:0.5:impact_share",
+      "regime:0.5:effective_mean",
+      "regime:0.5:realized_mean",
+      "regime:0.5:impact_share",
+      "split:0.5:effective_mean",
+      "split:0.5:realized_mean",
+      "split:0.5:impact_share",
+      "iid:1.0:effective_mean",
+      "iid:1.0:realized_mean",
+      "iid:1.0:impact_share",
+      "regime:1.0:effective_mean",
+      "regime:1.0:realized_mean",
+      "regime:1.0:impact_share",
+      "split:1.0:effective_mean",
+      "split:1.0:realized_mean",
+      "split:1.0:impact_share",
+      "iid:5.0:effective_mean",
+      "iid:5.0:realized_mean",
+      "iid:5.0:impact_share",
+      "regime:5.0:effective_mean",
+      "regime:5.0:realized_mean",
+      "regime:5.0:impact_share",
+      "split:5.0:effective_mean",
+      "split:5.0:realized_mean",
+      "split:5.0:impact_share",
+      "iid:10.0:effective_mean",
+      "iid:10.0:realized_mean",
+      "iid:10.0:impact_share",
+      "regime:10.0:effective_mean",
+      "regime:10.0:realized_mean",
+      "regime:10.0:impact_share",
+      "split:10.0:effective_mean",
+      "split:10.0:realized_mean",
+      "split:10.0:impact_share"
+    ],
+    "horizons_s": [
+      0.5,
+      1.0,
+      5.0,
+      10.0
+    ],
+    "n_divergences": 36,
+    "real": {
+      "effective_mean_ticks": 10.533875640739915,
+      "n_execs": 8974,
+      "per_horizon": {
+        "0.5s": {
+          "effective_mean": 10.533771734284441,
+          "effective_median": 9.0,
+          "impact_mean": 7.0397904592064195,
+          "impact_share": 0.6683067221111216,
+          "n": 8972,
+          "realized_mean": 3.4939812750780206,
+          "realized_median": 4.0,
+          "realized_positive_share": 0.6696388765046812
+        },
+        "1.0s": {
+          "effective_mean": 10.53456735057984,
+          "effective_median": 9.0,
+          "impact_mean": 8.331177520071364,
+          "impact_share": 0.7908419247623684,
+          "n": 8968,
+          "realized_mean": 2.2033898305084745,
+          "realized_median": 3.0,
+          "realized_positive_share": 0.6198706512042819
+        },
+        "10.0s": {
+          "effective_mean": 10.565725851793545,
+          "effective_median": 9.0,
+          "impact_mean": 12.085910266501743,
+          "impact_share": 1.1438788433499005,
+          "n": 8893,
+          "realized_mean": -1.5201844147081975,
+          "realized_median": 0.0,
+          "realized_positive_share": 0.4812774091982458
+        },
+        "5.0s": {
+          "effective_mean": 10.550374594655038,
+          "effective_median": 9.0,
+          "impact_mean": 10.795594319579559,
+          "impact_share": 1.0232427505511277,
+          "n": 8943,
+          "realized_mean": -0.24521972492452196,
+          "realized_median": 1.0,
+          "realized_positive_share": 0.5244325170524432
+        }
+      }
+    },
+    "ticker": "AMZN"
+  },
+  "data_label": "MIXED",
+  "git_revision": "caaeadf1eac6c7050eda35a539ec1c4850b0dc06",
+  "interpretation": {
+    "effective_vs_realized": "gap = adverse selection absorbed by makers",
+    "impact_share": "share of the effective spread that is permanent impact"
+  },
+  "kind": "trade_decomp",
+  "receipt_sha256": "aa81370fc30d00fe7931a59a7a27d0ede66e49ea4e0de5b268850414c2e6b794",
+  "research_only": true,
+  "schema": "trade_decomp.v1"
+}

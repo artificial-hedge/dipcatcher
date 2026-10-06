@@ -1,0 +1,163 @@
+{
+  "kind": "promotion_gate",
+  "schema": "promotion_gate.v1",
+  "subject": "conf_t",
+  "verdict": "admitted",
+  "n_mentions": 13,
+  "n_verified": 13,
+  "labels": [
+    "SYNTHETIC",
+    "yahoo_eod"
+  ],
+  "mentions": [
+    {
+      "receipt": "concordance_df424fa2f6b1c4e9.json",
+      "kind": "selection_concordance",
+      "data_label": "SYNTHETIC",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.payload.shards[2].best",
+        "$.payload.shards[4].eliminated.stepm[0]",
+        "$.payload.shards[5].eliminated.dm[0]",
+        "$.payload.shards[5].eliminated.mcs[0]",
+        "$.payload.shards[5].eliminated.stepm[0]"
+      ]
+    },
+    {
+      "receipt": "emerge_real_drill.json",
+      "kind": "emerge_drill.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.pooled_per_head.conf_t (key)"
+      ]
+    },
+    {
+      "receipt": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "kind": "distribution_fleet_eval",
+      "data_label": "SYNTHETIC",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.model_versions.conf_t (key)",
+        "$.model_versions.conf_t.head",
+        "$.models[0]",
+        "$.results[10].model",
+        "$.results[23].model"
+      ]
+    },
+    {
+      "receipt": "fleet_race_real_drill.json",
+      "kind": "fleet_race.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.global_evidence.conf_t (key)"
+      ]
+    },
+    {
+      "receipt": "honest_verdict_real_drill.json",
+      "kind": "honest_verdict.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.run.params.heads[0]"
+      ]
+    },
+    {
+      "receipt": "loss_cs_real_drill_conf_t_vs_empirical.json",
+      "kind": "loss_cs.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.challenger"
+      ]
+    },
+    {
+      "receipt": "loss_cs_real_drill_gaussian_vs_conf_t.json",
+      "kind": "loss_cs.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.incumbent"
+      ]
+    },
+    {
+      "receipt": "mcs_real_drill.json",
+      "kind": "mcs_seq.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.eliminated.conf_t (key)"
+      ]
+    },
+    {
+      "receipt": "monitor_run_real_drill.json",
+      "kind": "monitor_run",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.params.heads[0]"
+      ]
+    },
+    {
+      "receipt": "multih_fleet_eval_5db1cab214e291d7.json",
+      "kind": "multih_fleet_eval",
+      "data_label": "SYNTHETIC",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.payload.rows[60].model",
+        "$.payload.rows[61].model",
+        "$.payload.rows[62].model",
+        "$.payload.rows[63].model",
+        "$.payload.rows[64].model"
+      ]
+    },
+    {
+      "receipt": "panel_audit_real_drill.json",
+      "kind": "panel_audit.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.heads[4].head"
+      ]
+    },
+    {
+      "receipt": "serial_watch_1e8e1446e506fce1.json",
+      "kind": "serial_watch.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.drill.head"
+      ]
+    },
+    {
+      "receipt": "verdict_real_drill.json",
+      "kind": "honest_verdict.v1",
+      "data_label": "yahoo_eod",
+      "verified": true,
+      "errors": [],
+      "mention_paths": [
+        "$.components.promotion.runner_up",
+        "$.run.params.data_labels.conf_t (key)"
+      ]
+    }
+  ],
+  "claim": "promotion_gate:admitted",
+  "interpretation": "A head is admissible only when every committed receipt that mentions it verifies and at least one carries non-synthetic evidence. Corrupt or unsealed evidence demotes the verdict \u2014 the gate cannot be gamed by writing more receipts.",
+  "git_revision": "c028616bf271882a4826fc7277ba556c569a1fb0",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "98b7c28f028546c337af544a597a78bb33498c1644ae90eb18128b44199f1cb8"
+}

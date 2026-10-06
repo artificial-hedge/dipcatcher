@@ -1,0 +1,30 @@
+{
+ "claim": {
+  "flags": {
+   "malformed_dates_sort_lexically": true
+  },
+  "ok": true,
+  "results": {
+   "boundary_is_pre": true,
+   "empty_post_none": true,
+   "malformed_sorts_post": true,
+   "missing_result_fails": true,
+   "pass_rate_value": 0.5,
+   "post_membership": [
+    "garbage",
+    "post"
+   ],
+   "undated_membership": [
+    "undated"
+   ]
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "84ca691663fc021898a63217df896ba0b061fc33",
+ "interpretation": "Partition contract holds: boundary stamp is pre, undated is excluded from both slices, empty post slice reports None, missing results count as fails. Caveat pinned: malformed provenance dates sort lexicographically into post.",
+ "kind": "timepart_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "662061fd13301285aa321d2f8c9c860c07213cfdc4edbb4184009b3de33a8cad",
+ "research_only": true,
+ "schema": "timepart_audit.v1"
+}
