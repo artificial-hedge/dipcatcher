@@ -457,6 +457,8 @@ def _page(
     """``{object: list, data, first_id, last_id, has_more}`` — same page
     contract as the stored-request subresources; an unknown cursor fails
     closed ``400 invalid_cursor``."""
+    if not 1 <= limit <= 100:
+        raise VectorStoreError(400, "limit must be 1..100", "invalid_limit")
     ordered = list(rows)
     if order == "desc":
         ordered.reverse()
@@ -473,7 +475,9 @@ def _page(
                 400, f"cursor {cursor!r} is not in this listing", "invalid_cursor"
             )
         ordered = ordered[idx + 1 :] if keep_after else ordered[:idx]
-    page = ordered[:limit]
+    # ``before`` pages backward — the tail of the window before the cursor
+    # (the previous page), matching paged_item_list and the anthropic twin.
+    page = ordered[-limit:] if before is not None else ordered[:limit]
     return {
         "object": "list",
         "data": page,

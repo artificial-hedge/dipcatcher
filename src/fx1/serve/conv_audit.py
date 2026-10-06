@@ -521,8 +521,11 @@ def _probe_paging() -> dict[str, bool]:
 
     pre = _items(client, cid, before=ids[3])
     out["page_before_walks"] = _item_ids(pre) == ids[:3] and pre["has_more"] is False
+    # after+before bound the window; before keeps its previous-page
+    # semantics — the tail of the bounded window, same as the anthropic
+    # before_id twin
     window = _items(client, cid, limit=2, after=ids[0], before=ids[4])
-    out["page_window_after_before"] = _item_ids(window) == ids[1:3]
+    out["page_window_after_before"] = _item_ids(window) == ids[2:4]
 
     desc = _items(client, cid, order="desc", limit=2)
     out["page_desc_reverses"] = _item_ids(desc) == list(reversed(ids))[:2]
