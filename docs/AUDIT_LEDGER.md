@@ -346,3 +346,26 @@ gate-refused ones, and the rpm refusal code is `rate_limited`.
 The generated audit receipt is `SYNTHETIC`, `research_only`, and makes
 no live-PnL claim. The serve census moves from 47 to 48 and remains
 `partial`.
+
+## Data-quality audit (`skills.audit_*` operation battery)
+
+`fx1.operations.dataqual_audit` exercises all twelve `audit_*` data-quality
+sentinels in-process: `audit_bar_integrity` (per-cell failure taxonomy,
+inverted-range envelope suppression, bounded diagnostics),
+`audit_duplicate_keys` (JSON scalar semantics — `1 == 1.0`, `True != 1`,
+`"1" != 1` — under reject/equal/distinct null policies),
+`audit_missingness` (absent/null/optional-empty counting, supplied-order
+runs, unassessed empty states), `audit_monotonic_sequences` (never
+reorders input; group-wide duplicate clocks incl. timezone-equivalent
+instants; singleton unassessed), `audit_cross_field_contracts`
+(type-aware equality, bool ≠ number, ordering restricted to numbers,
+missing-before-null precedence), `audit_missingness_association` (2×2
+contingency, Jaccard, null phi on constants), `audit_panel_gaps`
+(per-security anchored elapsed-time grid), `audit_point_in_time`
+(availability always required; completed-event/ingestion opt-in),
+`audit_referential_integrity` (parent/child verdicts under numeric
+policy), `audit_revision_conflicts` (conflicting fields vs exact
+duplicates), `audit_schema_drift` (added/removed/type/optionality/
+nullability), `audit_source_coverage` (latest-event selection,
+exclusions, staleness clocks). ~95 literal-bool probes seal into a
+`dataqual_audit.v1` receipt.
