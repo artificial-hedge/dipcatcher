@@ -1063,7 +1063,7 @@ def _probe_client_coverage(out: dict[str, bool], texts: dict[str, str]) -> None:
         emitted.append((method, path.split("?")[0]))
         return 200, {}, canned_body(path)
 
-    client = HarnessClient("http://probe.local", transport=rec_transport, max_retries=0)
+    client = HarnessClient("https://probe.local", transport=rec_transport, max_retries=0)
     pats = _route_patterns()
     uncovered: list[str] = []
     for name in sorted(n for n in dir(client) if not n.startswith("_")):
