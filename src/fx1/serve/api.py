@@ -4096,13 +4096,19 @@ class _RateLimiter:
             tokens, ts = entry if entry is not None else (self.capacity, now)
             tokens = min(self.capacity, tokens + self.rps * (now - ts))
             if tokens >= 1.0:
-                self._buckets[identity] = (tokens - 1.0, now)
-                return 0.0, max(0.0, tokens - 1.0)
-            wait = (1.0 - tokens) / self.rps
+                tokens -= 1.0
+                wait = 0.0
+                remaining = max(0.0, tokens)
+            else:
+                wait = (1.0 - tokens) / self.rps
+                remaining = 0.0
             self._buckets[identity] = (tokens, now)
+            # bound the identity map on every admission path — a spray of
+            # hosts that all get *admitted* must evict LRU just like a
+            # refused spray does
             while len(self._buckets) > self.max_keys:
                 self._buckets.popitem(last=False)
-            return wait, 0.0
+            return wait, remaining
 
 
 class _BackendBreaker:
@@ -10347,7 +10353,9 @@ def create_app(
             wait, remaining = limiter.allow(host)
             reset = max(0, math.ceil((limiter.capacity - remaining) / limiter.rps))
             rl_headers = {
-                "X-RateLimit-Limit": str(int(limiter.rps)),
+                # capacity, not int(rps): a 0.5 rps limit still admits
+                # its one-token floor — declaring Limit 0 would lie
+                "X-RateLimit-Limit": str(int(limiter.capacity)),
                 "X-RateLimit-Remaining": str(int(remaining)),
                 "X-RateLimit-Reset": str(reset),
             }
@@ -10368,6 +10376,11 @@ def create_app(
                 return _finish(request, request_id, response, started)
         ingress_refusal = await _request_ingress_refusal(request)
         if ingress_refusal is not None:
+            if rl_headers is not None:
+                # the request consumed a global-bucket slot before
+                # ingress refused it — report the spent trio like every
+                # other governed refusal does
+                ingress_refusal.headers.update(rl_headers)
             return _finish(request, request_id, ingress_refusal, started)
         # Auth surface: ``FX1_API_KEY`` is the root credential (admin);
         # managed keys from ``key_store`` additionally authenticate.
@@ -10382,7 +10395,10 @@ def create_app(
             # same fail-closed shape as the global limiter, keyed to the
             # credential's own window/budget; a scope denial is 403, not
             # rate limiting
-            if exc.code != "insufficient_scope":
+            if exc.code == "rate_limited":
+                # only real rate-limit denials inflate the limiter
+                # counter — a terminal quota_exceeded is a budget
+                # verdict, not rate limiting (a scope denial is 403)
                 metrics.record_rate_limited()
             refused = _key_refusal_response(exc, request, key_store)
             if rl_headers is not None:
