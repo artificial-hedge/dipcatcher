@@ -96,6 +96,8 @@ def manski_bounds(
     n_seen = n_obs - n_miss
     if n_seen < 10:
         raise ValueError("fewer than 10 observed outcomes")
+    if not np.isfinite(y[m <= 0.5]).all():
+        raise ValueError("non-finite observed outcome")
     p_obs = n_seen / n_obs
     if y_lo is None or y_hi is None:
         support_est = 1.0
@@ -149,6 +151,8 @@ def manski_mar_bounds(
     seen = y[m <= 0.5]
     if seen.size < 10:
         raise ValueError("fewer than 10 observed outcomes")
+    if not np.isfinite(seen).all():
+        raise ValueError("non-finite observed outcome")
     mu = float(seen.mean())
     se = float(seen.std(ddof=1)) / math.sqrt(seen.size)
     z = _z(alpha)
@@ -189,6 +193,8 @@ def lee_bounds(
         raise ValueError("need at least 60 observations")
     y1 = y[(t > 0.5) & (s > 0.5)]
     y0 = y[(t <= 0.5) & (s > 0.5)]
+    if not np.isfinite(y[s > 0.5]).all():
+        raise ValueError("non-finite observed outcome")
     p1 = float((s[t > 0.5]).mean())
     p0 = float((s[t <= 0.5]).mean())
     if p1 <= p0 + 1e-9:
