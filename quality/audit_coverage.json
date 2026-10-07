@@ -552,6 +552,9 @@
   "models/malliavin_greeks.py": {
    "status": "audited"
   },
+  "models/markov_switching.py": {
+   "status": "audited"
+  },
   "models/martingale_ot.py": {
    "status": "audited"
   },

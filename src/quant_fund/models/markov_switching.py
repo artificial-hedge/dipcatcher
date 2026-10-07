@@ -69,6 +69,8 @@ def _check_params(
     k = mu.size
     if mu.ndim != 1 or sigma.shape != mu.shape or p.shape != (k, k):
         raise ValueError("mu, sigma length-K; P is K×K")
+    if not np.isfinite(mu).all() or not np.isfinite(sigma).all() or not np.isfinite(p).all():
+        raise ValueError("mu/sigma/P must be finite")
     if np.any(sigma <= 0):
         raise ValueError("sigma must be positive")
     if np.any(p < 0) or not np.allclose(p.sum(axis=1), 1.0, atol=1e-6):
@@ -113,7 +115,7 @@ def hamilton_filter(
         pred = p.T @ xi[t - 1] if t else pi0
         xi_t = pred * eta[t]
         s = xi_t.sum()
-        if s <= 0:
+        if not s > 0:  # catches NaN normalizers too
             raise ValueError("likelihood underflow — degenerate parameters")
         xi[t] = xi_t / s
         ll += math.log(s)
@@ -198,8 +200,8 @@ def ms_em_fit(
 def regime_forecast(filt: dict[str, FloatArray | float], h: int = 5) -> dict[str, FloatArray]:
     """``h``-step regime probabilities and predictive mean/variance from
     the last filtered state via ``P^h``."""
-    if h < 1:
-        raise ValueError("h >= 1")
+    if not isinstance(h, (int, np.integer)) or h < 1:
+        raise ValueError("h must be an integer >= 1")
     xi_t = np.asarray(filt["filtered"])[-1]
     p = np.asarray(filt["p"])
     mu = np.asarray(filt["mu"])
@@ -207,13 +209,13 @@ def regime_forecast(filt: dict[str, FloatArray | float], h: int = 5) -> dict[str
     xi_h = np.linalg.matrix_power(p.T, h) @ xi_t
     mean = float(xi_h @ mu)
     var = float(xi_h @ (sigma**2 + mu**2) - mean**2)
-    return {"xi_h": xi_h, "mean": np.array([mean]), "var": np.array([var])}
+    return {"xi_h": xi_h, "mean": np.array([mean]), "var": np.array([max(var, 0.0)])}
 
 
 def _check_measure(w: FloatArray) -> FloatArray:
     a = np.asarray(w, dtype=np.float64)
     s = float(a.sum())
-    if a.ndim != 1 or s <= 0 or np.any(a < 0):
+    if a.ndim != 1 or not np.isfinite(s) or s <= 0 or np.any(a < 0):
         raise ValueError("initial distribution invalid")
     return a / s
 
@@ -225,6 +227,8 @@ def synth_markov(
 ) -> dict[str, FloatArray | np.float64]:
     """SYNTHETIC two-regime series: low-vol state μ=-0.3/σ=0.4,
     high-vol state μ=+0.8/σ=1.2, persistence ``p_stay``."""
+    if not 0.0 <= p_stay <= 1.0:
+        raise ValueError("p_stay must be in [0, 1]")
     rng = np.random.default_rng(seed)
     mu = np.array([-0.3, 0.8])
     sigma = np.array([0.4, 1.2])
