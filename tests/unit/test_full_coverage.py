@@ -12,10 +12,23 @@ from coverage import Coverage, CoverageData
 from scripts import full_coverage as gate
 
 
+def test_source_roots_include_every_first_party_python_tree() -> None:
+    assert gate.SOURCE_ROOTS == (
+        "src",
+        "scripts",
+        "examples",
+        "replay/scripts",
+        "web/scripts",
+    )
+
+
 @pytest.fixture
 def project(tmp_path: Path) -> Path:
     for name in gate.SOURCE_ROOTS:
-        (tmp_path / name).mkdir()
+        # ``SOURCE_ROOTS`` may include nested paths (e.g.
+        # ``replay/scripts``); use ``parents=True`` so the fixture
+        # does not require each intermediate directory to exist.
+        (tmp_path / name).mkdir(parents=True)
     (tmp_path / "src" / "sample.py").write_text(
         "def choose(flag):\n    if flag:\n        return 1\n    return 0\n"
     )

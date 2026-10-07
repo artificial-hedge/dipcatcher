@@ -12,11 +12,12 @@ Python suites. Slow and `perf_full` tests are included. Suites remain separate
 to preserve their existing import/discovery behavior. The native extension is
 built before its Python wrapper suite.
 
-Every tracked Python file under `src/`, `scripts/`, and `examples/` is in the
-measurement inventory, including entrypoints and files never imported by a
-test. Untouched files get zero-hit entries, not silently omitted denominators.
-This is not quantitative JavaScript or Rust source coverage, coverage of
-vendored code, or coverage of Python files outside those three roots.
+Every tracked Python file under `src/`, `scripts/`, `examples/`,
+`replay/scripts/`, and `web/scripts/` is in the measurement inventory,
+including entrypoints and files never imported by a test. Untouched files get
+zero-hit entries, not silently omitted denominators. Python files outside
+those five roots are not inventoried. This is not quantitative JavaScript or
+Rust source coverage or coverage of vendored code.
 
 Independent jobs run the repository's lint/type/FX1/security/documentation
 gates, locked Python and four npm dependency audits, browser/JavaScript

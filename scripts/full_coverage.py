@@ -30,7 +30,12 @@ SEPARATE_LANES = {
     "native": "tests/native",
 }
 LANES = (*LAB_LANES, *SEPARATE_LANES)
-SOURCE_ROOTS = ("src", "scripts", "examples")
+# ``SOURCE_ROOTS`` enumerates the first-party Python roots included in
+# the full-offline coverage denominator. Files outside these roots are not
+# inventoried, so adding another first-party root requires updating this
+# tuple, the coverage documentation, and the source-inventory regressions.
+# See #2851: replay/scripts and web/scripts were omitted previously.
+SOURCE_ROOTS = ("src", "scripts", "examples", "replay/scripts", "web/scripts")
 SCHEMA = "full-offline-coverage.v1"
 
 
