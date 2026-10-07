@@ -46,31 +46,41 @@ def _bracket(f: Func, a: float, b: float) -> tuple[float, float]:
 def bisection(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -> dict[str, float]:
     fa, _fb0 = _bracket(f, a, b)
     x = a
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         x = 0.5 * (a + b)
         fx = f(x)
+        if not np.isfinite(fx):
+            raise ValueError("non-finite f inside bracket")
         if abs(fx) < tol or (b - a) < tol:
             break
         if fa * fx < 0:
             b = x
         else:
             a, fa = x, fx
-    return {"root": x, "f": float(f(x)), "iters": 0.0}
+    return {"root": x, "f": float(f(x)), "iters": float(used)}
 
 
 def secant(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 60) -> dict[str, float]:
     x0, x1 = a, b
     f0, f1 = f(x0), f(x1)
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         if abs(f1 - f0) < 1e-300:
             break
         x2 = x1 - f1 * (x1 - x0) / (f1 - f0)
         f2 = f(x2)
-        if not np.isfinite(f2) or abs(f2) < tol:
+        # A non-finite iterate means the method shot off (e.g. across a
+        # pole) — fail closed rather than return the diverged point.
+        if not np.isfinite(x2) or not np.isfinite(f2):
+            raise ValueError("secant diverged to a non-finite iterate")
+        if abs(f2) < tol:
             x1 = x2
             break
         x0, f0, x1, f1 = x1, f1, x2, f2
-    return {"root": x1, "f": float(f(x1)), "iters": 0.0}
+    return {"root": x1, "f": float(f(x1)), "iters": float(used)}
 
 
 def illinois(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -> dict[str, float]:
@@ -78,9 +88,13 @@ def illinois(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -> 
     fa, fb = _bracket(f, a, b)
     x = a
     last_side = 0
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         x = (a * fb - b * fa) / (fb - fa)
         fx = f(x)
+        if not np.isfinite(fx):
+            raise ValueError("non-finite f inside bracket")
         if abs(fx) < tol:
             break
         if fb * fx < 0:
@@ -94,16 +108,20 @@ def illinois(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -> 
                 fb /= 2
             a, fa, side = x, fx, 1
         last_side = side
-    return {"root": x, "f": float(f(x)), "iters": 0.0}
+    return {"root": x, "f": float(f(x)), "iters": float(used)}
 
 
 def ridders(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 60) -> dict[str, float]:
     """Ridders' exponential-fitting root finder."""
     fa, fb = _bracket(f, a, b)
     x = a
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         xm = 0.5 * (a + b)
         fm = f(xm)
+        if not np.isfinite(fm):
+            raise ValueError("non-finite f inside bracket")
         s = np.sqrt(fm * fm - fa * fb)
         if s == 0:
             x = xm
@@ -111,6 +129,8 @@ def ridders(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 60) -> di
         sign = 1.0 if (fa - fb) >= 0 else -1.0
         x = xm + (xm - a) * (sign * fm / s)
         fx = f(x)
+        if not np.isfinite(fx):
+            raise ValueError("non-finite f inside bracket")
         if abs(fx) < tol:
             break
         # re-bracket: keep the smallest sub-interval with
@@ -126,7 +146,7 @@ def ridders(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 60) -> di
                 break
         if not done:
             break
-    return {"root": x, "f": float(f(x)), "iters": 0.0}
+    return {"root": x, "f": float(f(x)), "iters": float(used)}
 
 
 def brent_root(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -> dict[str, float]:
@@ -137,7 +157,9 @@ def brent_root(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -
         a, b, fa, fb = b, a, fb, fa
     c, fc = a, fa
     d = e = b - a
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         if fb * fc > 0:
             c, fc = a, fa
             d = e = b - a
@@ -172,9 +194,11 @@ def brent_root(f: Func, a: float, b: float, tol: float = 1e-12, it: int = 100) -
         a, fa = b, fb
         b = b + d if abs(d) > tol1 else b + (tol1 if xm >= 0 else -tol1)
         fb = f(b)
+        if not np.isfinite(fb):
+            raise ValueError("non-finite f inside bracket")
         if abs(fb) < tol * 0.1:
             break
-    return {"root": b, "f": float(f(b)), "iters": 0.0}
+    return {"root": b, "f": float(f(b)), "iters": float(used)}
 
 
 def golden_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 200) -> dict[str, float]:
@@ -183,7 +207,9 @@ def golden_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 200) -
     c = b - phi * (b - a)
     d = a + phi * (b - a)
     fc, fd = f(c), f(d)
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         if abs(b - a) < tol:
             break
         if fc < fd:
@@ -195,7 +221,7 @@ def golden_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 200) -
             d = a + phi * (b - a)
             fd = f(d)
     x = 0.5 * (a + b)
-    return {"x": x, "f": float(f(x)), "iters": 0.0}
+    return {"x": x, "f": float(f(x)), "iters": float(used)}
 
 
 def brent_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 100) -> dict[str, float]:
@@ -205,7 +231,9 @@ def brent_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 100) ->
     x = w = v = a + CGOLD * (b - a)
     fx = fw = fv = f(x)
     d = e = 0.0
-    for _ in range(it):
+    used = 0
+    for k in range(it):
+        used = k + 1
         xm = 0.5 * (a + b)
         tol1 = tol * abs(x) + 1e-12
         tol2 = 2 * tol1
@@ -252,7 +280,7 @@ def brent_min(f: Func, a: float, b: float, tol: float = 1e-10, it: int = 100) ->
                 w, fw = u, fu
             elif fu <= fv or v in (x, w):
                 v, fv = u, fu
-    return {"x": x, "f": float(fx), "iters": 0.0}
+    return {"x": x, "f": float(fx), "iters": float(used)}
 
 
 def bench_roots(seed: int = 532) -> dict[str, float]:
