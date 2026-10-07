@@ -654,6 +654,11 @@ def crossvenue_basis_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     if not isinstance(legs_meta, Mapping) or not legs_meta:
         errors.append("inputs_legs_missing")
         return errors
+    if not all(isinstance(meta, Mapping) for meta in legs_meta.values()):
+        # A non-object leg entry would slip past the label-derivation and
+        # dataset-digest loops below — its SYNTHETIC tag must not hide.
+        errors.append("inputs_legs_meta_not_object")
+        return errors
     labels = {
         str(meta.get("data_label")) for meta in legs_meta.values() if isinstance(meta, Mapping)
     }

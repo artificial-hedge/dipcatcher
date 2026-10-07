@@ -636,11 +636,15 @@ def _r_kyle_lambda_ofi_depth_corr(b: SyntheticBundle) -> float:
     worst = 0.0
     for key in ("kyle_lambda_ofi_depth_spearman", "kyle_lambda_ofi_depth_pearson"):
         value = float(out[key])
-        if math.isfinite(value):
-            worst = max(worst, max(0.0, abs(value) - 1.0))
+        if not math.isfinite(value):
+            # An undefined correlation with enough aligned dates is a
+            # degenerate series — fail closed, not a silent bound pass.
+            raise ValueError(f"{key} undefined on a >=3-date aligned panel")
+        worst = max(worst, max(0.0, abs(value) - 1.0))
     p_value = float(out["kyle_lambda_ofi_depth_prod_hac_p"])
-    if math.isfinite(p_value):
-        worst = max(worst, max(0.0, -p_value, p_value - 1.0))
+    if not math.isfinite(p_value):
+        raise ValueError("kyle_lambda_ofi_depth_prod_hac_p undefined")
+    worst = max(worst, max(0.0, -p_value, p_value - 1.0))
     return worst
 
 

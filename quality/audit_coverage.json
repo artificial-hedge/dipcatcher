@@ -246,7 +246,23 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
-    }
+    },
+    "research/basis_carry.py": "audited",
+    "research/cost_allocation.py": "audited",
+    "research/cost_calibration.py": "audited",
+    "research/crossvenue_basis.py": "audited",
+    "research/garch_benchmark.py": "audited",
+    "research/identity_sweep.py": "audited",
+    "research/research100.py": "audited",
+    "research/research100_benchmark.py": "audited",
+    "research/research100_cli.py": "audited",
+    "research/stocbench.py": "audited",
+    "research/suite_health.py": "audited",
+    "research/total_return.py": "audited",
+    "research/vine_dominance.py": "audited",
+    "research/vine_panel.py": "audited",
+    "research/vol_bench.py": "audited",
+    "research/vol_of_vol.py": "audited"
   },
   "schema_version": "audit-coverage/v1",
   "statuses": {
